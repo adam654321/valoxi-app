@@ -51,7 +51,12 @@ const industries = [
 const targetCompanySchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
   industry: z.string().min(1, "Industry is required"),
-  website: z.string().url("Please enter a valid website URL").optional().or(z.literal("")),
+  website: z.string().optional().or(z.literal("")).refine((val) => {
+    if (!val || val === "") return true;
+    // Allow URLs with or without protocol - we'll add https:// automatically
+    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    return urlPattern.test(val);
+  }, "Please enter a valid website URL (example.com or https://example.com)"),
   phone: z.string().optional(),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   address: z.string().optional(),
@@ -281,10 +286,18 @@ export default function EnhancedTargetCompanies() {
   });
 
   const onSubmit = (data: TargetCompanyForm) => {
+    // Auto-prefix website URL with https:// if not present
+    const processedData = {
+      ...data,
+      website: data.website && !data.website.startsWith('http://') && !data.website.startsWith('https://') 
+        ? `https://${data.website}` 
+        : data.website
+    };
+
     if (editingCompany) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(processedData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(processedData);
     }
   };
 
@@ -784,7 +797,7 @@ export default function EnhancedTargetCompanies() {
                       <FormItem>
                         <FormLabel>Website</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://example.com" {...field} data-testid="input-website" />
+                          <Input placeholder="example.com" {...field} data-testid="input-website" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
