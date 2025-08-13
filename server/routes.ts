@@ -213,11 +213,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const targetCompanyCount = await storage.getTargetCompanyCount(userCompanyId);
+      const totalContactsCount = await storage.getTotalContactsCount(userCompanyId);
 
       res.json({
         targetCompanies: targetCompanyCount,
         activeDeals: 0, // Placeholder for future implementation
-        totalContacts: 0, // Placeholder for future implementation
+        totalContacts: totalContactsCount,
         dealValue: "0", // Placeholder for future implementation
       });
     } catch (error) {

@@ -79,6 +79,7 @@ export interface IStorage {
   searchTargetCompanies(userCompanyId: number, searchParams: SearchParams): Promise<TargetCompanyWithStats[]>;
   getFilterOptions(userCompanyId: number): Promise<FilterOptions>;
   getTargetCompanyCount(userCompanyId: number): Promise<number>;
+  getTotalContactsCount(userCompanyId: number): Promise<number>;
   getTargetCompany(id: number, userCompanyId: number): Promise<TargetCompany | undefined>;
   getCompanyProfile(targetCompanyId: number, userCompanyId: number, userId: number): Promise<CompanyProfile | undefined>;
   createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
@@ -328,6 +329,15 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db
       .select({ count: count() })
       .from(targetCompanies)
+      .where(eq(targetCompanies.userCompanyId, userCompanyId));
+    return result.count;
+  }
+
+  async getTotalContactsCount(userCompanyId: number): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(targetContacts)
+      .leftJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
       .where(eq(targetCompanies.userCompanyId, userCompanyId));
     return result.count;
   }
