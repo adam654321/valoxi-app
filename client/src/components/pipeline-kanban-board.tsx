@@ -334,40 +334,47 @@ export function PipelineKanbanBoard() {
               const colorScheme = stageColors[columnIndex % stageColors.length];
 
               return (
-                <div key={column.stageName} className="flex-shrink-0 w-80 pipeline-column" data-column-index={columnIndex}>
-                  <div className={`rounded-xl shadow-lg border-2 ${colorScheme.border} ${colorScheme.bg} backdrop-blur-sm min-h-[700px] pipeline-column-inner`}>
-                    {/* Column Header */}
-                    <div className="p-6 border-b border-gray-200/50 dark:border-slate-700/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${colorScheme.accent}`}></div>
-                          <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                            {column.stageName}
-                          </h3>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800 rounded-full px-3 py-1 shadow-sm border border-gray-200 dark:border-slate-600">
-                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                            {column.companies.length}
-                          </span>
-                        </div>
+                <div key={column.stageName} className="flex-shrink-0 w-80">
+                  {/* Floating Stage Header */}
+                  <div className="mb-6 relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded-full ${colorScheme.accent} shadow-lg`}></div>
+                        <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+                          {column.stageName}
+                        </h3>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {column.description}
-                      </p>
+                      <div className={`${colorScheme.accent} text-white rounded-full px-4 py-2 shadow-lg`}>
+                        <span className="text-sm font-bold">
+                          {column.companies.length}
+                        </span>
+                      </div>
                     </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 ml-7">
+                      {column.description}
+                    </p>
+                    {/* Subtle column background indicator */}
+                    <div className={`absolute -inset-x-4 -inset-y-2 rounded-xl ${colorScheme.bg} opacity-20 -z-10`}></div>
+                  </div>
 
-                    <Droppable droppableId={column.stageName}>
-                      {(provided: any, snapshot: any) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`p-4 min-h-[580px] transition-all duration-300 ${
-                            snapshot.isDraggingOver
-                              ? 'bg-blue-100/80 dark:bg-blue-900/40 scale-[1.02]'
-                              : ''
-                          }`}
-                        >
-                          <div className="space-y-4">
+                  {/* Invisible Drop Zone Container */}
+                  <Droppable droppableId={column.stageName}>
+                    {(provided: any, snapshot: any) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`min-h-[600px] transition-all duration-300 relative ${
+                          snapshot.isDraggingOver
+                            ? 'bg-gradient-to-b from-blue-50/30 to-blue-100/30 dark:from-blue-900/10 dark:to-blue-800/10 rounded-xl scale-[1.01]'
+                            : ''
+                        }`}
+                        style={{ 
+                          border: snapshot.isDraggingOver ? '2px dashed #3b82f6' : '2px dashed transparent',
+                          borderRadius: '12px',
+                          padding: '8px'
+                        }}
+                      >
+                        <div className="space-y-4">
                             {column.companies.map((company, index) => (
                               <Draggable
                                 key={company.id}
@@ -498,11 +505,10 @@ export function PipelineKanbanBoard() {
                                 </p>
                               </div>
                             )}
-                          </div>
                         </div>
-                      )}
-                    </Droppable>
-                  </div>
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
               );
             })}
