@@ -506,6 +506,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all contacts across all target companies for the user
+  app.get("/api/contacts/all", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const allContacts = await storage.getAllContactsForUserCompany(userCompanyId);
+      res.json(allContacts);
+    } catch (error) {
+      console.error("Get all contacts error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

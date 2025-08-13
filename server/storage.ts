@@ -230,6 +230,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(targetContacts.id, id));
     return (result.rowCount ?? 0) > 0;
   }
+
+  async getAllContactsForUserCompany(userCompanyId: number) {
+    const contacts = await db
+      .select({
+        id: targetContacts.id,
+        targetCompanyId: targetContacts.targetCompanyId,
+        firstName: targetContacts.firstName,
+        lastName: targetContacts.lastName,
+        title: targetContacts.title,
+        email: targetContacts.email,
+        phone: targetContacts.phone,
+        isPrimary: targetContacts.isPrimary,
+        notes: targetContacts.notes,
+        createdAt: targetContacts.createdAt,
+        company: {
+          id: targetCompanies.id,
+          companyName: targetCompanies.companyName,
+          industry: targetCompanies.industry,
+        },
+      })
+      .from(targetContacts)
+      .innerJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .orderBy(
+        sql`${targetContacts.isPrimary} DESC`,
+        targetCompanies.companyName,
+        targetContacts.lastName
+      );
+
+    return contacts;
+  }
 }
 
 export const storage = new DatabaseStorage();

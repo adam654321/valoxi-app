@@ -10,6 +10,7 @@ import Register from "@/pages/auth/register";
 import Dashboard from "@/pages/dashboard";
 import TargetCompanies from "@/pages/target-companies";
 import TargetCompanyDetail from "@/pages/target-company-detail";
+import Contacts from "@/pages/contacts";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +40,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/target-companies" component={TargetCompanies} />
           <Route path="/target-companies/:id" component={TargetCompanyDetail} />
+          <Route path="/contacts" component={Contacts} />
         </>
       )}
       <Route component={NotFound} />

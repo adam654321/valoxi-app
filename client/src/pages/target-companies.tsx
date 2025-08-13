@@ -223,9 +223,9 @@ export default function TargetCompanies() {
                 <Link href="/target-companies" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
                   Target Companies
                 </Link>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
+                <Link href="/contacts" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Contacts
-                </a>
+                </Link>
                 <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Reports
                 </a>
