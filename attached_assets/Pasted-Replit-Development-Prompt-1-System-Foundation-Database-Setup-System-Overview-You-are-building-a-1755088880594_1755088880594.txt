@@ -1,0 +1,158 @@
+Replit Development Prompt 1: System Foundation & Database Setup
+System Overview
+You are building an M&A (Mergers & Acquisitions) CRM platform that helps business buyers track and manage potential acquisition targets through their deal pipeline.
+User Structure (CRITICAL - Read Carefully)
+Users: M&A professionals, business buyers, investment firms who are LOOKING TO ACQUIRE businesses
+Target Companies: Businesses that users want to potentially ACQUIRE (these are NOT the users' companies)
+User Companies: The organizations that employ the users (the acquiring companies/investment firms)
+
+Example: John works for "ABC Investment Partners" (user company). He uses this CRM to track "XYZ Manufacturing" and "Local Restaurant Chain" (target companies) that ABC Investment Partners might want to acquire.
+Core System Purpose
+This CRM tracks potential acquisition targets through a pipeline from initial identification to deal completion. Users input information about businesses they want to buy, not businesses they own.
+What You Need to Build in This Prompt
+1. Project Setup
+Create a new Node.js project with Express
+Set up basic folder structure
+Install essential dependencies
+Configure environment variables
+2. Database Schema
+Create these essential tables with proper relationships:
+
+-- User companies (the acquiring organizations)
+CREATE TABLE user_companies (
+  id SERIAL PRIMARY KEY,
+  company_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  address TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Users (M&A professionals who use the system)
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  user_company_id INTEGER REFERENCES user_companies(id),
+  role VARCHAR(50) DEFAULT 'user', -- 'admin' or 'user'
+  email_verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Target companies (businesses users want to acquire)
+CREATE TABLE target_companies (
+  id SERIAL PRIMARY KEY,
+  user_company_id INTEGER REFERENCES user_companies(id), -- Which acquiring company is tracking this
+  company_name VARCHAR(255) NOT NULL,
+  industry VARCHAR(100),
+  website VARCHAR(255),
+  phone VARCHAR(50),
+  email VARCHAR(255),
+  address TEXT,
+  annual_revenue DECIMAL(15,2),
+  employee_count INTEGER,
+  year_established INTEGER,
+  description TEXT,
+  created_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Primary contacts at target companies
+CREATE TABLE target_contacts (
+  id SERIAL PRIMARY KEY,
+  target_company_id INTEGER REFERENCES target_companies(id),
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  title VARCHAR(100),
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  is_primary BOOLEAN DEFAULT FALSE,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- User sessions
+CREATE TABLE user_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  session_token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+3. Basic Authentication System
+User registration with email/password
+Login functionality with session management
+Password hashing using bcrypt
+Basic session middleware for protected routes
+4. Landing Page After Login
+Create a simple dashboard that shows:
+
+Welcome message with user's name and company
+Quick stats: "You are tracking X target companies"
+Navigation menu for main sections
+"Add New Target Company" button
+5. Essential API Endpoints
+// Authentication
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+
+// Basic data
+GET /api/dashboard/stats
+Technical Requirements
+Dependencies to Install
+{
+  "express": "^4.18.0",
+  "bcrypt": "^5.1.0",
+  "pg": "^8.8.0",
+  "express-session": "^1.17.0",
+  "dotenv": "^16.0.0",
+  "cors": "^2.8.5"
+}
+Environment Variables
+DATABASE_URL=your_replit_database_url
+SESSION_SECRET=your_session_secret
+PORT=3000
+Folder Structure
+/
+├── server.js
+├── package.json
+├── .env
+├── routes/
+│   ├── auth.js
+│   └── dashboard.js
+├── middleware/
+│   └── auth.js
+├── database/
+│   └── db.js
+└── public/
+    ├── index.html
+    ├── login.html
+    ├── register.html
+    └── dashboard.html
+Success Criteria for Prompt 1
+Database tables created with correct relationships
+User can register with email/password
+User can login and receive session
+Dashboard shows after successful login
+Data isolation: users only see their company's data
+Basic navigation structure in place
+No errors in console
+Clean, professional UI
+Key Implementation Notes
+Data Isolation: ALWAYS filter queries by user_company_id to ensure users only see their company's target companies
+User Structure: Remember users are BUYERS tracking companies they want to ACQUIRE
+Security: Hash passwords, validate inputs, use sessions properly
+Database: Use Replit's built-in PostgreSQL database
+UI: Keep it simple and professional - this is for business users
+Next Steps Preview
+After completing this prompt, the next prompt will add:
+
+Target company creation and listing
+Basic company information forms
+Contact management for target companies
+
+Focus only on the requirements in this prompt. Build a solid foundation that the next prompts can build upon.
