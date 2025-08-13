@@ -181,6 +181,34 @@ export const stageHistory = pgTable("stage_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Activity types reference table
+export const activityTypes = pgTable("activity_types", {
+  id: serial("id").primaryKey(),
+  typeName: varchar("type_name", { length: 50 }).unique().notNull(),
+  description: text("description"),
+  requiresContact: boolean("requires_contact").default(false),
+  defaultDuration: integer("default_duration"), // in minutes
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Activities table for tracking all interactions
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  activityType: varchar("activity_type", { length: 50 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  activityDate: timestamp("activity_date").notNull(),
+  activityTime: varchar("activity_time", { length: 8 }), // HH:MM format
+  durationMinutes: integer("duration_minutes"),
+  contactId: integer("contact_id").references(() => targetContacts.id),
+  isCompleted: boolean("is_completed").default(true),
+  followUpDate: timestamp("follow_up_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const userCompaniesRelations = relations(userCompanies, ({ many }) => ({
   users: many(users),
@@ -201,6 +229,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   dealAssignmentsMade: many(userDealAssignments, { relationName: "assigner" }),
   notificationsReceived: many(teamNotifications, { relationName: "targetUser" }),
   notificationsSent: many(teamNotifications, { relationName: "fromUser" }),
+  activities: many(activities),
 }));
 
 export const targetCompaniesRelations = relations(targetCompanies, ({ one, many }) => ({
@@ -221,13 +250,15 @@ export const targetCompaniesRelations = relations(targetCompanies, ({ one, many 
   dealAssignments: many(userDealAssignments),
   notifications: many(teamNotifications),
   stageHistory: many(stageHistory),
+  activities: many(activities),
 }));
 
-export const targetContactsRelations = relations(targetContacts, ({ one }) => ({
+export const targetContactsRelations = relations(targetContacts, ({ one, many }) => ({
   targetCompany: one(targetCompanies, {
     fields: [targetContacts.targetCompanyId],
     references: [targetCompanies.id],
   }),
+  activities: many(activities),
 }));
 
 export const userSessionsRelations = relations(userSessions, ({ one }) => ({
@@ -307,6 +338,29 @@ export const stageHistoryRelations = relations(stageHistory, ({ one }) => ({
   }),
 }));
 
+export const activityTypesRelations = relations(activityTypes, ({ many }) => ({
+  activities: many(activities),
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [activities.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  user: one(users, {
+    fields: [activities.userId],
+    references: [users.id],
+  }),
+  contact: one(targetContacts, {
+    fields: [activities.contactId],
+    references: [targetContacts.id],
+  }),
+  activityType: one(activityTypes, {
+    fields: [activities.activityType],
+    references: [activityTypes.typeName],
+  }),
+}));
+
 // Insert schemas
 export const insertUserCompanySchema = createInsertSchema(userCompanies).omit({
   id: true,
@@ -369,6 +423,21 @@ export const insertStageHistorySchema = createInsertSchema(stageHistory).omit({
   changedAt: true,
 });
 
+export const insertActivityTypeSchema = createInsertSchema(activityTypes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertActivitySchema = createInsertSchema(activities).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  activityDate: z.string().datetime().or(z.date()),
+  durationMinutes: z.number().optional().nullable(),
+  contactId: z.number().optional().nullable(),
+  followUpDate: z.string().datetime().optional().nullable().or(z.date().optional().nullable()),
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -401,6 +470,12 @@ export type PipelineStage = typeof pipelineStages.$inferSelect;
 
 export type InsertStageHistory = z.infer<typeof insertStageHistorySchema>;
 export type StageHistory = typeof stageHistory.$inferSelect;
+
+export type InsertActivityType = z.infer<typeof insertActivityTypeSchema>;
+export type ActivityType = typeof activityTypes.$inferSelect;
+
+export type InsertActivity = z.infer<typeof insertActivitySchema>;
+export type Activity = typeof activities.$inferSelect;
 
 export type TeamMember = User & {
   roleDescription?: string;

@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 
 // Extend session type
@@ -1272,6 +1272,206 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(overview);
     } catch (error) {
       console.error("Get pipeline overview error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Activity management routes
+
+  // Get activity types
+  app.get("/api/activities/types", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const activityTypes = await storage.getActivityTypes();
+      res.json(activityTypes);
+    } catch (error) {
+      console.error("Get activity types error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create new activity for target company
+  app.post("/api/target-companies/:id/activities", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      // Verify user has access to this company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const activityData = insertActivitySchema.parse({
+        ...req.body,
+        targetCompanyId,
+        userId,
+      });
+
+      const newActivity = await storage.createActivity(activityData);
+      res.status(201).json(newActivity);
+    } catch (error) {
+      console.error("Create activity error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get activities for target company
+  app.get("/api/target-companies/:id/activities", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      // Verify user has access to this company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const activities = await storage.getActivitiesForCompany(targetCompanyId, userCompanyId);
+      res.json(activities);
+    } catch (error) {
+      console.error("Get company activities error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get activity timeline for target company
+  app.get("/api/target-companies/:id/activities/timeline", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      // Verify user has access to this company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const timeline = await storage.getActivityTimeline(targetCompanyId, userCompanyId);
+      res.json(timeline);
+    } catch (error) {
+      console.error("Get activity timeline error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update activity
+  app.put("/api/activities/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const activityId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(activityId)) {
+        return res.status(400).json({ message: "Invalid activity ID" });
+      }
+
+      const updateData = z.object({
+        activityType: z.string().optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        activityDate: z.string().datetime().or(z.date()).optional(),
+        activityTime: z.string().optional(),
+        durationMinutes: z.number().optional().nullable(),
+        contactId: z.number().optional().nullable(),
+        isCompleted: z.boolean().optional(),
+        followUpDate: z.string().datetime().optional().nullable().or(z.date().optional().nullable()),
+      }).parse(req.body);
+
+      const updatedActivity = await storage.updateActivity(activityId, updateData, userCompanyId);
+      
+      if (!updatedActivity) {
+        return res.status(404).json({ message: "Activity not found or access denied" });
+      }
+
+      res.json(updatedActivity);
+    } catch (error) {
+      console.error("Update activity error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete activity
+  app.delete("/api/activities/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const activityId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(activityId)) {
+        return res.status(400).json({ message: "Invalid activity ID" });
+      }
+
+      const deleted = await storage.deleteActivity(activityId, userCompanyId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Activity not found or access denied" });
+      }
+
+      res.json({ message: "Activity deleted successfully" });
+    } catch (error) {
+      console.error("Delete activity error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get recent activities across all companies
+  app.get("/api/activities/recent", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const recentActivities = await storage.getRecentActivities(userCompanyId, limit);
+      res.json(recentActivities);
+    } catch (error) {
+      console.error("Get recent activities error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -38,6 +38,7 @@ import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calend
 import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
+import { ActivityManagement } from "@/components/activity-management";
 
 // Enhanced profile interface to match the backend CompanyProfile
 interface CompanyProfile extends TargetCompany {
@@ -794,6 +795,26 @@ export default function TargetCompanyDetail() {
         targetCompanyId={parseInt(id!)} 
         targetCompanyName={company.companyName} 
       />
+
+      {/* Activity Management Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Activity Management
+          </CardTitle>
+          <CardDescription>
+            Track all interactions and activities with {company.companyName}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActivityManagement 
+            targetCompanyId={parseInt(id!)}
+            companyName={company.companyName}
+            contacts={contacts}
+          />
+        </CardContent>
+      </Card>
 
       {/* Contact Form Dialog */}
       <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
