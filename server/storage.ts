@@ -51,6 +51,19 @@ export interface FilterOptions {
   };
 }
 
+export interface CompanyProfile extends TargetCompany {
+  createdByName: string;
+  userCompanyName: string;
+  totalContacts: number;
+  primaryContactName: string | null;
+  primaryContactEmail: string | null;
+  primaryContactPhone: string | null;
+  primaryContactTitle: string | null;
+  yearsInBusiness: number | null;
+  revenuePerEmployee: number | null;
+  contacts: TargetContact[];
+}
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -67,6 +80,7 @@ export interface IStorage {
   getFilterOptions(userCompanyId: number): Promise<FilterOptions>;
   getTargetCompanyCount(userCompanyId: number): Promise<number>;
   getTargetCompany(id: number, userCompanyId: number): Promise<TargetCompany | undefined>;
+  getCompanyProfile(targetCompanyId: number, userCompanyId: number, userId: number): Promise<CompanyProfile | undefined>;
   createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
   updateTargetCompany(id: number, company: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany | undefined>;
   deleteTargetCompany(id: number, userCompanyId: number): Promise<boolean>;
@@ -350,6 +364,72 @@ export class DatabaseStorage implements IStorage {
       .from(targetCompanies)
       .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
     return company || undefined;
+  }
+
+  async getCompanyProfile(targetCompanyId: number, userCompanyId: number, userId: number): Promise<CompanyProfile | undefined> {
+    // Get comprehensive company data with user and contact information
+    const [profileData] = await db
+      .select({
+        // Company fields
+        id: targetCompanies.id,
+        userCompanyId: targetCompanies.userCompanyId,
+        companyName: targetCompanies.companyName,
+        industry: targetCompanies.industry,
+        website: targetCompanies.website,
+        phone: targetCompanies.phone,
+        email: targetCompanies.email,
+        address: targetCompanies.address,
+        annualRevenue: targetCompanies.annualRevenue,
+        employeeCount: targetCompanies.employeeCount,
+        yearEstablished: targetCompanies.yearEstablished,
+        description: targetCompanies.description,
+        createdBy: targetCompanies.createdBy,
+        createdAt: targetCompanies.createdAt,
+        // Enhanced profile data
+        createdByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        userCompanyName: userCompanies.companyName,
+        totalContacts: sql<number>`COALESCE((SELECT COUNT(*) FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}), 0)`,
+        primaryContactName: sql<string | null>`(SELECT ${targetContacts.firstName} || ' ' || ${targetContacts.lastName} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+        primaryContactEmail: sql<string | null>`(SELECT ${targetContacts.email} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+        primaryContactPhone: sql<string | null>`(SELECT ${targetContacts.phone} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+        primaryContactTitle: sql<string | null>`(SELECT ${targetContacts.title} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+      })
+      .from(targetCompanies)
+      .leftJoin(users, eq(targetCompanies.createdBy, users.id))
+      .leftJoin(userCompanies, eq(targetCompanies.userCompanyId, userCompanies.id))
+      .where(
+        and(
+          eq(targetCompanies.id, targetCompanyId),
+          eq(targetCompanies.userCompanyId, userCompanyId)
+        )
+      );
+
+    if (!profileData) {
+      return undefined;
+    }
+
+    // Get all contacts for this company
+    const contacts = await db
+      .select()
+      .from(targetContacts)
+      .where(eq(targetContacts.targetCompanyId, targetCompanyId))
+      .orderBy(desc(targetContacts.isPrimary), asc(targetContacts.lastName));
+
+    // Calculate additional metrics
+    const currentYear = new Date().getFullYear();
+    const yearsInBusiness = profileData.yearEstablished ? currentYear - profileData.yearEstablished : null;
+    
+    const revenuePerEmployee = (profileData.annualRevenue && profileData.employeeCount) 
+      ? parseFloat(profileData.annualRevenue) / profileData.employeeCount 
+      : null;
+
+    return {
+      ...profileData,
+      userCompanyName: profileData.userCompanyName || 'Unknown Organization',
+      yearsInBusiness,
+      revenuePerEmployee,
+      contacts,
+    };
   }
 
   async createTargetCompany(insertCompany: InsertTargetCompany): Promise<TargetCompany> {

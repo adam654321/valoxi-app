@@ -34,20 +34,35 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink } from "lucide-react";
 import type { TargetCompany, TargetContact } from "@shared/schema";
 
+// Enhanced profile interface to match the backend CompanyProfile
+interface CompanyProfile extends TargetCompany {
+  createdByName: string;
+  userCompanyName: string;
+  totalContacts: number;
+  primaryContactName: string | null;
+  primaryContactEmail: string | null;
+  primaryContactPhone: string | null;
+  primaryContactTitle: string | null;
+  yearsInBusiness: number | null;
+  revenuePerEmployee: number | null;
+  contacts: TargetContact[];
+}
+
+// Contact form schema
 const contactSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   title: z.string().optional(),
-  email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   phone: z.string().optional(),
   isPrimary: z.boolean().default(false),
   notes: z.string().optional(),
 });
 
-type ContactForm = z.infer<typeof contactSchema>;
+type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function TargetCompanyDetail() {
   const { id } = useParams();
@@ -55,7 +70,7 @@ export default function TargetCompanyDetail() {
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<TargetContact | null>(null);
 
-  const contactForm = useForm<ContactForm>({
+  const contactForm = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
       firstName: "",
@@ -68,34 +83,38 @@ export default function TargetCompanyDetail() {
     },
   });
 
-  // Get target company details
-  const { data: company, isLoading: companyLoading } = useQuery<TargetCompany>({
-    queryKey: ["/api/target-companies", id],
+  // Get comprehensive company profile with enhanced data
+  const { data: profile, isLoading: profileLoading } = useQuery<CompanyProfile>({
+    queryKey: ["/api/target-companies", id, "profile"],
     enabled: !!id,
   });
 
-  // Get contacts for this company
-  const { data: contacts = [], isLoading: contactsLoading } = useQuery<TargetContact[]>({
-    queryKey: ["/api/target-companies", id, "contacts"],
-    enabled: !!id,
-  });
+  // Extract company and contacts from profile
+  const company = profile;
+  const contacts = profile?.contacts || [];
+  const companyLoading = profileLoading;
+  const contactsLoading = profileLoading;
 
-  // Create contact mutation
-  const createContactMutation = useMutation({
-    mutationFn: async (data: ContactForm) => {
-      return await apiRequest("POST", `/api/target-companies/${id}/contacts`, data);
-    },
+  // Add contact mutation
+  const addContactMutation = useMutation({
+    mutationFn: (data: ContactFormData) =>
+      apiRequest(`/api/target-companies/${id}/contacts`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...data,
+          targetCompanyId: parseInt(id!),
+        }),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "contacts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
-      setShowContactForm(false);
-      contactForm.reset();
       toast({
         title: "Success",
-        description: "Contact added successfully!",
+        description: "Contact added successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+      setShowContactForm(false);
+      contactForm.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to add contact",
@@ -104,24 +123,24 @@ export default function TargetCompanyDetail() {
     },
   });
 
-  // Update contact mutation
-  const updateContactMutation = useMutation({
-    mutationFn: async (data: ContactForm) => {
-      if (!editingContact) return;
-      return await apiRequest("PUT", `/api/contacts/${editingContact.id}`, data);
-    },
+  // Edit contact mutation  
+  const editContactMutation = useMutation({
+    mutationFn: (data: ContactFormData) =>
+      apiRequest(`/api/target-companies/${id}/contacts/${editingContact!.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "contacts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
-      setEditingContact(null);
-      setShowContactForm(false);
-      contactForm.reset();
       toast({
         title: "Success", 
-        description: "Contact updated successfully!",
+        description: "Contact updated successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+      setShowContactForm(false);
+      setEditingContact(null);
+      contactForm.reset();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update contact",
@@ -132,18 +151,18 @@ export default function TargetCompanyDetail() {
 
   // Delete contact mutation
   const deleteContactMutation = useMutation({
-    mutationFn: async (contactId: number) => {
-      return await apiRequest("DELETE", `/api/contacts/${contactId}`);
-    },
+    mutationFn: (contactId: number) =>
+      apiRequest(`/api/target-companies/${id}/contacts/${contactId}`, {
+        method: "DELETE",
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "contacts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
       toast({
         title: "Success",
-        description: "Contact deleted successfully!",
+        description: "Contact deleted successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete contact",
@@ -153,12 +172,21 @@ export default function TargetCompanyDetail() {
   });
 
   const handleAddContact = () => {
-    contactForm.reset();
     setEditingContact(null);
+    contactForm.reset({
+      firstName: "",
+      lastName: "",
+      title: "",
+      email: "",
+      phone: "",
+      isPrimary: false,
+      notes: "",
+    });
     setShowContactForm(true);
   };
 
   const handleEditContact = (contact: TargetContact) => {
+    setEditingContact(contact);
     contactForm.reset({
       firstName: contact.firstName,
       lastName: contact.lastName,
@@ -168,16 +196,7 @@ export default function TargetCompanyDetail() {
       isPrimary: contact.isPrimary || false,
       notes: contact.notes || "",
     });
-    setEditingContact(contact);
     setShowContactForm(true);
-  };
-
-  const handleSubmitContact = (data: ContactForm) => {
-    if (editingContact) {
-      updateContactMutation.mutate(data);
-    } else {
-      createContactMutation.mutate(data);
-    }
   };
 
   const handleDeleteContact = (contactId: number) => {
@@ -186,18 +205,23 @@ export default function TargetCompanyDetail() {
     }
   };
 
+  const handleSubmitContact = (data: ContactFormData) => {
+    if (editingContact) {
+      editContactMutation.mutate(data);
+    } else {
+      addContactMutation.mutate(data);
+    }
+  };
+
   if (companyLoading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10" />
-          <Skeleton className="h-8 w-48" />
+        <div className="flex items-center gap-4 mb-6">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-8 w-64" />
         </div>
+        
         <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
           <CardContent className="space-y-4">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
@@ -237,128 +261,272 @@ export default function TargetCompanyDetail() {
     }).format(num);
   };
 
-  const formatNumber = (value: string | null | undefined) => {
+  const formatNumber = (value: string | number | null | undefined) => {
     if (!value) return "N/A";
-    const num = parseInt(value);
+    const num = typeof value === 'number' ? value : parseInt(value.toString());
     if (isNaN(num)) return value;
     return new Intl.NumberFormat().format(num);
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Not specified";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Quick action functions
+  const emailContact = (email: string) => {
+    if (email) {
+      window.location.href = `mailto:${email}`;
+    }
+  };
+
+  const callContact = (phone: string) => {
+    if (phone) {
+      window.location.href = `tel:${phone}`;
+    }
+  };
+
+  const visitWebsite = (website: string) => {
+    if (website) {
+      window.open(website, '_blank');
+    }
+  };
+
+  const viewOnMap = (address: string) => {
+    if (address) {
+      window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+    }
   };
 
   const primaryContact = contacts.find(c => c.isPrimary);
   const otherContacts = contacts.filter(c => !c.isPrimary);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+      {/* Professional Header Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-8 border">
+        {/* Navigation */}
+        <div className="flex items-center gap-4 mb-6">
           <Link href="/target-companies">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Back to Companies
             </Button>
           </Link>
+        </div>
+
+        {/* Company Title and Industry */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold">{company.companyName}</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <Building2 className="w-8 h-8 text-blue-600" />
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white" data-testid="text-company-name">
+                {company.companyName}
+              </h1>
+            </div>
             {company.industry && (
-              <Badge variant="secondary" className="mt-1">
+              <Badge variant="secondary" className="text-sm px-3 py-1" data-testid="badge-industry">
                 {company.industry}
               </Badge>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Company Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-        </CardHeader>
-        <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {company.website && (
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-muted-foreground" />
-              <a 
-                href={company.website} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                {company.website.replace(/^https?:\/\//, '')}
-              </a>
+          {/* Key Metrics at a Glance */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            <div className="text-center bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm">
+              <div className="text-2xl font-bold text-green-600" data-testid="metric-revenue">
+                {company.annualRevenue ? formatCurrency(company.annualRevenue) : 'N/A'}
+              </div>
+              <div className="text-sm text-muted-foreground">Annual Revenue</div>
             </div>
-          )}
-
-          {company.email && (
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-muted-foreground" />
-              <a href={`mailto:${company.email}`} className="text-blue-600 hover:underline">
-                {company.email}
-              </a>
+            <div className="text-center bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm">
+              <div className="text-2xl font-bold text-blue-600" data-testid="metric-employees">
+                {company.employeeCount ? formatNumber(company.employeeCount) : 'N/A'}
+              </div>
+              <div className="text-sm text-muted-foreground">Employees</div>
             </div>
-          )}
-
-          {company.phone && (
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-muted-foreground" />
-              <span>{company.phone}</span>
+            <div className="text-center bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm">
+              <div className="text-2xl font-bold text-purple-600" data-testid="metric-years">
+                {profile?.yearsInBusiness || 'N/A'}
+              </div>
+              <div className="text-sm text-muted-foreground">Years in Business</div>
             </div>
-          )}
-
-          {company.address && (
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              <span>{company.address}</span>
-            </div>
-          )}
-
-          {company.annualRevenue && (
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-              <span>Annual Revenue: {formatCurrency(company.annualRevenue)}</span>
-            </div>
-          )}
-
-          {company.employeeCount && (
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span>Employees: {formatNumber(company.employeeCount?.toString())}</span>
-            </div>
-          )}
-
-          {company.yearEstablished && (
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span>Established: {company.yearEstablished}</span>
-            </div>
-          )}
-        </CardContent>
-        
-        {company.description && (
-          <>
-            <CardHeader className="pt-0">
-              <CardTitle className="text-lg">Description</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-muted-foreground">{company.description}</p>
-            </CardContent>
-          </>
-        )}
-      </Card>
-
-      {/* Contacts Section */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Contacts</CardTitle>
-            <CardDescription>
-              Key people at {company.companyName}
-            </CardDescription>
           </div>
-          <Button onClick={handleAddContact}>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-3 mt-6">
+          <Button onClick={handleAddContact} data-testid="button-add-contact">
             <Plus className="w-4 h-4 mr-2" />
             Add Contact
           </Button>
+          {company.website && (
+            <Button variant="outline" onClick={() => visitWebsite(company.website!)} data-testid="button-visit-website">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Visit Website
+            </Button>
+          )}
+          {profile?.primaryContactEmail && (
+            <Button variant="outline" onClick={() => emailContact(profile.primaryContactEmail!)} data-testid="button-email-primary">
+              <Mail className="w-4 h-4 mr-2" />
+              Email Primary Contact
+            </Button>
+          )}
+          {profile?.primaryContactPhone && (
+            <Button variant="outline" onClick={() => callContact(profile.primaryContactPhone!)} data-testid="button-call-primary">
+              <Phone className="w-4 h-4 mr-2" />
+              Call Primary Contact
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Business Overview Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Business Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              {company.website && (
+                <div className="flex items-center gap-3" data-testid="info-website">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <span className="font-medium">Website:</span>
+                    <a 
+                      href={company.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="ml-2 text-blue-600 hover:underline"
+                    >
+                      {company.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {company.email && (
+                <div className="flex items-center gap-3" data-testid="info-email">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <span className="font-medium">Email:</span>
+                    <a href={`mailto:${company.email}`} className="ml-2 text-blue-600 hover:underline">
+                      {company.email}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {company.phone && (
+                <div className="flex items-center gap-3" data-testid="info-phone">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <span className="font-medium">Phone:</span>
+                    <a href={`tel:${company.phone}`} className="ml-2 text-blue-600 hover:underline">
+                      {company.phone}
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {company.address && (
+                <div className="flex items-start gap-3" data-testid="info-address">
+                  <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <span className="font-medium">Address:</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm">{company.address}</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => viewOnMap(company.address!)}
+                        className="h-6 px-2 text-xs"
+                        data-testid="button-view-map"
+                      >
+                        View Map
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {company.yearEstablished && (
+                <div className="flex items-center gap-3" data-testid="info-established">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <span className="font-medium">Established:</span>
+                    <span className="ml-2">{company.yearEstablished}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {company.description && (
+            <div className="mt-6 pt-6 border-t">
+              <h4 className="font-semibold mb-3">Company Description</h4>
+              <p className="text-muted-foreground leading-relaxed" data-testid="text-description">
+                {company.description}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Financial Information Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Financial Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border">
+              <div className="text-2xl font-bold text-green-600 mb-1" data-testid="financial-revenue">
+                {company.annualRevenue ? formatCurrency(company.annualRevenue) : 'Not specified'}
+              </div>
+              <div className="text-sm text-muted-foreground">Annual Revenue</div>
+            </div>
+            
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border">
+              <div className="text-2xl font-bold text-blue-600 mb-1" data-testid="financial-employees">
+                {company.employeeCount ? formatNumber(company.employeeCount) : 'Not specified'}
+              </div>
+              <div className="text-sm text-muted-foreground">Employee Count</div>
+            </div>
+            
+            <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border">
+              <div className="text-2xl font-bold text-purple-600 mb-1" data-testid="financial-revenue-per-employee">
+                {profile?.revenuePerEmployee ? formatCurrency(profile.revenuePerEmployee.toString()) : 'Not calculated'}
+              </div>
+              <div className="text-sm text-muted-foreground">Revenue per Employee</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Contact Directory Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Contact Directory
+          </CardTitle>
+          <CardDescription>
+            Key people at {company.companyName} ({profile?.totalContacts || 0} contacts)
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {contactsLoading ? (
@@ -378,111 +546,237 @@ export default function TargetCompanyDetail() {
               <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No contacts added yet</p>
               <p className="text-sm">Add contacts to track key people at this company</p>
+              <Button onClick={handleAddContact} className="mt-4" data-testid="button-add-first-contact">
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Contact
+              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Primary Contact */}
+            <div className="space-y-6">
+              {/* Primary Contact Highlight */}
               {primaryContact && (
-                <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                  <h3 className="font-semibold text-lg mb-4 text-blue-900 dark:text-blue-100">Primary Contact</h3>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-xl font-bold" data-testid="primary-contact-name">
                           {primaryContact.firstName} {primaryContact.lastName}
                         </h4>
-                        <Badge variant="default">Primary</Badge>
+                        {primaryContact.title && (
+                          <p className="text-muted-foreground font-medium" data-testid="primary-contact-title">
+                            {primaryContact.title}
+                          </p>
+                        )}
                       </div>
-                      {primaryContact.title && (
-                        <p className="text-sm text-muted-foreground">{primaryContact.title}</p>
-                      )}
-                      <div className="flex flex-wrap gap-4 text-sm">
+                      
+                      <div className="flex flex-wrap gap-4">
                         {primaryContact.email && (
-                          <a href={`mailto:${primaryContact.email}`} className="text-blue-600 hover:underline flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
+                          <a 
+                            href={`mailto:${primaryContact.email}`} 
+                            className="flex items-center gap-2 text-blue-600 hover:underline"
+                            data-testid="primary-contact-email"
+                          >
+                            <Mail className="w-4 h-4" />
                             {primaryContact.email}
                           </a>
                         )}
                         {primaryContact.phone && (
-                          <span className="text-muted-foreground flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
+                          <a 
+                            href={`tel:${primaryContact.phone}`} 
+                            className="flex items-center gap-2 text-blue-600 hover:underline"
+                            data-testid="primary-contact-phone"
+                          >
+                            <Phone className="w-4 h-4" />
                             {primaryContact.phone}
-                          </span>
+                          </a>
                         )}
                       </div>
+                      
                       {primaryContact.notes && (
-                        <p className="text-sm text-muted-foreground mt-2">{primaryContact.notes}</p>
+                        <p className="text-sm text-muted-foreground bg-white dark:bg-gray-800 p-3 rounded border" data-testid="primary-contact-notes">
+                          {primaryContact.notes}
+                        </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    
+                    <div className="flex gap-2 lg:flex-col">
+                      {primaryContact.email && (
+                        <Button
+                          onClick={() => emailContact(primaryContact.email!)}
+                          className="flex-1 lg:flex-none"
+                          data-testid="button-email-primary-contact"
+                        >
+                          <Mail className="w-4 h-4 mr-2" />
+                          Email
+                        </Button>
+                      )}
+                      {primaryContact.phone && (
+                        <Button
+                          variant="outline"
+                          onClick={() => callContact(primaryContact.phone!)}
+                          className="flex-1 lg:flex-none"
+                          data-testid="button-call-primary-contact"
+                        >
+                          <Phone className="w-4 h-4 mr-2" />
+                          Call
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditContact(primaryContact)}
+                        data-testid="button-edit-primary-contact"
                       >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteContact(primaryContact.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
+                        <Edit className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Other Contacts */}
-              {otherContacts.map((contact) => (
-                <div key={contact.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">
-                        {contact.firstName} {contact.lastName}
-                      </h4>
-                      {contact.title && (
-                        <p className="text-sm text-muted-foreground">{contact.title}</p>
-                      )}
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        {contact.email && (
-                          <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {contact.email}
-                          </a>
-                        )}
-                        {contact.phone && (
-                          <span className="text-muted-foreground flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {contact.phone}
-                          </span>
-                        )}
-                      </div>
-                      {contact.notes && (
-                        <p className="text-sm text-muted-foreground mt-2">{contact.notes}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditContact(contact)}
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteContact(contact.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
+              {/* All Contacts Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">
+                    All Contacts ({contacts.length})
+                  </h3>
+                  <Button onClick={handleAddContact} data-testid="button-add-contact-directory">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Contact
+                  </Button>
                 </div>
-              ))}
+                
+                <div className="grid gap-4">
+                  {contacts.map((contact) => (
+                    <div 
+                      key={contact.id} 
+                      className={`border rounded-lg p-4 ${contact.isPrimary ? 'bg-blue-50/50 dark:bg-blue-950/10 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-gray-800'}`}
+                      data-testid={`contact-card-${contact.id}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold" data-testid={`contact-name-${contact.id}`}>
+                              {contact.firstName} {contact.lastName}
+                            </h4>
+                            {contact.isPrimary && (
+                              <Badge variant="default" className="text-xs">Primary</Badge>
+                            )}
+                          </div>
+                          
+                          {contact.title && (
+                            <p className="text-sm text-muted-foreground" data-testid={`contact-title-${contact.id}`}>
+                              {contact.title}
+                            </p>
+                          )}
+                          
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            {contact.email && (
+                              <a 
+                                href={`mailto:${contact.email}`} 
+                                className="text-blue-600 hover:underline flex items-center gap-1"
+                                data-testid={`contact-email-${contact.id}`}
+                              >
+                                <Mail className="w-3 h-3" />
+                                {contact.email}
+                              </a>
+                            )}
+                            {contact.phone && (
+                              <a 
+                                href={`tel:${contact.phone}`} 
+                                className="text-blue-600 hover:underline flex items-center gap-1"
+                                data-testid={`contact-phone-${contact.id}`}
+                              >
+                                <Phone className="w-3 h-3" />
+                                {contact.phone}
+                              </a>
+                            )}
+                          </div>
+                          
+                          {contact.notes && (
+                            <p className="text-sm text-muted-foreground" data-testid={`contact-notes-${contact.id}`}>
+                              {contact.notes}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditContact(contact)}
+                            data-testid={`button-edit-contact-${contact.id}`}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteContact(contact.id)}
+                            data-testid={`button-delete-contact-${contact.id}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* System Information Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            System Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Creation Details</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span>Created by: <strong>{profile?.createdByName || 'Unknown'}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                    <span>Organization: <strong>{profile?.userCompanyName || 'Unknown'}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <span>Date: <strong>{formatDate(company.createdAt?.toString())}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Record Statistics</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span>Total Contacts: <strong>{profile?.totalContacts || 0}</strong></span>
+                  </div>
+                  {profile?.primaryContactName && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span>Primary Contact: <strong>{profile.primaryContactName}</strong></span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -549,7 +843,7 @@ export default function TargetCompanyDetail() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@example.com" {...field} />
+                        <Input type="email" placeholder="john@company.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -563,7 +857,7 @@ export default function TargetCompanyDetail() {
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input type="tel" placeholder="(555) 123-4567" {...field} />
+                        <Input placeholder="(555) 123-4567" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -583,9 +877,11 @@ export default function TargetCompanyDetail() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Primary Contact</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Mark this as the main person to contact at this company
+                      <FormLabel>
+                        Set as primary contact
+                      </FormLabel>
+                      <p className="text-[0.8rem] text-muted-foreground">
+                        The primary contact will be highlighted in the company profile
                       </p>
                     </div>
                   </FormItem>
@@ -600,10 +896,9 @@ export default function TargetCompanyDetail() {
                     <FormLabel>Notes</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Additional information about this contact..."
-                        className="resize-none"
-                        rows={3}
-                        {...field} 
+                        placeholder="Additional notes about this contact..."
+                        className="min-h-[80px]"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -611,19 +906,24 @@ export default function TargetCompanyDetail() {
                 )}
               />
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowContactForm(false)}
+                  disabled={addContactMutation.isPending || editContactMutation.isPending}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createContactMutation.isPending || updateContactMutation.isPending}
+                  disabled={addContactMutation.isPending || editContactMutation.isPending}
                 >
-                  {editingContact ? "Update Contact" : "Add Contact"}
+                  {addContactMutation.isPending || editContactMutation.isPending
+                    ? "Saving..."
+                    : editingContact
+                    ? "Update Contact"
+                    : "Add Contact"}
                 </Button>
               </div>
             </form>

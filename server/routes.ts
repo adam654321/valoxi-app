@@ -357,6 +357,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get comprehensive company profile with enhanced data
+  app.get("/api/target-companies/:id/profile", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid target company ID" });
+      }
+
+      const profile = await storage.getCompanyProfile(targetCompanyId, userCompanyId, userId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Target company not found" });
+      }
+
+      res.json(profile);
+    } catch (error) {
+      console.error("Get company profile error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Update target company
   app.put("/api/target-companies/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
