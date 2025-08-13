@@ -49,22 +49,39 @@ div[data-rbd-draggable-id] {
   position: relative;
 }
 
-/* Key fix: Force highest z-index on dragged elements */
-[data-rbd-draggable-id][style*="position: fixed"] {
-  z-index: 999999 !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
-  border: 2px solid #3b82f6 !important;
-  transform: rotate(2deg) !important;
-}
-
 /* Prevent body scroll during drag */
 body.dragging {
   overflow: hidden;
 }
 
-/* Ensure dragged elements are never clipped */
-body.dragging .overflow-hidden {
+/* Force all containers to allow overflow during drag */
+body.dragging * {
   overflow: visible !important;
+}
+
+/* Key fix: Target dragged elements with multiple selectors */
+[data-rbd-draggable-id][style*="position: fixed"],
+[data-rbd-draggable-id][style*="transform: translate"],
+.react-beautiful-dnd-dragging {
+  z-index: 999999 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid #3b82f6 !important;
+  pointer-events: none !important;
+}
+
+/* Improve cursor positioning by using transform origin */
+[data-rbd-draggable-id][style*="transform"] {
+  transform-origin: 50% 50% !important;
+}
+
+/* Ensure dragged elements from all columns work */
+body.dragging [data-rbd-droppable-id] {
+  overflow: visible !important;
+}
+
+/* Additional selector for React Beautiful DND portal */
+body > div[data-react-beautiful-dnd-drag-handle] {
+  z-index: 999999 !important;
 }
 
 /* Touch/mobile drag improvements */

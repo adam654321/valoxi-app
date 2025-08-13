@@ -276,7 +276,7 @@ export function PipelineKanbanBoard() {
             // Optional: Handle drag updates
           }}
         >
-          <div className="flex gap-6 overflow-x-auto pb-6">
+          <div className="flex gap-6 overflow-x-auto pb-6" style={{ overflow: 'visible auto' }}>
             {columns.map((column, columnIndex) => {
               const stageColors = [
                 { 
@@ -387,8 +387,8 @@ export function PipelineKanbanBoard() {
                                     style={{
                                       ...provided.draggableProps.style,
                                       ...(snapshot.isDragging && {
-                                        zIndex: 99999,
-                                        position: 'relative',
+                                        zIndex: 999999,
+                                        transformOrigin: '50% 50%',
                                       })
                                     }}
                                   >
