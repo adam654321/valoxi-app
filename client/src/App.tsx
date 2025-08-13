@@ -14,6 +14,7 @@ import TargetCompanyDetail from "@/pages/target-company-detail";
 import Contacts from "@/pages/contacts";
 import TeamManagement from "@/pages/team-management";
 import AcceptInvitation from "@/pages/accept-invitation";
+import Pipeline from "@/pages/pipeline";
 import { NotificationsPage } from "@/components/notifications";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/dashboard" component={Dashboard} />
+            <Route path="/pipeline" component={Pipeline} />
             <Route path="/target-companies" component={EnhancedTargetCompanies} />
             <Route path="/target-companies/:id" component={TargetCompanyDetail} />
             <Route path="/contacts" component={Contacts} />

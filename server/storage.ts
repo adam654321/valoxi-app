@@ -116,7 +116,7 @@ export interface IStorage {
   createUserCompany(company: InsertUserCompany): Promise<UserCompany>;
   
   // Target company operations
-  getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompany[]>;
+  getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompanyWithStats[]>;
   searchTargetCompanies(userCompanyId: number, searchParams: SearchParams): Promise<TargetCompanyWithStats[]>;
   getFilterOptions(userCompanyId: number): Promise<FilterOptions>;
   getTargetCompanyCount(userCompanyId: number): Promise<number>;
@@ -220,9 +220,44 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
-  async getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompany[]> {
+  async getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
     return await db
-      .select()
+      .select({
+        id: targetCompanies.id,
+        userCompanyId: targetCompanies.userCompanyId,
+        companyName: targetCompanies.companyName,
+        industry: targetCompanies.industry,
+        website: targetCompanies.website,
+        phone: targetCompanies.phone,
+        email: targetCompanies.email,
+        address: targetCompanies.address,
+        annualRevenue: targetCompanies.annualRevenue,
+        employeeCount: targetCompanies.employeeCount,
+        yearEstablished: targetCompanies.yearEstablished,
+        description: targetCompanies.description,
+        stage: targetCompanies.stage,
+        stageUpdatedAt: targetCompanies.stageUpdatedAt,
+        stageUpdatedBy: targetCompanies.stageUpdatedBy,
+        createdBy: targetCompanies.createdBy,
+        createdAt: targetCompanies.createdAt,
+        totalContacts: sql<number>`COALESCE((
+          SELECT COUNT(*)::int 
+          FROM ${targetContacts} 
+          WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}
+        ), 0)`,
+        contactCount: sql<number>`COALESCE((
+          SELECT COUNT(*)::int 
+          FROM ${targetContacts} 
+          WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}
+        ), 0)`,
+        primaryContactName: sql<string | null>`(
+          SELECT ${targetContacts.firstName} || ' ' || ${targetContacts.lastName}
+          FROM ${targetContacts}
+          WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}
+            AND ${targetContacts.isPrimary} = true
+          LIMIT 1
+        )`
+      })
       .from(targetCompanies)
       .where(eq(targetCompanies.userCompanyId, userCompanyId))
       .orderBy(desc(targetCompanies.createdAt));

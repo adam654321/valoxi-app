@@ -42,6 +42,7 @@ export default function Layout({ children }: LayoutProps) {
   const isActiveRoute = (path: string) => {
     if (path === "/dashboard" && location === "/") return true;
     if (path === "/target-companies" && (location === "/target-companies" || location.startsWith("/target-companies/"))) return true;
+    if (path === "/pipeline" && location === "/pipeline") return true;
     if (path === "/team" && location === "/team") return true;
     if (path === "/notifications" && location === "/notifications") return true;
     return location === path;
@@ -80,12 +81,12 @@ export default function Layout({ children }: LayoutProps) {
                 <Link href="/contacts" className={getNavLinkClass("/contacts")}>
                   Contacts
                 </Link>
+                <Link href="/pipeline" className={getNavLinkClass("/pipeline")}>
+                  Pipeline
+                </Link>
                 <Link href="/team" className={getNavLinkClass("/team")}>
                   Team
                 </Link>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Reports
-                </a>
               </div>
             </div>
             <div className="flex items-center space-x-4">
