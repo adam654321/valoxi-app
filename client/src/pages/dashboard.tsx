@@ -47,69 +47,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
-              </div>
-              <div className="hidden md:ml-10 md:flex md:space-x-8">
-                <Link href="/dashboard" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
-                  Dashboard
-                </Link>
-                <Link href="/target-companies" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Target Companies
-                </Link>
-                <Link href="/contacts" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Contacts
-                </Link>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Reports
-                </a>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/target-companies">
-                <Button className="bg-primary text-white hover:bg-blue-700">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Target Company
-                </Button>
-              </Link>
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  className="flex items-center space-x-2 text-textSecondary hover:text-textPrimary"
-                  onClick={() => logoutMutation.mutate()}
-                  disabled={logoutMutation.isPending}
-                >
-                  <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {user.firstName} {user.lastName}
-                  </span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Dashboard Header */}
-        <div className="mb-8">
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {/* Dashboard Header */}
+      <div className="mb-8">
           <h1 className="text-2xl font-bold text-textPrimary">
             Welcome back, {user.firstName}
           </h1>
@@ -117,11 +57,11 @@ export default function Dashboard() {
             {user.company?.companyName} • 
             <span className="text-accent font-medium ml-1">Last login: Today</span>
           </p>
-        </div>
+      </div>
 
-        {/* Statistics Cards */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Statistics Cards */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[...Array(4)].map((_, i) => (
               <Card key={i}>
                 <CardContent className="p-6">
@@ -214,10 +154,10 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Getting Started</span>
@@ -242,10 +182,10 @@ export default function Dashboard() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          </div>
+          </Card>
+        </div>
 
-          <div className="space-y-6">
+        <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
@@ -272,8 +212,7 @@ export default function Dashboard() {
                   Generate Report
                 </Button>
               </CardContent>
-            </Card>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

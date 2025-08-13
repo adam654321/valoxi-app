@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import Layout from "@/components/layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
@@ -35,15 +36,17 @@ function Router() {
           <Route path="/register" component={Register} />
         </>
       ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/target-companies" component={EnhancedTargetCompanies} />
-          <Route path="/target-companies/:id" component={TargetCompanyDetail} />
-          <Route path="/contacts" component={Contacts} />
-        </>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/target-companies" component={EnhancedTargetCompanies} />
+            <Route path="/target-companies/:id" component={TargetCompanyDetail} />
+            <Route path="/contacts" component={Contacts} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
