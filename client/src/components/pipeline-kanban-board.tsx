@@ -129,6 +129,9 @@ export function PipelineKanbanBoard() {
   }, [stages, companies]);
 
   const handleDragEnd = (result: DropResult) => {
+    // Remove dragging class from body
+    document.body.classList.remove('dragging');
+    
     const { destination, source, draggableId } = result;
 
     // If dropped outside a droppable area
@@ -260,7 +263,19 @@ export function PipelineKanbanBoard() {
           </div>
         </div>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DragDropContext 
+          onDragEnd={handleDragEnd}
+          onBeforeDragStart={() => {
+            // Add body class to prevent scroll during drag
+            document.body.classList.add('dragging');
+          }}
+          onDragStart={() => {
+            // Optional: Add any drag start behavior
+          }}
+          onDragUpdate={() => {
+            // Optional: Handle drag updates
+          }}
+        >
           <div className="flex gap-6 overflow-x-auto pb-6">
             {columns.map((column, columnIndex) => {
               const stageColors = [
@@ -364,11 +379,17 @@ export function PipelineKanbanBoard() {
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    className={`cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                                    className={`cursor-grab active:cursor-grabbing ${
                                       snapshot.isDragging
-                                        ? 'shadow-2xl scale-105 rotate-2 ring-2 ring-blue-300 dark:ring-blue-500'
-                                        : 'hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1'
+                                        ? 'shadow-2xl ring-2 ring-blue-300 dark:ring-blue-500 z-50'
+                                        : 'hover:shadow-lg hover:scale-[1.01] hover:-translate-y-1 transition-all duration-200'
                                     } bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700`}
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                      ...(snapshot.isDragging && {
+                                        transform: provided.draggableProps.style?.transform,
+                                      })
+                                    }}
                                   >
                                     <CardHeader className="pb-3">
                                       <div className="flex items-start justify-between">

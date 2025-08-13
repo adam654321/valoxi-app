@@ -44,6 +44,37 @@
   --textSecondary: hsl(215, 16%, 47%);
 }
 
+/* Drag and drop improvements */
+.react-beautiful-dnd-dragging {
+  pointer-events: none !important;
+}
+
+.react-beautiful-dnd-drag-handle {
+  touch-action: manipulation;
+}
+
+/* Better drag positioning and prevent body scroll during drag */
+body.dragging {
+  overflow: hidden;
+}
+
+/* Dragged element positioning */
+[data-rbd-drag-handle-draggable-id] {
+  position: relative;
+}
+
+/* Ensure dragged card follows cursor more naturally */
+div[data-rbd-draggable-id][style*="transform"] {
+  transition: none !important;
+}
+
+/* Improve dragged element appearance */
+.react-beautiful-dnd-dragging {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  z-index: 9999 !important;
+  border: 2px solid #3b82f6 !important;
+}
+
 .dark {
   --background: hsl(222, 84%, 5%);
   --foreground: hsl(210, 40%, 98%);
