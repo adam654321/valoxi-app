@@ -92,23 +92,33 @@ body > div[data-react-beautiful-dnd-drag-handle] {
   z-index: 999999 !important;
 }
 
-/* Nuclear option: Force overflow visible on ALL elements during drag */
-body.dragging,
-body.dragging *,
-body.dragging > *,
-body.dragging div,
-body.dragging section,
-body.dragging article,
-body.dragging main {
-  overflow-x: visible !important;
-  overflow-y: visible !important;
+/* Comprehensive fix: Remove all stacking contexts during drag */
+body.dragging * {
+  overflow: visible !important;
+  position: static !important;
+}
+
+body.dragging .flex-shrink-0,
+body.dragging .rounded-xl {
+  position: static !important;
+  z-index: auto !important;
   overflow: visible !important;
 }
 
-/* Maintain horizontal scroll only on the main container */
-body.dragging .overflow-x-auto {
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+/* Restore positioning only for essential elements */
+body.dragging [data-rbd-draggable-id],
+body.dragging [data-rbd-droppable-id] {
+  position: relative !important;
+}
+
+/* Ultimate dragged element styling */
+[data-rbd-draggable-id][style*="position: fixed"],
+[data-rbd-draggable-id][style*="transform"] {
+  z-index: 999999 !important;
+  position: fixed !important;
+  pointer-events: none !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid #3b82f6 !important;
 }
 
 /* Touch/mobile drag improvements */
