@@ -904,10 +904,25 @@ export class DatabaseStorage implements IStorage {
     return newAssignment;
   }
 
-  async getDealAssignments(targetCompanyId: number): Promise<UserDealAssignment[]> {
+  async getDealAssignments(targetCompanyId: number): Promise<any[]> {
     return await db
-      .select()
+      .select({
+        id: userDealAssignments.id,
+        userId: userDealAssignments.userId,
+        targetCompanyId: userDealAssignments.targetCompanyId,
+        assignmentRole: userDealAssignments.assignmentRole,
+        canEditCompany: userDealAssignments.canEditCompany,
+        canUploadDocuments: userDealAssignments.canUploadDocuments,
+        canManageContacts: userDealAssignments.canManageContacts,
+        canCreateActivities: userDealAssignments.canCreateActivities,
+        isActive: userDealAssignments.isActive,
+        assignmentDate: userDealAssignments.assignmentDate,
+        createdAt: userDealAssignments.createdAt,
+        userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        userEmail: users.email,
+      })
       .from(userDealAssignments)
+      .innerJoin(users, eq(userDealAssignments.userId, users.id))
       .where(and(
         eq(userDealAssignments.targetCompanyId, targetCompanyId),
         eq(userDealAssignments.isActive, true)

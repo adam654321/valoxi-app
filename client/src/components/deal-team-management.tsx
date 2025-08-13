@@ -413,12 +413,12 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
               <div className="flex items-center space-x-4">
                 <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {assignment.userName.split(' ').map(n => n[0]).join('')}
+                    {assignment.userName ? assignment.userName.split(' ').map(n => n[0]).join('') : '??'}
                   </span>
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                    {assignment.userName}
+                    {assignment.userName || 'Unknown User'}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{assignment.userEmail}</p>
                   <div className="flex items-center gap-2 mt-1">
