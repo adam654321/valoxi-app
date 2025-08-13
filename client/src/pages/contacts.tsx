@@ -1,9 +1,35 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -14,6 +40,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Mail, Phone, User, Building, Eye, UserPlus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { TargetContact, TargetCompany } from "@shared/schema";
 
 // Extended contact type that includes company information
@@ -25,15 +54,85 @@ interface ContactWithCompany extends TargetContact {
   };
 }
 
+// Contact form schema
+const contactSchema = z.object({
+  targetCompanyId: z.string().min(1, "Please select a target company"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  title: z.string().optional(),
+  email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  isPrimary: z.boolean().default(false),
+  notes: z.string().optional(),
+});
+
+type ContactForm = z.infer<typeof contactSchema>;
+
 export default function Contacts() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showContactForm, setShowContactForm] = useState(false);
 
   // Get all contacts across all target companies
   const { data: allContacts = [], isLoading } = useQuery<ContactWithCompany[]>({
     queryKey: ["/api/contacts/all"],
     enabled: !!user,
   });
+
+  // Get target companies for the contact form dropdown
+  const { data: targetCompanies = [] } = useQuery<TargetCompany[]>({
+    queryKey: ["/api/target-companies"],
+    enabled: !!user,
+  });
+
+  // Contact form
+  const contactForm = useForm<ContactForm>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      targetCompanyId: "",
+      firstName: "",
+      lastName: "",
+      title: "",
+      email: "",
+      phone: "",
+      isPrimary: false,
+      notes: "",
+    },
+  });
+
+  // Create contact mutation
+  const createContactMutation = useMutation({
+    mutationFn: async (data: ContactForm) => {
+      const { targetCompanyId, ...contactData } = data;
+      return await apiRequest("POST", `/api/target-companies/${targetCompanyId}/contacts`, contactData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      setShowContactForm(false);
+      contactForm.reset();
+      toast({
+        title: "Success",
+        description: "Contact added successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add contact",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddContact = () => {
+    contactForm.reset();
+    setShowContactForm(true);
+  };
+
+  const handleSubmitContact = (data: ContactForm) => {
+    createContactMutation.mutate(data);
+  };
 
   // Filter contacts based on search term
   const filteredContacts = allContacts.filter((contact) => {
@@ -214,12 +313,13 @@ export default function Contacts() {
               <div className="text-sm text-gray-500">
                 {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} found
               </div>
-              <Link href="/target-companies">
-                <Button className="bg-primary text-white hover:bg-blue-700">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add Contact
-                </Button>
-              </Link>
+              <Button 
+                className="bg-primary text-white hover:bg-blue-700"
+                onClick={handleAddContact}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Contact
+              </Button>
             </div>
           </div>
 
@@ -250,12 +350,10 @@ export default function Contacts() {
                       View Companies
                     </Button>
                   </Link>
-                  <Link href="/target-companies">
-                    <Button>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Add First Contact
-                    </Button>
-                  </Link>
+                  <Button onClick={handleAddContact}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add First Contact
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -435,6 +533,182 @@ export default function Contacts() {
           )}
         </div>
       </div>
+
+      {/* Contact Form Dialog */}
+      <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Contact</DialogTitle>
+          </DialogHeader>
+
+          <Form {...contactForm}>
+            <form onSubmit={contactForm.handleSubmit(handleSubmitContact)} className="space-y-4">
+              {/* Target Company Selection */}
+              <FormField
+                control={contactForm.control}
+                name="targetCompanyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Company *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a target company" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {targetCompanies.map((company) => (
+                          <SelectItem key={company.id} value={company.id.toString()}>
+                            {company.companyName}
+                            {company.industry && (
+                              <span className="text-muted-foreground ml-2">
+                                ({company.industry})
+                              </span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={contactForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={contactForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Smith" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={contactForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CEO, CTO, etc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={contactForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@company.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={contactForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+1 (555) 123-4567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={contactForm.control}
+                name="isPrimary"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Primary Contact
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Mark this person as the primary contact for this company
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={contactForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Any additional notes about this contact..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowContactForm(false)}
+                  disabled={createContactMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createContactMutation.isPending}
+                >
+                  {createContactMutation.isPending ? "Adding..." : "Add Contact"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
