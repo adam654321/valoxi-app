@@ -334,8 +334,8 @@ export function PipelineKanbanBoard() {
               const colorScheme = stageColors[columnIndex % stageColors.length];
 
               return (
-                <div key={column.stageName} className="flex-shrink-0 w-80" style={{ position: 'relative', zIndex: 1 }}>
-                  <div className={`rounded-xl shadow-lg border-2 ${colorScheme.border} ${colorScheme.bg} backdrop-blur-sm min-h-[700px]`} style={{ position: 'relative', zIndex: 1 }}>
+                <div key={column.stageName} className="flex-shrink-0 w-80 pipeline-column" data-column-index={columnIndex}>
+                  <div className={`rounded-xl shadow-lg border-2 ${colorScheme.border} ${colorScheme.bg} backdrop-blur-sm min-h-[700px] pipeline-column-inner`}>
                     {/* Column Header */}
                     <div className="p-6 border-b border-gray-200/50 dark:border-slate-700/50">
                       <div className="flex items-center justify-between mb-3">

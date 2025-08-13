@@ -92,20 +92,25 @@ body > div[data-react-beautiful-dnd-drag-handle] {
   z-index: 999999 !important;
 }
 
-/* Comprehensive fix: Remove all stacking contexts during drag */
-body.dragging * {
+/* Target all pipeline columns specifically */
+.pipeline-column,
+.pipeline-column-inner,
+body.dragging .pipeline-column,
+body.dragging .pipeline-column-inner,
+body.dragging .pipeline-column *,
+body.dragging .pipeline-column-inner * {
   overflow: visible !important;
-  position: static !important;
-}
-
-body.dragging .flex-shrink-0,
-body.dragging .rounded-xl {
   position: static !important;
   z-index: auto !important;
-  overflow: visible !important;
 }
 
-/* Restore positioning only for essential elements */
+/* Force overflow visible on ALL columns */
+body.dragging [data-column-index] {
+  overflow: visible !important;
+  position: static !important;
+}
+
+/* Restore positioning only for drag elements */
 body.dragging [data-rbd-draggable-id],
 body.dragging [data-rbd-droppable-id] {
   position: relative !important;
