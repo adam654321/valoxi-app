@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "wouter";
 
 interface DashboardStats {
   targetCompanies: number;
@@ -61,12 +62,12 @@ export default function Dashboard() {
                 <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
               </div>
               <div className="hidden md:ml-10 md:flex md:space-x-8">
-                <a href="#" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
+                <Link href="/dashboard" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
                   Dashboard
-                </a>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
+                </Link>
+                <Link href="/target-companies" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Target Companies
-                </a>
+                </Link>
                 <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Contacts
                 </a>
@@ -76,12 +77,14 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button className="bg-primary text-white hover:bg-blue-700">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Target Company
-              </Button>
+              <Link href="/target-companies">
+                <Button className="bg-primary text-white hover:bg-blue-700">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Target Company
+                </Button>
+              </Link>
               <div className="relative">
                 <Button
                   variant="ghost"
@@ -228,12 +231,14 @@ export default function Dashboard() {
                   <h3 className="mt-2 text-sm font-medium text-gray-900">No target companies yet</h3>
                   <p className="mt-1 text-sm text-gray-500">Get started by adding your first acquisition target.</p>
                   <div className="mt-6">
-                    <Button className="bg-primary hover:bg-blue-700">
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Add Target Company
-                    </Button>
+                    <Link href="/target-companies">
+                      <Button className="bg-primary hover:bg-blue-700">
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Target Company
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
@@ -246,12 +251,14 @@ export default function Dashboard() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button className="w-full justify-start bg-primary bg-opacity-5 hover:bg-opacity-10 text-primary">
-                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Target Company
-                </Button>
+                <Link href="/target-companies">
+                  <Button className="w-full justify-start bg-primary bg-opacity-5 hover:bg-opacity-10 text-primary">
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Target Company
+                  </Button>
+                </Link>
                 <Button variant="ghost" className="w-full justify-start">
                   <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
