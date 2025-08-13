@@ -54,8 +54,12 @@ body.dragging {
   overflow: hidden;
 }
 
-/* Force all containers to allow overflow during drag */
-body.dragging * {
+/* Force all containers to allow overflow during drag - comprehensive approach */
+body.dragging *,
+body.dragging .rounded-xl,
+body.dragging [class*="overflow"],
+body.dragging [class*="flex"],
+body.dragging div {
   overflow: visible !important;
 }
 
@@ -75,13 +79,36 @@ body.dragging * {
 }
 
 /* Ensure dragged elements from all columns work */
-body.dragging [data-rbd-droppable-id] {
+body.dragging [data-rbd-droppable-id],
+body.dragging .flex-shrink-0,
+body.dragging .w-80,
+body.dragging .min-h-\[580px\],
+body.dragging .min-h-\[700px\] {
   overflow: visible !important;
 }
 
 /* Additional selector for React Beautiful DND portal */
 body > div[data-react-beautiful-dnd-drag-handle] {
   z-index: 999999 !important;
+}
+
+/* Nuclear option: Force overflow visible on ALL elements during drag */
+body.dragging,
+body.dragging *,
+body.dragging > *,
+body.dragging div,
+body.dragging section,
+body.dragging article,
+body.dragging main {
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  overflow: visible !important;
+}
+
+/* Maintain horizontal scroll only on the main container */
+body.dragging .overflow-x-auto {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
 }
 
 /* Touch/mobile drag improvements */
