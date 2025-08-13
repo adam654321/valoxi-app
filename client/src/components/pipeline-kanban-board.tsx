@@ -335,7 +335,7 @@ export function PipelineKanbanBoard() {
 
               return (
                 <div key={column.stageName} className="flex-shrink-0 w-80">
-                  <div className={`rounded-xl shadow-lg border-2 ${colorScheme.border} ${colorScheme.bg} backdrop-blur-sm min-h-[700px] overflow-hidden`}>
+                  <div className={`rounded-xl shadow-lg border-2 ${colorScheme.border} ${colorScheme.bg} backdrop-blur-sm min-h-[700px]`}>
                     {/* Column Header */}
                     <div className="p-6 border-b border-gray-200/50 dark:border-slate-700/50">
                       <div className="flex items-center justify-between mb-3">

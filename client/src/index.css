@@ -45,60 +45,31 @@
 }
 
 /* Drag and drop improvements */
-.react-beautiful-dnd-dragging {
-  pointer-events: none !important;
-  position: relative !important;
-  z-index: 99999 !important;
+div[data-rbd-draggable-id] {
+  position: relative;
+}
+
+/* Key fix: Force highest z-index on dragged elements */
+[data-rbd-draggable-id][style*="position: fixed"] {
+  z-index: 999999 !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
   border: 2px solid #3b82f6 !important;
   transform: rotate(2deg) !important;
 }
 
-.react-beautiful-dnd-drag-handle {
-  touch-action: manipulation;
-}
-
-/* Better drag positioning and prevent body scroll during drag */
+/* Prevent body scroll during drag */
 body.dragging {
   overflow: hidden;
 }
 
-/* Dragged element positioning */
-[data-rbd-drag-handle-draggable-id] {
-  position: relative;
+/* Ensure dragged elements are never clipped */
+body.dragging .overflow-hidden {
+  overflow: visible !important;
 }
 
-/* Ensure dragged card follows cursor more naturally */
-div[data-rbd-draggable-id][style*="transform"] {
-  transition: none !important;
-}
-
-/* Force dragged items to stay on top of everything */
-[data-rbd-draggable-id][style*="transform"]:not([style*="transition"]) {
-  z-index: 99999 !important;
-  position: relative !important;
-}
-
-/* Portal container for dragged items */
-.react-beautiful-dnd-drag {
-  z-index: 99999 !important;
-}
-
-/* Ensure droppable areas don't interfere with dragged items */
-[data-rbd-droppable-id] {
-  position: relative;
-  z-index: 1;
-}
-
-/* Override any parent containers that might have z-index */
-.react-beautiful-dnd-dragging * {
-  z-index: inherit !important;
-}
-
-/* Absolutely force dragged elements to stay on top */
-body [data-rbd-draggable-id][style*="transform"]:not([style*="none"]) {
-  z-index: 999999 !important;
-  position: fixed !important;
+/* Touch/mobile drag improvements */
+.react-beautiful-dnd-drag-handle {
+  touch-action: manipulation;
 }
 
 .dark {
