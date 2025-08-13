@@ -268,12 +268,28 @@ export function PipelineKanbanBoard() {
           onBeforeDragStart={() => {
             // Add body class to prevent scroll during drag
             document.body.classList.add('dragging');
+            
+            // Reset any existing transforms that might interfere
+            const allDraggables = document.querySelectorAll('[data-rbd-draggable-id]');
+            allDraggables.forEach((el: any) => {
+              if (el.style) {
+                el.style.transformOrigin = '0 0';
+              }
+            });
           }}
-          onDragStart={() => {
-            // Optional: Add any drag start behavior
+          onDragStart={(start) => {
+            // Ensure proper transform origin on the dragged element
+            const draggedElement = document.querySelector(`[data-rbd-draggable-id="${start.draggableId}"]`);
+            if (draggedElement) {
+              (draggedElement as HTMLElement).style.transformOrigin = '0 0';
+            }
           }}
           onDragUpdate={() => {
-            // Optional: Handle drag updates
+            // Maintain transform origin during drag
+            const draggingElement = document.querySelector('.react-beautiful-dnd-dragging');
+            if (draggingElement) {
+              (draggingElement as HTMLElement).style.transformOrigin = '0 0';
+            }
           }}
         >
           <div className="flex gap-6 overflow-x-auto pb-6" style={{ overflow: 'visible auto' }}>
@@ -395,7 +411,6 @@ export function PipelineKanbanBoard() {
                                       ...provided.draggableProps.style,
                                       ...(snapshot.isDragging && {
                                         zIndex: 999999,
-                                        transformOrigin: '50% 50%',
                                       })
                                     }}
                                   >

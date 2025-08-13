@@ -44,7 +44,7 @@
   --textSecondary: hsl(215, 16%, 47%);
 }
 
-/* Drag and drop improvements */
+/* Drag and drop improvements - cursor tracking fix */
 div[data-rbd-draggable-id] {
   position: relative;
 }
@@ -54,28 +54,33 @@ body.dragging {
   overflow: hidden;
 }
 
-/* Force all containers to allow overflow during drag - comprehensive approach */
-body.dragging *,
-body.dragging .rounded-xl,
-body.dragging [class*="overflow"],
-body.dragging [class*="flex"],
-body.dragging div {
+/* Force all containers to allow overflow during drag */
+body.dragging * {
   overflow: visible !important;
 }
 
-/* Key fix: Target dragged elements with multiple selectors */
-[data-rbd-draggable-id][style*="position: fixed"],
-[data-rbd-draggable-id][style*="transform: translate"],
-.react-beautiful-dnd-dragging {
+/* Critical fix: Proper cursor tracking for dragged elements */
+[data-rbd-draggable-id][style*="transform"] {
   z-index: 999999 !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
   border: 2px solid #3b82f6 !important;
   pointer-events: none !important;
+  transform-origin: 0 0 !important;
 }
 
-/* Improve cursor positioning by using transform origin */
-[data-rbd-draggable-id][style*="transform"] {
-  transform-origin: 50% 50% !important;
+/* Ensure consistent positioning for all dragged elements */
+[data-rbd-draggable-id][style*="position: fixed"] {
+  transform-origin: 0 0 !important;
+}
+
+/* Override any React Beautiful DND transform offsets */
+body [data-rbd-draggable-id][style*="transform"] {
+  transform-origin: 0 0 !important;
+}
+
+/* Specific targeting for portal elements */
+body > div[data-rbd-draggable-id] {
+  transform-origin: 0 0 !important;
 }
 
 /* Ensure dragged elements from all columns work */
