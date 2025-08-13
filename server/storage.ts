@@ -15,7 +15,41 @@ import {
   type UserSession,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, count, desc, asc, sql } from "drizzle-orm";
+import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
+
+// Search and filter types
+export interface SearchParams {
+  q?: string;
+  industry?: string;
+  minRevenue?: number;
+  maxRevenue?: number;
+  minEmployees?: number;
+  maxEmployees?: number;
+  minYear?: number;
+  maxYear?: number;
+  sort?: string;
+}
+
+export interface TargetCompanyWithStats extends TargetCompany {
+  contactCount: number;
+  primaryContactName: string | null;
+}
+
+export interface FilterOptions {
+  industries: string[];
+  revenueRange: {
+    min: number | null;
+    max: number | null;
+  };
+  employeeRange: {
+    min: number | null;
+    max: number | null;
+  };
+  yearRange: {
+    min: number | null;
+    max: number | null;
+  };
+}
 
 export interface IStorage {
   // User operations
@@ -29,6 +63,8 @@ export interface IStorage {
   
   // Target company operations
   getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompany[]>;
+  searchTargetCompanies(userCompanyId: number, searchParams: SearchParams): Promise<TargetCompanyWithStats[]>;
+  getFilterOptions(userCompanyId: number): Promise<FilterOptions>;
   getTargetCompanyCount(userCompanyId: number): Promise<number>;
   getTargetCompany(id: number, userCompanyId: number): Promise<TargetCompany | undefined>;
   createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
@@ -85,7 +121,193 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(targetCompanies)
       .where(eq(targetCompanies.userCompanyId, userCompanyId))
-      .orderBy(targetCompanies.createdAt);
+      .orderBy(desc(targetCompanies.createdAt));
+  }
+
+  async searchTargetCompanies(userCompanyId: number, searchParams: SearchParams): Promise<TargetCompanyWithStats[]> {
+    // Build the base query with contact count and primary contact info
+    let query = db
+      .select({
+        id: targetCompanies.id,
+        userCompanyId: targetCompanies.userCompanyId,
+        companyName: targetCompanies.companyName,
+        industry: targetCompanies.industry,
+        website: targetCompanies.website,
+        phone: targetCompanies.phone,
+        email: targetCompanies.email,
+        address: targetCompanies.address,
+        annualRevenue: targetCompanies.annualRevenue,
+        employeeCount: targetCompanies.employeeCount,
+        yearEstablished: targetCompanies.yearEstablished,
+        description: targetCompanies.description,
+        createdBy: targetCompanies.createdBy,
+        createdAt: targetCompanies.createdAt,
+        contactCount: sql<number>`COALESCE(${sql`(
+          SELECT COUNT(*)::int 
+          FROM ${targetContacts} 
+          WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}
+        )`}, 0)`,
+        primaryContactName: sql<string | null>`(
+          SELECT ${targetContacts.firstName} || ' ' || ${targetContacts.lastName}
+          FROM ${targetContacts}
+          WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}
+            AND ${targetContacts.isPrimary} = true
+          LIMIT 1
+        )`
+      })
+      .from(targetCompanies);
+
+    // Build WHERE conditions
+    const conditions = [eq(targetCompanies.userCompanyId, userCompanyId)];
+
+    // Add search conditions
+    if (searchParams.q) {
+      const searchTerm = `%${searchParams.q}%`;
+      conditions.push(
+        or(
+          ilike(targetCompanies.companyName, searchTerm),
+          ilike(targetCompanies.industry, searchTerm),
+          ilike(targetCompanies.address, searchTerm)
+        )!
+      );
+    }
+
+    if (searchParams.industry && searchParams.industry !== 'all') {
+      conditions.push(eq(targetCompanies.industry, searchParams.industry));
+    }
+
+    if (searchParams.minRevenue !== undefined) {
+      conditions.push(gte(targetCompanies.annualRevenue, searchParams.minRevenue.toString()));
+    }
+
+    if (searchParams.maxRevenue !== undefined) {
+      conditions.push(lte(targetCompanies.annualRevenue, searchParams.maxRevenue.toString()));
+    }
+
+    if (searchParams.minEmployees !== undefined) {
+      conditions.push(gte(targetCompanies.employeeCount, searchParams.minEmployees));
+    }
+
+    if (searchParams.maxEmployees !== undefined) {
+      conditions.push(lte(targetCompanies.employeeCount, searchParams.maxEmployees));
+    }
+
+    if (searchParams.minYear !== undefined) {
+      conditions.push(gte(targetCompanies.yearEstablished, searchParams.minYear));
+    }
+
+    if (searchParams.maxYear !== undefined) {
+      conditions.push(lte(targetCompanies.yearEstablished, searchParams.maxYear));
+    }
+
+    // Execute query with conditions
+    const finalQuery = query.where(and(...conditions));
+
+    // Add sorting
+    const sortBy = searchParams.sort || 'date_newest';
+    let sortedQuery;
+    
+    switch (sortBy) {
+      case 'name_asc':
+        sortedQuery = finalQuery.orderBy(asc(targetCompanies.companyName));
+        break;
+      case 'name_desc':
+        sortedQuery = finalQuery.orderBy(desc(targetCompanies.companyName));
+        break;
+      case 'date_oldest':
+        sortedQuery = finalQuery.orderBy(asc(targetCompanies.createdAt));
+        break;
+      case 'revenue_high':
+        sortedQuery = finalQuery.orderBy(desc(targetCompanies.annualRevenue));
+        break;
+      case 'revenue_low':
+        sortedQuery = finalQuery.orderBy(asc(targetCompanies.annualRevenue));
+        break;
+      case 'employees_high':
+        sortedQuery = finalQuery.orderBy(desc(targetCompanies.employeeCount));
+        break;
+      case 'employees_low':
+        sortedQuery = finalQuery.orderBy(asc(targetCompanies.employeeCount));
+        break;
+      default: // 'date_newest'
+        sortedQuery = finalQuery.orderBy(desc(targetCompanies.createdAt));
+        break;
+    }
+
+    const results = await sortedQuery.execute();
+    return results as TargetCompanyWithStats[];
+  }
+
+  async getFilterOptions(userCompanyId: number): Promise<FilterOptions> {
+    // Get unique industries
+    const industries = await db
+      .selectDistinct({ industry: targetCompanies.industry })
+      .from(targetCompanies)
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          sql`${targetCompanies.industry} IS NOT NULL`
+        )
+      )
+      .orderBy(targetCompanies.industry);
+
+    // Get revenue range
+    const revenueStats = await db
+      .select({
+        min: sql<number>`MIN(${targetCompanies.annualRevenue}::numeric)`,
+        max: sql<number>`MAX(${targetCompanies.annualRevenue}::numeric)`
+      })
+      .from(targetCompanies)
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          sql`${targetCompanies.annualRevenue} IS NOT NULL`
+        )
+      );
+
+    // Get employee count range
+    const employeeStats = await db
+      .select({
+        min: sql<number>`MIN(${targetCompanies.employeeCount})`,
+        max: sql<number>`MAX(${targetCompanies.employeeCount})`
+      })
+      .from(targetCompanies)
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          sql`${targetCompanies.employeeCount} IS NOT NULL`
+        )
+      );
+
+    // Get year established range
+    const yearStats = await db
+      .select({
+        min: sql<number>`MIN(${targetCompanies.yearEstablished})`,
+        max: sql<number>`MAX(${targetCompanies.yearEstablished})`
+      })
+      .from(targetCompanies)
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          sql`${targetCompanies.yearEstablished} IS NOT NULL`
+        )
+      );
+
+    return {
+      industries: industries.map(row => row.industry!).filter(Boolean),
+      revenueRange: {
+        min: revenueStats[0]?.min || null,
+        max: revenueStats[0]?.max || null
+      },
+      employeeRange: {
+        min: employeeStats[0]?.min || null,
+        max: employeeStats[0]?.max || null
+      },
+      yearRange: {
+        min: yearStats[0]?.min || null,
+        max: yearStats[0]?.max || null
+      }
+    };
   }
 
   async getTargetCompanyCount(userCompanyId: number): Promise<number> {
@@ -131,17 +353,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTargetCompany(insertCompany: InsertTargetCompany): Promise<TargetCompany> {
+    // Convert numeric fields to appropriate types
+    const processedData = {
+      ...insertCompany,
+      annualRevenue: typeof insertCompany.annualRevenue === 'number' 
+        ? insertCompany.annualRevenue.toString() 
+        : insertCompany.annualRevenue
+    };
+    
     const [company] = await db
       .insert(targetCompanies)
-      .values(insertCompany)
+      .values(processedData)
       .returning();
     return company;
   }
 
   async updateTargetCompany(id: number, updateData: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany | undefined> {
+    // Convert numeric fields to appropriate types
+    const processedData = {
+      ...updateData,
+      annualRevenue: typeof updateData.annualRevenue === 'number' 
+        ? updateData.annualRevenue.toString() 
+        : updateData.annualRevenue
+    };
+    
     const [company] = await db
       .update(targetCompanies)
-      .set(updateData)
+      .set(processedData)
       .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
       .returning();
     return company || undefined;

@@ -46,9 +46,9 @@ export const targetCompanies = pgTable("target_companies", {
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
   address: text("address"),
-  annualRevenue: varchar("annual_revenue", { length: 50 }),
-  employeeCount: varchar("employee_count", { length: 50 }),
-  yearEstablished: varchar("year_established", { length: 50 }),
+  annualRevenue: decimal("annual_revenue"),
+  employeeCount: integer("employee_count"),
+  yearEstablished: integer("year_established"),
   description: text("description"),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -132,6 +132,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertTargetCompanySchema = createInsertSchema(targetCompanies).omit({
   id: true,
   createdAt: true,
+}).extend({
+  annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
+  employeeCount: z.union([z.number(), z.null()]).optional(),
+  yearEstablished: z.union([z.number(), z.null()]).optional(),
 });
 
 export const insertTargetContactSchema = createInsertSchema(targetContacts).omit({

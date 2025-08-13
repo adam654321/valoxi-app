@@ -231,9 +231,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     userCompanyId: true,
     createdBy: true,
   }).extend({
-    annualRevenue: z.union([z.string(), z.number()]).optional().nullable(),
-    employeeCount: z.union([z.string(), z.number()]).optional().nullable(),
-    yearEstablished: z.union([z.string(), z.number()]).optional().nullable(),
+    annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
+    employeeCount: z.union([z.number(), z.null()]).optional(),
+    yearEstablished: z.union([z.number(), z.null()]).optional(),
   });
 
   // Create target company
@@ -280,6 +280,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(targetCompanies);
     } catch (error) {
       console.error("Get target companies error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Search target companies with filters
+  app.get("/api/target-companies/search", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const searchParams = {
+        q: req.query.q as string,
+        industry: req.query.industry as string,
+        minRevenue: req.query.minRevenue ? Number(req.query.minRevenue) : undefined,
+        maxRevenue: req.query.maxRevenue ? Number(req.query.maxRevenue) : undefined,
+        minEmployees: req.query.minEmployees ? Number(req.query.minEmployees) : undefined,
+        maxEmployees: req.query.maxEmployees ? Number(req.query.maxEmployees) : undefined,
+        minYear: req.query.minYear ? Number(req.query.minYear) : undefined,
+        maxYear: req.query.maxYear ? Number(req.query.maxYear) : undefined,
+        sort: req.query.sort as string,
+      };
+
+      const targetCompanies = await storage.searchTargetCompanies(userCompanyId, searchParams);
+      res.json(targetCompanies);
+    } catch (error) {
+      console.error("Search target companies error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get filter options
+  app.get("/api/target-companies/filters", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const filterOptions = await storage.getFilterOptions(userCompanyId);
+      res.json(filterOptions);
+    } catch (error) {
+      console.error("Get filter options error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
