@@ -1,0 +1,1043 @@
+Replit Development Prompt 5a: Team Member Invitations & User Management
+Prerequisites
+Prompts 1-5 completed with working target company profiles and contact management
+User authentication system operational with company data isolation
+Basic user and company management functionality working
+What This Prompt Builds
+Add comprehensive team collaboration functionality allowing users to invite colleagues from their company to join the M&A CRM system, manage team member permissions, and enable collaborative deal management.
+System Context Reminder
+Team Invitations: Allow existing users to invite colleagues to join their company account
+User Roles: Different permission levels for team members (Admin, Manager, Analyst)
+Collaborative Access: Multiple team members can work on the same deals with proper access control
+What You Need to Build
+1. Team Management System
+Create comprehensive team collaboration with these capabilities:
+
+User Invitation Process:
+
+Send email invitations to new team members
+Secure invitation links with expiration
+Role assignment during invitation
+Invitation tracking and management
+
+User Roles and Permissions:
+
+Company Admin - Full system access, user management, billing
+Deal Manager - Manage deals, invite users, view all company data
+Senior Analyst - Create/edit deals, upload documents, create offers
+Analyst - View deals, add activities, upload documents (limited)
+Viewer - Read-only access to assigned deals
+
+Team Collaboration:
+
+Assign team members to specific deals
+Activity notifications between team members
+Deal ownership and responsibility tracking
+2. Database Schema for Team Management
+-- Create user invitations table
+CREATE TABLE user_invitations (
+  id SERIAL PRIMARY KEY,
+  user_company_id INTEGER REFERENCES user_companies(id),
+  email VARCHAR(255) NOT NULL,
+  invited_by INTEGER REFERENCES users(id),
+  
+  -- Invitation Details
+  invitation_token VARCHAR(255) UNIQUE NOT NULL,
+  invited_role VARCHAR(50) NOT NULL, -- company_admin, deal_manager, senior_analyst, analyst, viewer
+  invitation_message TEXT,
+  
+  -- Status Tracking
+  invitation_status VARCHAR(50) DEFAULT 'pending', -- pending, accepted, expired, cancelled
+  sent_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days'),
+  accepted_at TIMESTAMP,
+  
+  -- Security
+  ip_address_sent INET,
+  ip_address_accepted INET,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create user roles table
+CREATE TABLE user_roles (
+  id SERIAL PRIMARY KEY,
+  role_name VARCHAR(50) UNIQUE NOT NULL,
+  role_description TEXT,
+  
+  -- Permissions
+  can_manage_users BOOLEAN DEFAULT FALSE,
+  can_manage_company BOOLEAN DEFAULT FALSE,
+  can_create_deals BOOLEAN DEFAULT FALSE,
+  can_edit_all_deals BOOLEAN DEFAULT FALSE,
+  can_delete_deals BOOLEAN DEFAULT FALSE,
+  can_upload_documents BOOLEAN DEFAULT FALSE,
+  can_create_offers BOOLEAN DEFAULT FALSE,
+  can_view_financials BOOLEAN DEFAULT FALSE,
+  can_access_analytics BOOLEAN DEFAULT FALSE,
+  can_export_data BOOLEAN DEFAULT FALSE,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create user assignments table (many-to-many for users and target companies)
+CREATE TABLE user_deal_assignments (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  target_company_id INTEGER REFERENCES target_companies(id),
+  assigned_by INTEGER REFERENCES users(id),
+  
+  -- Assignment Details
+  assignment_role VARCHAR(50) DEFAULT 'analyst', -- lead, analyst, viewer
+  assignment_date TIMESTAMP DEFAULT NOW(),
+  is_active BOOLEAN DEFAULT TRUE,
+  
+  -- Permissions for this specific deal
+  can_edit_company BOOLEAN DEFAULT TRUE,
+  can_upload_documents BOOLEAN DEFAULT TRUE,
+  can_create_activities BOOLEAN DEFAULT TRUE,
+  can_manage_contacts BOOLEAN DEFAULT TRUE,
+  
+  UNIQUE(user_id, target_company_id)
+);
+
+-- Add role column to users table
+ALTER TABLE users ADD COLUMN user_role VARCHAR(50) DEFAULT 'analyst';
+ALTER TABLE users ADD COLUMN is_company_admin BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN last_login TIMESTAMP;
+ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+
+-- Insert default user roles
+INSERT INTO user_roles (role_name, role_description, can_manage_users, can_manage_company, can_create_deals, can_edit_all_deals, can_delete_deals, can_upload_documents, can_create_offers, can_view_financials, can_access_analytics, can_export_data) VALUES
+('company_admin', 'Full system access including user management and billing', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+('deal_manager', 'Manage deals and team assignments, view all company data', TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+('senior_analyst', 'Create and manage deals, full deal access', FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, FALSE),
+('analyst', 'Work on assigned deals, limited permissions', FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE, FALSE),
+('viewer', 'Read-only access to assigned deals', FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE);
+
+-- Create team activity notifications table
+CREATE TABLE team_notifications (
+  id SERIAL PRIMARY KEY,
+  user_company_id INTEGER REFERENCES user_companies(id),
+  target_user_id INTEGER REFERENCES users(id), -- Who should receive the notification
+  from_user_id INTEGER REFERENCES users(id), -- Who triggered the notification
+  
+  -- Notification Details
+  notification_type VARCHAR(50) NOT NULL, -- deal_assigned, stage_changed, document_uploaded, offer_created, etc.
+  notification_title VARCHAR(255) NOT NULL,
+  notification_message TEXT,
+  
+  -- Related Objects
+  target_company_id INTEGER REFERENCES target_companies(id),
+  related_object_type VARCHAR(50), -- document, offer, activity, etc.
+  related_object_id INTEGER,
+  
+  -- Status
+  is_read BOOLEAN DEFAULT FALSE,
+  read_at TIMESTAMP,
+  is_email_sent BOOLEAN DEFAULT FALSE,
+  email_sent_at TIMESTAMP,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_user_invitations_token ON user_invitations(invitation_token);
+CREATE INDEX idx_user_invitations_email ON user_invitations(email);
+CREATE INDEX idx_user_deal_assignments_user ON user_deal_assignments(user_id);
+CREATE INDEX idx_user_deal_assignments_company ON user_deal_assignments(target_company_id);
+CREATE INDEX idx_team_notifications_user ON team_notifications(target_user_id, is_read);
+3. API Endpoints
+// Team member invitations
+POST /api/team/invite                         // Send invitation to new team member
+GET /api/team/invitations                     // Get pending invitations (admin only)
+PUT /api/team/invitations/:id                 // Update invitation (cancel, resend)
+POST /api/team/accept-invitation              // Accept invitation via token
+GET /api/team/invitation/:token               // Get invitation details
+
+// Team management
+GET /api/team/members                         // Get all team members
+PUT /api/team/members/:id                     // Update team member role/status
+DELETE /api/team/members/:id                  // Remove team member (admin only)
+GET /api/team/roles                           // Get available roles and permissions
+
+// Deal assignments
+POST /api/deals/:id/assign                    // Assign team member to deal
+DELETE /api/deals/:id/assign/:userId          // Remove team member from deal
+GET /api/deals/:id/team                       // Get deal team members
+PUT /api/deals/:id/team/:userId               // Update team member permissions
+
+// Team notifications
+GET /api/notifications                        // Get user notifications
+PUT /api/notifications/:id/read               // Mark notification as read
+POST /api/notifications/mark-all-read         // Mark all notifications as read
+4. Team Management Implementation
+const teamManager = {
+  // Send invitation to new team member
+  inviteTeamMember: async (inviterUserId, invitationData) => {
+    // Verify inviter has permission to invite users
+    const inviter = await getUserWithPermissions(inviterUserId);
+    if (!inviter.can_manage_users && !inviter.is_company_admin) {
+      throw new Error('Insufficient permissions to invite users');
+    }
+    
+    // Check if user already exists or has pending invitation
+    const existingUser = await db.query(
+      'SELECT id FROM users WHERE email = $1 AND user_company_id = $2',
+      [invitationData.email, inviter.user_company_id]
+    );
+    
+    if (existingUser.rows.length > 0) {
+      throw new Error('User already exists in your company');
+    }
+    
+    const existingInvitation = await db.query(
+      'SELECT id FROM user_invitations WHERE email = $1 AND user_company_id = $2 AND invitation_status = $3',
+      [invitationData.email, inviter.user_company_id, 'pending']
+    );
+    
+    if (existingInvitation.rows.length > 0) {
+      throw new Error('Invitation already sent to this email address');
+    }
+    
+    // Generate secure invitation token
+    const crypto = require('crypto');
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    
+    // Create invitation record
+    const invitationQuery = `
+      INSERT INTO user_invitations (
+        user_company_id, email, invited_by, invitation_token, invited_role, invitation_message
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    
+    const invitationValues = [
+      inviter.user_company_id,
+      invitationData.email.toLowerCase(),
+      inviterUserId,
+      invitationToken,
+      invitationData.role || 'analyst',
+      invitationData.message || ''
+    ];
+    
+    const result = await db.query(invitationQuery, invitationValues);
+    const invitation = result.rows[0];
+    
+    // Send invitation email
+    await sendInvitationEmail(invitation, inviter);
+    
+    // Log activity
+    await logActivity(null, inviterUserId, 'team_invitation_sent', `Invited ${invitationData.email} as ${invitationData.role}`);
+    
+    return invitation;
+  },
+  
+  // Accept invitation and create user account
+  acceptInvitation: async (invitationToken, userData) => {
+    // Verify invitation token
+    const invitationQuery = `
+      SELECT ui.*, uc.company_name 
+      FROM user_invitations ui
+      JOIN user_companies uc ON ui.user_company_id = uc.id
+      WHERE ui.invitation_token = $1 
+      AND ui.invitation_status = 'pending'
+      AND ui.expires_at > NOW()
+    `;
+    
+    const invitationResult = await db.query(invitationQuery, [invitationToken]);
+    
+    if (invitationResult.rows.length === 0) {
+      throw new Error('Invalid or expired invitation');
+    }
+    
+    const invitation = invitationResult.rows[0];
+    
+    // Create user account
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const userQuery = `
+      INSERT INTO users (
+        email, password_hash, first_name, last_name, user_company_id, user_role, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+    
+    const userValues = [
+      invitation.email,
+      hashedPassword,
+      userData.first_name,
+      userData.last_name,
+      invitation.user_company_id,
+      invitation.invited_role,
+      true
+    ];
+    
+    const userResult = await db.query(userQuery, userValues);
+    const newUser = userResult.rows[0];
+    
+    // Update invitation status
+    await db.query(
+      'UPDATE user_invitations SET invitation_status = $1, accepted_at = NOW() WHERE id = $2',
+      ['accepted', invitation.id]
+    );
+    
+    // Create welcome notification for inviter
+    await createTeamNotification(
+      invitation.invited_by,
+      'team_member_joined',
+      'New Team Member Joined',
+      `${userData.first_name} ${userData.last_name} has joined your team`,
+      null,
+      newUser.id
+    );
+    
+    // Log activity
+    await logActivity(null, newUser.id, 'team_member_joined', `${userData.first_name} ${userData.last_name} joined the team`);
+    
+    return newUser;
+  },
+  
+  // Assign team member to deal
+  assignUserToDeal: async (targetCompanyId, userId, assignedBy, assignmentData) => {
+    // Verify assigner has permission
+    const assigner = await getUserWithPermissions(assignedBy);
+    if (!assigner.can_manage_users && !assigner.is_company_admin) {
+      // Check if assigner is assigned to this deal as lead
+      const dealAssignment = await db.query(
+        'SELECT assignment_role FROM user_deal_assignments WHERE user_id = $1 AND target_company_id = $2 AND is_active = true',
+        [assignedBy, targetCompanyId]
+      );
+      
+      if (dealAssignment.rows.length === 0 || dealAssignment.rows[0].assignment_role !== 'lead') {
+        throw new Error('Insufficient permissions to assign users to this deal');
+      }
+    }
+    
+    // Verify target user exists and is in same company
+    const targetUser = await db.query(
+      'SELECT * FROM users WHERE id = $1 AND user_company_id = $2 AND is_active = true',
+      [userId, assigner.user_company_id]
+    );
+    
+    if (targetUser.rows.length === 0) {
+      throw new Error('User not found or not in your company');
+    }
+    
+    // Create or update assignment
+    const assignmentQuery = `
+      INSERT INTO user_deal_assignments (
+        user_id, target_company_id, assigned_by, assignment_role,
+        can_edit_company, can_upload_documents, can_create_activities, can_manage_contacts
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (user_id, target_company_id) 
+      DO UPDATE SET 
+        assignment_role = EXCLUDED.assignment_role,
+        assigned_by = EXCLUDED.assigned_by,
+        assignment_date = NOW(),
+        is_active = true,
+        can_edit_company = EXCLUDED.can_edit_company,
+        can_upload_documents = EXCLUDED.can_upload_documents,
+        can_create_activities = EXCLUDED.can_create_activities,
+        can_manage_contacts = EXCLUDED.can_manage_contacts
+      RETURNING *
+    `;
+    
+    const assignmentValues = [
+      userId,
+      targetCompanyId,
+      assignedBy,
+      assignmentData.role || 'analyst',
+      assignmentData.can_edit_company !== false,
+      assignmentData.can_upload_documents !== false,
+      assignmentData.can_create_activities !== false,
+      assignmentData.can_manage_contacts !== false
+    ];
+    
+    const result = await db.query(assignmentQuery, assignmentValues);
+    
+    // Get company name for notification
+    const company = await db.query('SELECT company_name FROM target_companies WHERE id = $1', [targetCompanyId]);
+    
+    // Create notification for assigned user
+    await createTeamNotification(
+      userId,
+      'deal_assigned',
+      'Assigned to Deal',
+      `You have been assigned to ${company.rows[0].company_name}`,
+      targetCompanyId,
+      assignedBy
+    );
+    
+    // Log activity
+    await logActivity(targetCompanyId, assignedBy, 'team_member_assigned', `Assigned ${targetUser.rows[0].first_name} ${targetUser.rows[0].last_name} to deal`);
+    
+    return result.rows[0];
+  },
+  
+  // Get team members with their roles and permissions
+  getTeamMembers: async (userCompanyId, requestingUserId) => {
+    const teamQuery = `
+      SELECT 
+        u.id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.user_role,
+        u.is_company_admin,
+        u.is_active,
+        u.last_login,
+        u.created_at,
+        ur.role_description,
+        ur.can_manage_users,
+        ur.can_create_deals,
+        ur.can_view_financials,
+        COUNT(uda.target_company_id) as assigned_deals_count
+      FROM users u
+      LEFT JOIN user_roles ur ON u.user_role = ur.role_name
+      LEFT JOIN user_deal_assignments uda ON u.id = uda.user_id AND uda.is_active = true
+      WHERE u.user_company_id = $1 AND u.is_active = true
+      GROUP BY u.id, ur.role_description, ur.can_manage_users, ur.can_create_deals, ur.can_view_financials
+      ORDER BY u.is_company_admin DESC, u.created_at ASC
+    `;
+    
+    const result = await db.query(teamQuery, [userCompanyId]);
+    return result.rows;
+  }
+};
+
+const notificationManager = {
+  // Create team notification
+  createTeamNotification: async (targetUserId, notificationType, title, message, targetCompanyId = null, fromUserId = null) => {
+    const notificationQuery = `
+      INSERT INTO team_notifications (
+        user_company_id, target_user_id, from_user_id, notification_type,
+        notification_title, notification_message, target_company_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+    
+    // Get user's company ID
+    const userCompany = await db.query('SELECT user_company_id FROM users WHERE id = $1', [targetUserId]);
+    
+    const values = [
+      userCompany.rows[0].user_company_id,
+      targetUserId,
+      fromUserId,
+      notificationType,
+      title,
+      message,
+      targetCompanyId
+    ];
+    
+    const result = await db.query(notificationQuery, values);
+    
+    // Send email notification if user preferences allow
+    await sendEmailNotification(result.rows[0]);
+    
+    return result.rows[0];
+  },
+  
+  // Get user notifications
+  getUserNotifications: async (userId, limit = 50) => {
+    const notificationsQuery = `
+      SELECT 
+        tn.*,
+        fu.first_name as from_first_name,
+        fu.last_name as from_last_name,
+        tc.company_name
+      FROM team_notifications tn
+      LEFT JOIN users fu ON tn.from_user_id = fu.id
+      LEFT JOIN target_companies tc ON tn.target_company_id = tc.id
+      WHERE tn.target_user_id = $1
+      ORDER BY tn.created_at DESC
+      LIMIT $2
+    `;
+    
+    const result = await db.query(notificationsQuery, [userId, limit]);
+    return result.rows;
+  },
+  
+  // Mark notification as read
+  markNotificationRead: async (notificationId, userId) => {
+    const result = await db.query(
+      'UPDATE team_notifications SET is_read = true, read_at = NOW() WHERE id = $1 AND target_user_id = $2 RETURNING *',
+      [notificationId, userId]
+    );
+    
+    return result.rows[0];
+  }
+};
+
+const sendInvitationEmail = async (invitation, inviter) => {
+  const invitationUrl = `${process.env.APP_BASE_URL || 'https://your-app.replit.app'}/accept-invitation?token=${invitation.invitation_token}`;
+  
+  const emailContent = `
+    <h2>You're invited to join ${inviter.company_name} on M&A CRM</h2>
+    
+    <p>Hi there,</p>
+    
+    <p>${inviter.first_name} ${inviter.last_name} has invited you to join their team on our M&A CRM platform.</p>
+    
+    ${invitation.invitation_message ? `<p><strong>Personal message:</strong><br>${invitation.invitation_message}</p>` : ''}
+    
+    <p><strong>Your role:</strong> ${invitation.invited_role.replace('_', ' ').toUpperCase()}</p>
+    
+    <p>Click the link below to accept the invitation and create your account:</p>
+    
+    <p><a href="${invitationUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a></p>
+    
+    <p>This invitation will expire in 7 days.</p>
+    
+    <p>If you have any questions, please contact ${inviter.first_name} at ${inviter.email}.</p>
+    
+    <p>Best regards,<br>The M&A CRM Team</p>
+  `;
+  
+  // Send email using your preferred email service
+  // This is a placeholder - implement with your email provider
+  console.log(`Sending invitation email to ${invitation.email}`);
+  console.log(`Invitation URL: ${invitationUrl}`);
+  
+  return true;
+};
+
+const getUserWithPermissions = async (userId) => {
+  const userQuery = `
+    SELECT 
+      u.*,
+      ur.can_manage_users,
+      ur.can_manage_company,
+      ur.can_create_deals,
+      ur.can_edit_all_deals,
+      ur.can_delete_deals,
+      ur.can_upload_documents,
+      ur.can_create_offers,
+      ur.can_view_financials,
+      ur.can_access_analytics,
+      ur.can_export_data
+    FROM users u
+    LEFT JOIN user_roles ur ON u.user_role = ur.role_name
+    WHERE u.id = $1 AND u.is_active = true
+  `;
+  
+  const result = await db.query(userQuery, [userId]);
+  return result.rows[0];
+};
+UI Implementation
+Team Management Interface
+<div class="team-management-section">
+  <div class="section-header">
+    <h3>Team Management</h3>
+    <div class="team-controls">
+      <button onclick="showInviteModal()" class="btn-primary">👥 Invite Team Member</button>
+      <button onclick="showRolesModal()" class="btn-secondary">🔐 Manage Roles</button>
+    </div>
+  </div>
+  
+  <!-- Team Members List -->
+  <div class="team-members-list">
+    <h4>Team Members</h4>
+    
+    <div class="members-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Assigned Deals</th>
+            <th>Last Login</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each teamMembers}}
+          <tr>
+            <td>
+              <div class="member-info">
+                <div class="member-avatar">{{first_name.[0]}}{{last_name.[0]}}</div>
+                <div class="member-name">{{first_name}} {{last_name}}</div>
+              </div>
+            </td>
+            <td>{{email}}</td>
+            <td>
+              <span class="role-badge role-{{user_role}}">
+                {{user_role | replace '_' ' ' | capitalize}}
+                {{#if is_company_admin}}👑{{/if}}
+              </span>
+            </td>
+            <td>{{assigned_deals_count}} deals</td>
+            <td>{{#if last_login}}{{last_login | timeAgo}}{{else}}Never{{/if}}</td>
+            <td>
+              <span class="status-badge {{#if is_active}}active{{else}}inactive{{/if}}">
+                {{#if is_active}}Active{{else}}Inactive{{/if}}
+              </span>
+            </td>
+            <td>
+              <div class="member-actions">
+                {{#unless is_company_admin}}
+                <button onclick="editMemberRole({{id}})" class="btn-small">✏️ Edit</button>
+                <button onclick="viewMemberDeals({{id}})" class="btn-small">👁️ Deals</button>
+                {{#if ../canManageUsers}}
+                <button onclick="deactivateMember({{id}})" class="btn-small btn-danger">🚫 Remove</button>
+                {{/if}}
+                {{/unless}}
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Pending Invitations -->
+  {{#if pendingInvitations}}
+  <div class="pending-invitations">
+    <h4>Pending Invitations</h4>
+    
+    <div class="invitations-list">
+      {{#each pendingInvitations}}
+      <div class="invitation-item">
+        <div class="invitation-details">
+          <span class="invitation-email">{{email}}</span>
+          <span class="invitation-role">{{invited_role | replace '_' ' ' | capitalize}}</span>
+          <span class="invitation-date">Sent {{sent_at | timeAgo}}</span>
+          <span class="invitation-expires">Expires {{expires_at | timeAgo}}</span>
+        </div>
+        
+        <div class="invitation-actions">
+          <button onclick="resendInvitation({{id}})" class="btn-small">📤 Resend</button>
+          <button onclick="cancelInvitation({{id}})" class="btn-small btn-danger">❌ Cancel</button>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+  
+  <!-- Team Notifications -->
+  <div class="team-notifications">
+    <h4>Recent Team Activity</h4>
+    
+    <div class="notifications-list">
+      {{#each teamNotifications}}
+      <div class="notification-item {{#unless is_read}}unread{{/unless}}">
+        <div class="notification-icon">
+          {{#if (eq notification_type 'deal_assigned')}}📋{{/if}}
+          {{#if (eq notification_type 'team_member_joined')}}👋{{/if}}
+          {{#if (eq notification_type 'stage_changed')}}🔄{{/if}}
+          {{#if (eq notification_type 'document_uploaded')}}📄{{/if}}
+        </div>
+        
+        <div class="notification-content">
+          <div class="notification-title">{{notification_title}}</div>
+          <div class="notification-message">{{notification_message}}</div>
+          <div class="notification-meta">
+            {{#if from_first_name}}by {{from_first_name}} {{from_last_name}}{{/if}}
+            • {{created_at | timeAgo}}
+          </div>
+        </div>
+        
+        <div class="notification-actions">
+          {{#unless is_read}}
+          <button onclick="markNotificationRead({{id}})" class="btn-small">✓ Mark Read</button>
+          {{/unless}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+
+<!-- Invite Team Member Modal -->
+<div id="invite-member-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Invite Team Member</h3>
+      <button onclick="closeModal('invite-member-modal')" class="close-btn">×</button>
+    </div>
+    
+    <form id="invite-member-form">
+      <div class="form-group">
+        <label for="invite-email">Email Address</label>
+        <input type="email" id="invite-email" name="email" required 
+               placeholder="colleague@company.com">
+      </div>
+      
+      <div class="form-group">
+        <label for="invite-role">Role</label>
+        <select id="invite-role" name="role" required>
+          <option value="analyst">Analyst - Basic deal access</option>
+          <option value="senior_analyst">Senior Analyst - Full deal management</option>
+          <option value="deal_manager">Deal Manager - Team and deal management</option>
+          {{#if isCompanyAdmin}}
+          <option value="company_admin">Company Admin - Full system access</option>
+          {{/if}}
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="invite-message">Personal Message (Optional)</label>
+        <textarea id="invite-message" name="message" rows="3" 
+                  placeholder="Add a personal message to the invitation..."></textarea>
+      </div>
+      
+      <div class="role-permissions" id="role-permissions">
+        <!-- Permissions will be populated based on selected role -->
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit">Send Invitation</button>
+        <button type="button" onclick="closeModal('invite-member-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Deal Assignment Modal -->
+<div id="assign-deal-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Assign Team Members to Deal</h3>
+      <button onclick="closeModal('assign-deal-modal')" class="close-btn">×</button>
+    </div>
+    
+    <div class="deal-assignment-content">
+      <div class="deal-info">
+        <h4 id="assignment-deal-name">Deal Name</h4>
+        <p id="assignment-deal-stage">Current Stage</p>
+      </div>
+      
+      <div class="team-assignment">
+        <h5>Team Members</h5>
+        
+        <div class="available-members">
+          {{#each teamMembers}}
+          <div class="member-assignment-item">
+            <div class="member-info">
+              <div class="member-avatar">{{first_name.[0]}}{{last_name.[0]}}</div>
+              <div class="member-details">
+                <span class="member-name">{{first_name}} {{last_name}}</span>
+                <span class="member-role">{{user_role | replace '_' ' ' | capitalize}}</span>
+              </div>
+            </div>
+            
+            <div class="assignment-controls">
+              <select class="assignment-role" data-user-id="{{id}}">
+                <option value="">Not Assigned</option>
+                <option value="lead">Lead</option>
+                <option value="analyst">Analyst</option>
+                <option value="viewer">Viewer</option>
+              </select>
+              
+              <div class="assignment-permissions" style="display: none;">
+                <label><input type="checkbox" name="can_edit_company" checked> Edit Company</label>
+                <label><input type="checkbox" name="can_upload_documents" checked> Upload Documents</label>
+                <label><input type="checkbox" name="can_create_activities" checked> Create Activities</label>
+                <label><input type="checkbox" name="can_manage_contacts" checked> Manage Contacts</label>
+              </div>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button onclick="saveTeamAssignments()" class="btn-primary">Save Assignments</button>
+        <button onclick="closeModal('assign-deal-modal')" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+Team Management JavaScript
+// Team member invitation
+document.getElementById('invite-member-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const invitationData = Object.fromEntries(formData.entries());
+  
+  try {
+    const response = await fetch('/api/team/invite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(invitationData)
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      showNotification(`Invitation sent to ${invitationData.email}`, 'success');
+      closeModal('invite-member-modal');
+      refreshTeamMembers();
+    } else {
+      showNotification(result.error || 'Failed to send invitation', 'error');
+    }
+    
+  } catch (error) {
+    console.error('Invitation failed:', error);
+    showNotification('Failed to send invitation', 'error');
+  }
+});
+
+// Update role permissions display
+document.getElementById('invite-role').addEventListener('change', (e) => {
+  const role = e.target.value;
+  updateRolePermissionsDisplay(role);
+});
+
+const updateRolePermissionsDisplay = (role) => {
+  const permissionsContainer = document.getElementById('role-permissions');
+  
+  const rolePermissions = {
+    'analyst': ['Upload documents', 'Create activities', 'View assigned deals'],
+    'senior_analyst': ['Create deals', 'Upload documents', 'Create activities', 'View financials'],
+    'deal_manager': ['Manage team assignments', 'Create/edit deals', 'View all company data', 'Create offers'],
+    'company_admin': ['Full system access', 'User management', 'Billing access', 'All permissions']
+  };
+  
+  const permissions = rolePermissions[role] || [];
+  
+  permissionsContainer.innerHTML = `
+    <div class="permissions-preview">
+      <h5>Role Permissions:</h5>
+      <ul>
+        ${permissions.map(permission => `<li>✓ ${permission}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+};
+
+// Deal assignment management
+const showDealAssignmentModal = (dealId, dealName, dealStage) => {
+  document.getElementById('assignment-deal-name').textContent = dealName;
+  document.getElementById('assignment-deal-stage').textContent = `Stage: ${dealStage}`;
+  
+  // Load current assignments
+  loadCurrentAssignments(dealId);
+  
+  showModal('assign-deal-modal');
+};
+
+const loadCurrentAssignments = async (dealId) => {
+  try {
+    const response = await fetch(`/api/deals/${dealId}/team`);
+    const assignments = await response.json();
+    
+    if (response.ok) {
+      // Update assignment dropdowns based on current assignments
+      assignments.forEach(assignment => {
+        const roleSelect = document.querySelector(`[data-user-id="${assignment.user_id}"]`);
+        if (roleSelect) {
+          roleSelect.value = assignment.assignment_role;
+          
+          // Show permissions checkboxes
+          const permissionsDiv = roleSelect.parentElement.querySelector('.assignment-permissions');
+          permissionsDiv.style.display = 'block';
+          
+          // Set permission checkboxes
+          permissionsDiv.querySelector('[name="can_edit_company"]').checked = assignment.can_edit_company;
+          permissionsDiv.querySelector('[name="can_upload_documents"]').checked = assignment.can_upload_documents;
+          permissionsDiv.querySelector('[name="can_create_activities"]').checked = assignment.can_create_activities;
+          permissionsDiv.querySelector('[name="can_manage_contacts"]').checked = assignment.can_manage_contacts;
+        }
+      });
+    }
+    
+  } catch (error) {
+    console.error('Failed to load assignments:', error);
+  }
+};
+
+const saveTeamAssignments = async () => {
+  const dealId = getCurrentDealId(); // Get from modal context
+  const assignments = [];
+  
+  // Collect all assignment data
+  document.querySelectorAll('.assignment-role').forEach(select => {
+    const userId = select.dataset.userId;
+    const role = select.value;
+    
+    if (role) {
+      const permissionsDiv = select.parentElement.querySelector('.assignment-permissions');
+      const permissions = {
+        can_edit_company: permissionsDiv.querySelector('[name="can_edit_company"]').checked,
+        can_upload_documents: permissionsDiv.querySelector('[name="can_upload_documents"]').checked,
+        can_create_activities: permissionsDiv.querySelector('[name="can_create_activities"]').checked,
+        can_manage_contacts: permissionsDiv.querySelector('[name="can_manage_contacts"]').checked
+      };
+      
+      assignments.push({
+        user_id: parseInt(userId),
+        role: role,
+        ...permissions
+      });
+    }
+  });
+  
+  try {
+    const response = await fetch(`/api/deals/${dealId}/assign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ assignments })
+    });
+    
+    if (response.ok) {
+      showNotification('Team assignments saved successfully', 'success');
+      closeModal('assign-deal-modal');
+      refreshDealTeam(dealId);
+    } else {
+      showNotification('Failed to save team assignments', 'error');
+    }
+    
+  } catch (error) {
+    console.error('Assignment save failed:', error);
+    showNotification('Failed to save team assignments', 'error');
+  }
+};
+
+// Notification management
+const markNotificationRead = async (notificationId) => {
+  try {
+    const response = await fetch(`/api/notifications/${notificationId}/read`, {
+      method: 'PUT'
+    });
+    
+    if (response.ok) {
+      // Update UI to show as read
+      const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+      if (notificationElement) {
+        notificationElement.classList.remove('unread');
+        notificationElement.querySelector('.notification-actions').innerHTML = '';
+      }
+    }
+    
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+  }
+};
+
+// Team member management
+const editMemberRole = async (memberId) => {
+  // Show role editing modal or inline editor
+  const newRole = prompt('Enter new role (analyst, senior_analyst, deal_manager, company_admin):');
+  
+  if (newRole) {
+    try {
+      const response = await fetch(`/api/team/members/${memberId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_role: newRole })
+      });
+      
+      if (response.ok) {
+        showNotification('Member role updated successfully', 'success');
+        refreshTeamMembers();
+      } else {
+        showNotification('Failed to update member role', 'error');
+      }
+      
+    } catch (error) {
+      console.error('Role update failed:', error);
+      showNotification('Failed to update member role', 'error');
+    }
+  }
+};
+
+const deactivateMember = async (memberId) => {
+  if (confirm('Are you sure you want to remove this team member? They will lose access to all deals.')) {
+    try {
+      const response = await fetch(`/api/team/members/${memberId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        showNotification('Team member removed successfully', 'success');
+        refreshTeamMembers();
+      } else {
+        showNotification('Failed to remove team member', 'error');
+      }
+      
+    } catch (error) {
+      console.error('Member removal failed:', error);
+      showNotification('Failed to remove team member', 'error');
+    }
+  }
+};
+
+// Show/hide assignment permissions based on role selection
+document.addEventListener('change', (e) => {
+  if (e.target.classList.contains('assignment-role')) {
+    const permissionsDiv = e.target.parentElement.querySelector('.assignment-permissions');
+    if (e.target.value) {
+      permissionsDiv.style.display = 'block';
+    } else {
+      permissionsDiv.style.display = 'none';
+    }
+  }
+});
+
+// Auto-refresh notifications every 30 seconds
+setInterval(refreshNotifications, 30000);
+
+const refreshNotifications = async () => {
+  try {
+    const response = await fetch('/api/notifications');
+    const notifications = await response.json();
+    
+    if (response.ok) {
+      updateNotificationsDisplay(notifications);
+    }
+    
+  } catch (error) {
+    console.error('Failed to refresh notifications:', error);
+  }
+};
+File Structure Updates
+routes/
+├── team.js (new)
+├── notifications.js (new)
+
+public/
+├── js/
+│   └── team-management.js (new)
+└── css/
+    └── team-management.css (new)
+
+views/
+├── accept-invitation.ejs (new)
+└── team-management.ejs (new)
+Success Criteria for Prompt 5a
+Users can invite team members via email with role assignment
+Invitation system works with secure tokens and expiration
+Team members can accept invitations and create accounts
+Role-based permissions control access to features
+Deal assignments allow collaborative work on specific deals
+Team notifications keep members informed of activities
+Team management interface shows all members and their roles
+Pending invitations can be managed (resend, cancel)
+Business Value
+This prompt enables:
+
+Team Collaboration - Multiple users can work together on deals
+Scalable User Management - Companies can grow their teams systematically
+Role-Based Security - Proper access control for different user types
+Professional Workflow - Team assignments and notifications improve coordination
+Enterprise Readiness - Multi-user capabilities essential for business customers
+Integration with Existing System
+This prompt integrates seamlessly with:
+
+Prompts 1-5: Builds on existing user and company management
+Future Prompts: Team assignments will enhance pipeline management, document sharing, and analytics
+Security Model: Maintains data isolation while enabling team collaboration
+
+The team management system provides the foundation for collaborative M&A deal management while maintaining security and proper access control!
