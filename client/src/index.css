@@ -47,6 +47,11 @@
 /* Drag and drop improvements */
 .react-beautiful-dnd-dragging {
   pointer-events: none !important;
+  position: relative !important;
+  z-index: 99999 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid #3b82f6 !important;
+  transform: rotate(2deg) !important;
 }
 
 .react-beautiful-dnd-drag-handle {
@@ -68,11 +73,32 @@ div[data-rbd-draggable-id][style*="transform"] {
   transition: none !important;
 }
 
-/* Improve dragged element appearance */
-.react-beautiful-dnd-dragging {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
-  z-index: 9999 !important;
-  border: 2px solid #3b82f6 !important;
+/* Force dragged items to stay on top of everything */
+[data-rbd-draggable-id][style*="transform"]:not([style*="transition"]) {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+/* Portal container for dragged items */
+.react-beautiful-dnd-drag {
+  z-index: 99999 !important;
+}
+
+/* Ensure droppable areas don't interfere with dragged items */
+[data-rbd-droppable-id] {
+  position: relative;
+  z-index: 1;
+}
+
+/* Override any parent containers that might have z-index */
+.react-beautiful-dnd-dragging * {
+  z-index: inherit !important;
+}
+
+/* Absolutely force dragged elements to stay on top */
+body [data-rbd-draggable-id][style*="transform"]:not([style*="none"]) {
+  z-index: 999999 !important;
+  position: fixed !important;
 }
 
 .dark {

@@ -381,13 +381,14 @@ export function PipelineKanbanBoard() {
                                     {...provided.dragHandleProps}
                                     className={`cursor-grab active:cursor-grabbing ${
                                       snapshot.isDragging
-                                        ? 'shadow-2xl ring-2 ring-blue-300 dark:ring-blue-500 z-50'
+                                        ? 'shadow-2xl ring-2 ring-blue-300 dark:ring-blue-500'
                                         : 'hover:shadow-lg hover:scale-[1.01] hover:-translate-y-1 transition-all duration-200'
                                     } bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700`}
                                     style={{
                                       ...provided.draggableProps.style,
                                       ...(snapshot.isDragging && {
-                                        transform: provided.draggableProps.style?.transform,
+                                        zIndex: 99999,
+                                        position: 'relative',
                                       })
                                     }}
                                   >
