@@ -73,6 +73,7 @@ export default function Contacts() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showPrimaryOnly, setShowPrimaryOnly] = useState(false);
 
   // Get all contacts across all target companies
   const { data: allContacts = [], isLoading } = useQuery<ContactWithCompany[]>({
@@ -134,8 +135,14 @@ export default function Contacts() {
     createContactMutation.mutate(data);
   };
 
-  // Filter contacts based on search term
+  // Filter contacts based on search term and primary filter
   const filteredContacts = allContacts.filter((contact) => {
+    // First apply primary filter if enabled
+    if (showPrimaryOnly && !contact.isPrimary) {
+      return false;
+    }
+
+    // Then apply search filter
     const searchLower = searchTerm.toLowerCase();
     return (
       contact.firstName.toLowerCase().includes(searchLower) ||
@@ -146,7 +153,7 @@ export default function Contacts() {
     );
   });
 
-  // Separate primary and other contacts
+  // Separate primary and other contacts for display
   const primaryContacts = filteredContacts.filter(c => c.isPrimary);
   const otherContacts = filteredContacts.filter(c => !c.isPrimary);
 
@@ -323,15 +330,30 @@ export default function Contacts() {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search contacts and companies..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search contacts and companies..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="primary-only"
+                checked={showPrimaryOnly}
+                onCheckedChange={setShowPrimaryOnly}
+              />
+              <label
+                htmlFor="primary-only"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Primary contacts only
+              </label>
+            </div>
           </div>
 
           {/* Contacts List */}
@@ -374,11 +396,11 @@ export default function Contacts() {
           {filteredContacts.length > 0 && (
             <div className="space-y-6">
               {/* Primary Contacts */}
-              {primaryContacts.length > 0 && (
+              {primaryContacts.length > 0 && !showPrimaryOnly && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                    Primary Contacts
+                    Primary Contacts ({primaryContacts.length})
                   </h2>
                   <div className="grid gap-4">
                     {primaryContacts.map((contact) => (
@@ -453,12 +475,12 @@ export default function Contacts() {
                 </div>
               )}
 
-              {/* Other Contacts */}
-              {otherContacts.length > 0 && (
+              {/* Other Contacts - only show when not filtering for primary only */}
+              {otherContacts.length > 0 && !showPrimaryOnly && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                    Other Contacts
+                    Other Contacts ({otherContacts.length})
                   </h2>
                   <div className="grid gap-4">
                     {otherContacts.map((contact) => (
@@ -473,6 +495,86 @@ export default function Contacts() {
                                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
                                   {contact.firstName} {contact.lastName}
                                 </h3>
+                                {contact.title && (
+                                  <p className="text-sm text-gray-600 mb-1">{contact.title}</p>
+                                )}
+                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                                  <div className="flex items-center gap-1">
+                                    <Building className="w-3 h-3" />
+                                    <Link 
+                                      href={`/target-companies/${contact.company.id}`}
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      {contact.company.companyName}
+                                    </Link>
+                                  </div>
+                                  {contact.company.industry && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {contact.company.industry}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-4 text-sm">
+                                  {contact.email && (
+                                    <a 
+                                      href={`mailto:${contact.email}`} 
+                                      className="text-blue-600 hover:underline flex items-center gap-1"
+                                    >
+                                      <Mail className="w-3 h-3" />
+                                      {contact.email}
+                                    </a>
+                                  )}
+                                  {contact.phone && (
+                                    <span className="text-gray-600 flex items-center gap-1">
+                                      <Phone className="w-3 h-3" />
+                                      {contact.phone}
+                                    </span>
+                                  )}
+                                </div>
+                                {contact.notes && (
+                                  <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">
+                                    {contact.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Link href={`/target-companies/${contact.company.id}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="w-3 h-3 mr-1" />
+                                View Company
+                              </Button>
+                            </Link>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* When showing primary only, display all filtered contacts without grouping */}
+              {showPrimaryOnly && (
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
+                    Primary Contacts ({filteredContacts.length})
+                  </h2>
+                  <div className="grid gap-4">
+                    {filteredContacts.map((contact) => (
+                      <Card key={contact.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <User className="w-6 h-6 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="text-lg font-semibold text-gray-900">
+                                    {contact.firstName} {contact.lastName}
+                                  </h3>
+                                  <Badge variant="default">Primary</Badge>
+                                </div>
                                 {contact.title && (
                                   <p className="text-sm text-gray-600 mb-1">{contact.title}</p>
                                 )}
