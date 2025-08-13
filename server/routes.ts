@@ -230,6 +230,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const targetCompanyCreateSchema = insertTargetCompanySchema.omit({
     userCompanyId: true,
     createdBy: true,
+  }).extend({
+    annualRevenue: z.union([z.string(), z.number()]).optional().nullable(),
+    employeeCount: z.union([z.string(), z.number()]).optional().nullable(),
+    yearEstablished: z.union([z.string(), z.number()]).optional().nullable(),
   });
 
   // Create target company
@@ -246,6 +250,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const targetCompany = await storage.createTargetCompany({
         ...validatedData,
+        annualRevenue: validatedData.annualRevenue ? String(validatedData.annualRevenue) : null,
+        employeeCount: validatedData.employeeCount ? String(validatedData.employeeCount) : null,
+        yearEstablished: validatedData.yearEstablished ? String(validatedData.yearEstablished) : null,
         userCompanyId,
         createdBy: userId,
       });
@@ -323,9 +330,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = targetCompanyCreateSchema.partial().parse(req.body);
 
+      const processedData = {
+        ...validatedData,
+        annualRevenue: validatedData.annualRevenue ? String(validatedData.annualRevenue) : null,
+        employeeCount: validatedData.employeeCount ? String(validatedData.employeeCount) : null,
+        yearEstablished: validatedData.yearEstablished ? String(validatedData.yearEstablished) : null,
+      };
+      
       const updatedCompany = await storage.updateTargetCompany(
         targetCompanyId, 
-        validatedData, 
+        processedData, 
         userCompanyId
       );
       

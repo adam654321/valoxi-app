@@ -43,9 +43,9 @@ const targetCompanySchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
   address: z.string().optional(),
-  annualRevenue: z.string().optional(),
-  employeeCount: z.string().optional(),
-  yearEstablished: z.string().optional(),
+  annualRevenue: z.union([z.string(), z.number()]).optional(),
+  employeeCount: z.union([z.string(), z.number()]).optional(),
+  yearEstablished: z.union([z.string(), z.number()]).optional(),
   description: z.string().optional(),
 });
 
@@ -81,9 +81,9 @@ export default function TargetCompanies() {
     mutationFn: async (data: TargetCompanyForm) => {
       const payload = {
         ...data,
-        annualRevenue: data.annualRevenue ? parseFloat(data.annualRevenue) : null,
-        employeeCount: data.employeeCount ? parseInt(data.employeeCount) : null,
-        yearEstablished: data.yearEstablished ? parseInt(data.yearEstablished) : null,
+        annualRevenue: data.annualRevenue ? String(data.annualRevenue) : null,
+        employeeCount: data.employeeCount ? String(data.employeeCount) : null,
+        yearEstablished: data.yearEstablished ? String(data.yearEstablished) : null,
         website: data.website || null,
         email: data.email || null,
       };
@@ -113,9 +113,9 @@ export default function TargetCompanies() {
       if (!editingCompany) return;
       const payload = {
         ...data,
-        annualRevenue: data.annualRevenue ? parseFloat(data.annualRevenue) : null,
-        employeeCount: data.employeeCount ? parseInt(data.employeeCount) : null,
-        yearEstablished: data.yearEstablished ? parseInt(data.yearEstablished) : null,
+        annualRevenue: data.annualRevenue ? String(data.annualRevenue) : null,
+        employeeCount: data.employeeCount ? String(data.employeeCount) : null,
+        yearEstablished: data.yearEstablished ? String(data.yearEstablished) : null,
         website: data.website || null,
         email: data.email || null,
       };
@@ -437,7 +437,18 @@ export default function TargetCompanies() {
                       <FormItem>
                         <FormLabel>Website</FormLabel>
                         <FormControl>
-                          <Input type="url" placeholder="https://example.com" {...field} />
+                          <Input 
+                            type="url" 
+                            placeholder="example.com"
+                            {...field}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              if (value && !value.startsWith('http://') && !value.startsWith('https://')) {
+                                value = 'https://' + value;
+                              }
+                              field.onChange(value);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
