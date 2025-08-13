@@ -17,43 +17,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { UserPlus, Mail, Edit, Trash2, Crown, Shield, Users, Bell, RefreshCw, X } from "lucide-react";
 
-// Types based on our schema
-interface TeamMember {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-  userRole: string;
-  isCompanyAdmin: boolean;
-  isActive: boolean;
-  lastLogin?: Date;
-  roleDescription?: string;
-  permissions?: {
-    canManageUsers: boolean;
-    canCreateDeals: boolean;
-    canManageContacts: boolean;
-  };
-}
+import { UserInvitation, UserRole, TeamMember, insertUserInvitationSchema } from "@shared/schema";
 
-interface UserInvitation {
-  id: number;
-  email: string;
-  invitedRole: string;
-  invitationStatus: string;
-  sentAt: Date;
-  inviterName: string;
-  invitationMessage?: string;
-}
 
-interface UserRole {
-  roleName: string;
-  roleDescription: string;
-  permissions: {
-    canManageUsers: boolean;
-    canCreateDeals: boolean;
-    canManageContacts: boolean;
-  };
-}
 
 // Form schemas
 const inviteSchema = z.object({
@@ -331,7 +297,10 @@ export default function TeamManagement() {
                         <SelectContent>
                           {roles?.map((role) => (
                             <SelectItem key={role.roleName} value={role.roleName}>
-                              {role.roleName} - {role.roleDescription}
+                              <div>
+                                <div className="font-medium capitalize">{role.roleName.replace('_', ' ')}</div>
+                                <div className="text-xs text-muted-foreground">{role.roleDescription}</div>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -411,13 +380,16 @@ export default function TeamManagement() {
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
                     <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {member.userRole?.replace('_', ' ') || 'No Role'}
+                      </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {member.userRole}
+                        {member.assignedDealsCount || 0} Deals
                       </Badge>
                       {member.permissions?.canManageUsers && (
                         <Badge variant="outline" className="text-xs">
                           <Shield className="h-3 w-3 mr-1" />
-                          User Management
+                          Manager
                         </Badge>
                       )}
                     </div>
@@ -428,7 +400,7 @@ export default function TeamManagement() {
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" onClick={() => {
                         setEditingMember(member);
-                        updateForm.setValue('role', member.userRole);
+                        updateForm.setValue('role', member.userRole || '');
                         updateForm.setValue('status', member.isActive ? 'active' : 'inactive');
                       }}>
                         <Edit className="h-4 w-4" />
@@ -458,7 +430,10 @@ export default function TeamManagement() {
                                   <SelectContent>
                                     {roles?.map((role) => (
                                       <SelectItem key={role.roleName} value={role.roleName}>
-                                        {role.roleName} - {role.roleDescription}
+                                        <div>
+                                          <div className="font-medium capitalize">{role.roleName.replace('_', ' ')}</div>
+                                          <div className="text-xs text-muted-foreground">{role.roleDescription}</div>
+                                        </div>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -565,7 +540,7 @@ export default function TeamManagement() {
                     </Badge>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Sent {new Date(invitation.sentAt).toLocaleDateString()} by {invitation.inviterName}
+                    Sent {invitation.sentAt ? new Date(invitation.sentAt).toLocaleDateString() : 'Unknown'} by {invitation.invitedBy}
                   </p>
                   {invitation.invitationMessage && (
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 italic">

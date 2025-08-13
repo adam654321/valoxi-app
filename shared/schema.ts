@@ -334,3 +334,40 @@ export type UserDealAssignment = typeof userDealAssignments.$inferSelect;
 
 export type InsertTeamNotification = z.infer<typeof insertTeamNotificationSchema>;
 export type TeamNotification = typeof teamNotifications.$inferSelect;
+
+export type TeamMember = User & {
+  roleDescription?: string;
+  assignedDealsCount?: number;
+  permissions?: {
+    id?: number;
+    roleName?: string;
+    roleDescription?: string;
+    canManageUsers?: boolean;
+    canManageCompany?: boolean;
+    canCreateDeals?: boolean;
+    canEditAllDeals?: boolean;
+    canDeleteDeals?: boolean;
+    canUploadDocuments?: boolean;
+    canCreateOffers?: boolean;
+    canViewFinancials?: boolean;
+    canAccessAnalytics?: boolean;
+    canExportData?: boolean;
+    createdAt?: Date;
+  };
+};
+
+export type UserWithRole = User & {
+  roleDescription?: string;
+  permissions?: {
+    canManageUsers?: boolean;
+    canManageCompany?: boolean;
+    canCreateDeals?: boolean;
+    canEditAllDeals?: boolean;
+    canDeleteDeals?: boolean;
+    canUploadDocuments?: boolean;
+    canCreateOffers?: boolean;
+    canViewFinancials?: boolean;
+    canAccessAnalytics?: boolean;
+    canExportData?: boolean;
+  };
+};
