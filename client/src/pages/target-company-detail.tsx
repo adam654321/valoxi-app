@@ -98,12 +98,9 @@ export default function TargetCompanyDetail() {
   // Add contact mutation
   const addContactMutation = useMutation({
     mutationFn: (data: ContactFormData) =>
-      apiRequest(`/api/target-companies/${id}/contacts`, {
-        method: "POST",
-        body: JSON.stringify({
-          ...data,
-          targetCompanyId: parseInt(id!),
-        }),
+      apiRequest("POST", `/api/target-companies/${id}/contacts`, {
+        ...data,
+        targetCompanyId: parseInt(id!),
       }),
     onSuccess: () => {
       toast({
@@ -126,10 +123,7 @@ export default function TargetCompanyDetail() {
   // Edit contact mutation  
   const editContactMutation = useMutation({
     mutationFn: (data: ContactFormData) =>
-      apiRequest(`/api/target-companies/${id}/contacts/${editingContact!.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("PUT", `/api/contacts/${editingContact!.id}`, data),
     onSuccess: () => {
       toast({
         title: "Success", 
@@ -152,9 +146,7 @@ export default function TargetCompanyDetail() {
   // Delete contact mutation
   const deleteContactMutation = useMutation({
     mutationFn: (contactId: number) =>
-      apiRequest(`/api/target-companies/${id}/contacts/${contactId}`, {
-        method: "DELETE",
-      }),
+      apiRequest("DELETE", `/api/contacts/${contactId}`),
     onSuccess: () => {
       toast({
         title: "Success",
