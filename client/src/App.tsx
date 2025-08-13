@@ -12,6 +12,9 @@ import Dashboard from "@/pages/dashboard";
 import EnhancedTargetCompanies from "@/pages/enhanced-target-companies";
 import TargetCompanyDetail from "@/pages/target-company-detail";
 import Contacts from "@/pages/contacts";
+import TeamManagement from "@/pages/team-management";
+import AcceptInvitation from "@/pages/accept-invitation";
+import { NotificationsPage } from "@/components/notifications";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -34,6 +37,7 @@ function Router() {
           <Route path="/" component={Login} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
+          <Route path="/accept-invitation" component={AcceptInvitation} />
         </>
       ) : (
         <Layout>
@@ -43,6 +47,8 @@ function Router() {
             <Route path="/target-companies" component={EnhancedTargetCompanies} />
             <Route path="/target-companies/:id" component={TargetCompanyDetail} />
             <Route path="/contacts" component={Contacts} />
+            <Route path="/team" component={TeamManagement} />
+            <Route path="/notifications" component={NotificationsPage} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

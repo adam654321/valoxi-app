@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink } from "lucide-react";
 import type { TargetCompany, TargetContact } from "@shared/schema";
+import { DealTeamManagement } from "@/components/deal-team-management";
 
 // Enhanced profile interface to match the backend CompanyProfile
 interface CompanyProfile extends TargetCompany {
@@ -771,6 +772,12 @@ export default function TargetCompanyDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Deal Team Management Section */}
+      <DealTeamManagement 
+        targetCompanyId={parseInt(id!)} 
+        targetCompanyName={company.companyName} 
+      />
 
       {/* Contact Form Dialog */}
       <Dialog open={showContactForm} onOpenChange={setShowContactForm}>

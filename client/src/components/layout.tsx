@@ -13,7 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, Users, Bell } from "lucide-react";
+import { Notifications } from "@/components/notifications";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,6 +42,8 @@ export default function Layout({ children }: LayoutProps) {
   const isActiveRoute = (path: string) => {
     if (path === "/dashboard" && location === "/") return true;
     if (path === "/target-companies" && (location === "/target-companies" || location.startsWith("/target-companies/"))) return true;
+    if (path === "/team" && location === "/team") return true;
+    if (path === "/notifications" && location === "/notifications") return true;
     return location === path;
   };
 
@@ -77,12 +80,16 @@ export default function Layout({ children }: LayoutProps) {
                 <Link href="/contacts" className={getNavLinkClass("/contacts")}>
                   Contacts
                 </Link>
+                <Link href="/team" className={getNavLinkClass("/team")}>
+                  Team
+                </Link>
                 <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Reports
                 </a>
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Notifications />
               <Link href="/target-companies">
                 <Button className="bg-primary text-white hover:bg-blue-700" data-testid="button-add-target-company">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
