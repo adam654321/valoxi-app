@@ -202,7 +202,7 @@ export default function Register() {
                   <span className="text-sm text-textSecondary">Already have an account? </span>
                   <button
                     type="button"
-                    onClick={() => setLocation("/login")}
+                    onClick={() => setLocation("/")}
                     className="font-medium text-primary hover:text-blue-500 transition-colors"
                   >
                     Sign in
