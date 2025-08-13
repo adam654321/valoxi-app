@@ -27,6 +27,10 @@ export interface IStorage {
   // Target company operations
   getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompany[]>;
   getTargetCompanyCount(userCompanyId: number): Promise<number>;
+  getTargetCompany(id: number, userCompanyId: number): Promise<TargetCompany | undefined>;
+  createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
+  updateTargetCompany(id: number, company: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany | undefined>;
+  deleteTargetCompany(id: number, userCompanyId: number): Promise<boolean>;
   
   // Session operations
   createSession(userId: number, sessionToken: string, expiresAt: Date): Promise<UserSession>;
@@ -107,6 +111,38 @@ export class DatabaseStorage implements IStorage {
     await db.delete(userSessions).where(
       eq(userSessions.expiresAt, new Date())
     );
+  }
+
+  async getTargetCompany(id: number, userCompanyId: number): Promise<TargetCompany | undefined> {
+    const [company] = await db
+      .select()
+      .from(targetCompanies)
+      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
+    return company || undefined;
+  }
+
+  async createTargetCompany(insertCompany: InsertTargetCompany): Promise<TargetCompany> {
+    const [company] = await db
+      .insert(targetCompanies)
+      .values(insertCompany)
+      .returning();
+    return company;
+  }
+
+  async updateTargetCompany(id: number, updateData: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany | undefined> {
+    const [company] = await db
+      .update(targetCompanies)
+      .set(updateData)
+      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
+      .returning();
+    return company || undefined;
+  }
+
+  async deleteTargetCompany(id: number, userCompanyId: number): Promise<boolean> {
+    const result = await db
+      .delete(targetCompanies)
+      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

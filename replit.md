@@ -2,6 +2,18 @@
 
 This is an M&A (Mergers & Acquisitions) CRM platform that helps business buyers track and manage potential acquisition targets through their deal pipeline. The system serves M&A professionals, business buyers, and investment firms who are looking to acquire businesses. Users can track target companies (businesses they want to potentially acquire) from initial identification through deal completion.
 
+## Recent Changes (Latest: August 13, 2025)
+
+**Phase 2 Implementation - Target Company Management**
+- ✅ Complete CRUD operations for target companies
+- ✅ Professional form with industry dropdown and validation
+- ✅ Card-based list view with edit/delete functionality
+- ✅ Modal dialog for adding/editing companies
+- ✅ Real-time dashboard stats integration
+- ✅ Mobile-responsive design
+- ✅ Data isolation by user company ID enforced
+- ✅ Currency formatting and business data display
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

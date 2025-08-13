@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 
 // Extend session type
@@ -222,6 +222,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Dashboard stats error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Target Company Management Routes
+  const targetCompanyCreateSchema = insertTargetCompanySchema.omit({
+    userCompanyId: true,
+    createdBy: true,
+  });
+
+  // Create target company
+  app.post("/api/target-companies", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const validatedData = targetCompanyCreateSchema.parse(req.body);
+
+      const targetCompany = await storage.createTargetCompany({
+        ...validatedData,
+        userCompanyId,
+        createdBy: userId,
+      });
+
+      res.status(201).json(targetCompany);
+    } catch (error) {
+      console.error("Create target company error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get all target companies for user's company
+  app.get("/api/target-companies", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const targetCompanies = await storage.getTargetCompaniesByUserCompany(userCompanyId);
+      res.json(targetCompanies);
+    } catch (error) {
+      console.error("Get target companies error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get specific target company
+  app.get("/api/target-companies/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid target company ID" });
+      }
+
+      const targetCompany = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      
+      if (!targetCompany) {
+        return res.status(404).json({ message: "Target company not found" });
+      }
+
+      res.json(targetCompany);
+    } catch (error) {
+      console.error("Get target company error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update target company
+  app.put("/api/target-companies/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid target company ID" });
+      }
+
+      const validatedData = targetCompanyCreateSchema.partial().parse(req.body);
+
+      const updatedCompany = await storage.updateTargetCompany(
+        targetCompanyId, 
+        validatedData, 
+        userCompanyId
+      );
+      
+      if (!updatedCompany) {
+        return res.status(404).json({ message: "Target company not found" });
+      }
+
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Update target company error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete target company
+  app.delete("/api/target-companies/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid target company ID" });
+      }
+
+      const deleted = await storage.deleteTargetCompany(targetCompanyId, userCompanyId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Target company not found" });
+      }
+
+      res.json({ message: "Target company deleted successfully" });
+    } catch (error) {
+      console.error("Delete target company error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
