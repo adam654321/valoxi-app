@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Mail, Phone, User, Building, Eye, UserPlus } from "lucide-react";
+import { Search, Mail, Phone, User, Building, Eye, UserPlus, Pencil, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -74,6 +74,7 @@ export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showContactForm, setShowContactForm] = useState(false);
   const [showPrimaryOnly, setShowPrimaryOnly] = useState(false);
+  const [editingContact, setEditingContact] = useState<ContactWithCompany | null>(null);
 
   // Get all contacts across all target companies
   const { data: allContacts = [], isLoading } = useQuery<ContactWithCompany[]>({
@@ -110,7 +111,9 @@ export default function Contacts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       setShowContactForm(false);
+      setEditingContact(null);
       contactForm.reset();
       toast({
         title: "Success",
@@ -126,13 +129,88 @@ export default function Contacts() {
     },
   });
 
+  // Update contact mutation
+  const updateContactMutation = useMutation({
+    mutationFn: async (data: ContactForm) => {
+      if (!editingContact) return;
+      const { targetCompanyId, ...contactData } = data;
+      return await apiRequest("PUT", `/api/target-companies/${editingContact.company.id}/contacts/${editingContact.id}`, contactData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      setShowContactForm(false);
+      setEditingContact(null);
+      contactForm.reset();
+      toast({
+        title: "Success",
+        description: "Contact updated successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update contact",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete contact mutation
+  const deleteContactMutation = useMutation({
+    mutationFn: async (contact: ContactWithCompany) => {
+      return await apiRequest("DELETE", `/api/target-companies/${contact.company.id}/contacts/${contact.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      toast({
+        title: "Success",
+        description: "Contact deleted successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete contact",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddContact = () => {
+    setEditingContact(null);
     contactForm.reset();
     setShowContactForm(true);
   };
 
+  const handleEditContact = (contact: ContactWithCompany) => {
+    setEditingContact(contact);
+    contactForm.reset({
+      targetCompanyId: contact.company.id.toString(),
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      title: contact.title || "",
+      email: contact.email || "",
+      phone: contact.phone || "",
+      isPrimary: contact.isPrimary,
+      notes: contact.notes || "",
+    });
+    setShowContactForm(true);
+  };
+
+  const handleDeleteContact = (contact: ContactWithCompany) => {
+    if (confirm(`Are you sure you want to delete ${contact.firstName} ${contact.lastName}?`)) {
+      deleteContactMutation.mutate(contact);
+    }
+  };
+
   const handleSubmitContact = (data: ContactForm) => {
-    createContactMutation.mutate(data);
+    if (editingContact) {
+      updateContactMutation.mutate(data);
+    } else {
+      createContactMutation.mutate(data);
+    }
   };
 
   // Filter contacts based on search term and primary filter
@@ -461,12 +539,33 @@ export default function Contacts() {
                                 )}
                               </div>
                             </div>
-                            <Link href={`/target-companies/${contact.company.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-3 h-3 mr-1" />
-                                View Company
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditContact(contact)}
+                                data-testid={`button-edit-contact-${contact.id}`}
+                              >
+                                <Pencil className="w-3 h-3 mr-1" />
+                                Edit
                               </Button>
-                            </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteContact(contact)}
+                                disabled={deleteContactMutation.isPending}
+                                data-testid={`button-delete-contact-${contact.id}`}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1 text-red-500" />
+                                Delete
+                              </Button>
+                              <Link href={`/target-companies/${contact.company.id}`}>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View Company
+                                </Button>
+                              </Link>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -538,12 +637,33 @@ export default function Contacts() {
                                 )}
                               </div>
                             </div>
-                            <Link href={`/target-companies/${contact.company.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-3 h-3 mr-1" />
-                                View Company
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditContact(contact)}
+                                data-testid={`button-edit-contact-${contact.id}`}
+                              >
+                                <Pencil className="w-3 h-3 mr-1" />
+                                Edit
                               </Button>
-                            </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteContact(contact)}
+                                disabled={deleteContactMutation.isPending}
+                                data-testid={`button-delete-contact-${contact.id}`}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1 text-red-500" />
+                                Delete
+                              </Button>
+                              <Link href={`/target-companies/${contact.company.id}`}>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View Company
+                                </Button>
+                              </Link>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -618,12 +738,33 @@ export default function Contacts() {
                                 )}
                               </div>
                             </div>
-                            <Link href={`/target-companies/${contact.company.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-3 h-3 mr-1" />
-                                View Company
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditContact(contact)}
+                                data-testid={`button-edit-contact-${contact.id}`}
+                              >
+                                <Pencil className="w-3 h-3 mr-1" />
+                                Edit
                               </Button>
-                            </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteContact(contact)}
+                                disabled={deleteContactMutation.isPending}
+                                data-testid={`button-delete-contact-${contact.id}`}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1 text-red-500" />
+                                Delete
+                              </Button>
+                              <Link href={`/target-companies/${contact.company.id}`}>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View Company
+                                </Button>
+                              </Link>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -640,7 +781,9 @@ export default function Contacts() {
       <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Add New Contact</DialogTitle>
+            <DialogTitle>
+              {editingContact ? "Edit Contact" : "Add New Contact"}
+            </DialogTitle>
           </DialogHeader>
 
           <Form {...contactForm}>
@@ -796,15 +939,19 @@ export default function Contacts() {
                   type="button"
                   variant="outline"
                   onClick={() => setShowContactForm(false)}
-                  disabled={createContactMutation.isPending}
+                  disabled={createContactMutation.isPending || updateContactMutation.isPending}
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={createContactMutation.isPending}
+                  disabled={createContactMutation.isPending || updateContactMutation.isPending}
+                  data-testid="button-submit-contact"
                 >
-                  {createContactMutation.isPending ? "Adding..." : "Add Contact"}
+                  {createContactMutation.isPending || updateContactMutation.isPending
+                    ? (editingContact ? "Updating..." : "Adding...") 
+                    : (editingContact ? "Update Contact" : "Add Contact")
+                  }
                 </Button>
               </div>
             </form>
