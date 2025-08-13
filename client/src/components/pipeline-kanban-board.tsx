@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Building2, Users, DollarSign, Calendar, ExternalLink, Eye, Plus, Loader2 } from "lucide-react";
+import { Building2, Users, DollarSign, Calendar, ExternalLink, Eye, Plus, Loader2, Phone, Clock } from "lucide-react";
 import { Link } from "wouter";
 
 interface PipelineStage {
@@ -54,12 +54,11 @@ type StageMoveFormValues = z.infer<typeof stageMoveSchema>;
 
 export function PipelineKanbanBoard() {
   const { toast } = useToast();
+  const [columns, setColumns] = useState<KanbanColumn[]>([]);
+  const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [draggedCompany, setDraggedCompany] = useState<TargetCompany | null>(null);
   const [targetStage, setTargetStage] = useState<string | null>(null);
-  const [showNotesDialog, setShowNotesDialog] = useState(false);
-  const [columns, setColumns] = useState<KanbanColumn[]>([]);
 
-  // Form for adding notes when moving stages
   const form = useForm<StageMoveFormValues>({
     resolver: zodResolver(stageMoveSchema),
     defaultValues: {
@@ -67,31 +66,37 @@ export function PipelineKanbanBoard() {
     },
   });
 
-  // Query for pipeline stages
+  // Get pipeline stages
   const { data: stages, isLoading: stagesLoading } = useQuery<PipelineStage[]>({
     queryKey: ['/api/pipeline/stages'],
   });
 
-  // Query for all target companies
+  // Get companies with stats
   const { data: companies, isLoading: companiesLoading } = useQuery<TargetCompany[]>({
     queryKey: ['/api/target-companies'],
   });
 
-  // Mutation for updating company stage
+  // Stage update mutation
   const updateStageMutation = useMutation({
-    mutationFn: async (data: { companyId: number; stage: string; notes?: string }) => {
-      return await apiRequest('PUT', `/api/target-companies/${data.companyId}/stage`, { 
-        stage: data.stage, 
-        notes: data.notes || '' 
+    mutationFn: async ({ companyId, stage, notes }: { companyId: number; stage: string; notes?: string }) => {
+      const response = await fetch(`/api/target-companies/${companyId}/stage`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stage, notes }),
       });
+      if (!response.ok) {
+        throw new Error('Failed to update stage');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Stage updated",
-        description: "Company moved successfully",
+        title: "Stage Updated",
+        description: "Company has been moved to the new stage successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/pipeline/overview'] });
       setShowNotesDialog(false);
       setDraggedCompany(null);
       setTargetStage(null);
@@ -99,8 +104,8 @@ export function PipelineKanbanBoard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error updating stage",
-        description: error.message || "Failed to update company stage",
+        title: "Error",
+        description: error.message || "Failed to update stage",
         variant: "destructive",
       });
       // Refresh to revert any optimistic updates
@@ -201,62 +206,25 @@ export function PipelineKanbanBoard() {
     return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num);
   };
 
-  const getStageColor = (stageName: string): string => {
-    switch (stageName) {
-      case 'New Target':
-        return 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700';
-      case 'Initial Contact':
-      case 'Documents Requested':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
-      case 'Under Review':
-      case 'Offer Stage':
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-      case 'Negotiation':
-      case 'Due Diligence':
-        return 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800';
-      case 'Legal & Accounting':
-        return 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800';
-      case 'Completion':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
-      case 'Not Qualified':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
-      default:
-        return 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700';
-    }
-  };
-
-  const getBadgeVariant = (stageName: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (stageName) {
-      case 'New Target':
-        return 'outline';
-      case 'Initial Contact':
-      case 'Documents Requested':
-      case 'Under Review':
-        return 'secondary';
-      case 'Offer Stage':
-      case 'Negotiation':
-      case 'Due Diligence':
-      case 'Legal & Accounting':
-        return 'default';
-      case 'Completion':
-        return 'default';
-      case 'Not Qualified':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
+  const getDaysInStage = (dateString: string) => {
+    const days = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24));
+    return days;
   };
 
   if (stagesLoading || companiesLoading) {
     return (
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
+        <div className="flex gap-6 overflow-x-auto pb-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-80 bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+              <div className="animate-pulse">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-6"></div>
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, j) => (
+                    <div key={j} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
@@ -266,204 +234,316 @@ export function PipelineKanbanBoard() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">M&A Pipeline Board</h1>
-        <p className="text-muted-foreground">
-          Drag and drop companies between pipeline stages to track your acquisition progress
-        </p>
-      </div>
-
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {columns.map((column) => (
-            <div key={column.stageName} className="flex-shrink-0 w-80">
-              <div className={`rounded-lg border-2 ${getStageColor(column.stageName)} min-h-96`}>
-                <div className="p-4 border-b">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-lg">{column.stageName}</h3>
-                    <Badge variant={getBadgeVariant(column.stageName)}>
-                      {column.companies.length}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{column.description}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                M&A Pipeline Board
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Drag and drop companies between pipeline stages to track your acquisition progress
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="bg-white dark:bg-slate-800 rounded-lg px-4 py-2 shadow-sm border border-gray-200 dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold text-sm">
+                    {columns.reduce((acc, col) => acc + col.companies.length, 0)} Total Companies
+                  </span>
                 </div>
-
-                <Droppable droppableId={column.stageName}>
-                  {(provided: any, snapshot: any) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`p-4 min-h-80 transition-colors ${
-                        snapshot.isDraggingOver
-                          ? 'bg-blue-100 dark:bg-blue-900/30'
-                          : ''
-                      }`}
-                    >
-                      <div className="space-y-3">
-                        {column.companies.map((company, index) => (
-                          <Draggable
-                            key={company.id}
-                            draggableId={company.id.toString()}
-                            index={index}
-                          >
-                            {(provided: any, snapshot: any) => (
-                              <Card
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`cursor-grab active:cursor-grabbing transition-shadow ${
-                                  snapshot.isDragging
-                                    ? 'shadow-lg scale-105 rotate-1'
-                                    : 'hover:shadow-md'
-                                }`}
-                              >
-                                <CardHeader className="pb-2">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <CardTitle className="text-base font-semibold truncate">
-                                        {company.companyName}
-                                      </CardTitle>
-                                      {company.industry && (
-                                        <CardDescription className="text-xs mt-1">
-                                          {company.industry}
-                                        </CardDescription>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 ml-2">
-                                      <Link href={`/target-companies/${company.id}`}>
-                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                          <Eye className="h-3 w-3" />
-                                        </Button>
-                                      </Link>
-                                      {company.website && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 w-6 p-0"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.open(company.website!, '_blank');
-                                          }}
-                                        >
-                                          <ExternalLink className="h-3 w-3" />
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                  <div className="space-y-2 text-xs">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1 text-muted-foreground">
-                                        <DollarSign className="h-3 w-3" />
-                                        <span>Revenue</span>
-                                      </div>
-                                      <span className="font-medium">
-                                        {formatCurrency(company.annualRevenue)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1 text-muted-foreground">
-                                        <Users className="h-3 w-3" />
-                                        <span>Employees</span>
-                                      </div>
-                                      <span className="font-medium">
-                                        {formatNumber(company.employeeCount)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1 text-muted-foreground">
-                                        <Users className="h-3 w-3" />
-                                        <span>Contacts</span>
-                                      </div>
-                                      <span className="font-medium">{company.totalContacts}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1 text-muted-foreground">
-                                        <Calendar className="h-3 w-3" />
-                                        <span>In stage</span>
-                                      </div>
-                                      <span className="font-medium">
-                                        {company.stageUpdatedAt
-                                          ? Math.floor((new Date().getTime() - new Date(company.stageUpdatedAt).getTime()) / (1000 * 60 * 60 * 24))
-                                          : Math.floor((new Date().getTime() - new Date(company.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-                                        } days
-                                      </span>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    </div>
-                  )}
-                </Droppable>
               </div>
             </div>
-          ))}
+          </div>
         </div>
-      </DragDropContext>
 
-      {/* Notes Dialog for Stage Changes */}
-      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move Company to {targetStage}</DialogTitle>
-            <DialogDescription>
-              Moving <strong>{draggedCompany?.companyName}</strong> to <strong>{targetStage}</strong>.
-              Would you like to add any notes about this stage change?
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleStageMove)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Add notes about this stage change..."
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowNotesDialog(false);
-                    // Revert optimistic update
-                    queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateStageMutation.isPending}>
-                  {updateStageMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Moving...
-                    </>
-                  ) : (
-                    'Confirm Move'
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="flex gap-6 overflow-x-auto pb-6">
+            {columns.map((column, columnIndex) => {
+              const stageColors = [
+                { 
+                  bg: 'bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20',
+                  border: 'border-blue-200 dark:border-blue-700',
+                  accent: 'bg-blue-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20',
+                  border: 'border-yellow-200 dark:border-yellow-700',
+                  accent: 'bg-yellow-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20',
+                  border: 'border-orange-200 dark:border-orange-700',
+                  accent: 'bg-orange-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',
+                  border: 'border-purple-200 dark:border-purple-700',
+                  accent: 'bg-purple-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20',
+                  border: 'border-pink-200 dark:border-pink-700',
+                  accent: 'bg-pink-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20',
+                  border: 'border-indigo-200 dark:border-indigo-700',
+                  accent: 'bg-indigo-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20',
+                  border: 'border-green-200 dark:border-green-700',
+                  accent: 'bg-green-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
+                  border: 'border-red-200 dark:border-red-700',
+                  accent: 'bg-red-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20',
+                  border: 'border-teal-200 dark:border-teal-700',
+                  accent: 'bg-teal-500'
+                },
+                { 
+                  bg: 'bg-gradient-to-b from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20',
+                  border: 'border-emerald-200 dark:border-emerald-700',
+                  accent: 'bg-emerald-500'
+                }
+              ];
+
+              const colorScheme = stageColors[columnIndex % stageColors.length];
+
+              return (
+                <div key={column.stageName} className="flex-shrink-0 w-80">
+                  <div className={`rounded-xl shadow-lg border-2 ${colorScheme.border} ${colorScheme.bg} backdrop-blur-sm min-h-[700px] overflow-hidden`}>
+                    {/* Column Header */}
+                    <div className="p-6 border-b border-gray-200/50 dark:border-slate-700/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${colorScheme.accent}`}></div>
+                          <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                            {column.stageName}
+                          </h3>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 rounded-full px-3 py-1 shadow-sm border border-gray-200 dark:border-slate-600">
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                            {column.companies.length}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {column.description}
+                      </p>
+                    </div>
+
+                    <Droppable droppableId={column.stageName}>
+                      {(provided: any, snapshot: any) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`p-4 min-h-[580px] transition-all duration-300 ${
+                            snapshot.isDraggingOver
+                              ? 'bg-blue-100/80 dark:bg-blue-900/40 scale-[1.02]'
+                              : ''
+                          }`}
+                        >
+                          <div className="space-y-4">
+                            {column.companies.map((company, index) => (
+                              <Draggable
+                                key={company.id}
+                                draggableId={company.id.toString()}
+                                index={index}
+                              >
+                                {(provided: any, snapshot: any) => (
+                                  <Card
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                                      snapshot.isDragging
+                                        ? 'shadow-2xl scale-105 rotate-2 ring-2 ring-blue-300 dark:ring-blue-500'
+                                        : 'hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1'
+                                    } bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700`}
+                                  >
+                                    <CardHeader className="pb-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1 min-w-0">
+                                          <CardTitle className="text-base font-bold text-gray-900 dark:text-white truncate mb-1">
+                                            {company.companyName}
+                                          </CardTitle>
+                                          {company.industry && (
+                                            <div className="inline-block">
+                                              <Badge 
+                                                variant="secondary" 
+                                                className="text-xs bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700"
+                                              >
+                                                {company.industry}
+                                              </Badge>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-1 ml-2">
+                                          <Link href={`/target-companies/${company.id}`}>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                            >
+                                              <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            </Button>
+                                          </Link>
+                                          {company.website && (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const url = company.website?.startsWith('http') 
+                                                  ? company.website 
+                                                  : `https://${company.website}`;
+                                                window.open(url, '_blank');
+                                              }}
+                                            >
+                                              <ExternalLink className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent className="pt-0 space-y-3">
+                                      {/* Key Metrics Grid */}
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            <span className="text-xs text-green-700 dark:text-green-300 font-medium">Revenue</span>
+                                          </div>
+                                          <div className="text-sm font-bold text-green-800 dark:text-green-200">
+                                            {formatCurrency(company.annualRevenue)}
+                                          </div>
+                                        </div>
+                                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">Staff</span>
+                                          </div>
+                                          <div className="text-sm font-bold text-blue-800 dark:text-blue-200">
+                                            {formatNumber(company.employeeCount)}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Bottom Stats */}
+                                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-700">
+                                        <div className="flex items-center gap-2">
+                                          <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                            {company.totalContacts} contacts
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                                            {company.stageUpdatedAt
+                                              ? getDaysInStage(company.stageUpdatedAt)
+                                              : getDaysInStage(company.createdAt)
+                                            }d
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                            
+                            {/* Empty State */}
+                            {column.companies.length === 0 && (
+                              <div className="text-center py-12">
+                                <Building2 className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                                  No companies in this stage
+                                </p>
+                                <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                                  Drag companies here to get started
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Droppable>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
+
+        {/* Notes Dialog for Stage Changes */}
+        <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move Company to {targetStage}</DialogTitle>
+              <DialogDescription>
+                Moving <strong>{draggedCompany?.companyName}</strong> to <strong>{targetStage}</strong>.
+                Would you like to add any notes about this stage change?
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleStageMove)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Add any relevant notes about this stage change..."
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                />
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowNotesDialog(false);
+                      // Revert optimistic update
+                      queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateStageMutation.isPending}>
+                    {updateStageMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Moving...
+                      </>
+                    ) : (
+                      'Confirm Move'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
