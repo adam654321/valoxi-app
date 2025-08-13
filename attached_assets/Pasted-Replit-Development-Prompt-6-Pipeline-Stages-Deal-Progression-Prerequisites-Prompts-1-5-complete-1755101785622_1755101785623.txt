@@ -1,0 +1,351 @@
+Replit Development Prompt 6: Pipeline Stages & Deal Progression
+Prerequisites
+Prompts 1-5 completed with working target company profiles
+Users can create, search, and view detailed company information
+What This Prompt Builds
+Add pipeline stage management to track target companies through the M&A acquisition process from initial contact to deal completion.
+System Context Reminder
+Pipeline: The stages a potential acquisition moves through
+Target Companies: Now need to be tracked through deal stages
+Users: M&A professionals managing multiple deals at different stages
+What You Need to Build
+1. Pipeline Stage System
+Add stage tracking to target companies with these predefined stages:
+
+M&A Pipeline Stages:
+
+New Target - Recently identified potential acquisition
+Initial Contact - First outreach made to target company
+Documents Requested - Asked for financial information
+Under Review - Analyzing provided documents
+Offer Stage - Preparing or presenting initial offer
+Negotiation - Discussing terms and conditions
+Due Diligence - Detailed investigation phase
+Legal & Accounting - Final legal and financial review
+Completion - Deal successfully closed
+Not Qualified - Target not suitable for acquisition
+2. Database Schema Updates
+-- Add stage tracking to target companies
+ALTER TABLE target_companies ADD COLUMN stage VARCHAR(50) DEFAULT 'New Target';
+ALTER TABLE target_companies ADD COLUMN stage_updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE target_companies ADD COLUMN stage_updated_by INTEGER REFERENCES users(id);
+
+-- Create stage history table
+CREATE TABLE stage_history (
+  id SERIAL PRIMARY KEY,
+  target_company_id INTEGER REFERENCES target_companies(id),
+  from_stage VARCHAR(50),
+  to_stage VARCHAR(50),
+  changed_by INTEGER REFERENCES users(id),
+  changed_at TIMESTAMP DEFAULT NOW(),
+  notes TEXT
+);
+
+-- Create stage definitions table
+CREATE TABLE pipeline_stages (
+  id SERIAL PRIMARY KEY,
+  stage_name VARCHAR(50) UNIQUE NOT NULL,
+  stage_order INTEGER NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Insert default pipeline stages
+INSERT INTO pipeline_stages (stage_name, stage_order, description) VALUES
+('New Target', 1, 'Recently identified potential acquisition target'),
+('Initial Contact', 2, 'First outreach made to target company'),
+('Documents Requested', 3, 'Requested financial and business information'),
+('Under Review', 4, 'Analyzing provided documents and information'),
+('Offer Stage', 5, 'Preparing or presenting initial acquisition offer'),
+('Negotiation', 6, 'Discussing terms, conditions, and deal structure'),
+('Due Diligence', 7, 'Detailed investigation and verification phase'),
+('Legal & Accounting', 8, 'Final legal and financial review process'),
+('Completion', 9, 'Deal successfully closed and completed'),
+('Not Qualified', 10, 'Target determined not suitable for acquisition');
+3. API Endpoints
+// Pipeline management
+GET /api/pipeline/stages                    // Get all pipeline stages
+PUT /api/target-companies/:id/stage         // Update company stage
+GET /api/target-companies/:id/stage-history // Get stage change history
+GET /api/pipeline/overview                  // Get pipeline overview stats
+4. Stage Update Implementation
+const updateCompanyStage = async (companyId, newStage, userId, notes = '') => {
+  // Verify user has access to this company
+  const company = await getTargetCompanyById(companyId, userId);
+  if (!company) {
+    throw new Error('Company not found or access denied');
+  }
+  
+  const oldStage = company.stage;
+  
+  // Don't update if stage is the same
+  if (oldStage === newStage) {
+    return { success: true, message: 'Stage unchanged' };
+  }
+  
+  try {
+    // Start transaction
+    await db.query('BEGIN');
+    
+    // Update company stage
+    await db.query(
+      'UPDATE target_companies SET stage = $1, stage_updated_at = NOW(), stage_updated_by = $2 WHERE id = $3',
+      [newStage, userId, companyId]
+    );
+    
+    // Record stage history
+    await db.query(
+      'INSERT INTO stage_history (target_company_id, from_stage, to_stage, changed_by, notes) VALUES ($1, $2, $3, $4, $5)',
+      [companyId, oldStage, newStage, userId, notes]
+    );
+    
+    // Commit transaction
+    await db.query('COMMIT');
+    
+    return {
+      success: true,
+      message: `Stage updated from "${oldStage}" to "${newStage}"`,
+      oldStage,
+      newStage
+    };
+    
+  } catch (error) {
+    await db.query('ROLLBACK');
+    throw error;
+  }
+};
+5. Pipeline Overview Dashboard
+const getPipelineOverview = async (userId) => {
+  const user = await getUserById(userId);
+  
+  const query = `
+    SELECT 
+      ps.stage_name,
+      ps.stage_order,
+      COUNT(tc.id) as company_count,
+      AVG(EXTRACT(days FROM (NOW() - tc.stage_updated_at))) as avg_days_in_stage
+    FROM pipeline_stages ps
+    LEFT JOIN target_companies tc ON ps.stage_name = tc.stage 
+      AND tc.user_company_id = $1
+    WHERE ps.is_active = true
+    GROUP BY ps.stage_name, ps.stage_order
+    ORDER BY ps.stage_order
+  `;
+  
+  const stageStats = await db.query(query, [user.user_company_id]);
+  
+  // Get recent stage changes
+  const recentChanges = await db.query(`
+    SELECT 
+      sh.*, 
+      tc.company_name,
+      u.first_name || ' ' || u.last_name as changed_by_name
+    FROM stage_history sh
+    JOIN target_companies tc ON sh.target_company_id = tc.id
+    JOIN users u ON sh.changed_by = u.id
+    WHERE tc.user_company_id = $1
+    ORDER BY sh.changed_at DESC
+    LIMIT 10
+  `, [user.user_company_id]);
+  
+  return {
+    stageStats: stageStats.rows,
+    recentChanges: recentChanges.rows,
+    totalCompanies: stageStats.rows.reduce((sum, stage) => sum + parseInt(stage.company_count), 0)
+  };
+};
+UI Implementation
+Stage Update Interface
+<!-- Add to company profile page -->
+<div class="pipeline-section">
+  <h2>Pipeline Status</h2>
+  
+  <div class="current-stage">
+    <label>Current Stage:</label>
+    <select id="stage-select" onchange="updateStage()">
+      <option value="New Target">New Target</option>
+      <option value="Initial Contact">Initial Contact</option>
+      <option value="Documents Requested">Documents Requested</option>
+      <option value="Under Review">Under Review</option>
+      <option value="Offer Stage">Offer Stage</option>
+      <option value="Negotiation">Negotiation</option>
+      <option value="Due Diligence">Due Diligence</option>
+      <option value="Legal & Accounting">Legal & Accounting</option>
+      <option value="Completion">Completion</option>
+      <option value="Not Qualified">Not Qualified</option>
+    </select>
+  </div>
+  
+  <div class="stage-info">
+    <p><strong>Stage Updated:</strong> <span id="stage-updated-date">{{stage_updated_at | date}}</span></p>
+    <p><strong>Updated By:</strong> <span id="stage-updated-by">{{stage_updated_by_name}}</span></p>
+    <p><strong>Days in Current Stage:</strong> <span id="days-in-stage">{{days_in_current_stage}}</span></p>
+  </div>
+  
+  <div class="stage-notes">
+    <label for="stage-notes">Notes for Stage Change:</label>
+    <textarea id="stage-notes" placeholder="Add notes about this stage change..."></textarea>
+  </div>
+</div>
+Pipeline Overview Dashboard
+<div class="pipeline-overview">
+  <h2>Pipeline Overview</h2>
+  
+  <div class="pipeline-stats">
+    <div class="total-deals">
+      <h3>{{totalCompanies}}</h3>
+      <p>Total Active Deals</p>
+    </div>
+  </div>
+  
+  <div class="pipeline-stages">
+    {{#each stageStats}}
+    <div class="stage-card">
+      <h4>{{stage_name}}</h4>
+      <div class="stage-count">{{company_count}}</div>
+      <div class="stage-avg">
+        {{#if avg_days_in_stage}}
+          Avg: {{avg_days_in_stage | round}} days
+        {{else}}
+          No companies
+        {{/if}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  
+  <div class="recent-changes">
+    <h3>Recent Stage Changes</h3>
+    <div class="changes-list">
+      {{#each recentChanges}}
+      <div class="change-item">
+        <div class="change-info">
+          <strong>{{company_name}}</strong>
+          <span class="stage-change">{{from_stage}} → {{to_stage}}</span>
+        </div>
+        <div class="change-meta">
+          <span class="change-date">{{changed_at | date}}</span>
+          <span class="change-user">by {{changed_by_name}}</span>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+Stage Update JavaScript
+const updateStage = async () => {
+  const newStage = document.getElementById('stage-select').value;
+  const notes = document.getElementById('stage-notes').value;
+  const companyId = getCurrentCompanyId(); // Get from URL or page data
+  
+  try {
+    const response = await fetch(`/api/target-companies/${companyId}/stage`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        stage: newStage,
+        notes: notes
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Update UI
+      updateStageDisplay(result);
+      
+      // Clear notes
+      document.getElementById('stage-notes').value = '';
+      
+      // Show success message
+      showNotification('Stage updated successfully', 'success');
+      
+      // Refresh stage history if displayed
+      refreshStageHistory();
+    } else {
+      showNotification('Failed to update stage', 'error');
+    }
+    
+  } catch (error) {
+    console.error('Stage update failed:', error);
+    showNotification('Error updating stage', 'error');
+  }
+};
+
+const updateStageDisplay = (result) => {
+  document.getElementById('stage-updated-date').textContent = new Date().toLocaleDateString();
+  document.getElementById('days-in-stage').textContent = '0';
+  
+  // Update any other UI elements that show current stage
+  const stageElements = document.querySelectorAll('.current-stage-display');
+  stageElements.forEach(el => {
+    el.textContent = result.newStage;
+  });
+};
+File Structure Updates
+routes/
+├── pipeline.js (new)
+
+public/
+├── pipeline-overview.html (new)
+├── js/
+│   └── pipeline.js (new)
+└── css/
+    └── pipeline.css (new)
+Enhanced Target Company List
+Update the target company list to show pipeline stages:
+
+<!-- Enhanced company card with stage -->
+<div class="company-card">
+  <div class="company-header">
+    <h3>{{company_name}}</h3>
+    <span class="stage-badge stage-{{stage | slugify}}">{{stage}}</span>
+  </div>
+  
+  <div class="company-details">
+    <div class="detail-item">
+      <strong>Industry:</strong> {{industry}}
+    </div>
+    <div class="detail-item">
+      <strong>Stage:</strong> {{stage}}
+    </div>
+    <div class="detail-item">
+      <strong>Days in Stage:</strong> {{days_in_current_stage}}
+    </div>
+  </div>
+  
+  <div class="company-actions">
+    <button onclick="viewCompany({{id}})">View Details</button>
+    <select onchange="quickStageUpdate({{id}}, this.value)">
+      <option value="">Change Stage...</option>
+      <!-- Stage options -->
+    </select>
+  </div>
+</div>
+Success Criteria for Prompt 6
+Target companies can be assigned to pipeline stages
+Stage changes are recorded with history
+Pipeline overview shows stage distribution
+Stage updates work from company profiles
+Recent stage changes are displayed
+Days in current stage calculated correctly
+Stage change notes are saved
+Data isolation maintained for all pipeline data
+Business Value
+This prompt enables:
+
+Visual tracking of deal progression
+Understanding of pipeline bottlenecks
+Historical record of deal progression
+Team visibility into deal status
+Performance metrics by stage
+Next Steps Preview
+Prompt 7 will add:
+
+Activity logging for target companies
+Notes and communication tracking
+Timeline view of all activities
+
+Focus only on pipeline stage management in this prompt. Ensure the interface is intuitive for M&A professionals to quickly update and track deal progression.
