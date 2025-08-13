@@ -206,10 +206,8 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
   };
 
   // Get available members (not already assigned)
-  const assignedUserIds = dealTeam?.map(assignment => assignment.userId) || [];
-  const unassignedMembers = availableMembers?.filter(member => 
-    !assignedUserIds.includes(member.id) && member.isActive
-  ) || [];
+  // Show all active team members (allow multiple roles per person)
+  const availableTeamMembers = availableMembers?.filter(member => member.isActive) || [];
 
   if (dealTeamLoading || membersLoading) {
     return (
@@ -244,7 +242,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
               Manage team members assigned to {targetCompanyName}
             </CardDescription>
           </div>
-          {unassignedMembers.length > 0 && (
+          {availableTeamMembers.length > 0 && (
             <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -274,7 +272,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {unassignedMembers.map((member) => (
+                              {availableTeamMembers.map((member) => (
                                 <SelectItem key={member.id} value={member.id.toString()}>
                                   {member.firstName} {member.lastName} ({member.email})
                                 </SelectItem>
@@ -629,7 +627,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
           {(!dealTeam || dealTeam.length === 0) && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No team members assigned to this deal yet.
-              {unassignedMembers.length > 0 && (
+              {availableTeamMembers.length > 0 && (
                 <p className="mt-2">Click "Assign Member" to add team members to this deal.</p>
               )}
             </div>
