@@ -322,7 +322,7 @@ export default function TargetCompanyDetail() {
           {company.employeeCount && (
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span>Employees: {formatNumber(company.employeeCount)}</span>
+              <span>Employees: {formatNumber(company.employeeCount?.toString())}</span>
             </div>
           )}
 
