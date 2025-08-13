@@ -4,15 +4,27 @@ import {
   targetCompanies,
   targetContacts,
   userSessions,
+  userInvitations,
+  userRoles,
+  userDealAssignments,
+  teamNotifications,
   type User,
   type UserCompany,
   type TargetCompany,
   type TargetContact,
+  type UserSession,
+  type UserInvitation,
+  type UserRole,
+  type UserDealAssignment,
+  type TeamNotification,
   type InsertUser,
   type InsertUserCompany,
   type InsertTargetCompany,
   type InsertTargetContact,
-  type UserSession,
+  type InsertUserInvitation,
+  type InsertUserRole,
+  type InsertUserDealAssignment,
+  type InsertTeamNotification,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -64,6 +76,29 @@ export interface CompanyProfile extends TargetCompany {
   contacts: TargetContact[];
 }
 
+// Team management interfaces
+export interface UserWithRole extends User {
+  roleDescription?: string;
+  assignedDealsCount?: number;
+  permissions?: UserRole;
+}
+
+export interface TeamMember extends User {
+  roleDescription: string;
+  assignedDealsCount: number;
+  lastLoginFormatted: string | null;
+}
+
+export interface InvitationWithDetails extends UserInvitation {
+  inviterName: string;
+  companyName: string;
+}
+
+export interface NotificationWithDetails extends TeamNotification {
+  fromUserName: string;
+  targetCompanyName: string | null;
+}
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -97,6 +132,36 @@ export interface IStorage {
   getSessionByToken(sessionToken: string): Promise<UserSession | undefined>;
   deleteSession(sessionToken: string): Promise<void>;
   deleteExpiredSessions(): Promise<void>;
+  
+  // Team invitation operations
+  createUserInvitation(invitation: InsertUserInvitation): Promise<UserInvitation>;
+  getUserInvitationByToken(token: string): Promise<InvitationWithDetails | undefined>;
+  getInvitationsByUserCompany(userCompanyId: number): Promise<InvitationWithDetails[]>;
+  updateUserInvitation(id: number, invitation: Partial<InsertUserInvitation>): Promise<UserInvitation | undefined>;
+  acceptInvitation(token: string, userData: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // User role operations
+  getUserRoles(): Promise<UserRole[]>;
+  getUserRole(roleName: string): Promise<UserRole | undefined>;
+  getUserWithPermissions(userId: number): Promise<UserWithRole | undefined>;
+  
+  // Team management operations
+  getTeamMembers(userCompanyId: number): Promise<TeamMember[]>;
+  updateUserRole(userId: number, role: string, userCompanyId: number): Promise<User | undefined>;
+  deactivateUser(userId: number, userCompanyId: number): Promise<boolean>;
+  
+  // Deal assignment operations
+  createDealAssignment(assignment: InsertUserDealAssignment): Promise<UserDealAssignment>;
+  getDealAssignments(targetCompanyId: number): Promise<UserDealAssignment[]>;
+  getUserDealAssignments(userId: number): Promise<UserDealAssignment[]>;
+  removeDealAssignment(userId: number, targetCompanyId: number): Promise<boolean>;
+  updateDealAssignment(userId: number, targetCompanyId: number, assignment: Partial<InsertUserDealAssignment>): Promise<UserDealAssignment | undefined>;
+  
+  // Team notification operations
+  createNotification(notification: InsertTeamNotification): Promise<TeamNotification>;
+  getUserNotifications(userId: number): Promise<NotificationWithDetails[]>;
+  markNotificationRead(notificationId: number, userId: number): Promise<boolean>;
+  markAllNotificationsRead(userId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -588,6 +653,366 @@ export class DatabaseStorage implements IStorage {
       );
 
     return contacts;
+  }
+
+  // Team invitation operations
+  async createUserInvitation(invitation: InsertUserInvitation): Promise<UserInvitation> {
+    const [newInvitation] = await db
+      .insert(userInvitations)
+      .values(invitation)
+      .returning();
+    return newInvitation;
+  }
+
+  async getUserInvitationByToken(token: string): Promise<InvitationWithDetails | undefined> {
+    const [invitation] = await db
+      .select({
+        id: userInvitations.id,
+        userCompanyId: userInvitations.userCompanyId,
+        email: userInvitations.email,
+        invitedBy: userInvitations.invitedBy,
+        invitationToken: userInvitations.invitationToken,
+        invitedRole: userInvitations.invitedRole,
+        invitationMessage: userInvitations.invitationMessage,
+        invitationStatus: userInvitations.invitationStatus,
+        sentAt: userInvitations.sentAt,
+        expiresAt: userInvitations.expiresAt,
+        acceptedAt: userInvitations.acceptedAt,
+        ipAddressSent: userInvitations.ipAddressSent,
+        ipAddressAccepted: userInvitations.ipAddressAccepted,
+        createdAt: userInvitations.createdAt,
+        inviterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        companyName: userCompanies.companyName,
+      })
+      .from(userInvitations)
+      .innerJoin(users, eq(userInvitations.invitedBy, users.id))
+      .innerJoin(userCompanies, eq(userInvitations.userCompanyId, userCompanies.id))
+      .where(
+        and(
+          eq(userInvitations.invitationToken, token),
+          eq(userInvitations.invitationStatus, "pending"),
+          sql`${userInvitations.expiresAt} > NOW()`
+        )
+      );
+    
+    return invitation || undefined;
+  }
+
+  async getInvitationsByUserCompany(userCompanyId: number): Promise<InvitationWithDetails[]> {
+    return await db
+      .select({
+        id: userInvitations.id,
+        userCompanyId: userInvitations.userCompanyId,
+        email: userInvitations.email,
+        invitedBy: userInvitations.invitedBy,
+        invitationToken: userInvitations.invitationToken,
+        invitedRole: userInvitations.invitedRole,
+        invitationMessage: userInvitations.invitationMessage,
+        invitationStatus: userInvitations.invitationStatus,
+        sentAt: userInvitations.sentAt,
+        expiresAt: userInvitations.expiresAt,
+        acceptedAt: userInvitations.acceptedAt,
+        ipAddressSent: userInvitations.ipAddressSent,
+        ipAddressAccepted: userInvitations.ipAddressAccepted,
+        createdAt: userInvitations.createdAt,
+        inviterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        companyName: userCompanies.companyName,
+      })
+      .from(userInvitations)
+      .innerJoin(users, eq(userInvitations.invitedBy, users.id))
+      .innerJoin(userCompanies, eq(userInvitations.userCompanyId, userCompanies.id))
+      .where(eq(userInvitations.userCompanyId, userCompanyId))
+      .orderBy(desc(userInvitations.createdAt));
+  }
+
+  async updateUserInvitation(id: number, invitation: Partial<InsertUserInvitation>): Promise<UserInvitation | undefined> {
+    const [updatedInvitation] = await db
+      .update(userInvitations)
+      .set(invitation)
+      .where(eq(userInvitations.id, id))
+      .returning();
+    return updatedInvitation || undefined;
+  }
+
+  async acceptInvitation(token: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    // Get invitation details
+    const invitation = await this.getUserInvitationByToken(token);
+    if (!invitation) {
+      return undefined;
+    }
+
+    // Create user account
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        email: invitation.email,
+        userCompanyId: invitation.userCompanyId,
+        userRole: invitation.invitedRole,
+        isActive: true,
+      } as InsertUser)
+      .returning();
+
+    // Update invitation status
+    await this.updateUserInvitation(invitation.id, {
+      invitationStatus: "accepted",
+      acceptedAt: new Date(),
+    } as Partial<InsertUserInvitation>);
+
+    return newUser;
+  }
+
+  // User role operations
+  async getUserRoles(): Promise<UserRole[]> {
+    return await db.select().from(userRoles).orderBy(userRoles.roleName);
+  }
+
+  async getUserRole(roleName: string): Promise<UserRole | undefined> {
+    const [role] = await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.roleName, roleName));
+    return role || undefined;
+  }
+
+  async getUserWithPermissions(userId: number): Promise<UserWithRole | undefined> {
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        passwordHash: users.passwordHash,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        userCompanyId: users.userCompanyId,
+        role: users.role,
+        userRole: users.userRole,
+        isCompanyAdmin: users.isCompanyAdmin,
+        lastLogin: users.lastLogin,
+        isActive: users.isActive,
+        emailVerified: users.emailVerified,
+        createdAt: users.createdAt,
+        roleDescription: userRoles.roleDescription ?? undefined,
+        assignedDealsCount: sql<number>`COALESCE((
+          SELECT COUNT(*)::int 
+          FROM ${userDealAssignments} 
+          WHERE ${userDealAssignments.userId} = ${users.id} 
+          AND ${userDealAssignments.isActive} = true
+        ), 0)`,
+        permissions: {
+          id: userRoles.id,
+          roleName: userRoles.roleName,
+          roleDescription: userRoles.roleDescription,
+          canManageUsers: userRoles.canManageUsers,
+          canManageCompany: userRoles.canManageCompany,
+          canCreateDeals: userRoles.canCreateDeals,
+          canEditAllDeals: userRoles.canEditAllDeals,
+          canDeleteDeals: userRoles.canDeleteDeals,
+          canUploadDocuments: userRoles.canUploadDocuments,
+          canCreateOffers: userRoles.canCreateOffers,
+          canViewFinancials: userRoles.canViewFinancials,
+          canAccessAnalytics: userRoles.canAccessAnalytics,
+          canExportData: userRoles.canExportData,
+          createdAt: userRoles.createdAt,
+        },
+      })
+      .from(users)
+      .leftJoin(userRoles, eq(users.userRole, userRoles.roleName))
+      .where(and(eq(users.id, userId), eq(users.isActive, true)));
+
+    return user ? {
+      ...user,
+      roleDescription: user.roleDescription ?? undefined,
+      permissions: user.permissions ?? undefined,
+    } as UserWithRole : undefined;
+  }
+
+  // Team management operations
+  async getTeamMembers(userCompanyId: number): Promise<TeamMember[]> {
+    const members = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        passwordHash: users.passwordHash,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        userCompanyId: users.userCompanyId,
+        role: users.role,
+        userRole: users.userRole,
+        isCompanyAdmin: users.isCompanyAdmin,
+        lastLogin: users.lastLogin,
+        isActive: users.isActive,
+        emailVerified: users.emailVerified,
+        createdAt: users.createdAt,
+        roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
+        assignedDealsCount: sql<number>`COALESCE((
+          SELECT COUNT(*)::int 
+          FROM ${userDealAssignments} 
+          WHERE ${userDealAssignments.userId} = ${users.id} 
+          AND ${userDealAssignments.isActive} = true
+        ), 0)`,
+      })
+      .from(users)
+      .leftJoin(userRoles, eq(users.userRole, userRoles.roleName))
+      .where(and(eq(users.userCompanyId, userCompanyId), eq(users.isActive, true)))
+      .orderBy(users.createdAt);
+
+    return members.map((member) => ({
+      ...member,
+      lastLoginFormatted: member.lastLogin 
+        ? new Date(member.lastLogin).toLocaleDateString()
+        : null,
+    }));
+  }
+
+  async updateUserRole(userId: number, role: string, userCompanyId: number): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ userRole: role })
+      .where(and(eq(users.id, userId), eq(users.userCompanyId, userCompanyId)))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async deactivateUser(userId: number, userCompanyId: number): Promise<boolean> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ isActive: false })
+      .where(and(eq(users.id, userId), eq(users.userCompanyId, userCompanyId)))
+      .returning();
+    return !!updatedUser;
+  }
+
+  // Deal assignment operations
+  async createDealAssignment(assignment: InsertUserDealAssignment): Promise<UserDealAssignment> {
+    const [newAssignment] = await db
+      .insert(userDealAssignments)
+      .values(assignment)
+      .onConflictDoUpdate({
+        target: [userDealAssignments.userId, userDealAssignments.targetCompanyId],
+        set: {
+          assignmentRole: assignment.assignmentRole,
+          assignedBy: assignment.assignedBy,
+          assignmentDate: sql`NOW()`,
+          isActive: true,
+          canEditCompany: assignment.canEditCompany,
+          canUploadDocuments: assignment.canUploadDocuments,
+          canCreateActivities: assignment.canCreateActivities,
+          canManageContacts: assignment.canManageContacts,
+        },
+      })
+      .returning();
+    return newAssignment;
+  }
+
+  async getDealAssignments(targetCompanyId: number): Promise<UserDealAssignment[]> {
+    return await db
+      .select()
+      .from(userDealAssignments)
+      .where(and(
+        eq(userDealAssignments.targetCompanyId, targetCompanyId),
+        eq(userDealAssignments.isActive, true)
+      ))
+      .orderBy(userDealAssignments.assignmentDate);
+  }
+
+  async getUserDealAssignments(userId: number): Promise<UserDealAssignment[]> {
+    return await db
+      .select()
+      .from(userDealAssignments)
+      .where(and(
+        eq(userDealAssignments.userId, userId),
+        eq(userDealAssignments.isActive, true)
+      ))
+      .orderBy(userDealAssignments.assignmentDate);
+  }
+
+  async removeDealAssignment(userId: number, targetCompanyId: number): Promise<boolean> {
+    const [updatedAssignment] = await db
+      .update(userDealAssignments)
+      .set({ isActive: false })
+      .where(and(
+        eq(userDealAssignments.userId, userId),
+        eq(userDealAssignments.targetCompanyId, targetCompanyId)
+      ))
+      .returning();
+    return !!updatedAssignment;
+  }
+
+  async updateDealAssignment(
+    userId: number,
+    targetCompanyId: number,
+    assignment: Partial<InsertUserDealAssignment>
+  ): Promise<UserDealAssignment | undefined> {
+    const [updatedAssignment] = await db
+      .update(userDealAssignments)
+      .set(assignment)
+      .where(and(
+        eq(userDealAssignments.userId, userId),
+        eq(userDealAssignments.targetCompanyId, targetCompanyId)
+      ))
+      .returning();
+    return updatedAssignment || undefined;
+  }
+
+  // Team notification operations
+  async createNotification(notification: InsertTeamNotification): Promise<TeamNotification> {
+    const [newNotification] = await db
+      .insert(teamNotifications)
+      .values(notification)
+      .returning();
+    return newNotification;
+  }
+
+  async getUserNotifications(userId: number): Promise<NotificationWithDetails[]> {
+    return await db
+      .select({
+        id: teamNotifications.id,
+        userCompanyId: teamNotifications.userCompanyId,
+        targetUserId: teamNotifications.targetUserId,
+        fromUserId: teamNotifications.fromUserId,
+        notificationType: teamNotifications.notificationType,
+        notificationTitle: teamNotifications.notificationTitle,
+        notificationMessage: teamNotifications.notificationMessage,
+        targetCompanyId: teamNotifications.targetCompanyId,
+        relatedObjectType: teamNotifications.relatedObjectType,
+        relatedObjectId: teamNotifications.relatedObjectId,
+        isRead: teamNotifications.isRead,
+        readAt: teamNotifications.readAt,
+        isEmailSent: teamNotifications.isEmailSent,
+        emailSentAt: teamNotifications.emailSentAt,
+        createdAt: teamNotifications.createdAt,
+        fromUserName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        targetCompanyName: targetCompanies.companyName,
+      })
+      .from(teamNotifications)
+      .innerJoin(users, eq(teamNotifications.fromUserId, users.id))
+      .leftJoin(targetCompanies, eq(teamNotifications.targetCompanyId, targetCompanies.id))
+      .where(eq(teamNotifications.targetUserId, userId))
+      .orderBy(desc(teamNotifications.createdAt));
+  }
+
+  async markNotificationRead(notificationId: number, userId: number): Promise<boolean> {
+    const [updatedNotification] = await db
+      .update(teamNotifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(and(
+        eq(teamNotifications.id, notificationId),
+        eq(teamNotifications.targetUserId, userId)
+      ))
+      .returning();
+    return !!updatedNotification;
+  }
+
+  async markAllNotificationsRead(userId: number): Promise<number> {
+    const updatedNotifications = await db
+      .update(teamNotifications)
+      .set({ isRead: true, readAt: new Date() })
+      .where(and(
+        eq(teamNotifications.targetUserId, userId),
+        eq(teamNotifications.isRead, false)
+      ))
+      .returning();
+    return updatedNotifications.length;
   }
 }
 

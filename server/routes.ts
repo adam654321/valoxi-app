@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 
 // Extend session type
@@ -594,6 +594,593 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allContacts);
     } catch (error) {
       console.error("Get all contacts error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ========================
+  // Team Management Routes
+  // ========================
+
+  // Send invitation to new team member
+  app.post("/api/team/invite", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+
+      if (!userId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      // Check if user has permission to invite
+      const userWithPermissions = await storage.getUserWithPermissions(userId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions to invite users" });
+      }
+
+      const inviteSchema = z.object({
+        email: z.string().email("Invalid email address"),
+        role: z.string().min(1, "Role is required"),
+        message: z.string().optional(),
+      });
+
+      const { email, role, message } = inviteSchema.parse(req.body);
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.userCompanyId === userCompanyId) {
+        return res.status(400).json({ message: "User already exists in your company" });
+      }
+
+      // Check if invitation already exists
+      const existingInvitations = await storage.getInvitationsByUserCompany(userCompanyId);
+      const existingInvitation = existingInvitations.find(inv => 
+        inv.email === email && inv.invitationStatus === 'pending'
+      );
+      
+      if (existingInvitation) {
+        return res.status(400).json({ message: "Invitation already sent to this email address" });
+      }
+
+      // Generate secure invitation token
+      const invitationToken = randomUUID();
+
+      const invitation = await storage.createUserInvitation({
+        userCompanyId,
+        email: email.toLowerCase(),
+        invitedBy: userId,
+        invitationToken,
+        invitedRole: role,
+        invitationMessage: message || "",
+        invitationStatus: "pending",
+        ipAddressSent: req.ip,
+      });
+
+      // Create notification for team activity
+      await storage.createNotification({
+        userCompanyId,
+        targetUserId: userId, // Notify the inviter
+        fromUserId: userId,
+        notificationType: "team_invitation_sent",
+        notificationTitle: "Team Invitation Sent",
+        notificationMessage: `Invitation sent to ${email} as ${role}`,
+        isRead: false,
+      });
+
+      res.json({ 
+        message: "Invitation sent successfully", 
+        invitation: { 
+          id: invitation.id,
+          email: invitation.email,
+          role: invitation.invitedRole,
+          status: invitation.invitationStatus,
+          sentAt: invitation.sentAt
+        }
+      });
+    } catch (error) {
+      console.error("Send invitation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get pending invitations (admin only)
+  app.get("/api/team/invitations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+
+      if (!userId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(userId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const invitations = await storage.getInvitationsByUserCompany(userCompanyId);
+      res.json(invitations);
+    } catch (error) {
+      console.error("Get invitations error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update invitation (cancel, resend)
+  app.put("/api/team/invitations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const invitationId = parseInt(req.params.id);
+
+      if (!userId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(invitationId)) {
+        return res.status(400).json({ message: "Invalid invitation ID" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(userId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const updateSchema = z.object({
+        status: z.enum(["cancelled", "pending"]),
+      });
+
+      const { status } = updateSchema.parse(req.body);
+
+      const updatedInvitation = await storage.updateUserInvitation(invitationId, {
+        invitationStatus: status,
+      });
+
+      if (!updatedInvitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      res.json(updatedInvitation);
+    } catch (error) {
+      console.error("Update invitation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Accept invitation via token
+  app.post("/api/team/accept-invitation", async (req: Request, res: Response) => {
+    try {
+      const acceptSchema = z.object({
+        token: z.string().min(1, "Token is required"),
+        firstName: z.string().min(1, "First name is required"),
+        lastName: z.string().min(1, "Last name is required"),
+        password: z.string().min(6, "Password must be at least 6 characters"),
+      });
+
+      const { token, firstName, lastName, password } = acceptSchema.parse(req.body);
+
+      // Get invitation details
+      const invitation = await storage.getUserInvitationByToken(token);
+      if (!invitation) {
+        return res.status(400).json({ message: "Invalid or expired invitation" });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      // Accept invitation and create user
+      const newUser = await storage.acceptInvitation(token, {
+        firstName,
+        lastName,
+        passwordHash,
+      });
+
+      if (!newUser) {
+        return res.status(400).json({ message: "Failed to accept invitation" });
+      }
+
+      // Create welcome notification for inviter
+      await storage.createNotification({
+        userCompanyId: invitation.userCompanyId,
+        targetUserId: invitation.invitedBy,
+        fromUserId: newUser.id,
+        notificationType: "team_member_joined",
+        notificationTitle: "New Team Member Joined",
+        notificationMessage: `${firstName} ${lastName} has joined your team`,
+        isRead: false,
+      });
+
+      res.json({ 
+        message: "Account created successfully",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.userRole
+        }
+      });
+    } catch (error) {
+      console.error("Accept invitation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get invitation details by token
+  app.get("/api/team/invitation/:token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      const invitation = await storage.getUserInvitationByToken(token);
+      if (!invitation) {
+        return res.status(400).json({ message: "Invalid or expired invitation" });
+      }
+
+      res.json({
+        email: invitation.email,
+        role: invitation.invitedRole,
+        companyName: invitation.companyName,
+        inviterName: invitation.inviterName,
+        message: invitation.invitationMessage
+      });
+    } catch (error) {
+      console.error("Get invitation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get all team members
+  app.get("/api/team/members", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const teamMembers = await storage.getTeamMembers(userCompanyId);
+      res.json(teamMembers);
+    } catch (error) {
+      console.error("Get team members error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update team member role/status
+  app.put("/api/team/members/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const memberId = parseInt(req.params.id);
+
+      if (!userId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(memberId)) {
+        return res.status(400).json({ message: "Invalid member ID" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(userId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const updateSchema = z.object({
+        role: z.string().optional(),
+        status: z.enum(["active", "inactive"]).optional(),
+      });
+
+      const { role, status } = updateSchema.parse(req.body);
+
+      if (role) {
+        const updatedUser = await storage.updateUserRole(memberId, role, userCompanyId);
+        if (!updatedUser) {
+          return res.status(404).json({ message: "Team member not found" });
+        }
+      }
+
+      if (status === "inactive") {
+        const deactivated = await storage.deactivateUser(memberId, userCompanyId);
+        if (!deactivated) {
+          return res.status(404).json({ message: "Team member not found" });
+        }
+      }
+
+      res.json({ message: "Team member updated successfully" });
+    } catch (error) {
+      console.error("Update team member error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Remove team member (admin only)
+  app.delete("/api/team/members/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const memberId = parseInt(req.params.id);
+
+      if (!userId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(memberId)) {
+        return res.status(400).json({ message: "Invalid member ID" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(userId);
+      if (!userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Only company admins can remove team members" });
+      }
+
+      // Don't allow removing themselves
+      if (memberId === userId) {
+        return res.status(400).json({ message: "Cannot remove yourself" });
+      }
+
+      const deactivated = await storage.deactivateUser(memberId, userCompanyId);
+      if (!deactivated) {
+        return res.status(404).json({ message: "Team member not found" });
+      }
+
+      res.json({ message: "Team member removed successfully" });
+    } catch (error) {
+      console.error("Remove team member error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get available roles and permissions
+  app.get("/api/team/roles", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const roles = await storage.getUserRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error("Get roles error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Assign team member to deal
+  app.post("/api/deals/:id/assign", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+
+      if (!userId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(userId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const assignSchema = z.object({
+        userId: z.number(),
+        role: z.string().default("analyst"),
+        canEditCompany: z.boolean().default(true),
+        canUploadDocuments: z.boolean().default(true),
+        canCreateActivities: z.boolean().default(true),
+        canManageContacts: z.boolean().default(true),
+      });
+
+      const assignmentData = assignSchema.parse(req.body);
+
+      const assignment = await storage.createDealAssignment({
+        userId: assignmentData.userId,
+        targetCompanyId,
+        assignedBy: userId,
+        assignmentRole: assignmentData.role,
+        canEditCompany: assignmentData.canEditCompany,
+        canUploadDocuments: assignmentData.canUploadDocuments,
+        canCreateActivities: assignmentData.canCreateActivities,
+        canManageContacts: assignmentData.canManageContacts,
+        isActive: true,
+      });
+
+      // Get target company name for notification
+      const targetCompany = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      
+      // Create notification for assigned user
+      if (targetCompany) {
+        await storage.createNotification({
+          userCompanyId,
+          targetUserId: assignmentData.userId,
+          fromUserId: userId,
+          notificationType: "deal_assigned",
+          notificationTitle: "Assigned to Deal",
+          notificationMessage: `You have been assigned to ${targetCompany.companyName}`,
+          targetCompanyId,
+          isRead: false,
+        });
+      }
+
+      res.json(assignment);
+    } catch (error) {
+      console.error("Assign team member error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Remove team member from deal
+  app.delete("/api/deals/:id/assign/:userId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const requestUserId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      const assignedUserId = parseInt(req.params.userId);
+
+      if (!requestUserId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId) || isNaN(assignedUserId)) {
+        return res.status(400).json({ message: "Invalid parameters" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(requestUserId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const removed = await storage.removeDealAssignment(assignedUserId, targetCompanyId);
+      if (!removed) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+
+      res.json({ message: "Team member removed from deal successfully" });
+    } catch (error) {
+      console.error("Remove team member from deal error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get deal team members
+  app.get("/api/deals/:id/team", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      const assignments = await storage.getDealAssignments(targetCompanyId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Get deal team error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update team member permissions for deal
+  app.put("/api/deals/:id/team/:userId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const requestUserId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      const assignedUserId = parseInt(req.params.userId);
+
+      if (!requestUserId || !userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(targetCompanyId) || isNaN(assignedUserId)) {
+        return res.status(400).json({ message: "Invalid parameters" });
+      }
+
+      // Check if user has permission
+      const userWithPermissions = await storage.getUserWithPermissions(requestUserId);
+      if (!userWithPermissions?.permissions?.canManageUsers && !userWithPermissions?.isCompanyAdmin) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const updateSchema = z.object({
+        role: z.string().optional(),
+        canEditCompany: z.boolean().optional(),
+        canUploadDocuments: z.boolean().optional(),
+        canCreateActivities: z.boolean().optional(),
+        canManageContacts: z.boolean().optional(),
+      });
+
+      const updateData = updateSchema.parse(req.body);
+
+      const updatedAssignment = await storage.updateDealAssignment(
+        assignedUserId, 
+        targetCompanyId, 
+        {
+          assignmentRole: updateData.role,
+          canEditCompany: updateData.canEditCompany,
+          canUploadDocuments: updateData.canUploadDocuments,
+          canCreateActivities: updateData.canCreateActivities,
+          canManageContacts: updateData.canManageContacts,
+        }
+      );
+
+      if (!updatedAssignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+
+      res.json(updatedAssignment);
+    } catch (error) {
+      console.error("Update team member permissions error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get user notifications
+  app.get("/api/notifications", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+
+      if (!userId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      const notifications = await storage.getUserNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Mark notification as read
+  app.put("/api/notifications/:id/read", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const notificationId = parseInt(req.params.id);
+
+      if (!userId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      if (isNaN(notificationId)) {
+        return res.status(400).json({ message: "Invalid notification ID" });
+      }
+
+      const marked = await storage.markNotificationRead(notificationId, userId);
+      if (!marked) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.post("/api/notifications/mark-all-read", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+
+      if (!userId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      const count = await storage.markAllNotificationsRead(userId);
+      res.json({ message: "All notifications marked as read", count });
+    } catch (error) {
+      console.error("Mark all notifications read error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

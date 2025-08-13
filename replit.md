@@ -62,6 +62,21 @@ This is an M&A (Mergers & Acquisitions) CRM platform that helps business buyers 
 
 **Status: Phase 4 fully implemented and enhanced - users can now edit contacts directly from the contacts page without navigating to company details**
 
+**Phase 5 Complete - Comprehensive Team Management System (August 13, 2025)**
+- ✅ Complete database schema for team management (5 new tables)
+- ✅ User roles and permissions system with default role seeding
+- ✅ Team member invitation workflow with secure token-based acceptance
+- ✅ User notification system for team activities and deal assignments
+- ✅ Deal-specific team member assignments with granular permissions
+- ✅ Role-based access control with canManageUsers permissions
+- ✅ Full API endpoints for invitation management (send, cancel, resend, accept)
+- ✅ Team member CRUD operations with proper authorization
+- ✅ Deal team assignment system with role-based permissions
+- ✅ Notification system for team activities, invitations, and assignments
+- ✅ Database migration with proper indexes and relationships
+- ✅ Integration with existing authentication and company isolation systems
+- ✅ TypeScript type safety throughout entire team management system
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -90,15 +105,25 @@ Preferred communication style: Simple, everyday language.
 - **Schema Management**: Drizzle Kit for migrations and schema management
 - **Key Entities**:
   - `user_companies`: Acquiring organizations (investment firms, buyers)
-  - `users`: M&A professionals who use the system
+  - `users`: M&A professionals who use the system (now with team role assignments)
+  - `user_roles`: Role definitions with permissions (admin, analyst, associate, etc.)
+  - `user_invitations`: Secure invitation system for team member onboarding
+  - `user_deal_assignments`: Deal-specific team member assignments with permissions
+  - `team_notifications`: Activity notifications for team collaboration
   - `target_companies`: Businesses that users want to acquire
+  - `target_contacts`: Contact information for target company personnel
   - Session storage for authentication state
 
 ## Authentication & Security
 - **Session Management**: PostgreSQL-backed sessions with configurable TTL
 - **Password Security**: bcrypt hashing with salt rounds
-- **Authorization**: Role-based access (admin/user roles)
+- **Authorization**: Comprehensive role-based access control system
+  - Company admin permissions for full team management
+  - Role-specific permissions (canManageUsers, canCreateDeals, canManageContacts)
+  - Deal-specific team member assignments with granular permissions
+  - Invitation-based user onboarding with secure token validation
 - **Session Security**: HTTP-only cookies, CSRF protection considerations
+- **Team Security**: Multi-level permission system with company isolation
 
 ## Data Flow Architecture
 - **Client-Server Communication**: JSON API with fetch-based requests
