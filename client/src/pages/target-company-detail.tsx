@@ -37,6 +37,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink } from "lucide-react";
 import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
+import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 
 // Enhanced profile interface to match the backend CompanyProfile
 interface CompanyProfile extends TargetCompany {
@@ -772,6 +773,21 @@ export default function TargetCompanyDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pipeline Stage Management Section */}
+      <PipelineStageManagement 
+        targetCompanyId={parseInt(id!)}
+        targetCompanyName={company.companyName}
+        currentStage={company.stage || 'New Target'}
+        stageUpdatedAt={company.stageUpdatedAt || company.createdAt || new Date().toISOString()}
+        stageUpdatedBy={company.stageUpdatedBy}
+        daysInStage={company.stageUpdatedAt 
+          ? Math.floor((new Date().getTime() - new Date(company.stageUpdatedAt).getTime()) / (1000 * 60 * 60 * 24))
+          : company.createdAt 
+            ? Math.floor((new Date().getTime() - new Date(company.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+            : 0
+        }
+      />
 
       {/* Deal Team Management Section */}
       <DealTeamManagement 

@@ -56,6 +56,9 @@ export const targetCompanies = pgTable("target_companies", {
   employeeCount: integer("employee_count"),
   yearEstablished: integer("year_established"),
   description: text("description"),
+  stage: varchar("stage", { length: 50 }).default("New Target"),
+  stageUpdatedAt: timestamp("stage_updated_at").defaultNow(),
+  stageUpdatedBy: integer("stage_updated_by").references(() => users.id),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -156,6 +159,28 @@ export const teamNotifications = pgTable("team_notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Pipeline stages definitions
+export const pipelineStages = pgTable("pipeline_stages", {
+  id: serial("id").primaryKey(),
+  stageName: varchar("stage_name", { length: 50 }).unique().notNull(),
+  stageOrder: integer("stage_order").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Stage history for tracking changes
+export const stageHistory = pgTable("stage_history", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  fromStage: varchar("from_stage", { length: 50 }),
+  toStage: varchar("to_stage", { length: 50 }).notNull(),
+  changedBy: integer("changed_by").references(() => users.id).notNull(),
+  changedAt: timestamp("changed_at").defaultNow(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const userCompaniesRelations = relations(userCompanies, ({ many }) => ({
   users: many(users),
@@ -187,9 +212,15 @@ export const targetCompaniesRelations = relations(targetCompanies, ({ one, many 
     fields: [targetCompanies.createdBy],
     references: [users.id],
   }),
+  stageUpdatedByUser: one(users, {
+    fields: [targetCompanies.stageUpdatedBy],
+    references: [users.id],
+    relationName: "stageUpdater",
+  }),
   contacts: many(targetContacts),
   dealAssignments: many(userDealAssignments),
   notifications: many(teamNotifications),
+  stageHistory: many(stageHistory),
 }));
 
 export const targetContactsRelations = relations(targetContacts, ({ one }) => ({
@@ -257,6 +288,25 @@ export const teamNotificationsRelations = relations(teamNotifications, ({ one })
   }),
 }));
 
+export const pipelineStagesRelations = relations(pipelineStages, ({ many }) => ({
+  stageHistory: many(stageHistory),
+}));
+
+export const stageHistoryRelations = relations(stageHistory, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [stageHistory.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  changedByUser: one(users, {
+    fields: [stageHistory.changedBy],
+    references: [users.id],
+  }),
+  pipelineStage: one(pipelineStages, {
+    fields: [stageHistory.toStage],
+    references: [pipelineStages.stageName],
+  }),
+}));
+
 // Insert schemas
 export const insertUserCompanySchema = createInsertSchema(userCompanies).omit({
   id: true,
@@ -308,6 +358,17 @@ export const insertTeamNotificationSchema = createInsertSchema(teamNotifications
   emailSentAt: true,
 });
 
+export const insertPipelineStageSchema = createInsertSchema(pipelineStages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertStageHistorySchema = createInsertSchema(stageHistory).omit({
+  id: true,
+  createdAt: true,
+  changedAt: true,
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -334,6 +395,12 @@ export type UserDealAssignment = typeof userDealAssignments.$inferSelect;
 
 export type InsertTeamNotification = z.infer<typeof insertTeamNotificationSchema>;
 export type TeamNotification = typeof teamNotifications.$inferSelect;
+
+export type InsertPipelineStage = z.infer<typeof insertPipelineStageSchema>;
+export type PipelineStage = typeof pipelineStages.$inferSelect;
+
+export type InsertStageHistory = z.infer<typeof insertStageHistorySchema>;
+export type StageHistory = typeof stageHistory.$inferSelect;
 
 export type TeamMember = User & {
   roleDescription?: string;

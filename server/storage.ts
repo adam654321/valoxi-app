@@ -8,6 +8,8 @@ import {
   userRoles,
   userDealAssignments,
   teamNotifications,
+  pipelineStages,
+  stageHistory,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -17,6 +19,8 @@ import {
   type UserRole,
   type UserDealAssignment,
   type TeamNotification,
+  type PipelineStage,
+  type StageHistory,
   type InsertUser,
   type InsertUserCompany,
   type InsertTargetCompany,
@@ -25,6 +29,8 @@ import {
   type InsertUserRole,
   type InsertUserDealAssignment,
   type InsertTeamNotification,
+  type InsertPipelineStage,
+  type InsertStageHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -162,6 +168,24 @@ export interface IStorage {
   getUserNotifications(userId: number): Promise<NotificationWithDetails[]>;
   markNotificationRead(notificationId: number, userId: number): Promise<boolean>;
   markAllNotificationsRead(userId: number): Promise<number>;
+  
+  // Pipeline stage operations
+  getPipelineStages(): Promise<PipelineStage[]>;
+  updateCompanyStage(companyId: number, newStage: string, userId: number, notes?: string): Promise<{ success: boolean; message: string; oldStage?: string; newStage?: string }>;
+  getStageHistory(targetCompanyId: number): Promise<StageHistory[]>;
+  getPipelineOverview(userCompanyId: number): Promise<{
+    stageStats: Array<{
+      stageName: string;
+      stageOrder: number;
+      companyCount: number;
+      avgDaysInStage: number | null;
+    }>;
+    recentChanges: Array<StageHistory & {
+      companyName: string;
+      changedByName: string;
+    }>;
+    totalCompanies: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -220,6 +244,9 @@ export class DatabaseStorage implements IStorage {
         employeeCount: targetCompanies.employeeCount,
         yearEstablished: targetCompanies.yearEstablished,
         description: targetCompanies.description,
+        stage: targetCompanies.stage,
+        stageUpdatedAt: targetCompanies.stageUpdatedAt,
+        stageUpdatedBy: targetCompanies.stageUpdatedBy,
         createdBy: targetCompanies.createdBy,
         createdAt: targetCompanies.createdAt,
         contactCount: sql<number>`COALESCE(${sql`(
@@ -458,6 +485,9 @@ export class DatabaseStorage implements IStorage {
         employeeCount: targetCompanies.employeeCount,
         yearEstablished: targetCompanies.yearEstablished,
         description: targetCompanies.description,
+        stage: targetCompanies.stage,
+        stageUpdatedAt: targetCompanies.stageUpdatedAt,
+        stageUpdatedBy: targetCompanies.stageUpdatedBy,
         createdBy: targetCompanies.createdBy,
         createdAt: targetCompanies.createdAt,
         // Enhanced profile data
@@ -1028,6 +1058,146 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return updatedNotifications.length;
+  }
+
+  // Pipeline stage operations
+  async getPipelineStages(): Promise<PipelineStage[]> {
+    return await db
+      .select()
+      .from(pipelineStages)
+      .where(eq(pipelineStages.isActive, true))
+      .orderBy(pipelineStages.stageOrder);
+  }
+
+  async updateCompanyStage(
+    companyId: number,
+    newStage: string,
+    userId: number,
+    notes: string = ''
+  ): Promise<{ success: boolean; message: string; oldStage?: string; newStage?: string }> {
+    try {
+      // Get current company stage
+      const [company] = await db
+        .select({ stage: targetCompanies.stage })
+        .from(targetCompanies)
+        .where(eq(targetCompanies.id, companyId));
+
+      if (!company) {
+        return { success: false, message: 'Company not found' };
+      }
+
+      const oldStage = company.stage || 'New Target';
+
+      // Don't update if stage is the same
+      if (oldStage === newStage) {
+        return { success: true, message: 'Stage unchanged' };
+      }
+
+      // Start transaction
+      await db.transaction(async (tx) => {
+        // Update company stage
+        await tx
+          .update(targetCompanies)
+          .set({
+            stage: newStage,
+            stageUpdatedAt: new Date(),
+            stageUpdatedBy: userId,
+          })
+          .where(eq(targetCompanies.id, companyId));
+
+        // Record stage history
+        await tx
+          .insert(stageHistory)
+          .values({
+            targetCompanyId: companyId,
+            fromStage: oldStage,
+            toStage: newStage,
+            changedBy: userId,
+            notes: notes,
+          });
+      });
+
+      return {
+        success: true,
+        message: `Stage updated from "${oldStage}" to "${newStage}"`,
+        oldStage,
+        newStage,
+      };
+    } catch (error) {
+      console.error('Error updating company stage:', error);
+      return { success: false, message: 'Failed to update stage' };
+    }
+  }
+
+  async getStageHistory(targetCompanyId: number): Promise<StageHistory[]> {
+    return await db
+      .select()
+      .from(stageHistory)
+      .where(eq(stageHistory.targetCompanyId, targetCompanyId))
+      .orderBy(desc(stageHistory.changedAt));
+  }
+
+  async getPipelineOverview(userCompanyId: number): Promise<{
+    stageStats: Array<{
+      stageName: string;
+      stageOrder: number;
+      companyCount: number;
+      avgDaysInStage: number | null;
+    }>;
+    recentChanges: Array<StageHistory & {
+      companyName: string;
+      changedByName: string;
+    }>;
+    totalCompanies: number;
+  }> {
+    // Get stage statistics
+    const stageStats = await db
+      .select({
+        stageName: pipelineStages.stageName,
+        stageOrder: pipelineStages.stageOrder,
+        companyCount: sql<number>`COALESCE(COUNT(${targetCompanies.id}), 0)::int`,
+        avgDaysInStage: sql<number | null>`AVG(EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})))`,
+      })
+      .from(pipelineStages)
+      .leftJoin(targetCompanies, 
+        and(
+          eq(pipelineStages.stageName, targetCompanies.stage),
+          eq(targetCompanies.userCompanyId, userCompanyId)
+        )
+      )
+      .where(eq(pipelineStages.isActive, true))
+      .groupBy(pipelineStages.stageName, pipelineStages.stageOrder)
+      .orderBy(pipelineStages.stageOrder);
+
+    // Get recent stage changes
+    const recentChanges = await db
+      .select({
+        id: stageHistory.id,
+        targetCompanyId: stageHistory.targetCompanyId,
+        fromStage: stageHistory.fromStage,
+        toStage: stageHistory.toStage,
+        changedBy: stageHistory.changedBy,
+        changedAt: stageHistory.changedAt,
+        notes: stageHistory.notes,
+        createdAt: stageHistory.createdAt,
+        companyName: targetCompanies.companyName,
+        changedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+      })
+      .from(stageHistory)
+      .innerJoin(targetCompanies, eq(stageHistory.targetCompanyId, targetCompanies.id))
+      .innerJoin(users, eq(stageHistory.changedBy, users.id))
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .orderBy(desc(stageHistory.changedAt))
+      .limit(10);
+
+    // Calculate total companies
+    const totalCompanies = stageStats.reduce((sum, stage) => sum + stage.companyCount, 0);
+
+    return {
+      stageStats,
+      recentChanges,
+      totalCompanies,
+    };
   }
 }
 

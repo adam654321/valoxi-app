@@ -1185,6 +1185,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pipeline stage management routes
+  // Get all pipeline stages
+  app.get("/api/pipeline/stages", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const stages = await storage.getPipelineStages();
+      res.json(stages);
+    } catch (error) {
+      console.error("Get pipeline stages error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update company stage
+  app.put("/api/target-companies/:id/stage", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const companyId = parseInt(req.params.id);
+      const { stage, notes = '' } = req.body;
+
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      if (!stage) {
+        return res.status(400).json({ message: "Stage is required" });
+      }
+
+      // Verify user has access to this company
+      const company = await storage.getTargetCompany(companyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const result = await storage.updateCompanyStage(companyId, stage, userId, notes);
+      res.json(result);
+    } catch (error) {
+      console.error("Update company stage error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get stage history for a company
+  app.get("/api/target-companies/:id/stage-history", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const companyId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      // Verify user has access to this company
+      const company = await storage.getTargetCompany(companyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const history = await storage.getStageHistory(companyId);
+      res.json(history);
+    } catch (error) {
+      console.error("Get stage history error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get pipeline overview
+  app.get("/api/pipeline/overview", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const overview = await storage.getPipelineOverview(userCompanyId);
+      res.json(overview);
+    } catch (error) {
+      console.error("Get pipeline overview error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
