@@ -241,65 +241,7 @@ export default function Contacts() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Navigation */}
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 flex items-center">
-                  <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
-                </div>
-                <div className="hidden md:ml-10 md:flex md:space-x-8">
-                  <Link href="/dashboard" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                    Dashboard
-                  </Link>
-                  <Link href="/target-companies" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                    Target Companies
-                  </Link>
-                  <Link href="/contacts" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
-                    Contacts
-                  </Link>
-                  <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                    Reports
-                  </a>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Link href="/target-companies">
-                  <Button className="bg-primary text-white hover:bg-blue-700">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add Target Company
-                  </Button>
-                </Link>
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2 text-textSecondary hover:text-textPrimary"
-                    onClick={handleLogout}
-                  >
-                    {user && (
-                      <span className="text-sm font-medium">
-                        {user.firstName} {user.lastName}
-                      </span>
-                    )}
-                    <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4" />
-                    </div>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Loading Content */}
-        <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
           <div className="space-y-6">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-10 w-full max-w-md" />
@@ -318,7 +260,6 @@ export default function Contacts() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
           </div>
         </div>
       </div>
@@ -326,66 +267,8 @@ export default function Contacts() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
-              </div>
-              <div className="hidden md:ml-10 md:flex md:space-x-8">
-                <Link href="/dashboard" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="/target-companies" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Target Companies
-                </Link>
-                <Link href="/contacts" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
-                  Contacts
-                </Link>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Reports
-                </a>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/target-companies">
-                <Button className="bg-primary text-white hover:bg-blue-700">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add Target Company
-                </Button>
-              </Link>
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  className="flex items-center space-x-2 text-textSecondary hover:text-textPrimary"
-                  onClick={handleLogout}
-                >
-                  {user && (
-                    <span className="text-sm font-medium">
-                      {user.firstName} {user.lastName}
-                    </span>
-                  )}
-                  <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4" />
-                  </div>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="space-y-6">
+    <div className="max-w-7xl mx-auto p-6">
+      <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
@@ -774,11 +657,9 @@ export default function Contacts() {
               )}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Contact Form Dialog */}
-      <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
+        {/* Contact Form Dialog */}
+        <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
@@ -957,7 +838,8 @@ export default function Contacts() {
             </form>
           </Form>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+      </div>
     </div>
   );
 }

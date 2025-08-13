@@ -369,53 +369,7 @@ export default function EnhancedTargetCompanies() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
-              </div>
-              <div className="hidden md:ml-10 md:flex md:space-x-8">
-                <Link href="/dashboard" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="/target-companies" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
-                  Target Companies
-                </Link>
-                <Link href="/contacts" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Contacts
-                </Link>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
-                  Reports
-                </a>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button onClick={handleAddNew} className="bg-primary text-white hover:bg-blue-700" data-testid="button-add-company">
-                <Building2 className="w-4 h-4 mr-2" />
-                Add Target Company
-              </Button>
-              <div className="relative">
-                <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-textPrimary">Target Companies</h1>
@@ -732,9 +686,8 @@ export default function EnhancedTargetCompanies() {
             ))}
           </div>
         )}
-      </div>
 
-      {/* Add/Edit Company Dialog */}
+        {/* Add/Edit Company Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
