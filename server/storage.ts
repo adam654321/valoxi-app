@@ -2,17 +2,20 @@ import {
   users,
   userCompanies,
   targetCompanies,
+  targetContacts,
   userSessions,
   type User,
   type UserCompany,
   type TargetCompany,
+  type TargetContact,
   type InsertUser,
   type InsertUserCompany,
   type InsertTargetCompany,
+  type InsertTargetContact,
   type UserSession,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -31,6 +34,12 @@ export interface IStorage {
   createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
   updateTargetCompany(id: number, company: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany | undefined>;
   deleteTargetCompany(id: number, userCompanyId: number): Promise<boolean>;
+  
+  // Target contact operations
+  getContactsForTargetCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]>;
+  createTargetContact(contact: InsertTargetContact): Promise<TargetContact>;
+  updateTargetContact(id: number, contact: Partial<InsertTargetContact>, userCompanyId: number): Promise<TargetContact | undefined>;
+  deleteTargetContact(id: number, userCompanyId: number): Promise<boolean>;
   
   // Session operations
   createSession(userId: number, sessionToken: string, expiresAt: Date): Promise<UserSession>;
@@ -142,6 +151,83 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(targetCompanies)
       .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Contact operations
+  async getContactsForTargetCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]> {
+    // Verify the target company belongs to the user's company first
+    const targetCompany = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!targetCompany) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(targetContacts)
+      .where(eq(targetContacts.targetCompanyId, targetCompanyId))
+      .orderBy(desc(targetContacts.isPrimary), asc(targetContacts.lastName));
+  }
+
+  async createTargetContact(insertContact: InsertTargetContact): Promise<TargetContact> {
+    // If this contact is marked as primary, unset other primary contacts for this company
+    if (insertContact.isPrimary) {
+      await db
+        .update(targetContacts)
+        .set({ isPrimary: false })
+        .where(eq(targetContacts.targetCompanyId, insertContact.targetCompanyId));
+    }
+
+    const [contact] = await db
+      .insert(targetContacts)
+      .values(insertContact)
+      .returning();
+    return contact;
+  }
+
+  async updateTargetContact(id: number, updateData: Partial<InsertTargetContact>, userCompanyId: number): Promise<TargetContact | undefined> {
+    // First verify access by checking if the contact belongs to a target company owned by the user's company
+    const [existingContact] = await db
+      .select()
+      .from(targetContacts)
+      .innerJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
+      .where(and(eq(targetContacts.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
+
+    if (!existingContact) {
+      return undefined;
+    }
+
+    // If setting as primary, unset other primary contacts for this company
+    if (updateData.isPrimary) {
+      await db
+        .update(targetContacts)
+        .set({ isPrimary: false })
+        .where(eq(targetContacts.targetCompanyId, existingContact.target_contacts.targetCompanyId));
+    }
+
+    const [contact] = await db
+      .update(targetContacts)
+      .set(updateData)
+      .where(eq(targetContacts.id, id))
+      .returning();
+    return contact || undefined;
+  }
+
+  async deleteTargetContact(id: number, userCompanyId: number): Promise<boolean> {
+    // First verify access by checking if the contact belongs to a target company owned by the user's company
+    const [existingContact] = await db
+      .select()
+      .from(targetContacts)
+      .innerJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
+      .where(and(eq(targetContacts.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
+
+    if (!existingContact) {
+      return false;
+    }
+
+    const result = await db
+      .delete(targetContacts)
+      .where(eq(targetContacts.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }

@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 
 // Extend session type
@@ -250,9 +250,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const targetCompany = await storage.createTargetCompany({
         ...validatedData,
-        annualRevenue: validatedData.annualRevenue ? String(validatedData.annualRevenue) : null,
-        employeeCount: validatedData.employeeCount ? String(validatedData.employeeCount) : null,
-        yearEstablished: validatedData.yearEstablished ? String(validatedData.yearEstablished) : null,
         userCompanyId,
         createdBy: userId,
       });
@@ -330,16 +327,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = targetCompanyCreateSchema.partial().parse(req.body);
 
-      const processedData = {
-        ...validatedData,
-        annualRevenue: validatedData.annualRevenue ? String(validatedData.annualRevenue) : null,
-        employeeCount: validatedData.employeeCount ? String(validatedData.employeeCount) : null,
-        yearEstablished: validatedData.yearEstablished ? String(validatedData.yearEstablished) : null,
-      };
-      
       const updatedCompany = await storage.updateTargetCompany(
         targetCompanyId, 
-        processedData, 
+        validatedData, 
         userCompanyId
       );
       
@@ -383,6 +373,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Target company deleted successfully" });
     } catch (error) {
       console.error("Delete target company error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Contact Management Routes
+  const targetContactCreateSchema = insertTargetContactSchema.omit({
+    targetCompanyId: true,
+  });
+
+  // Get contacts for target company
+  app.get("/api/target-companies/:id/contacts", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid target company ID" });
+      }
+
+      const contacts = await storage.getContactsForTargetCompany(targetCompanyId, userCompanyId);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Get contacts error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create contact for target company
+  app.post("/api/target-companies/:id/contacts", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid target company ID" });
+      }
+
+      // Verify target company exists and belongs to user
+      const targetCompany = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!targetCompany) {
+        return res.status(404).json({ message: "Target company not found" });
+      }
+
+      const validatedData = targetContactCreateSchema.parse(req.body);
+
+      const contact = await storage.createTargetContact({
+        ...validatedData,
+        targetCompanyId,
+      });
+
+      res.status(201).json(contact);
+    } catch (error) {
+      console.error("Create contact error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update contact
+  app.put("/api/contacts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const contactId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+
+      const validatedData = targetContactCreateSchema.partial().parse(req.body);
+
+      const updatedContact = await storage.updateTargetContact(contactId, validatedData, userCompanyId);
+      
+      if (!updatedContact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+
+      res.json(updatedContact);
+    } catch (error) {
+      console.error("Update contact error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete contact
+  app.delete("/api/contacts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const contactId = parseInt(req.params.id);
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      if (isNaN(contactId)) {
+        return res.status(400).json({ message: "Invalid contact ID" });
+      }
+
+      const deleted = await storage.deleteTargetContact(contactId, userCompanyId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+
+      res.json({ message: "Contact deleted successfully" });
+    } catch (error) {
+      console.error("Delete contact error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

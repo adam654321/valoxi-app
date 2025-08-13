@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Pencil, Trash2, Building2 } from "lucide-react";
+import { Pencil, Trash2, Building2, Eye } from "lucide-react";
 import type { TargetCompany } from "@shared/schema";
 
 const industries = [
@@ -81,9 +81,6 @@ export default function TargetCompanies() {
     mutationFn: async (data: TargetCompanyForm) => {
       const payload = {
         ...data,
-        annualRevenue: data.annualRevenue ? String(data.annualRevenue) : null,
-        employeeCount: data.employeeCount ? String(data.employeeCount) : null,
-        yearEstablished: data.yearEstablished ? String(data.yearEstablished) : null,
         website: data.website || null,
         email: data.email || null,
       };
@@ -113,9 +110,6 @@ export default function TargetCompanies() {
       if (!editingCompany) return;
       const payload = {
         ...data,
-        annualRevenue: data.annualRevenue ? String(data.annualRevenue) : null,
-        employeeCount: data.employeeCount ? String(data.employeeCount) : null,
-        yearEstablished: data.yearEstablished ? String(data.yearEstablished) : null,
         website: data.website || null,
         email: data.email || null,
       };
@@ -316,10 +310,20 @@ export default function TargetCompanies() {
                       )}
                     </div>
                     <div className="flex space-x-1">
+                      <Link href={`/target-companies/${company.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(company)}
+                        title="Edit Company"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -328,6 +332,7 @@ export default function TargetCompanies() {
                         size="sm"
                         onClick={() => deleteMutation.mutate(company.id)}
                         disabled={deleteMutation.isPending}
+                        title="Delete Company"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
