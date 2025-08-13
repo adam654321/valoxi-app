@@ -87,6 +87,7 @@ export default function TargetCompanyDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
       setShowContactForm(false);
       contactForm.reset();
       toast({
@@ -111,6 +112,7 @@ export default function TargetCompanyDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
       setEditingContact(null);
       setShowContactForm(false);
       contactForm.reset();
@@ -135,6 +137,7 @@ export default function TargetCompanyDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
       toast({
         title: "Success",
         description: "Contact deleted successfully!",

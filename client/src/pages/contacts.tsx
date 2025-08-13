@@ -134,7 +134,7 @@ export default function Contacts() {
     mutationFn: async (data: ContactForm) => {
       if (!editingContact) return;
       const { targetCompanyId, ...contactData } = data;
-      return await apiRequest("PUT", `/api/target-companies/${editingContact.company.id}/contacts/${editingContact.id}`, contactData);
+      return await apiRequest("PUT", `/api/contacts/${editingContact.id}`, contactData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
@@ -159,7 +159,7 @@ export default function Contacts() {
   // Delete contact mutation
   const deleteContactMutation = useMutation({
     mutationFn: async (contact: ContactWithCompany) => {
-      return await apiRequest("DELETE", `/api/target-companies/${contact.company.id}/contacts/${contact.id}`);
+      return await apiRequest("DELETE", `/api/contacts/${contact.id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
@@ -193,7 +193,7 @@ export default function Contacts() {
       title: contact.title || "",
       email: contact.email || "",
       phone: contact.phone || "",
-      isPrimary: contact.isPrimary,
+      isPrimary: contact.isPrimary || false,
       notes: contact.notes || "",
     });
     setShowContactForm(true);
@@ -423,7 +423,7 @@ export default function Contacts() {
               <Checkbox
                 id="primary-only"
                 checked={showPrimaryOnly}
-                onCheckedChange={setShowPrimaryOnly}
+                onCheckedChange={(checked) => setShowPrimaryOnly(checked === true)}
               />
               <label
                 htmlFor="primary-only"
