@@ -297,10 +297,9 @@ export default function TeamManagement() {
                         <SelectContent>
                           {roles?.map((role) => (
                             <SelectItem key={role.roleName} value={role.roleName}>
-                              <div>
-                                <div className="font-medium capitalize">{role.roleName.replace('_', ' ')}</div>
-                                <div className="text-xs text-muted-foreground">{role.roleDescription}</div>
-                              </div>
+                              {role.roleName.replace('_', ' ').split(' ').map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                              ).join(' ')}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -430,10 +429,9 @@ export default function TeamManagement() {
                                   <SelectContent>
                                     {roles?.map((role) => (
                                       <SelectItem key={role.roleName} value={role.roleName}>
-                                        <div>
-                                          <div className="font-medium capitalize">{role.roleName.replace('_', ' ')}</div>
-                                          <div className="text-xs text-muted-foreground">{role.roleDescription}</div>
-                                        </div>
+                                        {role.roleName.replace('_', ' ').split(' ').map(word => 
+                                          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                        ).join(' ')}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
