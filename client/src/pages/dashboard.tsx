@@ -13,12 +13,25 @@ interface DashboardStats {
   dealValue: string;
 }
 
+interface TargetCompany {
+  id: number;
+  companyName: string;
+  industry: string;
+  annualRevenue: string | null;
+  employeeCount: number | null;
+  createdAt: string;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
+  });
+
+  const { data: targetCompanies, isLoading: companiesLoading } = useQuery<TargetCompany[]>({
+    queryKey: ["/api/target-companies"],
   });
 
   const logoutMutation = useMutation({
@@ -160,27 +173,102 @@ export default function Dashboard() {
           <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Getting Started</span>
+                  <span>Recent Target Companies</span>
+                  <Link href="/target-companies">
+                    <Button variant="outline" size="sm">
+                      View All
+                    </Button>
+                  </Link>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No target companies yet</h3>
-                  <p className="mt-1 text-sm text-gray-500">Get started by adding your first acquisition target.</p>
-                  <div className="mt-6">
-                    <Link href="/target-companies">
-                      <Button className="bg-primary hover:bg-blue-700">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Target Company
-                      </Button>
-                    </Link>
+                {companiesLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/3 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                        {i < 2 && <div className="border-b border-gray-100 my-4"></div>}
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : targetCompanies && targetCompanies.length > 0 ? (
+                  <div className="space-y-4">
+                    {targetCompanies.slice(0, 3).map((company, index) => (
+                      <div key={company.id}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                  </svg>
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <Link href={`/target-companies/${company.id}`}>
+                                  <p className="text-sm font-medium text-textPrimary hover:text-primary cursor-pointer truncate">
+                                    {company.companyName}
+                                  </p>
+                                </Link>
+                                <p className="text-xs text-textSecondary">{company.industry}</p>
+                                <div className="flex items-center space-x-4 mt-1">
+                                  {company.annualRevenue && (
+                                    <span className="text-xs text-textSecondary">
+                                      Revenue: ${parseInt(company.annualRevenue).toLocaleString()}
+                                    </span>
+                                  )}
+                                  {company.employeeCount && (
+                                    <span className="text-xs text-textSecondary">
+                                      {company.employeeCount} employees
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 text-right">
+                            <p className="text-xs text-textSecondary">
+                              {new Date(company.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        {index < Math.min(targetCompanies.length - 1, 2) && (
+                          <div className="border-b border-gray-100 my-4"></div>
+                        )}
+                      </div>
+                    ))}
+                    {targetCompanies.length > 3 && (
+                      <div className="pt-4 border-t border-gray-100">
+                        <Link href="/target-companies">
+                          <Button variant="ghost" className="w-full text-sm text-primary">
+                            View {targetCompanies.length - 3} more companies →
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No target companies yet</h3>
+                    <p className="mt-1 text-sm text-gray-500">Get started by adding your first acquisition target.</p>
+                    <div className="mt-6">
+                      <Link href="/target-companies">
+                        <Button className="bg-primary hover:bg-blue-700">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add Target Company
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </CardContent>
           </Card>
         </div>
