@@ -15,7 +15,7 @@ import {
   type UserSession,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, count, desc, asc } from "drizzle-orm";
+import { eq, and, count, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations

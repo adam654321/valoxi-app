@@ -162,7 +162,7 @@ export default function TargetCompanyDetail() {
       title: contact.title || "",
       email: contact.email || "",
       phone: contact.phone || "",
-      isPrimary: contact.isPrimary,
+      isPrimary: contact.isPrimary || false,
       notes: contact.notes || "",
     });
     setEditingContact(contact);

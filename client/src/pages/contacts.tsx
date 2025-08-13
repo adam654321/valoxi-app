@@ -210,8 +210,16 @@ export default function Contacts() {
                 Manage contacts across all your target companies
               </p>
             </div>
-            <div className="text-sm text-gray-500">
-              {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} found
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-500">
+                {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} found
+              </div>
+              <Link href="/target-companies">
+                <Button className="bg-primary text-white hover:bg-blue-700">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add Contact
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -233,14 +241,22 @@ export default function Contacts() {
                 <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts yet</h3>
                 <p className="text-gray-600 mb-4">
-                  Start by adding target companies, then add contacts to them.
+                  Add contacts to your target companies to track key people and decision makers.
                 </p>
-                <Link href="/target-companies">
-                  <Button>
-                    <Building className="w-4 h-4 mr-2" />
-                    View Target Companies
-                  </Button>
-                </Link>
+                <div className="flex justify-center gap-3">
+                  <Link href="/target-companies">
+                    <Button variant="outline">
+                      <Building className="w-4 h-4 mr-2" />
+                      View Companies
+                    </Button>
+                  </Link>
+                  <Link href="/target-companies">
+                    <Button>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add First Contact
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           )}
