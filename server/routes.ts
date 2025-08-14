@@ -251,6 +251,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'quick-stats':
           data = await storage.getQuickStatsWidget(userCompanyId);
           break;
+        case 'upcoming-reminders':
+          data = await storage.getUpcomingRemindersWidget(req.session.userId!);
+          break;
+        case 'team-activity':
+          data = await storage.getTeamActivityWidget(userCompanyId);
+          break;
+        case 'stage-alerts':
+          data = await storage.getStageAlertsWidget(userCompanyId);
+          break;
         default:
           return res.status(400).json({ message: "Invalid widget type" });
       }
