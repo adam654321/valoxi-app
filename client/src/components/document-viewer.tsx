@@ -50,6 +50,14 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
 
+  // Reset states when dialog opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setViewerError(false);
+      setPdfLoadAttempted(false);
+    }
+  }, [isOpen]);
+
   if (!document) return null;
 
   const formatFileSize = (bytes: number) => {
@@ -90,14 +98,6 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
       variant: "destructive",
     });
   };
-
-  // Reset states when dialog opens/closes
-  React.useEffect(() => {
-    if (isOpen) {
-      setViewerError(false);
-      setPdfLoadAttempted(false);
-    }
-  }, [isOpen]);
 
   const openInNewTab = () => {
     window.open(viewerUrl, '_blank');
