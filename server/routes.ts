@@ -364,13 +364,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Target Company Management Routes
-  const targetCompanyCreateSchema = insertTargetCompanySchema.omit({
-    userCompanyId: true,
-    createdBy: true,
-  }).extend({
+  const targetCompanyCreateSchema = z.object({
+    companyName: z.string().min(1, "Company name is required"),
+    industry: z.string().optional(),
+    website: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().optional(),
+    address: z.string().optional(),
     annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
     employeeCount: z.union([z.string(), z.number(), z.null()]).optional(),
     yearEstablished: z.union([z.string(), z.number(), z.null()]).optional(),
+    description: z.string().optional(),
+    stage: z.string().optional(),
   });
 
   // Create target company
