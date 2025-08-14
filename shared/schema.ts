@@ -381,7 +381,7 @@ export const documents = pgTable("documents", {
   originalFilename: varchar("original_filename", { length: 255 }).notNull(),
   filePath: varchar("file_path", { length: 500 }).notNull(),
   fileSize: integer("file_size").notNull(), // in bytes
-  fileType: varchar("file_type", { length: 50 }).notNull(),
+  fileType: varchar("file_type", { length: 200 }).notNull(),
   documentCategory: varchar("document_category", { length: 100 }).notNull(),
   description: text("description"),
   isConfidential: boolean("is_confidential").default(true),
