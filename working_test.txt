@@ -1,1 +1,1 @@
-Working integration test document
+Working auto-approval test

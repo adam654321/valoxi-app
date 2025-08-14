@@ -2146,7 +2146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentCategory: req.body.document_category || 'General',
           description: `Submitted via external portal${req.body.submission_notes ? ': ' + req.body.submission_notes : ''}`,
           isConfidential: false,
-          uploadDate: new Date(),
+
           accessCount: 0,
         });
         
