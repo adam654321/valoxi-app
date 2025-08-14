@@ -2711,8 +2711,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const testSchema = z.object({
-        website: z.string().url(),
-        webhookUrl: z.string().url().optional(),
+        website: z.string().min(1, "Website URL is required").url("Please enter a valid URL (e.g., https://example.com)"),
+        webhookUrl: z.string().url("Please enter a valid webhook URL").optional(),
       });
 
       const validatedData = testSchema.parse(req.body);
@@ -2807,6 +2807,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Test webhook error:", error);
+      if (error instanceof z.ZodError) {
+        const firstError = error.issues[0];
+        return res.status(400).json({ 
+          message: firstError.message,
+          field: firstError.path[0]
+        });
+      }
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -56,8 +56,13 @@ export default function WebhookTest() {
       toast({ title: "Test webhook sent successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/webhook/logs"] });
     },
-    onError: () => {
-      toast({ title: "Failed to send test webhook", variant: "destructive" });
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || "Failed to send test webhook";
+      toast({ 
+        title: "Webhook Test Failed", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
     },
   });
 
@@ -82,13 +87,39 @@ export default function WebhookTest() {
   });
 
   const handleTestWebhook = () => {
-    if (!testWebsite) {
+    if (!testWebsite.trim()) {
       toast({ title: "Please enter a website URL", variant: "destructive" });
       return;
     }
+    
+    // Basic URL validation
+    try {
+      new URL(testWebsite);
+    } catch {
+      toast({ 
+        title: "Invalid URL format", 
+        description: "Please enter a valid URL starting with http:// or https://",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (testWebhookUrl && testWebhookUrl.trim()) {
+      try {
+        new URL(testWebhookUrl);
+      } catch {
+        toast({ 
+          title: "Invalid webhook URL format", 
+          description: "Please enter a valid webhook URL starting with http:// or https://",
+          variant: "destructive" 
+        });
+        return;
+      }
+    }
+
     testWebhookMutation.mutate({
-      website: testWebsite,
-      webhookUrl: testWebhookUrl || undefined,
+      website: testWebsite.trim(),
+      webhookUrl: testWebhookUrl.trim() || undefined,
     });
   };
 
