@@ -193,6 +193,8 @@ export default function EnhancedTargetCompanies() {
       }
       return response.json();
     },
+    staleTime: 0, // Always refetch
+    gcTime: 0,    // Don't cache
   });
 
   const createMutation = useMutation({
@@ -208,12 +210,17 @@ export default function EnhancedTargetCompanies() {
       return await apiRequest("POST", "/api/target-companies", payload);
     },
     onSuccess: () => {
-      // Invalidate all related queries
+      // Invalidate all related queries aggressively
+      queryClient.clear(); // Clear entire cache
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/data/quick-stats"] });
+      
+      // Force refetch immediately
+      queryClient.refetchQueries({ queryKey: ["/api/target-companies/search"], exact: false });
+      
       setShowForm(false);
       form.reset();
       toast({
