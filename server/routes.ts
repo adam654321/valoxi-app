@@ -2065,15 +2065,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }),
     fileFilter: (req, file, cb) => {
-      // Allow common business document types
-      const allowedTypes = /pdf|doc|docx|xls|xlsx|ppt|pptx|txt|jpg|jpeg|png|gif/;
-      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-      const mimetype = allowedTypes.test(file.mimetype);
+      // Allow common business document types - be more permissive with extensions
+      const allowedExtensions = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|jpg|jpeg|png|gif)$/i;
       
-      if (mimetype && extname) {
+      // Log file upload attempts for debugging
+      console.log('File upload attempt:', file.originalname, file.mimetype);
+      
+      if (allowedExtensions.test(file.originalname)) {
         return cb(null, true);
       } else {
-        cb(new Error('Only common document and image files are allowed'));
+        cb(new Error('Only PDF, Office documents, text files and images are allowed'));
       }
     },
     limits: {

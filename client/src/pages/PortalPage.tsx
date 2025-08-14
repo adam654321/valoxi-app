@@ -254,34 +254,38 @@ export default function PortalPage() {
   const primaryColor = portalData.portalBranding?.primaryColor || '#2563eb';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
       <div 
-        className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
-        style={{ borderBottomColor: primaryColor + '20' }}
+        className="bg-white dark:bg-gray-800 shadow-lg border-b-4"
+        style={{ borderBottomColor: primaryColor }}
       >
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {portalData.portalBranding?.companyName || 'Document Portal'}
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Secure document submission and management
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                Secure document submission and management platform
               </p>
+              <div className="flex items-center mt-3 text-sm text-gray-500 dark:text-gray-400">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                Portal active and secure
+              </div>
             </div>
             {portalData.portalBranding?.logoUrl && (
               <img 
                 src={portalData.portalBranding.logoUrl} 
                 alt="Company Logo" 
-                className="h-12 w-auto"
+                className="h-16 w-auto"
               />
             )}
           </div>
           
           {portalData.customMessage && (
-            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-blue-800 dark:text-blue-200">
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+              <p className="text-blue-800 dark:text-blue-200 font-medium">
                 {portalData.customMessage}
               </p>
             </div>
@@ -289,35 +293,54 @@ export default function PortalPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid gap-8 md:grid-cols-2">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid gap-8 lg:grid-cols-2">
           {/* Document Upload Section */}
           {portalData.allowedActions.upload && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5" style={{ color: primaryColor }} />
+            <Card className="border-0 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div 
+                    className="p-2 rounded-lg"
+                    style={{ backgroundColor: primaryColor + '20' }}
+                  >
+                    <Upload className="w-6 h-6" style={{ color: primaryColor }} />
+                  </div>
                   Upload Document
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   Submit required documents securely through this portal.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <Label htmlFor="file-input">Select Document</Label>
-                    <Input
-                      id="file-input"
-                      type="file"
-                      onChange={handleFileSelect}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif"
-                      className="mt-1"
-                    />
+                    <Label htmlFor="file-input" className="text-base font-medium">Select Document</Label>
+                    <div className="mt-3 relative">
+                      <Input
+                        id="file-input"
+                        type="file"
+                        onChange={handleFileSelect}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif"
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:cursor-pointer hover:file:opacity-80 transition-all duration-200"
+                        style={{ 
+                          '--file-bg': primaryColor,
+                          '--file-text': 'white'
+                        } as any}
+                      />
+                    </div>
                     {selectedFile && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                        Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-                      </p>
+                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {selectedFile.name}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({formatFileSize(selectedFile.size)})
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -354,18 +377,18 @@ export default function PortalPage() {
                   <Button 
                     type="submit" 
                     disabled={!selectedFile || uploading}
-                    className="w-full"
-                    style={{ backgroundColor: primaryColor }}
+                    className="w-full py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: primaryColor, borderColor: primaryColor }}
                   >
                     {uploading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Uploading...
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                        Uploading Document...
                       </>
                     ) : (
                       <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        Submit Document
+                        <Upload className="w-5 h-5 mr-3" />
+                        Submit Document Securely
                       </>
                     )}
                   </Button>
@@ -376,13 +399,18 @@ export default function PortalPage() {
 
           {/* Document Requirements */}
           {requirements.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" style={{ color: primaryColor }} />
+            <Card className="border-0 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-t-lg">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div 
+                    className="p-2 rounded-lg"
+                    style={{ backgroundColor: primaryColor + '20' }}
+                  >
+                    <FileText className="w-6 h-6" style={{ color: primaryColor }} />
+                  </div>
                   Required Documents
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base">
                   Review the documents needed for this process.
                 </CardDescription>
               </CardHeader>
@@ -423,13 +451,18 @@ export default function PortalPage() {
 
         {/* Submission History */}
         {submissions.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" style={{ color: primaryColor }} />
+          <Card className="mt-8 border-0 shadow-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: primaryColor + '20' }}
+                >
+                  <FileText className="w-6 h-6" style={{ color: primaryColor }} />
+                </div>
                 Submission History
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-base">
                 View the status of your submitted documents.
               </CardDescription>
             </CardHeader>
