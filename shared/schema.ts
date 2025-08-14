@@ -477,6 +477,65 @@ export type ActivityType = typeof activityTypes.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 
+// Dashboard preferences table
+export const dashboardPreferences = pgTable("dashboard_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  widgetType: varchar("widget_type", { length: 50 }).notNull(),
+  widgetPosition: integer("widget_position").notNull(),
+  widgetSize: varchar("widget_size", { length: 20 }).default("medium"),
+  isVisible: boolean("is_visible").default(true),
+  widgetConfig: text("widget_config"), // JSON string for widget-specific settings
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Dashboard alerts table
+export const dashboardAlerts = pgTable("dashboard_alerts", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  alertType: varchar("alert_type", { length: 50 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  severity: varchar("severity", { length: 20 }).default("info"),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id),
+  isDismissed: boolean("is_dismissed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  dismissedAt: timestamp("dismissed_at"),
+});
+
+// Dashboard relations
+export const dashboardPreferencesRelations = relations(dashboardPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [dashboardPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+export const dashboardAlertsRelations = relations(dashboardAlerts, ({ one }) => ({
+  userCompany: one(userCompanies, {
+    fields: [dashboardAlerts.userCompanyId],
+    references: [userCompanies.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [dashboardAlerts.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+}));
+
+// Dashboard schemas
+export const insertDashboardPreferenceSchema = createInsertSchema(dashboardPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDashboardAlertSchema = createInsertSchema(dashboardAlerts).omit({
+  id: true,
+  createdAt: true,
+  dismissedAt: true,
+});
+
 export type TeamMember = User & {
   roleDescription?: string;
   assignedDealsCount?: number;
@@ -513,3 +572,10 @@ export type UserWithRole = User & {
     canExportData?: boolean;
   };
 };
+
+// Dashboard types
+export type InsertDashboardPreference = z.infer<typeof insertDashboardPreferenceSchema>;
+export type DashboardPreference = typeof dashboardPreferences.$inferSelect;
+
+export type InsertDashboardAlert = z.infer<typeof insertDashboardAlertSchema>;
+export type DashboardAlert = typeof dashboardAlerts.$inferSelect;

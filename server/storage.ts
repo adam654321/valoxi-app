@@ -12,6 +12,8 @@ import {
   stageHistory,
   activityTypes,
   activities,
+  dashboardPreferences,
+  dashboardAlerts,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -25,6 +27,8 @@ import {
   type StageHistory,
   type ActivityType,
   type Activity,
+  type DashboardPreference,
+  type DashboardAlert,
   type InsertUser,
   type InsertUserCompany,
   type InsertTargetCompany,
@@ -37,6 +41,8 @@ import {
   type InsertStageHistory,
   type InsertActivityType,
   type InsertActivity,
+  type InsertDashboardPreference,
+  type InsertDashboardAlert,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -1503,6 +1509,210 @@ export class DatabaseStorage implements IStorage {
     });
 
     return csv;
+  }
+
+  // Dashboard widget methods
+  async getPipelineOverviewWidget(userCompanyId: number): Promise<any> {
+    const stagesData = await db
+      .select({
+        stage: targetCompanies.stage,
+        count: count(),
+        avgDays: sql<number>`AVG(EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})))::int`,
+      })
+      .from(targetCompanies)
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`
+      ))
+      .groupBy(targetCompanies.stage);
+
+    const totalActive = stagesData.reduce((sum, stage) => sum + stage.count, 0);
+    
+    return {
+      stages: stagesData.map(stage => ({
+        stage: stage.stage,
+        count: stage.count,
+        avg_days: stage.avgDays || 0,
+      })),
+      totalActive,
+      lastUpdated: new Date(),
+    };
+  }
+
+  async getRecentActivitiesWidget(userCompanyId: number): Promise<any> {
+    const activitiesData = await db
+      .select({
+        id: activities.id,
+        title: activities.title,
+        activityType: activities.activityType,
+        activityDate: activities.activityDate,
+        createdAt: activities.createdAt,
+        companyName: targetCompanies.companyName,
+        userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        contactName: sql<string>`COALESCE(${targetContacts.firstName} || ' ' || ${targetContacts.lastName}, '')`,
+      })
+      .from(activities)
+      .innerJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id))
+      .innerJoin(users, eq(activities.userId, users.id))
+      .leftJoin(targetContacts, eq(activities.contactId, targetContacts.id))
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .orderBy(desc(activities.createdAt))
+      .limit(10);
+
+    return {
+      activities: activitiesData,
+      lastUpdated: new Date(),
+    };
+  }
+
+  async getHotDealsWidget(userCompanyId: number): Promise<any> {
+    const hotDealsData = await db
+      .select({
+        id: targetCompanies.id,
+        companyName: targetCompanies.companyName,
+        stage: targetCompanies.stage,
+        stageUpdatedAt: targetCompanies.stageUpdatedAt,
+        daysInStage: sql<number>`EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt}))::int`,
+        recentActivityCount: sql<number>`COALESCE((
+          SELECT COUNT(*)::int 
+          FROM ${activities} 
+          WHERE ${activities.targetCompanyId} = ${targetCompanies.id} 
+          AND ${activities.activityDate} >= CURRENT_DATE - INTERVAL '7 days'
+        ), 0)`,
+        lastActivityDate: sql<Date | null>`(
+          SELECT MAX(${activities.activityDate}) 
+          FROM ${activities} 
+          WHERE ${activities.targetCompanyId} = ${targetCompanies.id}
+        )`,
+      })
+      .from(targetCompanies)
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`
+      ))
+      .having(
+        or(
+          sql`EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})) > 14`,
+          sql`COALESCE((
+            SELECT COUNT(*)::int 
+            FROM ${activities} 
+            WHERE ${activities.targetCompanyId} = ${targetCompanies.id} 
+            AND ${activities.activityDate} >= CURRENT_DATE - INTERVAL '7 days'
+          ), 0) = 0`,
+          sql`${targetCompanies.stage} IN ('Offer Stage', 'Negotiation', 'Due Diligence')`
+        )
+      )
+      .orderBy(
+        sql`CASE 
+          WHEN ${targetCompanies.stage} IN ('Offer Stage', 'Negotiation') THEN 1
+          WHEN EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})) > 30 THEN 2
+          ELSE 3
+        END`,
+        targetCompanies.stageUpdatedAt
+      )
+      .limit(5);
+
+    return {
+      deals: hotDealsData,
+      lastUpdated: new Date(),
+    };
+  }
+
+  async getQuickStatsWidget(userCompanyId: number): Promise<any> {
+    const thirtyDaysAgo = sql`CURRENT_DATE - INTERVAL '30 days'`;
+    
+    const [newDeals] = await db
+      .select({ count: count() })
+      .from(targetCompanies)
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        sql`${targetCompanies.createdAt} >= ${thirtyDaysAgo}`
+      ));
+
+    const [completedDeals] = await db
+      .select({ count: count() })
+      .from(targetCompanies)
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        eq(targetCompanies.stage, 'Completion'),
+        sql`${targetCompanies.stageUpdatedAt} >= ${thirtyDaysAgo}`
+      ));
+
+    const [totalActivities] = await db
+      .select({ count: count() })
+      .from(activities)
+      .innerJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id))
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        sql`${activities.activityDate} >= ${thirtyDaysAgo}`
+      ));
+
+    const [avgDealTime] = await db
+      .select({
+        avgDays: sql<number>`COALESCE(AVG(EXTRACT(days FROM (${targetCompanies.stageUpdatedAt} - ${targetCompanies.createdAt}))), 0)::int`,
+      })
+      .from(targetCompanies)
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        eq(targetCompanies.stage, 'Completion')
+      ));
+
+    return {
+      newDeals: newDeals.count,
+      completedDeals: completedDeals.count,
+      totalActivities: totalActivities.count,
+      avgDealTime: avgDealTime.avgDays || 0,
+      lastUpdated: new Date(),
+    };
+  }
+
+  // Dashboard preferences methods
+  async getDashboardPreferences(userId: number): Promise<DashboardPreference[]> {
+    return await db
+      .select()
+      .from(dashboardPreferences)
+      .where(eq(dashboardPreferences.userId, userId))
+      .orderBy(dashboardPreferences.widgetPosition);
+  }
+
+  async updateDashboardPreferences(userId: number, preferences: InsertDashboardPreference[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      // Delete existing preferences
+      await tx
+        .delete(dashboardPreferences)
+        .where(eq(dashboardPreferences.userId, userId));
+
+      // Insert new preferences
+      if (preferences.length > 0) {
+        await tx
+          .insert(dashboardPreferences)
+          .values(preferences.map(pref => ({ ...pref, userId })));
+      }
+    });
+  }
+
+  // Dashboard alerts methods
+  async getDashboardAlerts(userCompanyId: number): Promise<DashboardAlert[]> {
+    return await db
+      .select()
+      .from(dashboardAlerts)
+      .where(and(
+        eq(dashboardAlerts.userCompanyId, userCompanyId),
+        eq(dashboardAlerts.isDismissed, false)
+      ))
+      .orderBy(desc(dashboardAlerts.createdAt));
+  }
+
+  async dismissAlert(alertId: number, userCompanyId: number): Promise<boolean> {
+    const [updatedAlert] = await db
+      .update(dashboardAlerts)
+      .set({ isDismissed: true, dismissedAt: new Date() })
+      .where(and(
+        eq(dashboardAlerts.id, alertId),
+        eq(dashboardAlerts.userCompanyId, userCompanyId)
+      ))
+      .returning();
+    return !!updatedAlert;
   }
 }
 
