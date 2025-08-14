@@ -2696,6 +2696,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Webhook endpoint to receive website analysis results (public endpoint)
   app.post("/api/webhook/website-analysis", async (req: Request, res: Response) => {
+    console.log("🔔 Webhook response endpoint called!", {
+      timestamp: new Date().toISOString(),
+      bodyKeys: Object.keys(req.body || {}),
+      bodyPreview: JSON.stringify(req.body).substring(0, 200),
+      headers: req.headers['content-type']
+    });
+    
     try {
       const webhookSchema = z.object({
         target_company_id: z.number(),
@@ -2703,6 +2710,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const validatedData = webhookSchema.parse(req.body);
+      
+      console.log("✅ Webhook data validated successfully:", {
+        targetCompanyId: validatedData.target_company_id,
+        outputLength: validatedData.output.length
+      });
       
       // Convert \n to actual line breaks and format as markdown
       let processedOutput = validatedData.output.replace(/\\n/g, '\n');
