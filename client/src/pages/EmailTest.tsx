@@ -64,12 +64,12 @@ export default function EmailTest() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-sm text-gray-600 dark:text-gray-300">
-              <p><strong>Current Configuration:</strong></p>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>SMTP Host: {process.env.SMTP_HOST || 'Not configured'}</li>
-                <li>SMTP Port: {process.env.SMTP_PORT || 'Not configured'}</li>
-                <li>From Email: {process.env.SMTP_FROM_EMAIL || 'Not configured'}</li>
-              </ul>
+              <p><strong>Configuration Status:</strong></p>
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-blue-800 dark:text-blue-200">
+                  SMTP configuration is managed securely on the server. Use the test button below to verify your email settings are working correctly.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col items-center space-y-4">
