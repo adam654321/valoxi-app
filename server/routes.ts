@@ -390,23 +390,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = targetCompanyCreateSchema.parse(req.body);
 
-      // Convert string fields to numbers for storage
+      // Convert empty strings to null for proper database handling
       const processedData = {
-        ...validatedData,
-        annualRevenue: validatedData.annualRevenue && validatedData.annualRevenue.trim() 
-          ? validatedData.annualRevenue 
-          : null,
+        companyName: validatedData.companyName,
+        industry: validatedData.industry || null,
+        website: validatedData.website || null,
+        phone: validatedData.phone || null,
+        email: validatedData.email || null,
+        address: validatedData.address || null,
+        annualRevenue: validatedData.annualRevenue || null,
         employeeCount: validatedData.employeeCount && validatedData.employeeCount.trim() 
           ? parseInt(validatedData.employeeCount) || null 
           : null,
         yearEstablished: validatedData.yearEstablished && validatedData.yearEstablished.trim() 
           ? parseInt(validatedData.yearEstablished) || null 
           : null,
+        description: validatedData.description || null,
+        stage: validatedData.stage || null,
         userCompanyId,
         createdBy: userId,
       };
 
-      const targetCompany = await storage.createTargetCompany(processedData);
+      const targetCompany = await storage.createTargetCompany(processedData as any);
 
       // Send webhook if website is provided
       if (validatedData.website && validatedData.website.trim()) {
