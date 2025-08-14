@@ -210,16 +210,18 @@ export default function EnhancedTargetCompanies() {
       return await apiRequest("POST", "/api/target-companies", payload);
     },
     onSuccess: () => {
-      // Invalidate all related queries aggressively
-      queryClient.clear(); // Clear entire cache
+      // Immediately refetch the current search query
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/target-companies/search", searchParams.toString()],
+        exact: true 
+      });
+      
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/data/quick-stats"] });
-      
-      // Force refetch immediately
-      queryClient.refetchQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       
       setShowForm(false);
       form.reset();
