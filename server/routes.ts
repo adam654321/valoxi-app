@@ -369,16 +369,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     createdBy: true,
   }).extend({
     annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
-    employeeCount: z.union([
-      z.string().transform((val) => val === "" ? null : parseInt(val)), 
-      z.number(), 
-      z.null()
-    ]).optional(),
-    yearEstablished: z.union([
-      z.string().transform((val) => val === "" ? null : parseInt(val)), 
-      z.number(), 
-      z.null()
-    ]).optional(),
+    employeeCount: z.preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return null;
+      if (typeof val === "string") return parseInt(val) || null;
+      return val;
+    }, z.union([z.number(), z.null()]).optional()),
+    yearEstablished: z.preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return null;
+      if (typeof val === "string") return parseInt(val) || null;
+      return val;
+    }, z.union([z.number(), z.null()]).optional()),
   });
 
   // Create target company
