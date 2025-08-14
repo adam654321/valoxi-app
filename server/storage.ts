@@ -817,6 +817,22 @@ export class DatabaseStorage implements IStorage {
     return contacts;
   }
 
+  async getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]> {
+    const contacts = await db
+      .select()
+      .from(targetContacts)
+      .innerJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
+      .where(
+        and(
+          eq(targetContacts.targetCompanyId, targetCompanyId),
+          eq(targetCompanies.userCompanyId, userCompanyId)
+        )
+      )
+      .orderBy(sql`${targetContacts.isPrimary} DESC`, targetContacts.lastName);
+
+    return contacts.map(row => row.target_contacts);
+  }
+
   // Team invitation operations
   async createUserInvitation(invitation: InsertUserInvitation): Promise<UserInvitation> {
     const [newInvitation] = await db

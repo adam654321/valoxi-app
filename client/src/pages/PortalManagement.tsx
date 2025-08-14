@@ -82,9 +82,14 @@ export default function PortalManagement() {
     queryKey: ['/api/target-companies'],
   });
 
-  const { data: contacts = [] } = useQuery<TargetContact[]>({
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery<TargetContact[]>({
     queryKey: ['/api/target-companies/contacts', selectedCompany],
-    queryFn: () => selectedCompany ? fetch(`/api/target-companies/contacts/${selectedCompany}`).then(res => res.json()) : Promise.resolve([]),
+    queryFn: async () => {
+      if (!selectedCompany) return [];
+      const response = await fetch(`/api/target-companies/contacts/${selectedCompany}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: !!selectedCompany,
   });
 
@@ -252,12 +257,18 @@ export default function PortalManagement() {
                       <SelectValue placeholder="Select contact..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {contacts.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id.toString()}>
-                          {contact.firstName} {contact.lastName}
-                          {contact.email && ` (${contact.email})`}
-                        </SelectItem>
-                      ))}
+                      {contactsLoading ? (
+                        <SelectItem value="loading" disabled>Loading contacts...</SelectItem>
+                      ) : Array.isArray(contacts) && contacts.length > 0 ? (
+                        contacts.map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id.toString()}>
+                            {contact.firstName} {contact.lastName}
+                            {contact.email && ` (${contact.email})`}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-contacts" disabled>No contacts found</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

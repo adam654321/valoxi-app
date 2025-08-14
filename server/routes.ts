@@ -2374,8 +2374,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid company ID" });
       }
       
-      const contacts = await storage.getTargetContacts(targetCompanyId, userCompanyId);
-      res.json(contacts);
+      const contacts = await storage.getContactsByCompany(targetCompanyId, userCompanyId);
+      res.json(contacts || []);
     } catch (error) {
       console.error("Get contacts by company error:", error);
       res.status(500).json({ message: "Internal server error" });

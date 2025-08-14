@@ -116,6 +116,25 @@ This is an M&A (Mergers & Acquisitions) CRM platform that helps business buyers 
 
 **Status: Phase 11 fully implemented - comprehensive document viewer with Chrome compatibility and enhanced file support complete**
 
+**Phase 12 Complete - Secure External Document Portal (August 14, 2025)**
+- ✅ Complete database schema for external document portals (4 new tables)
+- ✅ Portal access token system with expiration dates and security controls
+- ✅ External document submission system with file validation and tracking
+- ✅ Portal activity logging and audit trail for all access attempts
+- ✅ Document requirement management with mandatory/optional specifications
+- ✅ Portal Management interface accessible from main navigation
+- ✅ Token-based secure access for external parties without user accounts
+- ✅ File upload with validation, status tracking, and review workflow
+- ✅ Portal branding and customization options for white-label experience
+- ✅ Comprehensive API endpoints for portal creation and management
+- ✅ Contact association system for portal access assignment
+- ✅ Professional portal submission page with user-friendly interface
+- ✅ Multi-modal document requirements with file type restrictions
+- ✅ IP address and user agent tracking for security audit trails
+- ✅ Portal deactivation and access control management
+
+**Status: Phase 12 fully implemented - secure external document portal system is complete with full functionality**
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
