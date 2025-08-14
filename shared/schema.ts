@@ -450,8 +450,8 @@ export const insertTargetCompanySchema = createInsertSchema(targetCompanies).omi
   createdAt: true,
 }).extend({
   annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
-  employeeCount: z.union([z.number(), z.null()]).optional(),
-  yearEstablished: z.union([z.number(), z.null()]).optional(),
+  employeeCount: z.union([z.string(), z.number(), z.null()]).optional(),
+  yearEstablished: z.union([z.string(), z.number(), z.null()]).optional(),
 });
 
 export const insertTargetContactSchema = createInsertSchema(targetContacts).omit({

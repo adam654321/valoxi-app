@@ -363,21 +363,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Target Company Management Routes - Accept all fields as strings from form
-  const targetCompanyCreateSchema = z.object({
-    companyName: z.string().min(1, "Company name is required"),
-    industry: z.string().optional(),
-    website: z.string().optional(),
-    phone: z.string().optional(),
-    email: z.string().optional(),
-    address: z.string().optional(),
-    annualRevenue: z.string().optional(),
-    employeeCount: z.string().optional(),
-    yearEstablished: z.string().optional(),
-    description: z.string().optional(),
-    stage: z.string().optional(),
-  });
-
   // Create target company
   app.post("/api/target-companies", isAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -388,9 +373,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User company not found" });
       }
 
-      const validatedData = targetCompanyCreateSchema.parse(req.body);
+      const validatedData = insertTargetCompanySchema.parse(req.body);
 
-      // Convert empty strings to null for proper database handling
+      // Convert empty strings to null and handle number conversion
       const processedData = {
         companyName: validatedData.companyName,
         industry: validatedData.industry || null,
@@ -399,12 +384,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: validatedData.email || null,
         address: validatedData.address || null,
         annualRevenue: validatedData.annualRevenue || null,
-        employeeCount: validatedData.employeeCount && validatedData.employeeCount.trim() 
-          ? parseInt(validatedData.employeeCount) || null 
-          : null,
-        yearEstablished: validatedData.yearEstablished && validatedData.yearEstablished.trim() 
-          ? parseInt(validatedData.yearEstablished) || null 
-          : null,
+        employeeCount: typeof validatedData.employeeCount === 'string' && validatedData.employeeCount.trim()
+          ? parseInt(validatedData.employeeCount) || null
+          : validatedData.employeeCount || null,
+        yearEstablished: typeof validatedData.yearEstablished === 'string' && validatedData.yearEstablished.trim()
+          ? parseInt(validatedData.yearEstablished) || null
+          : validatedData.yearEstablished || null,
         description: validatedData.description || null,
         stage: validatedData.stage || null,
         userCompanyId,
