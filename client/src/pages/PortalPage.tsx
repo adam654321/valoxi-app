@@ -51,17 +51,25 @@ interface Submission {
   reviewedAt?: string;
 }
 
+interface DocumentCategory {
+  id: number;
+  categoryName: string;
+  description: string;
+}
+
 export default function PortalPage() {
   const { token } = useParams();
   const { toast } = useToast();
   const [portalData, setPortalData] = useState<PortalToken | null>(null);
   const [requirements, setRequirements] = useState<DocumentRequirement[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submissionNotes, setSubmissionNotes] = useState('');
   const [selectedRequirement, setSelectedRequirement] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('Financial Statements');
 
   useEffect(() => {
     if (token) {
@@ -79,10 +87,11 @@ export default function PortalPage() {
       const data = await response.json();
       setPortalData(data);
       
-      // Load requirements and submissions
+      // Load requirements, submissions, and categories
       await Promise.all([
         loadRequirements(),
-        loadSubmissions()
+        loadSubmissions(),
+        loadCategories()
       ]);
     } catch (error) {
       console.error('Token validation error:', error);
@@ -120,6 +129,18 @@ export default function PortalPage() {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/document-categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Failed to load document categories:', error);
+    }
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -154,7 +175,7 @@ export default function PortalPage() {
       const formData = new FormData();
       formData.append('document', selectedFile);
       formData.append('submission_notes', submissionNotes);
-      formData.append('document_category', 'general');
+      formData.append('document_category', selectedCategory);
       
       if (selectedRequirement) {
         formData.append('requirement_id', selectedRequirement.toString());
@@ -181,6 +202,7 @@ export default function PortalPage() {
       setSelectedFile(null);
       setSubmissionNotes('');
       setSelectedRequirement(null);
+      setSelectedCategory('Financial Statements');
       
       // Refresh submissions
       await loadSubmissions();
@@ -344,16 +366,43 @@ export default function PortalPage() {
                     )}
                   </div>
 
+                  <div>
+                    <Label htmlFor="category-select">Document Category</Label>
+                    <select
+                      id="category-select"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full mt-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-opacity-20"
+                      style={{ 
+                        focusRingColor: primaryColor 
+                      }}
+                    >
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.categoryName}>
+                          {category.categoryName}
+                        </option>
+                      ))}
+                    </select>
+                    {categories.find(c => c.categoryName === selectedCategory)?.description && (
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {categories.find(c => c.categoryName === selectedCategory)?.description}
+                      </p>
+                    )}
+                  </div>
+
                   {requirements.length > 0 && (
                     <div>
-                      <Label htmlFor="requirement-select">Document Type (Optional)</Label>
+                      <Label htmlFor="requirement-select">Document Requirement (Optional)</Label>
                       <select
                         id="requirement-select"
                         value={selectedRequirement || ''}
                         onChange={(e) => setSelectedRequirement(e.target.value ? parseInt(e.target.value) : null)}
-                        className="w-full mt-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                        className="w-full mt-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-opacity-20"
+                        style={{ 
+                          focusRingColor: primaryColor 
+                        }}
                       >
-                        <option value="">Select document type...</option>
+                        <option value="">Select specific requirement...</option>
                         {requirements.map((req) => (
                           <option key={req.id} value={req.id}>
                             {req.requirementName} {req.isMandatory ? '(Required)' : '(Optional)'}
