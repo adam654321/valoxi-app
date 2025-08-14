@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { 
   Pencil, 
   Trash2, 
@@ -118,6 +118,7 @@ interface FilterOptions {
 export default function EnhancedTargetCompanies() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [editingCompany, setEditingCompany] = useState<TargetCompanyWithStats | null>(null);
@@ -336,6 +337,15 @@ export default function EnhancedTargetCompanies() {
     setEditingCompany(null);
     form.reset();
     setShowForm(true);
+  };
+
+  const handleCardClick = (company: TargetCompanyWithStats, event: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or links
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
+    setLocation(`/target-companies/${company.id}`);
   };
 
   const formatCurrency = (amount: string | number | null) => {
@@ -593,7 +603,12 @@ export default function EnhancedTargetCompanies() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.isArray(searchResults) && searchResults.map((company: TargetCompanyWithStats) => (
-              <Card key={company.id} className="hover:shadow-lg transition-shadow" data-testid={`card-company-${company.id}`}>
+              <Card 
+                key={company.id} 
+                className="hover:shadow-lg transition-shadow cursor-pointer" 
+                onClick={(event) => handleCardClick(company, event)}
+                data-testid={`card-company-${company.id}`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0">
