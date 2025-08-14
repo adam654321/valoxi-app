@@ -599,6 +599,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Target company not found" });
       }
 
+      // Log when website analysis is available
+      if (profile.websiteAnalysis) {
+        console.log(`Website analysis found for company ${targetCompanyId}:`, {
+          analysisLength: profile.websiteAnalysis?.length,
+          processedAt: profile.websiteAnalysisProcessedAt
+        });
+      }
+
       // Disable caching to ensure fresh data, especially for website analysis updates
       res.set({
         'Cache-Control': 'no-cache, no-store, must-revalidate',

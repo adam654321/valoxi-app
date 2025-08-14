@@ -96,14 +96,20 @@ export default function TargetCompanyDetail() {
     queryKey: ["/api/target-companies", id, "profile"],
     enabled: !!id,
     // More aggressive polling for website analysis
-    refetchInterval: (data) => {
-      // Always poll every 5 seconds if no website analysis is available yet
+    refetchInterval: (query) => {
+      // Get the actual profile data from the query state
+      const data = query?.state?.data as CompanyProfile | undefined;
+      
+      // Only log when checking for website analysis
       if (!data?.websiteAnalysis) {
-        console.log('Polling for website analysis updates...', { 
-          hasAnalysis: !!data?.websiteAnalysis, 
-          hasWebsite: !!data?.website,
-          companyId: id 
+        console.log('Checking for website analysis...', { 
+          companyId: id,
+          hasWebsite: !!data?.website 
         });
+      }
+      
+      // Poll every 5 seconds if no website analysis is available yet
+      if (!data?.websiteAnalysis) {
         return 5000; // 5 seconds for faster updates
       }
       return false; // Stop polling once analysis is available

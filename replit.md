@@ -53,7 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **External Document Portal**: Secure, token-based portal for external parties to submit documents, with robust access control, activity logging, and integration with the main document system.
 - **Email Integration**: Comprehensive email system using nodemailer with Google Workspace SMTP for team invitations, portal access notifications, and document submission alerts. Features professional email templates and secure credential management.
 - **Team Invitation System**: Complete invitation workflow with secure token-based invitations, professional signup forms with validation, and proper handling of existing users to prevent security conflicts.
-- **Webhook Integration**: Automated webhook system that triggers when target companies are created with websites. Includes comprehensive logging, real-time response tracking, and a dedicated testing interface. Features both manual testing tools and automatic webhook firing for new companies with website data.
+- **Webhook Integration**: Automated webhook system that triggers when target companies are created with websites. Includes comprehensive logging, real-time response tracking, and a dedicated testing interface. Features both manual testing tools and automatic webhook firing for new companies with website data. **Fixed 2025-08-14**: Webhook response detection system now properly integrates with production company creation using the same process as the webhook test tool. Frontend correctly detects and displays webhook responses with automatic polling cessation.
 
 # External Dependencies
 
