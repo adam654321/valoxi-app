@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Settings, User, Users, Bell } from "lucide-react";
+import { LogOut, Settings, User, Users, Bell, Send } from "lucide-react";
 import { Notifications } from "@/components/notifications";
 import { AddTargetCompanyButton } from "@/components/AddTargetCompanyButton";
 
@@ -49,6 +49,7 @@ export default function Layout({ children }: LayoutProps) {
     if (path === "/notifications" && location === "/notifications") return true;
     if (path === "/portal-management" && location === "/portal-management") return true;
     if (path === "/email-test" && location === "/email-test") return true;
+    if (path === "/webhook-test" && location === "/webhook-test") return true;
     return location === path;
   };
 
@@ -139,6 +140,12 @@ export default function Layout({ children }: LayoutProps) {
                   <DropdownMenuItem data-testid="menu-item-settings">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild data-testid="menu-item-webhook-test">
+                    <Link href="/webhook-test" className="flex w-full">
+                      <Send className="mr-2 h-4 w-4" />
+                      <span>Webhook Test</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

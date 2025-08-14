@@ -20,6 +20,7 @@ import { NotificationsPage } from "@/components/notifications";
 import PortalPage from "@/pages/PortalPage";
 import PortalManagement from "@/pages/PortalManagement";
 import EmailTest from "@/pages/EmailTest";
+import WebhookTest from "@/pages/webhook-test";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -64,6 +65,7 @@ function Router() {
             <Route path="/notifications" component={NotificationsPage} />
             <Route path="/portal-management" component={PortalManagement} />
             <Route path="/email-test" component={EmailTest} />
+            <Route path="/webhook-test" component={WebhookTest} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

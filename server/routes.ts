@@ -2674,6 +2674,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // In-memory webhook logs for testing
+  const webhookLogs: Array<{
+    id: number;
+    timestamp: string;
+    targetCompanyId: number | null;
+    webhookUrl: string;
+    payload: any;
+    response: any;
+    status: string;
+    processingTime: number;
+  }> = [];
+
+  let logCounter = 1;
+
+  // Get webhook configuration
+  app.get("/api/webhook/config", async (req: Request, res: Response) => {
+    const baseUrl = process.env.APP_URL || 
+                   (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:3000');
+    
+    res.json({
+      webhookUrl: process.env.WEBHOOK_URL || null,
+      responseUrl: `${baseUrl}/api/webhook/website-analysis`
+    });
+  });
+
+  // Get webhook logs
+  app.get("/api/webhook/logs", async (req: Request, res: Response) => {
+    res.json(webhookLogs.slice(-10).reverse()); // Return last 10 logs, newest first
+  });
+
+  // Test webhook endpoint
+  app.post("/api/webhook/test", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const testSchema = z.object({
+        website: z.string().url(),
+        webhookUrl: z.string().url().optional(),
+      });
+
+      const validatedData = testSchema.parse(req.body);
+      const startTime = Date.now();
+      
+      // Create a temporary target company for testing
+      const tempTargetCompany = await storage.createTargetCompany({
+        companyName: `Test Company - ${new Date().toISOString()}`,
+        industry: "Technology",
+        website: validatedData.website,
+        annualRevenue: 1000000,
+        employeeCount: 50,
+        userCompanyId: req.session.userCompanyId!,
+      });
+
+      const webhookUrlToUse = validatedData.webhookUrl || process.env.WEBHOOK_URL;
+      
+      if (!webhookUrlToUse) {
+        return res.status(400).json({ message: "No webhook URL configured" });
+      }
+
+      const baseUrl = process.env.APP_URL || 
+                     (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:3000');
+      
+      const payload = {
+        company_name: validatedData.website,
+        target_company_id: tempTargetCompany.id,
+        webhook_response_url: `${baseUrl}/api/webhook/website-analysis`
+      };
+
+      let response: any = null;
+      let status = "pending";
+      
+      try {
+        const webhookResponse = await fetch(webhookUrlToUse, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        response = {
+          status: webhookResponse.status,
+          statusText: webhookResponse.statusText,
+          headers: Object.fromEntries(webhookResponse.headers.entries()),
+        };
+
+        if (webhookResponse.ok) {
+          try {
+            const responseData = await webhookResponse.text();
+            if (responseData) {
+              response.body = responseData;
+            }
+          } catch (e) {
+            // Response body might be empty or invalid
+          }
+        }
+
+        status = webhookResponse.ok ? "success" : "error";
+      } catch (error) {
+        response = {
+          error: error instanceof Error ? error.message : "Unknown error"
+        };
+        status = "error";
+      }
+
+      const processingTime = Date.now() - startTime;
+
+      // Log the webhook test
+      const log = {
+        id: logCounter++,
+        timestamp: new Date().toISOString(),
+        targetCompanyId: tempTargetCompany.id,
+        webhookUrl: webhookUrlToUse,
+        payload,
+        response,
+        status,
+        processingTime,
+      };
+
+      webhookLogs.push(log);
+
+      console.log(`Test webhook sent to: ${webhookUrlToUse}, Status: ${status}, Processing time: ${processingTime}ms`);
+
+      res.json({
+        success: true,
+        message: "Test webhook sent successfully",
+        targetCompanyId: tempTargetCompany.id,
+        status,
+        processingTime,
+      });
+    } catch (error) {
+      console.error("Test webhook error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
