@@ -2132,23 +2132,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Also create a document in the main document management system for integration
       try {
-        // Create the document directly in main system to show up on company documents page
+        console.log('Attempting portal-to-main integration for:', file.originalname);
+        
+        // Use the storage interface to create the document in main system
         const mainDocument = await storage.createDocument({
           targetCompanyId: portalToken.targetCompanyId,
+          uploadedBy: 1, // System user for portal submissions
+          documentName: file.originalname,
           originalFilename: file.originalname,
-          storedFilename: file.filename,
           filePath: file.path,
           fileSize: file.size,
           fileType: file.mimetype,
-          categoryId: 1, // Default to first category (Financial Documents)
-          uploadedBy: 1, // Use system user ID for portal submissions
-          documentNotes: `Submitted via external portal${req.body.submission_notes ? ': ' + req.body.submission_notes : ''}`,
-          accessLevel: 'internal',
-          isVersioned: false,
+          documentCategory: req.body.document_category || 'General',
+          description: `Submitted via external portal${req.body.submission_notes ? ': ' + req.body.submission_notes : ''}`,
+          isConfidential: false,
+          uploadDate: new Date(),
+          accessCount: 0,
         });
-        console.log('✓ Portal document integrated into main system:', mainDocument.id);
+        
+        console.log('✅ SUCCESS: Portal document integrated into main system! Document ID:', mainDocument.id);
       } catch (integrationError: any) {
-        console.log('Note: Could not integrate with main document system:', integrationError?.message || 'Unknown error');
+        console.error('❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
+        console.error('Full error:', integrationError);
         // Continue anyway - portal submission is still valid
       }
       
