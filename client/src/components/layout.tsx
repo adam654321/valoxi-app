@@ -44,6 +44,7 @@ export default function Layout({ children }: LayoutProps) {
     if (path === "/target-companies" && (location === "/target-companies" || location.startsWith("/target-companies/"))) return true;
     if (path === "/pipeline" && location === "/pipeline") return true;
     if (path === "/team" && location === "/team") return true;
+    if (path === "/reports" && location === "/reports") return true;
     if (path === "/notifications" && location === "/notifications") return true;
     return location === path;
   };
@@ -83,6 +84,9 @@ export default function Layout({ children }: LayoutProps) {
                 </Link>
                 <Link href="/pipeline" className={getNavLinkClass("/pipeline")}>
                   Pipeline
+                </Link>
+                <Link href="/reports" className={getNavLinkClass("/reports")}>
+                  Reports
                 </Link>
                 <Link href="/team" className={getNavLinkClass("/team")}>
                   Team

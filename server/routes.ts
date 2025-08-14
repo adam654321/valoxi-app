@@ -1476,6 +1476,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================
+  // Reporting & Analytics Routes
+  // ========================
+
+  // Get pipeline overview report
+  app.get("/api/reports/pipeline-overview", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const dateRange = req.query.range as string;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const pipelineData = await storage.getPipelineOverview(userCompanyId, dateRange);
+      res.json(pipelineData);
+    } catch (error) {
+      console.error("Pipeline overview error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get activity summary report
+  app.get("/api/reports/activity-summary", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const dateRange = req.query.range as string;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const activityData = await storage.getActivitySummary(userCompanyId, dateRange);
+      res.json(activityData);
+    } catch (error) {
+      console.error("Activity summary error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get performance metrics report
+  app.get("/api/reports/performance-metrics", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const dateRange = req.query.range as string;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const performanceData = await storage.getPerformanceMetrics(userCompanyId, dateRange);
+      res.json(performanceData);
+    } catch (error) {
+      console.error("Performance metrics error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get stage analysis report
+  app.get("/api/reports/stage-analysis", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const dateRange = req.query.range as string;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const stageData = await storage.getStageAnalysis(userCompanyId, dateRange);
+      res.json(stageData);
+    } catch (error) {
+      console.error("Stage analysis error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get user performance report
+  app.get("/api/reports/user-performance", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const dateRange = req.query.range as string;
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const userPerformanceData = await storage.getUserPerformance(userCompanyId, dateRange);
+      res.json(userPerformanceData);
+    } catch (error) {
+      console.error("User performance error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Export reports as CSV
+  app.get("/api/reports/export/:type", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const reportType = req.params.type;
+      const format = req.query.format as string || 'csv';
+      
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User company not found" });
+      }
+
+      const csvData = await storage.exportReport(userCompanyId, reportType, format);
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${reportType}_report_${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvData);
+    } catch (error) {
+      console.error("Export report error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

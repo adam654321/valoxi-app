@@ -15,6 +15,7 @@ import Contacts from "@/pages/contacts";
 import TeamManagement from "@/pages/team-management";
 import AcceptInvitation from "@/pages/accept-invitation";
 import Pipeline from "@/pages/pipeline";
+import Reports from "@/pages/reports";
 import { NotificationsPage } from "@/components/notifications";
 
 function Router() {
@@ -50,6 +51,7 @@ function Router() {
             <Route path="/target-companies/:id" component={TargetCompanyDetail} />
             <Route path="/contacts" component={Contacts} />
             <Route path="/team" component={TeamManagement} />
+            <Route path="/reports" component={Reports} />
             <Route path="/notifications" component={NotificationsPage} />
             <Route component={NotFound} />
           </Switch>

@@ -1200,68 +1200,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(stageHistory.changedAt));
   }
 
-  async getPipelineOverview(userCompanyId: number): Promise<{
-    stageStats: Array<{
-      stageName: string;
-      stageOrder: number;
-      companyCount: number;
-      avgDaysInStage: number | null;
-    }>;
-    recentChanges: Array<StageHistory & {
-      companyName: string;
-      changedByName: string;
-    }>;
-    totalCompanies: number;
-  }> {
-    // Get stage statistics
-    const stageStats = await db
-      .select({
-        stageName: pipelineStages.stageName,
-        stageOrder: pipelineStages.stageOrder,
-        companyCount: sql<number>`COALESCE(COUNT(${targetCompanies.id}), 0)::int`,
-        avgDaysInStage: sql<number | null>`AVG(EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})))`,
-      })
-      .from(pipelineStages)
-      .leftJoin(targetCompanies, 
-        and(
-          eq(pipelineStages.stageName, targetCompanies.stage),
-          eq(targetCompanies.userCompanyId, userCompanyId)
-        )
-      )
-      .where(eq(pipelineStages.isActive, true))
-      .groupBy(pipelineStages.stageName, pipelineStages.stageOrder)
-      .orderBy(pipelineStages.stageOrder);
 
-    // Get recent stage changes
-    const recentChanges = await db
-      .select({
-        id: stageHistory.id,
-        targetCompanyId: stageHistory.targetCompanyId,
-        fromStage: stageHistory.fromStage,
-        toStage: stageHistory.toStage,
-        changedBy: stageHistory.changedBy,
-        changedAt: stageHistory.changedAt,
-        notes: stageHistory.notes,
-        createdAt: stageHistory.createdAt,
-        companyName: targetCompanies.companyName,
-        changedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-      })
-      .from(stageHistory)
-      .innerJoin(targetCompanies, eq(stageHistory.targetCompanyId, targetCompanies.id))
-      .innerJoin(users, eq(stageHistory.changedBy, users.id))
-      .where(eq(targetCompanies.userCompanyId, userCompanyId))
-      .orderBy(desc(stageHistory.changedAt))
-      .limit(10);
-
-    // Calculate total companies
-    const totalCompanies = stageStats.reduce((sum, stage) => sum + stage.companyCount, 0);
-
-    return {
-      stageStats,
-      recentChanges,
-      totalCompanies,
-    };
-  }
 
   // Activity management methods
   async getActivityTypes(): Promise<ActivityType[]> {
@@ -1440,6 +1379,130 @@ export class DatabaseStorage implements IStorage {
       .where(eq(targetCompanies.userCompanyId, userCompanyId))
       .orderBy(desc(activities.activityDate), desc(activities.createdAt))
       .limit(limit);
+  }
+
+  // ========================
+  // Simple Reporting Methods
+  // ========================
+
+  async getPipelineOverview(userCompanyId: number, dateRange?: string) {
+    // Get basic pipeline distribution
+    const pipelineDistribution = await db
+      .select({
+        stage: targetCompanies.stage,
+        count: sql<number>`count(*)::int`,
+        percentage: sql<number>`round(count(*) * 100.0 / sum(count(*)) over (), 2)`,
+      })
+      .from(targetCompanies)
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .groupBy(targetCompanies.stage);
+
+    return {
+      pipelineDistribution,
+      stageVelocity: [],
+      conversionRates: []
+    };
+  }
+
+  async getActivitySummary(userCompanyId: number, dateRange?: string) {
+    // Get activity by type
+    const activityByType = await db
+      .select({
+        activity_type: activities.activityType,
+        count: sql<number>`count(*)::int`,
+        avg_duration: sql<number>`avg(${activities.durationMinutes})`,
+        companies_contacted: sql<number>`count(distinct ${activities.targetCompanyId})::int`,
+      })
+      .from(activities)
+      .innerJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id))
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .groupBy(activities.activityType);
+
+    return {
+      activityByType,
+      activityByUser: [],
+      activityTrends: []
+    };
+  }
+
+  async getPerformanceMetrics(userCompanyId: number, dateRange?: string) {
+    const metrics = await db
+      .select({
+        total_deals: sql<number>`count(*)::int`,
+        active_deals: sql<number>`count(case when ${targetCompanies.stage} not in ('Completion', 'Not Qualified') then 1 end)::int`,
+        completed_deals: sql<number>`count(case when ${targetCompanies.stage} = 'Completion' then 1 end)::int`,
+        success_rate: sql<number>`round(count(case when ${targetCompanies.stage} = 'Completion' then 1 end) * 100.0 / nullif(count(case when ${targetCompanies.stage} in ('Completion', 'Not Qualified') then 1 end), 0), 2)`,
+      })
+      .from(targetCompanies)
+      .where(eq(targetCompanies.userCompanyId, userCompanyId));
+
+    return metrics[0] || {
+      total_deals: 0,
+      active_deals: 0,
+      completed_deals: 0,
+      success_rate: 0
+    };
+  }
+
+  async getStageAnalysis(userCompanyId: number, dateRange?: string) {
+    return await db
+      .select({
+        stage_name: targetCompanies.stage,
+        deal_count: sql<number>`count(*)::int`,
+        avg_days: sql<number>`avg(extract(days from (now() - ${targetCompanies.stageUpdatedAt})))`,
+        risk_level: sql<string>`case 
+          when avg(extract(days from (now() - ${targetCompanies.stageUpdatedAt}))) > 30 then 'high'
+          when avg(extract(days from (now() - ${targetCompanies.stageUpdatedAt}))) > 14 then 'medium'
+          else 'low'
+        end`,
+      })
+      .from(targetCompanies)
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .groupBy(targetCompanies.stage);
+  }
+
+  async getUserPerformance(userCompanyId: number, dateRange?: string) {
+    return await db
+      .select({
+        user_name: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        active_deals: sql<number>`count(distinct case when ${targetCompanies.stage} not in ('Completion', 'Not Qualified') then ${targetCompanies.id} end)::int`,
+        total_activities: sql<number>`count(${activities.id})::int`,
+        success_rate: sql<number>`round(count(case when ${targetCompanies.stage} = 'Completion' then 1 end) * 100.0 / nullif(count(case when ${targetCompanies.stage} in ('Completion', 'Not Qualified') then 1 end), 0), 2)`,
+      })
+      .from(users)
+      .leftJoin(activities, eq(users.id, activities.userId))
+      .leftJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id))
+      .where(eq(users.userCompanyId, userCompanyId))
+      .groupBy(users.id, users.firstName, users.lastName);
+  }
+
+  async exportReport(userCompanyId: number, reportType: string, format: string = 'csv'): Promise<string> {
+    let data: any[] = [];
+    let headers: string[] = [];
+
+    switch (reportType) {
+      case 'pipeline-overview':
+        const pipelineData = await this.getPipelineOverview(userCompanyId);
+        data = pipelineData.pipelineDistribution;
+        headers = ['stage', 'count', 'percentage'];
+        break;
+      case 'activity-summary':
+        const activityData = await this.getActivitySummary(userCompanyId);
+        data = activityData.activityByType;
+        headers = ['activity_type', 'count', 'avg_duration', 'companies_contacted'];
+        break;
+      default:
+        throw new Error('Invalid report type');
+    }
+
+    // Convert to CSV format
+    let csv = headers.join(',') + '\n';
+    data.forEach((row: any) => {
+      const values = headers.map(header => `"${row[header] || ''}"`);
+      csv += values.join(',') + '\n';
+    });
+
+    return csv;
   }
 }
 
