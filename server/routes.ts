@@ -2129,6 +2129,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         submissionUserAgent: req.get('User-Agent'),
         documentRequirementId: req.body.requirement_id ? parseInt(req.body.requirement_id) : null,
       });
+
+      // Also create a document in the main document management system for integration
+      try {
+        // Create the document directly in main system to show up on company documents page
+        const mainDocument = await storage.createDocument({
+          targetCompanyId: portalToken.targetCompanyId,
+          originalFilename: file.originalname,
+          storedFilename: file.filename,
+          filePath: file.path,
+          fileSize: file.size,
+          fileType: file.mimetype,
+          categoryId: 1, // Default to first category (Financial Documents)
+          uploadedBy: 1, // Use system user ID for portal submissions
+          documentNotes: `Submitted via external portal${req.body.submission_notes ? ': ' + req.body.submission_notes : ''}`,
+          accessLevel: 'internal',
+          isVersioned: false,
+        });
+        console.log('✓ Portal document integrated into main system:', mainDocument.id);
+      } catch (integrationError: any) {
+        console.log('Note: Could not integrate with main document system:', integrationError?.message || 'Unknown error');
+        // Continue anyway - portal submission is still valid
+      }
       
       // Log activity
       await storage.logPortalActivity({
