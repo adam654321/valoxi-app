@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Pencil, Trash2, Building2, Eye } from "lucide-react";
 import type { TargetCompany } from "@shared/schema";
 
@@ -54,6 +54,7 @@ type TargetCompanyForm = z.infer<typeof targetCompanySchema>;
 export default function TargetCompanies() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [editingCompany, setEditingCompany] = useState<TargetCompany | null>(null);
 
@@ -186,6 +187,15 @@ export default function TargetCompanies() {
     setShowForm(true);
   };
 
+  const handleCardClick = (company: TargetCompany, event: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or links
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
+    setLocation(`/target-companies/${company.id}`);
+  };
+
   const formatCurrency = (amount: number | string | null) => {
     if (!amount) return "Not specified";
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -298,7 +308,12 @@ export default function TargetCompanies() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {targetCompanies.map((company) => (
-              <Card key={company.id} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={company.id} 
+                className="hover:shadow-lg transition-shadow cursor-pointer" 
+                onClick={(event) => handleCardClick(company, event)}
+                data-testid={`card-company-${company.id}`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div>
@@ -315,6 +330,7 @@ export default function TargetCompanies() {
                           variant="ghost"
                           size="sm"
                           title="View Details"
+                          data-testid={`button-view-details-${company.id}`}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -324,6 +340,7 @@ export default function TargetCompanies() {
                         size="sm"
                         onClick={() => handleEdit(company)}
                         title="Edit Company"
+                        data-testid={`button-edit-${company.id}`}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -333,6 +350,7 @@ export default function TargetCompanies() {
                         onClick={() => deleteMutation.mutate(company.id)}
                         disabled={deleteMutation.isPending}
                         title="Delete Company"
+                        data-testid={`button-delete-${company.id}`}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
