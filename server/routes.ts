@@ -416,7 +416,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send webhook if website is provided
       if (validatedData.website && validatedData.website.trim()) {
-        await sendWebhook(validatedData.website, targetCompany.id);
+        // Log the webhook being sent for this company
+        const log = {
+          id: logCounter++,
+          timestamp: new Date().toISOString(),
+          targetCompanyId: targetCompany.id,
+          webhookUrl: process.env.WEBHOOK_URL || 'Not configured',
+          payload: {
+            company_name: validatedData.website,
+            target_company_id: targetCompany.id,
+            webhook_response_url: `${process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:3000')}/api/webhook/website-analysis`
+          },
+          response: null,
+          status: "pending",
+          processingTime: 0,
+        };
+        webhookLogs.push(log);
+        
+        console.log(`Webhook initiated for new target company ${targetCompany.id} with website: ${validatedData.website}`);
+        
+        // Send webhook asynchronously (don't block company creation)
+        sendWebhook(validatedData.website, targetCompany.id).then(() => {
+          log.status = "sent";
+          console.log(`Webhook sent successfully for target company ${targetCompany.id}`);
+        }).catch((error) => {
+          log.status = "error";
+          log.response = { error: error.message };
+          console.error(`Webhook failed for target company ${targetCompany.id}:`, error);
+        });
       }
 
       res.status(201).json(targetCompany);
@@ -2667,6 +2694,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`Website analysis updated for target company ID: ${validatedData.target_company_id}`);
+      
+      // Update webhook logs to show response received
+      const log = webhookLogs.find(log => log.targetCompanyId === validatedData.target_company_id && log.status !== "completed");
+      if (log) {
+        log.status = "completed";
+        log.response = {
+          success: true,
+          message: "Website analysis stored successfully",
+          receivedAt: new Date().toISOString(),
+          outputLength: processedOutput.length
+        };
+        log.processingTime = Date.now() - new Date(log.timestamp).getTime();
+        console.log(`Webhook response received and processed for target company ${validatedData.target_company_id} (${log.processingTime}ms total)`);
+      }
+      
       res.json({ success: true, message: "Website analysis stored successfully" });
     } catch (error) {
       console.error("Webhook website analysis error:", error);
@@ -2702,6 +2744,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get webhook logs
   app.get("/api/webhook/logs", async (req: Request, res: Response) => {
     res.json(webhookLogs.slice(-10).reverse()); // Return last 10 logs, newest first
+  });
+
+  // Get pending webhooks (waiting for response)
+  app.get("/api/webhook/pending", async (req: Request, res: Response) => {
+    const pendingWebhooks = webhookLogs.filter(log => 
+      ["pending", "sent"].includes(log.status) && 
+      (Date.now() - new Date(log.timestamp).getTime()) < 300000 // Less than 5 minutes old
+    );
+    res.json(pendingWebhooks);
   });
 
   // Test webhook endpoint
