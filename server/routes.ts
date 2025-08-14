@@ -60,6 +60,7 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
     webhookLogs.push(log);
 
     console.log(`Sending webhook with response URL: ${payload.webhook_response_url} for target company ${targetCompanyId}`);
+    console.log(`Full webhook payload:`, JSON.stringify(payload, null, 2));
     
     const response = await fetch(webhookUrlToUse, {
       method: 'POST',
