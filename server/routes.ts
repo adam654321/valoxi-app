@@ -20,12 +20,18 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
   }
 
   try {
+    // Construct proper webhook URL using Replit domain
+    const baseUrl = process.env.APP_URL || 
+                   (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:3000');
+    
     const payload = {
       company_name: website,
       target_company_id: targetCompanyId,
-      webhook_response_url: `${process.env.APP_URL || 'http://localhost:3000'}/api/webhook/website-analysis`
+      webhook_response_url: `${baseUrl}/api/webhook/website-analysis`
     };
 
+    console.log(`Sending webhook with response URL: ${payload.webhook_response_url}`);
+    
     const response = await fetch(webhookUrlToUse, {
       method: 'POST',
       headers: {
