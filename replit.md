@@ -51,6 +51,7 @@ Preferred communication style: Simple, everyday language.
 - **Activity Management**: Logging and tracking of various activity types (calls, emails, meetings, notes) linked to contacts and displayed in a timeline view.
 - **Document Management**: Advanced document viewer supporting various file types (PDF, images, Office documents) with secure handling and browser compatibility.
 - **External Document Portal**: Secure, token-based portal for external parties to submit documents, with robust access control, activity logging, and integration with the main document system.
+- **Email Integration**: Comprehensive email system using nodemailer with Google Workspace SMTP for team invitations, portal access notifications, and document submission alerts. Features professional email templates and secure credential management.
 
 # External Dependencies
 

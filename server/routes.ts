@@ -779,13 +779,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send invitation email
       const inviteUrl = `${req.protocol}://${req.get('host')}/invite/${invitation.invitationToken}`;
-      const inviterUser = await storage.getUserById(userId);
-      const userCompany = await storage.getUserCompanyById(userCompanyId);
+      const inviterUser = await storage.getUser(userId);
+      const userCompany = await storage.getUserCompany(userCompanyId);
       
       if (inviterUser && userCompany) {
+        const inviterName = `${inviterUser.firstName || ''} ${inviterUser.lastName || ''}`.trim() || inviterUser.email;
         const emailSent = await emailService.sendTeamInvitation(
           email,
-          inviterUser.fullName || inviterUser.email,
+          inviterName,
           userCompany.companyName,
           invitation.invitationToken,
           inviteUrl,
@@ -2168,8 +2169,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentCategory: req.body.document_category || 'General',
           description: `Submitted via external portal${req.body.submission_notes ? ': ' + req.body.submission_notes : ''}`,
           isConfidential: false,
-
-          accessCount: 0,
         });
         
         console.log('✅ SUCCESS: Portal document integrated into main system! Document ID:', mainDocument.id);
@@ -2184,8 +2183,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Send notification email to deal team about new document
         try {
-          const contact = await storage.getTargetContactById(portalToken.targetContactId);
-          const targetCompany = await storage.getTargetCompanyById(portalToken.targetCompanyId);
+          const contact = await storage.getTargetContact(portalToken.targetContactId, portalToken.userCompanyId);
+          const targetCompany = await storage.getTargetCompany(portalToken.targetCompanyId, portalToken.userCompanyId);
           const dealTeamEmails = await storage.getDealTeamEmails(portalToken.targetCompanyId);
           
           if (contact && targetCompany && dealTeamEmails.length > 0) {
@@ -2342,8 +2341,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send portal access email if contact email is available
       try {
-        const contact = await storage.getTargetContactById(tokenData.targetContactId);
-        const targetCompany = await storage.getTargetCompanyById(tokenData.targetCompanyId);
+        const contact = await storage.getTargetContact(tokenData.targetContactId, tokenData.userCompanyId);
+        const targetCompany = await storage.getTargetCompany(tokenData.targetCompanyId, tokenData.userCompanyId);
         
         if (contact?.email && targetCompany) {
           await emailService.sendPortalAccessLink(
@@ -2352,7 +2351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             targetCompany.companyName,
             portalUrl,
             tokenData.customMessage,
-            portalToken.expiresAt
+            portalToken.expiresAt || undefined
           );
         }
       } catch (emailError) {
