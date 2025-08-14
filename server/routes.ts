@@ -5,8 +5,11 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
+import multer from "multer";
+import path from "path";
+import fs from "fs/promises";
 
 // Extend session type
 declare module 'express-session' {
@@ -1694,6 +1697,246 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(csvData);
     } catch (error) {
       console.error("Export report error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Configure multer for file uploads
+  const uploadStorage = multer.diskStorage({
+    destination: async (req, file, cb) => {
+      const companyId = req.params.id;
+      const uploadPath = path.join(process.cwd(), 'uploads', 'companies', companyId);
+      
+      try {
+        await fs.mkdir(uploadPath, { recursive: true });
+        cb(null, uploadPath);
+      } catch (error) {
+        cb(error as Error, '');
+      }
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const extension = path.extname(file.originalname);
+      cb(null, `doc-${uniqueSuffix}${extension}`);
+    }
+  });
+
+  const fileFilter = (req: any, file: any, cb: any) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'image/jpeg',
+      'image/png'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not supported'), false);
+    }
+  };
+
+  const upload = multer({
+    storage: uploadStorage,
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+  });
+
+  // Document Categories endpoint
+  app.get("/api/document-categories", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const categories = await storage.getDocumentCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Get document categories error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Upload document
+  app.post("/api/target-companies/:id/documents", isAuthenticated, (req: Request, res: Response) => {
+    upload.single('document')(req, res, async (err) => {
+      try {
+        const targetCompanyId = parseInt(req.params.id);
+        const userId = req.session.userId!;
+        const userCompanyId = req.session.userCompanyId!;
+        
+        if (err) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File size too large. Maximum 10MB allowed.' });
+          }
+          return res.status(400).json({ error: err.message });
+        }
+        
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Verify user has access to this company
+        const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+        if (!company) {
+          return res.status(404).json({ error: 'Company not found or access denied' });
+        }
+        
+        // Create document record
+        const documentData = {
+          targetCompanyId,
+          uploadedBy: userId,
+          documentName: req.body.document_name || req.file.originalname,
+          originalFilename: req.file.originalname,
+          filePath: req.file.path,
+          fileSize: req.file.size,
+          fileType: req.file.mimetype,
+          documentCategory: req.body.document_category || 'Other',
+          description: req.body.description || '',
+          isConfidential: req.body.is_confidential !== 'false'
+        };
+        
+        const document = await storage.createDocument(documentData);
+        
+        res.json({
+          success: true,
+          document,
+          message: 'Document uploaded successfully'
+        });
+        
+      } catch (error) {
+        console.error('Document upload failed:', error);
+        res.status(500).json({ error: 'Upload failed' });
+      }
+    });
+  });
+
+  // Get company documents
+  app.get("/api/target-companies/:id/documents", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const documents = await storage.getCompanyDocuments(targetCompanyId, userCompanyId);
+      
+      // Group documents by category
+      const groupedDocuments = documents.reduce((acc: any, doc) => {
+        if (!acc[doc.documentCategory]) {
+          acc[doc.documentCategory] = [];
+        }
+        acc[doc.documentCategory].push(doc);
+        return acc;
+      }, {});
+      
+      res.json(groupedDocuments);
+    } catch (error) {
+      console.error("Get company documents error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get document details
+  app.get("/api/documents/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const document = await storage.getDocument(documentId, userCompanyId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found or access denied' });
+      }
+      
+      res.json(document);
+    } catch (error) {
+      console.error("Get document error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Download document
+  app.get("/api/documents/:id/download", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const document = await storage.getDocument(documentId, userCompanyId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found or access denied' });
+      }
+      
+      // Log access
+      await storage.logDocumentAccess(documentId, userId, 'download', req.ip);
+      
+      // Set headers for download
+      res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+      res.setHeader('Content-Type', document.fileType);
+      
+      // Send file
+      res.sendFile(path.resolve(document.filePath));
+      
+    } catch (error) {
+      console.error("Download document error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update document
+  app.put("/api/documents/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const updateData = {
+        documentName: req.body.document_name,
+        documentCategory: req.body.document_category,
+        description: req.body.description,
+        isConfidential: req.body.is_confidential
+      };
+      
+      const document = await storage.updateDocument(documentId, updateData, userCompanyId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found or access denied' });
+      }
+      
+      res.json({ success: true, document });
+    } catch (error) {
+      console.error("Update document error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete document
+  app.delete("/api/documents/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      // Get document before deletion to remove file
+      const document = await storage.getDocument(documentId, userCompanyId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found or access denied' });
+      }
+      
+      const success = await storage.deleteDocument(documentId, userCompanyId);
+      if (!success) {
+        return res.status(500).json({ error: 'Failed to delete document' });
+      }
+      
+      // Remove file from filesystem
+      try {
+        await fs.unlink(document.filePath);
+      } catch (err) {
+        console.warn("Could not remove file:", document.filePath, err);
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete document error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

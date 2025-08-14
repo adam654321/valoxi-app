@@ -41,6 +41,7 @@ import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { ActivityManagement } from "@/components/activity-management";
+import { DocumentManagement } from "@/components/document-management";
 
 // Enhanced profile interface to match the backend CompanyProfile
 interface CompanyProfile extends TargetCompany {
@@ -412,7 +413,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -420,6 +421,10 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="contacts" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Contacts
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Documents
             </TabsTrigger>
             <TabsTrigger value="activities" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
@@ -755,6 +760,13 @@ export default function TargetCompanyDetail() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="documents" className="space-y-6">
+            <DocumentManagement 
+              targetCompanyId={parseInt(id!)}
+              companyName={company.companyName}
+            />
+          </TabsContent>
+
           <TabsContent value="activities" className="space-y-6">
             <Card>
               <CardHeader>
@@ -778,7 +790,7 @@ export default function TargetCompanyDetail() {
               targetCompanyId={parseInt(id!)}
               targetCompanyName={company.companyName}
               currentStage={company.stage || 'New Target'}
-              stageUpdatedAt={company.stageUpdatedAt || company.createdAt || new Date().toISOString()}
+              stageUpdatedAt={company.stageUpdatedAt || (company.createdAt ? new Date(company.createdAt).toISOString() : new Date().toISOString())}
               stageUpdatedBy={company.stageUpdatedBy}
               daysInStage={company.stageUpdatedAt 
                 ? Math.floor((new Date().getTime() - new Date(company.stageUpdatedAt).getTime()) / (1000 * 60 * 60 * 24))

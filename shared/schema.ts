@@ -251,6 +251,7 @@ export const targetCompaniesRelations = relations(targetCompanies, ({ one, many 
   notifications: many(teamNotifications),
   stageHistory: many(stageHistory),
   activities: many(activities),
+  documents: many(documents),
 }));
 
 export const targetContactsRelations = relations(targetContacts, ({ one, many }) => ({
@@ -361,6 +362,78 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   }),
 }));
 
+// Document categories table
+export const documentCategories = pgTable("document_categories", {
+  id: serial("id").primaryKey(),
+  categoryName: varchar("category_name", { length: 100 }).unique().notNull(),
+  description: text("description"),
+  isRequired: boolean("is_required").default(false),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Documents table
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  documentName: varchar("document_name", { length: 255 }).notNull(),
+  originalFilename: varchar("original_filename", { length: 255 }).notNull(),
+  filePath: varchar("file_path", { length: 500 }).notNull(),
+  fileSize: integer("file_size").notNull(), // in bytes
+  fileType: varchar("file_type", { length: 50 }).notNull(),
+  documentCategory: varchar("document_category", { length: 100 }).notNull(),
+  description: text("description"),
+  isConfidential: boolean("is_confidential").default(true),
+  uploadDate: timestamp("upload_date").defaultNow(),
+  lastAccessed: timestamp("last_accessed"),
+  accessCount: integer("access_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Document access log
+export const documentAccessLog = pgTable("document_access_log", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  accessedBy: integer("accessed_by").references(() => users.id).notNull(),
+  accessType: varchar("access_type", { length: 50 }).notNull(), // 'view', 'download'
+  accessedAt: timestamp("accessed_at").defaultNow(),
+  ipAddress: inet("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for document tables
+export const documentCategoriesRelations = relations(documentCategories, ({ many }) => ({
+  documents: many(documents),
+}));
+
+export const documentsRelations = relations(documents, ({ one, many }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [documents.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [documents.uploadedBy],
+    references: [users.id],
+  }),
+  category: one(documentCategories, {
+    fields: [documents.documentCategory],
+    references: [documentCategories.categoryName],
+  }),
+  accessLog: many(documentAccessLog),
+}));
+
+export const documentAccessLogRelations = relations(documentAccessLog, ({ one }) => ({
+  document: one(documents, {
+    fields: [documentAccessLog.documentId],
+    references: [documents.id],
+  }),
+  accessedByUser: one(users, {
+    fields: [documentAccessLog.accessedBy],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserCompanySchema = createInsertSchema(userCompanies).omit({
   id: true,
@@ -438,6 +511,25 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
   followUpDate: z.string().datetime().optional().nullable().or(z.date().optional().nullable()),
 });
 
+export const insertDocumentCategorySchema = createInsertSchema(documentCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  createdAt: true,
+  uploadDate: true,
+  lastAccessed: true,
+  accessCount: true,
+});
+
+export const insertDocumentAccessLogSchema = createInsertSchema(documentAccessLog).omit({
+  id: true,
+  createdAt: true,
+  accessedAt: true,
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -476,6 +568,15 @@ export type ActivityType = typeof activityTypes.$inferSelect;
 
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
+
+export type InsertDocumentCategory = z.infer<typeof insertDocumentCategorySchema>;
+export type DocumentCategory = typeof documentCategories.$inferSelect;
+
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Document = typeof documents.$inferSelect;
+
+export type InsertDocumentAccessLog = z.infer<typeof insertDocumentAccessLogSchema>;
+export type DocumentAccessLog = typeof documentAccessLog.$inferSelect;
 
 // Dashboard preferences table
 export const dashboardPreferences = pgTable("dashboard_preferences", {

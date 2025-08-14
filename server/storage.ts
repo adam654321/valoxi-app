@@ -14,6 +14,9 @@ import {
   activities,
   dashboardPreferences,
   dashboardAlerts,
+  documentCategories,
+  documents,
+  documentAccessLog,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -29,6 +32,9 @@ import {
   type Activity,
   type DashboardPreference,
   type DashboardAlert,
+  type DocumentCategory,
+  type Document,
+  type DocumentAccessLog,
   type InsertUser,
   type InsertUserCompany,
   type InsertTargetCompany,
@@ -43,6 +49,9 @@ import {
   type InsertActivity,
   type InsertDashboardPreference,
   type InsertDashboardAlert,
+  type InsertDocumentCategory,
+  type InsertDocument,
+  type InsertDocumentAccessLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -235,6 +244,15 @@ export interface IStorage {
   updateDashboardPreferences(userId: number, preferences: any): Promise<void>;
   getDashboardAlerts(userCompanyId: number): Promise<DashboardAlert[]>;
   dismissAlert(alertId: number, userCompanyId: number): Promise<boolean>;
+
+  // Document operations
+  getDocumentCategories(): Promise<DocumentCategory[]>;
+  createDocument(document: InsertDocument): Promise<Document>;
+  getCompanyDocuments(targetCompanyId: number, userCompanyId: number): Promise<(Document & { uploadedByName: string; categoryDescription?: string })[]>;
+  getDocument(documentId: number, userCompanyId: number): Promise<Document | undefined>;
+  updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined>;
+  deleteDocument(documentId: number, userCompanyId: number): Promise<boolean>;
+  logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1838,6 +1856,117 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return !!updatedAlert;
+  }
+
+  // Document operations
+  async getDocumentCategories(): Promise<DocumentCategory[]> {
+    return await db
+      .select()
+      .from(documentCategories)
+      .orderBy(documentCategories.sortOrder, documentCategories.categoryName);
+  }
+
+  async createDocument(document: InsertDocument): Promise<Document> {
+    const [createdDocument] = await db
+      .insert(documents)
+      .values(document)
+      .returning();
+    return createdDocument;
+  }
+
+  async getCompanyDocuments(targetCompanyId: number, userCompanyId: number): Promise<(Document & { uploadedByName: string; categoryDescription?: string })[]> {
+    // First verify the user has access to this company
+    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      return [];
+    }
+
+    return await db
+      .select({
+        id: documents.id,
+        targetCompanyId: documents.targetCompanyId,
+        uploadedBy: documents.uploadedBy,
+        documentName: documents.documentName,
+        originalFilename: documents.originalFilename,
+        filePath: documents.filePath,
+        fileSize: documents.fileSize,
+        fileType: documents.fileType,
+        documentCategory: documents.documentCategory,
+        description: documents.description,
+        isConfidential: documents.isConfidential,
+        uploadDate: documents.uploadDate,
+        lastAccessed: documents.lastAccessed,
+        accessCount: documents.accessCount,
+        createdAt: documents.createdAt,
+        uploadedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        categoryDescription: documentCategories.description,
+      })
+      .from(documents)
+      .leftJoin(users, eq(documents.uploadedBy, users.id))
+      .leftJoin(documentCategories, eq(documents.documentCategory, documentCategories.categoryName))
+      .where(eq(documents.targetCompanyId, targetCompanyId))
+      .orderBy(documents.documentCategory, desc(documents.uploadDate));
+  }
+
+  async getDocument(documentId: number, userCompanyId: number): Promise<Document | undefined> {
+    const [document] = await db
+      .select()
+      .from(documents)
+      .leftJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
+      .where(and(
+        eq(documents.id, documentId),
+        eq(targetCompanies.userCompanyId, userCompanyId)
+      ));
+    return document?.documents;
+  }
+
+  async updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined> {
+    // First verify the user has access to this document
+    const existingDocument = await this.getDocument(documentId, userCompanyId);
+    if (!existingDocument) {
+      return undefined;
+    }
+
+    const [updatedDocument] = await db
+      .update(documents)
+      .set(document)
+      .where(eq(documents.id, documentId))
+      .returning();
+    return updatedDocument;
+  }
+
+  async deleteDocument(documentId: number, userCompanyId: number): Promise<boolean> {
+    // First verify the user has access to this document
+    const existingDocument = await this.getDocument(documentId, userCompanyId);
+    if (!existingDocument) {
+      return false;
+    }
+
+    const [deletedDocument] = await db
+      .delete(documents)
+      .where(eq(documents.id, documentId))
+      .returning();
+    return !!deletedDocument;
+  }
+
+  async logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void> {
+    await db
+      .insert(documentAccessLog)
+      .values({
+        documentId,
+        accessedBy: userId,
+        accessType,
+        ipAddress: ipAddress || null,
+      });
+
+    // Update document access count and last accessed timestamp
+    await db
+      .update(documents)
+      .set({
+        accessCount: sql`${documents.accessCount} + 1`,
+        lastAccessed: new Date(),
+      })
+      .where(eq(documents.id, documentId));
   }
 }
 
