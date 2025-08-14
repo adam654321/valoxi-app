@@ -36,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw } from "lucide-react";
 import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -92,9 +92,17 @@ export default function TargetCompanyDetail() {
   });
 
   // Get comprehensive company profile with enhanced data
-  const { data: profile, isLoading: profileLoading } = useQuery<CompanyProfile>({
+  const { data: profile, isLoading: profileLoading, isFetching: profileFetching, refetch: refetchProfile } = useQuery<CompanyProfile>({
     queryKey: ["/api/target-companies", id, "profile"],
     enabled: !!id,
+    // Poll every 10 seconds if website analysis is not available yet
+    refetchInterval: (data) => {
+      if (!data?.websiteAnalysis && data?.website) {
+        return 10000; // 10 seconds
+      }
+      return false; // No polling if analysis is complete or no website
+    },
+    refetchIntervalInBackground: false,
   });
 
   // Extract company and contacts from profile
@@ -604,13 +612,32 @@ export default function TargetCompanyDetail() {
           <TabsContent value="website-analysis" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Globe className="w-5 h-5" />
-                  Website Analysis
-                </CardTitle>
-                <CardDescription>
-                  AI-powered analysis of {company.companyName}'s website and digital presence
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Globe className="w-5 h-5" />
+                      Website Analysis
+                      {profileFetching && !profileLoading && (
+                        <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      AI-powered analysis of {company.companyName}'s website and digital presence
+                    </CardDescription>
+                  </div>
+                  {company && !company.websiteAnalysis && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchProfile()}
+                      disabled={profileFetching}
+                      data-testid="button-refresh-analysis"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${profileFetching ? 'animate-spin' : ''}`} />
+                      {profileFetching ? 'Checking...' : 'Check for Updates'}
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {profileLoading ? (
