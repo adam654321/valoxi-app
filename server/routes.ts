@@ -2626,10 +2626,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = webhookSchema.parse(req.body);
       
+      // Convert \n to actual line breaks for proper markdown rendering
+      const processedOutput = validatedData.output.replace(/\\n/g, '\n');
+      
       // Update target company with website analysis
       const updated = await storage.updateTargetCompanyWebsiteAnalysis(
         validatedData.target_company_id,
-        validatedData.output
+        processedOutput
       );
 
       if (!updated) {
