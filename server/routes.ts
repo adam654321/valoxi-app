@@ -373,7 +373,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User company not found" });
       }
 
-      const validatedData = insertTargetCompanySchema.parse(req.body);
+      // Create a validation schema that excludes userCompanyId and createdBy since we add them from session
+      const frontendTargetCompanySchema = insertTargetCompanySchema.omit({
+        userCompanyId: true,
+        createdBy: true,
+        stageUpdatedBy: true,
+        stageUpdatedAt: true,
+      });
+      
+      const validatedData = frontendTargetCompanySchema.parse(req.body);
 
       // Convert empty strings to null and handle number conversion
       const processedData = {
