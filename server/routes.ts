@@ -12,6 +12,32 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 
+// Webhook function to send company website data
+async function sendWebhook(website: string) {
+  const webhookUrl = process.env.WEBHOOK_URL;
+  if (!webhookUrl || !website) {
+    return;
+  }
+
+  try {
+    const payload = {
+      company_name: website
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log(`Webhook sent for website: ${website}, Status: ${response.status}`);
+  } catch (error) {
+    console.error('Failed to send webhook:', error);
+  }
+}
+
 // Extend session type
 declare module 'express-session' {
   interface SessionData {
@@ -364,6 +390,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userCompanyId,
         createdBy: userId,
       });
+
+      // Send webhook if website is provided
+      if (validatedData.website && validatedData.website.trim()) {
+        await sendWebhook(validatedData.website);
+      }
 
       res.status(201).json(targetCompany);
     } catch (error) {
