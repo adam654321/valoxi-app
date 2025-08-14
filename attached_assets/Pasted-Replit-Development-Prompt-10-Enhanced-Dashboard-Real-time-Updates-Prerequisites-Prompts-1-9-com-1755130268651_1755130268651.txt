@@ -1,0 +1,477 @@
+Replit Development Prompt 10: Enhanced Dashboard & Real-time Updates
+Prerequisites
+Prompts 1-9 completed with working reporting and analytics
+System has comprehensive data for dashboard widgets
+What This Prompt Builds
+Create a comprehensive dashboard that serves as the central hub for M&A professionals, providing real-time insights, quick actions, and personalized widgets.
+System Context Reminder
+Dashboard: Central command center for M&A deal management
+Widgets: Modular components showing key metrics and quick actions
+Real-time Updates: Live data refresh for current deal status
+What You Need to Build
+1. Dashboard Widget System
+Create modular widgets for different aspects of deal management:
+
+Core Widgets:
+
+Pipeline Overview - Visual pipeline with deal counts
+Recent Activities - Latest team activities across all deals
+Upcoming Reminders - Today's and upcoming tasks
+Quick Stats - Key performance indicators
+Hot Deals - High-priority or time-sensitive deals
+Team Activity - Recent team member actions
+Stage Alerts - Deals stuck in stages too long
+2. Database Schema for Dashboard
+-- Create dashboard preferences table
+CREATE TABLE dashboard_preferences (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  widget_type VARCHAR(50) NOT NULL,
+  widget_position INTEGER NOT NULL,
+  widget_size VARCHAR(20) DEFAULT 'medium', -- small, medium, large
+  is_visible BOOLEAN DEFAULT TRUE,
+  widget_config JSONB, -- Store widget-specific settings
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create dashboard alerts table
+CREATE TABLE dashboard_alerts (
+  id SERIAL PRIMARY KEY,
+  user_company_id INTEGER REFERENCES user_companies(id),
+  alert_type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  severity VARCHAR(20) DEFAULT 'info', -- info, warning, critical
+  target_company_id INTEGER REFERENCES target_companies(id),
+  is_dismissed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  dismissed_at TIMESTAMP
+);
+3. API Endpoints
+// Dashboard data
+GET /api/dashboard/widgets              // Get user's dashboard configuration
+PUT /api/dashboard/widgets              // Update widget configuration
+GET /api/dashboard/data/:widget         // Get data for specific widget
+GET /api/dashboard/alerts               // Get dashboard alerts
+PUT /api/dashboard/alerts/:id/dismiss   // Dismiss alert
+
+// Real-time updates
+GET /api/dashboard/live-updates         // Server-sent events for live updates
+4. Dashboard Data Implementation
+const getDashboardData = async (userId) => {
+  const user = await getUserById(userId);
+  
+  // Get all dashboard data in parallel for performance
+  const [
+    pipelineOverview,
+    recentActivities,
+    upcomingReminders,
+    quickStats,
+    hotDeals,
+    teamActivity,
+    stageAlerts
+  ] = await Promise.all([
+    getPipelineOverviewWidget(user.user_company_id),
+    getRecentActivitiesWidget(user.user_company_id),
+    getUpcomingRemindersWidget(userId),
+    getQuickStatsWidget(user.user_company_id),
+    getHotDealsWidget(user.user_company_id),
+    getTeamActivityWidget(user.user_company_id),
+    getStageAlertsWidget(user.user_company_id)
+  ]);
+  
+  return {
+    pipelineOverview,
+    recentActivities,
+    upcomingReminders,
+    quickStats,
+    hotDeals,
+    teamActivity,
+    stageAlerts
+  };
+};
+
+// Pipeline overview widget
+const getPipelineOverviewWidget = async (userCompanyId) => {
+  const pipelineData = await db.query(`
+    SELECT 
+      stage,
+      COUNT(*) as count,
+      AVG(EXTRACT(days FROM (NOW() - stage_updated_at))) as avg_days
+    FROM target_companies 
+    WHERE user_company_id = $1 
+    AND stage NOT IN ('Completion', 'Not Qualified')
+    GROUP BY stage
+    ORDER BY 
+      CASE stage
+        WHEN 'New Target' THEN 1
+        WHEN 'Initial Contact' THEN 2
+        WHEN 'Documents Requested' THEN 3
+        WHEN 'Under Review' THEN 4
+        WHEN 'Offer Stage' THEN 5
+        WHEN 'Negotiation' THEN 6
+        WHEN 'Due Diligence' THEN 7
+        WHEN 'Legal & Accounting' THEN 8
+      END
+  `, [userCompanyId]);
+  
+  const totalActive = pipelineData.rows.reduce((sum, stage) => sum + parseInt(stage.count), 0);
+  
+  return {
+    stages: pipelineData.rows,
+    totalActive,
+    lastUpdated: new Date()
+  };
+};
+
+// Recent activities widget
+const getRecentActivitiesWidget = async (userCompanyId) => {
+  const activities = await db.query(`
+    SELECT 
+      a.*,
+      tc.company_name,
+      u.first_name || ' ' || u.last_name as user_name,
+      cont.first_name || ' ' || cont.last_name as contact_name
+    FROM activities a
+    JOIN target_companies tc ON a.target_company_id = tc.id
+    JOIN users u ON a.user_id = u.id
+    LEFT JOIN target_contacts cont ON a.contact_id = cont.id
+    WHERE tc.user_company_id = $1
+    ORDER BY a.created_at DESC
+    LIMIT 10
+  `, [userCompanyId]);
+  
+  return {
+    activities: activities.rows,
+    lastUpdated: new Date()
+  };
+};
+
+// Hot deals widget (high priority or time-sensitive)
+const getHotDealsWidget = async (userCompanyId) => {
+  const hotDeals = await db.query(`
+    SELECT 
+      tc.*,
+      EXTRACT(days FROM (NOW() - tc.stage_updated_at)) as days_in_stage,
+      COUNT(a.id) as recent_activity_count,
+      MAX(a.activity_date) as last_activity_date
+    FROM target_companies tc
+    LEFT JOIN activities a ON tc.id = a.target_company_id 
+      AND a.activity_date >= CURRENT_DATE - INTERVAL '7 days'
+    WHERE tc.user_company_id = $1
+    AND tc.stage NOT IN ('Completion', 'Not Qualified')
+    GROUP BY tc.id
+    HAVING 
+      EXTRACT(days FROM (NOW() - tc.stage_updated_at)) > 14 -- Stuck in stage
+      OR COUNT(a.id) = 0 -- No recent activity
+      OR tc.stage IN ('Offer Stage', 'Negotiation', 'Due Diligence') -- Critical stages
+    ORDER BY 
+      CASE 
+        WHEN tc.stage IN ('Offer Stage', 'Negotiation') THEN 1
+        WHEN EXTRACT(days FROM (NOW() - tc.stage_updated_at)) > 30 THEN 2
+        ELSE 3
+      END,
+      tc.stage_updated_at ASC
+    LIMIT 5
+  `, [userCompanyId]);
+  
+  return {
+    deals: hotDeals.rows,
+    lastUpdated: new Date()
+  };
+};
+UI Implementation
+Dashboard Layout
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>M&A Dashboard</h1>
+    
+    <div class="dashboard-controls">
+      <button onclick="refreshDashboard()">🔄 Refresh</button>
+      <button onclick="customizeDashboard()">⚙️ Customize</button>
+      <div class="last-updated">
+        Last updated: <span id="last-updated-time">{{lastUpdated | timeAgo}}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Dashboard Alerts -->
+  <div id="dashboard-alerts" class="dashboard-alerts">
+    <!-- Alerts populated dynamically -->
+  </div>
+  
+  <!-- Widget Grid -->
+  <div class="dashboard-grid" id="dashboard-grid">
+    <!-- Widgets populated dynamically based on user preferences -->
+  </div>
+</div>
+Pipeline Overview Widget
+<div class="dashboard-widget pipeline-widget" data-widget="pipeline-overview">
+  <div class="widget-header">
+    <h3>Pipeline Overview</h3>
+    <div class="widget-actions">
+      <button onclick="refreshWidget('pipeline-overview')">🔄</button>
+      <button onclick="viewFullPipeline()">👁️</button>
+    </div>
+  </div>
+  
+  <div class="widget-content">
+    <div class="pipeline-summary">
+      <div class="total-deals">
+        <span class="number">{{totalActive}}</span>
+        <span class="label">Active Deals</span>
+      </div>
+    </div>
+    
+    <div class="pipeline-stages">
+      {{#each stages}}
+      <div class="stage-item" onclick="viewStage('{{stage}}')">
+        <div class="stage-name">{{stage}}</div>
+        <div class="stage-count">{{count}}</div>
+        <div class="stage-days">{{avg_days | round}} days avg</div>
+        {{#if (gt avg_days 21)}}
+        <div class="stage-warning">⚠️</div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+Recent Activities Widget
+<div class="dashboard-widget activities-widget" data-widget="recent-activities">
+  <div class="widget-header">
+    <h3>Recent Activities</h3>
+    <div class="widget-actions">
+      <button onclick="refreshWidget('recent-activities')">🔄</button>
+      <button onclick="viewAllActivities()">👁️</button>
+    </div>
+  </div>
+  
+  <div class="widget-content">
+    <div class="activity-list">
+      {{#each activities}}
+      <div class="activity-item" onclick="viewActivity({{id}})">
+        <div class="activity-icon">
+          {{#if (eq activity_type 'Phone Call')}}📞{{/if}}
+          {{#if (eq activity_type 'Email')}}📧{{/if}}
+          {{#if (eq activity_type 'Meeting')}}🤝{{/if}}
+          {{#if (eq activity_type 'Note')}}📝{{/if}}
+        </div>
+        
+        <div class="activity-details">
+          <div class="activity-title">{{title}}</div>
+          <div class="activity-meta">
+            <span class="company">{{company_name}}</span>
+            <span class="user">by {{user_name}}</span>
+            <span class="time">{{created_at | timeAgo}}</span>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+Hot Deals Widget
+<div class="dashboard-widget hot-deals-widget" data-widget="hot-deals">
+  <div class="widget-header">
+    <h3>🔥 Hot Deals</h3>
+    <div class="widget-subtitle">Deals needing attention</div>
+  </div>
+  
+  <div class="widget-content">
+    {{#if deals}}
+    <div class="hot-deals-list">
+      {{#each deals}}
+      <div class="hot-deal-item priority-{{priority}}" onclick="viewCompany({{id}})">
+        <div class="deal-info">
+          <h4>{{company_name}}</h4>
+          <div class="deal-stage">{{stage}}</div>
+        </div>
+        
+        <div class="deal-alerts">
+          {{#if (gt days_in_stage 21)}}
+          <span class="alert stuck">Stuck {{days_in_stage}} days</span>
+          {{/if}}
+          {{#if (eq recent_activity_count 0)}}
+          <span class="alert inactive">No recent activity</span>
+          {{/if}}
+          {{#if (includes stage 'Offer,Negotiation')}}
+          <span class="alert critical">Critical stage</span>
+          {{/if}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <div class="no-hot-deals">
+      <p>🎉 No deals need immediate attention!</p>
+    </div>
+    {{/if}}
+  </div>
+</div>
+Quick Stats Widget
+<div class="dashboard-widget stats-widget" data-widget="quick-stats">
+  <div class="widget-header">
+    <h3>Quick Stats</h3>
+    <div class="stats-period">Last 30 days</div>
+  </div>
+  
+  <div class="widget-content">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">{{newDeals}}</div>
+        <div class="stat-label">New Deals</div>
+        <div class="stat-change positive">+{{newDealsChange}}%</div>
+      </div>
+      
+      <div class="stat-item">
+        <div class="stat-number">{{completedDeals}}</div>
+        <div class="stat-label">Completed</div>
+        <div class="stat-change positive">+{{completedChange}}%</div>
+      </div>
+      
+      <div class="stat-item">
+        <div class="stat-number">{{totalActivities}}</div>
+        <div class="stat-label">Activities</div>
+        <div class="stat-change neutral">{{activityChange}}%</div>
+      </div>
+      
+      <div class="stat-item">
+        <div class="stat-number">{{avgDealTime}}</div>
+        <div class="stat-label">Avg Deal Time</div>
+        <div class="stat-change negative">{{dealTimeChange}} days</div>
+      </div>
+    </div>
+  </div>
+</div>
+Real-time Updates Implementation
+// Server-sent events for real-time updates
+const setupRealTimeUpdates = () => {
+  const eventSource = new EventSource('/api/dashboard/live-updates');
+  
+  eventSource.onmessage = (event) => {
+    const update = JSON.parse(event.data);
+    handleRealTimeUpdate(update);
+  };
+  
+  eventSource.onerror = (error) => {
+    console.error('Real-time connection error:', error);
+    // Attempt to reconnect after 5 seconds
+    setTimeout(setupRealTimeUpdates, 5000);
+  };
+};
+
+const handleRealTimeUpdate = (update) => {
+  switch (update.type) {
+    case 'stage_change':
+      updatePipelineWidget();
+      showNotification(`${update.company_name} moved to ${update.new_stage}`, 'info');
+      break;
+      
+    case 'new_activity':
+      updateActivitiesWidget();
+      updateHotDealsWidget();
+      break;
+      
+    case 'new_deal':
+      updatePipelineWidget();
+      updateStatsWidget();
+      break;
+      
+    case 'reminder_due':
+      updateRemindersWidget();
+      showNotification(`Reminder: ${update.title}`, 'warning');
+      break;
+  }
+};
+
+// Widget refresh functions
+const refreshWidget = async (widgetType) => {
+  try {
+    showWidgetLoading(widgetType);
+    
+    const response = await fetch(`/api/dashboard/data/${widgetType}`);
+    const data = await response.json();
+    
+    updateWidgetContent(widgetType, data);
+    hideWidgetLoading(widgetType);
+    
+  } catch (error) {
+    console.error(`Failed to refresh ${widgetType} widget:`, error);
+    showWidgetError(widgetType);
+  }
+};
+
+// Auto-refresh dashboard every 5 minutes
+setInterval(() => {
+  refreshDashboard();
+}, 5 * 60 * 1000);
+Dashboard Customization
+// Dashboard customization functionality
+const customizeDashboard = () => {
+  showCustomizationModal();
+};
+
+const showCustomizationModal = () => {
+  const modal = document.getElementById('customization-modal');
+  modal.style.display = 'block';
+  
+  // Load current widget configuration
+  loadWidgetConfiguration();
+};
+
+const saveWidgetConfiguration = async (config) => {
+  try {
+    await fetch('/api/dashboard/widgets', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(config)
+    });
+    
+    // Reload dashboard with new configuration
+    location.reload();
+    
+  } catch (error) {
+    console.error('Failed to save widget configuration:', error);
+    showNotification('Failed to save dashboard configuration', 'error');
+  }
+};
+File Structure Updates
+routes/
+├── dashboard.js (enhanced)
+
+public/
+├── dashboard.html (enhanced)
+├── js/
+│   ├── dashboard.js (enhanced)
+│   └── dashboard-widgets.js (new)
+└── css/
+    └── dashboard.css (enhanced)
+Success Criteria for Prompt 10
+Dashboard displays all widgets correctly
+Real-time updates work without page refresh
+Widget customization allows reordering and sizing
+Hot deals widget identifies priority items correctly
+Quick stats show accurate metrics
+Pipeline overview provides actionable insights
+Dashboard loads quickly with all data
+Mobile-responsive dashboard layout
+Business Value
+This prompt provides:
+
+Centralized command center for M&A operations
+Real-time visibility into deal pipeline
+Proactive alerts for deals needing attention
+Customizable interface for different user needs
+Improved team coordination and efficiency
+Next Steps Preview
+Prompt 11 will begin document management:
+
+File upload and storage system
+Document categorization and tracking
+Basic document requirements checklist
+
+This completes the pipeline management phase (Prompts 6-10). The system now has comprehensive deal tracking, activity management, notifications, reporting, and a powerful dashboard for M&A professionals.
