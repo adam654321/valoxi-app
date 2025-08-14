@@ -40,12 +40,14 @@ function Router() {
       {/* Public portal route - accessible without authentication */}
       <Route path="/portal/:token" component={PortalPage} />
       
+      {/* Public invitation route - accessible without authentication */}
+      <Route path="/invite/:token" component={AcceptInvitation} />
+      
       {!isAuthenticated ? (
         <>
           <Route path="/" component={Login} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
-          <Route path="/invite/:token" component={AcceptInvitation} />
           <Route path="/accept-invitation" component={AcceptInvitation} />
         </>
       ) : (
