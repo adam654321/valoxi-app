@@ -363,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Target Company Management Routes
+  // Target Company Management Routes - Accept all fields as strings from form
   const targetCompanyCreateSchema = z.object({
     companyName: z.string().min(1, "Company name is required"),
     industry: z.string().optional(),
@@ -371,9 +371,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     phone: z.string().optional(),
     email: z.string().optional(),
     address: z.string().optional(),
-    annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
-    employeeCount: z.union([z.string(), z.number(), z.null()]).optional(),
-    yearEstablished: z.union([z.string(), z.number(), z.null()]).optional(),
+    annualRevenue: z.string().optional(),
+    employeeCount: z.string().optional(),
+    yearEstablished: z.string().optional(),
     description: z.string().optional(),
     stage: z.string().optional(),
   });
@@ -390,11 +390,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = targetCompanyCreateSchema.parse(req.body);
 
-      const targetCompany = await storage.createTargetCompany({
+      // Convert string fields to numbers for storage
+      const processedData = {
         ...validatedData,
+        annualRevenue: validatedData.annualRevenue && validatedData.annualRevenue.trim() 
+          ? validatedData.annualRevenue 
+          : null,
+        employeeCount: validatedData.employeeCount && validatedData.employeeCount.trim() 
+          ? parseInt(validatedData.employeeCount) || null 
+          : null,
+        yearEstablished: validatedData.yearEstablished && validatedData.yearEstablished.trim() 
+          ? parseInt(validatedData.yearEstablished) || null 
+          : null,
         userCompanyId,
         createdBy: userId,
-      });
+      };
+
+      const targetCompany = await storage.createTargetCompany(processedData);
 
       // Send webhook if website is provided
       if (validatedData.website && validatedData.website.trim()) {
