@@ -89,12 +89,38 @@ export default function AcceptInvitation() {
         password: data.password,
       });
     },
-    onSuccess: () => {
+    onSuccess: async (response) => {
       toast({
         title: "Welcome to the team!",
-        description: "Your account has been created successfully. You can now log in.",
+        description: "Your account has been created successfully. Logging you in...",
       });
-      setLocation("/login");
+      
+      // Auto-login the user after successful registration
+      try {
+        const loginResponse = await apiRequest("POST", "/api/auth/login", {
+          email: invitation?.email,
+          password: form.getValues("password"),
+        });
+        
+        if (loginResponse) {
+          toast({
+            title: "Login successful!",
+            description: "Redirecting to your dashboard...",
+          });
+          setTimeout(() => {
+            setLocation("/dashboard");
+          }, 1000);
+        }
+      } catch (error) {
+        // If auto-login fails, redirect to login page
+        toast({
+          title: "Please login",
+          description: "Your account was created successfully. Please login with your credentials.",
+        });
+        setTimeout(() => {
+          setLocation("/login");
+        }, 1500);
+      }
     },
     onError: (error: any) => {
       toast({
