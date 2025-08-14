@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,7 +51,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
 
   // Reset states when dialog opens/closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setViewerError(false);
       setPdfLoadAttempted(false);

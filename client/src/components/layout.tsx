@@ -46,6 +46,7 @@ export default function Layout({ children }: LayoutProps) {
     if (path === "/team" && location === "/team") return true;
     if (path === "/reports" && location === "/reports") return true;
     if (path === "/notifications" && location === "/notifications") return true;
+    if (path === "/portal-management" && location === "/portal-management") return true;
     return location === path;
   };
 
@@ -90,6 +91,9 @@ export default function Layout({ children }: LayoutProps) {
                 </Link>
                 <Link href="/team" className={getNavLinkClass("/team")}>
                   Team
+                </Link>
+                <Link href="/portal-management" className={getNavLinkClass("/portal-management")}>
+                  Portals
                 </Link>
               </div>
             </div>

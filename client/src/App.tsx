@@ -17,6 +17,8 @@ import AcceptInvitation from "@/pages/accept-invitation";
 import Pipeline from "@/pages/pipeline";
 import Reports from "@/pages/reports";
 import { NotificationsPage } from "@/components/notifications";
+import PortalPage from "@/pages/PortalPage";
+import PortalManagement from "@/pages/PortalManagement";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -34,6 +36,9 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public portal route - accessible without authentication */}
+      <Route path="/portal/:token" component={PortalPage} />
+      
       {!isAuthenticated ? (
         <>
           <Route path="/" component={Login} />
@@ -53,6 +58,7 @@ function Router() {
             <Route path="/team" component={TeamManagement} />
             <Route path="/reports" component={Reports} />
             <Route path="/notifications" component={NotificationsPage} />
+            <Route path="/portal-management" component={PortalManagement} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

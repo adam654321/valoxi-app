@@ -17,6 +17,10 @@ import {
   documentCategories,
   documents,
   documentAccessLog,
+  portalAccessTokens,
+  externalDocumentSubmissions,
+  portalDocumentRequirements,
+  portalActivityLog,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -52,6 +56,14 @@ import {
   type InsertDocumentCategory,
   type InsertDocument,
   type InsertDocumentAccessLog,
+  type PortalAccessToken,
+  type InsertPortalAccessToken,
+  type ExternalDocumentSubmission,
+  type InsertExternalDocumentSubmission,
+  type PortalDocumentRequirement,
+  type InsertPortalDocumentRequirement,
+  type PortalActivityLog,
+  type InsertPortalActivityLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -253,6 +265,24 @@ export interface IStorage {
   updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined>;
   deleteDocument(documentId: number, userCompanyId: number): Promise<boolean>;
   logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void>;
+
+  // External Document Portal operations
+  createPortalAccessToken(token: InsertPortalAccessToken): Promise<PortalAccessToken>;
+  getPortalAccessToken(accessToken: string): Promise<PortalAccessToken | undefined>;
+  validatePortalToken(accessToken: string): Promise<PortalAccessToken | undefined>;
+  updatePortalTokenAccess(tokenId: number, ipAddress?: string, userAgent?: string): Promise<void>;
+  deactivatePortalToken(tokenId: number): Promise<boolean>;
+  
+  createExternalDocumentSubmission(submission: InsertExternalDocumentSubmission): Promise<ExternalDocumentSubmission>;
+  getPortalSubmissions(portalTokenId: number): Promise<ExternalDocumentSubmission[]>;
+  reviewDocumentSubmission(submissionId: number, reviewedBy: number, status: string, notes?: string): Promise<boolean>;
+  
+  createPortalDocumentRequirement(requirement: InsertPortalDocumentRequirement): Promise<PortalDocumentRequirement>;
+  getPortalDocumentRequirements(portalTokenId: number): Promise<PortalDocumentRequirement[]>;
+  updatePortalDocumentRequirement(requirementId: number, requirement: Partial<InsertPortalDocumentRequirement>): Promise<PortalDocumentRequirement | undefined>;
+  
+  logPortalActivity(activity: InsertPortalActivityLog): Promise<void>;
+  getPortalActivityLog(portalTokenId: number): Promise<PortalActivityLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1699,7 +1729,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Dashboard preferences methods
+  // Dashboard preferences methods (first implementation)
   async getDashboardPreferences(userId: number): Promise<DashboardPreference[]> {
     return await db
       .select()
@@ -1734,7 +1764,7 @@ export class DatabaseStorage implements IStorage {
         activityType: activities.activityType,
         activityDate: activities.activityDate,
         companyName: targetCompanies.companyName,
-        notes: activities.notes,
+        description: activities.description,
       })
       .from(activities)
       .innerJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id))
@@ -1820,19 +1850,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Dashboard preferences methods
-  async getDashboardPreferences(userId: number): Promise<DashboardPreference[]> {
-    return await db
-      .select()
-      .from(dashboardPreferences)
-      .where(eq(dashboardPreferences.userId, userId))
-      .orderBy(dashboardPreferences.widgetPosition);
-  }
 
-  async updateDashboardPreferences(userId: number, preferences: any): Promise<void> {
-    // For now, we'll just return since the UI can work without persistent preferences
-    return;
-  }
 
   // Dashboard alerts methods
   async getDashboardAlerts(userCompanyId: number): Promise<DashboardAlert[]> {
@@ -1967,6 +1985,139 @@ export class DatabaseStorage implements IStorage {
         lastAccessed: new Date(),
       })
       .where(eq(documents.id, documentId));
+  }
+
+  // ========================================
+  // External Document Portal Methods
+  // ========================================
+
+  async createPortalAccessToken(token: InsertPortalAccessToken): Promise<PortalAccessToken> {
+    const [createdToken] = await db
+      .insert(portalAccessTokens)
+      .values(token)
+      .returning();
+    return createdToken;
+  }
+
+  async getPortalAccessToken(accessToken: string): Promise<PortalAccessToken | undefined> {
+    const [token] = await db
+      .select()
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.accessToken, accessToken));
+    return token || undefined;
+  }
+
+  async validatePortalToken(accessToken: string): Promise<PortalAccessToken | undefined> {
+    const [token] = await db
+      .select()
+      .from(portalAccessTokens)
+      .where(and(
+        eq(portalAccessTokens.accessToken, accessToken),
+        eq(portalAccessTokens.isActive, true),
+        sql`${portalAccessTokens.expiresAt} > NOW()`
+      ));
+    return token || undefined;
+  }
+
+  async updatePortalTokenAccess(tokenId: number, ipAddress?: string, userAgent?: string): Promise<void> {
+    const updates: any = {
+      lastAccessed: new Date(),
+      accessCount: sql`${portalAccessTokens.accessCount} + 1`
+    };
+
+    if (ipAddress) {
+      // Add IP address to the array if not already present
+      updates.ipAddressesUsed = sql`array_append(COALESCE(${portalAccessTokens.ipAddressesUsed}, '{}'), ${ipAddress})`;
+    }
+
+    if (userAgent) {
+      // Add user agent to the array if not already present
+      updates.userAgentStrings = sql`array_append(COALESCE(${portalAccessTokens.userAgentStrings}, '{}'), ${userAgent})`;
+    }
+
+    await db
+      .update(portalAccessTokens)
+      .set(updates)
+      .where(eq(portalAccessTokens.id, tokenId));
+  }
+
+  async deactivatePortalToken(tokenId: number): Promise<boolean> {
+    const [updatedToken] = await db
+      .update(portalAccessTokens)
+      .set({ isActive: false })
+      .where(eq(portalAccessTokens.id, tokenId))
+      .returning();
+    return !!updatedToken;
+  }
+
+  async createExternalDocumentSubmission(submission: InsertExternalDocumentSubmission): Promise<ExternalDocumentSubmission> {
+    const [createdSubmission] = await db
+      .insert(externalDocumentSubmissions)
+      .values(submission)
+      .returning();
+    return createdSubmission;
+  }
+
+  async getPortalSubmissions(portalTokenId: number): Promise<ExternalDocumentSubmission[]> {
+    return await db
+      .select()
+      .from(externalDocumentSubmissions)
+      .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId))
+      .orderBy(desc(externalDocumentSubmissions.submittedAt));
+  }
+
+  async reviewDocumentSubmission(submissionId: number, reviewedBy: number, status: string, notes?: string): Promise<boolean> {
+    const [updatedSubmission] = await db
+      .update(externalDocumentSubmissions)
+      .set({
+        processingStatus: status,
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewNotes: notes || null,
+      })
+      .where(eq(externalDocumentSubmissions.id, submissionId))
+      .returning();
+    return !!updatedSubmission;
+  }
+
+  async createPortalDocumentRequirement(requirement: InsertPortalDocumentRequirement): Promise<PortalDocumentRequirement> {
+    const [createdRequirement] = await db
+      .insert(portalDocumentRequirements)
+      .values(requirement)
+      .returning();
+    return createdRequirement;
+  }
+
+  async getPortalDocumentRequirements(portalTokenId: number): Promise<PortalDocumentRequirement[]> {
+    return await db
+      .select()
+      .from(portalDocumentRequirements)
+      .where(eq(portalDocumentRequirements.portalTokenId, portalTokenId))
+      .orderBy(portalDocumentRequirements.collectionStage, portalDocumentRequirements.priorityLevel);
+  }
+
+  async updatePortalDocumentRequirement(requirementId: number, requirement: Partial<InsertPortalDocumentRequirement>): Promise<PortalDocumentRequirement | undefined> {
+    const [updatedRequirement] = await db
+      .update(portalDocumentRequirements)
+      .set({ ...requirement, updatedAt: new Date() })
+      .where(eq(portalDocumentRequirements.id, requirementId))
+      .returning();
+    return updatedRequirement || undefined;
+  }
+
+  async logPortalActivity(activity: InsertPortalActivityLog): Promise<void> {
+    await db
+      .insert(portalActivityLog)
+      .values(activity);
+  }
+
+  async getPortalActivityLog(portalTokenId: number): Promise<PortalActivityLog[]> {
+    return await db
+      .select()
+      .from(portalActivityLog)
+      .where(eq(portalActivityLog.portalTokenId, portalTokenId))
+      .orderBy(desc(portalActivityLog.activityTimestamp))
+      .limit(100);
   }
 }
 

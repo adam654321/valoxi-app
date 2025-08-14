@@ -680,3 +680,175 @@ export type DashboardPreference = typeof dashboardPreferences.$inferSelect;
 
 export type InsertDashboardAlert = z.infer<typeof insertDashboardAlertSchema>;
 export type DashboardAlert = typeof dashboardAlerts.$inferSelect;
+
+// ========================================
+// External Document Portal Schema
+// ========================================
+
+// Portal access tokens table for secure external document sharing
+export const portalAccessTokens = pgTable("portal_access_tokens", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  targetContactId: integer("target_contact_id").references(() => targetContacts.id).notNull(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  
+  // Token Details
+  accessToken: varchar("access_token", { length: 255 }).unique().notNull(),
+  tokenPurpose: varchar("token_purpose", { length: 50 }).default("document_submission"),
+  
+  // Access Control
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at").default(sql`(NOW() + INTERVAL '30 days')`),
+  lastAccessed: timestamp("last_accessed"),
+  accessCount: integer("access_count").default(0),
+  
+  // Security Tracking
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  ipAddressesUsed: text("ip_addresses_used").array(),
+  userAgentStrings: text("user_agent_strings").array(),
+  
+  // Portal Configuration
+  allowedActions: text("allowed_actions").default('{"upload": true, "download": true, "message": true}'),
+  customMessage: text("custom_message"),
+  portalBranding: text("portal_branding"), // JSON as text
+});
+
+// External document submissions table
+export const externalDocumentSubmissions = pgTable("external_document_submissions", {
+  id: serial("id").primaryKey(),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  targetContactId: integer("target_contact_id").references(() => targetContacts.id).notNull(),
+  
+  // Document Details
+  originalFilename: varchar("original_filename", { length: 255 }).notNull(),
+  storedFilename: varchar("stored_filename", { length: 255 }).notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size").notNull(),
+  fileType: varchar("file_type", { length: 100 }),
+  documentCategory: varchar("document_category", { length: 100 }),
+  
+  // Submission Details
+  submissionNotes: text("submission_notes"),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  submissionIp: inet("submission_ip"),
+  submissionUserAgent: text("submission_user_agent"),
+  
+  // Processing Status
+  processingStatus: varchar("processing_status", { length: 50 }).default("pending"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  
+  // Document Requirements Link
+  documentRequirementId: integer("document_requirement_id"),
+  
+  // Security and Compliance
+  virusScanStatus: varchar("virus_scan_status", { length: 50 }).default("pending"),
+  virusScanResult: text("virus_scan_result"), // JSON as text
+  encryptionStatus: varchar("encryption_status", { length: 50 }).default("encrypted"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Portal document requirements table
+export const portalDocumentRequirements = pgTable("portal_document_requirements", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id).notNull(),
+  
+  // Requirement Details
+  requirementName: varchar("requirement_name", { length: 255 }).notNull(),
+  requirementDescription: text("requirement_description"),
+  documentCategory: varchar("document_category", { length: 100 }),
+  isMandatory: boolean("is_mandatory").default(true),
+  
+  // Stage and Priority
+  collectionStage: integer("collection_stage").default(1),
+  priorityLevel: varchar("priority_level", { length: 20 }).default("medium"),
+  dueDate: timestamp("due_date"),
+  
+  // Submission Status
+  submissionStatus: varchar("submission_status", { length: 50 }).default("outstanding"),
+  submittedDocumentId: integer("submitted_document_id").references(() => externalDocumentSubmissions.id),
+  
+  // Requirements Specification
+  acceptedFileTypes: text("accepted_file_types").array(),
+  maxFileSize: integer("max_file_size").default(10485760), // 10MB default
+  minFileSize: integer("min_file_size").default(1024), // 1KB minimum
+  
+  // Instructions and Help
+  submissionInstructions: text("submission_instructions"),
+  exampleDocuments: text("example_documents").array(),
+  helpText: text("help_text"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Portal activity log table
+export const portalActivityLog = pgTable("portal_activity_log", {
+  id: serial("id").primaryKey(),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id).notNull(),
+  targetContactId: integer("target_contact_id").references(() => targetContacts.id).notNull(),
+  
+  // Activity Details
+  activityType: varchar("activity_type", { length: 50 }).notNull(),
+  activityDescription: text("activity_description"),
+  activityTimestamp: timestamp("activity_timestamp").defaultNow(),
+  
+  // Technical Details
+  ipAddress: inet("ip_address"),
+  userAgent: text("user_agent"),
+  sessionDuration: integer("session_duration"), // seconds
+  
+  // Related Objects
+  relatedDocumentId: integer("related_document_id").references(() => externalDocumentSubmissions.id),
+  relatedMessageId: integer("related_message_id"),
+  
+  // Security Flags
+  securityFlags: text("security_flags"), // JSON as text
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Portal schemas
+export const insertPortalAccessTokenSchema = createInsertSchema(portalAccessTokens).omit({
+  id: true,
+  createdAt: true,
+  lastAccessed: true,
+  accessCount: true,
+});
+
+export const insertExternalDocumentSubmissionSchema = createInsertSchema(externalDocumentSubmissions).omit({
+  id: true,
+  submittedAt: true,
+  reviewedAt: true,
+  createdAt: true,
+});
+
+export const insertPortalDocumentRequirementSchema = createInsertSchema(portalDocumentRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPortalActivityLogSchema = createInsertSchema(portalActivityLog).omit({
+  id: true,
+  activityTimestamp: true,
+  createdAt: true,
+});
+
+// Portal types
+export type PortalAccessToken = typeof portalAccessTokens.$inferSelect;
+export type InsertPortalAccessToken = z.infer<typeof insertPortalAccessTokenSchema>;
+
+export type ExternalDocumentSubmission = typeof externalDocumentSubmissions.$inferSelect;
+export type InsertExternalDocumentSubmission = z.infer<typeof insertExternalDocumentSubmissionSchema>;
+
+export type PortalDocumentRequirement = typeof portalDocumentRequirements.$inferSelect;
+export type InsertPortalDocumentRequirement = z.infer<typeof insertPortalDocumentRequirementSchema>;
+
+export type PortalActivityLog = typeof portalActivityLog.$inferSelect;
+export type InsertPortalActivityLog = z.infer<typeof insertPortalActivityLogSchema>;

@@ -1976,6 +1976,412 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================================
+  // External Document Portal Routes
+  // ========================================
+
+  // Validate portal token (public endpoint)
+  app.get("/api/portal/validate/:token", async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      
+      if (!accessToken) {
+        return res.status(400).json({ message: "Access token is required" });
+      }
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      // Log access
+      await storage.updatePortalTokenAccess(
+        portalToken.id, 
+        req.ip, 
+        req.get('User-Agent')
+      );
+      
+      // Log activity
+      await storage.logPortalActivity({
+        portalTokenId: portalToken.id,
+        targetContactId: portalToken.targetContactId,
+        activityType: "portal_access",
+        activityDescription: "Portal accessed via token validation",
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json({
+        valid: true,
+        tokenId: portalToken.id,
+        companyId: portalToken.targetCompanyId,
+        contactId: portalToken.targetContactId,
+        allowedActions: JSON.parse(portalToken.allowedActions || '{}'),
+        customMessage: portalToken.customMessage,
+        portalBranding: portalToken.portalBranding ? JSON.parse(portalToken.portalBranding) : null,
+      });
+    } catch (error) {
+      console.error("Validate portal token error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get portal document requirements (public endpoint)
+  app.get("/api/portal/:token/requirements", async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      const requirements = await storage.getPortalDocumentRequirements(portalToken.id);
+      
+      // Log activity
+      await storage.logPortalActivity({
+        portalTokenId: portalToken.id,
+        targetContactId: portalToken.targetContactId,
+        activityType: "requirements_viewed",
+        activityDescription: "Document requirements viewed",
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json(requirements);
+    } catch (error) {
+      console.error("Get portal requirements error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Submit document via portal (public endpoint with file upload)
+  const portalUpload = multer({
+    storage: multer.diskStorage({
+      destination: './uploads/portal',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      }
+    }),
+    fileFilter: (req, file, cb) => {
+      // Allow common business document types
+      const allowedTypes = /pdf|doc|docx|xls|xlsx|ppt|pptx|txt|jpg|jpeg|png|gif/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Only common document and image files are allowed'));
+      }
+    },
+    limits: {
+      fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+  });
+
+  app.post("/api/portal/:token/submit", portalUpload.single('document'), async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({ message: "No document uploaded" });
+      }
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        // Remove uploaded file if token is invalid
+        try {
+          await fs.unlink(file.path);
+        } catch (err) {
+          console.warn("Could not remove invalid upload:", file.path);
+        }
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      // Check allowed actions
+      const allowedActions = JSON.parse(portalToken.allowedActions || '{}');
+      if (!allowedActions.upload) {
+        try {
+          await fs.unlink(file.path);
+        } catch (err) {
+          console.warn("Could not remove unauthorized upload:", file.path);
+        }
+        return res.status(403).json({ message: "Document upload not permitted for this portal" });
+      }
+      
+      // Create submission record
+      const submission = await storage.createExternalDocumentSubmission({
+        portalTokenId: portalToken.id,
+        targetCompanyId: portalToken.targetCompanyId,
+        targetContactId: portalToken.targetContactId,
+        originalFilename: file.originalname,
+        storedFilename: file.filename,
+        filePath: file.path,
+        fileSize: file.size,
+        fileType: file.mimetype,
+        documentCategory: req.body.document_category || 'general',
+        submissionNotes: req.body.submission_notes || null,
+        submissionIp: req.ip,
+        submissionUserAgent: req.get('User-Agent'),
+        documentRequirementId: req.body.requirement_id ? parseInt(req.body.requirement_id) : null,
+      });
+      
+      // Log activity
+      await storage.logPortalActivity({
+        portalTokenId: portalToken.id,
+        targetContactId: portalToken.targetContactId,
+        activityType: "document_submitted",
+        activityDescription: `Document submitted: ${file.originalname}`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        relatedDocumentId: submission.id,
+      });
+      
+      res.json({
+        success: true,
+        submissionId: submission.id,
+        message: "Document submitted successfully",
+        filename: file.originalname,
+      });
+    } catch (error) {
+      console.error("Portal document submission error:", error);
+      
+      // Clean up uploaded file on error
+      if (req.file) {
+        try {
+          await fs.unlink(req.file.path);
+        } catch (err) {
+          console.warn("Could not remove file after error:", req.file.path);
+        }
+      }
+      
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get portal submissions history (public endpoint)
+  app.get("/api/portal/:token/submissions", async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      const submissions = await storage.getPortalSubmissions(portalToken.id);
+      
+      // Log activity
+      await storage.logPortalActivity({
+        portalTokenId: portalToken.id,
+        targetContactId: portalToken.targetContactId,
+        activityType: "submissions_viewed",
+        activityDescription: "Submission history viewed",
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      // Return submissions without sensitive server paths
+      const sanitizedSubmissions = submissions.map(submission => ({
+        id: submission.id,
+        originalFilename: submission.originalFilename,
+        fileSize: submission.fileSize,
+        fileType: submission.fileType,
+        documentCategory: submission.documentCategory,
+        submissionNotes: submission.submissionNotes,
+        submittedAt: submission.submittedAt,
+        processingStatus: submission.processingStatus,
+        reviewNotes: submission.reviewNotes,
+        reviewedAt: submission.reviewedAt,
+      }));
+      
+      res.json(sanitizedSubmissions);
+    } catch (error) {
+      console.error("Get portal submissions error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create portal access token (authenticated endpoint)
+  app.post("/api/portal/create-token", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      const tokenSchema = z.object({
+        targetCompanyId: z.number(),
+        targetContactId: z.number(),
+        tokenPurpose: z.string().default("document_submission"),
+        expiresInDays: z.number().min(1).max(90).default(30),
+        allowedActions: z.object({
+          upload: z.boolean().default(true),
+          download: z.boolean().default(false),
+          message: z.boolean().default(true),
+        }).default({ upload: true, download: false, message: true }),
+        customMessage: z.string().optional(),
+        portalBranding: z.object({
+          companyName: z.string().optional(),
+          logoUrl: z.string().optional(),
+          primaryColor: z.string().optional(),
+        }).optional(),
+      });
+      
+      const tokenData = tokenSchema.parse(req.body);
+      
+      // Verify user has access to the target company
+      const company = await storage.getTargetCompany(tokenData.targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Target company not found or access denied" });
+      }
+      
+      // Generate unique access token
+      const accessToken = randomUUID() + '-' + randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + tokenData.expiresInDays);
+      
+      const portalToken = await storage.createPortalAccessToken({
+        targetCompanyId: tokenData.targetCompanyId,
+        targetContactId: tokenData.targetContactId,
+        userCompanyId,
+        accessToken,
+        tokenPurpose: tokenData.tokenPurpose,
+        expiresAt,
+        createdBy: userId,
+        allowedActions: JSON.stringify(tokenData.allowedActions),
+        customMessage: tokenData.customMessage || null,
+        portalBranding: tokenData.portalBranding ? JSON.stringify(tokenData.portalBranding) : null,
+      });
+      
+      res.json({
+        success: true,
+        tokenId: portalToken.id,
+        accessToken: portalToken.accessToken,
+        portalUrl: `${req.protocol}://${req.get('host')}/portal/${portalToken.accessToken}`,
+        expiresAt: portalToken.expiresAt,
+      });
+    } catch (error) {
+      console.error("Create portal token error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Deactivate portal token (authenticated endpoint)
+  app.post("/api/portal/deactivate/:tokenId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const tokenId = parseInt(req.params.tokenId);
+      
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      if (isNaN(tokenId)) {
+        return res.status(400).json({ message: "Invalid token ID" });
+      }
+      
+      const deactivated = await storage.deactivatePortalToken(tokenId);
+      if (!deactivated) {
+        return res.status(404).json({ message: "Portal token not found" });
+      }
+      
+      res.json({ success: true, message: "Portal token deactivated" });
+    } catch (error) {
+      console.error("Deactivate portal token error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Review portal submission (authenticated endpoint)
+  app.post("/api/portal/review/:submissionId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const submissionId = parseInt(req.params.submissionId);
+      
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      if (isNaN(submissionId)) {
+        return res.status(400).json({ message: "Invalid submission ID" });
+      }
+      
+      const reviewSchema = z.object({
+        status: z.enum(["approved", "rejected", "needs_revision"]),
+        notes: z.string().optional(),
+      });
+      
+      const reviewData = reviewSchema.parse(req.body);
+      
+      const reviewed = await storage.reviewDocumentSubmission(
+        submissionId, 
+        userId, 
+        reviewData.status, 
+        reviewData.notes
+      );
+      
+      if (!reviewed) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Submission reviewed successfully",
+        status: reviewData.status 
+      });
+    } catch (error) {
+      console.error("Review portal submission error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get portal tokens (authenticated endpoint)
+  app.get("/api/portal/tokens", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      // This would need a new storage method - for now return empty array
+      res.json([]);
+    } catch (error) {
+      console.error("Get portal tokens error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get contacts by company (authenticated endpoint)
+  app.get("/api/target-companies/contacts/:companyId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const targetCompanyId = parseInt(req.params.companyId);
+      
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      if (isNaN(targetCompanyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+      
+      const contacts = await storage.getTargetContacts(targetCompanyId, userCompanyId);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Get contacts by company error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
