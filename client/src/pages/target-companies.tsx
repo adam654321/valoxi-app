@@ -188,11 +188,14 @@ export default function TargetCompanies() {
   };
 
   const handleCardClick = (company: TargetCompany, event: React.MouseEvent) => {
+    console.log('Card clicked:', company.id, event.target);
     // Don't navigate if clicking on buttons or links
     const target = event.target as HTMLElement;
     if (target.closest('button') || target.closest('a')) {
+      console.log('Click ignored - clicked on button or link');
       return;
     }
+    console.log('Navigating to:', `/target-companies/${company.id}`);
     setLocation(`/target-companies/${company.id}`);
   };
 
