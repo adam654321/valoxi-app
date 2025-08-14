@@ -537,6 +537,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Target company not found" });
       }
 
+      // Disable caching to ensure fresh data, especially for website analysis updates
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+
       res.json(profile);
     } catch (error) {
       console.error("Get company profile error:", error);

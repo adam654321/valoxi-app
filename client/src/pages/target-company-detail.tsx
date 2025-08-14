@@ -95,14 +95,24 @@ export default function TargetCompanyDetail() {
   const { data: profile, isLoading: profileLoading, isFetching: profileFetching, refetch: refetchProfile } = useQuery<CompanyProfile>({
     queryKey: ["/api/target-companies", id, "profile"],
     enabled: !!id,
-    // Poll every 10 seconds if website analysis is not available yet
+    // More aggressive polling for website analysis
     refetchInterval: (data) => {
-      if (!data?.websiteAnalysis && data?.website) {
-        return 10000; // 10 seconds
+      // Always poll every 5 seconds if no website analysis is available yet
+      if (!data?.websiteAnalysis) {
+        console.log('Polling for website analysis updates...', { 
+          hasAnalysis: !!data?.websiteAnalysis, 
+          hasWebsite: !!data?.website,
+          companyId: id 
+        });
+        return 5000; // 5 seconds for faster updates
       }
-      return false; // No polling if analysis is complete or no website
+      return false; // Stop polling once analysis is available
     },
     refetchIntervalInBackground: false,
+    // Don't use stale data
+    staleTime: 0,
+    // Force refetch on mount
+    refetchOnMount: 'always',
   });
 
   // Extract company and contacts from profile
@@ -629,12 +639,16 @@ export default function TargetCompanyDetail() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => refetchProfile()}
+                      onClick={() => {
+                        // Force cache invalidation and refetch
+                        queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+                        refetchProfile();
+                      }}
                       disabled={profileFetching}
                       data-testid="button-refresh-analysis"
                     >
                       <RefreshCw className={`w-4 h-4 mr-2 ${profileFetching ? 'animate-spin' : ''}`} />
-                      {profileFetching ? 'Checking...' : 'Check for Updates'}
+                      {profileFetching ? 'Checking...' : 'Force Refresh'}
                     </Button>
                   )}
                 </div>
@@ -674,9 +688,15 @@ export default function TargetCompanyDetail() {
                     <p className="text-muted-foreground mb-4">
                       Website analysis is currently being processed. This usually takes about 30 seconds.
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       The analysis will automatically appear here once completed.
                     </p>
+                    {profileFetching && (
+                      <div className="flex items-center justify-center gap-2 mt-4 text-sm text-blue-600">
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Checking for updates...</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
