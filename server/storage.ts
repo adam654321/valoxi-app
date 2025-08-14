@@ -686,12 +686,18 @@ export class DatabaseStorage implements IStorage {
       ...insertCompany,
       annualRevenue: typeof insertCompany.annualRevenue === 'number' 
         ? insertCompany.annualRevenue.toString() 
-        : insertCompany.annualRevenue
+        : insertCompany.annualRevenue,
+      employeeCount: typeof insertCompany.employeeCount === 'string' 
+        ? parseInt(insertCompany.employeeCount) || null
+        : insertCompany.employeeCount,
+      yearEstablished: typeof insertCompany.yearEstablished === 'string' 
+        ? parseInt(insertCompany.yearEstablished) || null
+        : insertCompany.yearEstablished
     };
     
     const [company] = await db
       .insert(targetCompanies)
-      .values(processedData)
+      .values([processedData])
       .returning();
     return company;
   }
@@ -702,7 +708,13 @@ export class DatabaseStorage implements IStorage {
       ...updateData,
       annualRevenue: typeof updateData.annualRevenue === 'number' 
         ? updateData.annualRevenue.toString() 
-        : updateData.annualRevenue
+        : updateData.annualRevenue,
+      employeeCount: typeof updateData.employeeCount === 'string' 
+        ? parseInt(updateData.employeeCount) || null
+        : updateData.employeeCount,
+      yearEstablished: typeof updateData.yearEstablished === 'string' 
+        ? parseInt(updateData.yearEstablished) || null
+        : updateData.yearEstablished
     };
     
     const [company] = await db
@@ -795,6 +807,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(targetContacts.id, id))
       .returning();
     return contact || undefined;
+  }
+
+  async getTargetContact(contactId: number, userCompanyId: number): Promise<TargetContact | undefined> {
+    // First verify the target company belongs to the user's company
+    const [existingContact] = await db
+      .select()
+      .from(targetContacts)
+      .innerJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
+      .where(and(eq(targetContacts.id, contactId), eq(targetCompanies.userCompanyId, userCompanyId)));
+
+    if (!existingContact) {
+      return undefined;
+    }
+
+    return existingContact.target_contacts;
   }
 
   async deleteTargetContact(id: number, userCompanyId: number): Promise<boolean> {
@@ -1568,10 +1595,26 @@ export class DatabaseStorage implements IStorage {
       .where(eq(targetCompanies.userCompanyId, userCompanyId))
       .groupBy(targetCompanies.stage);
 
+    // Get total companies count
+    const [totalResult] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+      })
+      .from(targetCompanies)
+      .where(eq(targetCompanies.userCompanyId, userCompanyId));
+
+    // Convert pipeline distribution to stageStats format
+    const stageStats = pipelineDistribution.map(item => ({
+      stageName: item.stage || 'Unknown',
+      stageOrder: 1, // Default order
+      companyCount: item.count,
+      avgDaysInStage: null as number | null
+    }));
+
     return {
-      pipelineDistribution,
-      stageVelocity: [],
-      conversionRates: []
+      stageStats,
+      recentChanges: [],
+      totalCompanies: totalResult?.total || 0
     };
   }
 
@@ -1654,7 +1697,12 @@ export class DatabaseStorage implements IStorage {
     switch (reportType) {
       case 'pipeline-overview':
         const pipelineData = await this.getPipelineOverview(userCompanyId);
-        data = pipelineData.pipelineDistribution;
+        data = pipelineData.stageStats.map(stat => ({
+          stage: stat.stageName,
+          count: stat.companyCount,
+          percentage: pipelineData.totalCompanies > 0 ? 
+            Math.round((stat.companyCount / pipelineData.totalCompanies) * 100 * 100) / 100 : 0
+        }));
         headers = ['stage', 'count', 'percentage'];
         break;
       case 'activity-summary':
@@ -2019,7 +2067,7 @@ export class DatabaseStorage implements IStorage {
         accessCount: documents.accessCount,
         createdAt: documents.createdAt,
         uploadedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-        categoryDescription: documentCategories.description,
+        categoryDescription: sql<string | undefined>`${documentCategories.description}`,
       })
       .from(documents)
       .leftJoin(users, eq(documents.uploadedBy, users.id))

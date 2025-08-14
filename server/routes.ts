@@ -2462,13 +2462,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send portal access email if contact email is available
       try {
-        const contact = await storage.getTargetContact(tokenData.targetContactId, tokenData.userCompanyId);
-        const targetCompany = await storage.getTargetCompany(tokenData.targetCompanyId, tokenData.userCompanyId);
+        const contact = await storage.getTargetContact(tokenData.targetContactId, userCompanyId);
+        const targetCompany = await storage.getTargetCompany(tokenData.targetCompanyId, userCompanyId);
         
         if (contact?.email && targetCompany) {
+          const contactName = `${contact.firstName} ${contact.lastName}`.trim() || contact.email;
           await emailService.sendPortalAccessLink(
             contact.email,
-            contact.fullName || contact.email,
+            contactName,
             targetCompany.companyName,
             portalUrl,
             tokenData.customMessage,
