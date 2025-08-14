@@ -85,6 +85,48 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
         status: response.status,
         message: `Webhook sent successfully`
       };
+      
+      // Check if webhook returned analysis directly
+      try {
+        const responseData = await response.text();
+        if (responseData) {
+          const parsedResponse = JSON.parse(responseData);
+          if (parsedResponse.output && parsedResponse.target_company_id) {
+            console.log(`📥 Production webhook returned analysis directly for company ${parsedResponse.target_company_id}`);
+            
+            // Process the analysis like webhook callback would
+            let processedOutput = parsedResponse.output.replace(/\\n/g, '\n');
+            processedOutput = processedOutput
+              .split('\n')
+              .map(line => {
+                if (line.match(/^\d+\s+/)) {
+                  return line.replace(/^(\d+)\s+(.+)/, '## $1. $2');
+                }
+                return line;
+              })
+              .join('\n\n');
+            
+            // Update target company with website analysis
+            const updated = await storage.updateTargetCompanyWebsiteAnalysis(
+              parsedResponse.target_company_id,
+              processedOutput
+            );
+            
+            if (updated) {
+              console.log(`✅ Production website analysis stored directly for target company ID: ${parsedResponse.target_company_id}`);
+              log.status = "completed";
+              log.response = {
+                success: true,
+                status: response.status,
+                message: "Website analysis received and stored",
+                outputLength: processedOutput.length
+              };
+            }
+          }
+        }
+      } catch (parseError) {
+        console.log("Production webhook response is not JSON or doesn't contain analysis data");
+      }
     }
 
     console.log(`Webhook sent for website: ${website}, Target ID: ${targetCompanyId}, Status: ${response.status} (${log.processingTime}ms)`);
@@ -2855,6 +2897,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const responseData = await webhookResponse.text();
             if (responseData) {
               response.body = responseData;
+              
+              // Parse response and extract analysis if present
+              try {
+                const parsedResponse = JSON.parse(responseData);
+                if (parsedResponse.output && parsedResponse.target_company_id) {
+                  console.log(`📥 Webhook returned analysis directly for company ${parsedResponse.target_company_id}`);
+                  
+                  // Process the analysis like webhook callback would
+                  let processedOutput = parsedResponse.output.replace(/\\n/g, '\n');
+                  processedOutput = processedOutput
+                    .split('\n')
+                    .map(line => {
+                      if (line.match(/^\d+\s+/)) {
+                        return line.replace(/^(\d+)\s+(.+)/, '## $1. $2');
+                      }
+                      return line;
+                    })
+                    .join('\n\n');
+                  
+                  // Update target company with website analysis
+                  const updated = await storage.updateTargetCompanyWebsiteAnalysis(
+                    parsedResponse.target_company_id,
+                    processedOutput
+                  );
+                  
+                  if (updated) {
+                    console.log(`✅ Website analysis stored directly for target company ID: ${parsedResponse.target_company_id}`);
+                  }
+                }
+              } catch (parseError) {
+                console.log("Response is not JSON or doesn't contain analysis data");
+              }
             }
           } catch (e) {
             // Response body might be empty or invalid
