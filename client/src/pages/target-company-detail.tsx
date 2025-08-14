@@ -42,6 +42,8 @@ import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { ActivityManagement } from "@/components/activity-management";
 import { DocumentManagement } from "@/components/document-management";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Enhanced profile interface to match the backend CompanyProfile
 interface CompanyProfile extends TargetCompany {
@@ -413,7 +415,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -421,6 +423,10 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="contacts" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Contacts
+            </TabsTrigger>
+            <TabsTrigger value="website-analysis" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              Analysis
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
@@ -591,6 +597,61 @@ export default function TargetCompanyDetail() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="website-analysis" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Website Analysis
+                </CardTitle>
+                <CardDescription>
+                  AI-powered analysis of {company.companyName}'s website and digital presence
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {profileLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-32 w-full" />
+                  </div>
+                ) : company.websiteAnalysis ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Analysis completed:</span>
+                      <span data-testid="analysis-processed-date">
+                        {company.websiteAnalysisProcessedAt 
+                          ? new Date(company.websiteAnalysisProcessedAt).toLocaleString()
+                          : 'Unknown'
+                        }
+                      </span>
+                    </div>
+                    <div 
+                      className="prose prose-sm max-w-none dark:prose-invert"
+                      data-testid="website-analysis-content"
+                    >
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {company.websiteAnalysis}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Globe className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Website Analysis Pending</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Website analysis is currently being processed. This usually takes about 30 seconds.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      The analysis will automatically appear here once completed.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

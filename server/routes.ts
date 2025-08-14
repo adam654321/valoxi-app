@@ -13,18 +13,20 @@ import path from "path";
 import fs from "fs/promises";
 
 // Webhook function to send company website data
-async function sendWebhook(website: string) {
-  const webhookUrl = process.env.WEBHOOK_URL;
-  if (!webhookUrl || !website) {
+async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?: string) {
+  const webhookUrlToUse = webhookUrl || process.env.WEBHOOK_URL;
+  if (!webhookUrlToUse || !website) {
     return;
   }
 
   try {
     const payload = {
-      company_name: website
+      company_name: website,
+      target_company_id: targetCompanyId,
+      webhook_response_url: `${process.env.APP_URL || 'http://localhost:3000'}/api/webhook/website-analysis`
     };
 
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(webhookUrlToUse, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,7 +34,7 @@ async function sendWebhook(website: string) {
       body: JSON.stringify(payload),
     });
 
-    console.log(`Webhook sent for website: ${website}, Status: ${response.status}`);
+    console.log(`Webhook sent for website: ${website}, Target ID: ${targetCompanyId}, Status: ${response.status}`);
   } catch (error) {
     console.error('Failed to send webhook:', error);
   }
@@ -408,7 +410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send webhook if website is provided
       if (validatedData.website && validatedData.website.trim()) {
-        await sendWebhook(validatedData.website);
+        await sendWebhook(validatedData.website, targetCompany.id);
       }
 
       res.status(201).json(targetCompany);
@@ -556,7 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid target company ID" });
       }
 
-      const validatedData = targetCompanyCreateSchema.partial().parse(req.body);
+      const validatedData = insertTargetCompanySchema.partial().parse(req.body);
 
       const updatedCompany = await storage.updateTargetCompany(
         targetCompanyId, 
@@ -2629,6 +2631,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Email test error:", error);
       res.status(500).json({ message: "Email test failed", error: String(error) });
+    }
+  });
+
+  // Webhook endpoint to receive website analysis results (public endpoint)
+  app.post("/api/webhook/website-analysis", async (req: Request, res: Response) => {
+    try {
+      const webhookSchema = z.object({
+        target_company_id: z.number(),
+        output: z.string(), // Markdown content from webhook
+      });
+
+      const validatedData = webhookSchema.parse(req.body);
+      
+      // Update target company with website analysis
+      const updated = await storage.updateTargetCompanyWebsiteAnalysis(
+        validatedData.target_company_id,
+        validatedData.output
+      );
+
+      if (!updated) {
+        console.error(`Failed to update website analysis for target company ID: ${validatedData.target_company_id}`);
+        return res.status(404).json({ message: "Target company not found" });
+      }
+
+      console.log(`Website analysis updated for target company ID: ${validatedData.target_company_id}`);
+      res.json({ success: true, message: "Website analysis stored successfully" });
+    } catch (error) {
+      console.error("Webhook website analysis error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

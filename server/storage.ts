@@ -171,10 +171,12 @@ export interface IStorage {
   getCompanyProfile(targetCompanyId: number, userCompanyId: number, userId: number): Promise<CompanyProfile | undefined>;
   createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
   updateTargetCompany(id: number, company: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany | undefined>;
+  updateTargetCompanyWebsiteAnalysis(targetCompanyId: number, analysis: string): Promise<boolean>;
   deleteTargetCompany(id: number, userCompanyId: number): Promise<boolean>;
   
   // Target contact operations
   getContactsForTargetCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]>;
+  getTargetContact(contactId: number, userCompanyId: number): Promise<TargetContact | undefined>;
   createTargetContact(contact: InsertTargetContact): Promise<TargetContact>;
   updateTargetContact(id: number, contact: Partial<InsertTargetContact>, userCompanyId: number): Promise<TargetContact | undefined>;
   deleteTargetContact(id: number, userCompanyId: number): Promise<boolean>;
@@ -335,6 +337,8 @@ export class DatabaseStorage implements IStorage {
         employeeCount: targetCompanies.employeeCount,
         yearEstablished: targetCompanies.yearEstablished,
         description: targetCompanies.description,
+        websiteAnalysis: targetCompanies.websiteAnalysis,
+        websiteAnalysisProcessedAt: targetCompanies.websiteAnalysisProcessedAt,
         stage: targetCompanies.stage,
         stageUpdatedAt: targetCompanies.stageUpdatedAt,
         stageUpdatedBy: targetCompanies.stageUpdatedBy,
@@ -379,6 +383,8 @@ export class DatabaseStorage implements IStorage {
         employeeCount: targetCompanies.employeeCount,
         yearEstablished: targetCompanies.yearEstablished,
         description: targetCompanies.description,
+        websiteAnalysis: targetCompanies.websiteAnalysis,
+        websiteAnalysisProcessedAt: targetCompanies.websiteAnalysisProcessedAt,
         stage: targetCompanies.stage,
         stageUpdatedAt: targetCompanies.stageUpdatedAt,
         stageUpdatedBy: targetCompanies.stageUpdatedBy,
@@ -620,6 +626,8 @@ export class DatabaseStorage implements IStorage {
         employeeCount: targetCompanies.employeeCount,
         yearEstablished: targetCompanies.yearEstablished,
         description: targetCompanies.description,
+        websiteAnalysis: targetCompanies.websiteAnalysis,
+        websiteAnalysisProcessedAt: targetCompanies.websiteAnalysisProcessedAt,
         stage: targetCompanies.stage,
         stageUpdatedAt: targetCompanies.stageUpdatedAt,
         stageUpdatedBy: targetCompanies.stageUpdatedBy,
@@ -703,6 +711,24 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
       .returning();
     return company || undefined;
+  }
+
+  async updateTargetCompanyWebsiteAnalysis(targetCompanyId: number, analysis: string): Promise<boolean> {
+    try {
+      const [updatedCompany] = await db
+        .update(targetCompanies)
+        .set({
+          websiteAnalysis: analysis,
+          websiteAnalysisProcessedAt: new Date()
+        })
+        .where(eq(targetCompanies.id, targetCompanyId))
+        .returning();
+      
+      return !!updatedCompany;
+    } catch (error) {
+      console.error('Error updating website analysis:', error);
+      return false;
+    }
   }
 
   async deleteTargetCompany(id: number, userCompanyId: number): Promise<boolean> {

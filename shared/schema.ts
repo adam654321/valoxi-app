@@ -56,6 +56,8 @@ export const targetCompanies = pgTable("target_companies", {
   employeeCount: integer("employee_count"),
   yearEstablished: integer("year_established"),
   description: text("description"),
+  websiteAnalysis: text("website_analysis"), // Store processed website information from webhook
+  websiteAnalysisProcessedAt: timestamp("website_analysis_processed_at"), // Track when analysis was completed
   stage: varchar("stage", { length: 50 }).default("New Target"),
   stageUpdatedAt: timestamp("stage_updated_at").defaultNow(),
   stageUpdatedBy: integer("stage_updated_by").references(() => users.id),
@@ -448,6 +450,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertTargetCompanySchema = createInsertSchema(targetCompanies).omit({
   id: true,
   createdAt: true,
+  websiteAnalysis: true, // Auto-managed by webhook
+  websiteAnalysisProcessedAt: true, // Auto-managed by webhook
 }).extend({
   annualRevenue: z.union([z.string(), z.number(), z.null()]).optional(),
   employeeCount: z.union([z.string(), z.number(), z.null()]).optional(),
