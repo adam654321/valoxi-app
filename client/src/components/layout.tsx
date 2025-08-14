@@ -96,9 +96,6 @@ export default function Layout({ children }: LayoutProps) {
                 <Link href="/portal-management" className={getNavLinkClass("/portal-management")}>
                   Portals
                 </Link>
-                <Link href="/email-test" className={getNavLinkClass("/email-test")}>
-                  Email Test
-                </Link>
               </div>
             </div>
             <div className="flex items-center space-x-4">
