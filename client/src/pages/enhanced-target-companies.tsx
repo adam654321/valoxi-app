@@ -208,10 +208,12 @@ export default function EnhancedTargetCompanies() {
       return await apiRequest("POST", "/api/target-companies", payload);
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/data/quick-stats"] });
       setShowForm(false);
       form.reset();
       toast({
@@ -242,9 +244,11 @@ export default function EnhancedTargetCompanies() {
       return await apiRequest("PUT", `/api/target-companies/${editingCompany.id}`, payload);
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setEditingCompany(null);
       setShowForm(false);
       form.reset();
@@ -267,8 +271,9 @@ export default function EnhancedTargetCompanies() {
       return await apiRequest("DELETE", `/api/target-companies/${id}`);
     },
     onSuccess: () => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
