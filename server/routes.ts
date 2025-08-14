@@ -2626,8 +2626,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = webhookSchema.parse(req.body);
       
-      // Convert \n to actual line breaks for proper markdown rendering
-      const processedOutput = validatedData.output.replace(/\\n/g, '\n');
+      // Convert \n to actual line breaks and format as markdown
+      let processedOutput = validatedData.output.replace(/\\n/g, '\n');
+      
+      // Format as markdown with proper headings and structure
+      processedOutput = processedOutput
+        .split('\n')
+        .map(line => {
+          if (line.match(/^\d+\s+/)) {
+            // Convert numbered items to markdown headings
+            return line.replace(/^(\d+)\s+(.+)/, '## $1. $2');
+          }
+          return line;
+        })
+        .join('\n\n');
       
       // Update target company with website analysis
       const updated = await storage.updateTargetCompanyWebsiteAnalysis(
