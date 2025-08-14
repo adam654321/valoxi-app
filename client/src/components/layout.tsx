@@ -15,6 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, Settings, User, Users, Bell } from "lucide-react";
 import { Notifications } from "@/components/notifications";
+import { AddTargetCompanyButton } from "@/components/AddTargetCompanyButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -100,14 +101,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div className="flex items-center space-x-4">
               <Notifications />
-              <Link href="/target-companies">
-                <Button className="bg-primary text-white hover:bg-blue-700" data-testid="button-add-target-company">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Target Company
-                </Button>
-              </Link>
+              <AddTargetCompanyButton />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
