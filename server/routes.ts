@@ -2320,25 +2320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Auto-approved upon successful integration to main document system'
         );
         
-        // Send notification email to deal team about new document
-        try {
-          const contact = await storage.getTargetContact(portalToken.targetContactId, portalToken.userCompanyId);
-          const targetCompany = await storage.getTargetCompany(portalToken.targetCompanyId, portalToken.userCompanyId);
-          const dealTeamEmails = await storage.getDealTeamEmails(portalToken.targetCompanyId);
-          
-          if (contact && targetCompany && dealTeamEmails.length > 0) {
-            await emailService.sendDocumentReceivedNotification(
-              dealTeamEmails,
-              contact.fullName || contact.email,
-              targetCompany.companyName,
-              file.originalname,
-              req.body.document_category || 'General',
-              req.body.submission_notes
-            );
-          }
-        } catch (emailError) {
-          console.warn('Failed to send document notification email:', emailError);
-        }
+        console.log('Portal access token created, email sending skipped for now');
         
       } catch (integrationError: any) {
         console.error('❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
