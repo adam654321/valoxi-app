@@ -1,29 +1,34 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserCheck, Building2, Mail, ShieldCheck } from "lucide-react";
-import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, CheckCircle, AlertCircle, UserPlus, Building2, Mail } from "lucide-react";
 
 interface InvitationDetails {
   email: string;
-  role: string;
+  invitedRole: string;
   companyName: string;
   inviterName: string;
-  message?: string;
+  invitationMessage?: string;
+  invitationStatus: string;
 }
 
 const acceptSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your password"),
+  password: z.string().min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  confirmPassword: z.string().min(8, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -34,16 +39,21 @@ type AcceptFormValues = z.infer<typeof acceptSchema>;
 export default function AcceptInvitation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const params = useParams();
   const [token, setToken] = useState<string | null>(null);
 
-  // Extract token from URL
+  // Extract token from URL params or query string
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const inviteToken = urlParams.get('token');
-    if (inviteToken) {
-      setToken(inviteToken);
+    if (params.token) {
+      setToken(params.token);
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteToken = urlParams.get('token');
+      if (inviteToken) {
+        setToken(inviteToken);
+      }
     }
-  }, []);
+  }, [params.token]);
 
   // Query invitation details
   const { data: invitation, isLoading, error } = useQuery<InvitationDetails>({
@@ -54,7 +64,7 @@ export default function AcceptInvitation() {
       const response = await fetch(`/api/team/invitation/${token}`);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(error.message || 'Failed to load invitation');
       }
       return response.json();
     },
@@ -73,40 +83,23 @@ export default function AcceptInvitation() {
   // Accept invitation mutation
   const acceptMutation = useMutation({
     mutationFn: async (data: AcceptFormValues) => {
-      if (!token) throw new Error("No token provided");
-      
-      const response = await fetch('/api/team/accept-invitation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          password: data.password,
-        }),
+      return apiRequest("POST", `/api/team/invitation/${token}/accept`, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        password: data.password,
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Welcome to the team!",
         description: "Your account has been created successfully. You can now log in.",
       });
-      
-      // Redirect to login page after a brief delay
-      setTimeout(() => {
-        setLocation('/auth/login');
-      }, 2000);
+      setLocation("/login");
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        title: "Error accepting invitation",
-        description: error.message,
+        title: "Registration Failed",
+        description: error.message || "Failed to accept invitation. Please try again.",
         variant: "destructive",
       });
     },
@@ -118,12 +111,13 @@ export default function AcceptInvitation() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-red-600 dark:text-red-400">Invalid Invitation</CardTitle>
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <CardTitle>Invalid Invitation</CardTitle>
             <CardDescription>
-              The invitation link is missing or invalid. Please check the link in your email.
+              No invitation token provided. Please check your invitation link.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -133,17 +127,12 @@ export default function AcceptInvitation() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                ))}
-              </div>
+            <div className="flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <span className="ml-3 text-lg">Loading invitation...</span>
             </div>
           </CardContent>
         </Card>
@@ -153,67 +142,97 @@ export default function AcceptInvitation() {
 
   if (error || !invitation) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-red-600 dark:text-red-400">Invalid or Expired Invitation</CardTitle>
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <CardTitle>Invitation Error</CardTitle>
             <CardDescription>
-              This invitation link is invalid, expired, or has already been used. 
-              Please contact your team administrator for a new invitation.
+              {error?.message || "This invitation is invalid or has expired."}
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => setLocation("/login")} 
+              className="w-full"
+              variant="outline"
+            >
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (invitation.invitationStatus !== 'pending') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+            <CardTitle>Invitation Already Used</CardTitle>
+            <CardDescription>
+              This invitation has already been accepted. You can log in with your existing account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => setLocation("/login")} 
+              className="w-full"
+            >
+              Go to Login
+            </Button>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-            <UserCheck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <CardTitle className="mt-4">Join the Team</CardTitle>
+          <UserPlus className="w-12 h-12 text-primary mx-auto mb-4" />
+          <CardTitle className="text-2xl font-bold">Join the Team</CardTitle>
           <CardDescription>
-            You've been invited to join the team. Complete your profile to get started.
+            Complete your registration to join {invitation.companyName}
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           {/* Invitation Details */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
-            <div className="flex items-center space-x-2">
-              <Building2 className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {invitation.companyName}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {invitation.email}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <ShieldCheck className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Role: {invitation.role}
-              </span>
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Invited by: {invitation.inviterName}
-            </div>
-            {invitation.message && (
-              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400">
-                <p className="text-sm text-blue-800 dark:text-blue-200 italic">
-                  "{invitation.message}"
-                </p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <span className="font-medium">Company:</span>
+                <span>{invitation.companyName}</span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-600" />
+                <span className="font-medium">Email:</span>
+                <span>{invitation.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-blue-600" />
+                <span className="font-medium">Role:</span>
+                <span className="capitalize">{invitation.invitedRole}</span>
+              </div>
+              {invitation.invitationMessage && (
+                <div className="mt-3 p-3 bg-blue-100 dark:bg-blue-800/30 rounded border-l-4 border-blue-400">
+                  <p className="text-blue-800 dark:text-blue-200 italic">
+                    "{invitation.invitationMessage}"
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                    - {invitation.inviterName}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Account Setup Form */}
+          {/* Registration Form */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -237,14 +256,14 @@ export default function AcceptInvitation() {
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Smith" {...field} />
+                        <Input placeholder="Doe" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="password"
@@ -252,13 +271,16 @@ export default function AcceptInvitation() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Create a secure password" {...field} />
+                      <Input type="password" placeholder="Enter secure password" {...field} />
                     </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Must be 8+ characters with uppercase, lowercase, and number
+                    </p>
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="confirmPassword"
@@ -266,33 +288,39 @@ export default function AcceptInvitation() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Confirm your password" {...field} />
+                      <Input type="password" placeholder="Confirm password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={acceptMutation.isPending}
               >
-                {acceptMutation.isPending ? "Creating Account..." : "Join Team"}
+                {acceptMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  "Accept Invitation & Create Account"
+                )}
               </Button>
             </form>
           </Form>
 
-          {acceptMutation.isSuccess && (
-            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <p className="text-green-800 dark:text-green-200 font-medium">
-                Account created successfully!
-              </p>
-              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                Redirecting to login page...
-              </p>
-            </div>
-          )}
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+            Already have an account?{" "}
+            <button
+              onClick={() => setLocation("/login")}
+              className="text-primary hover:underline font-medium"
+            >
+              Sign in here
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>

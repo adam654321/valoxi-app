@@ -815,6 +815,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get invitation details by token (public endpoint for invitation acceptance)
+  app.get("/api/team/invitation/:token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+      
+      const invitation = await storage.getUserInvitationByToken(token);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found or expired" });
+      }
+      
+      res.json({
+        email: invitation.email,
+        invitedRole: invitation.invitedRole,
+        companyName: invitation.companyName,
+        inviterName: invitation.inviterName,
+        invitationMessage: invitation.invitationMessage,
+        invitationStatus: invitation.invitationStatus,
+      });
+    } catch (error) {
+      console.error("Get invitation details error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Accept invitation endpoint (public)
+  app.post("/api/team/invitation/:token/accept", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      const acceptSchema = z.object({
+        firstName: z.string().min(1, "First name is required"),
+        lastName: z.string().min(1, "Last name is required"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+      });
+      
+      const { firstName, lastName, password } = acceptSchema.parse(req.body);
+      
+      const user = await storage.acceptInvitation(token, {
+        firstName,
+        lastName,
+        passwordHash: await bcrypt.hash(password, 10),
+        isActive: true,
+        emailVerified: true,
+      });
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired invitation" });
+      }
+      
+      res.json({ 
+        message: "Invitation accepted successfully",
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }
+      });
+    } catch (error) {
+      console.error("Accept invitation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get pending invitations (admin only)
   app.get("/api/team/invitations", isAuthenticated, async (req: Request, res: Response) => {
     try {
