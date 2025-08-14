@@ -14,7 +14,8 @@ import {
   FileText,
   Image as ImageIcon,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Eye
 } from "lucide-react";
 
 interface Document {
@@ -47,6 +48,7 @@ interface DocumentViewerProps {
 export function DocumentViewer({ document, isOpen, onClose, onDownload }: DocumentViewerProps) {
   const { toast } = useToast();
   const [viewerError, setViewerError] = useState(false);
+  const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
 
   if (!document) return null;
 
@@ -88,6 +90,14 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
       variant: "destructive",
     });
   };
+
+  // Reset states when dialog opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setViewerError(false);
+      setPdfLoadAttempted(false);
+    }
+  }, [isOpen]);
 
   const openInNewTab = () => {
     window.open(viewerUrl, '_blank');
@@ -209,13 +219,74 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             </div>
           ) : isPDF ? (
             <div className="h-full w-full rounded-lg overflow-hidden">
-              <iframe
-                src={`${viewerUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
-                className="w-full h-full border-0"
-                title={document.documentName}
-                onLoad={handleViewerLoad}
-                onError={handleViewerError}
-              />
+              {!pdfLoadAttempted ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <FileText className="w-16 h-16 text-blue-500 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">PDF Document Ready</h3>
+                  <p className="text-muted-foreground mb-6">
+                    This PDF document is ready to view. Choose your preferred viewing method below.
+                  </p>
+                  <div className="flex flex-col gap-3 w-full max-w-sm">
+                    <Button
+                      onClick={openInNewTab}
+                      className="w-full"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open in New Tab (Recommended)
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPdfLoadAttempted(true)}
+                      className="w-full"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Try Inline Viewer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => onDownload(document.id, document.originalFilename)}
+                      className="w-full"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Some browsers may block inline PDF viewing for security reasons
+                  </p>
+                </div>
+              ) : (
+                <object
+                  data={`${viewerUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
+                  type="application/pdf"
+                  className="w-full h-full"
+                  onLoad={handleViewerLoad}
+                  onError={handleViewerError}
+                >
+                  <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                    <AlertCircle className="w-16 h-16 text-amber-500 mb-4" />
+                    <h3 className="text-lg font-medium mb-2">PDF Viewer Blocked</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Your browser is blocking the inline PDF viewer for security reasons.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={openInNewTab}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open in New Tab
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => onDownload(document.id, document.originalFilename)}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </object>
+              )}
             </div>
           ) : isText ? (
             <div className="h-full w-full bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto">

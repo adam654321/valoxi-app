@@ -1879,6 +1879,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add cache control for better performance
       res.setHeader('Cache-Control', 'private, max-age=3600');
       
+      // Add headers to allow iframe embedding
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      res.setHeader('Content-Security-Policy', 'frame-ancestors \'self\'');
+      
       // Send file
       res.sendFile(path.resolve(document.filePath));
       
