@@ -27,10 +27,10 @@ class EmailService {
   }
 
   private setupTransporter() {
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpPort = process.env.SMTP_PORT;
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpPort = process.env.SMTP_PORT?.trim();
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
 
     if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
       console.warn('Email service not configured - missing SMTP environment variables');
@@ -46,6 +46,8 @@ class EmailService {
         pass: smtpPass,
       },
     };
+
+    console.log('SMTP configuration loaded successfully');
 
     this.transporter = nodemailer.createTransport(config);
   }
