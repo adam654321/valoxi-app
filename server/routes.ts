@@ -1857,6 +1857,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // View document (for preview)
+  app.get("/api/documents/:id/view", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const userId = req.session.userId!;
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const document = await storage.getDocument(documentId, userCompanyId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found or access denied' });
+      }
+      
+      // Log access
+      await storage.logDocumentAccess(documentId, userId, 'view', req.ip);
+      
+      // Set headers for inline viewing
+      res.setHeader('Content-Type', document.fileType);
+      res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+      
+      // Add cache control for better performance
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      
+      // Send file
+      res.sendFile(path.resolve(document.filePath));
+      
+    } catch (error) {
+      console.error("View document error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Download document
   app.get("/api/documents/:id/download", isAuthenticated, async (req: Request, res: Response) => {
     try {

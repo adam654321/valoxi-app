@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { DocumentViewer } from "@/components/document-viewer";
 import { 
   FileText, 
   Upload, 
@@ -105,6 +106,8 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   const { toast } = useToast();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<Document | null>(null);
+  const [showViewer, setShowViewer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const documentForm = useForm<DocumentFormData>({
@@ -211,6 +214,11 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     uploadMutation.mutate({ ...data, file: selectedFile });
   };
 
+  const handleView = (document: Document) => {
+    setViewingDocument(document);
+    setShowViewer(true);
+  };
+
   const handleDownload = (documentId: number, filename: string) => {
     window.open(`/api/documents/${documentId}/download`, '_blank');
   };
@@ -219,6 +227,11 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     if (confirm("Are you sure you want to delete this document?")) {
       deleteMutation.mutate(documentId);
     }
+  };
+
+  const handleCloseViewer = () => {
+    setShowViewer(false);
+    setViewingDocument(null);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -474,13 +487,29 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                               </div>
                             </div>
                             
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleView(document)}
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                View
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => handleView(document)}
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   onClick={() => handleDownload(document.id, document.originalFilename)}
                                 >
@@ -496,6 +525,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -507,6 +537,14 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           )}
         </CardContent>
       </Card>
+
+      {/* Document Viewer */}
+      <DocumentViewer
+        document={viewingDocument}
+        isOpen={showViewer}
+        onClose={handleCloseViewer}
+        onDownload={handleDownload}
+      />
     </div>
   );
 }
