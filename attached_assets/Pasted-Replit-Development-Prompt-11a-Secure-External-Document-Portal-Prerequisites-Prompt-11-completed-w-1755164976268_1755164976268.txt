@@ -1,0 +1,1286 @@
+Replit Development Prompt 11a: Secure External Document Portal
+Prerequisites
+Prompt 11 completed with internal document upload functionality
+Target company and contact management systems operational
+User authentication and company data isolation working
+Email system configured for sending portal invitations
+What This Prompt Builds
+Create a secure external portal that allows target company contacts to submit documents directly to the M&A CRM system. This professional portal provides a branded, secure interface for external parties to upload required documents, track their submission progress, and communicate with the acquiring team.
+System Context Reminder
+External Portal: Secure, branded interface for target company document submission
+Token-Based Security: Time-limited, encrypted access tokens for portal security
+Document Requirements: Contact-specific document lists based on deal stage and requirements
+Progress Tracking: Real-time visibility into document submission status for both parties
+What You Need to Build
+1. Secure Portal Access System
+Create a comprehensive external portal with these capabilities:
+
+Portal Token Management:
+
+Generate secure, time-limited access tokens for each contact
+Token-based authentication without requiring user accounts
+Configurable expiration periods (default 30 days, renewable)
+IP address tracking and access logging for security
+
+Contact-Specific Portal Access:
+
+Personalized portal experience with contact and company information
+Document requirements tailored to specific contact role and deal stage
+Progress tracking showing completed vs. outstanding documents
+Secure messaging system for communication with acquiring team
+
+Professional Branding:
+
+Branded portal interface with acquiring company logo and colors
+Professional document submission experience
+Mobile-responsive design for accessibility
+Clear instructions and help documentation
+2. Database Schema for External Portal
+-- Create portal access tokens table
+CREATE TABLE portal_access_tokens (
+  id SERIAL PRIMARY KEY,
+  target_company_id INTEGER REFERENCES target_companies(id),
+  target_contact_id INTEGER REFERENCES target_contacts(id),
+  user_company_id INTEGER REFERENCES user_companies(id),
+  
+  -- Token Details
+  access_token VARCHAR(255) UNIQUE NOT NULL,
+  token_purpose VARCHAR(50) DEFAULT 'document_submission', -- document_submission, document_review, communication
+  
+  -- Access Control
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '30 days'),
+  last_accessed TIMESTAMP,
+  access_count INTEGER DEFAULT 0,
+  
+  -- Security Tracking
+  created_by INTEGER REFERENCES users(id),
+  ip_addresses_used INET[],
+  user_agent_strings TEXT[],
+  
+  -- Portal Configuration
+  allowed_actions JSONB DEFAULT '{"upload": true, "download": true, "message": true}',
+  custom_message TEXT,
+  portal_branding JSONB -- Logo, colors, custom text
+);
+
+-- Create external document submissions table
+CREATE TABLE external_document_submissions (
+  id SERIAL PRIMARY KEY,
+  portal_token_id INTEGER REFERENCES portal_access_tokens(id),
+  target_company_id INTEGER REFERENCES target_companies(id),
+  target_contact_id INTEGER REFERENCES target_contacts(id),
+  
+  -- Document Details
+  original_filename VARCHAR(255) NOT NULL,
+  stored_filename VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT NOT NULL,
+  file_type VARCHAR(100),
+  document_category VARCHAR(100),
+  
+  -- Submission Details
+  submission_notes TEXT,
+  submitted_at TIMESTAMP DEFAULT NOW(),
+  submission_ip INET,
+  submission_user_agent TEXT,
+  
+  -- Processing Status
+  processing_status VARCHAR(50) DEFAULT 'pending', -- pending, processing, approved, rejected, requires_revision
+  reviewed_by INTEGER REFERENCES users(id),
+  reviewed_at TIMESTAMP,
+  review_notes TEXT,
+  
+  -- Document Requirements Link
+  document_requirement_id INTEGER, -- Links to document requirements system
+  
+  -- Security and Compliance
+  virus_scan_status VARCHAR(50) DEFAULT 'pending', -- pending, clean, infected, error
+  virus_scan_result JSONB,
+  encryption_status VARCHAR(50) DEFAULT 'encrypted',
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create portal activity log table
+CREATE TABLE portal_activity_log (
+  id SERIAL PRIMARY KEY,
+  portal_token_id INTEGER REFERENCES portal_access_tokens(id),
+  target_contact_id INTEGER REFERENCES target_contacts(id),
+  
+  -- Activity Details
+  activity_type VARCHAR(50) NOT NULL, -- login, upload, download, message, logout
+  activity_description TEXT,
+  activity_timestamp TIMESTAMP DEFAULT NOW(),
+  
+  -- Technical Details
+  ip_address INET,
+  user_agent TEXT,
+  session_duration INTEGER, -- seconds
+  
+  -- Related Objects
+  related_document_id INTEGER REFERENCES external_document_submissions(id),
+  related_message_id INTEGER, -- For messaging system
+  
+  -- Security Flags
+  security_flags JSONB, -- suspicious_activity, multiple_ips, etc.
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create portal messages table for secure communication
+CREATE TABLE portal_messages (
+  id SERIAL PRIMARY KEY,
+  portal_token_id INTEGER REFERENCES portal_access_tokens(id),
+  target_company_id INTEGER REFERENCES target_companies(id),
+  
+  -- Message Details
+  message_thread_id VARCHAR(100), -- Group related messages
+  message_subject VARCHAR(255),
+  message_content TEXT NOT NULL,
+  message_type VARCHAR(50) DEFAULT 'general', -- general, document_request, clarification, urgent
+  
+  -- Sender/Receiver
+  sender_type VARCHAR(20) NOT NULL, -- internal, external
+  sender_user_id INTEGER REFERENCES users(id), -- If sent by internal user
+  sender_contact_id INTEGER REFERENCES target_contacts(id), -- If sent by external contact
+  
+  -- Message Status
+  is_read BOOLEAN DEFAULT FALSE,
+  read_at TIMESTAMP,
+  requires_response BOOLEAN DEFAULT FALSE,
+  response_deadline TIMESTAMP,
+  
+  -- Attachments
+  has_attachments BOOLEAN DEFAULT FALSE,
+  attachment_count INTEGER DEFAULT 0,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create portal document requirements table
+CREATE TABLE portal_document_requirements (
+  id SERIAL PRIMARY KEY,
+  target_company_id INTEGER REFERENCES target_companies(id),
+  portal_token_id INTEGER REFERENCES portal_access_tokens(id),
+  
+  -- Requirement Details
+  requirement_name VARCHAR(255) NOT NULL,
+  requirement_description TEXT,
+  document_category VARCHAR(100),
+  is_mandatory BOOLEAN DEFAULT TRUE,
+  
+  -- Stage and Priority
+  collection_stage INTEGER DEFAULT 1, -- 1 = pre-offer, 2 = post-heads-of-terms
+  priority_level VARCHAR(20) DEFAULT 'medium', -- low, medium, high, critical
+  due_date TIMESTAMP,
+  
+  -- Submission Status
+  submission_status VARCHAR(50) DEFAULT 'outstanding', -- outstanding, submitted, approved, rejected
+  submitted_document_id INTEGER REFERENCES external_document_submissions(id),
+  
+  -- Requirements Specification
+  accepted_file_types TEXT[], -- ['pdf', 'docx', 'xlsx']
+  max_file_size BIGINT DEFAULT 10485760, -- 10MB default
+  min_file_size BIGINT DEFAULT 1024, -- 1KB minimum
+  
+  -- Instructions and Help
+  submission_instructions TEXT,
+  example_documents TEXT[], -- URLs or file paths to examples
+  help_text TEXT,
+  
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_portal_tokens_active ON portal_access_tokens(access_token, is_active, expires_at);
+CREATE INDEX idx_portal_tokens_company ON portal_access_tokens(target_company_id, is_active);
+CREATE INDEX idx_external_submissions_token ON external_document_submissions(portal_token_id);
+CREATE INDEX idx_external_submissions_status ON external_document_submissions(processing_status);
+CREATE INDEX idx_portal_activity_token ON portal_activity_log(portal_token_id, activity_timestamp);
+CREATE INDEX idx_portal_messages_thread ON portal_messages(message_thread_id, created_at);
+CREATE INDEX idx_portal_requirements_company ON portal_document_requirements(target_company_id, collection_stage);
+3. API Endpoints for Portal System
+// Portal token management (internal users)
+POST /api/portal/tokens                       // Generate portal access token
+GET /api/portal/tokens                        // Get portal tokens for company
+PUT /api/portal/tokens/:id                    // Update token settings
+DELETE /api/portal/tokens/:id                 // Revoke portal token
+POST /api/portal/tokens/:id/extend            // Extend token expiration
+
+// External portal access (public endpoints)
+GET /portal/:token                            // Portal landing page
+POST /portal/:token/validate                  // Validate token and get portal data
+GET /portal/:token/requirements               // Get document requirements
+POST /portal/:token/upload                    // Upload document
+GET /portal/:token/progress                   // Get submission progress
+POST /portal/:token/message                   // Send message to internal team
+GET /portal/:token/messages                   // Get message history
+
+// Portal management (internal users)
+GET /api/portal/:token/activity               // Get portal activity log
+GET /api/portal/:token/submissions            // Get submitted documents
+PUT /api/portal/submissions/:id/review        // Review submitted document
+POST /api/portal/requirements                 // Create document requirements
+PUT /api/portal/requirements/:id              // Update document requirements
+
+// Portal communication
+GET /api/portal/messages                      // Get portal messages (internal)
+POST /api/portal/messages                     // Send message to portal user
+PUT /api/portal/messages/:id/read             // Mark message as read
+4. Portal Token Management System
+const portalTokenManager = {
+  // Generate secure portal access token
+  generatePortalToken: async (targetCompanyId, contactId, createdBy, tokenConfig = {}) => {
+    // Verify permissions
+    const user = await getUserWithPermissions(createdBy);
+    if (!user.can_upload_documents && !user.can_manage_company) {
+      throw new Error('Insufficient permissions to create portal tokens');
+    }
+    
+    // Generate cryptographically secure token
+    const crypto = require('crypto');
+    const accessToken = crypto.randomBytes(32).toString('hex');
+    
+    // Set default configuration
+    const defaultConfig = {
+      expires_in_days: 30,
+      allowed_actions: {
+        upload: true,
+        download: true,
+        message: true
+      },
+      custom_message: '',
+      portal_branding: {
+        logo_url: '',
+        primary_color: '#007bff',
+        company_name: ''
+      }
+    };
+    
+    const config = { ...defaultConfig, ...tokenConfig };
+    
+    // Create portal token record
+    const tokenQuery = `
+      INSERT INTO portal_access_tokens (
+        target_company_id, target_contact_id, user_company_id, access_token,
+        expires_at, created_by, allowed_actions, custom_message, portal_branding
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+    
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + config.expires_in_days);
+    
+    const tokenValues = [
+      targetCompanyId,
+      contactId,
+      user.user_company_id,
+      accessToken,
+      expiresAt,
+      createdBy,
+      JSON.stringify(config.allowed_actions),
+      config.custom_message,
+      JSON.stringify(config.portal_branding)
+    ];
+    
+    const result = await db.query(tokenQuery, tokenValues);
+    const token = result.rows[0];
+    
+    // Create initial document requirements for this portal
+    await createPortalDocumentRequirements(token.id, targetCompanyId, 1); // Stage 1 requirements
+    
+    // Log token creation
+    await logActivity(targetCompanyId, createdBy, 'portal_token_created', `Created secure portal access for contact`);
+    
+    return token;
+  },
+  
+  // Validate portal token and get portal data
+  validatePortalToken: async (accessToken, ipAddress, userAgent) => {
+    const tokenQuery = `
+      SELECT 
+        pat.*,
+        tc.company_name as target_company_name,
+        tc.industry,
+        tcont.first_name,
+        tcont.last_name,
+        tcont.email,
+        uc.company_name as acquiring_company_name
+      FROM portal_access_tokens pat
+      JOIN target_companies tc ON pat.target_company_id = tc.id
+      JOIN target_contacts tcont ON pat.target_contact_id = tcont.id
+      JOIN user_companies uc ON pat.user_company_id = uc.id
+      WHERE pat.access_token = $1 
+      AND pat.is_active = true 
+      AND pat.expires_at > NOW()
+    `;
+    
+    const result = await db.query(tokenQuery, [accessToken]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Invalid or expired portal access token');
+    }
+    
+    const tokenData = result.rows[0];
+    
+    // Update access tracking
+    await db.query(`
+      UPDATE portal_access_tokens 
+      SET 
+        last_accessed = NOW(),
+        access_count = access_count + 1,
+        ip_addresses_used = array_append(ip_addresses_used, $2::inet),
+        user_agent_strings = array_append(user_agent_strings, $3)
+      WHERE id = $1
+    `, [tokenData.id, ipAddress, userAgent]);
+    
+    // Log portal access
+    await logPortalActivity(tokenData.id, tokenData.target_contact_id, 'login', 'Portal accessed', ipAddress, userAgent);
+    
+    return tokenData;
+  },
+  
+  // Get document requirements for portal
+  getPortalRequirements: async (tokenId, stage = 1) => {
+    const requirementsQuery = `
+      SELECT 
+        pdr.*,
+        eds.id as submission_id,
+        eds.original_filename,
+        eds.processing_status,
+        eds.submitted_at
+      FROM portal_document_requirements pdr
+      LEFT JOIN external_document_submissions eds ON pdr.submitted_document_id = eds.id
+      WHERE pdr.portal_token_id = $1 
+      AND pdr.collection_stage = $2
+      ORDER BY pdr.priority_level DESC, pdr.created_at ASC
+    `;
+    
+    const result = await db.query(requirementsQuery, [tokenId, stage]);
+    return result.rows;
+  },
+  
+  // Process document upload from portal
+  processPortalUpload: async (tokenId, fileData, submissionData, ipAddress, userAgent) => {
+    // Validate token
+    const token = await db.query(
+      'SELECT * FROM portal_access_tokens WHERE id = $1 AND is_active = true AND expires_at > NOW()',
+      [tokenId]
+    );
+    
+    if (token.rows.length === 0) {
+      throw new Error('Invalid or expired portal token');
+    }
+    
+    const tokenData = token.rows[0];
+    
+    // Validate file
+    if (fileData.size > 10485760) { // 10MB limit
+      throw new Error('File size exceeds 10MB limit');
+    }
+    
+    const allowedTypes = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png'];
+    const fileExtension = fileData.originalname.split('.').pop().toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension)) {
+      throw new Error('File type not allowed');
+    }
+    
+    // Generate secure filename
+    const crypto = require('crypto');
+    const fileHash = crypto.createHash('sha256').update(fileData.buffer).digest('hex');
+    const storedFilename = `${fileHash}_${Date.now()}.${fileExtension}`;
+    const filePath = `uploads/portal/${tokenData.user_company_id}/${storedFilename}`;
+    
+    // Save file to storage
+    const fs = require('fs').promises;
+    await fs.mkdir(`uploads/portal/${tokenData.user_company_id}`, { recursive: true });
+    await fs.writeFile(filePath, fileData.buffer);
+    
+    // Create submission record
+    const submissionQuery = `
+      INSERT INTO external_document_submissions (
+        portal_token_id, target_company_id, target_contact_id,
+        original_filename, stored_filename, file_path, file_size, file_type,
+        document_category, submission_notes, submission_ip, submission_user_agent
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `;
+    
+    const submissionValues = [
+      tokenId,
+      tokenData.target_company_id,
+      tokenData.target_contact_id,
+      fileData.originalname,
+      storedFilename,
+      filePath,
+      fileData.size,
+      fileExtension,
+      submissionData.document_category || 'general',
+      submissionData.notes || '',
+      ipAddress,
+      userAgent
+    ];
+    
+    const submissionResult = await db.query(submissionQuery, submissionValues);
+    const submission = submissionResult.rows[0];
+    
+    // Update document requirement if specified
+    if (submissionData.requirement_id) {
+      await db.query(
+        'UPDATE portal_document_requirements SET submission_status = $1, submitted_document_id = $2 WHERE id = $3',
+        ['submitted', submission.id, submissionData.requirement_id]
+      );
+    }
+    
+    // Log portal activity
+    await logPortalActivity(tokenId, tokenData.target_contact_id, 'upload', `Uploaded document: ${fileData.originalname}`, ipAddress, userAgent, submission.id);
+    
+    // Notify internal team
+    await notifyInternalTeam(tokenData.target_company_id, 'document_submitted', `New document submitted: ${fileData.originalname}`, submission.id);
+    
+    return submission;
+  },
+  
+  // Get portal submission progress
+  getPortalProgress: async (tokenId) => {
+    const progressQuery = `
+      SELECT 
+        COUNT(*) as total_requirements,
+        COUNT(CASE WHEN submission_status = 'submitted' THEN 1 END) as submitted_count,
+        COUNT(CASE WHEN submission_status = 'approved' THEN 1 END) as approved_count,
+        COUNT(CASE WHEN submission_status = 'outstanding' THEN 1 END) as outstanding_count,
+        COUNT(CASE WHEN is_mandatory = true AND submission_status = 'outstanding' THEN 1 END) as mandatory_outstanding
+      FROM portal_document_requirements
+      WHERE portal_token_id = $1
+    `;
+    
+    const result = await db.query(progressQuery, [tokenId]);
+    const progress = result.rows[0];
+    
+    // Calculate completion percentage
+    const completionPercentage = progress.total_requirements > 0 
+      ? Math.round((progress.submitted_count / progress.total_requirements) * 100)
+      : 0;
+    
+    return {
+      ...progress,
+      completion_percentage: completionPercentage,
+      is_complete: progress.mandatory_outstanding === '0'
+    };
+  }
+};
+
+const portalMessaging = {
+  // Send message from portal to internal team
+  sendPortalMessage: async (tokenId, messageData, ipAddress, userAgent) => {
+    const token = await db.query(
+      'SELECT * FROM portal_access_tokens WHERE id = $1 AND is_active = true',
+      [tokenId]
+    );
+    
+    if (token.rows.length === 0) {
+      throw new Error('Invalid portal token');
+    }
+    
+    const tokenData = token.rows[0];
+    
+    // Generate message thread ID if not provided
+    const messageThreadId = messageData.thread_id || `portal_${tokenId}_${Date.now()}`;
+    
+    const messageQuery = `
+      INSERT INTO portal_messages (
+        portal_token_id, target_company_id, message_thread_id,
+        message_subject, message_content, message_type,
+        sender_type, sender_contact_id, requires_response, response_deadline
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *
+    `;
+    
+    const messageValues = [
+      tokenId,
+      tokenData.target_company_id,
+      messageThreadId,
+      messageData.subject || 'Portal Message',
+      messageData.content,
+      messageData.type || 'general',
+      'external',
+      tokenData.target_contact_id,
+      messageData.requires_response || false,
+      messageData.response_deadline || null
+    ];
+    
+    const result = await db.query(messageQuery, messageValues);
+    const message = result.rows[0];
+    
+    // Log portal activity
+    await logPortalActivity(tokenId, tokenData.target_contact_id, 'message', `Sent message: ${messageData.subject}`, ipAddress, userAgent, null, message.id);
+    
+    // Notify internal team
+    await notifyInternalTeam(tokenData.target_company_id, 'portal_message_received', `New message from ${tokenData.target_company_name}`, message.id);
+    
+    return message;
+  },
+  
+  // Get message history for portal
+  getPortalMessages: async (tokenId, limit = 50) => {
+    const messagesQuery = `
+      SELECT 
+        pm.*,
+        u.first_name as sender_first_name,
+        u.last_name as sender_last_name,
+        tc.first_name as contact_first_name,
+        tc.last_name as contact_last_name
+      FROM portal_messages pm
+      LEFT JOIN users u ON pm.sender_user_id = u.id
+      LEFT JOIN target_contacts tc ON pm.sender_contact_id = tc.id
+      WHERE pm.portal_token_id = $1
+      ORDER BY pm.created_at DESC
+      LIMIT $2
+    `;
+    
+    const result = await db.query(messagesQuery, [tokenId, limit]);
+    return result.rows;
+  }
+};
+
+const createPortalDocumentRequirements = async (tokenId, targetCompanyId, stage) => {
+  // Default Stage 1 (Pre-Offer) requirements
+  const stage1Requirements = [
+    {
+      name: 'Financial Statements (Last 3 Years)',
+      description: 'Audited financial statements for the last three years including P&L, Balance Sheet, and Cash Flow',
+      category: 'financial',
+      mandatory: true,
+      priority: 'critical',
+      accepted_types: ['pdf', 'xlsx'],
+      instructions: 'Please provide audited financial statements. Management accounts are acceptable if audited statements are not available.'
+    },
+    {
+      name: 'Management Accounts (Current Year)',
+      description: 'Latest management accounts showing current year performance',
+      category: 'financial',
+      mandatory: true,
+      priority: 'high',
+      accepted_types: ['pdf', 'xlsx'],
+      instructions: 'Please provide the most recent management accounts available.'
+    },
+    {
+      name: 'Company Structure Chart',
+      description: 'Organizational chart showing company structure and key personnel',
+      category: 'corporate',
+      mandatory: true,
+      priority: 'medium',
+      accepted_types: ['pdf', 'docx', 'png', 'jpg'],
+      instructions: 'Please include reporting relationships and key management positions.'
+    },
+    {
+      name: 'Key Customer List',
+      description: 'List of top 10 customers with revenue contribution',
+      category: 'commercial',
+      mandatory: true,
+      priority: 'high',
+      accepted_types: ['pdf', 'xlsx'],
+      instructions: 'Please include customer names, revenue contribution, and contract terms where applicable.'
+    },
+    {
+      name: 'Key Supplier List',
+      description: 'List of main suppliers and key contracts',
+      category: 'commercial',
+      mandatory: false,
+      priority: 'medium',
+      accepted_types: ['pdf', 'xlsx'],
+      instructions: 'Please include supplier names, spend levels, and contract terms.'
+    }
+  ];
+  
+  // Default Stage 2 (Post-Heads of Terms) requirements
+  const stage2Requirements = [
+    {
+      name: 'Detailed Financial Records',
+      description: 'Complete financial records including trial balances, aged debtors/creditors',
+      category: 'financial',
+      mandatory: true,
+      priority: 'critical',
+      accepted_types: ['pdf', 'xlsx'],
+      instructions: 'Please provide comprehensive financial records for detailed due diligence.'
+    },
+    {
+      name: 'Legal Documents',
+      description: 'Articles of incorporation, shareholder agreements, material contracts',
+      category: 'legal',
+      mandatory: true,
+      priority: 'critical',
+      accepted_types: ['pdf'],
+      instructions: 'Please provide all constitutional documents and material legal agreements.'
+    },
+    {
+      name: 'Employee Records',
+      description: 'Employee contracts, pension schemes, HR policies',
+      category: 'hr',
+      mandatory: true,
+      priority: 'high',
+      accepted_types: ['pdf', 'docx'],
+      instructions: 'Please provide employment documentation and HR policies.'
+    },
+    {
+      name: 'Insurance Policies',
+      description: 'Current insurance policies and claims history',
+      category: 'insurance',
+      mandatory: true,
+      priority: 'medium',
+      accepted_types: ['pdf'],
+      instructions: 'Please provide all current insurance policies and any claims history.'
+    },
+    {
+      name: 'Tax Records',
+      description: 'Tax returns, correspondence with tax authorities',
+      category: 'tax',
+      mandatory: true,
+      priority: 'high',
+      accepted_types: ['pdf'],
+      instructions: 'Please provide tax returns and any correspondence with tax authorities.'
+    }
+  ];
+  
+  const requirements = stage === 1 ? stage1Requirements : stage2Requirements;
+  
+  for (const req of requirements) {
+    const requirementQuery = `
+      INSERT INTO portal_document_requirements (
+        target_company_id, portal_token_id, requirement_name, requirement_description,
+        document_category, is_mandatory, collection_stage, priority_level,
+        accepted_file_types, submission_instructions
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `;
+    
+    const values = [
+      targetCompanyId,
+      tokenId,
+      req.name,
+      req.description,
+      req.category,
+      req.mandatory,
+      stage,
+      req.priority,
+      req.accepted_types,
+      req.instructions
+    ];
+    
+    await db.query(requirementQuery, values);
+  }
+};
+
+const logPortalActivity = async (tokenId, contactId, activityType, description, ipAddress, userAgent, documentId = null, messageId = null) => {
+  const activityQuery = `
+    INSERT INTO portal_activity_log (
+      portal_token_id, target_contact_id, activity_type, activity_description,
+      ip_address, user_agent, related_document_id, related_message_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+  `;
+  
+  await db.query(activityQuery, [tokenId, contactId, activityType, description, ipAddress, userAgent, documentId, messageId]);
+};
+
+const notifyInternalTeam = async (targetCompanyId, notificationType, message, relatedId = null) => {
+  // Get all users assigned to this deal
+  const usersQuery = `
+    SELECT DISTINCT u.id
+    FROM users u
+    JOIN user_deal_assignments uda ON u.id = uda.user_id
+    WHERE uda.target_company_id = $1 AND uda.is_active = true
+  `;
+  
+  const users = await db.query(usersQuery, [targetCompanyId]);
+  
+  // Create notifications for all assigned users
+  for (const user of users.rows) {
+    await createTeamNotification(
+      user.id,
+      notificationType,
+      'Portal Activity',
+      message,
+      targetCompanyId,
+      null
+    );
+  }
+};
+UI Implementation
+External Portal Interface
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Submission Portal - {{acquiring_company_name}}</title>
+  <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body>
+  <div class="portal-container">
+    <!-- Portal Header -->
+    <div class="portal-header">
+      <div class="portal-branding">
+        {{#if portal_branding.logo_url}}
+        <img src="{{portal_branding.logo_url}}" alt="{{acquiring_company_name}}" class="company-logo">
+        {{/if}}
+        <h1>{{acquiring_company_name}}</h1>
+      </div>
+      
+      <div class="portal-info">
+        <h2>Document Submission Portal</h2>
+        <p>Welcome {{contact_first_name}} {{contact_last_name}} from {{target_company_name}}</p>
+      </div>
+    </div>
+    
+    <!-- Progress Overview -->
+    <div class="progress-section">
+      <h3>Submission Progress</h3>
+      
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {{progress.completion_percentage}}%"></div>
+        <span class="progress-text">{{progress.completion_percentage}}% Complete</span>
+      </div>
+      
+      <div class="progress-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{progress.submitted_count}}</span>
+          <span class="stat-label">Submitted</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{progress.approved_count}}</span>
+          <span class="stat-label">Approved</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{progress.outstanding_count}}</span>
+          <span class="stat-label">Outstanding</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Document Requirements -->
+    <div class="requirements-section">
+      <h3>Required Documents</h3>
+      
+      {{#if custom_message}}
+      <div class="custom-message">
+        <p>{{custom_message}}</p>
+      </div>
+      {{/if}}
+      
+      <div class="requirements-list">
+        {{#each requirements}}
+        <div class="requirement-item {{submission_status}}">
+          <div class="requirement-header">
+            <h4>
+              {{requirement_name}}
+              {{#if is_mandatory}}
+              <span class="mandatory-badge">Required</span>
+              {{else}}
+              <span class="optional-badge">Optional</span>
+              {{/if}}
+              <span class="priority-badge priority-{{priority_level}}">{{priority_level}}</span>
+            </h4>
+            
+            <div class="requirement-status">
+              {{#if (eq submission_status 'outstanding')}}
+              <span class="status-badge outstanding">📋 Outstanding</span>
+              {{else if (eq submission_status 'submitted')}}
+              <span class="status-badge submitted">📤 Submitted</span>
+              {{else if (eq submission_status 'approved')}}
+              <span class="status-badge approved">✅ Approved</span>
+              {{else if (eq submission_status 'rejected')}}
+              <span class="status-badge rejected">❌ Rejected</span>
+              {{/if}}
+            </div>
+          </div>
+          
+          <div class="requirement-content">
+            <p class="requirement-description">{{requirement_description}}</p>
+            
+            {{#if submission_instructions}}
+            <div class="submission-instructions">
+              <strong>Instructions:</strong> {{submission_instructions}}
+            </div>
+            {{/if}}
+            
+            <div class="file-requirements">
+              <strong>Accepted formats:</strong> {{accepted_file_types}}
+              <br>
+              <strong>Maximum size:</strong> {{max_file_size_mb}}MB
+            </div>
+            
+            {{#if (eq submission_status 'outstanding')}}
+            <div class="upload-section">
+              <form class="upload-form" data-requirement-id="{{id}}">
+                <div class="file-input-wrapper">
+                  <input type="file" id="file-{{id}}" name="document" accept="{{accepted_file_types_string}}" required>
+                  <label for="file-{{id}}" class="file-input-label">
+                    📁 Choose File
+                  </label>
+                  <span class="file-name" id="filename-{{id}}">No file selected</span>
+                </div>
+                
+                <div class="upload-notes">
+                  <textarea name="notes" placeholder="Add any notes about this document (optional)" rows="2"></textarea>
+                </div>
+                
+                <button type="submit" class="upload-btn">📤 Upload Document</button>
+              </form>
+            </div>
+            {{else if submitted_document_id}}
+            <div class="submitted-info">
+              <p><strong>Submitted:</strong> {{original_filename}} on {{submitted_at | formatDate}}</p>
+              {{#if (eq processing_status 'rejected')}}
+              <div class="rejection-info">
+                <p><strong>Rejection reason:</strong> {{review_notes}}</p>
+                <button onclick="resubmitDocument({{id}})" class="resubmit-btn">🔄 Resubmit</button>
+              </div>
+              {{/if}}
+            </div>
+            {{/if}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    
+    <!-- Messaging Section -->
+    <div class="messaging-section">
+      <h3>Communication</h3>
+      
+      <div class="message-thread">
+        {{#each messages}}
+        <div class="message-item {{sender_type}}">
+          <div class="message-header">
+            <span class="sender-name">
+              {{#if (eq sender_type 'internal')}}
+              {{sender_first_name}} {{sender_last_name}} ({{acquiring_company_name}})
+              {{else}}
+              {{contact_first_name}} {{contact_last_name}} ({{target_company_name}})
+              {{/if}}
+            </span>
+            <span class="message-time">{{created_at | timeAgo}}</span>
+          </div>
+          
+          <div class="message-content">
+            <h5>{{message_subject}}</h5>
+            <p>{{message_content}}</p>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+      
+      <div class="new-message-form">
+        <h4>Send Message</h4>
+        <form id="message-form">
+          <div class="form-group">
+            <input type="text" name="subject" placeholder="Message subject" required>
+          </div>
+          
+          <div class="form-group">
+            <textarea name="content" placeholder="Your message..." rows="4" required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>
+              <input type="checkbox" name="requires_response"> This message requires a response
+            </label>
+          </div>
+          
+          <button type="submit">📧 Send Message</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Portal Footer -->
+    <div class="portal-footer">
+      <p>This is a secure document submission portal. All uploads are encrypted and logged for security.</p>
+      <p>If you experience any issues, please contact your {{acquiring_company_name}} representative.</p>
+    </div>
+  </div>
+  
+  <!-- Upload Progress Modal -->
+  <div id="upload-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Uploading Document</h3>
+      <div class="upload-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" id="upload-progress-fill"></div>
+        </div>
+        <p id="upload-status">Preparing upload...</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="/js/portal.js"></script>
+</body>
+</html>
+Portal JavaScript
+// Portal document upload functionality
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize file input handlers
+  document.querySelectorAll('.upload-form').forEach(form => {
+    const fileInput = form.querySelector('input[type="file"]');
+    const filenameSpan = form.querySelector('.file-name');
+    
+    fileInput.addEventListener('change', (e) => {
+      const fileName = e.target.files[0]?.name || 'No file selected';
+      filenameSpan.textContent = fileName;
+    });
+    
+    form.addEventListener('submit', handleDocumentUpload);
+  });
+  
+  // Initialize message form
+  document.getElementById('message-form').addEventListener('submit', handleMessageSend);
+  
+  // Auto-refresh progress every 30 seconds
+  setInterval(refreshProgress, 30000);
+});
+
+const handleDocumentUpload = async (e) => {
+  e.preventDefault();
+  
+  const form = e.target;
+  const requirementId = form.dataset.requirementId;
+  const fileInput = form.querySelector('input[type="file"]');
+  const notesInput = form.querySelector('textarea[name="notes"]');
+  
+  if (!fileInput.files[0]) {
+    showNotification('Please select a file to upload', 'error');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  
+  // Validate file size (10MB limit)
+  if (file.size > 10485760) {
+    showNotification('File size must be less than 10MB', 'error');
+    return;
+  }
+  
+  // Show upload modal
+  showUploadModal();
+  
+  try {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('requirement_id', requirementId);
+    formData.append('notes', notesInput.value);
+    formData.append('document_category', form.dataset.category || 'general');
+    
+    const response = await fetch(`/portal/${getPortalToken()}/upload`, {
+      method: 'POST',
+      body: formData,
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        updateUploadProgress(percentCompleted);
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      showNotification('Document uploaded successfully', 'success');
+      
+      // Update the requirement item UI
+      updateRequirementStatus(requirementId, 'submitted', result);
+      
+      // Refresh progress
+      refreshProgress();
+      
+      // Reset form
+      form.reset();
+      form.querySelector('.file-name').textContent = 'No file selected';
+      
+    } else {
+      showNotification(result.error || 'Upload failed', 'error');
+    }
+    
+  } catch (error) {
+    console.error('Upload error:', error);
+    showNotification('Upload failed. Please try again.', 'error');
+  } finally {
+    hideUploadModal();
+  }
+};
+
+const handleMessageSend = async (e) => {
+  e.preventDefault();
+  
+  const form = e.target;
+  const formData = new FormData(form);
+  const messageData = Object.fromEntries(formData.entries());
+  
+  // Convert checkbox to boolean
+  messageData.requires_response = formData.has('requires_response');
+  
+  try {
+    const response = await fetch(`/portal/${getPortalToken()}/message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(messageData)
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      showNotification('Message sent successfully', 'success');
+      
+      // Add message to thread
+      addMessageToThread(result);
+      
+      // Reset form
+      form.reset();
+      
+    } else {
+      showNotification(result.error || 'Failed to send message', 'error');
+    }
+    
+  } catch (error) {
+    console.error('Message send error:', error);
+    showNotification('Failed to send message', 'error');
+  }
+};
+
+const refreshProgress = async () => {
+  try {
+    const response = await fetch(`/portal/${getPortalToken()}/progress`);
+    const progress = await response.json();
+    
+    if (response.ok) {
+      updateProgressDisplay(progress);
+    }
+    
+  } catch (error) {
+    console.error('Progress refresh error:', error);
+  }
+};
+
+const updateProgressDisplay = (progress) => {
+  // Update progress bar
+  const progressFill = document.querySelector('.progress-fill');
+  const progressText = document.querySelector('.progress-text');
+  
+  if (progressFill && progressText) {
+    progressFill.style.width = `${progress.completion_percentage}%`;
+    progressText.textContent = `${progress.completion_percentage}% Complete`;
+  }
+  
+  // Update stats
+  const stats = document.querySelectorAll('.stat-value');
+  if (stats.length >= 3) {
+    stats[0].textContent = progress.submitted_count;
+    stats[1].textContent = progress.approved_count;
+    stats[2].textContent = progress.outstanding_count;
+  }
+};
+
+const updateRequirementStatus = (requirementId, status, submissionData) => {
+  const requirementItem = document.querySelector(`[data-requirement-id="${requirementId}"]`).closest('.requirement-item');
+  
+  if (requirementItem) {
+    // Update status badge
+    const statusBadge = requirementItem.querySelector('.status-badge');
+    statusBadge.className = `status-badge ${status}`;
+    statusBadge.innerHTML = status === 'submitted' ? '📤 Submitted' : '✅ Approved';
+    
+    // Replace upload form with submission info
+    const uploadSection = requirementItem.querySelector('.upload-section');
+    if (uploadSection && submissionData) {
+      uploadSection.innerHTML = `
+        <div class="submitted-info">
+          <p><strong>Submitted:</strong> ${submissionData.original_filename} on ${new Date().toLocaleDateString()}</p>
+        </div>
+      `;
+    }
+    
+    // Update requirement item class
+    requirementItem.className = `requirement-item ${status}`;
+  }
+};
+
+const addMessageToThread = (message) => {
+  const messageThread = document.querySelector('.message-thread');
+  
+  const messageElement = document.createElement('div');
+  messageElement.className = 'message-item external';
+  messageElement.innerHTML = `
+    <div class="message-header">
+      <span class="sender-name">You</span>
+      <span class="message-time">Just now</span>
+    </div>
+    <div class="message-content">
+      <h5>${message.message_subject}</h5>
+      <p>${message.message_content}</p>
+    </div>
+  `;
+  
+  messageThread.appendChild(messageElement);
+  messageElement.scrollIntoView({ behavior: 'smooth' });
+};
+
+const showUploadModal = () => {
+  document.getElementById('upload-modal').style.display = 'flex';
+  updateUploadProgress(0);
+  document.getElementById('upload-status').textContent = 'Preparing upload...';
+};
+
+const hideUploadModal = () => {
+  document.getElementById('upload-modal').style.display = 'none';
+};
+
+const updateUploadProgress = (percentage) => {
+  const progressFill = document.getElementById('upload-progress-fill');
+  const statusText = document.getElementById('upload-status');
+  
+  progressFill.style.width = `${percentage}%`;
+  
+  if (percentage < 100) {
+    statusText.textContent = `Uploading... ${percentage}%`;
+  } else {
+    statusText.textContent = 'Processing upload...';
+  }
+};
+
+const showNotification = (message, type) => {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `
+    <span>${message}</span>
+    <button onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  // Add to page
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.remove();
+    }
+  }, 5000);
+};
+
+const getPortalToken = () => {
+  return window.location.pathname.split('/')[2]; // Extract token from URL
+};
+
+const resubmitDocument = (requirementId) => {
+  // Show upload form again for rejected documents
+  const requirementItem = document.querySelector(`[data-requirement-id="${requirementId}"]`).closest('.requirement-item');
+  const submittedInfo = requirementItem.querySelector('.submitted-info');
+  
+  if (submittedInfo) {
+    submittedInfo.innerHTML = `
+      <div class="upload-section">
+        <form class="upload-form" data-requirement-id="${requirementId}">
+          <div class="file-input-wrapper">
+            <input type="file" id="file-resubmit-${requirementId}" name="document" required>
+            <label for="file-resubmit-${requirementId}" class="file-input-label">📁 Choose File</label>
+            <span class="file-name">No file selected</span>
+          </div>
+          <div class="upload-notes">
+            <textarea name="notes" placeholder="Add any notes about this resubmission" rows="2"></textarea>
+          </div>
+          <button type="submit" class="upload-btn">🔄 Resubmit Document</button>
+        </form>
+      </div>
+    `;
+    
+    // Re-initialize form handlers
+    const newForm = submittedInfo.querySelector('.upload-form');
+    newForm.addEventListener('submit', handleDocumentUpload);
+    
+    const fileInput = newForm.querySelector('input[type="file"]');
+    const filenameSpan = newForm.querySelector('.file-name');
+    
+    fileInput.addEventListener('change', (e) => {
+      const fileName = e.target.files[0]?.name || 'No file selected';
+      filenameSpan.textContent = fileName;
+    });
+  }
+};
+
+// Auto-save form data to prevent loss
+const autoSaveFormData = () => {
+  const forms = document.querySelectorAll('form');
+  forms.forEach(form => {
+    const inputs = form.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        localStorage.setItem(`portal_${input.name}`, input.value);
+      });
+      
+      // Restore saved data
+      const savedValue = localStorage.getItem(`portal_${input.name}`);
+      if (savedValue) {
+        input.value = savedValue;
+      }
+    });
+  });
+};
+
+// Initialize auto-save
+autoSaveFormData();
+
+// Clear saved data on successful submission
+const clearSavedFormData = () => {
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('portal_')) {
+      localStorage.removeItem(key);
+    }
+  });
+};
+File Structure Updates
+routes/
+├── portal.js (new)
+
+public/
+├── css/
+│   └── portal.css (new)
+├── js/
+│   └── portal.js (new)
+
+views/
+├── portal/
+│   ├── index.ejs (new)
+│   └── expired.ejs (new)
+
+uploads/
+├── portal/ (new directory structure)
+Success Criteria for Prompt 11a
+Secure portal tokens generated with proper expiration and validation
+External portal interface allows document submission without user accounts
+Document requirements displayed clearly with submission instructions
+File upload works with validation, progress tracking, and security checks
+Progress tracking shows completion status in real-time
+Secure messaging system enables communication between parties
+Portal activity logging tracks all access and submissions
+Internal team notifications alert of portal activity
+Mobile-responsive design works on all devices
+Professional branding and user experience
+Business Value
+This prompt enables:
+
+Professional Client Experience - Secure, branded portal for document submission
+Reduced Manual Work - Automated document collection instead of email exchanges
+Enhanced Security - Token-based access with comprehensive audit trails
+Improved Efficiency - Real-time progress tracking and automated notifications
+Competitive Advantage - Professional portal system that competitors likely lack
+Integration with Existing System
+This prompt integrates seamlessly with:
+
+Prompt 11: Builds on internal document upload functionality
+Target Company Management: Uses existing contact and company data
+Team Management: Notifications and assignments work with team system
+Future Prompts: Portal submissions will integrate with document validation and chase-up systems
+
+The secure external portal transforms document collection from a manual, email-based process into a professional, automated system that enhances the client experience while improving internal efficiency!
+
