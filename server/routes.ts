@@ -24,12 +24,12 @@ async function sendWebhook(website: string) {
       company_name: website
     };
 
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+    // Use GET method with query parameters
+    const url = new URL(webhookUrl);
+    url.searchParams.append('company_name', website);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
     });
 
     console.log(`Webhook sent for website: ${website}, Status: ${response.status}`);
