@@ -856,16 +856,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { firstName, lastName, password } = acceptSchema.parse(req.body);
       
-      const user = await storage.acceptInvitation(token, {
-        firstName,
-        lastName,
-        passwordHash: await bcrypt.hash(password, 10),
-        isActive: true,
-        emailVerified: true,
-      });
+      // Get invitation details first
+      const invitation = await storage.getUserInvitationByToken(token);
+      if (!invitation || invitation.invitationStatus !== 'pending') {
+        return res.status(400).json({ message: "Invalid or expired invitation" });
+      }
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(invitation.email);
+      
+      let user: any;
+      
+      if (existingUser) {
+        // User exists - this means they were invited to a different company
+        // For security, we should not allow cross-company invitations without proper validation
+        return res.status(400).json({ 
+          message: "An account with this email already exists. Please contact your administrator or use a different email address." 
+        });
+      } else {
+        // Create new user
+        user = await storage.acceptInvitation(token, {
+          firstName,
+          lastName,
+          passwordHash: await bcrypt.hash(password, 10),
+          isActive: true,
+          emailVerified: true,
+        });
+      }
       
       if (!user) {
-        return res.status(400).json({ message: "Invalid or expired invitation" });
+        return res.status(400).json({ message: "Failed to accept invitation" });
       }
       
       res.json({ 

@@ -916,31 +916,88 @@ export class DatabaseStorage implements IStorage {
   }
 
   async acceptInvitation(token: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    // Get invitation details
-    const invitation = await this.getUserInvitationByToken(token);
-    if (!invitation) {
-      return undefined;
-    }
+    return await db.transaction(async (tx) => {
+      // Get invitation details using transaction
+      const invitation = await tx
+        .select({
+          id: userInvitations.id,
+          userCompanyId: userInvitations.userCompanyId,
+          email: userInvitations.email,
+          invitedBy: userInvitations.invitedBy,
+          invitationToken: userInvitations.invitationToken,
+          invitedRole: userInvitations.invitedRole,
+          invitationMessage: userInvitations.invitationMessage,
+          invitationStatus: userInvitations.invitationStatus,
+          sentAt: userInvitations.sentAt,
+          expiresAt: userInvitations.expiresAt,
+          acceptedAt: userInvitations.acceptedAt,
+          ipAddressSent: userInvitations.ipAddressSent,
+          ipAddressAccepted: userInvitations.ipAddressAccepted,
+          createdAt: userInvitations.createdAt,
+          inviterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+          companyName: userCompanies.companyName,
+        })
+        .from(userInvitations)
+        .innerJoin(users, eq(userInvitations.invitedBy, users.id))
+        .innerJoin(userCompanies, eq(userInvitations.userCompanyId, userCompanies.id))
+        .where(and(
+          eq(userInvitations.invitationToken, token),
+          eq(userInvitations.invitationStatus, 'pending')
+        ))
+        .limit(1);
+      
+      if (!invitation.length) {
+        return undefined;
+      }
+      
+      const invitationData = invitation[0];
 
-    // Create user account
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        ...userData,
-        email: invitation.email,
-        userCompanyId: invitation.userCompanyId,
-        userRole: invitation.invitedRole,
-        isActive: true,
-      } as InsertUser)
-      .returning();
+      // Check if user already exists
+      const existingUsers = await tx
+        .select()
+        .from(users)
+        .where(eq(users.email, invitationData.email));
 
-    // Update invitation status
-    await this.updateUserInvitation(invitation.id, {
-      invitationStatus: "accepted",
-      acceptedAt: new Date(),
-    } as Partial<InsertUserInvitation>);
+      let user: User;
 
-    return newUser;
+      if (existingUsers.length > 0) {
+        // User exists, update their details and add them to the company
+        [user] = await tx
+          .update(users)
+          .set({
+            userCompanyId: invitationData.userCompanyId,
+            userRole: invitationData.invitedRole,
+            isActive: true,
+            emailVerified: true,
+            ...userData,
+          })
+          .where(eq(users.id, existingUsers[0].id))
+          .returning();
+      } else {
+        // Create new user
+        [user] = await tx
+          .insert(users)
+          .values({
+            ...userData,
+            email: invitationData.email,
+            userCompanyId: invitationData.userCompanyId,
+            userRole: invitationData.invitedRole,
+            isActive: true,
+          } as InsertUser)
+          .returning();
+      }
+
+      // Update invitation status
+      await tx
+        .update(userInvitations)
+        .set({
+          invitationStatus: "accepted",
+          acceptedAt: new Date(),
+        })
+        .where(eq(userInvitations.invitationToken, token));
+
+      return user;
+    });
   }
 
   // User role operations

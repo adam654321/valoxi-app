@@ -52,6 +52,7 @@ Preferred communication style: Simple, everyday language.
 - **Document Management**: Advanced document viewer supporting various file types (PDF, images, Office documents) with secure handling and browser compatibility.
 - **External Document Portal**: Secure, token-based portal for external parties to submit documents, with robust access control, activity logging, and integration with the main document system.
 - **Email Integration**: Comprehensive email system using nodemailer with Google Workspace SMTP for team invitations, portal access notifications, and document submission alerts. Features professional email templates and secure credential management.
+- **Team Invitation System**: Complete invitation workflow with secure token-based invitations, professional signup forms with validation, and proper handling of existing users to prevent security conflicts.
 
 # External Dependencies
 
