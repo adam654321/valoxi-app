@@ -2151,6 +2151,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         console.log('✅ SUCCESS: Portal document integrated into main system! Document ID:', mainDocument.id);
+        
+        // Auto-approve the submission since it integrated successfully
+        await storage.reviewDocumentSubmission(
+          submission.id, 
+          portalToken.createdBy, 
+          'approved', 
+          'Auto-approved upon successful integration to main document system'
+        );
+        
       } catch (integrationError: any) {
         console.error('❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
         console.error('Full error:', integrationError);
