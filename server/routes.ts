@@ -7,6 +7,7 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
+import { emailService } from "./email";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
@@ -776,6 +777,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false,
       });
 
+      // Send invitation email
+      const inviteUrl = `${req.protocol}://${req.get('host')}/invite/${invitation.invitationToken}`;
+      const inviterUser = await storage.getUserById(userId);
+      const userCompany = await storage.getUserCompanyById(userCompanyId);
+      
+      if (inviterUser && userCompany) {
+        const emailSent = await emailService.sendTeamInvitation(
+          email,
+          inviterUser.fullName || inviterUser.email,
+          userCompany.companyName,
+          invitation.invitationToken,
+          inviteUrl,
+          role
+        );
+        
+        if (!emailSent) {
+          console.warn(`Failed to send invitation email to ${email}`);
+        }
+      }
+
       res.json({ 
         message: "Invitation sent successfully", 
         invitation: { 
@@ -783,7 +804,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: invitation.email,
           role: invitation.invitedRole,
           status: invitation.invitationStatus,
-          sentAt: invitation.sentAt
+          sentAt: invitation.sentAt,
+          inviteUrl
         }
       });
     } catch (error) {
@@ -2160,6 +2182,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Auto-approved upon successful integration to main document system'
         );
         
+        // Send notification email to deal team about new document
+        try {
+          const contact = await storage.getTargetContactById(portalToken.targetContactId);
+          const targetCompany = await storage.getTargetCompanyById(portalToken.targetCompanyId);
+          const dealTeamEmails = await storage.getDealTeamEmails(portalToken.targetCompanyId);
+          
+          if (contact && targetCompany && dealTeamEmails.length > 0) {
+            await emailService.sendDocumentReceivedNotification(
+              dealTeamEmails,
+              contact.fullName || contact.email,
+              targetCompany.companyName,
+              file.originalname,
+              req.body.document_category || 'General',
+              req.body.submission_notes
+            );
+          }
+        } catch (emailError) {
+          console.warn('Failed to send document notification email:', emailError);
+        }
+        
       } catch (integrationError: any) {
         console.error('❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
         console.error('Full error:', integrationError);
@@ -2296,11 +2338,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         portalBranding: tokenData.portalBranding ? JSON.stringify(tokenData.portalBranding) : null,
       });
       
+      const portalUrl = `${req.protocol}://${req.get('host')}/portal/${portalToken.accessToken}`;
+      
+      // Send portal access email if contact email is available
+      try {
+        const contact = await storage.getTargetContactById(tokenData.targetContactId);
+        const targetCompany = await storage.getTargetCompanyById(tokenData.targetCompanyId);
+        
+        if (contact?.email && targetCompany) {
+          await emailService.sendPortalAccessLink(
+            contact.email,
+            contact.fullName || contact.email,
+            targetCompany.companyName,
+            portalUrl,
+            tokenData.customMessage,
+            portalToken.expiresAt
+          );
+        }
+      } catch (emailError) {
+        console.warn('Failed to send portal access email:', emailError);
+      }
+
       res.json({
         success: true,
         tokenId: portalToken.id,
         accessToken: portalToken.accessToken,
-        portalUrl: `${req.protocol}://${req.get('host')}/portal/${portalToken.accessToken}`,
+        portalUrl,
         expiresAt: portalToken.expiresAt,
       });
     } catch (error) {
@@ -2416,6 +2479,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get contacts by company error:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Add email test endpoint
+  app.post("/api/email/test", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const testResult = await emailService.testConnection();
+      res.json({ 
+        success: testResult, 
+        message: testResult ? "Email connection successful" : "Email connection failed" 
+      });
+    } catch (error) {
+      console.error("Email test error:", error);
+      res.status(500).json({ message: "Email test failed", error: String(error) });
     }
   });
 

@@ -47,6 +47,7 @@ export default function Layout({ children }: LayoutProps) {
     if (path === "/reports" && location === "/reports") return true;
     if (path === "/notifications" && location === "/notifications") return true;
     if (path === "/portal-management" && location === "/portal-management") return true;
+    if (path === "/email-test" && location === "/email-test") return true;
     return location === path;
   };
 
@@ -94,6 +95,9 @@ export default function Layout({ children }: LayoutProps) {
                 </Link>
                 <Link href="/portal-management" className={getNavLinkClass("/portal-management")}>
                   Portals
+                </Link>
+                <Link href="/email-test" className={getNavLinkClass("/email-test")}>
+                  Email Test
                 </Link>
               </div>
             </div>

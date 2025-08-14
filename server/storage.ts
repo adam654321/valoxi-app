@@ -283,6 +283,9 @@ export interface IStorage {
   
   logPortalActivity(activity: InsertPortalActivityLog): Promise<void>;
   getPortalActivityLog(portalTokenId: number): Promise<PortalActivityLog[]>;
+  
+  // Helper methods for email functionality
+  getDealTeamEmails(targetCompanyId: number): Promise<string[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2134,6 +2137,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(portalActivityLog.portalTokenId, portalTokenId))
       .orderBy(desc(portalActivityLog.activityTimestamp))
       .limit(100);
+  }
+
+  async getDealTeamEmails(targetCompanyId: number): Promise<string[]> {
+    // Get all users assigned to deals for this target company
+    const dealAssignments = await db
+      .select({
+        email: users.email
+      })
+      .from(userDealAssignments)
+      .innerJoin(users, eq(userDealAssignments.userId, users.id))
+      .where(eq(userDealAssignments.targetCompanyId, targetCompanyId));
+    
+    return dealAssignments.map(assignment => assignment.email);
   }
 }
 

@@ -19,6 +19,7 @@ import Reports from "@/pages/reports";
 import { NotificationsPage } from "@/components/notifications";
 import PortalPage from "@/pages/PortalPage";
 import PortalManagement from "@/pages/PortalManagement";
+import EmailTest from "@/pages/EmailTest";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -59,6 +60,7 @@ function Router() {
             <Route path="/reports" component={Reports} />
             <Route path="/notifications" component={NotificationsPage} />
             <Route path="/portal-management" component={PortalManagement} />
+            <Route path="/email-test" component={EmailTest} />
             <Route component={NotFound} />
           </Switch>
         </Layout>
