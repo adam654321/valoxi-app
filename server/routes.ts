@@ -12,6 +12,20 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 
+// In-memory webhook logs for testing
+const webhookLogs: Array<{
+  id: number;
+  timestamp: string;
+  targetCompanyId: number | null;
+  webhookUrl: string;
+  payload: any;
+  response: any;
+  status: string;
+  processingTime: number;
+}> = [];
+
+let logCounter = 1;
+
 // Webhook function to send company website data
 async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?: string) {
   const webhookUrlToUse = webhookUrl || process.env.WEBHOOK_URL;
@@ -19,6 +33,8 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
     return;
   }
 
+  const startTime = Date.now();
+  
   try {
     // Construct proper webhook URL using Replit domain
     const baseUrl = process.env.APP_URL || 
@@ -30,7 +46,20 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
       webhook_response_url: `${baseUrl}/api/webhook/website-analysis`
     };
 
-    console.log(`Sending webhook with response URL: ${payload.webhook_response_url}`);
+    // Create webhook log entry (matching the test tool's approach)
+    const log = {
+      id: logCounter++,
+      timestamp: new Date().toISOString(),
+      targetCompanyId: targetCompanyId,
+      webhookUrl: webhookUrlToUse,
+      payload: payload,
+      response: null,
+      status: "pending",
+      processingTime: 0,
+    };
+    webhookLogs.push(log);
+
+    console.log(`Sending webhook with response URL: ${payload.webhook_response_url} for target company ${targetCompanyId}`);
     
     const response = await fetch(webhookUrlToUse, {
       method: 'POST',
@@ -40,8 +69,32 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
       body: JSON.stringify(payload),
     });
 
-    console.log(`Webhook sent for website: ${website}, Target ID: ${targetCompanyId}, Status: ${response.status}`);
+    // Update log with response status
+    log.status = response.ok ? "sent" : "error";
+    log.processingTime = Date.now() - startTime;
+    
+    if (!response.ok) {
+      log.response = {
+        error: `HTTP ${response.status}: ${response.statusText}`,
+        status: response.status
+      };
+    } else {
+      log.response = {
+        success: true,
+        status: response.status,
+        message: `Webhook sent successfully`
+      };
+    }
+
+    console.log(`Webhook sent for website: ${website}, Target ID: ${targetCompanyId}, Status: ${response.status} (${log.processingTime}ms)`);
   } catch (error) {
+    // Update log with error
+    const log = webhookLogs.find(l => l.targetCompanyId === targetCompanyId && l.status === "pending");
+    if (log) {
+      log.status = "error";
+      log.response = { error: error instanceof Error ? error.message : 'Unknown error' };
+      log.processingTime = Date.now() - startTime;
+    }
     console.error('Failed to send webhook:', error);
   }
 }
@@ -416,34 +469,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send webhook if website is provided
       if (validatedData.website && validatedData.website.trim()) {
-        // Log the webhook being sent for this company
-        const log = {
-          id: logCounter++,
-          timestamp: new Date().toISOString(),
-          targetCompanyId: targetCompany.id,
-          webhookUrl: process.env.WEBHOOK_URL || 'Not configured',
-          payload: {
-            company_name: validatedData.website,
-            target_company_id: targetCompany.id,
-            webhook_response_url: `${process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:3000')}/api/webhook/website-analysis`
-          },
-          response: null,
-          status: "pending",
-          processingTime: 0,
-        };
-        webhookLogs.push(log);
-        
         console.log(`Webhook initiated for new target company ${targetCompany.id} with website: ${validatedData.website}`);
         
-        // Send webhook asynchronously (don't block company creation)
-        sendWebhook(validatedData.website, targetCompany.id).then(() => {
-          log.status = "sent";
-          console.log(`Webhook sent successfully for target company ${targetCompany.id}`);
-        }).catch((error) => {
-          log.status = "error";
-          log.response = { error: error.message };
-          console.error(`Webhook failed for target company ${targetCompany.id}:`, error);
-        });
+        // Send webhook (it will handle its own logging now)
+        sendWebhook(validatedData.website, targetCompany.id);
       }
 
       res.status(201).json(targetCompany);
@@ -2716,19 +2745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // In-memory webhook logs for testing
-  const webhookLogs: Array<{
-    id: number;
-    timestamp: string;
-    targetCompanyId: number | null;
-    webhookUrl: string;
-    payload: any;
-    response: any;
-    status: string;
-    processingTime: number;
-  }> = [];
 
-  let logCounter = 1;
 
   // Get webhook configuration
   app.get("/api/webhook/config", async (req: Request, res: Response) => {
