@@ -94,7 +94,7 @@ Preferred communication style: Simple, everyday language.
 **Solution**: Implemented standardized requirements system with:
 - **Fixed 29-requirement set** automatically applied to all deals
 - **Two-stage collection process**:
-  - Stage 1 (6 requirements): Pre-offer documents for initial evaluation
+  - Stage 1 (6 requirements): Essential financial documents for pre-offer evaluation
   - Stage 2 (23 requirements): Comprehensive due diligence post-heads-of-terms
 - **Database function**: `initialize_standard_requirements()` ensures consistency
 - **Eliminated complexity**: Removed template tables, waiver systems, and custom requirement creation
