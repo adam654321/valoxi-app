@@ -24,8 +24,8 @@ const campaignSchema = z.object({
   description: z.string().optional(),
   status: z.enum(["draft", "active", "paused", "completed"]),
   targetAudience: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startDate: z.string().optional().transform(val => val === "" ? undefined : val),
+  endDate: z.string().optional().transform(val => val === "" ? undefined : val),
 });
 
 const emailTemplateSchema = z.object({

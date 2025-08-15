@@ -3007,12 +3007,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const campaignData = insertPortalLinkCampaignSchema.parse({
+      // Clean up empty date strings to null for PostgreSQL compatibility
+      const cleanData = {
         ...req.body,
         userCompanyId: req.session.userCompanyId,
-        createdBy: req.session.userId
-      });
+        createdBy: req.session.userId,
+        startDate: req.body.startDate === "" ? null : req.body.startDate,
+        endDate: req.body.endDate === "" ? null : req.body.endDate
+      };
 
+      const campaignData = insertPortalLinkCampaignSchema.parse(cleanData);
       const campaign = await storage.createPortalLinkCampaign(campaignData);
       res.status(201).json(campaign);
     } catch (error) {
@@ -3050,8 +3054,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const campaignId = parseInt(req.params.campaignId);
-      const updates = insertPortalLinkCampaignSchema.partial().parse(req.body);
       
+      // Clean up empty date strings to null for PostgreSQL compatibility
+      const cleanUpdates = {
+        ...req.body,
+        startDate: req.body.startDate === "" ? null : req.body.startDate,
+        endDate: req.body.endDate === "" ? null : req.body.endDate
+      };
+      
+      const updates = insertPortalLinkCampaignSchema.partial().parse(cleanUpdates);
       const campaign = await storage.updatePortalLinkCampaign(campaignId, req.session.userCompanyId, updates);
       
       if (!campaign) {
