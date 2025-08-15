@@ -2600,14 +2600,29 @@ export class DatabaseStorage implements IStorage {
   // ========================================
 
   async getDocumentRequirementTemplates(userCompanyId: number, industryCategory?: string | null): Promise<(DocumentRequirementTemplate & { itemCount: number })[]> {
-    let query = db
+    const whereConditions = [
+      eq(documentRequirementTemplates.isActive, true),
+      eq(documentRequirementTemplates.userCompanyId, userCompanyId)
+    ];
+
+    if (industryCategory) {
+      whereConditions.push(eq(documentRequirementTemplates.industryCategory, industryCategory));
+    }
+
+    return await db
       .select({
         id: documentRequirementTemplates.id,
+        userCompanyId: documentRequirementTemplates.userCompanyId,
+        createdBy: documentRequirementTemplates.createdBy,
         templateName: documentRequirementTemplates.templateName,
         templateDescription: documentRequirementTemplates.templateDescription,
         industryCategory: documentRequirementTemplates.industryCategory,
-        companyTypeCategory: documentRequirementTemplates.companyTypeCategory,
+        dealSizeCategory: documentRequirementTemplates.dealSizeCategory,
+        templateVersion: documentRequirementTemplates.templateVersion,
         isActive: documentRequirementTemplates.isActive,
+        isDefault: documentRequirementTemplates.isDefault,
+        usageCount: documentRequirementTemplates.usageCount,
+        lastUsed: documentRequirementTemplates.lastUsed,
         createdAt: documentRequirementTemplates.createdAt,
         updatedAt: documentRequirementTemplates.updatedAt,
         itemCount: sql<number>`(
@@ -2617,13 +2632,8 @@ export class DatabaseStorage implements IStorage {
         )`
       })
       .from(documentRequirementTemplates)
-      .where(eq(documentRequirementTemplates.isActive, true));
-
-    if (industryCategory) {
-      query = query.where(eq(documentRequirementTemplates.industryCategory, industryCategory));
-    }
-
-    return await query.orderBy(asc(documentRequirementTemplates.templateName));
+      .where(and(...whereConditions))
+      .orderBy(asc(documentRequirementTemplates.templateName));
   }
 
   async getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number): Promise<CompanyDocumentRequirement[]> {
@@ -2637,10 +2647,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(companyDocumentRequirements)
       .where(eq(companyDocumentRequirements.targetCompanyId, targetCompanyId))
-      .orderBy(
-        asc(companyDocumentRequirements.collectionStage),
-        asc(companyDocumentRequirements.displayOrder)
-      );
+      .orderBy(asc(companyDocumentRequirements.id));
   }
 
   async initializeCompanyRequirements(targetCompanyId: number, templateId: number, userId: number): Promise<void> {
@@ -2654,17 +2661,10 @@ export class DatabaseStorage implements IStorage {
     // Create company requirements from template
     const companyRequirements = templateItems.map(item => ({
       targetCompanyId,
-      requirementName: item.requirementName,
-      requirementDescription: item.requirementDescription,
-      documentCategory: item.documentCategory,
-      collectionStage: item.collectionStage,
-      priorityLevel: item.priorityLevel,
-      isMandatory: item.isMandatory,
-      submissionInstructions: item.submissionInstructions,
-      helpText: item.helpText,
-      displayOrder: item.displayOrder,
-      requirementStatus: 'pending' as const,
-      createdBy: userId,
+      templateId,
+      requirementItemId: item.id,
+      requirementStatus: 'outstanding' as const,
+      submissionStatus: 'not_started' as const,
     }));
 
     await db.insert(companyDocumentRequirements).values(companyRequirements);
@@ -2672,10 +2672,8 @@ export class DatabaseStorage implements IStorage {
     // Initialize stage progression
     await db.insert(documentStageProgression).values({
       targetCompanyId,
-      currentStage: 1,
       stage1Status: 'active',
       stage2Status: 'locked',
-      createdBy: userId,
     });
   }
 
@@ -2707,10 +2705,10 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: documentRequirementWaivers.id,
         targetCompanyId: documentRequirementWaivers.targetCompanyId,
-        companyDocumentRequirementId: documentRequirementWaivers.companyDocumentRequirementId,
+        companyRequirementId: documentRequirementWaivers.companyRequirementId,
         waiverReason: documentRequirementWaivers.waiverReason,
-        businessJustification: documentRequirementWaivers.businessJustification,
-        alternativeEvidence: documentRequirementWaivers.alternativeEvidence,
+        waiverJustification: documentRequirementWaivers.waiverJustification,
+        alternativeDocumentation: documentRequirementWaivers.alternativeDocumentation,
         requestedBy: documentRequirementWaivers.requestedBy,
         requestedAt: documentRequirementWaivers.requestedAt,
         approvalStatus: documentRequirementWaivers.approvalStatus,
@@ -2719,12 +2717,20 @@ export class DatabaseStorage implements IStorage {
         approvalNotes: documentRequirementWaivers.approvalNotes,
         conditionalApproval: documentRequirementWaivers.conditionalApproval,
         approvalConditions: documentRequirementWaivers.approvalConditions,
+        riskLevel: documentRequirementWaivers.riskLevel,
+        riskAssessment: documentRequirementWaivers.riskAssessment,
+        mitigationMeasures: documentRequirementWaivers.mitigationMeasures,
+        conditionMet: documentRequirementWaivers.conditionMet,
+        conditionVerifiedBy: documentRequirementWaivers.conditionVerifiedBy,
+        conditionVerifiedAt: documentRequirementWaivers.conditionVerifiedAt,
+        createdAt: documentRequirementWaivers.createdAt,
+        updatedAt: documentRequirementWaivers.updatedAt,
         companyName: targetCompanies.companyName,
-        requirementName: companyDocumentRequirements.requirementName,
+        requirementName: sql<string>`'Requirement'`, // Placeholder since requirement name comes from template items
       })
       .from(documentRequirementWaivers)
       .innerJoin(targetCompanies, eq(documentRequirementWaivers.targetCompanyId, targetCompanies.id))
-      .innerJoin(companyDocumentRequirements, eq(documentRequirementWaivers.companyDocumentRequirementId, companyDocumentRequirements.id))
+      .innerJoin(companyDocumentRequirements, eq(documentRequirementWaivers.companyRequirementId, companyDocumentRequirements.id))
       .where(
         and(
           eq(targetCompanies.userCompanyId, userCompanyId),
@@ -2760,9 +2766,6 @@ export class DatabaseStorage implements IStorage {
     return requirement;
   }
 
-  async getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]> {
-    return await this.getContactsForTargetCompany(targetCompanyId, userCompanyId);
-  }
 }
 
 export const storage = new DatabaseStorage();
