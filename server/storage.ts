@@ -2628,7 +2628,14 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    let query = db
+    const whereClause = stage !== null && stage !== undefined 
+      ? and(
+          eq(companyDocumentRequirements.targetCompanyId, targetCompanyId),
+          eq(companyDocumentRequirements.collectionStage, stage)
+        )
+      : eq(companyDocumentRequirements.targetCompanyId, targetCompanyId);
+
+    const query = db
       .select({
         id: companyDocumentRequirements.id,
         targetCompanyId: companyDocumentRequirements.targetCompanyId,
@@ -2648,12 +2655,6 @@ export class DatabaseStorage implements IStorage {
         reviewStatus: companyDocumentRequirements.reviewStatus,
         reviewNotes: companyDocumentRequirements.reviewNotes,
         reviewScore: companyDocumentRequirements.reviewScore,
-        isWaived: companyDocumentRequirements.isWaived,
-        waivedBy: companyDocumentRequirements.waivedBy,
-        waivedAt: companyDocumentRequirements.waivedAt,
-        waiverReason: companyDocumentRequirements.waiverReason,
-        waiverJustification: companyDocumentRequirements.waiverJustification,
-        waiverApprovedBy: companyDocumentRequirements.waiverApprovedBy,
         dueDate: companyDocumentRequirements.dueDate,
         reminderSentCount: companyDocumentRequirements.reminderSentCount,
         lastReminderSent: companyDocumentRequirements.lastReminderSent,
@@ -2665,23 +2666,20 @@ export class DatabaseStorage implements IStorage {
             WHEN ${companyDocumentRequirements.dueDate} < NOW() THEN 'overdue'
             WHEN ${companyDocumentRequirements.requirementStatus} = 'submitted' THEN 'submitted'
             WHEN ${companyDocumentRequirements.requirementStatus} = 'approved' THEN 'approved'
-            WHEN ${companyDocumentRequirements.requirementStatus} = 'waived' THEN 'waived'
             ELSE 'outstanding'
           END
         `
       })
       .from(companyDocumentRequirements)
-      .where(eq(companyDocumentRequirements.targetCompanyId, targetCompanyId));
+      .where(whereClause)
 
-    if (stage !== null) {
-      query = query.where(eq(companyDocumentRequirements.collectionStage, stage));
-    }
+      .orderBy(
+        asc(companyDocumentRequirements.collectionStage), 
+        desc(companyDocumentRequirements.priorityLevel), 
+        asc(companyDocumentRequirements.requirementName)
+      );
 
-    const results = await query.orderBy(
-      asc(companyDocumentRequirements.collectionStage), 
-      desc(companyDocumentRequirements.priorityLevel), 
-      asc(companyDocumentRequirements.requirementName)
-    );
+    const results = await query;
 
     return results;
   }
@@ -2708,7 +2706,7 @@ export class DatabaseStorage implements IStorage {
       .update(companyDocumentRequirements)
       .set({
         ...updates,
-        updatedBy: userId,
+
         updatedAt: new Date(),
       })
       .where(eq(companyDocumentRequirements.id, requirementId))
@@ -2716,19 +2714,7 @@ export class DatabaseStorage implements IStorage {
     return requirement;
   }
 
-  async getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]> {
-    // First verify access to the company
-    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
-    if (!company) {
-      return [];
-    }
 
-    return await db
-      .select()
-      .from(targetContacts)
-      .where(eq(targetContacts.targetCompanyId, targetCompanyId))
-      .orderBy(asc(targetContacts.contactName));
-  }
 
 }
 

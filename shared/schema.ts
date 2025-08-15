@@ -1022,13 +1022,7 @@ export const companyDocumentRequirements = pgTable("company_document_requirement
   reviewNotes: text("review_notes"),
   reviewScore: integer("review_score"),
   
-  // Waiver Information
-  isWaived: boolean("is_waived").default(false),
-  waivedBy: integer("waived_by").references(() => users.id),
-  waivedAt: timestamp("waived_at"),
-  waiverReason: text("waiver_reason"),
-  waiverJustification: text("waiver_justification"),
-  waiverApprovedBy: integer("waiver_approved_by").references(() => users.id),
+
   
   // Due Dates and Reminders
   dueDate: timestamp("due_date"),
@@ -1131,7 +1125,6 @@ export const insertCompanyDocumentRequirementSchema = createInsertSchema(company
   updatedAt: true,
   submittedAt: true,
   reviewedAt: true,
-  waivedAt: true,
   lastReminderSent: true,
 });
 

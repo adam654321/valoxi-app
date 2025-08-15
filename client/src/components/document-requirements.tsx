@@ -35,7 +35,7 @@ interface CompanyDocumentRequirement {
   requirementStatus: 'pending' | 'submitted' | 'approved' | 'rejected' | 'waived';
   submittedAt?: string;
   reviewedAt?: string;
-  waiverRequested: boolean;
+
   createdBy: number;
   createdAt: string;
   updatedAt?: string;
@@ -291,11 +291,7 @@ export function DocumentRequirements({ targetCompanyId, companyName }: DocumentR
 
                 </>
               )}
-              {requirement.waiverRequested && (
-                <Badge variant="outline" className="text-purple-700 dark:text-purple-300">
-                  Waiver Requested
-                </Badge>
-              )}
+
             </div>
           </div>
         </CardContent>
@@ -325,7 +321,7 @@ export function DocumentRequirements({ targetCompanyId, companyName }: DocumentR
               </div>
               <Progress value={stage1Completion} className="h-2" />
               <p className="text-sm text-muted-foreground">
-                {stage1Requirements.filter(r => r.requirementStatus === 'approved' || r.requirementStatus === 'waived').length} of {stage1Requirements.length} completed
+                {stage1Requirements.filter(r => r.requirementStatus === 'approved').length} of {stage1Requirements.length} completed
               </p>
             </div>
             
@@ -336,7 +332,7 @@ export function DocumentRequirements({ targetCompanyId, companyName }: DocumentR
               </div>
               <Progress value={stage2Completion} className="h-2" />
               <p className="text-sm text-muted-foreground">
-                {stage2Requirements.filter(r => r.requirementStatus === 'approved' || r.requirementStatus === 'waived').length} of {stage2Requirements.length} completed
+                {stage2Requirements.filter(r => r.requirementStatus === 'approved').length} of {stage2Requirements.length} completed
               </p>
             </div>
           </div>
