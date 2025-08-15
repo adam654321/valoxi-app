@@ -329,6 +329,20 @@ export interface IStorage {
   processWaiverRequest(waiverId: number, updates: { approvalStatus: string; approvalNotes?: string; conditionalApproval?: boolean; approvalConditions?: string }, userId: number): Promise<DocumentRequirementWaiver>;
   updateCompanyRequirement(requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement>;
   getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]>;
+  
+  // Template Management methods
+  getTemplatesWithItemCounts(userCompanyId: number): Promise<(DocumentRequirementTemplate & { itemCount: number })[]>;
+  getDocumentTemplateById(templateId: number, userCompanyId: number): Promise<DocumentRequirementTemplate | undefined>;
+  createDocumentTemplate(template: Omit<InsertDocumentRequirementTemplate, 'id'>): Promise<DocumentRequirementTemplate>;
+  updateDocumentTemplate(templateId: number, updates: Partial<InsertDocumentRequirementTemplate>, userCompanyId: number): Promise<DocumentRequirementTemplate>;
+  deleteDocumentTemplate(templateId: number, userCompanyId: number): Promise<boolean>;
+  duplicateDocumentTemplate(templateId: number, userCompanyId: number, userId: number): Promise<DocumentRequirementTemplate>;
+  
+  // Template Item Management methods
+  getTemplateRequirementItems(templateId: number, userCompanyId: number): Promise<DocumentRequirementItem[]>;
+  createDocumentRequirementItem(item: Omit<InsertDocumentRequirementItem, 'id'>): Promise<DocumentRequirementItem>;
+  updateDocumentRequirementItem(itemId: number, updates: Partial<InsertDocumentRequirementItem>, userCompanyId: number): Promise<DocumentRequirementItem>;
+  deleteDocumentRequirementItem(itemId: number, userCompanyId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2764,6 +2778,201 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companyDocumentRequirements.id, requirementId))
       .returning();
     return requirement;
+  }
+
+  // Template Management methods implementation
+  async getTemplatesWithItemCounts(userCompanyId: number): Promise<(DocumentRequirementTemplate & { itemCount: number })[]> {
+    return await db
+      .select({
+        id: documentRequirementTemplates.id,
+        userCompanyId: documentRequirementTemplates.userCompanyId,
+        createdBy: documentRequirementTemplates.createdBy,
+        templateName: documentRequirementTemplates.templateName,
+        templateDescription: documentRequirementTemplates.templateDescription,
+        industryCategory: documentRequirementTemplates.industryCategory,
+        dealSizeCategory: documentRequirementTemplates.dealSizeCategory,
+        templateVersion: documentRequirementTemplates.templateVersion,
+        isActive: documentRequirementTemplates.isActive,
+        isDefault: documentRequirementTemplates.isDefault,
+        usageCount: documentRequirementTemplates.usageCount,
+        createdAt: documentRequirementTemplates.createdAt,
+        updatedAt: documentRequirementTemplates.updatedAt,
+        lastUsed: documentRequirementTemplates.lastUsed,
+        itemCount: sql<number>`COALESCE((
+          SELECT COUNT(*)::int 
+          FROM ${documentRequirementItems} 
+          WHERE ${documentRequirementItems.templateId} = ${documentRequirementTemplates.id}
+        ), 0)`,
+      })
+      .from(documentRequirementTemplates)
+      .where(eq(documentRequirementTemplates.userCompanyId, userCompanyId))
+      .orderBy(desc(documentRequirementTemplates.createdAt));
+  }
+
+  async getDocumentTemplateById(templateId: number, userCompanyId: number): Promise<DocumentRequirementTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(documentRequirementTemplates)
+      .where(and(
+        eq(documentRequirementTemplates.id, templateId),
+        eq(documentRequirementTemplates.userCompanyId, userCompanyId)
+      ));
+    return template || undefined;
+  }
+
+  async createDocumentTemplate(template: Omit<InsertDocumentRequirementTemplate, 'id'>): Promise<DocumentRequirementTemplate> {
+    const [newTemplate] = await db
+      .insert(documentRequirementTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+
+  async updateDocumentTemplate(templateId: number, updates: Partial<InsertDocumentRequirementTemplate>, userCompanyId: number): Promise<DocumentRequirementTemplate> {
+    const [template] = await db
+      .update(documentRequirementTemplates)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(documentRequirementTemplates.id, templateId),
+        eq(documentRequirementTemplates.userCompanyId, userCompanyId)
+      ))
+      .returning();
+    return template;
+  }
+
+  async deleteDocumentTemplate(templateId: number, userCompanyId: number): Promise<boolean> {
+    // First delete all associated requirement items
+    await db
+      .delete(documentRequirementItems)
+      .where(eq(documentRequirementItems.templateId, templateId));
+    
+    // Then delete the template
+    const result = await db
+      .delete(documentRequirementTemplates)
+      .where(and(
+        eq(documentRequirementTemplates.id, templateId),
+        eq(documentRequirementTemplates.userCompanyId, userCompanyId)
+      ));
+    return Array.isArray(result) ? result.length > 0 : true;
+  }
+
+  async duplicateDocumentTemplate(templateId: number, userCompanyId: number, userId: number): Promise<DocumentRequirementTemplate> {
+    // Get the original template
+    const originalTemplate = await this.getDocumentTemplateById(templateId, userCompanyId);
+    if (!originalTemplate) {
+      throw new Error('Template not found');
+    }
+
+    // Create the duplicate template
+    const [duplicateTemplate] = await db
+      .insert(documentRequirementTemplates)
+      .values({
+        userCompanyId,
+        createdBy: userId,
+        templateName: `${originalTemplate.templateName} (Copy)`,
+        templateDescription: originalTemplate.templateDescription,
+        industryCategory: originalTemplate.industryCategory,
+        dealSizeCategory: originalTemplate.dealSizeCategory,
+        templateVersion: '1.0',
+        isActive: true,
+        isDefault: false,
+        usageCount: 0,
+      })
+      .returning();
+
+    // Get all original requirement items
+    const originalItems = await this.getTemplateRequirementItems(templateId, userCompanyId);
+    
+    // Duplicate all requirement items
+    if (originalItems.length > 0) {
+      await db.insert(documentRequirementItems).values(
+        originalItems.map(item => ({
+          templateId: duplicateTemplate.id,
+          requirementName: item.requirementName,
+          requirementDescription: item.requirementDescription,
+          documentCategory: item.documentCategory,
+          collectionStage: item.collectionStage,
+          priorityLevel: item.priorityLevel,
+          isMandatory: item.isMandatory,
+          displayOrder: item.displayOrder,
+          submissionInstructions: item.submissionInstructions,
+          helpText: item.helpText,
+        }))
+      );
+    }
+
+    return duplicateTemplate;
+  }
+
+  async getTemplateRequirementItems(templateId: number, userCompanyId: number): Promise<DocumentRequirementItem[]> {
+    // Verify template belongs to user company
+    const template = await this.getDocumentTemplateById(templateId, userCompanyId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    return await db
+      .select()
+      .from(documentRequirementItems)
+      .where(eq(documentRequirementItems.templateId, templateId))
+      .orderBy(asc(documentRequirementItems.collectionStage), asc(documentRequirementItems.displayOrder));
+  }
+
+  async createDocumentRequirementItem(item: Omit<InsertDocumentRequirementItem, 'id'>): Promise<DocumentRequirementItem> {
+    const [newItem] = await db
+      .insert(documentRequirementItems)
+      .values(item)
+      .returning();
+    return newItem;
+  }
+
+  async updateDocumentRequirementItem(itemId: number, updates: Partial<InsertDocumentRequirementItem>, userCompanyId: number): Promise<DocumentRequirementItem> {
+    // Verify item belongs to a template owned by user company
+    const [item] = await db
+      .select({ templateId: documentRequirementItems.templateId })
+      .from(documentRequirementItems)
+      .where(eq(documentRequirementItems.id, itemId));
+    
+    if (!item) {
+      throw new Error('Requirement item not found');
+    }
+
+    const template = await this.getDocumentTemplateById(item.templateId, userCompanyId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const [updatedItem] = await db
+      .update(documentRequirementItems)
+      .set(updates)
+      .where(eq(documentRequirementItems.id, itemId))
+      .returning();
+    return updatedItem;
+  }
+
+  async deleteDocumentRequirementItem(itemId: number, userCompanyId: number): Promise<boolean> {
+    // Verify item belongs to a template owned by user company
+    const [item] = await db
+      .select({ templateId: documentRequirementItems.templateId })
+      .from(documentRequirementItems)
+      .where(eq(documentRequirementItems.id, itemId));
+    
+    if (!item) {
+      throw new Error('Requirement item not found');
+    }
+
+    const template = await this.getDocumentTemplateById(item.templateId, userCompanyId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const result = await db
+      .delete(documentRequirementItems)
+      .where(eq(documentRequirementItems.id, itemId));
+    return Array.isArray(result) ? result.length > 0 : true;
   }
 
 }
