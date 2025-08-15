@@ -439,7 +439,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -447,10 +447,6 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="contacts" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               Contacts
-            </TabsTrigger>
-            <TabsTrigger value="website-analysis" className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              Analysis
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
@@ -571,32 +567,29 @@ export default function TargetCompanyDetail() {
 
                   {/* Website Analysis Section */}
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-3 mb-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium text-muted-foreground">Website Analysis</span>
                       {profileFetching && !profileLoading && (
-                        <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
+                        <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
                       )}
                     </div>
                     {profileLoading ? (
                       <div className="space-y-2">
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
                       </div>
                     ) : company.websiteAnalysis ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Analysis completed:</span>
-                          <span data-testid="analysis-processed-date">
-                            {company.websiteAnalysisProcessedAt 
-                              ? new Date(company.websiteAnalysisProcessedAt).toLocaleString()
-                              : 'Unknown'
-                            }
-                          </span>
+                      <div className="space-y-2">
+                        <div className="text-sm text-muted-foreground">
+                          Analysis completed: {company.websiteAnalysisProcessedAt 
+                            ? new Date(company.websiteAnalysisProcessedAt).toLocaleString()
+                            : 'Unknown'
+                          }
                         </div>
                         <div 
-                          className="prose prose-sm max-w-none dark:prose-invert text-sm"
+                          className="prose prose-sm max-w-none dark:prose-invert"
                           data-testid="website-analysis-content"
                         >
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -605,10 +598,10 @@ export default function TargetCompanyDetail() {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Globe className="w-4 h-4" />
+                            <Globe className="w-4 h-4 text-muted-foreground" />
                             <span className="font-medium">Website Analysis Pending</span>
                           </div>
                           <Button
@@ -619,19 +612,19 @@ export default function TargetCompanyDetail() {
                               refetchProfile();
                             }}
                             disabled={profileFetching}
-                            className="h-6 px-2 text-xs"
+                            className="h-7 px-2"
                             data-testid="button-refresh-analysis-business-info"
                           >
-                            <RefreshCw className={`w-3 h-3 mr-1 ${profileFetching ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-4 h-4 mr-1 ${profileFetching ? 'animate-spin' : ''}`} />
                             {profileFetching ? 'Checking...' : 'Refresh'}
                           </Button>
                         </div>
-                        <p className="text-xs mb-1">
+                        <div className="text-sm text-muted-foreground">
                           Website analysis is currently being processed. This usually takes about 30 seconds.
-                        </p>
+                        </div>
                         {profileFetching && (
-                          <div className="flex items-center gap-2 mt-2 text-xs text-blue-600">
-                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
+                            <RefreshCw className="w-4 h-4 animate-spin" />
                             <span>Checking for updates...</span>
                           </div>
                         )}
@@ -698,89 +691,7 @@ export default function TargetCompanyDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="website-analysis" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Globe className="w-5 h-5" />
-                      Website Analysis
-                      {profileFetching && !profileLoading && (
-                        <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      AI-powered analysis of {company.companyName}'s website and digital presence
-                    </CardDescription>
-                  </div>
-                  {company && !company.websiteAnalysis && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // Force cache invalidation and refetch
-                        queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
-                        refetchProfile();
-                      }}
-                      disabled={profileFetching}
-                      data-testid="button-refresh-analysis"
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${profileFetching ? 'animate-spin' : ''}`} />
-                      {profileFetching ? 'Checking...' : 'Force Refresh'}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {profileLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-32 w-full" />
-                  </div>
-                ) : company.websiteAnalysis ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Analysis completed:</span>
-                      <span data-testid="analysis-processed-date">
-                        {company.websiteAnalysisProcessedAt 
-                          ? new Date(company.websiteAnalysisProcessedAt).toLocaleString()
-                          : 'Unknown'
-                        }
-                      </span>
-                    </div>
-                    <div 
-                      className="prose prose-sm max-w-none dark:prose-invert"
-                      data-testid="website-analysis-content"
-                    >
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {company.websiteAnalysis}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Globe className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Website Analysis Pending</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Website analysis is currently being processed. This usually takes about 30 seconds.
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      The analysis will automatically appear here once completed.
-                    </p>
-                    {profileFetching && (
-                      <div className="flex items-center justify-center gap-2 mt-4 text-sm text-blue-600">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Checking for updates...</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           <TabsContent value="contacts" className="space-y-6">
             <Card>
