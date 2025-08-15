@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema, insertDocumentRequirementTemplateSchema, insertDocumentRequirementItemSchema, insertCompanyDocumentRequirementSchema, insertDocumentRequirementWaiverSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { emailService } from "./email";
 import multer from "multer";
@@ -3358,6 +3358,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to send campaign emails:", error);
       res.status(500).json({ error: "Failed to send campaign emails" });
+    }
+  });
+
+  // ========================================
+  // STAGED DOCUMENT REQUIREMENTS SYSTEM
+  // ========================================
+
+  // Get document requirement templates
+  app.get("/api/document-requirements/templates", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const industryCategory = req.query.industry as string;
+      const templates = await storage.getDocumentRequirementTemplates(userCompanyId, industryCategory || null);
+      res.json(templates);
+    } catch (error) {
+      console.error("Get document requirement templates error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get company document requirements
+  app.get("/api/companies/:id/requirements", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId;
+
+      if (isNaN(targetCompanyId) || !userCompanyId) {
+        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
+      }
+
+      const requirements = await storage.getCompanyDocumentRequirements(targetCompanyId, userCompanyId);
+      res.json(requirements);
+    } catch (error) {
+      console.error("Get company document requirements error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Initialize company document requirements from template
+  app.post("/api/companies/:id/requirements/initialize", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+
+      if (isNaN(targetCompanyId) || !userId || !userCompanyId) {
+        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
+      }
+
+      const { templateId } = req.body;
+      await storage.initializeCompanyRequirements(targetCompanyId, templateId, userId);
+
+      res.json({ success: true, message: "Company requirements initialized successfully" });
+    } catch (error) {
+      console.error("Initialize company requirements error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get stage progression status
+  app.get("/api/companies/:id/stage-progression", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId;
+
+      if (isNaN(targetCompanyId) || !userCompanyId) {
+        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
+      }
+
+      const progression = await storage.getDocumentStageProgression(targetCompanyId, userCompanyId);
+      res.json(progression);
+    } catch (error) {
+      console.error("Get stage progression error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Request document requirement waiver
+  app.post("/api/companies/:id/requirements/waiver", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      if (isNaN(targetCompanyId) || !userId) {
+        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
+      }
+
+      const waiverData = insertDocumentRequirementWaiverSchema.parse({
+        ...req.body,
+        targetCompanyId,
+        requestedBy: userId,
+      });
+
+      const waiver = await storage.requestRequirementWaiver(waiverData);
+      res.json(waiver);
+    } catch (error) {
+      console.error("Request requirement waiver error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get pending waiver requests
+  app.get("/api/document-requirements/waivers", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const waivers = await storage.getPendingWaivers(userCompanyId);
+      res.json(waivers);
+    } catch (error) {
+      console.error("Get pending waivers error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Approve/reject waiver request
+  app.put("/api/document-requirements/waivers/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const waiverId = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      if (isNaN(waiverId) || !userId) {
+        return res.status(400).json({ message: "Invalid waiver ID or user not authenticated" });
+      }
+
+      const { approvalStatus, approvalNotes, conditionalApproval, approvalConditions } = req.body;
+
+      const waiver = await storage.processWaiverRequest(waiverId, {
+        approvalStatus,
+        approvalNotes,
+        conditionalApproval,
+        approvalConditions,
+      }, userId);
+
+      res.json(waiver);
+    } catch (error) {
+      console.error("Process waiver request error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update specific company requirement
+  app.put("/api/companies/:id/requirements/:reqId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const requirementId = parseInt(req.params.reqId);
+      const userId = req.session.userId;
+
+      if (isNaN(targetCompanyId) || isNaN(requirementId) || !userId) {
+        return res.status(400).json({ message: "Invalid parameters or user not authenticated" });
+      }
+
+      const updates = req.body;
+      const requirement = await storage.updateCompanyRequirement(requirementId, updates, userId);
+
+      res.json(requirement);
+    } catch (error) {
+      console.error("Update company requirement error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

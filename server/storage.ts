@@ -26,6 +26,11 @@ import {
   portalCommunicationsLog,
   portalAnalytics,
   portalLinkShares,
+  documentRequirementTemplates,
+  documentRequirementItems,
+  companyDocumentRequirements,
+  documentStageProgression,
+  documentRequirementWaivers,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -79,6 +84,16 @@ import {
   type InsertPortalAnalytics,
   type PortalLinkShare,
   type InsertPortalLinkShare,
+  type DocumentRequirementTemplate,
+  type InsertDocumentRequirementTemplate,
+  type DocumentRequirementItem,
+  type InsertDocumentRequirementItem,
+  type CompanyDocumentRequirement,
+  type InsertCompanyDocumentRequirement,
+  type DocumentStageProgression,
+  type InsertDocumentStageProgression,
+  type DocumentRequirementWaiver,
+  type InsertDocumentRequirementWaiver,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -303,6 +318,17 @@ export interface IStorage {
   
   // Helper methods for email functionality
   getDealTeamEmails(targetCompanyId: number): Promise<string[]>;
+  
+  // Document Requirements System methods
+  getDocumentRequirementTemplates(userCompanyId: number, industryCategory?: string | null): Promise<(DocumentRequirementTemplate & { itemCount: number })[]>;
+  getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number): Promise<CompanyDocumentRequirement[]>;
+  initializeCompanyRequirements(targetCompanyId: number, templateId: number, userId: number): Promise<void>;
+  getDocumentStageProgression(targetCompanyId: number, userCompanyId: number): Promise<DocumentStageProgression | undefined>;
+  requestRequirementWaiver(waiverData: InsertDocumentRequirementWaiver): Promise<DocumentRequirementWaiver>;
+  getPendingWaivers(userCompanyId: number): Promise<(DocumentRequirementWaiver & { companyName: string; requirementName: string })[]>;
+  processWaiverRequest(waiverId: number, updates: { approvalStatus: string; approvalNotes?: string; conditionalApproval?: boolean; approvalConditions?: string }, userId: number): Promise<DocumentRequirementWaiver>;
+  updateCompanyRequirement(requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement>;
+  getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2567,6 +2593,175 @@ export class DatabaseStorage implements IStorage {
       .where(eq(portalLinkShares.id, shareId))
       .returning();
     return !!updatedShare;
+  }
+
+  // ========================================
+  // Document Requirements System
+  // ========================================
+
+  async getDocumentRequirementTemplates(userCompanyId: number, industryCategory?: string | null): Promise<(DocumentRequirementTemplate & { itemCount: number })[]> {
+    let query = db
+      .select({
+        id: documentRequirementTemplates.id,
+        templateName: documentRequirementTemplates.templateName,
+        templateDescription: documentRequirementTemplates.templateDescription,
+        industryCategory: documentRequirementTemplates.industryCategory,
+        companyTypeCategory: documentRequirementTemplates.companyTypeCategory,
+        isActive: documentRequirementTemplates.isActive,
+        createdAt: documentRequirementTemplates.createdAt,
+        updatedAt: documentRequirementTemplates.updatedAt,
+        itemCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM ${documentRequirementItems}
+          WHERE ${documentRequirementItems.templateId} = ${documentRequirementTemplates.id}
+        )`
+      })
+      .from(documentRequirementTemplates)
+      .where(eq(documentRequirementTemplates.isActive, true));
+
+    if (industryCategory) {
+      query = query.where(eq(documentRequirementTemplates.industryCategory, industryCategory));
+    }
+
+    return await query.orderBy(asc(documentRequirementTemplates.templateName));
+  }
+
+  async getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number): Promise<CompanyDocumentRequirement[]> {
+    // First verify access to the company
+    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(companyDocumentRequirements)
+      .where(eq(companyDocumentRequirements.targetCompanyId, targetCompanyId))
+      .orderBy(
+        asc(companyDocumentRequirements.collectionStage),
+        asc(companyDocumentRequirements.displayOrder)
+      );
+  }
+
+  async initializeCompanyRequirements(targetCompanyId: number, templateId: number, userId: number): Promise<void> {
+    // Get template items
+    const templateItems = await db
+      .select()
+      .from(documentRequirementItems)
+      .where(eq(documentRequirementItems.templateId, templateId))
+      .orderBy(asc(documentRequirementItems.displayOrder));
+
+    // Create company requirements from template
+    const companyRequirements = templateItems.map(item => ({
+      targetCompanyId,
+      requirementName: item.requirementName,
+      requirementDescription: item.requirementDescription,
+      documentCategory: item.documentCategory,
+      collectionStage: item.collectionStage,
+      priorityLevel: item.priorityLevel,
+      isMandatory: item.isMandatory,
+      submissionInstructions: item.submissionInstructions,
+      helpText: item.helpText,
+      displayOrder: item.displayOrder,
+      requirementStatus: 'pending' as const,
+      createdBy: userId,
+    }));
+
+    await db.insert(companyDocumentRequirements).values(companyRequirements);
+
+    // Initialize stage progression
+    await db.insert(documentStageProgression).values({
+      targetCompanyId,
+      currentStage: 1,
+      stage1Status: 'active',
+      stage2Status: 'locked',
+      createdBy: userId,
+    });
+  }
+
+  async getDocumentStageProgression(targetCompanyId: number, userCompanyId: number): Promise<DocumentStageProgression | undefined> {
+    // First verify access to the company
+    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      return undefined;
+    }
+
+    const [progression] = await db
+      .select()
+      .from(documentStageProgression)
+      .where(eq(documentStageProgression.targetCompanyId, targetCompanyId));
+
+    return progression;
+  }
+
+  async requestRequirementWaiver(waiverData: InsertDocumentRequirementWaiver): Promise<DocumentRequirementWaiver> {
+    const [waiver] = await db
+      .insert(documentRequirementWaivers)
+      .values(waiverData)
+      .returning();
+    return waiver;
+  }
+
+  async getPendingWaivers(userCompanyId: number): Promise<(DocumentRequirementWaiver & { companyName: string; requirementName: string })[]> {
+    return await db
+      .select({
+        id: documentRequirementWaivers.id,
+        targetCompanyId: documentRequirementWaivers.targetCompanyId,
+        companyDocumentRequirementId: documentRequirementWaivers.companyDocumentRequirementId,
+        waiverReason: documentRequirementWaivers.waiverReason,
+        businessJustification: documentRequirementWaivers.businessJustification,
+        alternativeEvidence: documentRequirementWaivers.alternativeEvidence,
+        requestedBy: documentRequirementWaivers.requestedBy,
+        requestedAt: documentRequirementWaivers.requestedAt,
+        approvalStatus: documentRequirementWaivers.approvalStatus,
+        approvedBy: documentRequirementWaivers.approvedBy,
+        approvedAt: documentRequirementWaivers.approvedAt,
+        approvalNotes: documentRequirementWaivers.approvalNotes,
+        conditionalApproval: documentRequirementWaivers.conditionalApproval,
+        approvalConditions: documentRequirementWaivers.approvalConditions,
+        companyName: targetCompanies.companyName,
+        requirementName: companyDocumentRequirements.requirementName,
+      })
+      .from(documentRequirementWaivers)
+      .innerJoin(targetCompanies, eq(documentRequirementWaivers.targetCompanyId, targetCompanies.id))
+      .innerJoin(companyDocumentRequirements, eq(documentRequirementWaivers.companyDocumentRequirementId, companyDocumentRequirements.id))
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          eq(documentRequirementWaivers.approvalStatus, 'pending')
+        )
+      )
+      .orderBy(desc(documentRequirementWaivers.requestedAt));
+  }
+
+  async processWaiverRequest(waiverId: number, updates: { approvalStatus: string; approvalNotes?: string; conditionalApproval?: boolean; approvalConditions?: string }, userId: number): Promise<DocumentRequirementWaiver> {
+    const [waiver] = await db
+      .update(documentRequirementWaivers)
+      .set({
+        ...updates,
+        approvedBy: userId,
+        approvedAt: new Date(),
+      })
+      .where(eq(documentRequirementWaivers.id, waiverId))
+      .returning();
+    return waiver;
+  }
+
+  async updateCompanyRequirement(requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement> {
+    const [requirement] = await db
+      .update(companyDocumentRequirements)
+      .set({
+        ...updates,
+        updatedBy: userId,
+        updatedAt: new Date(),
+      })
+      .where(eq(companyDocumentRequirements.id, requirementId))
+      .returning();
+    return requirement;
+  }
+
+  async getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]> {
+    return await this.getContactsForTargetCompany(targetCompanyId, userCompanyId);
   }
 }
 
