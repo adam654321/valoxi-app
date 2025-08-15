@@ -589,7 +589,7 @@ export default function TargetCompanyDetail() {
                           }
                         </div>
                         <div 
-                          className="prose prose-sm max-w-none dark:prose-invert"
+                          className="prose prose-xs max-w-none dark:prose-invert text-sm leading-relaxed [&>*]:text-sm [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>p]:text-sm [&>ul]:text-sm [&>ol]:text-sm [&>li]:text-sm"
                           data-testid="website-analysis-content"
                         >
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
