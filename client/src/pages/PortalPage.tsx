@@ -373,9 +373,6 @@ export default function PortalPage() {
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="w-full mt-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-opacity-20"
-                      style={{ 
-                        focusRingColor: primaryColor 
-                      }}
                     >
                       {categories.map((category) => (
                         <option key={category.id} value={category.categoryName}>
@@ -398,9 +395,6 @@ export default function PortalPage() {
                         value={selectedRequirement || ''}
                         onChange={(e) => setSelectedRequirement(e.target.value ? parseInt(e.target.value) : null)}
                         className="w-full mt-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-opacity-20"
-                        style={{ 
-                          focusRingColor: primaryColor 
-                        }}
                       >
                         <option value="">Select specific requirement...</option>
                         {requirements.map((req) => (

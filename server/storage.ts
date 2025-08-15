@@ -21,6 +21,11 @@ import {
   externalDocumentSubmissions,
   portalDocumentRequirements,
   portalActivityLog,
+  portalLinkCampaigns,
+  portalEmailTemplates,
+  portalCommunicationsLog,
+  portalAnalytics,
+  portalLinkShares,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -64,6 +69,16 @@ import {
   type InsertPortalDocumentRequirement,
   type PortalActivityLog,
   type InsertPortalActivityLog,
+  type PortalLinkCampaign,
+  type InsertPortalLinkCampaign,
+  type PortalEmailTemplate,
+  type InsertPortalEmailTemplate,
+  type PortalCommunicationsLog,
+  type InsertPortalCommunicationsLog,
+  type PortalAnalytics,
+  type InsertPortalAnalytics,
+  type PortalLinkShare,
+  type InsertPortalLinkShare,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -2281,6 +2296,277 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userDealAssignments.targetCompanyId, targetCompanyId));
     
     return dealAssignments.map(assignment => assignment.email);
+  }
+
+  // ========================================
+  // Portal Link Campaigns
+  // ========================================
+
+  async createPortalLinkCampaign(campaign: InsertPortalLinkCampaign): Promise<PortalLinkCampaign> {
+    const [createdCampaign] = await db
+      .insert(portalLinkCampaigns)
+      .values(campaign)
+      .returning();
+    return createdCampaign;
+  }
+
+  async getPortalLinkCampaigns(userCompanyId: number): Promise<PortalLinkCampaign[]> {
+    return await db
+      .select()
+      .from(portalLinkCampaigns)
+      .where(eq(portalLinkCampaigns.userCompanyId, userCompanyId))
+      .orderBy(desc(portalLinkCampaigns.createdAt));
+  }
+
+  async getPortalLinkCampaign(campaignId: number, userCompanyId: number): Promise<PortalLinkCampaign | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(portalLinkCampaigns)
+      .where(and(
+        eq(portalLinkCampaigns.id, campaignId),
+        eq(portalLinkCampaigns.userCompanyId, userCompanyId)
+      ));
+    return campaign || undefined;
+  }
+
+  async updatePortalLinkCampaign(campaignId: number, userCompanyId: number, updates: Partial<InsertPortalLinkCampaign>): Promise<PortalLinkCampaign | undefined> {
+    const [updatedCampaign] = await db
+      .update(portalLinkCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(portalLinkCampaigns.id, campaignId),
+        eq(portalLinkCampaigns.userCompanyId, userCompanyId)
+      ))
+      .returning();
+    return updatedCampaign || undefined;
+  }
+
+  async deletePortalLinkCampaign(campaignId: number, userCompanyId: number): Promise<boolean> {
+    const [deletedCampaign] = await db
+      .delete(portalLinkCampaigns)
+      .where(and(
+        eq(portalLinkCampaigns.id, campaignId),
+        eq(portalLinkCampaigns.userCompanyId, userCompanyId)
+      ))
+      .returning();
+    return !!deletedCampaign;
+  }
+
+  // ========================================
+  // Portal Email Templates
+  // ========================================
+
+  async createPortalEmailTemplate(template: InsertPortalEmailTemplate): Promise<PortalEmailTemplate> {
+    const [createdTemplate] = await db
+      .insert(portalEmailTemplates)
+      .values(template)
+      .returning();
+    return createdTemplate;
+  }
+
+  async getPortalEmailTemplates(userCompanyId: number): Promise<PortalEmailTemplate[]> {
+    return await db
+      .select()
+      .from(portalEmailTemplates)
+      .where(and(
+        eq(portalEmailTemplates.userCompanyId, userCompanyId),
+        eq(portalEmailTemplates.isActive, true)
+      ))
+      .orderBy(desc(portalEmailTemplates.createdAt));
+  }
+
+  async getPortalEmailTemplate(templateId: number, userCompanyId: number): Promise<PortalEmailTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(portalEmailTemplates)
+      .where(and(
+        eq(portalEmailTemplates.id, templateId),
+        eq(portalEmailTemplates.userCompanyId, userCompanyId)
+      ));
+    return template || undefined;
+  }
+
+  async updatePortalEmailTemplate(templateId: number, userCompanyId: number, updates: Partial<InsertPortalEmailTemplate>): Promise<PortalEmailTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(portalEmailTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(
+        eq(portalEmailTemplates.id, templateId),
+        eq(portalEmailTemplates.userCompanyId, userCompanyId)
+      ))
+      .returning();
+    return updatedTemplate || undefined;
+  }
+
+  async deletePortalEmailTemplate(templateId: number, userCompanyId: number): Promise<boolean> {
+    const [deletedTemplate] = await db
+      .delete(portalEmailTemplates)
+      .where(and(
+        eq(portalEmailTemplates.id, templateId),
+        eq(portalEmailTemplates.userCompanyId, userCompanyId)
+      ))
+      .returning();
+    return !!deletedTemplate;
+  }
+
+  async incrementTemplateUsage(templateId: number): Promise<void> {
+    await db
+      .update(portalEmailTemplates)
+      .set({ 
+        usageCount: sql`${portalEmailTemplates.usageCount} + 1`,
+        lastUsed: new Date()
+      })
+      .where(eq(portalEmailTemplates.id, templateId));
+  }
+
+  // ========================================
+  // Portal Communications Log
+  // ========================================
+
+  async logPortalCommunication(communication: InsertPortalCommunicationsLog): Promise<PortalCommunicationsLog> {
+    const [loggedCommunication] = await db
+      .insert(portalCommunicationsLog)
+      .values(communication)
+      .returning();
+    return loggedCommunication;
+  }
+
+  async getPortalCommunications(userCompanyId: number, filters?: {
+    campaignId?: number;
+    targetContactId?: number;
+    communicationType?: string;
+  }): Promise<PortalCommunicationsLog[]> {
+    const conditions = [eq(targetCompanies.userCompanyId, userCompanyId)];
+    
+    if (filters?.campaignId) {
+      conditions.push(eq(portalCommunicationsLog.campaignId, filters.campaignId));
+    }
+    if (filters?.targetContactId) {
+      conditions.push(eq(portalCommunicationsLog.targetContactId, filters.targetContactId));
+    }
+    if (filters?.communicationType) {
+      conditions.push(eq(portalCommunicationsLog.communicationType, filters.communicationType));
+    }
+
+    const results = await db
+      .select()
+      .from(portalCommunicationsLog)
+      .innerJoin(targetContacts, eq(portalCommunicationsLog.targetContactId, targetContacts.id))
+      .innerJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
+      .where(and(...conditions))
+      .orderBy(desc(portalCommunicationsLog.createdAt));
+      
+    return results.map(result => result.portal_communications_log);
+  }
+
+  async updateCommunicationStatus(communicationId: number, updates: {
+    emailStatus?: string;
+    deliveredAt?: Date;
+    openedAt?: Date;
+    clickedAt?: Date;
+  }): Promise<void> {
+    await db
+      .update(portalCommunicationsLog)
+      .set(updates)
+      .where(eq(portalCommunicationsLog.id, communicationId));
+  }
+
+  // ========================================
+  // Portal Analytics
+  // ========================================
+
+  async createOrUpdatePortalAnalytics(analytics: InsertPortalAnalytics): Promise<PortalAnalytics> {
+    const [existingAnalytics] = await db
+      .select()
+      .from(portalAnalytics)
+      .where(and(
+        eq(portalAnalytics.userCompanyId, analytics.userCompanyId),
+        eq(portalAnalytics.analyticsDate, analytics.analyticsDate || sql`CURRENT_DATE`),
+        analytics.targetCompanyId ? eq(portalAnalytics.targetCompanyId, analytics.targetCompanyId) : isNull(portalAnalytics.targetCompanyId),
+        analytics.portalTokenId ? eq(portalAnalytics.portalTokenId, analytics.portalTokenId) : isNull(portalAnalytics.portalTokenId)
+      ));
+
+    if (existingAnalytics) {
+      const [updatedAnalytics] = await db
+        .update(portalAnalytics)
+        .set({ ...analytics, updatedAt: new Date() })
+        .where(eq(portalAnalytics.id, existingAnalytics.id))
+        .returning();
+      return updatedAnalytics;
+    } else {
+      const [createdAnalytics] = await db
+        .insert(portalAnalytics)
+        .values(analytics)
+        .returning();
+      return createdAnalytics;
+    }
+  }
+
+  async getPortalAnalytics(userCompanyId: number, filters?: {
+    startDate?: string;
+    endDate?: string;
+    targetCompanyId?: number;
+    portalTokenId?: number;
+  }): Promise<PortalAnalytics[]> {
+    const conditions = [eq(portalAnalytics.userCompanyId, userCompanyId)];
+
+    if (filters?.startDate) {
+      conditions.push(gte(portalAnalytics.analyticsDate, filters.startDate));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(portalAnalytics.analyticsDate, filters.endDate));
+    }
+    if (filters?.targetCompanyId) {
+      conditions.push(eq(portalAnalytics.targetCompanyId, filters.targetCompanyId));
+    }
+    if (filters?.portalTokenId) {
+      conditions.push(eq(portalAnalytics.portalTokenId, filters.portalTokenId));
+    }
+
+    return await db
+      .select()
+      .from(portalAnalytics)
+      .where(and(...conditions))
+      .orderBy(desc(portalAnalytics.analyticsDate));
+  }
+
+  // ========================================
+  // Portal Link Shares
+  // ========================================
+
+  async createPortalLinkShare(share: InsertPortalLinkShare): Promise<PortalLinkShare> {
+    const [createdShare] = await db
+      .insert(portalLinkShares)
+      .values(share)
+      .returning();
+    return createdShare;
+  }
+
+  async getPortalLinkShares(portalTokenId: number): Promise<PortalLinkShare[]> {
+    return await db
+      .select()
+      .from(portalLinkShares)
+      .where(eq(portalLinkShares.portalTokenId, portalTokenId))
+      .orderBy(desc(portalLinkShares.createdAt));
+  }
+
+  async updatePortalLinkShareUsage(shareId: number): Promise<void> {
+    await db
+      .update(portalLinkShares)
+      .set({ 
+        currentUses: sql`${portalLinkShares.currentUses} + 1`,
+        lastAccessed: new Date()
+      })
+      .where(eq(portalLinkShares.id, shareId));
+  }
+
+  async deactivatePortalLinkShare(shareId: number): Promise<boolean> {
+    const [updatedShare] = await db
+      .update(portalLinkShares)
+      .set({ isActive: false })
+      .where(eq(portalLinkShares.id, shareId))
+      .returning();
+    return !!updatedShare;
   }
 }
 

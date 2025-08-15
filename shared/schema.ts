@@ -10,6 +10,9 @@ import {
   timestamp,
   inet,
   unique,
+  numeric,
+  date,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -817,6 +820,92 @@ export const portalActivityLog = pgTable("portal_activity_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Portal link campaigns table
+export const portalLinkCampaigns = pgTable("portal_link_campaigns", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  targetAudience: varchar("target_audience", { length: 255 }),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Portal link shares table
+export const portalLinkShares = pgTable("portal_link_shares", {
+  id: serial("id").primaryKey(),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id).notNull(),
+  sharedBy: integer("shared_by").references(() => users.id).notNull(),
+  sharedMethod: varchar("shared_method", { length: 50 }),
+  sharedTo: varchar("shared_to", { length: 255 }),
+  shareMessage: text("share_message"),
+  maxUses: integer("max_uses").default(1),
+  currentUses: integer("current_uses").default(0),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(true),
+  lastAccessed: timestamp("last_accessed"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Email templates table
+export const portalEmailTemplates = pgTable("portal_email_templates", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  bodyTemplate: text("body_template").notNull(),
+  templateCategory: varchar("template_category", { length: 50 }).default("custom"),
+  isActive: boolean("is_active").default(true),
+  usageCount: integer("usage_count").default(0),
+  lastUsed: timestamp("last_used"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Portal communications log table
+export const portalCommunicationsLog = pgTable("portal_communications_log", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => portalLinkCampaigns.id),
+  targetContactId: integer("target_contact_id").references(() => targetContacts.id).notNull(),
+  communicationType: varchar("communication_type", { length: 50 }).notNull(),
+  subject: varchar("subject", { length: 500 }),
+  message: text("message"),
+  emailStatus: varchar("email_status", { length: 50 }),
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Portal analytics table
+export const portalAnalytics = pgTable("portal_analytics", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  analyticsDate: date("analytics_date").default(sql`CURRENT_DATE`),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id),
+  uniqueVisitors: integer("unique_visitors").default(0),
+  totalPageViews: integer("total_page_views").default(0),
+  documentsViewed: integer("documents_viewed").default(0),
+  documentsDownloaded: integer("documents_downloaded").default(0),
+  averageSessionDuration: numeric("average_session_duration", { precision: 10, scale: 2 }).default("0"),
+  emailsSent: integer("emails_sent").default(0),
+  emailsOpened: integer("emails_opened").default(0),
+  emailsClicked: integer("emails_clicked").default(0),
+  portalLinksGenerated: integer("portal_links_generated").default(0),
+  portalLinksShared: integer("portal_links_shared").default(0),
+  conversionRate: numeric("conversion_rate", { precision: 5, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Portal schemas
 export const insertPortalAccessTokenSchema = createInsertSchema(portalAccessTokens).omit({
   id: true,
@@ -844,6 +933,34 @@ export const insertPortalActivityLogSchema = createInsertSchema(portalActivityLo
   createdAt: true,
 });
 
+export const insertPortalLinkCampaignSchema = createInsertSchema(portalLinkCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPortalEmailTemplateSchema = createInsertSchema(portalEmailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPortalCommunicationsLogSchema = createInsertSchema(portalCommunicationsLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPortalAnalyticsSchema = createInsertSchema(portalAnalytics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPortalLinkShareSchema = createInsertSchema(portalLinkShares).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Portal types
 export type PortalAccessToken = typeof portalAccessTokens.$inferSelect;
 export type InsertPortalAccessToken = z.infer<typeof insertPortalAccessTokenSchema>;
@@ -856,3 +973,18 @@ export type InsertPortalDocumentRequirement = z.infer<typeof insertPortalDocumen
 
 export type PortalActivityLog = typeof portalActivityLog.$inferSelect;
 export type InsertPortalActivityLog = z.infer<typeof insertPortalActivityLogSchema>;
+
+export type PortalLinkCampaign = typeof portalLinkCampaigns.$inferSelect;
+export type InsertPortalLinkCampaign = z.infer<typeof insertPortalLinkCampaignSchema>;
+
+export type PortalEmailTemplate = typeof portalEmailTemplates.$inferSelect;
+export type InsertPortalEmailTemplate = z.infer<typeof insertPortalEmailTemplateSchema>;
+
+export type PortalCommunicationsLog = typeof portalCommunicationsLog.$inferSelect;
+export type InsertPortalCommunicationsLog = z.infer<typeof insertPortalCommunicationsLogSchema>;
+
+export type PortalAnalytics = typeof portalAnalytics.$inferSelect;
+export type InsertPortalAnalytics = z.infer<typeof insertPortalAnalyticsSchema>;
+
+export type PortalLinkShare = typeof portalLinkShares.$inferSelect;
+export type InsertPortalLinkShare = z.infer<typeof insertPortalLinkShareSchema>;

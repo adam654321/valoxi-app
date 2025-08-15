@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { emailService } from "./email";
 import multer from "multer";
@@ -2978,6 +2978,375 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ========================================
+  // Portal Link Campaigns Management
+  // ========================================
+
+  // Get all portal link campaigns for user's company
+  app.get("/api/portal/campaigns", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const campaigns = await storage.getPortalLinkCampaigns(req.session.userCompanyId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Failed to fetch portal campaigns:", error);
+      res.status(500).json({ error: "Failed to fetch portal campaigns" });
+    }
+  });
+
+  // Create new portal link campaign
+  app.post("/api/portal/campaigns", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const campaignData = insertPortalLinkCampaignSchema.parse({
+        ...req.body,
+        userCompanyId: req.session.userCompanyId,
+        createdBy: req.session.userId
+      });
+
+      const campaign = await storage.createPortalLinkCampaign(campaignData);
+      res.status(201).json(campaign);
+    } catch (error) {
+      console.error("Failed to create portal campaign:", error);
+      res.status(500).json({ error: "Failed to create portal campaign" });
+    }
+  });
+
+  // Get specific portal link campaign
+  app.get("/api/portal/campaigns/:campaignId", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getPortalLinkCampaign(campaignId, req.session.userCompanyId);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      console.error("Failed to fetch portal campaign:", error);
+      res.status(500).json({ error: "Failed to fetch portal campaign" });
+    }
+  });
+
+  // Update portal link campaign
+  app.patch("/api/portal/campaigns/:campaignId", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const updates = insertPortalLinkCampaignSchema.partial().parse(req.body);
+      
+      const campaign = await storage.updatePortalLinkCampaign(campaignId, req.session.userCompanyId, updates);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      console.error("Failed to update portal campaign:", error);
+      res.status(500).json({ error: "Failed to update portal campaign" });
+    }
+  });
+
+  // Delete portal link campaign
+  app.delete("/api/portal/campaigns/:campaignId", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const deleted = await storage.deletePortalLinkCampaign(campaignId, req.session.userCompanyId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete portal campaign:", error);
+      res.status(500).json({ error: "Failed to delete portal campaign" });
+    }
+  });
+
+  // ========================================
+  // Portal Email Templates Management
+  // ========================================
+
+  // Get all portal email templates for user's company
+  app.get("/api/portal/email-templates", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const templates = await storage.getPortalEmailTemplates(req.session.userCompanyId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Failed to fetch email templates:", error);
+      res.status(500).json({ error: "Failed to fetch email templates" });
+    }
+  });
+
+  // Create new portal email template
+  app.post("/api/portal/email-templates", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const templateData = insertPortalEmailTemplateSchema.parse({
+        ...req.body,
+        userCompanyId: req.session.userCompanyId,
+        createdBy: req.session.userId
+      });
+
+      const template = await storage.createPortalEmailTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Failed to create email template:", error);
+      res.status(500).json({ error: "Failed to create email template" });
+    }
+  });
+
+  // Get specific portal email template
+  app.get("/api/portal/email-templates/:templateId", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const templateId = parseInt(req.params.templateId);
+      const template = await storage.getPortalEmailTemplate(templateId, req.session.userCompanyId);
+      
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Failed to fetch email template:", error);
+      res.status(500).json({ error: "Failed to fetch email template" });
+    }
+  });
+
+  // Update portal email template
+  app.patch("/api/portal/email-templates/:templateId", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const templateId = parseInt(req.params.templateId);
+      const updates = insertPortalEmailTemplateSchema.partial().parse(req.body);
+      
+      const template = await storage.updatePortalEmailTemplate(templateId, req.session.userCompanyId, updates);
+      
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Failed to update email template:", error);
+      res.status(500).json({ error: "Failed to update email template" });
+    }
+  });
+
+  // Delete portal email template
+  app.delete("/api/portal/email-templates/:templateId", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const templateId = parseInt(req.params.templateId);
+      const deleted = await storage.deletePortalEmailTemplate(templateId, req.session.userCompanyId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete email template:", error);
+      res.status(500).json({ error: "Failed to delete email template" });
+    }
+  });
+
+  // ========================================
+  // Portal Communications Log
+  // ========================================
+
+  // Get portal communications log
+  app.get("/api/portal/communications", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const { campaignId, targetContactId, communicationType } = req.query;
+      
+      const filters = {
+        campaignId: campaignId ? parseInt(campaignId as string) : undefined,
+        targetContactId: targetContactId ? parseInt(targetContactId as string) : undefined,
+        communicationType: communicationType as string
+      };
+
+      const communications = await storage.getPortalCommunications(req.session.userCompanyId, filters);
+      res.json(communications);
+    } catch (error) {
+      console.error("Failed to fetch portal communications:", error);
+      res.status(500).json({ error: "Failed to fetch portal communications" });
+    }
+  });
+
+  // ========================================
+  // Portal Analytics
+  // ========================================
+
+  // Get portal analytics
+  app.get("/api/portal/analytics", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const { startDate, endDate, targetCompanyId, portalTokenId } = req.query;
+      
+      const filters = {
+        startDate: startDate as string,
+        endDate: endDate as string,
+        targetCompanyId: targetCompanyId ? parseInt(targetCompanyId as string) : undefined,
+        portalTokenId: portalTokenId ? parseInt(portalTokenId as string) : undefined
+      };
+
+      const analytics = await storage.getPortalAnalytics(req.session.userCompanyId, filters);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Failed to fetch portal analytics:", error);
+      res.status(500).json({ error: "Failed to fetch portal analytics" });
+    }
+  });
+
+  // ========================================
+  // Send Campaign Emails
+  // ========================================
+
+  // Send campaign emails to selected contacts
+  app.post("/api/portal/campaigns/:campaignId/send", isAuthenticated, async (req: Request, res: Response) => {
+    if (!req.session?.userId || !req.session.userCompanyId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const { targetContactIds, templateId, customSubject, customMessage } = req.body;
+
+      // Get campaign and template
+      const campaign = await storage.getPortalLinkCampaign(campaignId, req.session.userCompanyId);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      const template = templateId ? await storage.getPortalEmailTemplate(templateId, req.session.userCompanyId) : null;
+
+      // Get target contacts
+      const contacts = await Promise.all(
+        targetContactIds.map((id: number) => storage.getTargetContact(id, req.session.userCompanyId))
+      );
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Send emails to each contact
+      for (const contact of contacts) {
+        if (!contact) continue;
+
+        try {
+          // Generate unique portal link for this contact
+          const portalToken = await storage.getPortalAccessTokenByContactAndCompany(
+            contact.id, 
+            contact.targetCompanyId
+          );
+
+          if (!portalToken) {
+            errorCount++;
+            continue;
+          }
+
+          const portalLink = `${process.env.REPLIT_DEV_DOMAIN}/portal/${portalToken.token}`;
+
+          // Prepare email content
+          const subject = customSubject || template?.subject || campaign.name;
+          let message = customMessage || template?.bodyTemplate || campaign.description || "";
+          
+          // Replace template variables
+          message = message
+            .replace(/\{contact_name\}/g, contact.name)
+            .replace(/\{company_name\}/g, contact.targetCompanyName || "")
+            .replace(/\{portal_link\}/g, portalLink)
+            .replace(/\{campaign_name\}/g, campaign.name);
+
+          // Send email
+          await emailService.sendPortalAccessEmail(
+            contact.email,
+            contact.name,
+            subject,
+            message,
+            portalLink
+          );
+
+          // Log communication
+          await storage.logPortalCommunication({
+            campaignId: campaignId,
+            targetContactId: contact.id,
+            communicationType: "email",
+            subject: subject,
+            message: message,
+            emailStatus: "sent",
+            sentAt: new Date()
+          });
+
+          // Update template usage if template was used
+          if (template) {
+            await storage.incrementTemplateUsage(template.id);
+          }
+
+          successCount++;
+        } catch (emailError) {
+          console.error(`Failed to send email to ${contact.email}:`, emailError);
+          errorCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        sentCount: successCount,
+        errorCount: errorCount,
+        totalContacts: contacts.length
+      });
+
+    } catch (error) {
+      console.error("Failed to send campaign emails:", error);
+      res.status(500).json({ error: "Failed to send campaign emails" });
     }
   });
 

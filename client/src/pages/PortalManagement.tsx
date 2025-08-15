@@ -1,492 +1,809 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { Link2, Plus, Settings, Users, FileText, Activity, Calendar, Copy, ExternalLink, Trash2 } from 'lucide-react';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus, Send, Edit, Trash2, Eye, Mail, Calendar, TrendingUp, Users, ExternalLink, Copy } from "lucide-react";
+import { format } from "date-fns";
 
-interface TargetCompany {
-  id: number;
-  companyName: string;
-  industry?: string;
-  stage?: string;
-}
+// Form schemas
+const campaignSchema = z.object({
+  name: z.string().min(1, "Campaign name is required"),
+  description: z.string().optional(),
+  status: z.enum(["draft", "active", "paused", "completed"]),
+  targetAudience: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
 
-interface TargetContact {
-  id: number;
-  targetCompanyId: number;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  title?: string;
-}
+const emailTemplateSchema = z.object({
+  name: z.string().min(1, "Template name is required"),
+  description: z.string().optional(),
+  subject: z.string().min(1, "Subject is required"),
+  bodyTemplate: z.string().min(1, "Email body is required"),
+  templateCategory: z.enum(["initial_outreach", "follow_up", "reminder", "thank_you", "custom"]),
+  isActive: z.boolean().default(true),
+});
 
-interface PortalToken {
+type Campaign = {
   id: number;
-  targetCompanyId: number;
-  targetContactId: number;
-  accessToken: string;
-  tokenPurpose: string;
-  expiresAt: string;
+  name: string;
+  description?: string;
+  status: "draft" | "active" | "paused" | "completed";
+  targetAudience?: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+  userCompanyId: number;
+};
+
+type EmailTemplate = {
+  id: number;
+  name: string;
+  description?: string;
+  subject: string;
+  bodyTemplate: string;
+  templateCategory: "initial_outreach" | "follow_up" | "reminder" | "thank_you" | "custom";
   isActive: boolean;
-  accessCount: number;
-  lastAccessed?: string;
-  allowedActions: {
-    upload: boolean;
-    download: boolean;
-    message: boolean;
-  };
-  customMessage?: string;
-  portalBranding?: {
-    companyName?: string;
-    logoUrl?: string;
-    primaryColor?: string;
-  };
-  // Relations
-  companyName?: string;
-  contactName?: string;
-  contactEmail?: string;
-}
+  usageCount: number;
+  lastUsed?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+  userCompanyId: number;
+};
+
+type Communication = {
+  id: number;
+  campaignId?: number;
+  targetContactId: number;
+  communicationType: string;
+  subject?: string;
+  message?: string;
+  emailStatus?: string;
+  sentAt?: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  clickedAt?: string;
+  createdAt: string;
+};
+
+type Analytics = {
+  id: number;
+  userCompanyId: number;
+  analyticsDate: string;
+  targetCompanyId?: number;
+  portalTokenId?: number;
+  uniqueVisitors: number;
+  totalPageViews: number;
+  documentsViewed: number;
+  documentsDownloaded: number;
+  averageSessionDuration: number;
+  emailsSent: number;
+  emailsOpened: number;
+  emailsClicked: number;
+  portalLinksGenerated: number;
+  portalLinksShared: number;
+  conversionRate: number;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export default function PortalManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedCompany, setSelectedCompany] = useState<number | null>(null);
-  const [selectedContact, setSelectedContact] = useState<number | null>(null);
-  const [tokenForm, setTokenForm] = useState({
-    tokenPurpose: 'document_submission',
-    expiresInDays: 30,
-    allowedActions: {
-      upload: true,
-      download: false,
-      message: true,
-    },
-    customMessage: '',
-    portalBranding: {
-      companyName: '',
-      logoUrl: '',
-      primaryColor: '#2563eb',
-    },
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
+  const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false);
+  const [isCreateTemplateOpen, setIsCreateTemplateOpen] = useState(false);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
+
+  // Fetch campaigns
+  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<Campaign[]>({
+    queryKey: ["/api/portal/campaigns"],
   });
 
-  // Queries
-  const { data: companies = [] } = useQuery<TargetCompany[]>({
-    queryKey: ['/api/target-companies'],
+  // Fetch email templates
+  const { data: templates = [], isLoading: templatesLoading } = useQuery<EmailTemplate[]>({
+    queryKey: ["/api/portal/email-templates"],
   });
 
-  const { data: contacts = [], isLoading: contactsLoading } = useQuery<TargetContact[]>({
-    queryKey: ['/api/target-companies/contacts', selectedCompany],
-    queryFn: async () => {
-      if (!selectedCompany) return [];
-      const response = await fetch(`/api/target-companies/contacts/${selectedCompany}`);
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: !!selectedCompany,
+  // Fetch communications log
+  const { data: communications = [], isLoading: communicationsLoading } = useQuery<Communication[]>({
+    queryKey: ["/api/portal/communications"],
   });
 
-  const { data: portalTokens = [] } = useQuery<PortalToken[]>({
-    queryKey: ['/api/portal/tokens'],
+  // Fetch analytics
+  const { data: analytics = [], isLoading: analyticsLoading } = useQuery<Analytics[]>({
+    queryKey: ["/api/portal/analytics"],
   });
 
-  // Mutations
-  const createTokenMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/portal/create-token', {
-        targetCompanyId: selectedCompany,
-        targetContactId: selectedContact,
-        ...data,
+  // Create campaign mutation
+  const createCampaignMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof campaignSchema>) => {
+      const response = await fetch("/api/portal/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: "Portal Created",
-        description: `Portal access token created successfully. Token expires on ${new Date(data.expiresAt).toLocaleDateString()}.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/portal/tokens'] });
-      resetForm();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Creation Failed",
-        description: error.message || "Failed to create portal token",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deactivateTokenMutation = useMutation({
-    mutationFn: async (tokenId: number) => {
-      return await apiRequest('POST', `/api/portal/deactivate/${tokenId}`);
+      if (!response.ok) throw new Error("Failed to create campaign");
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Portal Deactivated",
-        description: "Portal access has been deactivated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/portal/tokens'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/campaigns"] });
+      setIsCreateCampaignOpen(false);
+      toast({ title: "Campaign created successfully" });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Deactivation Failed",
-        description: error.message || "Failed to deactivate portal",
-        variant: "destructive",
-      });
+    onError: () => {
+      toast({ title: "Failed to create campaign", variant: "destructive" });
     },
   });
 
-  const resetForm = () => {
-    setSelectedCompany(null);
-    setSelectedContact(null);
-    setTokenForm({
-      tokenPurpose: 'document_submission',
-      expiresInDays: 30,
-      allowedActions: {
-        upload: true,
-        download: false,
-        message: true,
-      },
-      customMessage: '',
-      portalBranding: {
-        companyName: '',
-        logoUrl: '',
-        primaryColor: '#2563eb',
-      },
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedCompany || !selectedContact) {
-      toast({
-        title: "Missing Information",
-        description: "Please select both a target company and contact.",
-        variant: "destructive",
+  // Create template mutation
+  const createTemplateMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof emailTemplateSchema>) => {
+      const response = await fetch("/api/portal/email-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      return;
+      if (!response.ok) throw new Error("Failed to create template");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/email-templates"] });
+      setIsCreateTemplateOpen(false);
+      toast({ title: "Email template created successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to create email template", variant: "destructive" });
+    },
+  });
+
+  // Delete campaign mutation
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (campaignId: number) => {
+      const response = await fetch(`/api/portal/campaigns/${campaignId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete campaign");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/campaigns"] });
+      toast({ title: "Campaign deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete campaign", variant: "destructive" });
+    },
+  });
+
+  // Delete template mutation
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const response = await fetch(`/api/portal/email-templates/${templateId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete template");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/email-templates"] });
+      toast({ title: "Email template deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete email template", variant: "destructive" });
+    },
+  });
+
+  const campaignForm = useForm<z.infer<typeof campaignSchema>>({
+    resolver: zodResolver(campaignSchema),
+    defaultValues: {
+      status: "draft",
+      name: "",
+      description: "",
+      targetAudience: "",
+      startDate: "",
+      endDate: "",
+    },
+  });
+
+  const templateForm = useForm<z.infer<typeof emailTemplateSchema>>({
+    resolver: zodResolver(emailTemplateSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      subject: "",
+      bodyTemplate: "",
+      templateCategory: "initial_outreach",
+      isActive: true,
+    },
+  });
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "active": return "default";
+      case "draft": return "secondary";
+      case "paused": return "outline";
+      case "completed": return "outline";
+      default: return "secondary";
     }
-
-    createTokenMutation.mutate(tokenForm);
   };
 
-  const copyPortalUrl = (token: string) => {
-    const url = `${window.location.origin}/portal/${token}`;
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "URL Copied",
-      description: "Portal URL has been copied to your clipboard.",
-    });
-  };
-
-  const getStatusBadge = (token: PortalToken) => {
-    const isExpired = new Date(token.expiresAt) < new Date();
-    const isInactive = !token.isActive;
-    
-    if (isInactive) {
-      return <Badge variant="destructive">Deactivated</Badge>;
-    } else if (isExpired) {
-      return <Badge variant="outline" className="border-yellow-600 text-yellow-600">Expired</Badge>;
-    } else {
-      return <Badge variant="default" className="bg-green-600">Active</Badge>;
+  const getCategoryBadgeVariant = (category: string) => {
+    switch (category) {
+      case "initial_outreach": return "default";
+      case "follow_up": return "secondary";
+      case "reminder": return "outline";
+      case "thank_you": return "outline";
+      default: return "secondary";
     }
   };
+
+  // Calculate analytics summary
+  const analyticsSummary = analytics.reduce((acc, item) => ({
+    totalVisitors: acc.totalVisitors + item.uniqueVisitors,
+    totalEmailsSent: acc.totalEmailsSent + item.emailsSent,
+    totalEmailsOpened: acc.totalEmailsOpened + item.emailsOpened,
+    totalLinksGenerated: acc.totalLinksGenerated + item.portalLinksGenerated,
+    avgConversionRate: (acc.avgConversionRate + item.conversionRate) / 2,
+  }), {
+    totalVisitors: 0,
+    totalEmailsSent: 0,
+    totalEmailsOpened: 0,
+    totalLinksGenerated: 0,
+    avgConversionRate: 0,
+  });
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6" data-testid="portal-management-page">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Portal Management</h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Create and manage secure document submission portals for external parties.
+          <h1 className="text-3xl font-bold">Portal Management</h1>
+          <p className="text-muted-foreground">
+            Manage portal link campaigns, email templates, and track analytics
           </p>
         </div>
-
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Create Portal
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create Document Portal</DialogTitle>
-              <DialogDescription>
-                Set up a secure portal for external document submission and communication.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="company-select">Target Company</Label>
-                  <Select value={selectedCompany?.toString() || ''} onValueChange={(value) => {
-                    setSelectedCompany(parseInt(value));
-                    setSelectedContact(null);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select company..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id.toString()}>
-                          {company.companyName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="contact-select">Primary Contact</Label>
-                  <Select 
-                    value={selectedContact?.toString() || ''} 
-                    onValueChange={(value) => setSelectedContact(parseInt(value))}
-                    disabled={!selectedCompany}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select contact..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contactsLoading ? (
-                        <SelectItem value="loading" disabled>Loading contacts...</SelectItem>
-                      ) : Array.isArray(contacts) && contacts.length > 0 ? (
-                        contacts.map((contact) => (
-                          <SelectItem key={contact.id} value={contact.id.toString()}>
-                            {contact.firstName} {contact.lastName}
-                            {contact.email && ` (${contact.email})`}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-contacts" disabled>No contacts found</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="purpose">Portal Purpose</Label>
-                  <Input
-                    id="purpose"
-                    value={tokenForm.tokenPurpose}
-                    onChange={(e) => setTokenForm({ ...tokenForm, tokenPurpose: e.target.value })}
-                    placeholder="e.g., Due Diligence Documents"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="expires">Expires In (Days)</Label>
-                  <Input
-                    id="expires"
-                    type="number"
-                    min="1"
-                    max="90"
-                    value={tokenForm.expiresInDays}
-                    onChange={(e) => setTokenForm({ ...tokenForm, expiresInDays: parseInt(e.target.value) || 30 })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Allowed Actions</Label>
-                <div className="flex items-center space-x-6 mt-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={tokenForm.allowedActions.upload}
-                      onCheckedChange={(checked) => setTokenForm({
-                        ...tokenForm,
-                        allowedActions: { ...tokenForm.allowedActions, upload: checked }
-                      })}
-                    />
-                    <Label>Document Upload</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={tokenForm.allowedActions.download}
-                      onCheckedChange={(checked) => setTokenForm({
-                        ...tokenForm,
-                        allowedActions: { ...tokenForm.allowedActions, download: checked }
-                      })}
-                    />
-                    <Label>Document Download</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={tokenForm.allowedActions.message}
-                      onCheckedChange={(checked) => setTokenForm({
-                        ...tokenForm,
-                        allowedActions: { ...tokenForm.allowedActions, message: checked }
-                      })}
-                    />
-                    <Label>Messaging</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="custom-message">Custom Welcome Message (Optional)</Label>
-                <Textarea
-                  id="custom-message"
-                  value={tokenForm.customMessage}
-                  onChange={(e) => setTokenForm({ ...tokenForm, customMessage: e.target.value })}
-                  placeholder="Welcome to our secure document portal. Please upload the requested due diligence materials..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Portal Branding (Optional)</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="brand-company">Display Company Name</Label>
-                    <Input
-                      id="brand-company"
-                      value={tokenForm.portalBranding.companyName}
-                      onChange={(e) => setTokenForm({
-                        ...tokenForm,
-                        portalBranding: { ...tokenForm.portalBranding, companyName: e.target.value }
-                      })}
-                      placeholder="Your Company Name"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="brand-color">Primary Color</Label>
-                    <Input
-                      id="brand-color"
-                      type="color"
-                      value={tokenForm.portalBranding.primaryColor}
-                      onChange={(e) => setTokenForm({
-                        ...tokenForm,
-                        portalBranding: { ...tokenForm.portalBranding, primaryColor: e.target.value }
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={createTokenMutation.isPending || !selectedCompany || !selectedContact}
-                >
-                  {createTokenMutation.isPending ? 'Creating...' : 'Create Portal'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Portal Tokens List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Link2 className="w-5 h-5" />
-            Active Portals
-          </CardTitle>
-          <CardDescription>
-            Manage your external document submission portals.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {portalTokens.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <Link2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No portals created yet.</p>
-              <p className="text-sm">Create your first portal to get started.</p>
+      {/* Analytics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Visitors</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsSummary.totalVisitors}</div>
+            <p className="text-xs text-muted-foreground">Unique portal visitors</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Emails Sent</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsSummary.totalEmailsSent}</div>
+            <p className="text-xs text-muted-foreground">Total campaign emails</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Email Open Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsSummary.totalEmailsSent > 0 
+                ? Math.round((analyticsSummary.totalEmailsOpened / analyticsSummary.totalEmailsSent) * 100)
+                : 0}%
             </div>
-          ) : (
-            <div className="space-y-4">
-              {portalTokens.map((token) => (
-                <div key={token.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white">
-                          {token.companyName || 'Unknown Company'}
-                        </h4>
-                        {getStatusBadge(token)}
-                      </div>
-                      
-                      <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                        <p><strong>Contact:</strong> {token.contactName || 'Unknown Contact'}</p>
-                        <p><strong>Purpose:</strong> {token.tokenPurpose}</p>
-                        <p><strong>Expires:</strong> {new Date(token.expiresAt).toLocaleDateString()}</p>
-                        <p><strong>Access Count:</strong> {token.accessCount}</p>
-                        {token.lastAccessed && (
-                          <p><strong>Last Accessed:</strong> {new Date(token.lastAccessed).toLocaleString()}</p>
-                        )}
-                      </div>
+            <p className="text-xs text-muted-foreground">Email engagement rate</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Portal Links</CardTitle>
+            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsSummary.totalLinksGenerated}</div>
+            <p className="text-xs text-muted-foreground">Links generated</p>
+          </CardContent>
+        </Card>
+      </div>
 
-                      <div className="flex items-center gap-2 mt-3">
-                        {token.allowedActions.upload && (
-                          <Badge variant="outline" className="text-xs">
-                            <FileText className="w-3 h-3 mr-1" />
-                            Upload
-                          </Badge>
+      <Tabs defaultValue="campaigns" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="templates">Email Templates</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+
+        {/* Campaigns Tab */}
+        <TabsContent value="campaigns" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Portal Link Campaigns</h2>
+            <Dialog open={isCreateCampaignOpen} onOpenChange={setIsCreateCampaignOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-create-campaign">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Campaign
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Campaign</DialogTitle>
+                  <DialogDescription>
+                    Create a new portal link campaign to organize your outreach efforts.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...campaignForm}>
+                  <form onSubmit={campaignForm.handleSubmit((data) => createCampaignMutation.mutate(data))} className="space-y-4">
+                    <FormField
+                      control={campaignForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Campaign Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Q1 2024 Outreach Campaign" {...field} data-testid="input-campaign-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={campaignForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Campaign description and objectives..." {...field} data-testid="input-campaign-description" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={campaignForm.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-campaign-status">
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="paused">Paused</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                        {token.allowedActions.download && (
-                          <Badge variant="outline" className="text-xs">
-                            <FileText className="w-3 h-3 mr-1" />
-                            Download
-                          </Badge>
+                      />
+                      <FormField
+                        control={campaignForm.control}
+                        name="targetAudience"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Target Audience</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Healthcare companies" {...field} data-testid="input-target-audience" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                        {token.allowedActions.message && (
-                          <Badge variant="outline" className="text-xs">
-                            <Activity className="w-3 h-3 mr-1" />
-                            Message
-                          </Badge>
-                        )}
-                      </div>
+                      />
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => copyPortalUrl(token.accessToken)}
-                      >
-                        <Copy className="w-4 h-4" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={campaignForm.control}
+                        name="startDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} data-testid="input-start-date" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={campaignForm.control}
+                        name="endDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} data-testid="input-end-date" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setIsCreateCampaignOpen(false)}>
+                        Cancel
                       </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(`/portal/${token.accessToken}`, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4" />
+                      <Button type="submit" disabled={createCampaignMutation.isPending} data-testid="button-save-campaign">
+                        {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
                       </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
 
-                      {token.isActive && (
+          {campaignsLoading ? (
+            <div className="text-center py-8">Loading campaigns...</div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {campaigns.map((campaign) => (
+                <Card key={campaign.id} className="relative" data-testid={`card-campaign-${campaign.id}`}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                        <CardDescription>{campaign.description}</CardDescription>
+                      </div>
+                      <Badge variant={getStatusBadgeVariant(campaign.status)}>
+                        {campaign.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {campaign.targetAudience && (
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Target:</strong> {campaign.targetAudience}
+                      </p>
+                    )}
+                    {campaign.startDate && (
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Start:</strong> {format(new Date(campaign.startDate), "MMM dd, yyyy")}
+                      </p>
+                    )}
+                    <div className="flex justify-between items-center pt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Created {format(new Date(campaign.createdAt), "MMM dd, yyyy")}
+                      </p>
+                      <div className="flex space-x-1">
                         <Button
                           size="sm"
-                          variant="destructive"
-                          onClick={() => deactivateTokenMutation.mutate(token.id)}
-                          disabled={deactivateTokenMutation.isPending}
+                          variant="outline"
+                          onClick={() => setSelectedCampaign(campaign)}
+                          data-testid={`button-view-campaign-${campaign.id}`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteCampaignMutation.mutate(campaign.id)}
+                          data-testid={`button-delete-campaign-${campaign.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        {/* Email Templates Tab */}
+        <TabsContent value="templates" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Email Templates</h2>
+            <Dialog open={isCreateTemplateOpen} onOpenChange={setIsCreateTemplateOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-create-template">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Create Email Template</DialogTitle>
+                  <DialogDescription>
+                    Create a reusable email template for your portal campaigns.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...templateForm}>
+                  <form onSubmit={templateForm.handleSubmit((data) => createTemplateMutation.mutate(data))} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={templateForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Template Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Initial Outreach Template" {...field} data-testid="input-template-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={templateForm.control}
+                        name="templateCategory"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-template-category">
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="initial_outreach">Initial Outreach</SelectItem>
+                                <SelectItem value="follow_up">Follow Up</SelectItem>
+                                <SelectItem value="reminder">Reminder</SelectItem>
+                                <SelectItem value="thank_you">Thank You</SelectItem>
+                                <SelectItem value="custom">Custom</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={templateForm.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Subject</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Portal Access for {company_name}" {...field} data-testid="input-template-subject" />
+                          </FormControl>
+                          <FormDescription>
+                            Use variables: {"{contact_name}"}, {"{company_name}"}, {"{portal_link}"}, {"{campaign_name}"}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={templateForm.control}
+                      name="bodyTemplate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Body</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Dear {contact_name},&#10;&#10;We are pleased to provide you with secure access to our document portal...&#10;&#10;Access your portal here: {portal_link}&#10;&#10;Best regards"
+                              rows={8}
+                              {...field} 
+                              data-testid="input-template-body"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Use the same variables as subject line for personalization
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={templateForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Template description and usage notes..." {...field} data-testid="input-template-description" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setIsCreateTemplateOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={createTemplateMutation.isPending} data-testid="button-save-template">
+                        {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {templatesLoading ? (
+            <div className="text-center py-8">Loading templates...</div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {templates.map((template) => (
+                <Card key={template.id} className="relative" data-testid={`card-template-${template.id}`}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <CardDescription>{template.description}</CardDescription>
+                      </div>
+                      <Badge variant={getCategoryBadgeVariant(template.templateCategory)}>
+                        {template.templateCategory.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm font-medium">Subject: {template.subject}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Used {template.usageCount} times
+                      {template.lastUsed && ` • Last used ${format(new Date(template.lastUsed), "MMM dd, yyyy")}`}
+                    </p>
+                    <div className="flex justify-between items-center pt-2">
+                      <Badge variant={template.isActive ? "default" : "secondary"}>
+                        {template.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                      <div className="flex space-x-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedTemplate(template)}
+                          data-testid={`button-view-template-${template.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteTemplateMutation.mutate(template.id)}
+                          data-testid={`button-delete-template-${template.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Communications Tab */}
+        <TabsContent value="communications" className="space-y-4">
+          <h2 className="text-xl font-semibold">Communications Log</h2>
+          {communicationsLoading ? (
+            <div className="text-center py-8">Loading communications...</div>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="border-b">
+                      <tr className="text-left">
+                        <th className="p-4 font-medium">Date</th>
+                        <th className="p-4 font-medium">Type</th>
+                        <th className="p-4 font-medium">Subject</th>
+                        <th className="p-4 font-medium">Status</th>
+                        <th className="p-4 font-medium">Contact</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {communications.map((communication) => (
+                        <tr key={communication.id} className="border-b hover:bg-muted/50" data-testid={`row-communication-${communication.id}`}>
+                          <td className="p-4">
+                            {format(new Date(communication.createdAt), "MMM dd, yyyy HH:mm")}
+                          </td>
+                          <td className="p-4">
+                            <Badge variant="outline">{communication.communicationType}</Badge>
+                          </td>
+                          <td className="p-4">{communication.subject || "-"}</td>
+                          <td className="p-4">
+                            <Badge variant={communication.emailStatus === "sent" ? "default" : "secondary"}>
+                              {communication.emailStatus || "pending"}
+                            </Badge>
+                          </td>
+                          <td className="p-4">Contact #{communication.targetContactId}</td>
+                        </tr>
+                      ))}
+                      {communications.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                            No communications logged yet
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-4">
+          <h2 className="text-xl font-semibold">Portal Analytics</h2>
+          {analyticsLoading ? (
+            <div className="text-center py-8">Loading analytics...</div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {analytics.map((analytic) => (
+                <Card key={analytic.id} data-testid={`card-analytics-${analytic.id}`}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {format(new Date(analytic.analyticsDate), "MMM dd, yyyy")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Visitors</p>
+                        <p className="font-semibold">{analytic.uniqueVisitors}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Page Views</p>
+                        <p className="font-semibold">{analytic.totalPageViews}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Docs Viewed</p>
+                        <p className="font-semibold">{analytic.documentsViewed}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Downloads</p>
+                        <p className="font-semibold">{analytic.documentsDownloaded}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Emails Sent</p>
+                        <p className="font-semibold">{analytic.emailsSent}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Conversion</p>
+                        <p className="font-semibold">{analytic.conversionRate.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {analytics.length === 0 && (
+                <Card className="col-span-full">
+                  <CardContent className="p-8 text-center text-muted-foreground">
+                    No analytics data available yet
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
