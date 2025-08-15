@@ -42,7 +42,7 @@ import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { ActivityManagement } from "@/components/activity-management";
 import { DocumentManagement } from "@/components/document-management";
-import { DocumentRequirements } from "@/components/document-requirements";
+
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -440,7 +440,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -452,10 +452,6 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Documents
-            </TabsTrigger>
-            <TabsTrigger value="requirements" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Requirements
             </TabsTrigger>
             <TabsTrigger value="activities" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
@@ -865,13 +861,6 @@ export default function TargetCompanyDetail() {
 
           <TabsContent value="documents" className="space-y-6">
             <DocumentManagement 
-              targetCompanyId={parseInt(id!)}
-              companyName={company.companyName}
-            />
-          </TabsContent>
-
-          <TabsContent value="requirements" className="space-y-6">
-            <DocumentRequirements 
               targetCompanyId={parseInt(id!)}
               companyName={company.companyName}
             />
