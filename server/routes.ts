@@ -738,25 +738,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get contacts for target company
   app.get("/api/target-companies/:id/contacts", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      console.log(`[CONTACTS DEBUG] Route hit for company ${req.params.id}`);
       const userCompanyId = req.session.userCompanyId;
       const targetCompanyId = parseInt(req.params.id);
       
-      console.log(`[CONTACTS DEBUG] Getting contacts for company ${targetCompanyId}, userCompanyId: ${userCompanyId}`);
-      console.log(`[CONTACTS DEBUG] Session data:`, { userId: req.session.userId, userCompanyId: req.session.userCompanyId });
-      
       if (!userCompanyId) {
-        console.log("[CONTACTS DEBUG] No userCompanyId in session");
         return res.status(400).json({ message: "User company not found" });
       }
 
       if (isNaN(targetCompanyId)) {
-        console.log("[CONTACTS DEBUG] Invalid target company ID");
         return res.status(400).json({ message: "Invalid target company ID" });
       }
 
       const contacts = await storage.getContactsForTargetCompany(targetCompanyId, userCompanyId);
-      console.log(`[CONTACTS DEBUG] Found ${contacts.length} contacts:`, contacts);
       res.json(contacts);
     } catch (error) {
       console.error("Get contacts error:", error);
@@ -2531,7 +2524,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create portal access token (authenticated endpoint)
+  // Portal token creation (NEW route for Portal Management page)
+  app.post("/api/portal-tokens", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      console.log('[PORTAL TOKEN] Creating tokens with data:', req.body);
+      
+      const portalLinkSchema = z.object({
+        targetCompanyId: z.number(),
+        contactIds: z.array(z.number()).min(1, "At least one contact is required"),
+        customMessage: z.string().optional(),
+      });
+      
+      const tokenData = portalLinkSchema.parse(req.body);
+      
+      // Verify user has access to the target company
+      const company = await storage.getTargetCompany(tokenData.targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Target company not found or access denied" });
+      }
+      
+      const createdTokens = [];
+      
+      // Create a portal token for each contact
+      for (const contactId of tokenData.contactIds) {
+        // Verify contact exists and belongs to the company
+        const contact = await storage.getTargetContact(contactId, userCompanyId);
+        if (!contact || contact.targetCompanyId !== tokenData.targetCompanyId) {
+          console.log(`[PORTAL TOKEN] Contact ${contactId} not found or doesn't belong to company ${tokenData.targetCompanyId}`);
+          continue;
+        }
+        
+        // Generate unique access token
+        const accessToken = randomUUID() + '-' + randomUUID();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30); // 30 days default
+        
+        const portalToken = await storage.createPortalAccessToken({
+          targetCompanyId: tokenData.targetCompanyId,
+          targetContactId: contactId,
+          userCompanyId,
+          accessToken,
+          tokenPurpose: "document_submission",
+          expiresAt,
+          createdBy: userId,
+          allowedActions: JSON.stringify({ upload: true, download: false, message: true }),
+          customMessage: tokenData.customMessage || null,
+          portalBranding: null,
+        });
+        
+        const portalUrl = `${req.protocol}://${req.get('host')}/portal/${portalToken.accessToken}`;
+        
+        // Send portal access email
+        try {
+          console.log(`[PORTAL TOKEN] Sending email to ${contact.email} for portal access`);
+          
+          const emailResult = await emailService.sendPortalAccessEmail(
+            contact.email,
+            contact.firstName || 'Contact',
+            company.companyName,
+            portalUrl,
+            tokenData.customMessage || 'Please access the secure document portal to submit required documents.'
+          );
+          
+          console.log(`[PORTAL TOKEN] Email sent result:`, emailResult);
+          
+        } catch (emailError) {
+          console.error(`[PORTAL TOKEN] Failed to send email to ${contact.email}:`, emailError);
+          // Continue anyway - token is created
+        }
+        
+        createdTokens.push({
+          id: portalToken.id,
+          accessToken: portalToken.accessToken,
+          contactId: contactId,
+          contactName: `${contact.firstName} ${contact.lastName}`,
+          contactEmail: contact.email,
+          portalUrl: portalUrl,
+        });
+      }
+      
+      if (createdTokens.length === 0) {
+        return res.status(400).json({ message: "No valid contacts found for portal token creation" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Portal ${createdTokens.length === 1 ? 'link' : 'links'} created and sent successfully`,
+        tokens: createdTokens 
+      });
+      
+    } catch (error) {
+      console.error("Create portal tokens error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get portal tokens for management page
+  app.get("/api/portal-tokens", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const tokens = await storage.getPortalTokensForCompany(userCompanyId);
+      res.json(tokens);
+    } catch (error) {
+      console.error("Get portal tokens error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // LEGACY portal token creation route
   app.post("/api/portal/create-token", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId;

@@ -2228,6 +2228,33 @@ export class DatabaseStorage implements IStorage {
     return !!updatedToken;
   }
 
+  async getPortalTokensForCompany(userCompanyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: portalAccessTokens.id,
+        accessToken: portalAccessTokens.accessToken,
+        targetCompanyId: portalAccessTokens.targetCompanyId,
+        contactId: portalAccessTokens.targetContactId,
+        isActive: portalAccessTokens.isActive,
+        expiresAt: portalAccessTokens.expiresAt,
+        createdAt: portalAccessTokens.createdAt,
+        lastAccessed: portalAccessTokens.lastAccessed,
+        companyName: targetCompanies.companyName,
+        contactName: sql<string>`${targetContacts.firstName} || ' ' || ${targetContacts.lastName}`,
+        contactEmail: targetContacts.email,
+        documentSubmissions: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM ${externalDocumentSubmissions} 
+          WHERE ${externalDocumentSubmissions.portalTokenId} = ${portalAccessTokens.id}
+        )`,
+      })
+      .from(portalAccessTokens)
+      .innerJoin(targetCompanies, eq(portalAccessTokens.targetCompanyId, targetCompanies.id))
+      .innerJoin(targetContacts, eq(portalAccessTokens.targetContactId, targetContacts.id))
+      .where(eq(portalAccessTokens.userCompanyId, userCompanyId))
+      .orderBy(desc(portalAccessTokens.createdAt));
+  }
+
   async createExternalDocumentSubmission(submission: InsertExternalDocumentSubmission): Promise<ExternalDocumentSubmission> {
     const [createdSubmission] = await db
       .insert(externalDocumentSubmissions)
