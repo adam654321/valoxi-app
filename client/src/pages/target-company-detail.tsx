@@ -559,18 +559,91 @@ export default function TargetCompanyDetail() {
                 <CardHeader>
                   <CardTitle className="text-lg">Business Information</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {company.description ? (
+                <CardContent className="space-y-6">
+                  {company.description && (
                     <div>
                       <span className="text-sm font-medium text-muted-foreground">Description</span>
                       <p className="mt-2 text-sm leading-relaxed" data-testid="info-description">
                         {company.description}
                       </p>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No description available</p>
+                  )}
+
+                  {/* Website Analysis Section */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">Website Analysis</span>
+                      {profileFetching && !profileLoading && (
+                        <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    {profileLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    ) : company.websiteAnalysis ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>Analysis completed:</span>
+                          <span data-testid="analysis-processed-date">
+                            {company.websiteAnalysisProcessedAt 
+                              ? new Date(company.websiteAnalysisProcessedAt).toLocaleString()
+                              : 'Unknown'
+                            }
+                          </span>
+                        </div>
+                        <div 
+                          className="prose prose-sm max-w-none dark:prose-invert text-sm"
+                          data-testid="website-analysis-content"
+                        >
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {company.websiteAnalysis}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            <span className="font-medium">Website Analysis Pending</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+                              refetchProfile();
+                            }}
+                            disabled={profileFetching}
+                            className="h-6 px-2 text-xs"
+                            data-testid="button-refresh-analysis-business-info"
+                          >
+                            <RefreshCw className={`w-3 h-3 mr-1 ${profileFetching ? 'animate-spin' : ''}`} />
+                            {profileFetching ? 'Checking...' : 'Refresh'}
+                          </Button>
+                        </div>
+                        <p className="text-xs mb-1">
+                          Website analysis is currently being processed. This usually takes about 30 seconds.
+                        </p>
+                        {profileFetching && (
+                          <div className="flex items-center gap-2 mt-2 text-xs text-blue-600">
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            <span>Checking for updates...</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Show a placeholder if neither description nor analysis is available */}
+                  {!company.description && !company.websiteAnalysis && !profileLoading && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <FileText className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No business information available</p>
                     </div>
                   )}
                 </CardContent>
@@ -904,7 +977,7 @@ export default function TargetCompanyDetail() {
               targetCompanyId={parseInt(id!)}
               targetCompanyName={company.companyName}
               currentStage={company.stage || 'New Target'}
-              stageUpdatedAt={company.stageUpdatedAt || (company.createdAt ? new Date(company.createdAt).toISOString() : new Date().toISOString())}
+              stageUpdatedAt={company.stageUpdatedAt || (company.createdAt ? (typeof company.createdAt === 'string' ? company.createdAt : company.createdAt.toISOString()) : new Date().toISOString())}
               stageUpdatedBy={company.stageUpdatedBy}
               daysInStage={company.stageUpdatedAt 
                 ? Math.floor((new Date().getTime() - new Date(company.stageUpdatedAt).getTime()) / (1000 * 60 * 60 * 24))
