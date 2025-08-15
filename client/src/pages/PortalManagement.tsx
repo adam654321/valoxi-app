@@ -77,7 +77,7 @@ export default function PortalManagement() {
 
   // Fetch contacts for selected company
   const { data: contacts = [], isLoading: contactsLoading } = useQuery<TargetContact[]>({
-    queryKey: ['/api/target-contacts/by-company', selectedCompanyId],
+    queryKey: ['/api/target-companies', selectedCompanyId, 'contacts'],
     enabled: !!selectedCompanyId,
   });
 

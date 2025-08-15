@@ -738,18 +738,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get contacts for target company
   app.get("/api/target-companies/:id/contacts", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      console.log(`[CONTACTS DEBUG] Route hit for company ${req.params.id}`);
       const userCompanyId = req.session.userCompanyId;
       const targetCompanyId = parseInt(req.params.id);
       
+      console.log(`[CONTACTS DEBUG] Getting contacts for company ${targetCompanyId}, userCompanyId: ${userCompanyId}`);
+      console.log(`[CONTACTS DEBUG] Session data:`, { userId: req.session.userId, userCompanyId: req.session.userCompanyId });
+      
       if (!userCompanyId) {
+        console.log("[CONTACTS DEBUG] No userCompanyId in session");
         return res.status(400).json({ message: "User company not found" });
       }
 
       if (isNaN(targetCompanyId)) {
+        console.log("[CONTACTS DEBUG] Invalid target company ID");
         return res.status(400).json({ message: "Invalid target company ID" });
       }
 
       const contacts = await storage.getContactsForTargetCompany(targetCompanyId, userCompanyId);
+      console.log(`[CONTACTS DEBUG] Found ${contacts.length} contacts:`, contacts);
       res.json(contacts);
     } catch (error) {
       console.error("Get contacts error:", error);
