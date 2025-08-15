@@ -21,8 +21,7 @@ import PortalPage from "@/pages/PortalPage";
 import PortalManagement from "@/pages/PortalManagement";
 import EmailTest from "@/pages/EmailTest";
 import WebhookTest from "@/pages/webhook-test";
-import TemplateManagement from "@/pages/TemplateManagement";
-import TemplateRequirements from "@/pages/TemplateRequirements";
+
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -66,8 +65,6 @@ function Router() {
             <Route path="/reports" component={Reports} />
             <Route path="/notifications" component={NotificationsPage} />
             <Route path="/portal-management" component={PortalManagement} />
-            <Route path="/templates" component={TemplateManagement} />
-            <Route path="/templates/:templateId/requirements" component={TemplateRequirements} />
             <Route path="/email-test" component={EmailTest} />
             <Route path="/webhook-test" component={WebhookTest} />
             <Route component={NotFound} />
