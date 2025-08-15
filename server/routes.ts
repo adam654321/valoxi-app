@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema, insertDocumentRequirementTemplateSchema, insertDocumentRequirementItemSchema, insertCompanyDocumentRequirementSchema, insertDocumentRequirementWaiverSchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema, insertCompanyDocumentRequirementSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { emailService } from "./email";
 import multer from "multer";
@@ -3365,43 +3365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // STAGED DOCUMENT REQUIREMENTS SYSTEM
   // ========================================
 
-  // Get document requirement templates
-  app.get("/api/document-requirements/templates", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      if (!userCompanyId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-
-      const industryCategory = req.query.industry as string;
-      const templates = await storage.getDocumentRequirementTemplates(userCompanyId, industryCategory || null);
-      res.json(templates);
-    } catch (error) {
-      console.error("Get document requirement templates error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get company document requirements
-  app.get("/api/companies/:id/requirements", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const targetCompanyId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(targetCompanyId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
-      }
-
-      const requirements = await storage.getCompanyDocumentRequirements(targetCompanyId, userCompanyId);
-      res.json(requirements);
-    } catch (error) {
-      console.error("Get company document requirements error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Initialize company document requirements from template
-  app.post("/api/companies/:id/requirements/initialize", isAuthenticated, async (req: Request, res: Response) => {
+  // Initialize standardized document requirements for a company
+  app.post("/api/companies/:id/requirements/initialize-standard", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const targetCompanyId = parseInt(req.params.id);
       const userId = req.session.userId;
@@ -3411,15 +3376,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
       }
 
-      const { templateId } = req.body;
-      await storage.initializeCompanyRequirements(targetCompanyId, templateId, userId);
-
-      res.json({ success: true, message: "Company requirements initialized successfully" });
+      const result = await storage.initializeStandardRequirements(targetCompanyId, userId);
+      res.json(result);
     } catch (error) {
-      console.error("Initialize company requirements error:", error);
+      console.error("Initialize standard requirements error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Get company document requirements (standardized)
+  app.get("/api/companies/:id/requirements", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId;
+      const stage = req.query.stage ? parseInt(req.query.stage as string) : null;
+
+      if (isNaN(targetCompanyId) || !userCompanyId) {
+        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
+      }
+
+      const requirements = await storage.getCompanyDocumentRequirements(targetCompanyId, userCompanyId, stage);
+      res.json(requirements);
+    } catch (error) {
+      console.error("Get company document requirements error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+
 
   // Get stage progression status
   app.get("/api/companies/:id/stage-progression", isAuthenticated, async (req: Request, res: Response) => {
@@ -3439,71 +3423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Request document requirement waiver
-  app.post("/api/companies/:id/requirements/waiver", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const targetCompanyId = parseInt(req.params.id);
-      const userId = req.session.userId;
 
-      if (isNaN(targetCompanyId) || !userId) {
-        return res.status(400).json({ message: "Invalid company ID or user not authenticated" });
-      }
-
-      const waiverData = insertDocumentRequirementWaiverSchema.parse({
-        ...req.body,
-        targetCompanyId,
-        requestedBy: userId,
-      });
-
-      const waiver = await storage.requestRequirementWaiver(waiverData);
-      res.json(waiver);
-    } catch (error) {
-      console.error("Request requirement waiver error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get pending waiver requests
-  app.get("/api/document-requirements/waivers", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      if (!userCompanyId) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
-
-      const waivers = await storage.getPendingWaivers(userCompanyId);
-      res.json(waivers);
-    } catch (error) {
-      console.error("Get pending waivers error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Approve/reject waiver request
-  app.put("/api/document-requirements/waivers/:id", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const waiverId = parseInt(req.params.id);
-      const userId = req.session.userId;
-
-      if (isNaN(waiverId) || !userId) {
-        return res.status(400).json({ message: "Invalid waiver ID or user not authenticated" });
-      }
-
-      const { approvalStatus, approvalNotes, conditionalApproval, approvalConditions } = req.body;
-
-      const waiver = await storage.processWaiverRequest(waiverId, {
-        approvalStatus,
-        approvalNotes,
-        conditionalApproval,
-        approvalConditions,
-      }, userId);
-
-      res.json(waiver);
-    } catch (error) {
-      console.error("Process waiver request error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Update specific company requirement
   app.put("/api/companies/:id/requirements/:reqId", isAuthenticated, async (req: Request, res: Response) => {
@@ -3526,222 +3446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Template Management Routes
-  
-  // Get all templates for management (includes item counts)
-  app.get("/api/document-requirements/templates/manage", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      if (!userCompanyId) {
-        return res.status(401).json({ message: "User company not found" });
-      }
 
-      const templates = await storage.getTemplatesWithItemCounts(userCompanyId);
-      res.json(templates);
-    } catch (error) {
-      console.error("Get templates for management error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get single template details
-  app.get("/api/document-requirements/templates/:id", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid template ID or user company not found" });
-      }
-
-      const template = await storage.getDocumentTemplateById(templateId, userCompanyId);
-      if (!template) {
-        return res.status(404).json({ message: "Template not found" });
-      }
-
-      res.json(template);
-    } catch (error) {
-      console.error("Get template by ID error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Create new template
-  app.post("/api/document-requirements/templates", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      const userId = req.session.userId;
-
-      if (!userCompanyId || !userId) {
-        return res.status(401).json({ message: "User company or user ID not found" });
-      }
-
-      const templateData = {
-        userCompanyId,
-        createdBy: userId,
-        templateName: req.body.templateName,
-        templateDescription: req.body.templateDescription,
-        industryCategory: req.body.industryCategory,
-        dealSizeCategory: req.body.dealSizeCategory,
-        isDefault: req.body.isDefault || false,
-        isActive: req.body.isActive !== false,
-        templateVersion: "1.0",
-        usageCount: 0,
-      };
-
-      const template = await storage.createDocumentTemplate(templateData);
-      res.status(201).json(template);
-    } catch (error) {
-      console.error("Create template error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Update template
-  app.patch("/api/document-requirements/templates/:id", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid template ID or user company not found" });
-      }
-
-      const template = await storage.updateDocumentTemplate(templateId, req.body, userCompanyId);
-      res.json(template);
-    } catch (error) {
-      console.error("Update template error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Delete template
-  app.delete("/api/document-requirements/templates/:id", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid template ID or user company not found" });
-      }
-
-      await storage.deleteDocumentTemplate(templateId, userCompanyId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete template error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Duplicate template
-  app.post("/api/document-requirements/templates/:id/duplicate", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-      const userId = req.session.userId;
-
-      if (isNaN(templateId) || !userCompanyId || !userId) {
-        return res.status(400).json({ message: "Invalid parameters" });
-      }
-
-      const duplicatedTemplate = await storage.duplicateDocumentTemplate(templateId, userCompanyId, userId);
-      res.status(201).json(duplicatedTemplate);
-    } catch (error) {
-      console.error("Duplicate template error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get template requirement items
-  app.get("/api/document-requirements/templates/:id/items", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid template ID or user company not found" });
-      }
-
-      const items = await storage.getTemplateRequirementItems(templateId, userCompanyId);
-      res.json(items);
-    } catch (error) {
-      console.error("Get template items error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Create new requirement item
-  app.post("/api/document-requirements/templates/:id/items", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid template ID or user company not found" });
-      }
-
-      // Get the next display order
-      const existingItems = await storage.getTemplateRequirementItems(templateId, userCompanyId);
-      const maxOrder = existingItems.length > 0 ? Math.max(...existingItems.map(item => item.displayOrder)) : 0;
-
-      const itemData = {
-        templateId,
-        requirementName: req.body.requirementName,
-        requirementDescription: req.body.requirementDescription,
-        documentCategory: req.body.documentCategory,
-        collectionStage: req.body.collectionStage,
-        priorityLevel: req.body.priorityLevel,
-        isMandatory: req.body.isMandatory,
-        displayOrder: maxOrder + 1,
-        submissionInstructions: req.body.submissionInstructions,
-        helpText: req.body.helpText,
-      };
-
-      const item = await storage.createDocumentRequirementItem(itemData);
-      res.status(201).json(item);
-    } catch (error) {
-      console.error("Create requirement item error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Update requirement item
-  app.patch("/api/document-requirements/templates/:id/items/:itemId", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const itemId = parseInt(req.params.itemId);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || isNaN(itemId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid parameters" });
-      }
-
-      const item = await storage.updateDocumentRequirementItem(itemId, req.body, userCompanyId);
-      res.json(item);
-    } catch (error) {
-      console.error("Update requirement item error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Delete requirement item
-  app.delete("/api/document-requirements/templates/:id/items/:itemId", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const templateId = parseInt(req.params.id);
-      const itemId = parseInt(req.params.itemId);
-      const userCompanyId = req.session.userCompanyId;
-
-      if (isNaN(templateId) || isNaN(itemId) || !userCompanyId) {
-        return res.status(400).json({ message: "Invalid parameters" });
-      }
-
-      await storage.deleteDocumentRequirementItem(itemId, userCompanyId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Delete requirement item error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

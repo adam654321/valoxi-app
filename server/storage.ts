@@ -26,11 +26,8 @@ import {
   portalCommunicationsLog,
   portalAnalytics,
   portalLinkShares,
-  documentRequirementTemplates,
-  documentRequirementItems,
   companyDocumentRequirements,
   documentStageProgression,
-  documentRequirementWaivers,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -84,16 +81,10 @@ import {
   type InsertPortalAnalytics,
   type PortalLinkShare,
   type InsertPortalLinkShare,
-  type DocumentRequirementTemplate,
-  type InsertDocumentRequirementTemplate,
-  type DocumentRequirementItem,
-  type InsertDocumentRequirementItem,
   type CompanyDocumentRequirement,
   type InsertCompanyDocumentRequirement,
   type DocumentStageProgression,
   type InsertDocumentStageProgression,
-  type DocumentRequirementWaiver,
-  type InsertDocumentRequirementWaiver,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
@@ -319,30 +310,12 @@ export interface IStorage {
   // Helper methods for email functionality
   getDealTeamEmails(targetCompanyId: number): Promise<string[]>;
   
-  // Document Requirements System methods
-  getDocumentRequirementTemplates(userCompanyId: number, industryCategory?: string | null): Promise<(DocumentRequirementTemplate & { itemCount: number })[]>;
-  getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number): Promise<CompanyDocumentRequirement[]>;
-  initializeCompanyRequirements(targetCompanyId: number, templateId: number, userId: number): Promise<void>;
+  // Standardized Document Requirements System methods
+  initializeStandardRequirements(targetCompanyId: number, userId: number): Promise<{ stage1Requirements: number; stage2Requirements: number; totalRequirements: number; message: string }>;
+  getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number, stage?: number | null): Promise<CompanyDocumentRequirement[]>;
   getDocumentStageProgression(targetCompanyId: number, userCompanyId: number): Promise<DocumentStageProgression | undefined>;
-  requestRequirementWaiver(waiverData: InsertDocumentRequirementWaiver): Promise<DocumentRequirementWaiver>;
-  getPendingWaivers(userCompanyId: number): Promise<(DocumentRequirementWaiver & { companyName: string; requirementName: string })[]>;
-  processWaiverRequest(waiverId: number, updates: { approvalStatus: string; approvalNotes?: string; conditionalApproval?: boolean; approvalConditions?: string }, userId: number): Promise<DocumentRequirementWaiver>;
   updateCompanyRequirement(requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement>;
   getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]>;
-  
-  // Template Management methods
-  getTemplatesWithItemCounts(userCompanyId: number): Promise<(DocumentRequirementTemplate & { itemCount: number })[]>;
-  getDocumentTemplateById(templateId: number, userCompanyId: number): Promise<DocumentRequirementTemplate | undefined>;
-  createDocumentTemplate(template: Omit<InsertDocumentRequirementTemplate, 'id'>): Promise<DocumentRequirementTemplate>;
-  updateDocumentTemplate(templateId: number, updates: Partial<InsertDocumentRequirementTemplate>, userCompanyId: number): Promise<DocumentRequirementTemplate>;
-  deleteDocumentTemplate(templateId: number, userCompanyId: number): Promise<boolean>;
-  duplicateDocumentTemplate(templateId: number, userCompanyId: number, userId: number): Promise<DocumentRequirementTemplate>;
-  
-  // Template Item Management methods
-  getTemplateRequirementItems(templateId: number, userCompanyId: number): Promise<DocumentRequirementItem[]>;
-  createDocumentRequirementItem(item: Omit<InsertDocumentRequirementItem, 'id'>): Promise<DocumentRequirementItem>;
-  updateDocumentRequirementItem(itemId: number, updates: Partial<InsertDocumentRequirementItem>, userCompanyId: number): Promise<DocumentRequirementItem>;
-  deleteDocumentRequirementItem(itemId: number, userCompanyId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2610,85 +2583,107 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ========================================
-  // Document Requirements System
+  // Standardized Document Requirements System
   // ========================================
 
-  async getDocumentRequirementTemplates(userCompanyId: number, industryCategory?: string | null): Promise<(DocumentRequirementTemplate & { itemCount: number })[]> {
-    const whereConditions = [
-      eq(documentRequirementTemplates.isActive, true),
-      eq(documentRequirementTemplates.userCompanyId, userCompanyId)
-    ];
-
-    if (industryCategory) {
-      whereConditions.push(eq(documentRequirementTemplates.industryCategory, industryCategory));
+  async initializeStandardRequirements(targetCompanyId: number, userId: number): Promise<{ stage1Requirements: number; stage2Requirements: number; totalRequirements: number; message: string }> {
+    // Verify permissions
+    const user = await this.getUserWithPermissions(userId);
+    if (!user || (!user.permissions?.canCreateDeals && !user.permissions?.canManageCompany)) {
+      throw new Error('Insufficient permissions to initialize document requirements');
     }
 
-    return await db
-      .select({
-        id: documentRequirementTemplates.id,
-        userCompanyId: documentRequirementTemplates.userCompanyId,
-        createdBy: documentRequirementTemplates.createdBy,
-        templateName: documentRequirementTemplates.templateName,
-        templateDescription: documentRequirementTemplates.templateDescription,
-        industryCategory: documentRequirementTemplates.industryCategory,
-        dealSizeCategory: documentRequirementTemplates.dealSizeCategory,
-        templateVersion: documentRequirementTemplates.templateVersion,
-        isActive: documentRequirementTemplates.isActive,
-        isDefault: documentRequirementTemplates.isDefault,
-        usageCount: documentRequirementTemplates.usageCount,
-        lastUsed: documentRequirementTemplates.lastUsed,
-        createdAt: documentRequirementTemplates.createdAt,
-        updatedAt: documentRequirementTemplates.updatedAt,
-        itemCount: sql<number>`(
-          SELECT COUNT(*)::int
-          FROM ${documentRequirementItems}
-          WHERE ${documentRequirementItems.templateId} = ${documentRequirementTemplates.id}
-        )`
-      })
-      .from(documentRequirementTemplates)
-      .where(and(...whereConditions))
-      .orderBy(asc(documentRequirementTemplates.templateName));
+    // Call the database function to create standard requirements
+    await db.execute(sql`SELECT initialize_standard_requirements(${targetCompanyId})`);
+
+    // Log activity - assuming we have an activity logger
+    try {
+      // Create an activity log entry
+      await this.createActivity({
+        targetCompanyId,
+        userId,
+        activityType: 'system_action',
+        title: 'Document Requirements Initialized',
+        description: 'Initialized 29 standard document requirements (6 Stage 1 + 23 Stage 2)',
+        activityDate: new Date().toISOString(),
+        isCompleted: true,
+      });
+    } catch (error) {
+      // Don't fail the whole operation if activity logging fails
+      console.error('Failed to log requirements initialization activity:', error);
+    }
+
+    return {
+      stage1Requirements: 6,
+      stage2Requirements: 23,
+      totalRequirements: 29,
+      message: 'Standard document requirements initialized successfully'
+    };
   }
 
-  async getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number): Promise<CompanyDocumentRequirement[]> {
+  async getCompanyDocumentRequirements(targetCompanyId: number, userCompanyId: number, stage?: number | null): Promise<CompanyDocumentRequirement[]> {
     // First verify access to the company
     const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
     if (!company) {
       return [];
     }
 
-    return await db
-      .select()
+    let query = db
+      .select({
+        id: companyDocumentRequirements.id,
+        targetCompanyId: companyDocumentRequirements.targetCompanyId,
+        requirementName: companyDocumentRequirements.requirementName,
+        requirementDescription: companyDocumentRequirements.requirementDescription,
+        documentCategory: companyDocumentRequirements.documentCategory,
+        collectionStage: companyDocumentRequirements.collectionStage,
+        priorityLevel: companyDocumentRequirements.priorityLevel,
+        isMandatory: companyDocumentRequirements.isMandatory,
+        requirementStatus: companyDocumentRequirements.requirementStatus,
+        submissionStatus: companyDocumentRequirements.submissionStatus,
+        submittedDocumentId: companyDocumentRequirements.submittedDocumentId,
+        submittedAt: companyDocumentRequirements.submittedAt,
+        submittedByContactId: companyDocumentRequirements.submittedByContactId,
+        reviewedBy: companyDocumentRequirements.reviewedBy,
+        reviewedAt: companyDocumentRequirements.reviewedAt,
+        reviewStatus: companyDocumentRequirements.reviewStatus,
+        reviewNotes: companyDocumentRequirements.reviewNotes,
+        reviewScore: companyDocumentRequirements.reviewScore,
+        isWaived: companyDocumentRequirements.isWaived,
+        waivedBy: companyDocumentRequirements.waivedBy,
+        waivedAt: companyDocumentRequirements.waivedAt,
+        waiverReason: companyDocumentRequirements.waiverReason,
+        waiverJustification: companyDocumentRequirements.waiverJustification,
+        waiverApprovedBy: companyDocumentRequirements.waiverApprovedBy,
+        dueDate: companyDocumentRequirements.dueDate,
+        reminderSentCount: companyDocumentRequirements.reminderSentCount,
+        lastReminderSent: companyDocumentRequirements.lastReminderSent,
+        nextReminderDue: companyDocumentRequirements.nextReminderDue,
+        createdAt: companyDocumentRequirements.createdAt,
+        updatedAt: companyDocumentRequirements.updatedAt,
+        displayStatus: sql<string>`
+          CASE 
+            WHEN ${companyDocumentRequirements.dueDate} < NOW() THEN 'overdue'
+            WHEN ${companyDocumentRequirements.requirementStatus} = 'submitted' THEN 'submitted'
+            WHEN ${companyDocumentRequirements.requirementStatus} = 'approved' THEN 'approved'
+            WHEN ${companyDocumentRequirements.requirementStatus} = 'waived' THEN 'waived'
+            ELSE 'outstanding'
+          END
+        `
+      })
       .from(companyDocumentRequirements)
-      .where(eq(companyDocumentRequirements.targetCompanyId, targetCompanyId))
-      .orderBy(asc(companyDocumentRequirements.id));
-  }
+      .where(eq(companyDocumentRequirements.targetCompanyId, targetCompanyId));
 
-  async initializeCompanyRequirements(targetCompanyId: number, templateId: number, userId: number): Promise<void> {
-    // Get template items
-    const templateItems = await db
-      .select()
-      .from(documentRequirementItems)
-      .where(eq(documentRequirementItems.templateId, templateId))
-      .orderBy(asc(documentRequirementItems.displayOrder));
+    if (stage !== null) {
+      query = query.where(eq(companyDocumentRequirements.collectionStage, stage));
+    }
 
-    // Create company requirements from template
-    const companyRequirements = templateItems.map(item => ({
-      targetCompanyId,
-      templateId,
-      requirementItemId: item.id,
-      requirementStatus: 'outstanding' as const,
-      submissionStatus: 'not_started' as const,
-    }));
+    const results = await query.orderBy(
+      asc(companyDocumentRequirements.collectionStage), 
+      desc(companyDocumentRequirements.priorityLevel), 
+      asc(companyDocumentRequirements.requirementName)
+    );
 
-    await db.insert(companyDocumentRequirements).values(companyRequirements);
-
-    // Initialize stage progression
-    await db.insert(documentStageProgression).values({
-      targetCompanyId,
-      stage1Status: 'active',
-      stage2Status: 'locked',
-    });
+    return results;
   }
 
   async getDocumentStageProgression(targetCompanyId: number, userCompanyId: number): Promise<DocumentStageProgression | undefined> {
@@ -2706,66 +2701,7 @@ export class DatabaseStorage implements IStorage {
     return progression;
   }
 
-  async requestRequirementWaiver(waiverData: InsertDocumentRequirementWaiver): Promise<DocumentRequirementWaiver> {
-    const [waiver] = await db
-      .insert(documentRequirementWaivers)
-      .values(waiverData)
-      .returning();
-    return waiver;
-  }
 
-  async getPendingWaivers(userCompanyId: number): Promise<(DocumentRequirementWaiver & { companyName: string; requirementName: string })[]> {
-    return await db
-      .select({
-        id: documentRequirementWaivers.id,
-        targetCompanyId: documentRequirementWaivers.targetCompanyId,
-        companyRequirementId: documentRequirementWaivers.companyRequirementId,
-        waiverReason: documentRequirementWaivers.waiverReason,
-        waiverJustification: documentRequirementWaivers.waiverJustification,
-        alternativeDocumentation: documentRequirementWaivers.alternativeDocumentation,
-        requestedBy: documentRequirementWaivers.requestedBy,
-        requestedAt: documentRequirementWaivers.requestedAt,
-        approvalStatus: documentRequirementWaivers.approvalStatus,
-        approvedBy: documentRequirementWaivers.approvedBy,
-        approvedAt: documentRequirementWaivers.approvedAt,
-        approvalNotes: documentRequirementWaivers.approvalNotes,
-        conditionalApproval: documentRequirementWaivers.conditionalApproval,
-        approvalConditions: documentRequirementWaivers.approvalConditions,
-        riskLevel: documentRequirementWaivers.riskLevel,
-        riskAssessment: documentRequirementWaivers.riskAssessment,
-        mitigationMeasures: documentRequirementWaivers.mitigationMeasures,
-        conditionMet: documentRequirementWaivers.conditionMet,
-        conditionVerifiedBy: documentRequirementWaivers.conditionVerifiedBy,
-        conditionVerifiedAt: documentRequirementWaivers.conditionVerifiedAt,
-        createdAt: documentRequirementWaivers.createdAt,
-        updatedAt: documentRequirementWaivers.updatedAt,
-        companyName: targetCompanies.companyName,
-        requirementName: sql<string>`'Requirement'`, // Placeholder since requirement name comes from template items
-      })
-      .from(documentRequirementWaivers)
-      .innerJoin(targetCompanies, eq(documentRequirementWaivers.targetCompanyId, targetCompanies.id))
-      .innerJoin(companyDocumentRequirements, eq(documentRequirementWaivers.companyRequirementId, companyDocumentRequirements.id))
-      .where(
-        and(
-          eq(targetCompanies.userCompanyId, userCompanyId),
-          eq(documentRequirementWaivers.approvalStatus, 'pending')
-        )
-      )
-      .orderBy(desc(documentRequirementWaivers.requestedAt));
-  }
-
-  async processWaiverRequest(waiverId: number, updates: { approvalStatus: string; approvalNotes?: string; conditionalApproval?: boolean; approvalConditions?: string }, userId: number): Promise<DocumentRequirementWaiver> {
-    const [waiver] = await db
-      .update(documentRequirementWaivers)
-      .set({
-        ...updates,
-        approvedBy: userId,
-        approvedAt: new Date(),
-      })
-      .where(eq(documentRequirementWaivers.id, waiverId))
-      .returning();
-    return waiver;
-  }
 
   async updateCompanyRequirement(requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement> {
     const [requirement] = await db
@@ -2780,199 +2716,18 @@ export class DatabaseStorage implements IStorage {
     return requirement;
   }
 
-  // Template Management methods implementation
-  async getTemplatesWithItemCounts(userCompanyId: number): Promise<(DocumentRequirementTemplate & { itemCount: number })[]> {
-    return await db
-      .select({
-        id: documentRequirementTemplates.id,
-        userCompanyId: documentRequirementTemplates.userCompanyId,
-        createdBy: documentRequirementTemplates.createdBy,
-        templateName: documentRequirementTemplates.templateName,
-        templateDescription: documentRequirementTemplates.templateDescription,
-        industryCategory: documentRequirementTemplates.industryCategory,
-        dealSizeCategory: documentRequirementTemplates.dealSizeCategory,
-        templateVersion: documentRequirementTemplates.templateVersion,
-        isActive: documentRequirementTemplates.isActive,
-        isDefault: documentRequirementTemplates.isDefault,
-        usageCount: documentRequirementTemplates.usageCount,
-        createdAt: documentRequirementTemplates.createdAt,
-        updatedAt: documentRequirementTemplates.updatedAt,
-        lastUsed: documentRequirementTemplates.lastUsed,
-        itemCount: sql<number>`COALESCE((
-          SELECT COUNT(*)::int 
-          FROM ${documentRequirementItems} 
-          WHERE ${documentRequirementItems.templateId} = ${documentRequirementTemplates.id}
-        ), 0)`,
-      })
-      .from(documentRequirementTemplates)
-      .where(eq(documentRequirementTemplates.userCompanyId, userCompanyId))
-      .orderBy(desc(documentRequirementTemplates.createdAt));
-  }
-
-  async getDocumentTemplateById(templateId: number, userCompanyId: number): Promise<DocumentRequirementTemplate | undefined> {
-    const [template] = await db
-      .select()
-      .from(documentRequirementTemplates)
-      .where(and(
-        eq(documentRequirementTemplates.id, templateId),
-        eq(documentRequirementTemplates.userCompanyId, userCompanyId)
-      ));
-    return template || undefined;
-  }
-
-  async createDocumentTemplate(template: Omit<InsertDocumentRequirementTemplate, 'id'>): Promise<DocumentRequirementTemplate> {
-    const [newTemplate] = await db
-      .insert(documentRequirementTemplates)
-      .values(template)
-      .returning();
-    return newTemplate;
-  }
-
-  async updateDocumentTemplate(templateId: number, updates: Partial<InsertDocumentRequirementTemplate>, userCompanyId: number): Promise<DocumentRequirementTemplate> {
-    const [template] = await db
-      .update(documentRequirementTemplates)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(and(
-        eq(documentRequirementTemplates.id, templateId),
-        eq(documentRequirementTemplates.userCompanyId, userCompanyId)
-      ))
-      .returning();
-    return template;
-  }
-
-  async deleteDocumentTemplate(templateId: number, userCompanyId: number): Promise<boolean> {
-    // First delete all associated requirement items
-    await db
-      .delete(documentRequirementItems)
-      .where(eq(documentRequirementItems.templateId, templateId));
-    
-    // Then delete the template
-    const result = await db
-      .delete(documentRequirementTemplates)
-      .where(and(
-        eq(documentRequirementTemplates.id, templateId),
-        eq(documentRequirementTemplates.userCompanyId, userCompanyId)
-      ));
-    return Array.isArray(result) ? result.length > 0 : true;
-  }
-
-  async duplicateDocumentTemplate(templateId: number, userCompanyId: number, userId: number): Promise<DocumentRequirementTemplate> {
-    // Get the original template
-    const originalTemplate = await this.getDocumentTemplateById(templateId, userCompanyId);
-    if (!originalTemplate) {
-      throw new Error('Template not found');
-    }
-
-    // Create the duplicate template
-    const [duplicateTemplate] = await db
-      .insert(documentRequirementTemplates)
-      .values({
-        userCompanyId,
-        createdBy: userId,
-        templateName: `${originalTemplate.templateName} (Copy)`,
-        templateDescription: originalTemplate.templateDescription,
-        industryCategory: originalTemplate.industryCategory,
-        dealSizeCategory: originalTemplate.dealSizeCategory,
-        templateVersion: '1.0',
-        isActive: true,
-        isDefault: false,
-        usageCount: 0,
-      })
-      .returning();
-
-    // Get all original requirement items
-    const originalItems = await this.getTemplateRequirementItems(templateId, userCompanyId);
-    
-    // Duplicate all requirement items
-    if (originalItems.length > 0) {
-      await db.insert(documentRequirementItems).values(
-        originalItems.map(item => ({
-          templateId: duplicateTemplate.id,
-          requirementName: item.requirementName,
-          requirementDescription: item.requirementDescription,
-          documentCategory: item.documentCategory,
-          collectionStage: item.collectionStage,
-          priorityLevel: item.priorityLevel,
-          isMandatory: item.isMandatory,
-          displayOrder: item.displayOrder,
-          submissionInstructions: item.submissionInstructions,
-          helpText: item.helpText,
-        }))
-      );
-    }
-
-    return duplicateTemplate;
-  }
-
-  async getTemplateRequirementItems(templateId: number, userCompanyId: number): Promise<DocumentRequirementItem[]> {
-    // Verify template belongs to user company
-    const template = await this.getDocumentTemplateById(templateId, userCompanyId);
-    if (!template) {
-      throw new Error('Template not found');
+  async getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]> {
+    // First verify access to the company
+    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      return [];
     }
 
     return await db
       .select()
-      .from(documentRequirementItems)
-      .where(eq(documentRequirementItems.templateId, templateId))
-      .orderBy(asc(documentRequirementItems.collectionStage), asc(documentRequirementItems.displayOrder));
-  }
-
-  async createDocumentRequirementItem(item: Omit<InsertDocumentRequirementItem, 'id'>): Promise<DocumentRequirementItem> {
-    const [newItem] = await db
-      .insert(documentRequirementItems)
-      .values(item)
-      .returning();
-    return newItem;
-  }
-
-  async updateDocumentRequirementItem(itemId: number, updates: Partial<InsertDocumentRequirementItem>, userCompanyId: number): Promise<DocumentRequirementItem> {
-    // Verify item belongs to a template owned by user company
-    const [item] = await db
-      .select({ templateId: documentRequirementItems.templateId })
-      .from(documentRequirementItems)
-      .where(eq(documentRequirementItems.id, itemId));
-    
-    if (!item) {
-      throw new Error('Requirement item not found');
-    }
-
-    const template = await this.getDocumentTemplateById(item.templateId, userCompanyId);
-    if (!template) {
-      throw new Error('Template not found');
-    }
-
-    const [updatedItem] = await db
-      .update(documentRequirementItems)
-      .set(updates)
-      .where(eq(documentRequirementItems.id, itemId))
-      .returning();
-    return updatedItem;
-  }
-
-  async deleteDocumentRequirementItem(itemId: number, userCompanyId: number): Promise<boolean> {
-    // Verify item belongs to a template owned by user company
-    const [item] = await db
-      .select({ templateId: documentRequirementItems.templateId })
-      .from(documentRequirementItems)
-      .where(eq(documentRequirementItems.id, itemId));
-    
-    if (!item) {
-      throw new Error('Requirement item not found');
-    }
-
-    const template = await this.getDocumentTemplateById(item.templateId, userCompanyId);
-    if (!template) {
-      throw new Error('Template not found');
-    }
-
-    const result = await db
-      .delete(documentRequirementItems)
-      .where(eq(documentRequirementItems.id, itemId));
-    return Array.isArray(result) ? result.length > 0 : true;
+      .from(targetContacts)
+      .where(eq(targetContacts.targetCompanyId, targetCompanyId))
+      .orderBy(asc(targetContacts.contactName));
   }
 
 }

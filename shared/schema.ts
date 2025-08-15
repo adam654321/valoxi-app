@@ -990,83 +990,21 @@ export type PortalLinkShare = typeof portalLinkShares.$inferSelect;
 export type InsertPortalLinkShare = z.infer<typeof insertPortalLinkShareSchema>;
 
 // ========================================
-// STAGED DOCUMENT REQUIREMENTS SYSTEM
+// STANDARDIZED DOCUMENT REQUIREMENTS SYSTEM
 // ========================================
 
-// Document requirement templates table
-export const documentRequirementTemplates = pgTable("document_requirement_templates", {
-  id: serial("id").primaryKey(),
-  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
-  
-  // Template Details
-  templateName: varchar("template_name", { length: 255 }).notNull(),
-  templateDescription: text("template_description"),
-  industryCategory: varchar("industry_category", { length: 100 }),
-  dealSizeCategory: varchar("deal_size_category", { length: 50 }),
-  
-  // Template Configuration
-  isDefault: boolean("is_default").default(false),
-  isActive: boolean("is_active").default(true),
-  templateVersion: varchar("template_version", { length: 20 }).default("1.0"),
-  
-  // Usage Tracking
-  usageCount: integer("usage_count").default(0),
-  lastUsed: timestamp("last_used"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Document requirement items table
-export const documentRequirementItems = pgTable("document_requirement_items", {
-  id: serial("id").primaryKey(),
-  templateId: integer("template_id").references(() => documentRequirementTemplates.id).notNull(),
-  
-  // Requirement Details
-  requirementName: varchar("requirement_name", { length: 255 }).notNull(),
-  requirementDescription: text("requirement_description"),
-  documentCategory: varchar("document_category", { length: 100 }),
-  
-  // Stage and Priority
-  collectionStage: integer("collection_stage").notNull(), // 1 = pre-offer, 2 = post-heads-of-terms
-  priorityLevel: varchar("priority_level", { length: 20 }).default("medium"),
-  isMandatory: boolean("is_mandatory").default(true),
-  
-  // Document Specifications
-  acceptedFileTypes: text("accepted_file_types").array().default(sql`ARRAY['pdf', 'docx', 'xlsx']`),
-  maxFileSize: bigint("max_file_size", { mode: "number" }).default(10485760), // 10MB default
-  minFileSize: bigint("min_file_size", { mode: "number" }).default(1024), // 1KB minimum
-  maxFileCount: integer("max_file_count").default(1),
-  
-  // Instructions and Help
-  submissionInstructions: text("submission_instructions"),
-  exampleDocuments: text("example_documents").array(),
-  helpText: text("help_text"),
-  commonIssues: text("common_issues"),
-  
-  // Dependencies
-  prerequisiteRequirements: integer("prerequisite_requirements").array(),
-  relatedRequirements: integer("related_requirements").array(),
-  
-  // Validation Rules
-  validationRules: text("validation_rules"), // JSON string
-  autoValidation: boolean("auto_validation").default(false),
-  
-  // Display and Ordering
-  displayOrder: integer("display_order").default(0),
-  isVisible: boolean("is_visible").default(true),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Company document requirements table (instance of template for specific deal)
+// Company document requirements table (standardized for all companies)
 export const companyDocumentRequirements = pgTable("company_document_requirements", {
   id: serial("id").primaryKey(),
   targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
-  templateId: integer("template_id").references(() => documentRequirementTemplates.id),
-  requirementItemId: integer("requirement_item_id").references(() => documentRequirementItems.id).notNull(),
+  
+  // Standardized Requirement Details
+  requirementName: varchar("requirement_name", { length: 255 }).notNull(),
+  requirementDescription: text("requirement_description"),
+  documentCategory: varchar("document_category", { length: 100 }),
+  collectionStage: integer("collection_stage").notNull().default(1), // 1 = Stage 1, 2 = Stage 2
+  priorityLevel: varchar("priority_level", { length: 20 }).default("medium"),
+  isMandatory: boolean("is_mandatory").default(true),
   
   // Requirement Status
   requirementStatus: varchar("requirement_status", { length: 50 }).default("outstanding"),
@@ -1097,11 +1035,6 @@ export const companyDocumentRequirements = pgTable("company_document_requirement
   reminderSentCount: integer("reminder_sent_count").default(0),
   lastReminderSent: timestamp("last_reminder_sent"),
   nextReminderDue: timestamp("next_reminder_due"),
-  
-  // Custom Modifications
-  customInstructions: text("custom_instructions"),
-  customPriority: varchar("custom_priority", { length: 20 }),
-  isCustomRequirement: boolean("is_custom_requirement").default(false),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1152,75 +1085,13 @@ export const documentStageProgression = pgTable("document_stage_progression", {
   };
 });
 
-// Document requirement waivers table
-export const documentRequirementWaivers = pgTable("document_requirement_waivers", {
-  id: serial("id").primaryKey(),
-  companyRequirementId: integer("company_requirement_id").references(() => companyDocumentRequirements.id).notNull(),
-  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
-  
-  // Waiver Request
-  requestedBy: integer("requested_by").references(() => users.id).notNull(),
-  requestedAt: timestamp("requested_at").defaultNow(),
-  waiverReason: varchar("waiver_reason", { length: 100 }),
-  waiverJustification: text("waiver_justification").notNull(),
-  alternativeDocumentation: text("alternative_documentation"),
-  
-  // Approval Process
-  approvalStatus: varchar("approval_status", { length: 50 }).default("pending"),
-  approvedBy: integer("approved_by").references(() => users.id),
-  approvedAt: timestamp("approved_at"),
-  approvalNotes: text("approval_notes"),
-  
-  // Risk Assessment
-  riskLevel: varchar("risk_level", { length: 20 }).default("low"),
-  riskAssessment: text("risk_assessment"),
-  mitigationMeasures: text("mitigation_measures"),
-  
-  // Conditions
-  conditionalApproval: boolean("conditional_approval").default(false),
-  approvalConditions: text("approval_conditions"),
-  conditionMet: boolean("condition_met").default(false),
-  conditionVerifiedBy: integer("condition_verified_by").references(() => users.id),
-  conditionVerifiedAt: timestamp("condition_verified_at"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+
 
 // Relations for staged requirements
-export const documentRequirementTemplatesRelations = relations(documentRequirementTemplates, ({ one, many }) => ({
-  userCompany: one(userCompanies, {
-    fields: [documentRequirementTemplates.userCompanyId],
-    references: [userCompanies.id],
-  }),
-  createdByUser: one(users, {
-    fields: [documentRequirementTemplates.createdBy],
-    references: [users.id],
-  }),
-  requirementItems: many(documentRequirementItems),
-  companyRequirements: many(companyDocumentRequirements),
-}));
-
-export const documentRequirementItemsRelations = relations(documentRequirementItems, ({ one, many }) => ({
-  template: one(documentRequirementTemplates, {
-    fields: [documentRequirementItems.templateId],
-    references: [documentRequirementTemplates.id],
-  }),
-  companyRequirements: many(companyDocumentRequirements),
-}));
-
 export const companyDocumentRequirementsRelations = relations(companyDocumentRequirements, ({ one }) => ({
   targetCompany: one(targetCompanies, {
     fields: [companyDocumentRequirements.targetCompanyId],
     references: [targetCompanies.id],
-  }),
-  template: one(documentRequirementTemplates, {
-    fields: [companyDocumentRequirements.templateId],
-    references: [documentRequirementTemplates.id],
-  }),
-  requirementItem: one(documentRequirementItems, {
-    fields: [companyDocumentRequirements.requirementItemId],
-    references: [documentRequirementItems.id],
   }),
   submittedDocument: one(externalDocumentSubmissions, {
     fields: [companyDocumentRequirements.submittedDocumentId],
@@ -1251,40 +1122,9 @@ export const documentStageProgressionRelations = relations(documentStageProgress
   }),
 }));
 
-export const documentRequirementWaiversRelations = relations(documentRequirementWaivers, ({ one }) => ({
-  companyRequirement: one(companyDocumentRequirements, {
-    fields: [documentRequirementWaivers.companyRequirementId],
-    references: [companyDocumentRequirements.id],
-  }),
-  targetCompany: one(targetCompanies, {
-    fields: [documentRequirementWaivers.targetCompanyId],
-    references: [targetCompanies.id],
-  }),
-  requestedByUser: one(users, {
-    fields: [documentRequirementWaivers.requestedBy],
-    references: [users.id],
-  }),
-  approvedByUser: one(users, {
-    fields: [documentRequirementWaivers.approvedBy],
-    references: [users.id],
-  }),
-}));
+
 
 // Document requirement schemas
-export const insertDocumentRequirementTemplateSchema = createInsertSchema(documentRequirementTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  usageCount: true,
-  lastUsed: true,
-});
-
-export const insertDocumentRequirementItemSchema = createInsertSchema(documentRequirementItems).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertCompanyDocumentRequirementSchema = createInsertSchema(companyDocumentRequirements).omit({
   id: true,
   createdAt: true,
@@ -1305,27 +1145,9 @@ export const insertDocumentStageProgressionSchema = createInsertSchema(documentS
   pipelineStageUpdatedAt: true,
 });
 
-export const insertDocumentRequirementWaiverSchema = createInsertSchema(documentRequirementWaivers).omit({
-  id: true,
-  requestedAt: true,
-  approvedAt: true,
-  conditionVerifiedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 // Document requirement types
-export type DocumentRequirementTemplate = typeof documentRequirementTemplates.$inferSelect;
-export type InsertDocumentRequirementTemplate = z.infer<typeof insertDocumentRequirementTemplateSchema>;
-
-export type DocumentRequirementItem = typeof documentRequirementItems.$inferSelect;
-export type InsertDocumentRequirementItem = z.infer<typeof insertDocumentRequirementItemSchema>;
-
 export type CompanyDocumentRequirement = typeof companyDocumentRequirements.$inferSelect;
 export type InsertCompanyDocumentRequirement = z.infer<typeof insertCompanyDocumentRequirementSchema>;
 
 export type DocumentStageProgression = typeof documentStageProgression.$inferSelect;
 export type InsertDocumentStageProgression = z.infer<typeof insertDocumentStageProgressionSchema>;
-
-export type DocumentRequirementWaiver = typeof documentRequirementWaivers.$inferSelect;
-export type InsertDocumentRequirementWaiver = z.infer<typeof insertDocumentRequirementWaiverSchema>;

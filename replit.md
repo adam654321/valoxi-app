@@ -28,7 +28,8 @@ Preferred communication style: Simple, everyday language.
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless
 - **Schema Management**: Drizzle Kit for migrations and schema management
-- **Key Entities**: `user_companies`, `users`, `user_roles`, `user_invitations`, `user_deal_assignments`, `team_notifications`, `target_companies`, `target_contacts`, and entities for activity logging, document management, and external document portals.
+- **Key Entities**: `user_companies`, `users`, `user_roles`, `user_invitations`, `user_deal_assignments`, `team_notifications`, `target_companies`, `target_contacts`, and entities for activity logging, document management, external document portals, and standardized document requirements.
+- **Document Requirements**: Standardized 29-requirement system with automatic initialization for all deals via database function.
 
 ## Authentication & Security
 - **Session Management**: PostgreSQL-backed sessions with configurable TTL
@@ -54,6 +55,7 @@ Preferred communication style: Simple, everyday language.
 - **Email Integration**: Comprehensive email system using nodemailer with Google Workspace SMTP for team invitations, portal access notifications, and document submission alerts. Features professional email templates and secure credential management.
 - **Team Invitation System**: Complete invitation workflow with secure token-based invitations, professional signup forms with validation, and proper handling of existing users to prevent security conflicts.
 - **Webhook Integration**: Automated webhook system that triggers when target companies are created with websites. Includes comprehensive logging, real-time response tracking, and a dedicated testing interface. Features both manual testing tools and automatic webhook firing for new companies with website data. **Fixed 2025-08-14**: Webhook response detection system now properly integrates with production company creation. Critical fix: External webhook service returns analysis data directly in the initial response body rather than calling back to our response endpoint. Both test and production systems now parse the direct response and store website analysis immediately.
+- **Document Requirements System**: **CORRECTIVELY SIMPLIFIED (2025-08-15)**: Replaced complex template-based requirements with standardized 29-requirement system that automatically applies to all deals. Eliminates template management, waiver workflows, and custom requirement creation for consistent due diligence processes across all transactions.
 
 # External Dependencies
 
@@ -78,3 +80,35 @@ Preferred communication style: Simple, everyday language.
 - **bcrypt**: Password hashing library.
 - **express-session**: Session management middleware.
 - **wouter**: Lightweight routing library for React.
+
+# Recent Major Changes
+
+## 2025-08-15: Document Requirements System - Corrective Simplification
+
+**Problem**: The previous template-based document requirements system was overly complex with:
+- Custom template creation and management interfaces
+- Complex waiver request and approval workflows  
+- Inconsistent requirements across different deals
+- Complicated template-based initialization processes
+
+**Solution**: Implemented standardized requirements system with:
+- **Fixed 29-requirement set** automatically applied to all deals
+- **Two-stage collection process**:
+  - Stage 1 (6 requirements): Pre-offer documents for initial evaluation
+  - Stage 2 (23 requirements): Comprehensive due diligence post-heads-of-terms
+- **Database function**: `initialize_standard_requirements()` ensures consistency
+- **Eliminated complexity**: Removed template tables, waiver systems, and custom requirement creation
+
+**Technical Changes**:
+- Removed tables: `document_requirement_templates`, `document_requirement_items`, `document_requirement_waivers`
+- Retained simplified: `company_document_requirements`, `document_stage_progression`
+- Updated storage layer to use standardized initialization
+- Removed complex route handlers for template and waiver management
+- Maintained all portal functionality and document submission workflows
+
+**Benefits**:
+- Consistent due diligence requirements across all deals
+- Simplified deal setup (automatic requirement initialization)
+- Reduced system complexity and maintenance burden
+- Maintained comprehensive document tracking and stage progression
+- Preserved all external portal and communication capabilities
