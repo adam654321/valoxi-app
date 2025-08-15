@@ -2585,12 +2585,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`[PORTAL TOKEN] Sending email to ${contact.email} for portal access`);
           
-          const emailResult = await emailService.sendPortalAccessEmail(
+          const emailResult = await emailService.sendPortalAccessLink(
             contact.email,
             contact.firstName || 'Contact',
             company.companyName,
             portalUrl,
-            tokenData.customMessage || 'Please access the secure document portal to submit required documents.'
+            tokenData.customMessage || 'Please access the secure document portal to submit required documents.',
+            expiresAt
           );
           
           console.log(`[PORTAL TOKEN] Email sent result:`, emailResult);
