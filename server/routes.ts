@@ -75,12 +75,12 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
     log.processingTime = Date.now() - startTime;
     
     if (!response.ok) {
-      log.response = {
+      (log as any).response = {
         error: `HTTP ${response.status}: ${response.statusText}`,
         status: response.status
       };
     } else {
-      log.response = {
+      (log as any).response = {
         success: true,
         status: response.status,
         message: `Webhook sent successfully`
@@ -98,7 +98,7 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
             let processedOutput = parsedResponse.output.replace(/\\n/g, '\n');
             processedOutput = processedOutput
               .split('\n')
-              .map(line => {
+              .map((line: string) => {
                 if (line.match(/^\d+\s+/)) {
                   return line.replace(/^(\d+)\s+(.+)/, '## $1. $2');
                 }
@@ -115,7 +115,7 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
             if (updated) {
               console.log(`✅ Production website analysis stored directly for target company ID: ${parsedResponse.target_company_id}`);
               log.status = "completed";
-              log.response = {
+              (log as any).response = {
                 success: true,
                 status: response.status,
                 message: "Website analysis received and stored",
@@ -2908,7 +2908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   let processedOutput = parsedResponse.output.replace(/\\n/g, '\n');
                   processedOutput = processedOutput
                     .split('\n')
-                    .map(line => {
+                    .map((line: string) => {
                       if (line.match(/^\d+\s+/)) {
                         return line.replace(/^(\d+)\s+(.+)/, '## $1. $2');
                       }
