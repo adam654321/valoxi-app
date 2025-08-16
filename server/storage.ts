@@ -2243,6 +2243,11 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
 
+    // Delete associated file upload events first to avoid foreign key constraint
+    await db
+      .delete(fileUploadEvents)
+      .where(eq(fileUploadEvents.documentId, documentId));
+
     const [deletedDocument] = await db
       .delete(documents)
       .where(eq(documents.id, documentId))
