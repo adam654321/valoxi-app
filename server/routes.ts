@@ -2092,12 +2092,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const document = await storage.createDocument(documentData);
         
         // Create file upload event for webhook monitoring
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
         const fileUploadEventData = {
           documentId: document.id,
           targetCompanyId: targetCompanyId,
           uploadedBy: userId,
           fileName: req.file.originalname,
-          fileUrl: `/api/documents/${document.id}/download`, // Internal URL for the document
+          fileUrl: `${baseUrl}/api/documents/${document.id}/download`, // Full URL for external access
           webhookSent: false,
           webhookStatus: 'pending',
         };
