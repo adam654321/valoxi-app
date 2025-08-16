@@ -75,17 +75,17 @@ export default function PortalManagement() {
     enabled: !!selectedCompanyId,
   });
 
+  // Fetch existing portal tokens
+  const { data: portalTokens = [], isLoading: tokensLoading } = useQuery<PortalToken[]>({
+    queryKey: ['/api/portal-tokens'],
+  });
+
   // Get primary contacts only (for portal link creation)
   const primaryContacts = contacts.filter(contact => contact.isPrimary);
 
   // Check if selected company already has a portal link
   const companyHasPortal = selectedCompanyId ? 
     portalTokens.some(token => token.targetCompanyId === selectedCompanyId) : false;
-
-  // Fetch existing portal tokens
-  const { data: portalTokens = [], isLoading: tokensLoading } = useQuery<PortalToken[]>({
-    queryKey: ['/api/portal-tokens'],
-  });
 
   // Create portal token mutation
   const createPortalToken = useMutation({
