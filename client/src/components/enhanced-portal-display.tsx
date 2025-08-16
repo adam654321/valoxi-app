@@ -304,76 +304,39 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
               </CardHeader>
 
               <CardContent>
-                {requirement.display_status === 'completed' && (
-                  <div className="bg-green-100 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 text-green-800">
-                      <CheckCircle2 className="h-5 w-5" />
+                {/* SIMPLE LOGIC: For Company Accounts, show submission count if any exist */}
+                {requirement.requirement_name === "Company Accounts" && requirement.submitted_documents > 0 && (
+                  <div className="bg-blue-100 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2 text-blue-800">
+                      <FileText className="h-5 w-5" />
                       <span className="font-medium">
-                        Submitted: {requirement.requirement_name === "Company Accounts" 
-                          ? `${requirement.submitted_documents} Company Account Files` 
-                          : requirement.latest_filename
+                        {requirement.submitted_documents >= 5 
+                          ? `Complete: ${requirement.submitted_documents} Company Account Files` 
+                          : `Submitted: ${requirement.submitted_documents} of 5 Company Account Files`
                         }
                       </span>
                     </div>
-                    {requirement.latest_submission_date && (
-                      <div className="text-sm text-green-600 mt-1">
-                        {formatTimeAgo(requirement.latest_submission_date)}
+                    {requirement.submitted_documents < 5 && (
+                      <div className="text-sm text-blue-600 mt-1">
+                        Upload {5 - requirement.submitted_documents} more files to complete
                       </div>
                     )}
                   </div>
                 )}
 
-                {requirement.display_status === 'submitted' && requirement.requirement_name !== "Company Accounts" && (
+                {/* For other requirements, show normal submitted status */}
+                {requirement.requirement_name !== "Company Accounts" && requirement.display_status === 'submitted' && (
                   <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center space-x-2 text-blue-800">
                       <FileText className="h-5 w-5" />
                       <span className="font-medium">Under Review: {requirement.latest_filename}</span>
                     </div>
-                    {requirement.latest_submission_date && (
-                      <div className="text-sm text-blue-600 mt-1">
-                        Submitted {formatTimeAgo(requirement.latest_submission_date)}
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* For Company Accounts: show submitted files count + upload interface if less than 5 */}
-                {requirement.requirement_name === "Company Accounts" && requirement.submitted_documents > 0 && requirement.submitted_documents < 5 && (
-                  <div className="space-y-4">
-                    <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-2 text-blue-800">
-                        <FileText className="h-5 w-5" />
-                        <span className="font-medium">
-                          Submitted: {requirement.submitted_documents} of 5 Company Account Files
-                        </span>
-                      </div>
-                      <div className="text-sm text-blue-600 mt-1">
-                        Upload {5 - requirement.submitted_documents} more files to complete this requirement
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* For Company Accounts: show fully submitted state when 5+ files */}
-                {requirement.requirement_name === "Company Accounts" && requirement.submitted_documents >= 5 && (
-                  <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 text-blue-800">
-                      <FileText className="h-5 w-5" />
-                      <span className="font-medium">
-                        Under Review: {requirement.submitted_documents} Company Account Files
-                      </span>
-                    </div>
-                    {requirement.latest_submission_date && (
-                      <div className="text-sm text-blue-600 mt-1">
-                        All files submitted {formatTimeAgo(requirement.latest_submission_date)}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Show upload interface for pending requirements or Company Accounts with less than 5 files */}
-                {(requirement.display_status === 'pending' || 
-                  (requirement.requirement_name === "Company Accounts" && requirement.submitted_documents < 5)) && (
+                {/* Show upload interface: ALWAYS for Company Accounts if < 5 files, or for other pending requirements */}
+                {((requirement.requirement_name === "Company Accounts" && requirement.submitted_documents < 5) || 
+                  (requirement.requirement_name !== "Company Accounts" && requirement.display_status === 'pending')) && (
                   <div className="space-y-4">
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                       <input
