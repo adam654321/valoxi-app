@@ -2213,6 +2213,14 @@ export class DatabaseStorage implements IStorage {
     return document?.documents;
   }
 
+  async getDocumentByIdPublic(documentId: number): Promise<Document | undefined> {
+    const [document] = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.id, documentId));
+    return document || undefined;
+  }
+
   async updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined> {
     // First verify the user has access to this document
     const existingDocument = await this.getDocument(documentId, userCompanyId);

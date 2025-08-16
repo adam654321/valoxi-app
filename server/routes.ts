@@ -2098,7 +2098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           targetCompanyId: targetCompanyId,
           uploadedBy: userId,
           fileName: req.file.originalname,
-          fileUrl: `${baseUrl}/api/documents/${document.id}/download`, // Full URL for external access
+          fileUrl: `${baseUrl}/api/public/documents/${document.id}/download`, // Public URL for external webhook access
           webhookSent: false,
           webhookStatus: 'pending',
         };
@@ -3055,6 +3055,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (Date.now() - new Date(log.timestamp).getTime()) < 300000 // Less than 5 minutes old
     );
     res.json(pendingWebhooks);
+  });
+
+  // ========================
+  // Public Document Download for Webhooks
+  // ========================
+  
+  // Public download endpoint for webhook access (no authentication required)
+  app.get("/api/public/documents/:id/download", async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      
+      // For webhook testing, we'll allow public access to documents
+      // In production, you might want to implement token-based security
+      const document = await storage.getDocumentByIdPublic(documentId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found' });
+      }
+      
+      // Set headers for download
+      res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+      res.setHeader('Content-Type', document.fileType);
+      
+      // Send file
+      res.sendFile(path.resolve(document.filePath));
+      
+    } catch (error) {
+      console.error("Public download document error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // ========================
