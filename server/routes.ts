@@ -12,6 +12,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 
+// We'll use storage methods instead of direct db queries
+
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
   id: number;
@@ -2309,6 +2311,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Validate portal token error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Main portal data endpoint - returns complete portal data for frontend  
+  app.get("/api/portal/:token", async (req: Request, res: Response) => {
+    console.log(`[PORTAL API] Accessing portal data for token: ${req.params.token}`);
+    
+    // Skip if this is a more specific route
+    if (req.params.token.includes('/')) {
+      return res.status(404).json({ message: "Not found" });
+    }
+    
+    try {
+      const accessToken = req.params.token;
+      
+      if (!accessToken) {
+        return res.status(400).json({ message: "Access token is required" });
+      }
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired portal token" });
+      }
+      
+      // Log access
+      await storage.updatePortalTokenAccess(
+        portalToken.id, 
+        req.ip, 
+        req.get('User-Agent')
+      );
+      
+      // Get portal data for simple upload system
+      const documentTypes = [
+        { value: 'p_and_l', label: 'P&L Statement', category: 'financial', maxFiles: 1 },
+        { value: 'balance_sheet', label: 'Balance Sheet', category: 'financial', maxFiles: 1 },
+        { value: 'cash_flow', label: 'Cash Flow Statement', category: 'financial', maxFiles: 1 },
+        { value: 'tax_returns', label: 'Tax Returns', category: 'financial', maxFiles: 1 },
+        { value: 'management_accounts', label: 'Management Accounts', category: 'financial', maxFiles: 1 },
+        { value: 'company_accounts_1', label: 'Company Accounts 1', category: 'company_accounts', maxFiles: 1 },
+        { value: 'company_accounts_2', label: 'Company Accounts 2', category: 'company_accounts', maxFiles: 1 },
+        { value: 'company_accounts_3', label: 'Company Accounts 3', category: 'company_accounts', maxFiles: 1 },
+        { value: 'company_accounts_4', label: 'Company Accounts 4', category: 'company_accounts', maxFiles: 1 },
+        { value: 'company_accounts_5', label: 'Company Accounts 5', category: 'company_accounts', maxFiles: 1 }
+      ];
+      
+      // Get company and contact info using storage methods
+      const company = await storage.getTargetCompany(portalToken.targetCompanyId, portalToken.userCompanyId);
+      const contact = await storage.getTargetContact(portalToken.targetContactId, portalToken.userCompanyId);
+      
+      // Use simple submission tracking - call storage method
+      const submissionsData = await storage.getSimplePortalProgress(portalToken.id);
+      
+      res.json({
+        valid: true,
+        tokenId: portalToken.id,
+        companyId: portalToken.targetCompanyId,
+        contactId: portalToken.targetContactId,
+        companyName: company?.companyName || 'Target Company',
+        contactName: contact ? `${contact.firstName} ${contact.lastName}` : 'Contact',
+        documentTypes: documentTypes,
+        submittedTypes: submissionsData.submittedTypes || [],
+        totalSubmissions: submissionsData.totalSubmissions || 0,
+        progressPercentage: Math.min((submissionsData.totalSubmissions || 0) * 10, 100),
+        maxDocuments: 10,
+        allowedActions: JSON.parse(portalToken.allowedActions || '{"upload":true}'),
+        customMessage: portalToken.customMessage,
+        expiresAt: portalToken.expiresAt
+      });
+    } catch (error) {
+      console.error("Portal data error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

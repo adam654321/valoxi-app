@@ -18,11 +18,29 @@ interface DocumentSubmission {
 }
 
 interface PortalData {
-  company_name: string;
-  total_documents_required: number;
-  submitted_documents: DocumentSubmission[];
-  progress_percentage: number;
-  portal_expires_at: string;
+  valid: boolean;
+  tokenId: number;
+  companyId: number;
+  contactId: number;
+  companyName: string;
+  contactName: string;
+  documentTypes: Array<{
+    value: string;
+    label: string;
+    category: string;
+    maxFiles: number;
+  }>;
+  submittedTypes: string[];
+  totalSubmissions: number;
+  progressPercentage: number;
+  maxDocuments: number;
+  allowedActions: {
+    upload: boolean;
+    download?: boolean;
+    message?: boolean;
+  };
+  customMessage: string | null;
+  expiresAt: string;
 }
 
 interface SimplePortalDisplayProps {
@@ -138,9 +156,9 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
   };
 
   const getNextAvailableDocumentType = (): string => {
-    if (!portalData?.submitted_documents) return DOCUMENT_TYPES[0].value;
+    if (!portalData?.submittedTypes) return DOCUMENT_TYPES[0].value;
     
-    const submittedTypes = portalData.submitted_documents.map(doc => doc.documentType);
+    const submittedTypes = portalData.submittedTypes;
     const availableType = DOCUMENT_TYPES.find(type => !submittedTypes.includes(type.value));
     
     return availableType?.value || '';
@@ -171,7 +189,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
     );
   }
 
-  const isCompleted = portalData.submitted_documents.length >= 10;
+  const isCompleted = (portalData.totalSubmissions || 0) >= 10;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -183,7 +201,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
               Document Submission Portal
             </CardTitle>
             <p className="text-center text-gray-600">
-              {portalData.company_name}
+              {portalData.companyName}
             </p>
           </CardHeader>
         </Card>
@@ -194,13 +212,13 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">
-                  Progress: {portalData.submitted_documents.length} of 10 documents
+                  Progress: {portalData.totalSubmissions || 0} of 10 documents
                 </span>
                 <span className="text-sm text-gray-500">
-                  {portalData.progress_percentage}% Complete
+                  {portalData.progressPercentage || 0}% Complete
                 </span>
               </div>
-              <Progress value={portalData.progress_percentage} className="h-3" />
+              <Progress value={portalData.progressPercentage || 0} className="h-3" />
             </div>
           </CardContent>
         </Card>
@@ -221,7 +239,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {DOCUMENT_TYPES
-                      .filter(type => !portalData.submitted_documents.some(doc => doc.documentType === type.value))
+                      .filter(type => !portalData.submittedTypes.includes(type.value))
                       .map(type => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
@@ -321,35 +339,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
           </Card>
         )}
 
-        {/* Submitted Documents */}
-        {portalData.submitted_documents.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Submitted Documents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {portalData.submitted_documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="h-5 w-5 text-gray-500" />
-                      <div>
-                        <div className="font-medium">
-                          {DOCUMENT_TYPES.find(type => type.value === doc.documentType)?.label || doc.documentType}
-                        </div>
-                        <div className="text-sm text-gray-500">{doc.filename}</div>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Under Review
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
       </div>
     </div>
   );

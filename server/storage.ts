@@ -2946,6 +2946,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async getSimplePortalProgress(portalTokenId: number): Promise<{ submittedTypes: string[], totalSubmissions: number }> {
+    try {
+      const submissions = await db
+        .select({
+          submissionNotes: externalDocumentSubmissions.submissionNotes
+        })
+        .from(externalDocumentSubmissions)
+        .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId));
+      
+      const submittedTypes = submissions.map(s => s.submissionNotes).filter(Boolean);
+      
+      return {
+        submittedTypes,
+        totalSubmissions: submittedTypes.length
+      };
+    } catch (error) {
+      console.error('Error getting simple portal progress:', error);
+      return { submittedTypes: [], totalSubmissions: 0 };
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
