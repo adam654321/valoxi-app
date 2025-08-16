@@ -308,7 +308,12 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   <div className="bg-green-100 border border-green-200 rounded-lg p-4">
                     <div className="flex items-center space-x-2 text-green-800">
                       <CheckCircle2 className="h-5 w-5" />
-                      <span className="font-medium">Submitted: {requirement.latest_filename}</span>
+                      <span className="font-medium">
+                        Submitted: {requirement.requirement_name === "Company Accounts" 
+                          ? `${requirement.submitted_documents} Company Account Files` 
+                          : requirement.latest_filename
+                        }
+                      </span>
                     </div>
                     {requirement.latest_submission_date && (
                       <div className="text-sm text-green-600 mt-1">
@@ -322,7 +327,12 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center space-x-2 text-blue-800">
                       <FileText className="h-5 w-5" />
-                      <span className="font-medium">Under Review: {requirement.latest_filename}</span>
+                      <span className="font-medium">
+                        Under Review: {requirement.requirement_name === "Company Accounts" 
+                          ? `${requirement.submitted_documents} Company Account Files` 
+                          : requirement.latest_filename
+                        }
+                      </span>
                     </div>
                     {requirement.latest_submission_date && (
                       <div className="text-sm text-blue-600 mt-1">

@@ -3775,7 +3775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit document for specific requirement
-  app.post('/api/portal/:token/documents/submit', upload.single('document'), async (req: Request, res: Response) => {
+  app.post('/api/portal/:token/documents/submit', portalUpload.single('document'), async (req: Request, res: Response) => {
     try {
       const token = req.params.token;
       const { requirementId, submissionNotes } = req.body;
