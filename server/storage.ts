@@ -2923,7 +2923,8 @@ export class DatabaseStorage implements IStorage {
         .insert(externalDocumentSubmissions)
         .values({
           portalTokenId: tokenData.id,
-          targetContactId: tokenData.targetContactId,
+          targetCompanyId: tokenData.target_company_id, // Fix: add the missing target company ID
+          targetContactId: tokenData.target_contact_id,
           originalFilename: uploadedFile.originalname,
           filePath: uploadedFile.path,
           fileSize: uploadedFile.size,
