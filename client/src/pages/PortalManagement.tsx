@@ -22,9 +22,12 @@ interface Contact {
   targetCompanyId: number;
   firstName: string;
   lastName: string;
-  email: string;
-  jobTitle?: string;
+  email?: string;
+  title?: string;
+  phone?: string;
   isPrimary: boolean;
+  notes?: string;
+  createdAt: string;
 }
 
 interface PortalToken {

@@ -14,6 +14,8 @@ interface DocumentStatus {
   label: string;
   required: boolean;
   submitted: boolean;
+  isComplete?: boolean;
+  isGroup?: boolean;
   submission: {
     id: number;
     filename: string;
