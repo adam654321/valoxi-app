@@ -2926,6 +2926,7 @@ export class DatabaseStorage implements IStorage {
           targetCompanyId: tokenData.targetCompanyId, // Fix: use correct field name
           targetContactId: tokenData.targetContactId, // Fix: use correct field name
           originalFilename: uploadedFile.originalname,
+          storedFilename: uploadedFile.filename, // Add the stored filename
           filePath: uploadedFile.path,
           fileSize: uploadedFile.size,
           fileType: uploadedFile.mimetype,
