@@ -218,7 +218,8 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {portalData.document_status?.map((doc) => (
+              {portalData.document_status && portalData.document_status.length > 0 ? (
+                portalData.document_status.map((doc) => (
                 <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                   <div className="flex items-center space-x-3">
                     {doc.isComplete ? (
@@ -259,7 +260,12 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                     )}
                   </div>
                 </div>
-              ))}
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  No document requirements found
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
