@@ -2847,8 +2847,8 @@ export class DatabaseStorage implements IStorage {
           .where(eq(externalDocumentSubmissions.portalTokenId, tokenInfo.id));
         
         companyAccountsSubmissions = submissions[0]?.count || 0;
-        companyAccountsStatus = companyAccountsSubmissions >= 5 ? "submitted" : 
-                               companyAccountsSubmissions > 0 ? "pending" : "pending";
+        // Company Accounts should show as pending until 5 files are submitted
+        companyAccountsStatus = companyAccountsSubmissions >= 5 ? "submitted" : "pending";
       }
       
       // Return mock Stage 1 requirements data for the portal
