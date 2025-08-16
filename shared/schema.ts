@@ -440,6 +440,38 @@ export const documentsRelations = relations(documents, ({ one, many }) => ({
     references: [documentCategories.categoryName],
   }),
   accessLog: many(documentAccessLog),
+  uploadEvents: many(fileUploadEvents),
+}));
+
+// File upload monitoring table for webhook testing
+export const fileUploadEvents = pgTable("file_upload_events", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileUrl: varchar("file_url", { length: 500 }).notNull(),
+  webhookSent: boolean("webhook_sent").default(false),
+  webhookResponse: text("webhook_response"), // JSON response from webhook
+  webhookStatus: varchar("webhook_status", { length: 50 }).default("pending"), // pending, success, failed
+  webhookSentAt: timestamp("webhook_sent_at"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const fileUploadEventsRelations = relations(fileUploadEvents, ({ one }) => ({
+  document: one(documents, {
+    fields: [fileUploadEvents.documentId],
+    references: [documents.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [fileUploadEvents.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [fileUploadEvents.uploadedBy],
+    references: [users.id],
+  }),
 }));
 
 export const documentAccessLogRelations = relations(documentAccessLog, ({ one }) => ({
@@ -1167,3 +1199,13 @@ export const insertUserCompanyMembershipSchema = createInsertSchema(userCompanyM
 
 export type UserCompanyMembership = typeof userCompanyMemberships.$inferSelect;
 export type InsertUserCompanyMembership = z.infer<typeof insertUserCompanyMembershipSchema>;
+
+// File upload events schemas and types
+export const insertFileUploadEventSchema = createInsertSchema(fileUploadEvents).omit({
+  id: true,
+  uploadedAt: true,
+  createdAt: true,
+});
+
+export type FileUploadEvent = typeof fileUploadEvents.$inferSelect;
+export type InsertFileUploadEvent = z.infer<typeof insertFileUploadEventSchema>;

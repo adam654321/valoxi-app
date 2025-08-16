@@ -18,6 +18,7 @@ import {
   documentCategories,
   documents,
   documentAccessLog,
+  fileUploadEvents,
   portalAccessTokens,
   externalDocumentSubmissions,
   portalDocumentRequirements,
@@ -64,6 +65,8 @@ import {
   type InsertDocumentCategory,
   type InsertDocument,
   type InsertDocumentAccessLog,
+  type FileUploadEvent,
+  type InsertFileUploadEvent,
   type PortalAccessToken,
   type InsertPortalAccessToken,
   type ExternalDocumentSubmission,
@@ -3091,6 +3094,72 @@ export class DatabaseStorage implements IStorage {
       console.error('Error getting simple portal progress:', error);
       return { submittedTypes: [], totalSubmissions: 0 };
     }
+  }
+
+  // File upload event operations
+  async createFileUploadEvent(event: InsertFileUploadEvent): Promise<FileUploadEvent> {
+    const [createdEvent] = await db
+      .insert(fileUploadEvents)
+      .values(event)
+      .returning();
+    return createdEvent;
+  }
+
+  async getFileUploadEventsWithDetails(userCompanyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: fileUploadEvents.id,
+        documentId: fileUploadEvents.documentId,
+        targetCompanyId: fileUploadEvents.targetCompanyId,
+        uploadedBy: fileUploadEvents.uploadedBy,
+        fileName: fileUploadEvents.fileName,
+        fileUrl: fileUploadEvents.fileUrl,
+        webhookSent: fileUploadEvents.webhookSent,
+        webhookResponse: fileUploadEvents.webhookResponse,
+        webhookStatus: fileUploadEvents.webhookStatus,
+        webhookSentAt: fileUploadEvents.webhookSentAt,
+        uploadedAt: fileUploadEvents.uploadedAt,
+        createdAt: fileUploadEvents.createdAt,
+        targetCompanyName: targetCompanies.companyName,
+        uploadedByName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, 'Unknown User')`,
+      })
+      .from(fileUploadEvents)
+      .leftJoin(targetCompanies, eq(fileUploadEvents.targetCompanyId, targetCompanies.id))
+      .leftJoin(users, eq(fileUploadEvents.uploadedBy, users.id))
+      .where(
+        // Filter by user company through target companies
+        exists(
+          db.select({ id: targetCompanies.id })
+            .from(targetCompanies)
+            .where(and(
+              eq(targetCompanies.id, fileUploadEvents.targetCompanyId),
+              eq(targetCompanies.userCompanyId, userCompanyId)
+            ))
+        )
+      )
+      .orderBy(desc(fileUploadEvents.createdAt));
+  }
+
+  async updateFileUploadEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date): Promise<FileUploadEvent | undefined> {
+    const [updatedEvent] = await db
+      .update(fileUploadEvents)
+      .set({
+        webhookSent: true,
+        webhookStatus: status,
+        webhookResponse: response,
+        webhookSentAt: sentAt || new Date(),
+      })
+      .where(eq(fileUploadEvents.id, eventId))
+      .returning();
+    return updatedEvent || undefined;
+  }
+
+  async getFileUploadEvent(eventId: number): Promise<FileUploadEvent | undefined> {
+    const [event] = await db
+      .select()
+      .from(fileUploadEvents)
+      .where(eq(fileUploadEvents.id, eventId));
+    return event || undefined;
   }
 }
 

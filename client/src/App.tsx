@@ -21,6 +21,7 @@ import PortalPage from "@/pages/PortalPage";
 import PortalManagement from "@/pages/PortalManagement";
 import EmailTest from "@/pages/EmailTest";
 import WebhookTest from "@/pages/webhook-test";
+import FileUploadTest from "@/pages/file-upload-test";
 import CompanyAccounts from "@/pages/company-accounts";
 
 
@@ -68,6 +69,7 @@ function Router() {
             <Route path="/portal-management" component={PortalManagement} />
             <Route path="/email-test" component={EmailTest} />
             <Route path="/webhook-test" component={WebhookTest} />
+            <Route path="/file-upload-test" component={FileUploadTest} />
             <Route path="/company-accounts" component={CompanyAccounts} />
             <Route component={NotFound} />
           </Switch>

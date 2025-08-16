@@ -144,10 +144,10 @@ export default function Layout({ children }: LayoutProps) {
                       <span>Company Accounts</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild data-testid="menu-item-webhook-test">
-                    <Link href="/webhook-test" className="flex w-full">
+                  <DropdownMenuItem asChild data-testid="menu-item-file-upload-test">
+                    <Link href="/file-upload-test" className="flex w-full">
                       <Send className="mr-2 h-4 w-4" />
-                      <span>Webhook Test</span>
+                      <span>File Upload Test</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import session from "express-session";
 import { randomUUID } from "crypto";
 import { z } from "zod";
-import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema, insertCompanyDocumentRequirementSchema } from "@shared/schema";
+import { insertUserSchema, insertUserCompanySchema, insertTargetCompanySchema, insertTargetContactSchema, insertUserInvitationSchema, insertUserDealAssignmentSchema, insertTeamNotificationSchema, insertActivitySchema, insertDocumentSchema, insertPortalLinkCampaignSchema, insertPortalEmailTemplateSchema, insertCompanyDocumentRequirementSchema, insertFileUploadEventSchema } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { emailService } from "./email";
 import multer from "multer";
@@ -3041,6 +3041,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (Date.now() - new Date(log.timestamp).getTime()) < 300000 // Less than 5 minutes old
     );
     res.json(pendingWebhooks);
+  });
+
+  // ========================
+  // File Upload Event Routes
+  // ========================
+
+  // Get file upload events for monitoring
+  app.get("/api/file-upload-events", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      if (!userCompanyId) {
+        return res.status(400).json({ message: "User not authenticated" });
+      }
+
+      const fileUploadEvents = await storage.getFileUploadEventsWithDetails(userCompanyId);
+      res.json(fileUploadEvents);
+    } catch (error) {
+      console.error("Get file upload events error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send webhook for file upload event
+  app.post("/api/file-upload-events/:eventId/send-webhook", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+
+      if (!userId || !userCompanyId || !eventId) {
+        return res.status(400).json({ message: "Invalid request" });
+      }
+
+      // Get the file upload event
+      const event = await storage.getFileUploadEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "File upload event not found" });
+      }
+
+      // Check if webhook URL is configured
+      const webhookUrl = process.env.file_upload_webhook;
+      if (!webhookUrl) {
+        return res.status(400).json({ message: "File upload webhook URL not configured" });
+      }
+
+      const startTime = Date.now();
+      
+      try {
+        // Prepare webhook payload
+        const webhookPayload = {
+          event_type: "file_uploaded",
+          timestamp: new Date().toISOString(),
+          file_info: {
+            id: event.id,
+            document_id: event.documentId,
+            target_company_id: event.targetCompanyId,
+            uploaded_by: event.uploadedBy,
+            file_name: event.fileName,
+            file_url: event.fileUrl,
+            uploaded_at: event.uploadedAt,
+          },
+        };
+
+        console.log(`[FILE_UPLOAD_WEBHOOK] Sending webhook for event ${eventId}:`, webhookPayload);
+
+        // Send webhook
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+          timeout: 30000, // 30 second timeout
+        });
+
+        const processingTime = Date.now() - startTime;
+        const responseText = await response.text();
+        let responseData;
+        
+        try {
+          responseData = JSON.parse(responseText);
+        } catch {
+          responseData = responseText;
+        }
+
+        const webhookStatus = response.ok ? 'success' : 'failed';
+        const webhookResponse = JSON.stringify({
+          status: response.status,
+          statusText: response.statusText,
+          data: responseData,
+          processingTime: processingTime
+        }, null, 2);
+
+        // Update the event with webhook response
+        const updatedEvent = await storage.updateFileUploadEventWebhookStatus(
+          eventId, 
+          webhookStatus, 
+          webhookResponse,
+          new Date()
+        );
+
+        if (!updatedEvent) {
+          return res.status(500).json({ message: "Failed to update webhook status" });
+        }
+
+        console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
+        
+        res.json({
+          success: true,
+          status: webhookStatus,
+          response: responseData,
+          processingTime: processingTime
+        });
+
+      } catch (webhookError) {
+        const processingTime = Date.now() - startTime;
+        const errorMessage = webhookError instanceof Error ? webhookError.message : 'Unknown webhook error';
+        const webhookResponse = JSON.stringify({
+          error: errorMessage,
+          processingTime: processingTime
+        }, null, 2);
+
+        // Update event with error
+        await storage.updateFileUploadEventWebhookStatus(
+          eventId, 
+          'failed', 
+          webhookResponse,
+          new Date()
+        );
+
+        console.error(`[FILE_UPLOAD_WEBHOOK] Webhook failed for event ${eventId}:`, webhookError);
+        
+        res.status(500).json({
+          success: false,
+          error: errorMessage,
+          processingTime: processingTime
+        });
+      }
+
+    } catch (error) {
+      console.error("Send file upload webhook error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Test webhook endpoint
