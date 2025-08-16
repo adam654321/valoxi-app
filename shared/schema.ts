@@ -35,15 +35,29 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
   lastName: varchar("last_name", { length: 100 }).notNull(),
-  userCompanyId: integer("user_company_id").references(() => userCompanies.id),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id), // Primary company (for backwards compatibility)
+  currentCompanyId: integer("current_company_id").references(() => userCompanies.id), // Currently active company (for multiple companies)
   role: varchar("role", { length: 50 }).default("user"),
   userRole: varchar("user_role", { length: 50 }).default("analyst"),
-  isCompanyAdmin: boolean("is_company_admin").default(false),
+  isCompanyAdmin: boolean("is_company_admin").default(false), // Admin for primary company
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
   emailVerified: boolean("email_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Junction table for user-company relationships (many-to-many)
+export const userCompanyMemberships = pgTable("user_company_memberships", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  isCompanyAdmin: boolean("is_company_admin").default(false),
+  membershipRole: varchar("membership_role", { length: 50 }).default("analyst"), // Role within this specific company
+  joinedAt: timestamp("joined_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+}, (table) => ({
+  uniqueUserCompany: unique("unique_user_company").on(table.userId, table.userCompanyId),
+}));
 
 // Target companies (businesses users want to acquire)
 export const targetCompanies = pgTable("target_companies", {
@@ -1144,3 +1158,12 @@ export type InsertCompanyDocumentRequirement = z.infer<typeof insertCompanyDocum
 
 export type DocumentStageProgression = typeof documentStageProgression.$inferSelect;
 export type InsertDocumentStageProgression = z.infer<typeof insertDocumentStageProgressionSchema>;
+
+// User company membership schemas and types
+export const insertUserCompanyMembershipSchema = createInsertSchema(userCompanyMemberships).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export type UserCompanyMembership = typeof userCompanyMemberships.$inferSelect;
+export type InsertUserCompanyMembership = z.infer<typeof insertUserCompanyMembershipSchema>;

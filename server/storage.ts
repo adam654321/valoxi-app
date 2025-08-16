@@ -1,6 +1,7 @@
 import {
   users,
   userCompanies,
+  userCompanyMemberships,
   targetCompanies,
   targetContacts,
   userSessions,
@@ -85,6 +86,8 @@ import {
   type InsertCompanyDocumentRequirement,
   type DocumentStageProgression,
   type InsertDocumentStageProgression,
+  type UserCompanyMembership,
+  type InsertUserCompanyMembership,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull, gt } from "drizzle-orm";
@@ -141,6 +144,7 @@ export interface UserWithRole extends User {
   roleDescription?: string;
   assignedDealsCount?: number;
   permissions?: UserRole;
+  userCompanies?: UserCompanyMembership[]; // For multiple company support
 }
 
 export interface TeamMember extends User {
@@ -181,6 +185,13 @@ export interface IStorage {
   // User company operations
   getUserCompany(id: number): Promise<UserCompany | undefined>;
   createUserCompany(company: InsertUserCompany): Promise<UserCompany>;
+  
+  // User company membership operations (for multiple companies)
+  getUserCompanies(userId: number): Promise<UserCompanyMembership[]>;
+  createUserCompanyMembership(membership: InsertUserCompanyMembership): Promise<UserCompanyMembership>;
+  updateUserCompanyMembership(id: number, membership: Partial<InsertUserCompanyMembership>): Promise<UserCompanyMembership | undefined>;
+  deleteUserCompanyMembership(id: number): Promise<boolean>;
+  switchUserActiveCompany(userId: number, companyId: number): Promise<boolean>;
   
   // Target company operations
   getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompanyWithStats[]>;
@@ -348,6 +359,48 @@ export class DatabaseStorage implements IStorage {
       .values(insertCompany)
       .returning();
     return company;
+  }
+
+  // User company membership operations (for multiple companies)
+  async getUserCompanies(userId: number): Promise<UserCompanyMembership[]> {
+    return await db
+      .select()
+      .from(userCompanyMemberships)
+      .where(and(eq(userCompanyMemberships.userId, userId), eq(userCompanyMemberships.isActive, true)))
+      .orderBy(desc(userCompanyMemberships.joinedAt));
+  }
+
+  async createUserCompanyMembership(membership: InsertUserCompanyMembership): Promise<UserCompanyMembership> {
+    const [newMembership] = await db
+      .insert(userCompanyMemberships)
+      .values(membership)
+      .returning();
+    return newMembership;
+  }
+
+  async updateUserCompanyMembership(id: number, membership: Partial<InsertUserCompanyMembership>): Promise<UserCompanyMembership | undefined> {
+    const [updated] = await db
+      .update(userCompanyMemberships)
+      .set(membership)
+      .where(eq(userCompanyMemberships.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteUserCompanyMembership(id: number): Promise<boolean> {
+    const result = await db
+      .update(userCompanyMemberships)
+      .set({ isActive: false })
+      .where(eq(userCompanyMemberships.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async switchUserActiveCompany(userId: number, companyId: number): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ currentCompanyId: companyId })
+      .where(eq(users.id, userId));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getTargetCompaniesByUserCompany(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
@@ -1177,6 +1230,7 @@ export class DatabaseStorage implements IStorage {
 
     return members.map((member) => ({
       ...member,
+      currentCompanyId: member.userCompanyId, // Add missing field for backwards compatibility
       lastLoginFormatted: member.lastLogin 
         ? new Date(member.lastLogin).toLocaleDateString()
         : null,
@@ -2866,7 +2920,7 @@ export class DatabaseStorage implements IStorage {
     const [document] = await db
       .insert(externalDocumentSubmissions)
       .values({
-        targetCompanyId: tokenData.targetCompanyId,
+        portalTokenId: tokenData.id,
         targetContactId: tokenData.targetContactId,
         portalTokenId: tokenData.id,
         originalFilename: uploadedFile.originalname,
@@ -2880,7 +2934,7 @@ export class DatabaseStorage implements IStorage {
     
     // Create requirement submission tracking record
     const [submission] = await db
-      .insert(documentRequirementSubmissions)
+      .insert(externalDocumentSubmissions)
       .values({
         companyRequirementId: requirementId,
         externalDocumentId: document.id,
@@ -2900,8 +2954,7 @@ export class DatabaseStorage implements IStorage {
         submittedDocumentId: document.id,
         submittedAt: new Date(),
         submittedByContactId: tokenData.targetContactId,
-        submittedDocumentCount: (requirement.submittedDocumentCount || 0) + 1,
-        latestSubmissionDate: new Date(),
+        submissionStatus: 'submitted',
         updatedAt: new Date()
       })
       .where(eq(companyDocumentRequirements.id, requirementId));
@@ -2956,10 +3009,7 @@ export class DatabaseStorage implements IStorage {
     const companies = await db
       .select()
       .from(targetCompanies)
-      .where(and(
-        eq(targetCompanies.userCompanyId, userCompanyId),
-        eq(targetCompanies.isActive, true)
-      ))
+      .where(eq(targetCompanies.userCompanyId, userCompanyId))
       .orderBy(asc(targetCompanies.companyName));
 
     // Get progress for each company

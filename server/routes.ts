@@ -3439,15 +3439,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // const portalLink = `${process.env.REPLIT_DEV_DOMAIN}/portal/example-token`;
 
           // Prepare email content
-          const subject = customSubject || template?.subject || campaign.name;
-          let message = customMessage || template?.bodyTemplate || campaign.description || "";
+          const subject = customSubject || template?.subject || campaign?.name || "Campaign Email";
+          let message = customMessage || template?.bodyTemplate || campaign?.description || "";
+          
+          // Generate a placeholder portal link since we're skipping the actual send
+          const portalLink = `${process.env.REPLIT_DEV_DOMAIN}/portal/example-token`;
           
           // Replace template variables
           message = message
-            .replace(/\{contact_name\}/g, contact.name)
+            .replace(/\{contact_name\}/g, contact.firstName || "Contact")
             .replace(/\{company_name\}/g, contact.targetCompanyName || "")
             .replace(/\{portal_link\}/g, portalLink)
-            .replace(/\{campaign_name\}/g, campaign.name);
+            .replace(/\{campaign_name\}/g, campaign?.name || "Campaign");
 
           // Send email - using sendPortalAccessLink instead
           await emailService.sendPortalAccessLink(
@@ -3471,7 +3474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           // Update template usage if template was used
-          if (template) {
+          if (template && template.id) {
             await storage.incrementTemplateUsage(template.id);
           }
 
@@ -3807,6 +3810,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: error instanceof Error ? error.message : 'Failed to submit document' 
       });
+    }
+  });
+
+  // ========================================
+  // COMPANY ACCOUNT MANAGEMENT SYSTEM
+  // ========================================
+
+  // Get all companies for current user
+  app.get("/api/user/companies", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get user's current companies
+      const companies = await storage.getUserCompanies(userId);
+      
+      // Get full company details
+      const companiesWithDetails = await Promise.all(
+        companies.map(async (membership) => {
+          const company = await storage.getUserCompany(membership.userCompanyId);
+          return {
+            id: membership.id,
+            companyId: membership.userCompanyId,
+            companyName: company?.companyName || 'Unknown Company',
+            email: company?.email,
+            phone: company?.phone,
+            address: company?.address,
+            isAdmin: membership.isCompanyAdmin,
+            role: membership.membershipRole,
+            joinedAt: membership.joinedAt,
+            isActive: membership.isActive,
+            isCurrent: membership.userCompanyId === req.session.userCompanyId
+          };
+        })
+      );
+      
+      res.json(companiesWithDetails);
+    } catch (error) {
+      console.error("Failed to get user companies:", error);
+      res.status(500).json({ error: "Failed to get user companies" });
+    }
+  });
+
+  // Create new company account
+  app.post("/api/user/companies", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const { companyName, email, phone, address } = req.body;
+      
+      // Check if user already has 5 companies (max limit)
+      const existingCompanies = await storage.getUserCompanies(userId);
+      if (existingCompanies.length >= 5) {
+        return res.status(400).json({ error: "Maximum of 5 companies allowed per user" });
+      }
+      
+      // Create new company
+      const newCompany = await storage.createUserCompany({
+        companyName,
+        email: email || null,
+        phone: phone || null,
+        address: address || null
+      });
+      
+      // Create membership for user as admin
+      const membership = await storage.createUserCompanyMembership({
+        userId,
+        userCompanyId: newCompany.id,
+        isCompanyAdmin: true,
+        membershipRole: 'admin',
+        isActive: true
+      });
+      
+      // If this is the user's first company, set it as current
+      if (existingCompanies.length === 0) {
+        await storage.switchUserActiveCompany(userId, newCompany.id);
+      }
+      
+      res.json({
+        id: membership.id,
+        companyId: newCompany.id,
+        companyName: newCompany.companyName,
+        email: newCompany.email,
+        phone: newCompany.phone,
+        address: newCompany.address,
+        isAdmin: true,
+        role: 'admin',
+        joinedAt: membership.joinedAt,
+        isActive: true,
+        isCurrent: existingCompanies.length === 0
+      });
+    } catch (error) {
+      console.error("Failed to create company:", error);
+      res.status(500).json({ error: "Failed to create company" });
+    }
+  });
+
+  // Switch active company
+  app.post("/api/user/companies/:companyId/switch", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const companyId = parseInt(req.params.companyId);
+      
+      // Verify user has access to this company
+      const companies = await storage.getUserCompanies(userId);
+      const hasAccess = companies.some(c => c.userCompanyId === companyId && c.isActive);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied to this company" });
+      }
+      
+      // Switch active company
+      await storage.switchUserActiveCompany(userId, companyId);
+      
+      // Update session
+      req.session.userCompanyId = companyId;
+      
+      res.json({ success: true, currentCompanyId: companyId });
+    } catch (error) {
+      console.error("Failed to switch company:", error);
+      res.status(500).json({ error: "Failed to switch company" });
     }
   });
 

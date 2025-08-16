@@ -50,6 +50,7 @@ export default function Layout({ children }: LayoutProps) {
     if (path === "/portal-management" && location === "/portal-management") return true;
     if (path === "/email-test" && location === "/email-test") return true;
     if (path === "/webhook-test" && location === "/webhook-test") return true;
+    if (path === "/company-accounts" && location === "/company-accounts") return true;
     return location === path;
   };
 
@@ -137,9 +138,11 @@ export default function Layout({ children }: LayoutProps) {
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem data-testid="menu-item-settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                  <DropdownMenuItem asChild data-testid="menu-item-company-accounts">
+                    <Link href="/company-accounts" className="flex w-full">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Company Accounts</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild data-testid="menu-item-webhook-test">
                     <Link href="/webhook-test" className="flex w-full">
