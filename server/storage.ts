@@ -2825,9 +2825,9 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getStage1RequirementsForPortal(targetCompanyId: number): Promise<any[]> {
+  async getSimplePortalData(targetCompanyId: number): Promise<any> {
     try {
-      // Get portal token for this company to check submissions
+      // Get portal token for this company
       const [tokenInfo] = await db
         .select()
         .from(portalAccessTokens)
@@ -2837,301 +2837,115 @@ export class DatabaseStorage implements IStorage {
         ))
         .limit(1);
       
-      // Count submissions for Company Accounts requirement
-      let companyAccountsSubmissions = 0;
-      let companyAccountsStatus = "pending";
-      if (tokenInfo) {
-        const submissions = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(externalDocumentSubmissions)
-          .where(eq(externalDocumentSubmissions.portalTokenId, tokenInfo.id));
-        
-        companyAccountsSubmissions = submissions[0]?.count || 0;
-        // FIXED: Company Accounts should ALWAYS show as pending until 5 files, never submitted until 5
-        companyAccountsStatus = "pending"; // Always pending so upload interface stays visible
+      if (!tokenInfo) {
+        throw new Error('No active portal token found');
       }
-      
-      // Return mock Stage 1 requirements data for the portal
-      return [
-        {
-          id: 1,
-          requirement_name: "Company Accounts",
-          requirement_description: "Upload up to 5 company account files (latest annual accounts, management accounts, etc.)",
-          priority_level: 1,
-          requirement_status: companyAccountsStatus,
-          submitted_documents: companyAccountsSubmissions,
-          latest_submission_date: null,
-          display_status: companyAccountsStatus
-        },
-        {
-          id: 2,
-          requirement_name: "P&L Statement",
-          requirement_description: "Detailed profit and loss statement for the current financial year",
-          priority_level: 1,
-          requirement_status: "pending",
-          submitted_documents: 0,
-          latest_submission_date: null,
-          display_status: "pending"
-        },
-        {
-          id: 3,
-          requirement_name: "Balance Sheet",
-          requirement_description: "Current balance sheet showing assets and liabilities",
-          priority_level: 1,
-          requirement_status: "pending",
-          submitted_documents: 0,
-          latest_submission_date: null,
-          display_status: "pending"
-        },
-        {
-          id: 4,
-          requirement_name: "Sales Ledger",
-          requirement_description: "Detailed sales ledger for the last 12 months",
-          priority_level: 2,
-          requirement_status: "pending",
-          submitted_documents: 0,
-          latest_submission_date: null,
-          display_status: "pending"
-        },
-        {
-          id: 5,
-          requirement_name: "Asset Register",
-          requirement_description: "Complete register of company assets including equipment and property",
-          priority_level: 2,
-          requirement_status: "pending",
-          submitted_documents: 0,
-          latest_submission_date: null,
-          display_status: "pending"
-        },
-        {
-          id: 6,
-          requirement_name: "Staff Matrix",
-          requirement_description: "Current organizational chart and staff details",
-          priority_level: 3,
-          requirement_status: "pending",
-          submitted_documents: 0,
-          latest_submission_date: null,
-          display_status: "pending"
-        }
-      ];
+
+      // Get all submitted documents for this portal
+      const submissions = await db
+        .select({
+          id: externalDocumentSubmissions.id,
+          documentType: externalDocumentSubmissions.submissionNotes, // We'll store document type here
+          filename: externalDocumentSubmissions.originalFilename,
+          submittedAt: externalDocumentSubmissions.createdAt,
+          status: externalDocumentSubmissions.processingStatus
+        })
+        .from(externalDocumentSubmissions)
+        .where(eq(externalDocumentSubmissions.portalTokenId, tokenInfo.id))
+        .orderBy(sql`${externalDocumentSubmissions.createdAt} DESC`);
+
+      // Get target company name
+      const [company] = await db
+        .select({
+          companyName: targetCompanies.companyName
+        })
+        .from(targetCompanies)
+        .where(eq(targetCompanies.id, targetCompanyId))
+        .limit(1);
+
+      const totalDocuments = submissions.length;
+      const progressPercentage = Math.min(Math.round((totalDocuments / 10) * 100), 100);
+
+      return {
+        company_name: company?.companyName || 'Unknown Company',
+        total_documents_required: 10,
+        submitted_documents: submissions.map(sub => ({
+          id: sub.id,
+          documentType: sub.documentType || 'unknown',
+          filename: sub.filename,
+          submittedAt: sub.submittedAt,
+          status: sub.status
+        })),
+        progress_percentage: progressPercentage,
+        portal_expires_at: tokenInfo.expiresAt
+      };
     } catch (error) {
-      console.error('Error in getStage1RequirementsForPortal:', error);
+      console.error('Error in getSimplePortalData:', error);
       throw error;
     }
   }
 
-  async submitDocumentForRequirement(tokenData: any, requirementId: number, uploadedFile: any, submissionNotes?: string): Promise<any> {
-    // For Company Accounts requirement (ID 1), allow multiple submissions
-    // For other requirements, check if already submitted
-    const [requirement] = await db
-      .select()
-      .from(companyDocumentRequirements)
-      .where(and(
-        eq(companyDocumentRequirements.id, requirementId),
-        eq(companyDocumentRequirements.targetCompanyId, tokenData.targetCompanyId),
-        eq(companyDocumentRequirements.collectionStage, 1)
-      ));
-
-    if (!requirement) {
-      throw new Error('Invalid requirement or requirement not found');
-    }
-    
-    // For non-Company Accounts requirements, check if already completed
-    if (requirementId !== 1 && requirement.requirementStatus === 'approved') {
-      throw new Error('This requirement has already been completed and approved');
-    }
-    
-    // For Company Accounts, check if we already have 5 submissions
-    if (requirementId === 1) {
+  async submitSimplePortalDocument(tokenData: any, uploadedFile: any, documentType: string, submissionNotes?: string): Promise<any> {
+    try {
+      // Check if this document type has already been submitted (except for company accounts which allow 5)
       const existingSubmissions = await db
         .select({ count: sql<number>`count(*)` })
         .from(externalDocumentSubmissions)
         .where(and(
           eq(externalDocumentSubmissions.portalTokenId, tokenData.id),
-          sql`${externalDocumentSubmissions.originalFilename} LIKE '%company%account%' OR ${externalDocumentSubmissions.originalFilename} LIKE '%account%'`
+          eq(externalDocumentSubmissions.submissionNotes, documentType)
         ));
       
-      if (existingSubmissions[0]?.count >= 5) {
-        throw new Error('Maximum of 5 company account documents already submitted');
+      const existingCount = existingSubmissions[0]?.count || 0;
+      
+      // For company accounts, allow up to 5 submissions
+      if (documentType.startsWith('company_accounts_') && existingCount >= 1) {
+        throw new Error('This company accounts file has already been submitted');
       }
-    }
-    
-    // Create external document submission record
-    const [document] = await db
-      .insert(externalDocumentSubmissions)
-      .values({
-        portalTokenId: tokenData.id,
-        targetContactId: tokenData.targetContactId,
-        portalTokenId: tokenData.id,
-        originalFilename: uploadedFile.originalname,
-        filePath: uploadedFile.path,
-        fileSize: uploadedFile.size,
-        fileType: uploadedFile.mimetype,
-        submissionNotes: submissionNotes || '',
-        processingStatus: 'uploaded'
-      })
-      .returning();
-    
-    // Create requirement submission tracking record
-    const [submission] = await db
-      .insert(externalDocumentSubmissions)
-      .values({
-        companyRequirementId: requirementId,
-        externalDocumentId: document.id,
-        targetCompanyId: tokenData.targetCompanyId,
-        targetContactId: tokenData.targetContactId,
-        originalFilename: uploadedFile.originalname,
-        fileSize: uploadedFile.size,
-        fileType: uploadedFile.mimetype
-      })
-      .returning();
-    
-    // Update requirement status - for Company Accounts, check if we have enough submissions
-    let newStatus = 'submitted';
-    if (requirementId === 1) { // Company Accounts
-      // Count total submissions for this requirement
-      const allSubmissions = await db
+      
+      // For other document types, allow only 1 submission
+      if (!documentType.startsWith('company_accounts_') && existingCount >= 1) {
+        throw new Error('This document type has already been submitted');
+      }
+      
+      // Check total submissions (max 10)
+      const totalSubmissions = await db
         .select({ count: sql<number>`count(*)` })
         .from(externalDocumentSubmissions)
         .where(eq(externalDocumentSubmissions.portalTokenId, tokenData.id));
       
-      // If we have 5 or more company account files, mark as submitted
-      newStatus = allSubmissions[0]?.count >= 5 ? 'submitted' : 'pending';
-    }
-    
-    await db
-      .update(companyDocumentRequirements)
-      .set({
-        requirementStatus: newStatus,
-        submittedDocumentId: document.id,
-        submittedAt: new Date(),
-        submittedByContactId: tokenData.targetContactId,
-        submissionStatus: newStatus,
-        updatedAt: new Date()
-      })
-      .where(eq(companyDocumentRequirements.id, requirementId));
-    
-    return {
-      submission_id: submission.id,
-      document_id: document.id,
-      requirement_name: requirement.requirementName,
-      filename: uploadedFile.originalname,
-      submitted_at: new Date().toISOString()
-    };
-  }
-
-  async getStage1Progress(targetCompanyId: number): Promise<any> {
-    // Get requirements from getStage1RequirementsForPortal to calculate progress
-    const requirements = await this.getStage1RequirementsForPortal(targetCompanyId);
-    
-    const totalRequirements = requirements.length;
-    let completedRequirements = 0;
-    
-    // For Company Accounts, consider it complete if we have 5+ files
-    // For other requirements, check if submitted/approved
-    for (const req of requirements) {
-      if (req.requirement_name === "Company Accounts") {
-        if (req.submitted_documents >= 5) {
-          completedRequirements += 1;
-        }
-      } else {
-        if (req.requirement_status === 'submitted' || req.requirement_status === 'approved') {
-          completedRequirements += 1;
-        }
+      if ((totalSubmissions[0]?.count || 0) >= 10) {
+        throw new Error('Maximum of 10 documents already submitted');
       }
+      
+      // Create external document submission record
+      const [document] = await db
+        .insert(externalDocumentSubmissions)
+        .values({
+          portalTokenId: tokenData.id,
+          targetContactId: tokenData.targetContactId,
+          originalFilename: uploadedFile.originalname,
+          filePath: uploadedFile.path,
+          fileSize: uploadedFile.size,
+          fileType: uploadedFile.mimetype,
+          submissionNotes: documentType, // Store document type in submissionNotes field
+          processingStatus: 'uploaded'
+        })
+        .returning();
+      
+      console.log(`[PORTAL] Document submitted: ${documentType} - ${uploadedFile.originalname}`);
+      
+      return {
+        success: true,
+        document_id: document.id,
+        document_type: documentType,
+        filename: uploadedFile.originalname
+      };
+    } catch (error) {
+      console.error('Error in submitSimplePortalDocument:', error);
+      throw error;
     }
-    
-    const completionPercentage = totalRequirements > 0 
-      ? Math.round((completedRequirements / totalRequirements) * 100)
-      : 0;
-
-    const overallStatus = 
-      completionPercentage === 100 ? 'complete' :
-      completionPercentage > 0 ? 'in_progress' : 'not_started';
-
-    return {
-      total_requirements: totalRequirements,
-      completed_requirements: completedRequirements,
-      completion_percentage: completionPercentage,
-      overall_status: overallStatus
-    };
   }
-
-  async getDetailedCompanyProgress(targetCompanyId: number): Promise<any> {
-    // Get detailed progress using the same methods as portal
-    const requirements = await this.getStage1RequirementsForPortal(targetCompanyId);
-    const progressStats = await this.getStage1Progress(targetCompanyId);
-    
-    return {
-      progress_stats: progressStats,
-      requirements: requirements
-    };
-  }
-
-  async getDocumentProgressDashboard(userCompanyId: number): Promise<any> {
-    // Get all target companies for this user company
-    const companies = await db
-      .select()
-      .from(targetCompanies)
-      .where(eq(targetCompanies.userCompanyId, userCompanyId))
-      .orderBy(asc(targetCompanies.companyName));
-
-    // Get progress for each company
-    const companiesWithProgress = await Promise.all(
-      companies.map(async (company) => {
-        const progress = await this.getStage1Progress(company.id);
-        const activePortals = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(portalAccessTokens)
-          .where(and(
-            eq(portalAccessTokens.targetCompanyId, company.id),
-            eq(portalAccessTokens.isActive, true),
-            gt(portalAccessTokens.expiresAt, new Date())
-          ));
-
-        const statusDisplay = 
-          progress.overall_status === 'complete' ? '✅ Complete' :
-          progress.overall_status === 'in_progress' ? '🔄 In Progress' : 
-          '⏳ Not Started';
-
-        return {
-          id: company.id,
-          company_name: company.companyName,
-          industry: company.industry,
-          pipeline_stage: company.stage,
-          total_requirements: progress.total_requirements,
-          completed_requirements: progress.completed_requirements,
-          completion_percentage: progress.completion_percentage,
-          overall_status: progress.overall_status,
-          status_display: statusDisplay,
-          active_portals: activePortals[0]?.count || 0,
-          last_activity: new Date().toISOString()
-        };
-      })
-    );
-
-    // Calculate summary statistics
-    const totalCompanies = companiesWithProgress.length;
-    const completedCompanies = companiesWithProgress.filter(c => c.overall_status === 'complete').length;
-    const inProgressCompanies = companiesWithProgress.filter(c => c.overall_status === 'in_progress').length;
-    const notStartedCompanies = companiesWithProgress.filter(c => c.overall_status === 'not_started').length;
-    
-    const averageCompletion = totalCompanies > 0 
-      ? Math.round(companiesWithProgress.reduce((sum, c) => sum + (c.completion_percentage || 0), 0) / totalCompanies)
-      : 0;
-    
-    return {
-      summary: {
-        total_companies: totalCompanies,
-        completed_companies: completedCompanies,
-        in_progress_companies: inProgressCompanies,
-        not_started_companies: notStartedCompanies,
-        average_completion: averageCompletion
-      },
-      companies: companiesWithProgress.sort((a, b) => b.completion_percentage - a.completion_percentage)
-    };
-  }
-
 }
 
 export const storage = new DatabaseStorage();

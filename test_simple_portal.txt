@@ -1,0 +1,13 @@
+Testing Simple Portal System:
+
+1. Portal data endpoint: /api/portal/{token}
+2. Document submission: POST /api/portal/{token}/documents/submit
+
+Expected behavior:
+- Portal shows 10 document types in dropdown
+- Progress bar updates by 10% per document
+- Company Accounts allows 5 separate files
+- Other requirements allow 1 file each
+- Total: 10 documents = 100%
+
+Token for testing: 83a4ea8a-a015-4e83-9eda-9e54b9e99b72-7c0fa031-4486-42ad-8d13-a6bb9f3a9f8b

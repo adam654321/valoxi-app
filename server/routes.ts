@@ -3711,23 +3711,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid or expired portal token' });
       }
 
-      // Get Stage 1 requirements with submission tracking
-      const requirements = await storage.getStage1RequirementsForPortal(tokenData.targetCompanyId);
-      
-      // Get progress summary
-      const progress = await storage.getStage1Progress(tokenData.targetCompanyId);
-      
-      const responseData = {
-        company_name: tokenData.company_name,
-        total_requirements: progress.total_requirements || 6,
-        completed_requirements: progress.completed_requirements || 0,
-        progress_percentage: progress.completion_percentage || 0,
-        overall_status: progress.overall_status || 'not_started',
-        portal_expires_at: tokenData.expiresAt,
-        requirements: requirements
-      };
+      // Get simple portal data
+      const portalData = await storage.getSimplePortalData(tokenData.targetCompanyId);
 
-      res.json(responseData);
+      res.json(portalData);
     } catch (error) {
       console.error('Portal requirements error:', error);
       res.status(500).json({ message: 'Failed to load requirements' });
@@ -3738,11 +3725,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/portal/:token/documents/submit', portalUpload.single('document'), async (req: Request, res: Response) => {
     try {
       const token = req.params.token;
-      const { requirementId, submissionNotes } = req.body;
+      const { documentType, submissionNotes } = req.body;
       const uploadedFile = req.file;
 
       if (!uploadedFile) {
         return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      if (!documentType) {
+        return res.status(400).json({ message: 'Document type is required' });
       }
 
       // Validate token
@@ -3751,19 +3742,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid or expired portal token' });
       }
 
-      // Submit document for requirement
-      const result = await storage.submitDocumentForRequirement(
+      // Submit document using simple method
+      const result = await storage.submitSimplePortalDocument(
         tokenData,
-        parseInt(requirementId),
         uploadedFile,
+        documentType,
         submissionNotes
       );
 
-      res.json({
-        success: true,
-        message: 'Document submitted successfully',
-        submission: result
-      });
+      res.json(result);
 
     } catch (error) {
       console.error('Document submission error:', error);
