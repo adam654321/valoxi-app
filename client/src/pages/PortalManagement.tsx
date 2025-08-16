@@ -84,10 +84,17 @@ export default function PortalManagement() {
       contactIds: number[];
       customMessage?: string;
     }) => {
-      return apiRequest('/api/portal-tokens', {
+      const response = await fetch('/api/portal-tokens', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       });
+      if (!response.ok) {
+        throw new Error('Failed to create portal token');
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -104,6 +111,33 @@ export default function PortalManagement() {
       toast({
         title: "Error creating portal links",
         description: error.message || "Failed to create portal links",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Remove/expire portal token mutation
+  const removePortalToken = useMutation({
+    mutationFn: async (tokenId: number) => {
+      const response = await fetch(`/api/portal/deactivate/${tokenId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove portal token');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Portal link removed",
+        description: "The portal link has been deactivated and removed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/portal-tokens'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error removing portal link",
+        description: error.message || "Failed to remove portal link",
         variant: "destructive",
       });
     },
@@ -439,13 +473,43 @@ export default function PortalManagement() {
                         <div className="text-xl font-bold text-green-600">{token.documentSubmissions}</div>
                         <div className="text-xs text-muted-foreground">Documents</div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigator.clipboard.writeText(`${window.location.origin}/portal/${token.accessToken}`)}
-                      >
-                        Copy Link
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`/portal/${token.accessToken}`, '_blank')}
+                          title="View Portal"
+                        >
+                          <ExternalLink size={14} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/portal/${token.accessToken}`);
+                            toast({
+                              title: "Link copied",
+                              description: "Portal link copied to clipboard",
+                            });
+                          }}
+                          title="Copy Link"
+                        >
+                          Copy
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to remove this portal link? This action cannot be undone.')) {
+                              removePortalToken.mutate(token.id);
+                            }
+                          }}
+                          disabled={removePortalToken.isPending}
+                          title="Remove Portal Link"
+                        >
+                          {removePortalToken.isPending ? '...' : 'Remove'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

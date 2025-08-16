@@ -2753,7 +2753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Deactivate portal token (authenticated endpoint)
-  app.post("/api/portal/deactivate/:tokenId", isAuthenticated, async (req: Request, res: Response) => {
+  app.delete("/api/portal/deactivate/:tokenId", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId;
       const userCompanyId = req.session.userCompanyId;
