@@ -2617,75 +2617,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Target company not found or access denied" });
       }
       
-      const createdTokens = [];
-      
-      // Create a portal token for each contact
-      for (const contactId of tokenData.contactIds) {
-        // Verify contact exists and belongs to the company
-        const contact = await storage.getTargetContact(contactId, userCompanyId);
-        if (!contact || contact.targetCompanyId !== tokenData.targetCompanyId) {
-          console.log(`[PORTAL TOKEN] Contact ${contactId} not found or doesn't belong to company ${tokenData.targetCompanyId}`);
-          continue;
-        }
-        
-        // Generate unique access token
-        const accessToken = randomUUID() + '-' + randomUUID();
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30); // 30 days default
-        
-        const portalToken = await storage.createPortalAccessToken({
-          targetCompanyId: tokenData.targetCompanyId,
-          targetContactId: contactId,
-          userCompanyId,
-          accessToken,
-          tokenPurpose: "document_submission",
-          expiresAt,
-          createdBy: userId,
-          allowedActions: JSON.stringify({ upload: true, download: false, message: true }),
-          customMessage: tokenData.customMessage || null,
-          portalBranding: null,
-        });
-        
-        const portalUrl = `${req.protocol}://${req.get('host')}/portal/${portalToken.accessToken}`;
-        
-        // Send portal access email
-        try {
-          console.log(`[PORTAL TOKEN] Sending email to ${contact.email} for portal access`);
-          
-          const emailResult = await emailService.sendPortalAccessLink(
-            contact.email!,
-            contact.firstName || 'Contact',
-            company.companyName,
-            portalUrl,
-            tokenData.customMessage || 'Please access the secure document portal to submit required documents.',
-            expiresAt
-          );
-          
-          console.log(`[PORTAL TOKEN] Email sent result:`, emailResult);
-          
-        } catch (emailError) {
-          console.error(`[PORTAL TOKEN] Failed to send email to ${contact.email}:`, emailError);
-          // Continue anyway - token is created
-        }
-        
-        createdTokens.push({
-          id: portalToken.id,
-          accessToken: portalToken.accessToken,
-          contactId: contactId,
-          contactName: `${contact.firstName} ${contact.lastName}`,
-          contactEmail: contact.email,
-          portalUrl: portalUrl,
+      // Check if a portal link already exists for this target company
+      const existingToken = await storage.getPortalTokenByCompany(tokenData.targetCompanyId);
+      if (existingToken) {
+        return res.status(409).json({ 
+          message: "A portal link already exists for this company. Please remove the existing link before creating a new one.",
+          existingToken: {
+            id: existingToken.id,
+            contactId: existingToken.targetContactId,
+            isActive: existingToken.isActive,
+            createdAt: existingToken.createdAt
+          }
         });
       }
       
-      if (createdTokens.length === 0) {
-        return res.status(400).json({ message: "No valid contacts found for portal token creation" });
+      // Only allow one contact and ensure it's the primary contact
+      if (tokenData.contactIds.length > 1) {
+        return res.status(400).json({ message: "Only one contact is allowed per portal link" });
       }
+      
+      const contactId = tokenData.contactIds[0];
+      
+      // Verify contact exists, belongs to the company, and is primary
+      const contact = await storage.getTargetContact(contactId, userCompanyId);
+      if (!contact || contact.targetCompanyId !== tokenData.targetCompanyId) {
+        return res.status(404).json({ message: "Contact not found or doesn't belong to the specified company" });
+      }
+      
+      if (!contact.isPrimary) {
+        return res.status(400).json({ message: "Portal links can only be created for primary contacts" });
+      }
+      
+      // Generate unique access token
+      const accessToken = randomUUID() + '-' + randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days default
+      
+      const portalToken = await storage.createPortalAccessToken({
+        targetCompanyId: tokenData.targetCompanyId,
+        targetContactId: contactId,
+        userCompanyId,
+        accessToken,
+        tokenPurpose: "document_submission",
+        expiresAt,
+        createdBy: userId,
+        allowedActions: JSON.stringify({ upload: true, download: false, message: true }),
+        customMessage: tokenData.customMessage || null,
+        portalBranding: null,
+      });
+      
+      const portalUrl = `${req.protocol}://${req.get('host')}/portal/${portalToken.accessToken}`;
+      
+      // Send portal access email
+      try {
+        console.log(`[PORTAL TOKEN] Sending email to ${contact.email} for portal access`);
+        
+        const emailResult = await emailService.sendPortalAccessLink(
+          contact.email!,
+          contact.firstName || 'Contact',
+          company.companyName,
+          portalUrl,
+          tokenData.customMessage || 'Please access the secure document portal to submit required documents.',
+          expiresAt
+        );
+        
+        console.log(`[PORTAL TOKEN] Email sent result:`, emailResult);
+        
+      } catch (emailError) {
+        console.error(`[PORTAL TOKEN] Failed to send email to ${contact.email}:`, emailError);
+        // Continue anyway - token is created
+      }
+      
+      const createdToken = {
+        id: portalToken.id,
+        accessToken: portalToken.accessToken,
+        contactId: contactId,
+        contactName: `${contact.firstName} ${contact.lastName}`,
+        contactEmail: contact.email,
+        portalUrl: portalUrl,
+      };
       
       res.json({ 
         success: true, 
-        message: `Portal ${createdTokens.length === 1 ? 'link' : 'links'} created and sent successfully`,
-        tokens: createdTokens 
+        message: "Portal link created and sent successfully",
+        token: createdToken 
       });
       
     } catch (error) {

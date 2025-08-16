@@ -2349,6 +2349,24 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(portalAccessTokens.createdAt));
   }
 
+  async getPortalTokenByCompany(targetCompanyId: number): Promise<any | null> {
+    const result = await db
+      .select({
+        id: portalAccessTokens.id,
+        accessToken: portalAccessTokens.accessToken,
+        targetCompanyId: portalAccessTokens.targetCompanyId,
+        targetContactId: portalAccessTokens.targetContactId,
+        isActive: portalAccessTokens.isActive,
+        expiresAt: portalAccessTokens.expiresAt,
+        createdAt: portalAccessTokens.createdAt,
+      })
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.targetCompanyId, targetCompanyId))
+      .limit(1);
+    
+    return result[0] || null;
+  }
+
   async createExternalDocumentSubmission(submission: InsertExternalDocumentSubmission): Promise<ExternalDocumentSubmission> {
     const [createdSubmission] = await db
       .insert(externalDocumentSubmissions)

@@ -75,6 +75,13 @@ export default function PortalManagement() {
     enabled: !!selectedCompanyId,
   });
 
+  // Get primary contacts only (for portal link creation)
+  const primaryContacts = contacts.filter(contact => contact.isPrimary);
+
+  // Check if selected company already has a portal link
+  const companyHasPortal = selectedCompanyId ? 
+    portalTokens.some(token => token.targetCompanyId === selectedCompanyId) : false;
+
   // Fetch existing portal tokens
   const { data: portalTokens = [], isLoading: tokensLoading } = useQuery<PortalToken[]>({
     queryKey: ['/api/portal-tokens'],
@@ -95,14 +102,15 @@ export default function PortalManagement() {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
-        throw new Error('Failed to create portal token');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create portal token');
       }
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Portal links created successfully",
-        description: "Portal access emails have been sent to the selected contacts.",
+        title: "Portal link created successfully",
+        description: "Portal access email has been sent to the primary contact.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/portal-tokens'] });
       setShowCreateForm(false);
@@ -173,10 +181,11 @@ export default function PortalManagement() {
   }, [portalTokens]);
 
   const handleContactToggle = (contactId: number) => {
+    // Only allow selecting one contact (primary contact)
     setSelectedContactIds(prev => 
       prev.includes(contactId) 
-        ? prev.filter(id => id !== contactId)
-        : [...prev, contactId]
+        ? [] // Deselect if already selected
+        : [contactId] // Select only this contact
     );
   };
 
@@ -333,14 +342,24 @@ export default function PortalManagement() {
 
               {selectedCompanyId && (
                 <div className="space-y-2">
-                  <Label>Select Contacts</Label>
-                  {contactsLoading ? (
+                  <Label>Primary Contact</Label>
+                  {companyHasPortal ? (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <div className="text-sm text-yellow-800">
+                        This company already has a portal link. Only one portal link per company is allowed.
+                      </div>
+                    </div>
+                  ) : contactsLoading ? (
                     <div className="text-sm text-muted-foreground">Loading contacts...</div>
-                  ) : contacts.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No contacts found for this company</div>
+                  ) : primaryContacts.length === 0 ? (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <div className="text-sm text-yellow-800">
+                        No primary contact found for this company. Portal links can only be sent to primary contacts.
+                      </div>
+                    </div>
                   ) : (
                     <div className="space-y-2">
-                      {contacts.map((contact) => (
+                      {primaryContacts.map((contact) => (
                         <div key={contact.id} className="flex items-center space-x-2">
                           <input
                             type="checkbox"
@@ -351,7 +370,7 @@ export default function PortalManagement() {
                           />
                           <label htmlFor={`contact-${contact.id}`} className="text-sm">
                             {contact.firstName} {contact.lastName} ({contact.email})
-                            {contact.isPrimary && <Badge variant="secondary" className="ml-2">Primary</Badge>}
+                            <Badge variant="secondary" className="ml-2">Primary</Badge>
                           </label>
                         </div>
                       ))}
@@ -374,9 +393,15 @@ export default function PortalManagement() {
               <div className="flex gap-2">
                 <Button 
                   type="submit" 
-                  disabled={!selectedCompanyId || selectedContactIds.length === 0 || createPortalToken.isPending}
+                  disabled={
+                    !selectedCompanyId || 
+                    selectedContactIds.length === 0 || 
+                    createPortalToken.isPending || 
+                    companyHasPortal || 
+                    primaryContacts.length === 0
+                  }
                 >
-                  {createPortalToken.isPending ? 'Sending...' : 'Send Portal Links'}
+                  {createPortalToken.isPending ? 'Sending...' : 'Send Portal Link'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
                   Cancel
