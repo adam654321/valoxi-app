@@ -3628,47 +3628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit document for specific requirement via portal
-  app.post('/api/portal/:token/documents/submit', upload.single('document'), async (req: Request, res: Response) => {
-    try {
-      const { token } = req.params;
-      const { requirementId, submissionNotes } = req.body;
-      const uploadedFile = req.file;
-      
-      if (!uploadedFile) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-      
-      if (!requirementId) {
-        return res.status(400).json({ message: 'Requirement ID is required' });
-      }
-      
-      // Verify portal token
-      const tokenData = await storage.getValidPortalToken(token);
-      if (!tokenData) {
-        return res.status(404).json({ message: 'Invalid or expired portal token' });
-      }
-      
-      // Submit document for requirement
-      const result = await storage.submitDocumentForRequirement(
-        tokenData,
-        parseInt(requirementId),
-        uploadedFile,
-        submissionNotes
-      );
-      
-      console.log(`[PORTAL] Document submitted for requirement: ${result.requirement_name}`);
-      
-      res.json({
-        success: true,
-        ...result
-      });
-      
-    } catch (error) {
-      console.error('Portal document submission error:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
+  // REMOVED DUPLICATE ROUTE - Using the correct one below with portalUpload
 
   // Get overall progress for portal
   app.get('/api/portal/:token/progress', async (req: Request, res: Response) => {

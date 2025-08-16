@@ -334,9 +334,8 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   </div>
                 )}
 
-                {/* Show upload interface: ALWAYS for Company Accounts if < 5 files, or for other pending requirements */}
-                {((requirement.requirement_name === "Company Accounts" && requirement.submitted_documents < 5) || 
-                  (requirement.requirement_name !== "Company Accounts" && requirement.display_status === 'pending')) && (
+                {/* Show upload interface: ALWAYS for Company Accounts (always pending), or for other pending requirements */}
+                {(requirement.requirement_name === "Company Accounts" || requirement.display_status === 'pending') && (
                   <div className="space-y-4">
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                       <input
