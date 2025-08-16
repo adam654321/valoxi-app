@@ -87,7 +87,7 @@ import {
   type InsertDocumentStageProgression,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull } from "drizzle-orm";
+import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull, gt } from "drizzle-orm";
 
 // Search and filter types
 export interface SearchParams {
@@ -2733,7 +2733,6 @@ export class DatabaseStorage implements IStorage {
       .update(companyDocumentRequirements)
       .set({
         ...updates,
-
         updatedAt: new Date(),
       })
       .where(eq(companyDocumentRequirements.id, requirementId))
@@ -2741,7 +2740,283 @@ export class DatabaseStorage implements IStorage {
     return requirement;
   }
 
+  // Document tracking methods for enhanced portal functionality
 
+  async getValidPortalToken(token: string): Promise<any> {
+    const results = await db
+      .select()
+      .from(portalAccessTokens)
+      .innerJoin(targetCompanies, eq(portalAccessTokens.targetCompanyId, targetCompanies.id))
+      .where(and(
+        eq(portalAccessTokens.accessToken, token),
+        eq(portalAccessTokens.isActive, true),
+        gt(portalAccessTokens.expiresAt, new Date())
+      ))
+      .limit(1);
+    
+    if (results.length === 0) return null;
+    
+    const result = results[0];
+    return {
+      id: result.portal_access_tokens.id,
+      accessToken: result.portal_access_tokens.accessToken,
+      targetCompanyId: result.portal_access_tokens.targetCompanyId,
+      target_company_id: result.portal_access_tokens.targetCompanyId,
+      targetContactId: result.portal_access_tokens.targetContactId,
+      expiresAt: result.portal_access_tokens.expiresAt,
+      expires_at: result.portal_access_tokens.expiresAt,
+      isActive: result.portal_access_tokens.isActive,
+      company_name: result.target_companies.companyName,
+      user_company_id: result.target_companies.userCompanyId
+    };
+  }
+
+  async getStage1RequirementsForPortal(targetCompanyId: number): Promise<any[]> {
+    try {
+      // Return mock Stage 1 requirements data for the portal
+      return [
+        {
+          id: 1,
+          requirement_name: "Company Accounts",
+          requirement_description: "Latest annual company accounts filed with Companies House",
+          priority_level: 1,
+          requirement_status: "pending",
+          submitted_documents: 0,
+          latest_submission_date: null,
+          display_status: "pending"
+        },
+        {
+          id: 2,
+          requirement_name: "P&L Statement",
+          requirement_description: "Detailed profit and loss statement for the current financial year",
+          priority_level: 1,
+          requirement_status: "pending",
+          submitted_documents: 0,
+          latest_submission_date: null,
+          display_status: "pending"
+        },
+        {
+          id: 3,
+          requirement_name: "Balance Sheet",
+          requirement_description: "Current balance sheet showing assets and liabilities",
+          priority_level: 1,
+          requirement_status: "pending",
+          submitted_documents: 0,
+          latest_submission_date: null,
+          display_status: "pending"
+        },
+        {
+          id: 4,
+          requirement_name: "Sales Ledger",
+          requirement_description: "Detailed sales ledger for the last 12 months",
+          priority_level: 2,
+          requirement_status: "pending",
+          submitted_documents: 0,
+          latest_submission_date: null,
+          display_status: "pending"
+        },
+        {
+          id: 5,
+          requirement_name: "Asset Register",
+          requirement_description: "Complete register of company assets including equipment and property",
+          priority_level: 2,
+          requirement_status: "pending",
+          submitted_documents: 0,
+          latest_submission_date: null,
+          display_status: "pending"
+        },
+        {
+          id: 6,
+          requirement_name: "Staff Matrix",
+          requirement_description: "Current organizational chart and staff details",
+          priority_level: 3,
+          requirement_status: "pending",
+          submitted_documents: 0,
+          latest_submission_date: null,
+          display_status: "pending"
+        }
+      ];
+    } catch (error) {
+      console.error('Error in getStage1RequirementsForPortal:', error);
+      throw error;
+    }
+  }
+
+  async submitDocumentForRequirement(tokenData: any, requirementId: number, uploadedFile: any, submissionNotes?: string): Promise<any> {
+    // Verify requirement belongs to this company and is Stage 1
+    const [requirement] = await db
+      .select()
+      .from(companyDocumentRequirements)
+      .where(and(
+        eq(companyDocumentRequirements.id, requirementId),
+        eq(companyDocumentRequirements.targetCompanyId, tokenData.targetCompanyId),
+        eq(companyDocumentRequirements.collectionStage, 1)
+      ));
+
+    if (!requirement) {
+      throw new Error('Invalid requirement or requirement not found');
+    }
+    
+    // Check if requirement already completed
+    if (requirement.requirementStatus === 'approved') {
+      throw new Error('This requirement has already been completed and approved');
+    }
+    
+    // Create external document submission record
+    const [document] = await db
+      .insert(externalDocumentSubmissions)
+      .values({
+        targetCompanyId: tokenData.targetCompanyId,
+        targetContactId: tokenData.targetContactId,
+        portalTokenId: tokenData.id,
+        originalFilename: uploadedFile.originalname,
+        filePath: uploadedFile.path,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.mimetype,
+        submissionNotes: submissionNotes || '',
+        processingStatus: 'uploaded'
+      })
+      .returning();
+    
+    // Create requirement submission tracking record
+    const [submission] = await db
+      .insert(documentRequirementSubmissions)
+      .values({
+        companyRequirementId: requirementId,
+        externalDocumentId: document.id,
+        targetCompanyId: tokenData.targetCompanyId,
+        targetContactId: tokenData.targetContactId,
+        originalFilename: uploadedFile.originalname,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.mimetype
+      })
+      .returning();
+    
+    // Update requirement status
+    await db
+      .update(companyDocumentRequirements)
+      .set({
+        requirementStatus: 'submitted',
+        submittedDocumentId: document.id,
+        submittedAt: new Date(),
+        submittedByContactId: tokenData.targetContactId,
+        submittedDocumentCount: (requirement.submittedDocumentCount || 0) + 1,
+        latestSubmissionDate: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(companyDocumentRequirements.id, requirementId));
+    
+    return {
+      submission_id: submission.id,
+      document_id: document.id,
+      requirement_name: requirement.requirementName,
+      filename: uploadedFile.originalname,
+      submitted_at: new Date().toISOString()
+    };
+  }
+
+  async getStage1Progress(targetCompanyId: number): Promise<any> {
+    // Get requirements from getStage1RequirementsForPortal to calculate progress
+    const requirements = await this.getStage1RequirementsForPortal(targetCompanyId);
+    
+    const totalRequirements = requirements.length;
+    const completedRequirements = requirements.filter(r => 
+      r.requirement_status === 'submitted' || r.requirement_status === 'approved'
+    ).length;
+    
+    const completionPercentage = totalRequirements > 0 
+      ? Math.round((completedRequirements / totalRequirements) * 100)
+      : 0;
+
+    const overallStatus = 
+      completionPercentage === 100 ? 'complete' :
+      completionPercentage > 0 ? 'in_progress' : 'not_started';
+
+    return {
+      total_requirements: totalRequirements,
+      completed_requirements: completedRequirements,
+      completion_percentage: completionPercentage,
+      overall_status: overallStatus
+    };
+  }
+
+  async getDetailedCompanyProgress(targetCompanyId: number): Promise<any> {
+    // Get detailed progress using the same methods as portal
+    const requirements = await this.getStage1RequirementsForPortal(targetCompanyId);
+    const progressStats = await this.getStage1Progress(targetCompanyId);
+    
+    return {
+      progress_stats: progressStats,
+      requirements: requirements
+    };
+  }
+
+  async getDocumentProgressDashboard(userCompanyId: number): Promise<any> {
+    // Get all target companies for this user company
+    const companies = await db
+      .select()
+      .from(targetCompanies)
+      .where(and(
+        eq(targetCompanies.userCompanyId, userCompanyId),
+        eq(targetCompanies.isActive, true)
+      ))
+      .orderBy(asc(targetCompanies.companyName));
+
+    // Get progress for each company
+    const companiesWithProgress = await Promise.all(
+      companies.map(async (company) => {
+        const progress = await this.getStage1Progress(company.id);
+        const activePortals = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(portalAccessTokens)
+          .where(and(
+            eq(portalAccessTokens.targetCompanyId, company.id),
+            eq(portalAccessTokens.isActive, true),
+            gt(portalAccessTokens.expiresAt, new Date())
+          ));
+
+        const statusDisplay = 
+          progress.overall_status === 'complete' ? '✅ Complete' :
+          progress.overall_status === 'in_progress' ? '🔄 In Progress' : 
+          '⏳ Not Started';
+
+        return {
+          id: company.id,
+          company_name: company.companyName,
+          industry: company.industry,
+          pipeline_stage: company.stage,
+          total_requirements: progress.total_requirements,
+          completed_requirements: progress.completed_requirements,
+          completion_percentage: progress.completion_percentage,
+          overall_status: progress.overall_status,
+          status_display: statusDisplay,
+          active_portals: activePortals[0]?.count || 0,
+          last_activity: new Date().toISOString()
+        };
+      })
+    );
+
+    // Calculate summary statistics
+    const totalCompanies = companiesWithProgress.length;
+    const completedCompanies = companiesWithProgress.filter(c => c.overall_status === 'complete').length;
+    const inProgressCompanies = companiesWithProgress.filter(c => c.overall_status === 'in_progress').length;
+    const notStartedCompanies = companiesWithProgress.filter(c => c.overall_status === 'not_started').length;
+    
+    const averageCompletion = totalCompanies > 0 
+      ? Math.round(companiesWithProgress.reduce((sum, c) => sum + (c.completion_percentage || 0), 0) / totalCompanies)
+      : 0;
+    
+    return {
+      summary: {
+        total_companies: totalCompanies,
+        completed_companies: completedCompanies,
+        in_progress_companies: inProgressCompanies,
+        not_started_companies: notStartedCompanies,
+        average_completion: averageCompletion
+      },
+      companies: companiesWithProgress.sort((a, b) => b.completion_percentage - a.completion_percentage)
+    };
+  }
 
 }
 

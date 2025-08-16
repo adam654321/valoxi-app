@@ -1,0 +1,1056 @@
+Replit Development Prompt 12b (REVISED): Document Tracking & Portal Progress Display
+Prerequisites
+Prompts 11a and 11b completed with secure portal and portal management
+Prompt 12a corrective fix applied with standardized Stage 1 requirements
+Target company and contact management systems working
+Basic document upload functionality operational
+What This Prompt Builds
+Create a comprehensive document tracking system that displays Stage 1 requirements clearly in the portal with progress indicators. External users can see exactly what documents are needed, track their submission progress, and the system ensures all portals for the same target company show synchronized progress. Internal users get real-time visibility into document collection status across all deals.
+System Context Reminder
+Stage 1 Documents: 6 specific requirements for pre-offer assessment
+Progress Tracking: Visual indicators showing completion status
+Cross-Portal Sync: All portals for same company show identical progress
+Document Matching: Upload system forces selection of specific requirement
+What You Need to Build
+1. Enhanced Portal Document Display
+Modify the existing external portal to show Stage 1 requirements with clear progress tracking:
+
+Stage 1 Requirements Display:
+
+Visual checklist of all 6 Stage 1 requirements
+Progress bar showing overall completion percentage
+Individual status indicators for each requirement
+Clear descriptions of what each document should contain
+
+Document Upload Integration:
+
+Force users to select which requirement they're fulfilling
+Prevent duplicate submissions for same requirement
+Show immediate progress updates after upload
+Cross-portal synchronization for same target company
+2. Database Schema Updates
+-- Add document tracking fields to existing tables
+ALTER TABLE company_document_requirements 
+ADD COLUMN IF NOT EXISTS submitted_document_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS latest_submission_date TIMESTAMP,
+ADD COLUMN IF NOT EXISTS submission_notes TEXT;
+
+-- Create document requirement submissions tracking table
+CREATE TABLE IF NOT EXISTS document_requirement_submissions (
+  id SERIAL PRIMARY KEY,
+  company_requirement_id INTEGER REFERENCES company_document_requirements(id),
+  external_document_id INTEGER REFERENCES external_document_submissions(id),
+  target_company_id INTEGER REFERENCES target_companies(id),
+  target_contact_id INTEGER REFERENCES target_contacts(id),
+  
+  -- Submission Details
+  submitted_at TIMESTAMP DEFAULT NOW(),
+  submission_method VARCHAR(50) DEFAULT 'portal_upload', -- portal_upload, email_attachment, manual_entry
+  
+  -- Document Information
+  original_filename VARCHAR(255),
+  file_size BIGINT,
+  file_type VARCHAR(50),
+  
+  -- Status Tracking
+  is_active BOOLEAN DEFAULT TRUE,
+  replaced_by_submission_id INTEGER REFERENCES document_requirement_submissions(id),
+  
+  -- Validation
+  is_validated BOOLEAN DEFAULT FALSE,
+  validated_by INTEGER REFERENCES users(id),
+  validated_at TIMESTAMP,
+  validation_notes TEXT,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create stage 1 progress tracking view
+CREATE OR REPLACE VIEW stage_1_progress AS
+SELECT 
+  tc.id as target_company_id,
+  tc.company_name,
+  COUNT(cdr.id) as total_requirements,
+  COUNT(CASE WHEN cdr.requirement_status IN ('submitted', 'approved') THEN 1 END) as completed_requirements,
+  COUNT(CASE WHEN cdr.requirement_status = 'submitted' THEN 1 END) as submitted_count,
+  COUNT(CASE WHEN cdr.requirement_status = 'approved' THEN 1 END) as approved_count,
+  ROUND(
+    (COUNT(CASE WHEN cdr.requirement_status IN ('submitted', 'approved') THEN 1 END)::DECIMAL / 
+     COUNT(cdr.id)::DECIMAL) * 100, 1
+  ) as completion_percentage,
+  CASE 
+    WHEN COUNT(CASE WHEN cdr.requirement_status IN ('submitted', 'approved') THEN 1 END) = COUNT(cdr.id) THEN 'complete'
+    WHEN COUNT(CASE WHEN cdr.requirement_status IN ('submitted', 'approved') THEN 1 END) > 0 THEN 'in_progress'
+    ELSE 'not_started'
+  END as overall_status,
+  MAX(cdr.updated_at) as last_activity
+FROM target_companies tc
+LEFT JOIN company_document_requirements cdr ON tc.id = cdr.target_company_id AND cdr.collection_stage = 1
+GROUP BY tc.id, tc.company_name;
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_doc_req_submissions_company ON document_requirement_submissions(target_company_id);
+CREATE INDEX IF NOT EXISTS idx_doc_req_submissions_requirement ON document_requirement_submissions(company_requirement_id);
+CREATE INDEX IF NOT EXISTS idx_doc_req_submissions_active ON document_requirement_submissions(is_active, submitted_at);
+3. API Endpoints for Document Tracking
+// Portal document tracking (external users)
+GET /api/portal/:token/requirements/stage1        // Get Stage 1 requirements with progress
+POST /api/portal/:token/documents/submit          // Submit document for specific requirement
+GET /api/portal/:token/progress                   // Get overall progress for this company
+
+// Internal document tracking (internal users)
+GET /api/companies/:id/requirements/progress      // Get detailed progress for company
+GET /api/companies/:id/documents/submissions      // Get all document submissions
+PUT /api/companies/:id/documents/:docId/validate  // Validate submitted document
+GET /api/dashboard/document-progress              // Get progress across all companies
+4. Document Tracking Implementation
+const documentTrackingManager = {
+  // Get Stage 1 requirements with progress for portal display
+  getStage1RequirementsForPortal: async (portalToken) => {
+    // Verify portal token and get company information
+    const tokenQuery = `
+      SELECT 
+        pat.*,
+        tc.id as target_company_id,
+        tc.company_name,
+        tc.user_company_id
+      FROM portal_access_tokens pat
+      JOIN target_companies tc ON pat.target_company_id = tc.id
+      WHERE pat.access_token = $1 
+      AND pat.is_active = true 
+      AND pat.expires_at > NOW()
+    `;
+    
+    const tokenResult = await db.query(tokenQuery, [portalToken]);
+    if (tokenResult.rows.length === 0) {
+      throw new Error('Invalid or expired portal token');
+    }
+    
+    const tokenData = tokenResult.rows[0];
+    
+    // Get Stage 1 requirements with submission status
+    const requirementsQuery = `
+      SELECT 
+        cdr.*,
+        COALESCE(drs.submission_count, 0) as submitted_documents,
+        drs.latest_submission_date,
+        drs.latest_filename,
+        CASE 
+          WHEN cdr.requirement_status IN ('submitted', 'approved') THEN 'completed'
+          WHEN drs.submission_count > 0 THEN 'submitted'
+          ELSE 'pending'
+        END as display_status
+      FROM company_document_requirements cdr
+      LEFT JOIN (
+        SELECT 
+          company_requirement_id,
+          COUNT(*) as submission_count,
+          MAX(submitted_at) as latest_submission_date,
+          MAX(original_filename) as latest_filename
+        FROM document_requirement_submissions 
+        WHERE is_active = true
+        GROUP BY company_requirement_id
+      ) drs ON cdr.id = drs.company_requirement_id
+      WHERE cdr.target_company_id = $1 
+      AND cdr.collection_stage = 1
+      ORDER BY cdr.priority_level DESC, cdr.requirement_name ASC
+    `;
+    
+    const requirements = await db.query(requirementsQuery, [tokenData.target_company_id]);
+    
+    // Calculate overall progress
+    const totalRequirements = requirements.rows.length;
+    const completedRequirements = requirements.rows.filter(req => 
+      req.requirement_status === 'submitted' || req.requirement_status === 'approved'
+    ).length;
+    
+    const progressPercentage = totalRequirements > 0 
+      ? Math.round((completedRequirements / totalRequirements) * 100)
+      : 0;
+    
+    return {
+      company_name: tokenData.company_name,
+      total_requirements: totalRequirements,
+      completed_requirements: completedRequirements,
+      progress_percentage: progressPercentage,
+      overall_status: completedRequirements === totalRequirements ? 'complete' : 
+                     completedRequirements > 0 ? 'in_progress' : 'not_started',
+      requirements: requirements.rows,
+      portal_expires_at: tokenData.expires_at
+    };
+  },
+  
+  // Submit document for specific requirement via portal
+  submitDocumentForRequirement: async (portalToken, requirementId, documentData, uploadedFile) => {
+    // Verify portal token
+    const tokenQuery = `
+      SELECT pat.*, tc.id as target_company_id
+      FROM portal_access_tokens pat
+      JOIN target_companies tc ON pat.target_company_id = tc.id
+      WHERE pat.access_token = $1 AND pat.is_active = true AND pat.expires_at > NOW()
+    `;
+    
+    const tokenResult = await db.query(tokenQuery, [portalToken]);
+    if (tokenResult.rows.length === 0) {
+      throw new Error('Invalid or expired portal token');
+    }
+    
+    const tokenData = tokenResult.rows[0];
+    
+    // Verify requirement belongs to this company and is Stage 1
+    const requirementQuery = `
+      SELECT * FROM company_document_requirements 
+      WHERE id = $1 AND target_company_id = $2 AND collection_stage = 1
+    `;
+    
+    const requirement = await db.query(requirementQuery, [requirementId, tokenData.target_company_id]);
+    if (requirement.rows.length === 0) {
+      throw new Error('Invalid requirement or requirement not found');
+    }
+    
+    const requirementData = requirement.rows[0];
+    
+    // Check if requirement already completed
+    if (requirementData.requirement_status === 'approved') {
+      throw new Error('This requirement has already been completed and approved');
+    }
+    
+    // Create external document submission record
+    const documentQuery = `
+      INSERT INTO external_document_submissions (
+        target_company_id, target_contact_id, portal_token_id,
+        original_filename, file_path, file_size, file_type,
+        submission_notes, processing_status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+    
+    const documentValues = [
+      tokenData.target_company_id,
+      tokenData.target_contact_id,
+      tokenData.id,
+      uploadedFile.originalname,
+      uploadedFile.path,
+      uploadedFile.size,
+      uploadedFile.mimetype,
+      documentData.submission_notes || '',
+      'uploaded'
+    ];
+    
+    const documentResult = await db.query(documentQuery, documentValues);
+    const document = documentResult.rows[0];
+    
+    // Create requirement submission tracking record
+    const submissionQuery = `
+      INSERT INTO document_requirement_submissions (
+        company_requirement_id, external_document_id, target_company_id, target_contact_id,
+        original_filename, file_size, file_type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `;
+    
+    const submissionValues = [
+      requirementId,
+      document.id,
+      tokenData.target_company_id,
+      tokenData.target_contact_id,
+      uploadedFile.originalname,
+      uploadedFile.size,
+      uploadedFile.mimetype
+    ];
+    
+    const submissionResult = await db.query(submissionQuery, submissionValues);
+    
+    // Update requirement status
+    await db.query(`
+      UPDATE company_document_requirements SET
+        requirement_status = 'submitted',
+        submitted_document_id = $2,
+        submitted_at = NOW(),
+        submitted_by_contact_id = $3,
+        submitted_document_count = submitted_document_count + 1,
+        latest_submission_date = NOW()
+      WHERE id = $1
+    `, [requirementId, document.id, tokenData.target_contact_id]);
+    
+    // Update stage progression
+    await updateStage1Progression(tokenData.target_company_id);
+    
+    // Log activity
+    await logPortalActivity(tokenData.id, 'document_submitted', `Document submitted for: ${requirementData.requirement_name}`, document.id);
+    
+    // Create internal notification
+    await notifyInternalTeam(
+      tokenData.target_company_id,
+      'stage1_document_submitted',
+      `Stage 1 document submitted: ${requirementData.requirement_name}`,
+      document.id
+    );
+    
+    return {
+      submission_id: submissionResult.rows[0].id,
+      document_id: document.id,
+      requirement_name: requirementData.requirement_name,
+      filename: uploadedFile.originalname,
+      submitted_at: new Date().toISOString()
+    };
+  },
+  
+  // Update Stage 1 progression and check for completion
+  updateStage1Progression: async (targetCompanyId) => {
+    // Get current Stage 1 progress
+    const progressQuery = `
+      SELECT * FROM stage_1_progress WHERE target_company_id = $1
+    `;
+    
+    const progress = await db.query(progressQuery, [targetCompanyId]);
+    if (progress.rows.length === 0) return;
+    
+    const progressData = progress.rows[0];
+    
+    // Update document stage progression table
+    await db.query(`
+      UPDATE document_stage_progression SET
+        stage_1_completion_percentage = $2,
+        stage_1_mandatory_completed = $3,
+        completed_requirements = $4,
+        overall_completion_percentage = $5,
+        can_progress_to_offer = $3,
+        updated_at = NOW()
+      WHERE target_company_id = $1
+    `, [
+      targetCompanyId,
+      progressData.completion_percentage,
+      progressData.overall_status === 'complete',
+      progressData.completed_requirements,
+      progressData.completion_percentage
+    ]);
+    
+    // Check if Stage 1 is complete
+    if (progressData.overall_status === 'complete') {
+      // Mark Stage 1 as completed
+      await db.query(`
+        UPDATE document_stage_progression SET
+          stage_1_completed_at = NOW(),
+          stage_1_status = 'completed'
+        WHERE target_company_id = $1
+      `, [targetCompanyId]);
+      
+      // Create notification for Stage 1 completion
+      await notifyInternalTeam(
+        targetCompanyId,
+        'stage1_completed',
+        'Stage 1 document collection completed - ready for analysis',
+        null
+      );
+      
+      // Log completion activity
+      await logActivity(targetCompanyId, null, 'stage1_completed', 'All Stage 1 documents submitted and ready for analysis');
+      
+      return { stage1_complete: true, ready_for_analysis: true };
+    }
+    
+    return { stage1_complete: false, progress: progressData.completion_percentage };
+  },
+  
+  // Get document progress for internal dashboard
+  getDocumentProgressDashboard: async (userCompanyId) => {
+    const dashboardQuery = `
+      SELECT 
+        tc.id,
+        tc.company_name,
+        tc.industry,
+        tc.stage as pipeline_stage,
+        sp.total_requirements,
+        sp.completed_requirements,
+        sp.completion_percentage,
+        sp.overall_status,
+        sp.last_activity,
+        CASE 
+          WHEN sp.overall_status = 'complete' THEN '✅ Complete'
+          WHEN sp.overall_status = 'in_progress' THEN '🔄 In Progress'
+          ELSE '⏳ Not Started'
+        END as status_display,
+        COUNT(DISTINCT pat.id) as active_portals
+      FROM target_companies tc
+      LEFT JOIN stage_1_progress sp ON tc.id = sp.target_company_id
+      LEFT JOIN portal_access_tokens pat ON tc.id = pat.target_company_id AND pat.is_active = true
+      WHERE tc.user_company_id = $1
+      AND tc.is_active = true
+      GROUP BY tc.id, tc.company_name, tc.industry, tc.stage, sp.total_requirements, 
+               sp.completed_requirements, sp.completion_percentage, sp.overall_status, sp.last_activity
+      ORDER BY sp.completion_percentage DESC, tc.company_name ASC
+    `;
+    
+    const result = await db.query(dashboardQuery, [userCompanyId]);
+    
+    // Calculate summary statistics
+    const companies = result.rows;
+    const totalCompanies = companies.length;
+    const completedCompanies = companies.filter(c => c.overall_status === 'complete').length;
+    const inProgressCompanies = companies.filter(c => c.overall_status === 'in_progress').length;
+    const notStartedCompanies = companies.filter(c => c.overall_status === 'not_started').length;
+    
+    const averageCompletion = totalCompanies > 0 
+      ? Math.round(companies.reduce((sum, c) => sum + (parseFloat(c.completion_percentage) || 0), 0) / totalCompanies)
+      : 0;
+    
+    return {
+      summary: {
+        total_companies: totalCompanies,
+        completed_companies: completedCompanies,
+        in_progress_companies: inProgressCompanies,
+        not_started_companies: notStartedCompanies,
+        average_completion: averageCompletion
+      },
+      companies: companies
+    };
+  },
+  
+  // Validate submitted document (internal user action)
+  validateSubmittedDocument: async (documentId, validationData, validatedBy) => {
+    // Verify permissions
+    const user = await getUserWithPermissions(validatedBy);
+    if (!user.can_edit_all_deals && !user.can_manage_company) {
+      throw new Error('Insufficient permissions to validate documents');
+    }
+    
+    // Get document submission details
+    const submissionQuery = `
+      SELECT 
+        drs.*,
+        cdr.requirement_name,
+        cdr.target_company_id,
+        eds.original_filename
+      FROM document_requirement_submissions drs
+      JOIN company_document_requirements cdr ON drs.company_requirement_id = cdr.id
+      JOIN external_document_submissions eds ON drs.external_document_id = eds.id
+      WHERE drs.id = $1
+    `;
+    
+    const submission = await db.query(submissionQuery, [documentId]);
+    if (submission.rows.length === 0) {
+      throw new Error('Document submission not found');
+    }
+    
+    const submissionData = submission.rows[0];
+    
+    // Update validation status
+    await db.query(`
+      UPDATE document_requirement_submissions SET
+        is_validated = $2,
+        validated_by = $3,
+        validated_at = NOW(),
+        validation_notes = $4
+      WHERE id = $1
+    `, [documentId, validationData.is_approved, validatedBy, validationData.validation_notes || '']);
+    
+    // Update requirement status based on validation
+    const newStatus = validationData.is_approved ? 'approved' : 'submitted';
+    await db.query(
+      'UPDATE company_document_requirements SET requirement_status = $1 WHERE id = $2',
+      [newStatus, submissionData.company_requirement_id]
+    );
+    
+    // Update stage progression
+    await updateStage1Progression(submissionData.target_company_id);
+    
+    // Log validation activity
+    const activityMessage = `Document ${validationData.is_approved ? 'approved' : 'rejected'}: ${submissionData.requirement_name}`;
+    await logActivity(submissionData.target_company_id, validatedBy, 'document_validated', activityMessage);
+    
+    return {
+      document_id: documentId,
+      requirement_name: submissionData.requirement_name,
+      validation_status: validationData.is_approved ? 'approved' : 'rejected',
+      validated_at: new Date().toISOString()
+    };
+  }
+};
+
+// Utility functions
+const logPortalActivity = async (portalTokenId, activityType, activityDescription, relatedDocumentId = null) => {
+  const activityQuery = `
+    INSERT INTO portal_activity_log (
+      portal_token_id, activity_type, activity_description, 
+      related_document_id, activity_timestamp
+    ) VALUES ($1, $2, $3, $4, NOW())
+  `;
+  
+  await db.query(activityQuery, [portalTokenId, activityType, activityDescription, relatedDocumentId]);
+};
+
+const notifyInternalTeam = async (targetCompanyId, notificationType, notificationMessage, relatedId = null) => {
+  // Get all users assigned to this deal
+  const teamQuery = `
+    SELECT DISTINCT u.id
+    FROM users u
+    JOIN user_deal_assignments uda ON u.id = uda.user_id
+    WHERE uda.target_company_id = $1 AND uda.is_active = true
+  `;
+  
+  const team = await db.query(teamQuery, [targetCompanyId]);
+  
+  // Create notifications for all team members
+  for (const member of team.rows) {
+    await createTeamNotification(
+      member.id,
+      notificationType,
+      notificationMessage,
+      notificationMessage,
+      targetCompanyId,
+      relatedId
+    );
+  }
+};
+5. Enhanced Portal UI Implementation
+<!-- Enhanced External Portal Document Submission Page -->
+<div class="portal-document-submission">
+  <div class="portal-header">
+    <h2>Document Submission Portal</h2>
+    <div class="company-info">
+      <h3>{{company_name}}</h3>
+      <p>Stage 1: Pre-Offer Assessment Documents</p>
+    </div>
+  </div>
+  
+  <!-- Overall Progress -->
+  <div class="progress-overview">
+    <div class="progress-header">
+      <h4>Overall Progress</h4>
+      <span class="progress-percentage">{{progress_percentage}}% Complete</span>
+    </div>
+    
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: {{progress_percentage}}%"></div>
+    </div>
+    
+    <div class="progress-stats">
+      <span class="completed-count">{{completed_requirements}} of {{total_requirements}} documents submitted</span>
+      <span class="portal-expiry">Portal expires: {{portal_expires_at | formatDate}}</span>
+    </div>
+  </div>
+  
+  <!-- Stage 1 Requirements Checklist -->
+  <div class="requirements-checklist">
+    <h4>Required Documents</h4>
+    <p>Please submit the following documents to complete Stage 1 assessment:</p>
+    
+    <div class="requirements-list">
+      {{#each requirements}}
+      <div class="requirement-item status-{{display_status}}">
+        <div class="requirement-checkbox">
+          {{#if (eq display_status 'completed')}}
+          <span class="checkbox checked">✓</span>
+          {{else if (eq display_status 'submitted')}}
+          <span class="checkbox submitted">📄</span>
+          {{else}}
+          <span class="checkbox pending">○</span>
+          {{/if}}
+        </div>
+        
+        <div class="requirement-content">
+          <div class="requirement-header">
+            <h5>{{requirement_name}}</h5>
+            <span class="priority-badge priority-{{priority_level}}">{{priority_level | capitalize}}</span>
+          </div>
+          
+          <div class="requirement-description">
+            {{requirement_description}}
+          </div>
+          
+          {{#if (eq display_status 'completed')}}
+          <div class="submission-info success">
+            <span class="status-text">✅ Submitted: {{latest_filename}}</span>
+            <span class="submission-date">{{latest_submission_date | timeAgo}}</span>
+          </div>
+          {{else if (eq display_status 'submitted')}}
+          <div class="submission-info pending">
+            <span class="status-text">📄 Under Review: {{latest_filename}}</span>
+            <span class="submission-date">{{latest_submission_date | timeAgo}}</span>
+          </div>
+          {{else}}
+          <div class="upload-section">
+            <form class="document-upload-form" data-requirement-id="{{id}}">
+              <div class="upload-area" onclick="triggerFileUpload({{id}})">
+                <input type="file" id="file-{{id}}" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display: none;" onchange="handleFileSelect({{id}}, this)">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">
+                  <strong>Click to upload {{requirement_name}}</strong>
+                  <br>Supported formats: PDF, Word, Excel
+                </div>
+              </div>
+              
+              <div class="upload-notes">
+                <textarea name="submission_notes" placeholder="Optional: Add notes about this document..." rows="2"></textarea>
+              </div>
+              
+              <button type="submit" class="submit-btn" disabled>
+                📤 Submit {{requirement_name}}
+              </button>
+            </form>
+          </div>
+          {{/if}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  
+  <!-- Completion Status -->
+  {{#if (eq overall_status 'complete')}}
+  <div class="completion-notice success">
+    <div class="completion-icon">🎉</div>
+    <div class="completion-content">
+      <h4>All Documents Submitted!</h4>
+      <p>Thank you for submitting all required Stage 1 documents. Our team will now review your submission and begin the initial assessment process.</p>
+      <p><strong>Next Steps:</strong> We will contact you within 5-7 business days with our initial assessment and next steps.</p>
+    </div>
+  </div>
+  {{else}}
+  <div class="completion-notice info">
+    <div class="completion-icon">📋</div>
+    <div class="completion-content">
+      <h4>{{completed_requirements}} of {{total_requirements}} Documents Submitted</h4>
+      <p>Please complete the remaining document submissions to proceed with the assessment process.</p>
+      {{#if (gt completed_requirements 0)}}
+      <p><strong>Progress saved:</strong> Your submitted documents are secure and will be retained.</p>
+      {{/if}}
+    </div>
+  </div>
+  {{/if}}
+  
+  <!-- Help and Support -->
+  <div class="portal-help">
+    <h4>Need Help?</h4>
+    <div class="help-options">
+      <button onclick="showDocumentGuidelines()" class="help-btn">📖 Document Guidelines</button>
+      <button onclick="contactSupport()" class="help-btn">💬 Contact Support</button>
+      <button onclick="showTechnicalHelp()" class="help-btn">🔧 Technical Help</button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Upload JavaScript -->
+<script>
+// File upload handling
+const triggerFileUpload = (requirementId) => {
+  document.getElementById(`file-${requirementId}`).click();
+};
+
+const handleFileSelect = (requirementId, input) => {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const form = input.closest('.document-upload-form');
+  const submitBtn = form.querySelector('.submit-btn');
+  const uploadArea = form.querySelector('.upload-area');
+  
+  // Update UI to show selected file
+  uploadArea.innerHTML = `
+    <div class="file-selected">
+      <div class="file-icon">📄</div>
+      <div class="file-info">
+        <strong>${file.name}</strong>
+        <br>Size: ${formatFileSize(file.size)}
+      </div>
+      <button type="button" onclick="clearFileSelection(${requirementId})" class="clear-file">×</button>
+    </div>
+  `;
+  
+  // Enable submit button
+  submitBtn.disabled = false;
+  submitBtn.textContent = `📤 Submit ${file.name}`;
+};
+
+const clearFileSelection = (requirementId) => {
+  const input = document.getElementById(`file-${requirementId}`);
+  const form = input.closest('.document-upload-form');
+  const submitBtn = form.querySelector('.submit-btn');
+  const uploadArea = form.querySelector('.upload-area');
+  
+  // Reset file input
+  input.value = '';
+  
+  // Reset UI
+  uploadArea.innerHTML = `
+    <div class="upload-icon">📁</div>
+    <div class="upload-text">
+      <strong>Click to upload document</strong>
+      <br>Supported formats: PDF, Word, Excel
+    </div>
+  `;
+  
+  // Disable submit button
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Select file to submit';
+};
+
+// Form submission handling
+document.addEventListener('DOMContentLoaded', () => {
+  const uploadForms = document.querySelectorAll('.document-upload-form');
+  
+  uploadForms.forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const requirementId = form.dataset.requirementId;
+      const fileInput = form.querySelector('input[type="file"]');
+      const notesTextarea = form.querySelector('textarea[name="submission_notes"]');
+      const submitBtn = form.querySelector('.submit-btn');
+      
+      if (!fileInput.files[0]) {
+        showNotification('Please select a file to upload', 'error');
+        return;
+      }
+      
+      // Disable form during submission
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Uploading...';
+      
+      try {
+        const formData = new FormData();
+        formData.append('document', fileInput.files[0]);
+        formData.append('requirement_id', requirementId);
+        formData.append('submission_notes', notesTextarea.value);
+        
+        const response = await fetch(`/api/portal/${getPortalToken()}/documents/submit`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showNotification(`Document submitted successfully: ${result.filename}`, 'success');
+          
+          // Refresh page to show updated progress
+          setTimeout(() => {
+            location.reload();
+          }, 1500);
+          
+        } else {
+          throw new Error(result.error || 'Upload failed');
+        }
+        
+      } catch (error) {
+        console.error('Document upload failed:', error);
+        showNotification(`Upload failed: ${error.message}`, 'error');
+        
+        // Re-enable form
+        submitBtn.disabled = false;
+        submitBtn.textContent = `📤 Submit Document`;
+      }
+    });
+  });
+});
+
+// Utility functions
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getPortalToken = () => {
+  return window.location.pathname.split('/portal/')[1];
+};
+
+const showDocumentGuidelines = () => {
+  // Show modal with document guidelines
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Document Submission Guidelines</h3>
+        <button onclick="this.closest('.modal').remove()" class="close-btn">×</button>
+      </div>
+      <div class="guidelines-content">
+        <h4>Stage 1 Document Requirements:</h4>
+        <ul>
+          <li><strong>Company Accounts (3-5 Years):</strong> Audited financial statements or management accounts</li>
+          <li><strong>Profit & Loss Statement:</strong> Detailed revenue and expense breakdown</li>
+          <li><strong>Balance Sheet:</strong> Current assets, liabilities, and equity position</li>
+          <li><strong>Sales Ledger:</strong> Customer sales data and revenue analysis</li>
+          <li><strong>Asset Register:</strong> Complete list of company assets with valuations</li>
+          <li><strong>Staff Matrix:</strong> Employee structure and payroll costs (can be anonymized)</li>
+        </ul>
+        <h4>File Requirements:</h4>
+        <ul>
+          <li>Accepted formats: PDF, Word (.doc/.docx), Excel (.xls/.xlsx)</li>
+          <li>Maximum file size: 10MB per document</li>
+          <li>Files should be clearly named and legible</li>
+          <li>Ensure all pages are included and complete</li>
+        </ul>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.style.display = 'flex';
+};
+
+const contactSupport = () => {
+  // Show contact support modal or redirect
+  window.open('mailto:support@company.com?subject=Document Portal Support', '_blank');
+};
+
+const showTechnicalHelp = () => {
+  // Show technical help modal
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Technical Help</h3>
+        <button onclick="this.closest('.modal').remove()" class="close-btn">×</button>
+      </div>
+      <div class="help-content">
+        <h4>Common Issues:</h4>
+        <ul>
+          <li><strong>File won't upload:</strong> Check file size (max 10MB) and format (PDF, Word, Excel)</li>
+          <li><strong>Page not loading:</strong> Try refreshing the page or clearing browser cache</li>
+          <li><strong>Upload stuck:</strong> Check internet connection and try again</li>
+          <li><strong>Can't select file:</strong> Ensure browser allows file uploads and JavaScript is enabled</li>
+        </ul>
+        <h4>Browser Requirements:</h4>
+        <ul>
+          <li>Modern browser (Chrome, Firefox, Safari, Edge)</li>
+          <li>JavaScript enabled</li>
+          <li>Cookies enabled</li>
+          <li>Stable internet connection</li>
+        </ul>
+        <p>If problems persist, please contact our support team.</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.style.display = 'flex';
+};
+</script>
+6. Internal Dashboard Updates
+<!-- Internal Document Progress Dashboard -->
+<div class="document-progress-dashboard">
+  <div class="dashboard-header">
+    <h2>Document Collection Progress</h2>
+    <div class="dashboard-controls">
+      <button onclick="refreshProgress()" class="btn-secondary">🔄 Refresh</button>
+      <button onclick="exportProgress()" class="btn-secondary">📊 Export Report</button>
+    </div>
+  </div>
+  
+  <!-- Summary Statistics -->
+  <div class="progress-summary">
+    <div class="summary-card">
+      <div class="card-value">{{summary.total_companies}}</div>
+      <div class="card-label">Total Companies</div>
+    </div>
+    
+    <div class="summary-card success">
+      <div class="card-value">{{summary.completed_companies}}</div>
+      <div class="card-label">Stage 1 Complete</div>
+    </div>
+    
+    <div class="summary-card warning">
+      <div class="card-value">{{summary.in_progress_companies}}</div>
+      <div class="card-label">In Progress</div>
+    </div>
+    
+    <div class="summary-card info">
+      <div class="card-value">{{summary.average_completion}}%</div>
+      <div class="card-label">Average Completion</div>
+    </div>
+  </div>
+  
+  <!-- Company Progress List -->
+  <div class="companies-progress">
+    <div class="progress-filters">
+      <select id="status-filter" onchange="filterCompanies(this.value)">
+        <option value="all">All Companies</option>
+        <option value="complete">Complete</option>
+        <option value="in_progress">In Progress</option>
+        <option value="not_started">Not Started</option>
+      </select>
+      
+      <input type="text" id="company-search" placeholder="Search companies..." onkeyup="searchCompanies(this.value)">
+    </div>
+    
+    <div class="companies-list">
+      {{#each companies}}
+      <div class="company-progress-item status-{{overall_status}}">
+        <div class="company-info">
+          <div class="company-header">
+            <h4><a href="/companies/{{id}}">{{company_name}}</a></h4>
+            <div class="company-meta">
+              <span class="industry">{{industry}}</span>
+              <span class="pipeline-stage">{{pipeline_stage}}</span>
+              <span class="active-portals">{{active_portals}} portal(s)</span>
+            </div>
+          </div>
+          
+          <div class="progress-details">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: {{completion_percentage}}%"></div>
+            </div>
+            
+            <div class="progress-stats">
+              <span class="completion-text">{{completed_requirements}}/{{total_requirements}} documents ({{completion_percentage}}%)</span>
+              <span class="status-badge status-{{overall_status}}">{{status_display}}</span>
+            </div>
+          </div>
+          
+          {{#if last_activity}}
+          <div class="last-activity">
+            Last activity: {{last_activity | timeAgo}}
+          </div>
+          {{/if}}
+        </div>
+        
+        <div class="company-actions">
+          <button onclick="viewCompanyDocuments({{id}})" class="btn-small">📄 View Documents</button>
+          <button onclick="sendReminder({{id}})" class="btn-small">📧 Send Reminder</button>
+          {{#if (eq overall_status 'complete')}}
+          <button onclick="triggerAnalysis({{id}})" class="btn-small btn-success">🔍 Trigger Analysis</button>
+          {{/if}}
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+
+<script>
+// Dashboard functionality
+const refreshProgress = async () => {
+  try {
+    const response = await fetch('/api/dashboard/document-progress');
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Update dashboard with new data
+      location.reload(); // Simple refresh for now
+    }
+  } catch (error) {
+    console.error('Failed to refresh progress:', error);
+    showNotification('Failed to refresh progress data', 'error');
+  }
+};
+
+const filterCompanies = (status) => {
+  const companyItems = document.querySelectorAll('.company-progress-item');
+  
+  companyItems.forEach(item => {
+    if (status === 'all' || item.classList.contains(`status-${status}`)) {
+      item.style.display = 'block';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+};
+
+const searchCompanies = (searchTerm) => {
+  const companyItems = document.querySelectorAll('.company-progress-item');
+  const term = searchTerm.toLowerCase();
+  
+  companyItems.forEach(item => {
+    const companyName = item.querySelector('h4 a').textContent.toLowerCase();
+    const industry = item.querySelector('.industry').textContent.toLowerCase();
+    
+    if (companyName.includes(term) || industry.includes(term)) {
+      item.style.display = 'block';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+};
+
+const viewCompanyDocuments = (companyId) => {
+  window.location.href = `/companies/${companyId}/documents`;
+};
+
+const sendReminder = async (companyId) => {
+  if (confirm('Send reminder email to all contacts for this company?')) {
+    try {
+      const response = await fetch(`/api/companies/${companyId}/send-reminder`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        showNotification('Reminder sent successfully', 'success');
+      } else {
+        showNotification('Failed to send reminder', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to send reminder:', error);
+      showNotification('Failed to send reminder', 'error');
+    }
+  }
+};
+
+const triggerAnalysis = async (companyId) => {
+  if (confirm('Trigger document analysis for this company? This will send all Stage 1 documents for external processing.')) {
+    try {
+      const response = await fetch(`/api/companies/${companyId}/trigger-analysis`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        showNotification('Analysis triggered successfully', 'success');
+      } else {
+        showNotification('Failed to trigger analysis', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to trigger analysis:', error);
+      showNotification('Failed to trigger analysis', 'error');
+    }
+  }
+};
+</script>
+File Structure Updates
+routes/
+├── portal-documents.js (new)
+├── document-tracking.js (new)
+
+public/
+├── js/
+│   ├── portal-document-submission.js (new)
+│   └── document-progress-dashboard.js (new)
+└── css/
+    ├── portal-documents.css (new)
+    └── document-tracking.css (new)
+
+views/
+├── portal/
+│   └── document-submission.ejs (enhanced)
+└── dashboard/
+    └── document-progress.ejs (new)
+Success Criteria for Prompt 12b (Revised)
+Portal displays exact 6 Stage 1 requirements with progress indicators
+Document upload forces selection of specific requirement
+Cross-portal synchronization shows same progress for all company contacts
+Real-time progress updates after document submission
+Internal dashboard shows document collection status across all deals
+Document validation system for internal users
+Automatic Stage 1 completion detection
+Professional portal interface with clear guidance
+Integration with existing portal and management systems
+Comprehensive activity logging and notifications
+Business Value
+This prompt enables:
+
+Clear Expectations - External users know exactly what documents are needed
+Progress Transparency - Real-time visibility into document collection status
+Efficient Management - Internal dashboard for monitoring all deals
+Professional Experience - Clean, intuitive portal interface
+Automated Tracking - System automatically detects completion and triggers next steps
+Integration with Existing System
+This prompt integrates seamlessly with:
+
+Prompts 11a & 11b: Enhances existing portal with document tracking
+Prompt 12a: Uses standardized Stage 1 requirements
+Team Management: Notifications and progress visibility
+Future Chase-up System: Provides foundation for automated reminders
+
+The document tracking system transforms the portal from a basic upload interface into a professional, guided document collection experience that provides clear expectations and real-time progress for both external and internal users!

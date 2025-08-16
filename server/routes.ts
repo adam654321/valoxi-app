@@ -3574,6 +3574,234 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Document tracking endpoints for enhanced portal functionality
+  
+  // Get Stage 1 requirements with progress for portal display
+  app.get('/api/portal/:token/requirements/stage1', async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      // Verify portal token and get company information
+      const tokenData = await storage.getValidPortalToken(token);
+      if (!tokenData) {
+        return res.status(404).json({ message: 'Invalid or expired portal token' });
+      }
+      
+      // Get Stage 1 requirements with submission status
+      const requirements = await storage.getStage1RequirementsForPortal(tokenData.target_company_id);
+      
+      // Calculate overall progress
+      const totalRequirements = requirements.length;
+      const completedRequirements = requirements.filter(req => 
+        req.requirement_status === 'submitted' || req.requirement_status === 'approved'
+      ).length;
+      
+      const progressPercentage = totalRequirements > 0 
+        ? Math.round((completedRequirements / totalRequirements) * 100)
+        : 0;
+      
+      res.json({
+        company_name: tokenData.company_name,
+        total_requirements: totalRequirements,
+        completed_requirements: completedRequirements,
+        progress_percentage: progressPercentage,
+        overall_status: completedRequirements === totalRequirements ? 'complete' : 
+                       completedRequirements > 0 ? 'in_progress' : 'not_started',
+        requirements: requirements,
+        portal_expires_at: tokenData.expires_at
+      });
+      
+    } catch (error) {
+      console.error('Portal requirements error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Submit document for specific requirement via portal
+  app.post('/api/portal/:token/documents/submit', upload.single('document'), async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      const { requirementId, submissionNotes } = req.body;
+      const uploadedFile = req.file;
+      
+      if (!uploadedFile) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      
+      if (!requirementId) {
+        return res.status(400).json({ message: 'Requirement ID is required' });
+      }
+      
+      // Verify portal token
+      const tokenData = await storage.getValidPortalToken(token);
+      if (!tokenData) {
+        return res.status(404).json({ message: 'Invalid or expired portal token' });
+      }
+      
+      // Submit document for requirement
+      const result = await storage.submitDocumentForRequirement(
+        tokenData,
+        parseInt(requirementId),
+        uploadedFile,
+        submissionNotes
+      );
+      
+      console.log(`[PORTAL] Document submitted for requirement: ${result.requirement_name}`);
+      
+      res.json({
+        success: true,
+        ...result
+      });
+      
+    } catch (error) {
+      console.error('Portal document submission error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Get overall progress for portal
+  app.get('/api/portal/:token/progress', async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      // Verify portal token
+      const tokenData = await storage.getValidPortalToken(token);
+      if (!tokenData) {
+        return res.status(404).json({ message: 'Invalid or expired portal token' });
+      }
+      
+      // Get progress
+      const progress = await storage.getStage1Progress(tokenData.target_company_id);
+      
+      res.json({
+        company_name: tokenData.company_name,
+        ...progress
+      });
+      
+    } catch (error) {
+      console.error('Portal progress error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Internal document tracking endpoints
+  
+  // Get detailed progress for company (internal users)
+  app.get('/api/companies/:id/requirements/progress', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId;
+      
+      // Verify company access
+      const company = await storage.getTargetCompanyById(targetCompanyId);
+      if (!company || company.userCompanyId !== userCompanyId) {
+        return res.status(404).json({ message: 'Company not found' });
+      }
+      
+      // Get detailed progress
+      const progress = await storage.getDetailedCompanyProgress(targetCompanyId);
+      
+      res.json({
+        company: company,
+        ...progress
+      });
+      
+    } catch (error) {
+      console.error('Company progress error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Get document progress dashboard (internal users)
+  app.get('/api/dashboard/document-progress', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      
+      const result = await storage.getDocumentProgressDashboard(userCompanyId);
+      
+      res.json(result);
+      
+    } catch (error) {
+      console.error('Document progress dashboard error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Enhanced Portal API Routes for Stage 1 Document Tracking
+
+  // Get Stage 1 requirements and progress for external portal
+  app.get('/api/portal/:token/requirements/stage1', async (req: Request, res: Response) => {
+    try {
+      const token = req.params.token;
+      
+      // Validate token and get company data
+      const tokenData = await storage.getValidPortalToken(token);
+      if (!tokenData) {
+        return res.status(401).json({ message: 'Invalid or expired portal token' });
+      }
+
+      // Get Stage 1 requirements with submission tracking
+      const requirements = await storage.getStage1RequirementsForPortal(tokenData.targetCompanyId);
+      
+      // Get progress summary
+      const progress = await storage.getStage1Progress(tokenData.targetCompanyId);
+      
+      const responseData = {
+        company_name: tokenData.company_name,
+        total_requirements: progress.total_requirements || 6,
+        completed_requirements: progress.completed_requirements || 0,
+        progress_percentage: progress.completion_percentage || 0,
+        overall_status: progress.overall_status || 'not_started',
+        portal_expires_at: tokenData.expiresAt,
+        requirements: requirements
+      };
+
+      res.json(responseData);
+    } catch (error) {
+      console.error('Portal requirements error:', error);
+      res.status(500).json({ message: 'Failed to load requirements' });
+    }
+  });
+
+  // Submit document for specific requirement
+  app.post('/api/portal/:token/documents/submit', upload.single('document'), async (req: Request, res: Response) => {
+    try {
+      const token = req.params.token;
+      const { requirementId, submissionNotes } = req.body;
+      const uploadedFile = req.file;
+
+      if (!uploadedFile) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      // Validate token
+      const tokenData = await storage.getValidPortalToken(token);
+      if (!tokenData) {
+        return res.status(401).json({ message: 'Invalid or expired portal token' });
+      }
+
+      // Submit document for requirement
+      const result = await storage.submitDocumentForRequirement(
+        tokenData,
+        parseInt(requirementId),
+        uploadedFile,
+        submissionNotes
+      );
+
+      res.json({
+        success: true,
+        message: 'Document submitted successfully',
+        submission: result
+      });
+
+    } catch (error) {
+      console.error('Document submission error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Failed to submit document' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
