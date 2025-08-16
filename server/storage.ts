@@ -2322,6 +2322,20 @@ export class DatabaseStorage implements IStorage {
     return !!updatedToken;
   }
 
+  async deletePortalToken(tokenId: number): Promise<boolean> {
+    // First delete any related document submissions
+    await db
+      .delete(externalDocumentSubmissions)
+      .where(eq(externalDocumentSubmissions.portalTokenId, tokenId));
+    
+    // Then delete the portal token itself
+    const [deletedToken] = await db
+      .delete(portalAccessTokens)
+      .where(eq(portalAccessTokens.id, tokenId))
+      .returning();
+    return !!deletedToken;
+  }
+
   async getPortalTokensForCompany(userCompanyId: number): Promise<any[]> {
     return await db
       .select({
@@ -2361,7 +2375,12 @@ export class DatabaseStorage implements IStorage {
         createdAt: portalAccessTokens.createdAt,
       })
       .from(portalAccessTokens)
-      .where(eq(portalAccessTokens.targetCompanyId, targetCompanyId))
+      .where(
+        and(
+          eq(portalAccessTokens.targetCompanyId, targetCompanyId),
+          eq(portalAccessTokens.isActive, true)
+        )
+      )
       .limit(1);
     
     return result[0] || null;

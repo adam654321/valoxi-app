@@ -2821,7 +2821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Deactivate portal token (authenticated endpoint)
+  // Delete portal token (authenticated endpoint)
   app.delete("/api/portal/deactivate/:tokenId", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId;
@@ -2836,14 +2836,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid token ID" });
       }
       
-      const deactivated = await storage.deactivatePortalToken(tokenId);
-      if (!deactivated) {
+      const deleted = await storage.deletePortalToken(tokenId);
+      if (!deleted) {
         return res.status(404).json({ message: "Portal token not found" });
       }
       
-      res.json({ success: true, message: "Portal token deactivated" });
+      res.json({ success: true, message: "Portal token deleted successfully" });
     } catch (error) {
-      console.error("Deactivate portal token error:", error);
+      console.error("Delete portal token error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
