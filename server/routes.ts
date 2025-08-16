@@ -2358,7 +2358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
       
       // Get enhanced portal data with document status tracking
-      const portalData = await storage.getSimplePortalData(portalToken.targetCompanyId);
+      const portalData = await storage.getSimplePortalData(portalToken.id);
       
       res.json(portalData);
     } catch (error) {

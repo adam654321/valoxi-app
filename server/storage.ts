@@ -2825,16 +2825,13 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getSimplePortalData(targetCompanyId: number): Promise<any> {
+  async getSimplePortalData(portalTokenId: number): Promise<any> {
     try {
       // Get portal token for this company
       const [tokenInfo] = await db
         .select()
         .from(portalAccessTokens)
-        .where(and(
-          eq(portalAccessTokens.targetCompanyId, targetCompanyId),
-          eq(portalAccessTokens.isActive, true)
-        ))
+        .where(eq(portalAccessTokens.id, portalTokenId))
         .limit(1);
       
       if (!tokenInfo) {
@@ -2852,7 +2849,7 @@ export class DatabaseStorage implements IStorage {
           status: externalDocumentSubmissions.processingStatus
         })
         .from(externalDocumentSubmissions)
-        .where(eq(externalDocumentSubmissions.targetCompanyId, targetCompanyId))
+        .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId))
         .orderBy(sql`${externalDocumentSubmissions.createdAt} DESC`);
 
       // Get target company name
@@ -2861,7 +2858,7 @@ export class DatabaseStorage implements IStorage {
           companyName: targetCompanies.companyName
         })
         .from(targetCompanies)
-        .where(eq(targetCompanies.id, targetCompanyId))
+        .where(eq(targetCompanies.id, tokenInfo.targetCompanyId))
         .limit(1);
 
       // Define the required document types
@@ -2915,13 +2912,12 @@ export class DatabaseStorage implements IStorage {
 
   async submitSimplePortalDocument(tokenData: any, uploadedFile: any, documentType: string, submissionNotes?: string): Promise<any> {
     try {
-      // Check if this document type has already been submitted for this COMPANY
-      // This prevents duplicates across all portals for the same company
+      // Check if this document type has already been submitted for this portal
       const existingSubmissions = await db
         .select({ count: sql<number>`count(*)` })
         .from(externalDocumentSubmissions)
         .where(and(
-          eq(externalDocumentSubmissions.targetCompanyId, tokenData.targetCompanyId),
+          eq(externalDocumentSubmissions.portalTokenId, tokenData.id),
           eq(externalDocumentSubmissions.submissionNotes, documentType)
         ));
       
@@ -2937,11 +2933,11 @@ export class DatabaseStorage implements IStorage {
         throw new Error('This document type has already been submitted');
       }
       
-      // Check total submissions for this COMPANY (max 10)
+      // Check total submissions for this portal (max 10)
       const totalSubmissions = await db
         .select({ count: sql<number>`count(*)` })
         .from(externalDocumentSubmissions)
-        .where(eq(externalDocumentSubmissions.targetCompanyId, tokenData.targetCompanyId));
+        .where(eq(externalDocumentSubmissions.portalTokenId, tokenData.id));
       
       if ((totalSubmissions[0]?.count || 0) >= 10) {
         throw new Error('Maximum of 10 documents already submitted');
