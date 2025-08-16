@@ -209,38 +209,50 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
           </CardContent>
         </Card>
 
-        {/* Document Status List */}
+        {/* Document Requirements - Condensed */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Document Requirements</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {portalData.document_status?.map((doc) => (
-                <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                   <div className="flex items-center space-x-3">
-                    {doc.submitted ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    {doc.isComplete ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
+                      <Clock className="h-5 w-5 text-gray-400 flex-shrink-0" />
                     )}
-                    <div>
-                      <p className="font-medium text-sm">{doc.label}</p>
-                      {doc.submission && (
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 text-sm">{doc.label}</p>
+                      {doc.isGroup ? (
                         <p className="text-xs text-gray-500">
-                          {doc.submission.filename} • {new Date(doc.submission.submittedAt).toLocaleDateString()}
+                          {doc.submitted} of {doc.required} files
                         </p>
-                      )}
+                      ) : doc.submission ? (
+                        <p className="text-xs text-gray-500 truncate">
+                          {doc.submission.filename}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
-                  <div>
-                    {doc.submitted ? (
-                      <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
-                        Submitted
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    {doc.isGroup ? (
+                      <Badge variant="outline" className={`${
+                        doc.isComplete 
+                          ? 'text-green-700 border-green-300 bg-green-50' 
+                          : 'text-blue-700 border-blue-300 bg-blue-50'
+                      }`}>
+                        {doc.submitted}/{doc.required}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-gray-500">
-                        Required
+                      <Badge variant="outline" className={`${
+                        doc.isComplete 
+                          ? 'text-green-700 border-green-300 bg-green-50' 
+                          : 'text-gray-500'
+                      }`}>
+                        {doc.isComplete ? 'Done' : 'Required'}
                       </Badge>
                     )}
                   </div>
@@ -266,7 +278,15 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {DOCUMENT_TYPES
-                      .filter(type => !portalData.document_status?.find(doc => doc.type === type.value)?.submitted)
+                      .filter(type => {
+                        const docStatus = portalData.document_status?.find(doc => {
+                          if (type.value.startsWith('company_accounts_')) {
+                            return doc.type === 'company_accounts';
+                          }
+                          return doc.type === type.value;
+                        });
+                        return !docStatus?.isComplete;
+                      })
                       .map(type => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}

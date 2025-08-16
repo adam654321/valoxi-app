@@ -2861,36 +2861,57 @@ export class DatabaseStorage implements IStorage {
         .where(eq(targetCompanies.id, tokenInfo.targetCompanyId))
         .limit(1);
 
-      // Define the required document types
-      const requiredDocuments = [
-        { type: 'company_accounts_1', label: 'Company Accounts (File 1 of 5)', required: true },
-        { type: 'company_accounts_2', label: 'Company Accounts (File 2 of 5)', required: true },
-        { type: 'company_accounts_3', label: 'Company Accounts (File 3 of 5)', required: true },
-        { type: 'company_accounts_4', label: 'Company Accounts (File 4 of 5)', required: true },
-        { type: 'company_accounts_5', label: 'Company Accounts (File 5 of 5)', required: true },
-        { type: 'p_and_l', label: 'P&L Statement', required: true },
-        { type: 'balance_sheet', label: 'Balance Sheet', required: true },
-        { type: 'sales_ledger', label: 'Sales Ledger', required: true },
-        { type: 'asset_register', label: 'Asset Register', required: true },
-        { type: 'staff_matrix', label: 'Staff Matrix', required: true }
+      // Count company accounts submissions
+      const companyAccountsSubmissions = submissions.filter(s => 
+        s.documentType?.startsWith('company_accounts_')
+      );
+
+      // Define the condensed document requirements
+      const documentRequirements = [
+        {
+          type: 'company_accounts',
+          label: 'Company Accounts',
+          required: 5,
+          submitted: companyAccountsSubmissions.length,
+          isGroup: true,
+          submissions: companyAccountsSubmissions
+        },
+        { type: 'p_and_l', label: 'P&L Statement', required: 1, isGroup: false },
+        { type: 'balance_sheet', label: 'Balance Sheet', required: 1, isGroup: false },
+        { type: 'sales_ledger', label: 'Sales Ledger', required: 1, isGroup: false },
+        { type: 'asset_register', label: 'Asset Register', required: 1, isGroup: false },
+        { type: 'staff_matrix', label: 'Staff Matrix', required: 1, isGroup: false }
       ];
 
-      // Create submission status for each required document
-      const submittedTypes = submissions.map(s => s.documentType);
-      const documentStatus = requiredDocuments.map(doc => {
-        const submission = submissions.find(s => s.documentType === doc.type);
-        return {
-          type: doc.type,
-          label: doc.label,
-          required: doc.required,
-          submitted: !!submission,
-          submission: submission ? {
-            id: submission.id,
-            filename: submission.filename,
-            submittedAt: submission.submittedAt,
-            status: submission.status
-          } : null
-        };
+      // Create submission status for each document requirement
+      const documentStatus = documentRequirements.map(req => {
+        if (req.isGroup) {
+          return {
+            type: req.type,
+            label: req.label,
+            required: req.required,
+            submitted: req.submitted,
+            isGroup: true,
+            isComplete: req.submitted >= req.required,
+            submissions: req.submissions
+          };
+        } else {
+          const submission = submissions.find(s => s.documentType === req.type);
+          return {
+            type: req.type,
+            label: req.label,
+            required: req.required,
+            submitted: submission ? 1 : 0,
+            isGroup: false,
+            isComplete: !!submission,
+            submission: submission ? {
+              id: submission.id,
+              filename: submission.filename,
+              submittedAt: submission.submittedAt,
+              status: submission.status
+            } : null
+          };
+        }
       });
 
       const totalDocuments = submissions.length;
