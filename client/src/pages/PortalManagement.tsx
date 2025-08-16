@@ -83,6 +83,11 @@ export default function PortalManagement() {
   // Get primary contacts only (for portal link creation)
   const primaryContacts = contacts.filter(contact => contact.isPrimary);
 
+  // Get companies that don't have portal links yet
+  const availableCompanies = companies.filter(company => 
+    !portalTokens.some(token => token.targetCompanyId === company.id)
+  );
+
   // Check if selected company already has a portal link
   const companyHasPortal = selectedCompanyId ? 
     portalTokens.some(token => token.targetCompanyId === selectedCompanyId) : false;
@@ -262,10 +267,17 @@ export default function PortalManagement() {
             </div>
           )}
         </div>
-        <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
-          <Plus size={16} />
-          Send Portal Link
-        </Button>
+        {availableCompanies.length > 0 ? (
+          <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
+            <Plus size={16} />
+            Send Portal Link
+          </Button>
+        ) : (
+          <Button disabled className="flex items-center gap-2">
+            <Plus size={16} />
+            All Companies Have Links
+          </Button>
+        )}
       </div>
 
       {/* Dashboard Overview */}
@@ -323,21 +335,29 @@ export default function PortalManagement() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="company">Target Company</Label>
-                <Select value={selectedCompanyId?.toString()} onValueChange={(value) => {
-                  setSelectedCompanyId(parseInt(value));
-                  setSelectedContactIds([]);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id.toString()}>
-                        {company.companyName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {availableCompanies.length === 0 ? (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="text-sm text-blue-800">
+                      All companies already have portal links. Each company can only have one portal link.
+                    </div>
+                  </div>
+                ) : (
+                  <Select value={selectedCompanyId?.toString()} onValueChange={(value) => {
+                    setSelectedCompanyId(parseInt(value));
+                    setSelectedContactIds([]);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCompanies.map((company) => (
+                        <SelectItem key={company.id} value={company.id.toString()}>
+                          {company.companyName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {selectedCompanyId && (
