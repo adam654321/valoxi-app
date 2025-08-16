@@ -2357,29 +2357,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { value: 'company_accounts_5', label: 'Company Accounts 5', category: 'company_accounts', maxFiles: 1 }
       ];
       
-      // Get company and contact info using storage methods
-      const company = await storage.getTargetCompany(portalToken.targetCompanyId, portalToken.userCompanyId);
-      const contact = await storage.getTargetContact(portalToken.targetContactId, portalToken.userCompanyId);
+      // Get enhanced portal data with document status tracking
+      const portalData = await storage.getSimplePortalData(portalToken.targetCompanyId);
       
-      // Use simple submission tracking - call storage method
-      const submissionsData = await storage.getSimplePortalProgress(portalToken.id);
-      
-      res.json({
-        valid: true,
-        tokenId: portalToken.id,
-        companyId: portalToken.targetCompanyId,
-        contactId: portalToken.targetContactId,
-        companyName: company?.companyName || 'Target Company',
-        contactName: contact ? `${contact.firstName} ${contact.lastName}` : 'Contact',
-        documentTypes: documentTypes,
-        submittedTypes: submissionsData.submittedTypes || [],
-        totalSubmissions: submissionsData.totalSubmissions || 0,
-        progressPercentage: Math.min((submissionsData.totalSubmissions || 0) * 10, 100),
-        maxDocuments: 10,
-        allowedActions: JSON.parse(portalToken.allowedActions || '{"upload":true}'),
-        customMessage: portalToken.customMessage,
-        expiresAt: portalToken.expiresAt
-      });
+      res.json(portalData);
     } catch (error) {
       console.error("Portal data error:", error);
       res.status(500).json({ message: "Internal server error" });

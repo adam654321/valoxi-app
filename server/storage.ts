@@ -2841,17 +2841,18 @@ export class DatabaseStorage implements IStorage {
         throw new Error('No active portal token found');
       }
 
-      // Get all submitted documents for this portal
+      // Get ALL submitted documents for this COMPANY (not just this portal token)
+      // This way all portals for the same company show the same data
       const submissions = await db
         .select({
           id: externalDocumentSubmissions.id,
-          documentType: externalDocumentSubmissions.submissionNotes, // We'll store document type here
+          documentType: externalDocumentSubmissions.submissionNotes,
           filename: externalDocumentSubmissions.originalFilename,
           submittedAt: externalDocumentSubmissions.createdAt,
           status: externalDocumentSubmissions.processingStatus
         })
         .from(externalDocumentSubmissions)
-        .where(eq(externalDocumentSubmissions.portalTokenId, tokenInfo.id))
+        .where(eq(externalDocumentSubmissions.targetCompanyId, targetCompanyId))
         .orderBy(sql`${externalDocumentSubmissions.createdAt} DESC`);
 
       // Get target company name
@@ -2863,20 +2864,47 @@ export class DatabaseStorage implements IStorage {
         .where(eq(targetCompanies.id, targetCompanyId))
         .limit(1);
 
+      // Define the required document types
+      const requiredDocuments = [
+        { type: 'company_accounts_1', label: 'Company Accounts (File 1 of 5)', required: true },
+        { type: 'company_accounts_2', label: 'Company Accounts (File 2 of 5)', required: true },
+        { type: 'company_accounts_3', label: 'Company Accounts (File 3 of 5)', required: true },
+        { type: 'company_accounts_4', label: 'Company Accounts (File 4 of 5)', required: true },
+        { type: 'company_accounts_5', label: 'Company Accounts (File 5 of 5)', required: true },
+        { type: 'p_and_l', label: 'P&L Statement', required: true },
+        { type: 'balance_sheet', label: 'Balance Sheet', required: true },
+        { type: 'sales_ledger', label: 'Sales Ledger', required: true },
+        { type: 'asset_register', label: 'Asset Register', required: true },
+        { type: 'staff_matrix', label: 'Staff Matrix', required: true }
+      ];
+
+      // Create submission status for each required document
+      const submittedTypes = submissions.map(s => s.documentType);
+      const documentStatus = requiredDocuments.map(doc => {
+        const submission = submissions.find(s => s.documentType === doc.type);
+        return {
+          type: doc.type,
+          label: doc.label,
+          required: doc.required,
+          submitted: !!submission,
+          submission: submission ? {
+            id: submission.id,
+            filename: submission.filename,
+            submittedAt: submission.submittedAt,
+            status: submission.status
+          } : null
+        };
+      });
+
       const totalDocuments = submissions.length;
       const progressPercentage = Math.min(Math.round((totalDocuments / 10) * 100), 100);
 
       return {
         company_name: company?.companyName || 'Unknown Company',
         total_documents_required: 10,
-        submitted_documents: submissions.map(sub => ({
-          id: sub.id,
-          documentType: sub.documentType || 'unknown',
-          filename: sub.filename,
-          submittedAt: sub.submittedAt,
-          status: sub.status
-        })),
+        total_submitted: totalDocuments,
         progress_percentage: progressPercentage,
+        document_status: documentStatus,
         portal_expires_at: tokenInfo.expiresAt
       };
     } catch (error) {
@@ -2887,12 +2915,13 @@ export class DatabaseStorage implements IStorage {
 
   async submitSimplePortalDocument(tokenData: any, uploadedFile: any, documentType: string, submissionNotes?: string): Promise<any> {
     try {
-      // Check if this document type has already been submitted (except for company accounts which allow 5)
+      // Check if this document type has already been submitted for this COMPANY
+      // This prevents duplicates across all portals for the same company
       const existingSubmissions = await db
         .select({ count: sql<number>`count(*)` })
         .from(externalDocumentSubmissions)
         .where(and(
-          eq(externalDocumentSubmissions.portalTokenId, tokenData.id),
+          eq(externalDocumentSubmissions.targetCompanyId, tokenData.targetCompanyId),
           eq(externalDocumentSubmissions.submissionNotes, documentType)
         ));
       
@@ -2908,11 +2937,11 @@ export class DatabaseStorage implements IStorage {
         throw new Error('This document type has already been submitted');
       }
       
-      // Check total submissions (max 10)
+      // Check total submissions for this COMPANY (max 10)
       const totalSubmissions = await db
         .select({ count: sql<number>`count(*)` })
         .from(externalDocumentSubmissions)
-        .where(eq(externalDocumentSubmissions.portalTokenId, tokenData.id));
+        .where(eq(externalDocumentSubmissions.targetCompanyId, tokenData.targetCompanyId));
       
       if ((totalSubmissions[0]?.count || 0) >= 10) {
         throw new Error('Maximum of 10 documents already submitted');

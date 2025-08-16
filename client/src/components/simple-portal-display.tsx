@@ -9,38 +9,26 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, FileUp, FileText, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface DocumentSubmission {
-  id: number;
-  documentType: string;
-  filename: string;
-  submittedAt: string;
-  status: string;
+interface DocumentStatus {
+  type: string;
+  label: string;
+  required: boolean;
+  submitted: boolean;
+  submission: {
+    id: number;
+    filename: string;
+    submittedAt: string;
+    status: string;
+  } | null;
 }
 
 interface PortalData {
-  valid: boolean;
-  tokenId: number;
-  companyId: number;
-  contactId: number;
-  companyName: string;
-  contactName: string;
-  documentTypes: Array<{
-    value: string;
-    label: string;
-    category: string;
-    maxFiles: number;
-  }>;
-  submittedTypes: string[];
-  totalSubmissions: number;
-  progressPercentage: number;
-  maxDocuments: number;
-  allowedActions: {
-    upload: boolean;
-    download?: boolean;
-    message?: boolean;
-  };
-  customMessage: string | null;
-  expiresAt: string;
+  company_name: string;
+  total_documents_required: number;
+  total_submitted: number;
+  progress_percentage: number;
+  document_status: DocumentStatus[];
+  portal_expires_at: string;
 }
 
 interface SimplePortalDisplayProps {
@@ -156,12 +144,10 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
   };
 
   const getNextAvailableDocumentType = (): string => {
-    if (!portalData?.submittedTypes) return DOCUMENT_TYPES[0].value;
+    if (!portalData?.document_status) return DOCUMENT_TYPES[0].value;
     
-    const submittedTypes = portalData.submittedTypes;
-    const availableType = DOCUMENT_TYPES.find(type => !submittedTypes.includes(type.value));
-    
-    return availableType?.value || '';
+    const unsubmittedTypes = portalData.document_status.filter(doc => !doc.submitted);
+    return unsubmittedTypes.length > 0 ? unsubmittedTypes[0].type : '';
   };
 
   if (isLoading) {
@@ -189,7 +175,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
     );
   }
 
-  const isCompleted = (portalData.totalSubmissions || 0) >= 10;
+  const isCompleted = (portalData.total_submitted || 0) >= 10;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -201,7 +187,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
               Document Submission Portal
             </CardTitle>
             <p className="text-center text-gray-600">
-              {portalData.companyName}
+              {portalData.company_name}
             </p>
           </CardHeader>
         </Card>
@@ -212,13 +198,54 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">
-                  Progress: {portalData.totalSubmissions || 0} of 10 documents
+                  Progress: {portalData.total_submitted || 0} of {portalData.total_documents_required} documents
                 </span>
                 <span className="text-sm text-gray-500">
-                  {portalData.progressPercentage || 0}% Complete
+                  {portalData.progress_percentage || 0}% Complete
                 </span>
               </div>
-              <Progress value={portalData.progressPercentage || 0} className="h-3" />
+              <Progress value={portalData.progress_percentage || 0} className="h-3" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Document Status List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Document Requirements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {portalData.document_status?.map((doc) => (
+                <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {doc.submitted ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-gray-400" />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">{doc.label}</p>
+                      {doc.submission && (
+                        <p className="text-xs text-gray-500">
+                          {doc.submission.filename} • {new Date(doc.submission.submittedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    {doc.submitted ? (
+                      <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                        Submitted
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500">
+                        Required
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -239,7 +266,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {DOCUMENT_TYPES
-                      .filter(type => !portalData.submittedTypes.includes(type.value))
+                      .filter(type => !portalData.document_status?.find(doc => doc.type === type.value)?.submitted)
                       .map(type => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
