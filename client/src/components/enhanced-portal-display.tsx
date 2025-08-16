@@ -40,6 +40,7 @@ interface EnhancedPortalDisplayProps {
 export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // For multiple file uploads
   const [submissionNotes, setSubmissionNotes] = useState('');
   const [uploadingRequirementId, setUploadingRequirementId] = useState<number | null>(null);
 
@@ -82,6 +83,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
         description: "Your document has been successfully submitted for review.",
       });
       setSelectedFile(null);
+      setSelectedFiles([]);
       setSubmissionNotes('');
       setUploadingRequirementId(null);
       // Refresh the data
@@ -98,21 +100,57 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   });
 
   const handleFileSelect = (requirementId: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setUploadingRequirementId(requirementId);
+    const files = Array.from(event.target.files || []);
+    const requirement = portalData?.requirements.find(r => r.id === requirementId);
+    
+    // For Company Accounts requirement, allow multiple files (up to 5)
+    if (requirement?.requirement_name === "Company Accounts") {
+      if (files.length > 5) {
+        toast({
+          title: "Too Many Files",
+          description: "You can upload up to 5 company account documents.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedFiles(files);
+      setSelectedFile(null);
+    } else {
+      // For other requirements, only allow single file
+      const file = files[0];
+      if (file) {
+        setSelectedFile(file);
+        setSelectedFiles([]);
+      }
     }
+    setUploadingRequirementId(requirementId);
   };
 
   const handleSubmitDocument = async (requirementId: number) => {
-    if (!selectedFile) return;
-
-    submitDocumentMutation.mutate({
-      requirementId,
-      file: selectedFile,
-      notes: submissionNotes,
-    });
+    const requirement = portalData?.requirements.find(r => r.id === requirementId);
+    
+    // Handle multiple files for Company Accounts
+    if (requirement?.requirement_name === "Company Accounts" && selectedFiles.length > 0) {
+      // Submit each file individually 
+      for (const file of selectedFiles) {
+        await new Promise((resolve) => {
+          submitDocumentMutation.mutate({
+            requirementId,
+            file,
+            notes: submissionNotes,
+          }, {
+            onSettled: () => resolve(void 0)
+          });
+        });
+      }
+    } else if (selectedFile) {
+      // Handle single file for other requirements
+      submitDocumentMutation.mutate({
+        requirementId,
+        file: selectedFile,
+        notes: submissionNotes,
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -301,6 +339,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                         type="file"
                         id={`file-${requirement.id}`}
                         accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        multiple={requirement.requirement_name === "Company Accounts"}
                         onChange={(e) => handleFileSelect(requirement.id, e)}
                         className="hidden"
                       />
@@ -313,31 +352,69 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                           Click to upload {requirement.requirement_name}
                         </div>
                         <div className="text-sm text-gray-500 mt-1">
-                          Supported formats: PDF, Word, Excel
+                          {requirement.requirement_name === "Company Accounts" 
+                            ? "Upload up to 5 company account files (PDF, Word, Excel)"
+                            : "Supported formats: PDF, Word, Excel"
+                          }
                         </div>
                       </label>
                     </div>
 
-                    {uploadingRequirementId === requirement.id && selectedFile && (
+                    {uploadingRequirementId === requirement.id && (selectedFile || selectedFiles.length > 0) && (
                       <div className="space-y-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium text-gray-900">{selectedFile.name}</div>
-                              <div className="text-sm text-gray-500">{formatFileSize(selectedFile.size)}</div>
+                        {/* Show multiple files for Company Accounts */}
+                        {requirement.requirement_name === "Company Accounts" && selectedFiles.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-700">
+                              Selected Files ({selectedFiles.length}/5):
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedFile(null);
-                                setUploadingRequirementId(null);
-                              }}
-                            >
-                              Remove
-                            </Button>
+                            {selectedFiles.map((file, index) => (
+                              <div key={index} className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium text-gray-900">{file.name}</div>
+                                    <div className="text-sm text-gray-500">{formatFileSize(file.size)}</div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newFiles = selectedFiles.filter((_, i) => i !== index);
+                                      setSelectedFiles(newFiles);
+                                      if (newFiles.length === 0) {
+                                        setUploadingRequirementId(null);
+                                      }
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </div>
+                        )}
+                        
+                        {/* Show single file for other requirements */}
+                        {requirement.requirement_name !== "Company Accounts" && selectedFile && (
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium text-gray-900">{selectedFile.name}</div>
+                                <div className="text-sm text-gray-500">{formatFileSize(selectedFile.size)}</div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedFile(null);
+                                  setUploadingRequirementId(null);
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         <div className="space-y-2">
                           <Label htmlFor="notes">Optional Notes</Label>
@@ -363,7 +440,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                           ) : (
                             <>
                               <Upload className="h-4 w-4 mr-2" />
-                              Submit {requirement.requirement_name}
+                              Submit {requirement.requirement_name === "Company Accounts" && selectedFiles.length > 1 
+                                ? `${selectedFiles.length} Company Account Files`
+                                : requirement.requirement_name
+                              }
                             </>
                           )}
                         </Button>

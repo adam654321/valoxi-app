@@ -2827,17 +2827,41 @@ export class DatabaseStorage implements IStorage {
 
   async getStage1RequirementsForPortal(targetCompanyId: number): Promise<any[]> {
     try {
+      // Get portal token for this company to check submissions
+      const [tokenInfo] = await db
+        .select()
+        .from(portalAccessTokens)
+        .where(and(
+          eq(portalAccessTokens.targetCompanyId, targetCompanyId),
+          eq(portalAccessTokens.isActive, true)
+        ))
+        .limit(1);
+      
+      // Count submissions for Company Accounts requirement
+      let companyAccountsSubmissions = 0;
+      let companyAccountsStatus = "pending";
+      if (tokenInfo) {
+        const submissions = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(externalDocumentSubmissions)
+          .where(eq(externalDocumentSubmissions.portalTokenId, tokenInfo.id));
+        
+        companyAccountsSubmissions = submissions[0]?.count || 0;
+        companyAccountsStatus = companyAccountsSubmissions >= 5 ? "submitted" : 
+                               companyAccountsSubmissions > 0 ? "pending" : "pending";
+      }
+      
       // Return mock Stage 1 requirements data for the portal
       return [
         {
           id: 1,
           requirement_name: "Company Accounts",
-          requirement_description: "Latest annual company accounts filed with Companies House",
+          requirement_description: "Upload up to 5 company account files (latest annual accounts, management accounts, etc.)",
           priority_level: 1,
-          requirement_status: "pending",
-          submitted_documents: 0,
+          requirement_status: companyAccountsStatus,
+          submitted_documents: companyAccountsSubmissions,
           latest_submission_date: null,
-          display_status: "pending"
+          display_status: companyAccountsStatus
         },
         {
           id: 2,
@@ -2897,7 +2921,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async submitDocumentForRequirement(tokenData: any, requirementId: number, uploadedFile: any, submissionNotes?: string): Promise<any> {
-    // Verify requirement belongs to this company and is Stage 1
+    // For Company Accounts requirement (ID 1), allow multiple submissions
+    // For other requirements, check if already submitted
     const [requirement] = await db
       .select()
       .from(companyDocumentRequirements)
@@ -2911,9 +2936,24 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Invalid requirement or requirement not found');
     }
     
-    // Check if requirement already completed
-    if (requirement.requirementStatus === 'approved') {
+    // For non-Company Accounts requirements, check if already completed
+    if (requirementId !== 1 && requirement.requirementStatus === 'approved') {
       throw new Error('This requirement has already been completed and approved');
+    }
+    
+    // For Company Accounts, check if we already have 5 submissions
+    if (requirementId === 1) {
+      const existingSubmissions = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(externalDocumentSubmissions)
+        .where(and(
+          eq(externalDocumentSubmissions.portalTokenId, tokenData.id),
+          sql`${externalDocumentSubmissions.originalFilename} LIKE '%company%account%' OR ${externalDocumentSubmissions.originalFilename} LIKE '%account%'`
+        ));
+      
+      if (existingSubmissions[0]?.count >= 5) {
+        throw new Error('Maximum of 5 company account documents already submitted');
+      }
     }
     
     // Create external document submission record
@@ -2946,15 +2986,27 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     
-    // Update requirement status
+    // Update requirement status - for Company Accounts, check if we have enough submissions
+    let newStatus = 'submitted';
+    if (requirementId === 1) { // Company Accounts
+      // Count total submissions for this requirement
+      const allSubmissions = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(externalDocumentSubmissions)
+        .where(eq(externalDocumentSubmissions.portalTokenId, tokenData.id));
+      
+      // If we have 5 or more company account files, mark as submitted
+      newStatus = allSubmissions[0]?.count >= 5 ? 'submitted' : 'pending';
+    }
+    
     await db
       .update(companyDocumentRequirements)
       .set({
-        requirementStatus: 'submitted',
+        requirementStatus: newStatus,
         submittedDocumentId: document.id,
         submittedAt: new Date(),
         submittedByContactId: tokenData.targetContactId,
-        submissionStatus: 'submitted',
+        submissionStatus: newStatus,
         updatedAt: new Date()
       })
       .where(eq(companyDocumentRequirements.id, requirementId));
@@ -2973,9 +3025,21 @@ export class DatabaseStorage implements IStorage {
     const requirements = await this.getStage1RequirementsForPortal(targetCompanyId);
     
     const totalRequirements = requirements.length;
-    const completedRequirements = requirements.filter(r => 
-      r.requirement_status === 'submitted' || r.requirement_status === 'approved'
-    ).length;
+    let completedRequirements = 0;
+    
+    // For Company Accounts, consider it complete if we have 5+ files
+    // For other requirements, check if submitted/approved
+    for (const req of requirements) {
+      if (req.requirement_name === "Company Accounts") {
+        if (req.submitted_documents >= 5) {
+          completedRequirements += 1;
+        }
+      } else {
+        if (req.requirement_status === 'submitted' || req.requirement_status === 'approved') {
+          completedRequirements += 1;
+        }
+      }
+    }
     
     const completionPercentage = totalRequirements > 0 
       ? Math.round((completedRequirements / totalRequirements) * 100)
