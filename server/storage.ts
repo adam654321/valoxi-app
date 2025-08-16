@@ -93,7 +93,7 @@ import {
   type InsertUserCompanyMembership,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull, gt } from "drizzle-orm";
+import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull, gt, exists } from "drizzle-orm";
 
 // Search and filter types
 export interface SearchParams {
@@ -3128,14 +3128,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(fileUploadEvents.uploadedBy, users.id))
       .where(
         // Filter by user company through target companies
-        exists(
-          db.select({ id: targetCompanies.id })
-            .from(targetCompanies)
-            .where(and(
-              eq(targetCompanies.id, fileUploadEvents.targetCompanyId),
-              eq(targetCompanies.userCompanyId, userCompanyId)
-            ))
-        )
+        eq(targetCompanies.userCompanyId, userCompanyId)
       )
       .orderBy(desc(fileUploadEvents.createdAt));
   }

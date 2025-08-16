@@ -42,7 +42,6 @@ export default function FileUploadTest() {
   // Fetch file upload events
   const { data: fileUploadEvents = [], isLoading: eventsLoading } = useQuery<FileUploadEvent[]>({
     queryKey: ["/api/file-upload-events"],
-    refetchInterval: 3000, // Refresh every 3 seconds
   });
 
   // Send webhook for file upload event
