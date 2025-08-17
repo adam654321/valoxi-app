@@ -152,12 +152,18 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Success",
         description: "Document uploaded successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+      
+      // Invalidate analysis cache for the newly uploaded document
+      if (data?.document?.id) {
+        queryClient.invalidateQueries({ queryKey: ["/api/documents", data.document.id, "analysis"] });
+      }
+      
       setShowUploadForm(false);
       setSelectedFile(null);
       documentForm.reset();

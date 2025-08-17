@@ -74,10 +74,24 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
 
   // Fetch document analysis results
-  const { data: analysisResults = [], isLoading: analysisLoading } = useQuery<DocumentAnalysisResult[]>({
+  const { data: analysisResults = [], isLoading: analysisLoading, error: analysisError } = useQuery<DocumentAnalysisResult[]>({
     queryKey: ["/api/documents", document?.id, "analysis"],
     enabled: !!document?.id && isOpen,
+    staleTime: 0, // Always refetch to get latest analysis
+    retry: 3,
   });
+
+  // Debug logging for analysis results
+  useEffect(() => {
+    if (document?.id && isOpen) {
+      console.log(`[DocumentViewer] Analysis query for document ${document.id}:`, {
+        results: analysisResults,
+        loading: analysisLoading,
+        error: analysisError,
+        length: analysisResults?.length
+      });
+    }
+  }, [document?.id, isOpen, analysisResults, analysisLoading, analysisError]);
 
   // Reset states when dialog opens/closes
   useEffect(() => {
