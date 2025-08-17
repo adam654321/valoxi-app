@@ -249,34 +249,23 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     // Handle both direct response and wrapped response structures
     let documentType, analysisData;
     
-    console.log(`[FILE_UPLOAD_WEBHOOK] DEBUG - Response structure:`, {
-      isArray: Array.isArray(webhookResponse),
-      hasDocumentType: !!webhookResponse.document_type,
-      hasData: !!webhookResponse.data,
-      hasNestedDocType: !!(webhookResponse.data && webhookResponse.data.document_type)
-    });
-    
     if (Array.isArray(webhookResponse)) {
       // Direct array response format
       const firstItem = webhookResponse[0];
       documentType = firstItem.document_type;
       analysisData = firstItem.data;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Using array format`);
     } else if (webhookResponse.data && webhookResponse.data.document_type) {
       // Nested response format (data.document_type exists)
       documentType = webhookResponse.data.document_type;
       analysisData = webhookResponse.data.data;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Using nested format`);
     } else if (webhookResponse.document_type && webhookResponse.data) {
       // Direct object response format
       documentType = webhookResponse.document_type;
       analysisData = webhookResponse.data;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Using direct object format`);
     } else {
       // Unknown format
       documentType = null;
       analysisData = null;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Unknown format`);
     }
 
     if (!documentType || !analysisData) {
