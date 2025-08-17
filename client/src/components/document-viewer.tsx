@@ -30,6 +30,8 @@ import {
   Calendar,
   List
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Document {
   id: number;
@@ -556,7 +558,11 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="whitespace-pre-line text-sm">{analysisData.summary}</div>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {analysisData.summary}
+                </ReactMarkdown>
+              </div>
             </CardContent>
           </Card>
         )}

@@ -253,15 +253,26 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       // Direct array response format
       const firstItem = webhookResponse[0];
       documentType = firstItem.document_type;
-      analysisData = firstItem.data;
+      // Include summary field if it exists (especially for profit & loss)
+      analysisData = {
+        ...firstItem.data,
+        ...(firstItem.summary && { summary: firstItem.summary })
+      };
     } else if (webhookResponse.data && webhookResponse.data.document_type) {
       // Nested response format (data.document_type exists)
       documentType = webhookResponse.data.document_type;
-      analysisData = webhookResponse.data.data;
+      analysisData = {
+        ...webhookResponse.data.data,
+        ...(webhookResponse.data.summary && { summary: webhookResponse.data.summary })
+      };
     } else if (webhookResponse.document_type && webhookResponse.data) {
       // Direct object response format
       documentType = webhookResponse.document_type;
-      analysisData = webhookResponse.data;
+      // Include summary field if it exists (especially for profit & loss)
+      analysisData = {
+        ...webhookResponse.data,
+        ...(webhookResponse.summary && { summary: webhookResponse.summary })
+      };
     } else {
       // Unknown format
       documentType = null;
