@@ -845,7 +845,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-8">
+              <div className="space-y-12">
                 {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
                   <div key={year} className="space-y-4">
                     <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 border-b border-orange-200 dark:border-orange-800 pb-2">
