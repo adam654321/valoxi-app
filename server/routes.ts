@@ -214,8 +214,8 @@ async function sendFileUploadWebhook(eventId: number) {
       new Date()
     );
 
-    if (response.ok && responseData && responseData.data && responseData.data.id === eventId) {
-      // Process and store the analysis results
+    if (response.ok && responseData) {
+      // Process and store the analysis results if we have valid response data
       await processFileUploadWebhookResponse(responseData, eventId);
     }
 
