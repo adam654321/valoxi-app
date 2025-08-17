@@ -249,19 +249,34 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     // Handle both direct response and wrapped response structures
     let documentType, analysisData;
     
+    console.log(`[FILE_UPLOAD_WEBHOOK] DEBUG - Response structure:`, {
+      isArray: Array.isArray(webhookResponse),
+      hasDocumentType: !!webhookResponse.document_type,
+      hasData: !!webhookResponse.data,
+      hasNestedDocType: !!(webhookResponse.data && webhookResponse.data.document_type)
+    });
+    
     if (Array.isArray(webhookResponse)) {
       // Direct array response format
       const firstItem = webhookResponse[0];
       documentType = firstItem.document_type;
       analysisData = firstItem.data;
-    } else if (webhookResponse.data) {
-      // Wrapped response format
+      console.log(`[FILE_UPLOAD_WEBHOOK] Using array format`);
+    } else if (webhookResponse.data && webhookResponse.data.document_type) {
+      // Nested response format (data.document_type exists)
       documentType = webhookResponse.data.document_type;
       analysisData = webhookResponse.data.data;
-    } else {
-      // Direct object response
+      console.log(`[FILE_UPLOAD_WEBHOOK] Using nested format`);
+    } else if (webhookResponse.document_type && webhookResponse.data) {
+      // Direct object response format
       documentType = webhookResponse.document_type;
       analysisData = webhookResponse.data;
+      console.log(`[FILE_UPLOAD_WEBHOOK] Using direct object format`);
+    } else {
+      // Unknown format
+      documentType = null;
+      analysisData = null;
+      console.log(`[FILE_UPLOAD_WEBHOOK] Unknown format`);
     }
 
     if (!documentType || !analysisData) {
@@ -3352,6 +3367,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
+        
+        // Process analysis results if webhook was successful and contains analysis data
+        if (response.ok && responseData && responseData.document_type) {
+          console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis results for event ${eventId}`);
+          await processFileUploadWebhookResponse(responseData, eventId);
+        }
         
         res.json({
           success: true,
