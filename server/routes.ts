@@ -246,12 +246,35 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       return;
     }
 
+    // Handle both direct response and wrapped response structures
+    let documentType, analysisData;
+    
+    if (Array.isArray(webhookResponse)) {
+      // Direct array response format
+      const firstItem = webhookResponse[0];
+      documentType = firstItem.document_type;
+      analysisData = firstItem.data;
+    } else if (webhookResponse.data) {
+      // Wrapped response format
+      documentType = webhookResponse.data.document_type;
+      analysisData = webhookResponse.data.data;
+    } else {
+      // Direct object response
+      documentType = webhookResponse.document_type;
+      analysisData = webhookResponse.data;
+    }
+
+    if (!documentType || !analysisData) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] Invalid webhook response structure for event ${eventId}:`, webhookResponse);
+      return;
+    }
+
     const analysisResult = {
       documentId: event.documentId,
       fileUploadEventId: eventId,
-      documentType: webhookResponse.data.document_type,
-      analysisData: webhookResponse.data.data, // Store the structured data
-      processingTime: webhookResponse.processingTime,
+      documentType: documentType,
+      analysisData: analysisData, // Store the structured data
+      processingTime: webhookResponse.processingTime || null,
     };
 
     // Store the analysis results
@@ -3364,6 +3387,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Send file upload webhook error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Webhook response handler for file upload analysis results
+  app.post("/api/file-upload-events/:eventId/webhook-response", async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      const responseData = req.body;
+      console.log(`[FILE_UPLOAD_WEBHOOK] Received webhook response for event ${eventId}:`, responseData);
+
+      // Process the analysis results
+      await processFileUploadWebhookResponse(responseData, eventId);
+      
+      res.json({ success: true, message: "Webhook response processed successfully" });
+      
+    } catch (error) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response:`, error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
