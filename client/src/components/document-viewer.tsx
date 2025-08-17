@@ -126,7 +126,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     const typeMap: Record<string, string> = {
       'sales_ledger': 'Sales Ledger',
       'staff_matrix': 'Staff Matrix',
-      'asset_register': 'Asset Register'
+      'asset_register': 'Asset Register',
+      'profit_and_loss': 'Profit & Loss'
     };
     return typeMap[documentType] || documentType;
   };
@@ -136,7 +137,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     const colorMap: Record<string, string> = {
       'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+      'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
     };
     return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
   };
@@ -443,6 +445,125 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     );
   };
 
+  // Render profit & loss analysis
+  const renderProfitAndLossAnalysis = (analysisData: any) => {
+    return (
+      <div className="space-y-6">
+        {/* Years Covered */}
+        {analysisData.years_covered && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Years Covered
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+                {analysisData.years_covered}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Year-by-Year Analysis */}
+        {analysisData.years && (
+          <div className="space-y-6">
+            {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
+              <Card key={year}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    {year} Financial Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">Revenue</div>
+                      <div className="text-xl font-bold text-blue-600">
+                        £{yearData.profit_and_loss?.revenue?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">Gross Profit</div>
+                      <div className="text-xl font-bold text-green-600">
+                        £{yearData.profit_and_loss?.gross_profit?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">Operating Profit</div>
+                      <div className="text-xl font-bold text-orange-600">
+                        £{yearData.profit_and_loss?.operating_profit?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">Profit Before Tax</div>
+                      <div className="text-xl font-bold text-purple-600">
+                        £{yearData.profit_and_loss?.profit_before_tax?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">Net Profit</div>
+                      <div className={`text-xl font-bold ${(yearData.profit_and_loss?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        £{yearData.profit_and_loss?.net_profit?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">Tax</div>
+                      <div className="text-xl font-bold text-gray-600">
+                        £{yearData.profit_and_loss?.tax?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Financial Details */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <div className="text-muted-foreground">Cost of Sales</div>
+                        <div className="font-medium">£{yearData.profit_and_loss?.cost_of_sales?.toLocaleString() || 0}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-muted-foreground">Admin Expenses</div>
+                        <div className="font-medium">£{yearData.profit_and_loss?.administrative_expenses?.toLocaleString() || 0}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-muted-foreground">Other Operating Income</div>
+                        <div className="font-medium">£{yearData.profit_and_loss?.other_operating_income?.toLocaleString() || 0}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-muted-foreground">Interest (Net)</div>
+                        <div className="font-medium">
+                          £{((yearData.profit_and_loss?.interest_receivable || 0) - (yearData.profit_and_loss?.interest_payable || 0)).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Summary Insights */}
+        {analysisData.summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Summary Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm">{analysisData.summary}</div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   // Render asset register analysis
   const renderAssetRegisterAnalysis = (analysisData: any) => {
     return (
@@ -656,8 +777,9 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             {result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
             {result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
             {result.documentType === 'asset_register' && renderAssetRegisterAnalysis(result.analysisData)}
+            {result.documentType === 'profit_and_loss' && renderProfitAndLossAnalysis(result.analysisData)}
             
-            {!['sales_ledger', 'staff_matrix', 'asset_register'].includes(result.documentType) && (
+            {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss'].includes(result.documentType) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Analysis Data</CardTitle>
