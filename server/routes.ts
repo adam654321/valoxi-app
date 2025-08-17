@@ -246,55 +246,67 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       return;
     }
 
-    // Handle both direct response and wrapped response structures
-    let documentType, analysisData;
+    // Handle multiple document analysis types in a single response
+    let analysisItems: Array<{documentType: string, analysisData: any}> = [];
     
     if (Array.isArray(webhookResponse)) {
-      // Direct array response format
-      const firstItem = webhookResponse[0];
-      documentType = firstItem.document_type;
-      // Include summary field if it exists (especially for profit & loss)
-      analysisData = {
-        ...firstItem.data,
-        ...(firstItem.summary && { summary: firstItem.summary })
-      };
+      // Direct array response format - multiple document types
+      for (const item of webhookResponse) {
+        if (item.document_type && item.data) {
+          analysisItems.push({
+            documentType: item.document_type,
+            analysisData: {
+              ...item.data,
+              ...(item.summary && { summary: item.summary })
+            }
+          });
+        }
+      }
     } else if (webhookResponse.data && webhookResponse.data.document_type) {
-      // Nested response format (data.document_type exists)
-      documentType = webhookResponse.data.document_type;
-      analysisData = {
-        ...webhookResponse.data.data,
-        ...(webhookResponse.data.summary && { summary: webhookResponse.data.summary })
-      };
+      // Nested response format (single document type)
+      analysisItems.push({
+        documentType: webhookResponse.data.document_type,
+        analysisData: {
+          ...webhookResponse.data.data,
+          ...(webhookResponse.data.summary && { summary: webhookResponse.data.summary })
+        }
+      });
     } else if (webhookResponse.document_type && webhookResponse.data) {
-      // Direct object response format
-      documentType = webhookResponse.document_type;
-      // Include summary field if it exists (especially for profit & loss)
-      analysisData = {
-        ...webhookResponse.data,
-        ...(webhookResponse.summary && { summary: webhookResponse.summary })
-      };
+      // Direct object response format (single document type)
+      analysisItems.push({
+        documentType: webhookResponse.document_type,
+        analysisData: {
+          ...webhookResponse.data,
+          ...(webhookResponse.summary && { summary: webhookResponse.summary })
+        }
+      });
     } else {
-      // Unknown format
-      documentType = null;
-      analysisData = null;
-    }
-
-    if (!documentType || !analysisData) {
       console.error(`[FILE_UPLOAD_WEBHOOK] Invalid webhook response structure for event ${eventId}:`, webhookResponse);
       return;
     }
 
-    const analysisResult = {
-      documentId: event.documentId,
-      fileUploadEventId: eventId,
-      documentType: documentType,
-      analysisData: analysisData, // Store the structured data
-      processingTime: webhookResponse.processingTime || null,
-    };
+    if (analysisItems.length === 0) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] No valid analysis items found in webhook response for event ${eventId}`);
+      return;
+    }
 
-    // Store the analysis results
-    const result = await storage.createDocumentAnalysisResult(analysisResult);
-    console.log(`[FILE_UPLOAD_WEBHOOK] Analysis results stored for document ${event.documentId}, result ID: ${result.id}`);
+    // Store each document analysis type as a separate result
+    const results = [];
+    for (const item of analysisItems) {
+      const analysisResult = {
+        documentId: event.documentId,
+        fileUploadEventId: eventId,
+        documentType: item.documentType,
+        analysisData: item.analysisData,
+        processingTime: webhookResponse.processingTime || null,
+      };
+
+      const result = await storage.createDocumentAnalysisResult(analysisResult);
+      results.push(result);
+      console.log(`[FILE_UPLOAD_WEBHOOK] Analysis results stored for document ${event.documentId}, type: ${item.documentType}, result ID: ${result.id}`);
+    }
+
+    console.log(`[FILE_UPLOAD_WEBHOOK] Successfully processed ${results.length} analysis result(s) for event ${eventId}`);
 
   } catch (error) {
     console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response for event ${eventId}:`, error);
@@ -3369,7 +3381,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
         
         // Process analysis results if webhook was successful and contains analysis data
-        if (response.ok && responseData && responseData.document_type) {
+        if (response.ok && responseData && (
+          responseData.document_type || // Single document type
+          (Array.isArray(responseData) && responseData.length > 0 && responseData[0].document_type) || // Multiple document types
+          (responseData.data && responseData.data.document_type) // Nested format
+        )) {
           console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis results for event ${eventId}`);
           await processFileUploadWebhookResponse(responseData, eventId);
         }
