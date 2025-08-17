@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,6 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Download, 
@@ -15,7 +19,12 @@ import {
   Image as ImageIcon,
   AlertCircle,
   ExternalLink,
-  Eye
+  Eye,
+  BarChart3,
+  TrendingUp,
+  DollarSign,
+  Users,
+  Clock
 } from "lucide-react";
 
 interface Document {
@@ -38,6 +47,16 @@ interface Document {
   categoryDescription?: string;
 }
 
+interface DocumentAnalysisResult {
+  id: number;
+  documentId: number;
+  fileUploadEventId: number;
+  documentType: string;
+  analysisData: any;
+  processingTime?: number;
+  createdAt: string;
+}
+
 interface DocumentViewerProps {
   document: Document | null;
   isOpen: boolean;
@@ -49,6 +68,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const { toast } = useToast();
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
+
+  // Fetch document analysis results
+  const { data: analysisResults = [], isLoading: analysisLoading } = useQuery<DocumentAnalysisResult[]>({
+    queryKey: ["/api/documents", document?.id, "analysis"],
+    enabled: !!document?.id && isOpen,
+  });
 
   // Reset states when dialog opens/closes
   useEffect(() => {
@@ -101,6 +126,193 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
 
   const openInNewTab = () => {
     window.open(viewerUrl, '_blank');
+  };
+
+  // Render sales ledger analysis
+  const renderSalesLedgerAnalysis = (analysisData: any) => {
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Total Invoices
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analysisData.total_invoice_count}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Total Value
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">£{analysisData.total_invoice_value?.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                Amount Paid
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">£{analysisData.total_amount_paid?.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                Outstanding
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">£{analysisData.total_outstanding?.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Invoice Status Summary */}
+        {analysisData.invoice_status_summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Invoice Status Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                {Object.entries(analysisData.invoice_status_summary).map(([status, data]: [string, any]) => (
+                  <div key={status} className="text-center p-4 border rounded-lg">
+                    <div className="text-lg font-semibold">{data.count}</div>
+                    <div className="text-sm text-muted-foreground">{status}</div>
+                    <div className="text-sm font-medium">£{data.value?.toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Customer Exposure */}
+        {analysisData.customer_exposure && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Customer Exposure Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Customer</th>
+                      <th className="text-right py-2">Total Invoiced</th>
+                      <th className="text-right py-2">Total Paid</th>
+                      <th className="text-right py-2">Outstanding</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analysisData.customer_exposure.map((customer: any, index: number) => (
+                      <tr key={index} className="border-b">
+                        <td className="py-2 font-medium">{customer.customer_name}</td>
+                        <td className="text-right py-2">£{customer.total_invoiced?.toLocaleString()}</td>
+                        <td className="text-right py-2 text-green-600">£{customer.total_paid?.toLocaleString()}</td>
+                        <td className={`text-right py-2 font-medium ${customer.total_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          £{customer.total_outstanding?.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Observations */}
+        {analysisData.observations && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Key Observations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm">{analysisData.observations}</div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
+  // Render analysis results based on document type
+  const renderAnalysisResults = (results: DocumentAnalysisResult[]) => {
+    if (results.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>No analysis results available for this document yet.</p>
+          <p className="text-sm mt-2">Analysis results will appear here after processing.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {results.map((result) => (
+          <div key={result.id}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">Document Analysis</h3>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>Type: {result.documentType}</span>
+                  <span>•</span>
+                  <span>Processed: {formatDate(result.createdAt)}</span>
+                  {result.processingTime && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {(result.processingTime / 1000).toFixed(1)}s
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
+            
+            {result.documentType !== 'sales_ledger' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Analysis Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
+                    {JSON.stringify(result.analysisData, null, 2)}
+                  </pre>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -168,19 +380,37 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          {!isViewable ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <FileText className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Preview Not Available</h3>
-              <p className="text-muted-foreground mb-4">
-                This file type cannot be previewed in the browser.
-              </p>
-              <p className="text-sm text-muted-foreground mb-6">
-                File type: {document.fileType}
-              </p>
-              <Button
-                onClick={() => onDownload(document.id, document.originalFilename)}
-              >
+          <Tabs defaultValue="document" className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="document" className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                Document
+              </TabsTrigger>
+              <TabsTrigger value="analysis" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Analysis
+                {analysisResults.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {analysisResults.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="document" className="flex-1 overflow-hidden">
+              {!isViewable ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <FileText className="w-16 h-16 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Preview Not Available</h3>
+                  <p className="text-muted-foreground mb-4">
+                    This file type cannot be previewed in the browser.
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    File type: {document.fileType}
+                  </p>
+                  <Button
+                    onClick={() => onDownload(document.id, document.originalFilename)}
+                  >
                 <Download className="w-4 h-4 mr-2" />
                 Download to View
               </Button>
@@ -299,6 +529,21 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               />
             </div>
           ) : null}
+            </TabsContent>
+            
+            <TabsContent value="analysis" className="flex-1 overflow-auto p-4">
+              {analysisLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                    <p className="text-muted-foreground">Loading analysis results...</p>
+                  </div>
+                </div>
+              ) : (
+                renderAnalysisResults(analysisResults)
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
