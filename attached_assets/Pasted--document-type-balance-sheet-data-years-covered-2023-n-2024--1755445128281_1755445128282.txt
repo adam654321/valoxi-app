@@ -1,0 +1,44 @@
+[
+  {
+    "document_type": "balance_sheet",
+    "data": {
+      "years_covered": "* 2023\n* 2024",
+      "years": {
+        "2023": {
+          "year": 2023,
+          "balance_sheet": {
+            "fixed_assets": 86500,
+            "debtors": 40250,
+            "cash_at_bank": 71500,
+            "total_current_assets": 111750,
+            "creditors_within_one_year": 38400,
+            "net_current_assets": 73350,
+            "total_assets_less_current_liabilities": 159850,
+            "creditors_after_one_year": 56200,
+            "net_assets": 103650,
+            "called_up_share_capital": 2,
+            "profit_and_loss_reserve": 103648
+          }
+        },
+        "2024": {
+          "year": 2024,
+          "balance_sheet": {
+            "fixed_assets": 92450,
+            "debtors": 51900,
+            "cash_at_bank": 83400,
+            "total_current_assets": 135300,
+            "creditors_within_one_year": 41750,
+            "net_current_assets": 93550,
+            "total_assets_less_current_liabilities": 185000,
+            "creditors_after_one_year": 64750,
+            "net_assets": 120250,
+            "called_up_share_capital": 2,
+            "profit_and_loss_reserve": 120248
+          }
+        }
+      }
+    },
+    "id": 24,
+    "summary": "🧠 Summary Insights\n\n*   **Strong Equity Growth:** Net assets grew substantially by 16% from £103,650 in 2023 to £120,250 in 2024, indicating a significantly stronger equity base and improved financial position.\n*   **Enhanced Liquidity:** The company's short-term liquidity strengthened, with the Current Ratio improving from 2.91 in 2023 to 3.24 in 2024, demonstrating an enhanced ability to cover immediate liabilities.\n*   **Robust Current Asset Expansion:** Total current assets experienced strong growth of over 21% to £135,300, primarily driven by a 29% increase in debtors and a 16.6% rise in cash at bank, signalling improved working capital.\n*   **Strategic Fixed Asset Investment:** Fixed assets expanded by nearly 7% to £92,450, suggesting continued investment in the company's long-term operational capacity.\n*   **Increased Debt Utilisation:** While current liabilities increased by 8.7% to £41,750, this was comfortably outpaced by current asset growth. Long-term creditors also rose by 15.2% to £64,750, indicating an overall increase in debt financing."
+  }
+]

@@ -73,6 +73,20 @@ body.dragging * {
   transform-origin: 0 0 !important;
 }
 
+/* Custom subtle background colors for balance sheet */
+.bg-green-25 {
+  background-color: rgb(240 253 244);
+}
+.bg-blue-25 {
+  background-color: rgb(239 246 255);
+}
+.dark .bg-green-25 {
+  background-color: rgb(20 83 45 / 0.3);
+}
+.dark .bg-blue-25 {
+  background-color: rgb(30 58 138 / 0.3);
+}
+
 /* Override any React Beautiful DND transform offsets */
 body [data-rbd-draggable-id][style*="transform"] {
   transform-origin: 0 0 !important;

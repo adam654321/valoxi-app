@@ -129,7 +129,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
       'sales_ledger': 'Sales Ledger',
       'staff_matrix': 'Staff Matrix',
       'asset_register': 'Asset Register',
-      'profit_and_loss': 'Profit & Loss'
+      'profit_and_loss': 'Profit & Loss',
+      'balance_sheet': 'Balance Sheet'
     };
     return typeMap[documentType] || documentType;
   };
@@ -140,7 +141,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
       'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-      'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+      'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+      'balance_sheet': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
     };
     return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
   };
@@ -803,6 +805,180 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     );
   };
 
+  // Render balance sheet analysis
+  const renderBalanceSheetAnalysis = (analysisData: any) => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="bg-orange-100 dark:bg-orange-900 px-4 py-2 rounded-full">
+            <span className="text-orange-800 dark:text-orange-200 font-semibold text-base">Balance Sheet</span>
+          </div>
+          <span className="text-muted-foreground text-sm">Financial Position Analysis</span>
+        </div>
+
+        {/* Years Covered */}
+        {analysisData.years_covered && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Years Covered
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {analysisData.years_covered}
+                </ReactMarkdown>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Balance Sheet Data */}
+        {analysisData.years && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Balance Sheet Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-8">
+                {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
+                  <div key={year} className="space-y-4">
+                    <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 border-b border-orange-200 dark:border-orange-800 pb-2">
+                      {year}
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Assets Section */}
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-green-700 dark:text-green-300">Assets</h4>
+                        
+                        {/* Fixed Assets */}
+                        <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                          <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Fixed Assets</div>
+                          <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                            £{yearData.balance_sheet?.fixed_assets?.toLocaleString() || 'N/A'}
+                          </div>
+                        </div>
+
+                        {/* Current Assets Breakdown */}
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-green-800 dark:text-green-200">Current Assets</div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                              <span className="text-sm">Debtors</span>
+                              <span className="font-medium">£{yearData.balance_sheet?.debtors?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                              <span className="text-sm">Cash at Bank</span>
+                              <span className="font-medium">£{yearData.balance_sheet?.cash_at_bank?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-green-100 dark:bg-green-900 p-2 rounded border-t border-green-200 dark:border-green-800">
+                              <span className="text-sm font-medium">Total Current Assets</span>
+                              <span className="font-bold">£{yearData.balance_sheet?.total_current_assets?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Liabilities & Equity Section */}
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold text-red-700 dark:text-red-300">Liabilities & Equity</h4>
+                        
+                        {/* Current Liabilities */}
+                        <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                          <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (Within One Year)</div>
+                          <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                            £{yearData.balance_sheet?.creditors_within_one_year?.toLocaleString() || 'N/A'}
+                          </div>
+                        </div>
+
+                        {/* Long-term Liabilities */}
+                        <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                          <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (After One Year)</div>
+                          <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                            £{yearData.balance_sheet?.creditors_after_one_year?.toLocaleString() || 'N/A'}
+                          </div>
+                        </div>
+
+                        {/* Equity Breakdown */}
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-blue-800 dark:text-blue-200">Shareholders' Equity</div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
+                              <span className="text-sm">Share Capital</span>
+                              <span className="font-medium">£{yearData.balance_sheet?.called_up_share_capital?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
+                              <span className="text-sm">P&L Reserve</span>
+                              <span className="font-medium">£{yearData.balance_sheet?.profit_and_loss_reserve?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-blue-100 dark:bg-blue-900 p-2 rounded border-t border-blue-200 dark:border-blue-800">
+                              <span className="text-sm font-medium">Net Assets</span>
+                              <span className="font-bold">£{yearData.balance_sheet?.net_assets?.toLocaleString() || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key Metrics Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                      <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Net Current Assets</div>
+                        <div className="text-xl font-bold text-purple-800 dark:text-purple-200">
+                          £{yearData.balance_sheet?.net_current_assets?.toLocaleString() || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="bg-indigo-50 dark:bg-indigo-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                        <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Total Assets Less Current Liabilities</div>
+                        <div className="text-xl font-bold text-indigo-800 dark:text-indigo-200">
+                          £{yearData.balance_sheet?.total_assets_less_current_liabilities?.toLocaleString() || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                        <div className="text-sm text-orange-700 dark:text-orange-300 font-medium">Current Ratio</div>
+                        <div className="text-xl font-bold text-orange-800 dark:text-orange-200">
+                          {yearData.balance_sheet?.total_current_assets && yearData.balance_sheet?.creditors_within_one_year
+                            ? (yearData.balance_sheet.total_current_assets / yearData.balance_sheet.creditors_within_one_year).toFixed(2)
+                            : 'N/A'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Summary Insights */}
+        {analysisData.summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Summary Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {analysisData.summary}
+                </ReactMarkdown>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   // Render analysis results based on document type
   const renderAnalysisResults = (results: DocumentAnalysisResult[]) => {
     if (results.length === 0) {
@@ -848,8 +1024,9 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             {result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
             {result.documentType === 'asset_register' && renderAssetRegisterAnalysis(result.analysisData)}
             {result.documentType === 'profit_and_loss' && renderProfitAndLossAnalysis(result.analysisData)}
+            {result.documentType === 'balance_sheet' && renderBalanceSheetAnalysis(result.analysisData)}
             
-            {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss'].includes(result.documentType) && (
+            {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(result.documentType) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Analysis Data</CardTitle>
