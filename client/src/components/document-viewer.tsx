@@ -141,6 +141,19 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
   };
 
+  // Get invoice status background color
+  const getInvoiceStatusColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'paid') {
+      return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800';
+    } else if (statusLower === 'part paid') {
+      return 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800';
+    } else if (statusLower === 'unpaid') {
+      return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
+    }
+    return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+  };
+
   const isPDF = document.fileType === 'application/pdf';
   const isImage = document.fileType.startsWith('image/');
   const isText = document.fileType === 'text/plain';
@@ -363,7 +376,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 {Object.entries(analysisData.invoice_status_summary).map(([status, data]: [string, any]) => (
-                  <div key={status} className="text-center p-4 border rounded-lg">
+                  <div key={status} className={`text-center p-4 border rounded-lg ${getInvoiceStatusColor(status)}`}>
                     <div className="text-lg font-semibold">{data.count}</div>
                     <div className="text-sm text-muted-foreground">{status}</div>
                     <div className="text-sm font-medium">£{data.value?.toLocaleString()}</div>
