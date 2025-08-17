@@ -105,6 +105,58 @@ const documentSchema = z.object({
 
 type DocumentFormData = z.infer<typeof documentSchema>;
 
+// Utility functions for analysis types (shared between components)
+const formatDocumentType = (type: string) => {
+  switch (type) {
+    case 'asset_register': return 'Asset Register';
+    case 'sales_ledger': return 'Sales Ledger';
+    case 'staff_matrix': return 'Staff Matrix';
+    case 'profit_and_loss': return 'Profit & Loss';
+    case 'balance_sheet': return 'Balance Sheet';
+    default: return type;
+  }
+};
+
+const getDocumentTypeColor = (type: string) => {
+  switch (type) {
+    case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+    case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    case 'staff_matrix': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    case 'profit_and_loss': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+    case 'balance_sheet': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+  }
+};
+
+// Document analysis badges component
+function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
+  const { data: analysisResults = [], isLoading } = useQuery<Array<{
+    id: number;
+    documentType: string;
+    createdAt: string;
+  }>>({
+    queryKey: ["/api/documents", documentId, "analysis"],
+  });
+
+  if (isLoading || analysisResults.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-2">
+      {analysisResults.map((result) => (
+        <Badge 
+          key={result.id} 
+          className={`text-xs ${getDocumentTypeColor(result.documentType)}`}
+          data-testid={`analysis-badge-${result.documentType}`}
+        >
+          {formatDocumentType(result.documentType)}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 // Analysis completion indicator component
 function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: number }) {
   const { data: completionStatus, isLoading } = useQuery<{
@@ -121,28 +173,6 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
   }
 
   const { completedTypes, missingTypes, isComplete, completionPercentage } = completionStatus;
-
-  const formatDocumentType = (type: string) => {
-    switch (type) {
-      case 'asset_register': return 'Asset Register';
-      case 'sales_ledger': return 'Sales Ledger';
-      case 'staff_matrix': return 'Staff Matrix';
-      case 'profit_and_loss': return 'Profit & Loss';
-      case 'balance_sheet': return 'Balance Sheet';
-      default: return type;
-    }
-  };
-
-  const getDocumentTypeColor = (type: string) => {
-    switch (type) {
-      case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'staff_matrix': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'profit_and_loss': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
-      case 'balance_sheet': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-  };
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
@@ -588,6 +618,8 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                                     {document.description}
                                   </p>
                                 )}
+
+                                <DocumentAnalysisBadges documentId={document.id} />
                                 
                                 <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                                   <div className="flex items-center gap-1">
