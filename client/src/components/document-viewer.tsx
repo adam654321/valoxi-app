@@ -121,6 +121,26 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     });
   };
 
+  // Format document type for display
+  const formatDocumentType = (documentType: string) => {
+    const typeMap: Record<string, string> = {
+      'sales_ledger': 'Sales Ledger',
+      'staff_matrix': 'Staff Matrix',
+      'asset_register': 'Asset Register'
+    };
+    return typeMap[documentType] || documentType;
+  };
+
+  // Get document type color
+  const getDocumentTypeColor = (documentType: string) => {
+    const colorMap: Record<string, string> = {
+      'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+    };
+    return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  };
+
   const isPDF = document.fileType === 'application/pdf';
   const isImage = document.fileType.startsWith('image/');
   const isText = document.fileType === 'text/plain';
@@ -599,7 +619,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               <div>
                 <h3 className="text-lg font-semibold">Document Analysis</h3>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>Type: {result.documentType}</span>
+                  <div className="flex items-center gap-2">
+                    <span>Type:</span>
+                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDocumentTypeColor(result.documentType)}`}>
+                      {formatDocumentType(result.documentType)}
+                    </span>
+                  </div>
                   <span>•</span>
                   <span>Processed: {formatDate(result.createdAt)}</span>
                   {result.processingTime && (
