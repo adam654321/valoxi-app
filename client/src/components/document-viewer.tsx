@@ -128,6 +128,139 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     window.open(viewerUrl, '_blank');
   };
 
+  // Render staff matrix analysis
+  const renderStaffMatrixAnalysis = (analysisData: any) => {
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Employees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analysisData.total_employee_count}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Annual Payroll
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">£{analysisData.total_annual_payroll?.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                Average Salary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">£{analysisData.average_salary?.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-green-600" />
+                Active Staff
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {analysisData.status_summary?.Active || 0}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Employment Type Breakdown */}
+        {analysisData.employment_type_breakdown && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Employment Type Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(analysisData.employment_type_breakdown).map(([type, count]: [string, any]) => (
+                  <div key={type} className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-semibold">{count}</div>
+                    <div className="text-sm text-muted-foreground">{type}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status Summary */}
+        {analysisData.status_summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Employee Status Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                {Object.entries(analysisData.status_summary).map(([status, count]: [string, any]) => (
+                  <div key={status} className="text-center p-4 border rounded-lg">
+                    <div className="text-lg font-semibold">{count}</div>
+                    <div className="text-sm text-muted-foreground">{status}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Longest Tenured Employees */}
+        {analysisData.longest_tenured_employees && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Longest Tenured Employees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+                {analysisData.longest_tenured_employees}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Observations */}
+        {analysisData.observations && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Key Observations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm">{analysisData.observations}</div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   // Render sales ledger analysis
   const renderSalesLedgerAnalysis = (analysisData: any) => {
     return (
@@ -296,8 +429,9 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             </div>
             
             {result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
+            {result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
             
-            {result.documentType !== 'sales_ledger' && (
+            {!['sales_ledger', 'staff_matrix'].includes(result.documentType) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Analysis Data</CardTitle>

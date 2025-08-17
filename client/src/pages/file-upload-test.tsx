@@ -12,7 +12,8 @@ import {
   Clock, 
   FileText, 
   ExternalLink,
-  Download
+  Download,
+  Users
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -83,6 +84,54 @@ export default function FileUploadTest() {
       const errorMessage = error?.message || "Failed to send webhook";
       toast({ 
         title: "Webhook Failed", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Test staff matrix webhook simulation
+  const testStaffMatrixMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const testData = {
+        document_type: "staff_matrix",
+        data: {
+          total_employee_count: 5,
+          total_annual_payroll: 140000,
+          average_salary: 28000,
+          employment_type_breakdown: {
+            "Full-Time": 4,
+            "Part-Time": 1
+          },
+          status_summary: {
+            "Active": 4,
+            "Maternity Leave": 1
+          },
+          longest_tenured_employees: "* Lisa Chow – Finance Assistant (start_date: 01/09/17; years_of_service: 7)\n* Alice Thompson – Operations Manager (start_date: 01/05/18; years_of_service: 7)\n* James Patel – Cleaning Supervisor (start_date: 15/11/19; years_of_service: 5)",
+          observations: "* Majority of staff are active full-time employees.\n* Two employees have been with the company for over 7 years.\n* Only one employee is currently on maternity leave."
+        },
+        id: eventId
+      };
+
+      const response = await fetch(`/api/file-upload-events/${eventId}/webhook-response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([testData]),
+      });
+      if (!response.ok) throw new Error("Failed to simulate staff matrix webhook");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Staff Matrix Analysis Added",
+        description: "Test staff matrix analysis results have been stored successfully"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to simulate staff matrix webhook";
+      toast({ 
+        title: "Simulation Failed", 
         description: errorMessage,
         variant: "destructive" 
       });
@@ -272,7 +321,7 @@ export default function FileUploadTest() {
                     )}
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -289,6 +338,16 @@ export default function FileUploadTest() {
                     >
                       <Send className="w-4 h-4 mr-2" />
                       {sendWebhookMutation.isPending ? "Sending..." : "Send Webhook"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => testStaffMatrixMutation.mutate(event.id)}
+                      disabled={testStaffMatrixMutation.isPending}
+                      data-testid={`button-test-staff-matrix-${event.id}`}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      {testStaffMatrixMutation.isPending ? "Adding..." : "Test Staff Matrix"}
                     </Button>
                   </div>
                 </div>
