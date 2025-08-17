@@ -1,0 +1,117 @@
+[
+  {
+    "document_type": "asset_register",
+    "data": {
+      "total_assets_cost": 4250,
+      "total_accumulated_depreciation": 1782,
+      "total_net_book_value": 2468,
+      "asset_breakdown": [
+        {
+          "category": "IT Equipment",
+          "cost": 1370,
+          "accumulated_depreciation": 464,
+          "net_book_value": 906
+        },
+        {
+          "category": "Office Furniture",
+          "cost": 1380,
+          "accumulated_depreciation": 1068,
+          "net_book_value": 312
+        },
+        {
+          "category": "Software Licenses",
+          "cost": 1500,
+          "accumulated_depreciation": 250,
+          "net_book_value": 1250
+        }
+      ],
+      "recent_additions_summary": "## Recent Additions\n- IT Equipment: 420\n- Software Licenses: 1500",
+      "depreciation_this_year": null,
+      "observations": "- The asset base shows a significant investment in Software Licenses (1,500), which represents a substantial portion of the total asset cost and has relatively low accumulated depreciation, suggesting a long remaining useful life or recent acquisition.\n- The Office Furniture category appears to be aging, with a high proportion of its original cost already depreciated (e.g., Conference Table at 80% depreciated), indicating these assets are nearing the end of their useful lives.\n- Recent additions, primarily in IT Equipment and Software Licenses, suggest ongoing investment in technology and digital infrastructure.",
+      "asset_breakdown_list": "* IT Equipment: Cost 1370, Accumulated depreciation 464, Net book value 906\n* Office Furniture: Cost 1380, Accumulated depreciation 1068, Net book value 312\n* Software Licenses: Cost 1500, Accumulated depreciation 250, Net book value 1250"
+    },
+    "id": 13
+  },
+  {
+    "document_type": "sales_ledger",
+    "data": {
+      "total_invoice_count": 6,
+      "total_invoice_value": 7195,
+      "total_amount_paid": 3580,
+      "total_outstanding": 3615,
+      "invoice_status_summary": {
+        "Paid": {
+          "count": 3,
+          "value": 3080
+        },
+        "Part Paid": {
+          "count": 1,
+          "value": 1375
+        },
+        "Unpaid": {
+          "count": 2,
+          "value": 2740
+        }
+      },
+      "customer_exposure": [
+        {
+          "customer_name": "ABC Cleaning Supplies",
+          "total_invoiced": 1250,
+          "total_paid": 1250,
+          "total_outstanding": 0
+        },
+        {
+          "customer_name": "Bright Homes Ltd",
+          "total_invoiced": 880,
+          "total_paid": 880,
+          "total_outstanding": 0
+        },
+        {
+          "customer_name": "Sparkle Maintenance",
+          "total_invoiced": 1375,
+          "total_paid": 500,
+          "total_outstanding": 875
+        },
+        {
+          "customer_name": "Urban Property Group",
+          "total_invoiced": 1620,
+          "total_paid": 0,
+          "total_outstanding": 1620
+        },
+        {
+          "customer_name": "Crystal Contracting",
+          "total_invoiced": 950,
+          "total_paid": 950,
+          "total_outstanding": 0
+        },
+        {
+          "customer_name": "Shiny Spaces Ltd",
+          "total_invoiced": 1120,
+          "total_paid": 0,
+          "total_outstanding": 1120
+        }
+      ],
+      "observations": "* Urban Property Group has £1620.00 overdue.\n* Sparkle Maintenance has only part-paid their latest invoice.\n* Top 3 customers account for 59.00% of total invoice value."
+    },
+    "id": 13
+  },
+  {
+    "document_type": "staff_matrix",
+    "data": {
+      "total_employee_count": 5,
+      "total_annual_payroll": 140000,
+      "average_salary": 28000,
+      "employment_type_breakdown": {
+        "Full-Time": 4,
+        "Part-Time": 1
+      },
+      "status_summary": {
+        "Active": 4,
+        "Maternity Leave": 1
+      },
+      "longest_tenured_employees": "* Lisa Chow – Finance Assistant (start_date: 01/09/17; years_of_service: 7)\n* Alice Thompson – Operations Manager (start_date: 01/05/18; years_of_service: 7)\n* James Patel – Cleaning Supervisor (start_date: 15/11/19; years_of_service: 5)",
+      "observations": "* Majority of staff are active full-time employees.\n* Lisa Chow is the longest-serving employee with over 7 years of service.\n* Only one employee is currently on maternity leave."
+    },
+    "id": 13
+  }
+]
