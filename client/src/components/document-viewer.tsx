@@ -548,6 +548,70 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
           </div>
         )}
 
+        {/* Key Financial Ratios */}
+        {analysisData.years && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Key Financial Ratios
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
+                  <div key={year} className="space-y-4">
+                    <h4 className="text-lg font-semibold text-muted-foreground">{year}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Gross Margin Percentage */}
+                      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="text-sm text-blue-700 dark:text-blue-300 font-medium">Gross Margin %</div>
+                        <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                          {yearData.profit_and_loss?.revenue && yearData.profit_and_loss?.gross_profit
+                            ? ((yearData.profit_and_loss.gross_profit / yearData.profit_and_loss.revenue) * 100).toFixed(1)
+                            : 'N/A'
+                          }%
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          (Gross Profit ÷ Revenue) × 100
+                        </div>
+                      </div>
+
+                      {/* Net Margin Percentage */}
+                      <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="text-sm text-green-700 dark:text-green-300 font-medium">Net Margin %</div>
+                        <div className="text-2xl font-bold text-green-800 dark:text-green-200">
+                          {yearData.profit_and_loss?.revenue && yearData.profit_and_loss?.net_profit
+                            ? ((yearData.profit_and_loss.net_profit / yearData.profit_and_loss.revenue) * 100).toFixed(1)
+                            : 'N/A'
+                          }%
+                        </div>
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          (Net Profit ÷ Revenue) × 100
+                        </div>
+                      </div>
+
+                      {/* Interest Coverage Ratio */}
+                      <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Interest Coverage</div>
+                        <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">
+                          {yearData.profit_and_loss?.operating_profit && yearData.profit_and_loss?.interest_payable
+                            ? (yearData.profit_and_loss.operating_profit / yearData.profit_and_loss.interest_payable).toFixed(1)
+                            : 'N/A'
+                          }x
+                        </div>
+                        <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                          Operating Profit ÷ Interest Payable
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Summary Insights */}
         {analysisData.summary && (
           <Card>
