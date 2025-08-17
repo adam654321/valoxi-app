@@ -22,9 +22,13 @@ import {
   Eye,
   BarChart3,
   TrendingUp,
+  TrendingDown,
   DollarSign,
   Users,
-  Clock
+  Clock,
+  Plus,
+  Calendar,
+  List
 } from "lucide-react";
 
 interface Document {
@@ -392,6 +396,175 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     );
   };
 
+  // Render asset register analysis
+  const renderAssetRegisterAnalysis = (analysisData: any) => {
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Total Assets Cost
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                £{analysisData.total_assets_cost?.toLocaleString() || 0}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingDown className="w-4 h-4" />
+                Accumulated Depreciation
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                £{analysisData.total_accumulated_depreciation?.toLocaleString() || 0}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Net Book Value
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                £{analysisData.total_net_book_value?.toLocaleString() || 0}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Asset Breakdown */}
+        {analysisData.asset_breakdown && analysisData.asset_breakdown.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Asset Category Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analysisData.asset_breakdown.map((asset: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <h4 className="font-semibold text-lg mb-3">{asset.category}</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground">Cost</div>
+                        <div className="text-lg font-semibold text-blue-600">
+                          £{asset.cost?.toLocaleString() || 0}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground">Depreciation</div>
+                        <div className="text-lg font-semibold text-red-600">
+                          £{asset.accumulated_depreciation?.toLocaleString() || 0}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground">Net Book Value</div>
+                        <div className="text-lg font-semibold text-green-600">
+                          £{asset.net_book_value?.toLocaleString() || 0}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Depreciation Rate */}
+                    {asset.cost > 0 && (
+                      <div className="mt-3 text-center">
+                        <div className="text-sm text-muted-foreground">Depreciation Rate</div>
+                        <div className="text-sm font-medium">
+                          {((asset.accumulated_depreciation / asset.cost) * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Additions */}
+        {analysisData.recent_additions_summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="w-5 h-5" />
+                Recent Additions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+                {analysisData.recent_additions_summary}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Depreciation This Year */}
+        {analysisData.depreciation_this_year && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Depreciation This Year
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                £{analysisData.depreciation_this_year?.toLocaleString() || 0}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Asset Breakdown List */}
+        {analysisData.asset_breakdown_list && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <List className="w-5 h-5" />
+                Asset Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+                {analysisData.asset_breakdown_list}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Observations */}
+        {analysisData.observations && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Key Observations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-line text-sm">{analysisData.observations}</div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   // Render analysis results based on document type
   const renderAnalysisResults = (results: DocumentAnalysisResult[]) => {
     if (results.length === 0) {
@@ -430,8 +603,9 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             
             {result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
             {result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
+            {result.documentType === 'asset_register' && renderAssetRegisterAnalysis(result.analysisData)}
             
-            {!['sales_ledger', 'staff_matrix'].includes(result.documentType) && (
+            {!['sales_ledger', 'staff_matrix', 'asset_register'].includes(result.documentType) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Analysis Data</CardTitle>
