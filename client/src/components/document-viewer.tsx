@@ -621,7 +621,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <span>Type:</span>
-                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDocumentTypeColor(result.documentType)}`}>
+                    <span className={`px-3 py-1 rounded-md text-sm font-medium ${getDocumentTypeColor(result.documentType)}`}>
                       {formatDocumentType(result.documentType)}
                     </span>
                   </div>
