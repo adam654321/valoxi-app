@@ -35,14 +35,32 @@ interface FileUploadEvent {
   uploadedByName?: string;
 }
 
+interface DocumentAnalysisResult {
+  id: number;
+  documentId: number;
+  fileUploadEventId: number;
+  documentType: string;
+  analysisData: any;
+  processingTime?: number;
+  createdAt: string;
+}
+
 export default function FileUploadTest() {
   const { toast } = useToast();
   const [expandedResponse, setExpandedResponse] = useState<number | null>(null);
+  const [selectedDocumentAnalysis, setSelectedDocumentAnalysis] = useState<DocumentAnalysisResult[] | null>(null);
 
   // Fetch file upload events
   const { data: fileUploadEvents = [], isLoading: eventsLoading } = useQuery<FileUploadEvent[]>({
     queryKey: ["/api/file-upload-events"],
   });
+
+  // Fetch analysis results for a specific document
+  const fetchAnalysisResults = async (documentId: number): Promise<DocumentAnalysisResult[]> => {
+    const response = await fetch(`/api/documents/${documentId}/analysis`);
+    if (!response.ok) throw new Error("Failed to fetch analysis results");
+    return response.json();
+  };
 
   // Send webhook for file upload event
   const sendWebhookMutation = useMutation({
@@ -109,6 +127,31 @@ export default function FileUploadTest() {
 
   const toggleResponseExpansion = (eventId: number) => {
     setExpandedResponse(expandedResponse === eventId ? null : eventId);
+  };
+
+  const checkAnalysisResults = async (documentId: number) => {
+    try {
+      const results = await fetchAnalysisResults(documentId);
+      setSelectedDocumentAnalysis(results);
+      if (results.length === 0) {
+        toast({
+          title: "No Analysis Results",
+          description: "No analysis results found for this document yet.",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Analysis Results Found",
+          description: `Found ${results.length} analysis result(s) for this document.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch analysis results",
+        variant: "destructive"
+      });
+    }
   };
 
   if (eventsLoading) {
@@ -229,14 +272,25 @@ export default function FileUploadTest() {
                     )}
                   </div>
                   
-                  <Button
-                    onClick={() => sendWebhookMutation.mutate(event.id)}
-                    disabled={sendWebhookMutation.isPending}
-                    data-testid={`button-send-webhook-${event.id}`}
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    {sendWebhookMutation.isPending ? "Sending..." : "Send Webhook"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => checkAnalysisResults(event.documentId)}
+                      data-testid={`button-view-analysis-${event.id}`}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      View Analysis
+                    </Button>
+                    <Button
+                      onClick={() => sendWebhookMutation.mutate(event.id)}
+                      disabled={sendWebhookMutation.isPending}
+                      data-testid={`button-send-webhook-${event.id}`}
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendWebhookMutation.isPending ? "Sending..." : "Send Webhook"}
+                    </Button>
+                  </div>
                 </div>
 
                 {event.webhookResponse && (
@@ -268,6 +322,65 @@ export default function FileUploadTest() {
           ))
         )}
       </div>
+
+      {/* Document Analysis Results Section */}
+      {selectedDocumentAnalysis && selectedDocumentAnalysis.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Document Analysis Results</h2>
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedDocumentAnalysis(null)}
+              data-testid="button-close-analysis"
+            >
+              Close
+            </Button>
+          </div>
+          
+          <div className="grid gap-4">
+            {selectedDocumentAnalysis.map((result) => (
+              <Card key={result.id} className="border">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Analysis Result #{result.id}
+                  </CardTitle>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span data-testid={`text-doc-type-${result.id}`}>
+                      Type: {result.documentType}
+                    </span>
+                    <span>•</span>
+                    <span data-testid={`text-processed-at-${result.id}`}>
+                      Processed: {formatDate(result.createdAt)}
+                    </span>
+                    {result.processingTime && (
+                      <>
+                        <span>•</span>
+                        <span data-testid={`text-processing-time-${result.id}`}>
+                          Processing time: {result.processingTime}ms
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Analysis Data</h4>
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <pre className="text-xs text-gray-700 whitespace-pre-wrap"
+                             data-testid={`text-analysis-data-${result.id}`}>
+                          {JSON.stringify(result.analysisData, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

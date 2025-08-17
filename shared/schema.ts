@@ -13,6 +13,7 @@ import {
   numeric,
   date,
   bigint,
+  json,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -459,7 +460,18 @@ export const fileUploadEvents = pgTable("file_upload_events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const fileUploadEventsRelations = relations(fileUploadEvents, ({ one }) => ({
+// Document analysis results table for storing webhook response data
+export const documentAnalysisResults = pgTable("document_analysis_results", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  fileUploadEventId: integer("file_upload_event_id").references(() => fileUploadEvents.id).notNull(),
+  documentType: varchar("document_type", { length: 100 }).notNull(), // e.g., 'sales_ledger', 'balance_sheet'
+  analysisData: json("analysis_data").notNull(), // Structured data from webhook response
+  processingTime: integer("processing_time"), // Time taken for webhook processing in ms
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const fileUploadEventsRelations = relations(fileUploadEvents, ({ one, many }) => ({
   document: one(documents, {
     fields: [fileUploadEvents.documentId],
     references: [documents.id],
@@ -471,6 +483,18 @@ export const fileUploadEventsRelations = relations(fileUploadEvents, ({ one }) =
   uploadedByUser: one(users, {
     fields: [fileUploadEvents.uploadedBy],
     references: [users.id],
+  }),
+  analysisResults: many(documentAnalysisResults),
+}));
+
+export const documentAnalysisResultsRelations = relations(documentAnalysisResults, ({ one }) => ({
+  document: one(documents, {
+    fields: [documentAnalysisResults.documentId],
+    references: [documents.id],
+  }),
+  fileUploadEvent: one(fileUploadEvents, {
+    fields: [documentAnalysisResults.fileUploadEventId],
+    references: [fileUploadEvents.id],
   }),
 }));
 
@@ -583,6 +607,18 @@ export const insertDocumentAccessLogSchema = createInsertSchema(documentAccessLo
   accessedAt: true,
 });
 
+export const insertFileUploadEventSchema = createInsertSchema(fileUploadEvents).omit({
+  id: true,
+  createdAt: true,
+  uploadedAt: true,
+  webhookSentAt: true,
+});
+
+export const insertDocumentAnalysisResultSchema = createInsertSchema(documentAnalysisResults).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -630,6 +666,12 @@ export type Document = typeof documents.$inferSelect;
 
 export type InsertDocumentAccessLog = z.infer<typeof insertDocumentAccessLogSchema>;
 export type DocumentAccessLog = typeof documentAccessLog.$inferSelect;
+
+export type InsertFileUploadEvent = z.infer<typeof insertFileUploadEventSchema>;
+export type FileUploadEvent = typeof fileUploadEvents.$inferSelect;
+
+export type InsertDocumentAnalysisResult = z.infer<typeof insertDocumentAnalysisResultSchema>;
+export type DocumentAnalysisResult = typeof documentAnalysisResults.$inferSelect;
 
 // Dashboard preferences table
 export const dashboardPreferences = pgTable("dashboard_preferences", {
@@ -1200,12 +1242,4 @@ export const insertUserCompanyMembershipSchema = createInsertSchema(userCompanyM
 export type UserCompanyMembership = typeof userCompanyMemberships.$inferSelect;
 export type InsertUserCompanyMembership = z.infer<typeof insertUserCompanyMembershipSchema>;
 
-// File upload events schemas and types
-export const insertFileUploadEventSchema = createInsertSchema(fileUploadEvents).omit({
-  id: true,
-  uploadedAt: true,
-  createdAt: true,
-});
-
-export type FileUploadEvent = typeof fileUploadEvents.$inferSelect;
-export type InsertFileUploadEvent = z.infer<typeof insertFileUploadEventSchema>;
+// File upload events schemas and types - moved to earlier section

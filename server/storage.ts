@@ -19,6 +19,7 @@ import {
   documents,
   documentAccessLog,
   fileUploadEvents,
+  documentAnalysisResults,
   portalAccessTokens,
   externalDocumentSubmissions,
   portalDocumentRequirements,
@@ -67,6 +68,8 @@ import {
   type InsertDocumentAccessLog,
   type FileUploadEvent,
   type InsertFileUploadEvent,
+  type DocumentAnalysisResult,
+  type InsertDocumentAnalysisResult,
   type PortalAccessToken,
   type InsertPortalAccessToken,
   type ExternalDocumentSubmission,
@@ -330,6 +333,11 @@ export interface IStorage {
   getDocumentStageProgression(targetCompanyId: number, userCompanyId: number): Promise<DocumentStageProgression | undefined>;
   updateCompanyRequirement(requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement>;
   getContactsByCompany(targetCompanyId: number, userCompanyId: number): Promise<TargetContact[]>;
+  
+  // Document Analysis Results methods
+  createDocumentAnalysisResult(result: InsertDocumentAnalysisResult): Promise<DocumentAnalysisResult>;
+  getDocumentAnalysisResults(documentId: number): Promise<DocumentAnalysisResult[]>;
+  getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3166,6 +3174,38 @@ export class DatabaseStorage implements IStorage {
       .from(fileUploadEvents)
       .where(eq(fileUploadEvents.id, eventId));
     return event || undefined;
+  }
+
+  // Document Analysis Results methods
+  async createDocumentAnalysisResult(result: InsertDocumentAnalysisResult): Promise<DocumentAnalysisResult> {
+    const [newResult] = await db
+      .insert(documentAnalysisResults)
+      .values(result)
+      .returning();
+    return newResult;
+  }
+
+  async getDocumentAnalysisResults(documentId: number): Promise<DocumentAnalysisResult[]> {
+    return await db
+      .select()
+      .from(documentAnalysisResults)
+      .where(eq(documentAnalysisResults.documentId, documentId))
+      .orderBy(desc(documentAnalysisResults.createdAt));
+  }
+
+  async getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
+    return await db
+      .select()
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .leftJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
+      .where(
+        and(
+          eq(documentAnalysisResults.documentType, documentType),
+          eq(targetCompanies.userCompanyId, userCompanyId)
+        )
+      )
+      .orderBy(desc(documentAnalysisResults.createdAt));
   }
 }
 
