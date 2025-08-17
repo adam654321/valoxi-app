@@ -59,7 +59,10 @@ import {
   Calendar,
   User,
   Eye,
-  File
+  File,
+  CheckCircle,
+  BarChart3,
+  TrendingUp
 } from "lucide-react";
 
 interface DocumentManagementProps {
@@ -101,6 +104,115 @@ const documentSchema = z.object({
 });
 
 type DocumentFormData = z.infer<typeof documentSchema>;
+
+// Analysis completion indicator component
+function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: number }) {
+  const { data: completionStatus, isLoading } = useQuery<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+  }>({
+    queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+  });
+
+  if (isLoading || !completionStatus) {
+    return null;
+  }
+
+  const { completedTypes, missingTypes, isComplete, completionPercentage } = completionStatus;
+
+  const formatDocumentType = (type: string) => {
+    switch (type) {
+      case 'asset_register': return 'Asset Register';
+      case 'sales_ledger': return 'Sales Ledger';
+      case 'staff_matrix': return 'Staff Matrix';
+      case 'profit_and_loss': return 'Profit & Loss';
+      case 'balance_sheet': return 'Balance Sheet';
+      default: return type;
+    }
+  };
+
+  const getDocumentTypeColor = (type: string) => {
+    switch (type) {
+      case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'staff_matrix': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'profit_and_loss': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+      case 'balance_sheet': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h3 className="font-semibold text-blue-900 dark:text-blue-100">Document Analysis Progress</h3>
+          {isComplete && (
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Complete
+            </Badge>
+          )}
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{completionPercentage}%</div>
+          <div className="text-xs text-blue-600 dark:text-blue-400">{completedTypes.length}/5 Types</div>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="flex justify-between text-sm mb-1">
+          <span className="text-blue-700 dark:text-blue-300">Analysis Coverage</span>
+          <span className="text-blue-600 dark:text-blue-400">{completedTypes.length} of 5 completed</span>
+        </div>
+        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+          <div 
+            className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${completionPercentage}%` }}
+          />
+        </div>
+      </div>
+
+      {completedTypes.length > 0 && (
+        <div className="mb-3">
+          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">✅ Analyzed:</div>
+          <div className="flex flex-wrap gap-1">
+            {completedTypes.map(type => (
+              <Badge key={type} className={`text-xs ${getDocumentTypeColor(type)}`}>
+                {formatDocumentType(type)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {missingTypes.length > 0 && (
+        <div>
+          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">📋 Remaining:</div>
+          <div className="flex flex-wrap gap-1">
+            {missingTypes.map(type => (
+              <Badge key={type} variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
+                {formatDocumentType(type)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isComplete && (
+        <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded">
+          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+            <TrendingUp className="w-4 h-4" />
+            <span className="text-sm font-medium">All financial analysis types completed! Ready for comprehensive due diligence review.</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function DocumentManagement({ targetCompanyId, companyName }: DocumentManagementProps) {
   const { toast } = useToast();
@@ -429,6 +541,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           </div>
         </CardHeader>
         <CardContent>
+          <AnalysisCompletionIndicator targetCompanyId={targetCompanyId} />
           {totalDocuments === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />

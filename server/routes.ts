@@ -3635,6 +3635,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get analysis completion status for a target company
+  app.get("/api/target-companies/:id/analysis-completion", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const completionStatus = await storage.getAnalysisCompletionStatus(targetCompanyId, userCompanyId);
+      res.json(completionStatus);
+    } catch (error) {
+      console.error("Get analysis completion error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // ========================================
   // Portal Link Campaigns Management
   // ========================================

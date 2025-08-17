@@ -3214,6 +3214,41 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(documentAnalysisResults.createdAt));
   }
+
+  async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+  }> {
+    // First verify access to the company
+    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      throw new Error('Company not found or access denied');
+    }
+
+    // Define the 5 required analysis types
+    const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
+
+    // Get distinct analysis types for this company
+    const analysisTypes = await db
+      .selectDistinct({
+        documentType: documentAnalysisResults.documentType
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+
+    const completedTypes = analysisTypes.map(a => a.documentType).filter(type => requiredTypes.includes(type));
+    const missingTypes = requiredTypes.filter(type => !completedTypes.includes(type));
+
+    return {
+      completedTypes,
+      missingTypes,
+      isComplete: completedTypes.length === requiredTypes.length,
+      completionPercentage: Math.round((completedTypes.length / requiredTypes.length) * 100)
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
