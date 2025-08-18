@@ -921,13 +921,30 @@ export default function TargetCompanyDetail() {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          {event.webhookStatus === 'success' && event.webhookResponse ? (
-                            <div className="prose dark:prose-invert max-w-none">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {event.webhookResponse}
-                              </ReactMarkdown>
-                            </div>
-                          ) : event.webhookStatus === 'failed' ? (
+                          {event.webhookStatus === 'success' && event.webhookResponse ? (() => {
+                            try {
+                              // Parse the webhook response JSON to extract the analysis content
+                              const responseData = JSON.parse(event.webhookResponse);
+                              const analysisContent = responseData.analysis || responseData.data?.analysis || event.webhookResponse;
+                              
+                              return (
+                                <div className="prose dark:prose-invert max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {analysisContent}
+                                  </ReactMarkdown>
+                                </div>
+                              );
+                            } catch (error) {
+                              // Fallback to rendering the raw response if JSON parsing fails
+                              return (
+                                <div className="prose dark:prose-invert max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {event.webhookResponse}
+                                  </ReactMarkdown>
+                                </div>
+                              );
+                            }
+                          })() : event.webhookStatus === 'failed' ? (
                             <div className="text-red-600 dark:text-red-400">
                               <p className="font-medium">Analysis failed</p>
                               {event.webhookResponse && (
