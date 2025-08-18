@@ -3225,8 +3225,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: documentAnalysisResults.id,
+        documentId: documentAnalysisResults.documentId,
+        fileUploadEventId: documentAnalysisResults.fileUploadEventId,
+        documentType: documentAnalysisResults.documentType,
+        analysisData: documentAnalysisResults.analysisData,
+        processingTime: documentAnalysisResults.processingTime,
+        createdAt: documentAnalysisResults.createdAt
+      })
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .leftJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
@@ -3237,6 +3245,8 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(documentAnalysisResults.createdAt));
+    
+    return results;
   }
 
   async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
