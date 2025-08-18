@@ -62,12 +62,13 @@ export default function FileUploadTest() {
   const [selectedDocumentAnalysis, setSelectedDocumentAnalysis] = useState<DocumentAnalysisResult[] | null>(null);
   const [manualWebhookResponse, setManualWebhookResponse] = useState("");
   const [selectedEventForManualWebhook, setSelectedEventForManualWebhook] = useState<number | null>(null);
-  const [webhookUrlDialog, setWebhookUrlDialog] = useState<{
+  const [webhookResponseDialog, setWebhookResponseDialog] = useState<{
     open: boolean;
-    webhookUrl: string;
-    fileUrl: string;
+    success: boolean;
+    webhookResponse: string;
     fileName: string;
-  }>({ open: false, webhookUrl: "", fileUrl: "", fileName: "" });
+    error?: string;
+  }>({ open: false, success: false, webhookResponse: "", fileName: "" });
 
   // Fetch file upload events
   const { data: fileUploadEvents = [], isLoading: eventsLoading } = useQuery<FileUploadEvent[]>({
@@ -313,35 +314,24 @@ export default function FileUploadTest() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Show webhook URL dialog
-      setWebhookUrlDialog({
+      // Show webhook response dialog
+      setWebhookResponseDialog({
         open: true,
-        webhookUrl: data.webhookUrl,
-        fileUrl: data.fileUrl,
-        fileName: data.fileName
-      });
-      
-      // Also copy to clipboard and show toast
-      navigator.clipboard.writeText(data.webhookUrl).then(() => {
-        toast({ 
-          title: "Webhook URL Ready & Copied!",
-          description: "Use the dialog to call the external service",
-          duration: 5000
-        });
-      }).catch(() => {
-        toast({ 
-          title: "Webhook URL Ready",
-          description: "Check the dialog for details",
-          duration: 5000
-        });
-      });
-      
-      console.log('Webhook Details:', {
-        webhookUrl: data.webhookUrl,
-        fileUrl: data.fileUrl,
+        success: data.success,
+        webhookResponse: data.webhookResponse || "",
         fileName: data.fileName,
-        eventId: data.eventId
+        error: data.error
       });
+      
+      // Show appropriate toast
+      toast({ 
+        title: data.success ? "Webhook Call Successful!" : "Webhook Call Failed",
+        description: data.success ? "Response received from external service" : data.error || "Check the response dialog for details",
+        variant: data.success ? "default" : "destructive",
+        duration: 5000
+      });
+      
+      console.log('Webhook Response:', data);
       
       queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
     },
@@ -853,67 +843,83 @@ export default function FileUploadTest() {
         </div>
       )}
 
-      {/* Webhook URL Dialog */}
-      <Dialog open={webhookUrlDialog.open} onOpenChange={(open) => setWebhookUrlDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="max-w-3xl">
+      {/* Webhook Response Dialog */}
+      <Dialog open={webhookResponseDialog.open} onOpenChange={(open) => setWebhookResponseDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Webhook URL Ready</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {webhookResponseDialog.success ? (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-500" />
+              )}
+              Webhook {webhookResponseDialog.success ? 'Response' : 'Error'}
+            </DialogTitle>
             <DialogDescription>
-              Use this information to call the external webhook service for: {webhookUrlDialog.fileName}
+              {webhookResponseDialog.success 
+                ? `Response from external webhook service for: ${webhookResponseDialog.fileName}`
+                : `Failed to call external webhook service for: ${webhookResponseDialog.fileName}`
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium">Webhook URL (already copied to clipboard)</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono flex-1 break-all select-all">
-                  {webhookUrlDialog.webhookUrl}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(webhookUrlDialog.webhookUrl);
-                    toast({ title: "Copied!", description: "Webhook URL copied to clipboard" });
-                  }}
-                >
-                  Copy
-                </Button>
+            {webhookResponseDialog.error && (
+              <div className="bg-red-50 dark:bg-red-950 p-4 rounded-md">
+                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Error Details:</h4>
+                <p className="text-sm text-red-700 dark:text-red-300">{webhookResponseDialog.error}</p>
               </div>
-            </div>
+            )}
             
             <div>
-              <Label className="text-sm font-medium">File URL to send with webhook</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono flex-1 break-all select-all">
-                  {webhookUrlDialog.fileUrl}
-                </code>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">
+                  {webhookResponseDialog.success ? 'Webhook Response' : 'Error Message'}
+                </Label>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(webhookUrlDialog.fileUrl);
-                    toast({ title: "Copied!", description: "File URL copied to clipboard" });
+                    navigator.clipboard.writeText(webhookResponseDialog.webhookResponse);
+                    toast({ title: "Copied!", description: "Response copied to clipboard" });
                   }}
                 >
-                  Copy
+                  Copy Response
                 </Button>
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md max-h-96 overflow-y-auto">
+                <pre className="text-sm font-mono whitespace-pre-wrap break-all select-all">
+                  {webhookResponseDialog.webhookResponse}
+                </pre>
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md">
-              <h4 className="text-sm font-medium mb-2">Next Steps:</h4>
-              <ol className="text-sm space-y-1 list-decimal list-inside text-gray-700 dark:text-gray-300">
-                <li>Call the webhook URL with the file URL as parameter</li>
-                <li>Copy the JSON response from the external service</li>
-                <li>Use "Process Response" button to paste the results</li>
-                <li>The system will create analysis results automatically</li>
-              </ol>
-            </div>
+            {webhookResponseDialog.success && (
+              <div className="bg-green-50 dark:bg-green-950 p-4 rounded-md">
+                <h4 className="text-sm font-medium mb-2">Next Steps:</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  If this response contains JSON analysis data, you can use the "Process Response" button to automatically create analysis results from this data.
+                </p>
+              </div>
+            )}
 
-            <div className="flex justify-end">
-              <Button onClick={() => setWebhookUrlDialog(prev => ({ ...prev, open: false }))}>
-                Got it!
+            <div className="flex justify-end gap-2">
+              {webhookResponseDialog.success && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setManualWebhookResponse(webhookResponseDialog.webhookResponse);
+                    setWebhookResponseDialog(prev => ({ ...prev, open: false }));
+                    // Find the first file upload event to set for processing
+                    if (fileUploadEvents.length > 0) {
+                      setSelectedEventForManualWebhook(fileUploadEvents[0].id);
+                    }
+                  }}
+                >
+                  Use for Processing
+                </Button>
+              )}
+              <Button onClick={() => setWebhookResponseDialog(prev => ({ ...prev, open: false }))}>
+                Close
               </Button>
             </div>
           </div>

@@ -4394,24 +4394,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied to this company" });
       }
 
-      // For now, just return the webhook URL that should be called
-      // In a real implementation, you could actually make the HTTP request here
       const webhookUrl = "https://hooks.zapier.com/hooks/catch/20337406/2mjxvns/";
       
-      // Update the event to mark webhook as sent
+      // Update the event to mark webhook as being sent
       await storage.updateFileUploadEvent(eventId, {
         webhookSent: true,
-        webhookStatus: 'sent',
+        webhookStatus: 'sending',
         webhookSentAt: new Date()
       });
 
+      console.log(`[WEBHOOK_TRIGGER] Sending file URL to external service: ${event.fileUrl}`);
+      
+      // Actually call the external webhook service
+      let webhookResponse;
+      let webhookError = null;
+      
+      try {
+        const webhookPayload = {
+          file_url: event.fileUrl,
+          filename: event.fileName,
+          event_id: eventId,
+          target_company_id: event.targetCompanyId
+        };
+
+        console.log(`[WEBHOOK_TRIGGER] Calling ${webhookUrl} with payload:`, webhookPayload);
+
+        const webhookResult = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+          timeout: 30000 // 30 second timeout
+        });
+
+        if (webhookResult.ok) {
+          webhookResponse = await webhookResult.text();
+          console.log(`[WEBHOOK_TRIGGER] ✅ Success response:`, webhookResponse);
+          
+          // Update event with successful response
+          await storage.updateFileUploadEvent(eventId, {
+            webhookStatus: 'success',
+            webhookResponse: webhookResponse
+          });
+          
+        } else {
+          webhookError = `HTTP ${webhookResult.status}: ${webhookResult.statusText}`;
+          console.log(`[WEBHOOK_TRIGGER] ❌ HTTP error:`, webhookError);
+          
+          // Update event with error status
+          await storage.updateFileUploadEvent(eventId, {
+            webhookStatus: 'failed',
+            webhookResponse: webhookError
+          });
+        }
+
+      } catch (fetchError: any) {
+        webhookError = fetchError.message || 'Network error calling webhook';
+        console.log(`[WEBHOOK_TRIGGER] ❌ Network error:`, webhookError);
+        
+        // Update event with error status
+        await storage.updateFileUploadEvent(eventId, {
+          webhookStatus: 'failed',
+          webhookResponse: webhookError
+        });
+      }
+
+      // Return the response to the frontend
       res.json({
-        success: true,
-        message: "Webhook URL ready - you can now call the external service",
+        success: !webhookError,
+        message: webhookError ? "Webhook call failed" : "Webhook call completed successfully",
+        webhookResponse: webhookResponse || webhookError,
         webhookUrl: webhookUrl,
         fileUrl: event.fileUrl,
         fileName: event.fileName,
-        eventId: eventId
+        eventId: eventId,
+        error: webhookError
       });
 
     } catch (error) {
