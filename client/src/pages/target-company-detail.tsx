@@ -912,29 +912,29 @@ export default function TargetCompanyDetail() {
                             <div>
                               <h3 className="font-semibold">Stage 1 Analysis</h3>
                               <p className="text-sm text-muted-foreground">
-                                Generated on {new Date(event.createdAt).toLocaleDateString()} at {new Date(event.createdAt).toLocaleTimeString()}
+                                Generated on {new Date(event.createdAt || new Date()).toLocaleDateString()} at {new Date(event.createdAt || new Date()).toLocaleTimeString()}
                               </p>
                             </div>
-                            <Badge variant={event.status === 'completed' ? 'default' : event.status === 'failed' ? 'destructive' : 'secondary'}>
-                              {event.status}
+                            <Badge variant={event.webhookStatus === 'success' ? 'default' : event.webhookStatus === 'failed' ? 'destructive' : 'secondary'}>
+                              {event.webhookStatus === 'success' ? 'completed' : event.webhookStatus === 'failed' ? 'failed' : 'pending'}
                             </Badge>
                           </div>
                         </CardHeader>
                         <CardContent>
-                          {event.status === 'completed' && event.analysisResult ? (
+                          {event.webhookStatus === 'success' && event.webhookResponse ? (
                             <div className="prose dark:prose-invert max-w-none">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {event.analysisResult}
+                                {event.webhookResponse}
                               </ReactMarkdown>
                             </div>
-                          ) : event.status === 'failed' ? (
+                          ) : event.webhookStatus === 'failed' ? (
                             <div className="text-red-600 dark:text-red-400">
                               <p className="font-medium">Analysis failed</p>
-                              {event.errorMessage && (
-                                <p className="text-sm mt-1">{event.errorMessage}</p>
+                              {event.webhookResponse && (
+                                <p className="text-sm mt-1">{event.webhookResponse}</p>
                               )}
                             </div>
-                          ) : event.status === 'in_progress' ? (
+                          ) : event.webhookStatus === 'pending' && event.webhookSent ? (
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <RefreshCw className="w-4 h-4 animate-spin" />
                               <span>Analysis in progress...</span>
@@ -976,7 +976,7 @@ export default function TargetCompanyDetail() {
               targetCompanyId={parseInt(id!)}
               targetCompanyName={company.companyName}
               currentStage={company.stage || 'New Target'}
-              stageUpdatedAt={company.stageUpdatedAt || (company.createdAt ? (typeof company.createdAt === 'string' ? company.createdAt : company.createdAt.toISOString()) : new Date().toISOString())}
+              stageUpdatedAt={company.stageUpdatedAt ? (typeof company.stageUpdatedAt === 'string' ? company.stageUpdatedAt : company.stageUpdatedAt.toISOString()) : (company.createdAt ? (typeof company.createdAt === 'string' ? company.createdAt : company.createdAt.toISOString()) : new Date().toISOString())}
               stageUpdatedBy={company.stageUpdatedBy}
               daysInStage={company.stageUpdatedAt 
                 ? Math.floor((new Date().getTime() - new Date(company.stageUpdatedAt).getTime()) / (1000 * 60 * 60 * 24))
