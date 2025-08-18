@@ -884,7 +884,7 @@ export default function TargetCompanyDetail() {
                   Company Analysis
                 </CardTitle>
                 <CardDescription>
-                  Comprehensive financial and operational analysis of {company.companyName}
+                  Latest comprehensive financial and operational analysis of {company.companyName}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -905,7 +905,8 @@ export default function TargetCompanyDetail() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {stage1Events.map((event) => (
+                    {/* Show only the latest analysis event */}
+                    {stage1Events.slice(0, 1).map((event) => (
                       <Card key={event.id} className="border-l-4 border-l-blue-500">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
