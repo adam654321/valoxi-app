@@ -216,6 +216,8 @@ async function sendFileUploadWebhook(eventId: number) {
 
     if (response.ok && responseData) {
       // Process and store the analysis results if we have valid response data
+      console.log(`[FILE_UPLOAD_WEBHOOK] About to process responseData for event ${eventId}:`, JSON.stringify(responseData, null, 2));
+      console.log(`[FILE_UPLOAD_WEBHOOK] responseData type: ${typeof responseData}, isArray: ${Array.isArray(responseData)}`);
       await processFileUploadWebhookResponse(responseData, eventId);
     }
 
@@ -370,6 +372,13 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
     console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response type: ${typeof webhookResponse}, isArray: ${Array.isArray(webhookResponse)}`);
     console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response:`, JSON.stringify(webhookResponse, null, 2));
+    
+    // Special handling: if webhookResponse is not an array but contains array data, extract it
+    if (!Array.isArray(webhookResponse) && webhookResponse.data && Array.isArray(webhookResponse.data)) {
+      console.log(`[FILE_UPLOAD_WEBHOOK] Found array data nested in response object, extracting...`);
+      webhookResponse = webhookResponse.data;
+      console.log(`[FILE_UPLOAD_WEBHOOK] Extracted array with ${webhookResponse.length} items`);
+    }
     
     // Get the file upload event to get document details
     const event = await storage.getFileUploadEvent(eventId);
