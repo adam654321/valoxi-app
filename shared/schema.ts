@@ -272,6 +272,7 @@ export const targetCompaniesRelations = relations(targetCompanies, ({ one, many 
   stageHistory: many(stageHistory),
   activities: many(activities),
   documents: many(documents),
+  stage1AnalysisEvents: many(stage1AnalysisEvents),
 }));
 
 export const targetContactsRelations = relations(targetContacts, ({ one, many }) => ({
@@ -471,6 +472,20 @@ export const documentAnalysisResults = pgTable("document_analysis_results", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Stage 1 analysis events for tracking comprehensive analysis when all 5 documents are complete
+export const stage1AnalysisEvents = pgTable("stage1_analysis_events", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  triggeredBy: integer("triggered_by").references(() => users.id).notNull(),
+  concatenatedData: json("concatenated_data").notNull(), // Combined JSON from all 5 document analyses
+  webhookSent: boolean("webhook_sent").default(false),
+  webhookResponse: text("webhook_response"), // Markdown response from stage1_json_analyser webhook
+  webhookStatus: varchar("webhook_status", { length: 50 }).default("pending"), // pending, success, failed
+  webhookSentAt: timestamp("webhook_sent_at"),
+  processingTime: integer("processing_time"), // Time taken for webhook processing in ms
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const fileUploadEventsRelations = relations(fileUploadEvents, ({ one, many }) => ({
   document: one(documents, {
     fields: [fileUploadEvents.documentId],
@@ -495,6 +510,17 @@ export const documentAnalysisResultsRelations = relations(documentAnalysisResult
   fileUploadEvent: one(fileUploadEvents, {
     fields: [documentAnalysisResults.fileUploadEventId],
     references: [fileUploadEvents.id],
+  }),
+}));
+
+export const stage1AnalysisEventsRelations = relations(stage1AnalysisEvents, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [stage1AnalysisEvents.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  triggeredByUser: one(users, {
+    fields: [stage1AnalysisEvents.triggeredBy],
+    references: [users.id],
   }),
 }));
 
@@ -619,6 +645,16 @@ export const insertDocumentAnalysisResultSchema = createInsertSchema(documentAna
   createdAt: true,
 });
 
+export const insertStage1AnalysisEventSchema = createInsertSchema(stage1AnalysisEvents).omit({
+  id: true,
+  createdAt: true,
+  webhookSent: true,
+  webhookResponse: true,
+  webhookStatus: true,
+  webhookSentAt: true,
+  processingTime: true,
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -671,6 +707,8 @@ export type InsertFileUploadEvent = z.infer<typeof insertFileUploadEventSchema>;
 export type FileUploadEvent = typeof fileUploadEvents.$inferSelect;
 
 export type InsertDocumentAnalysisResult = z.infer<typeof insertDocumentAnalysisResultSchema>;
+export type InsertStage1AnalysisEvent = z.infer<typeof insertStage1AnalysisEventSchema>;
+export type Stage1AnalysisEvent = typeof stage1AnalysisEvents.$inferSelect;
 export type DocumentAnalysisResult = typeof documentAnalysisResults.$inferSelect;
 
 // Dashboard preferences table

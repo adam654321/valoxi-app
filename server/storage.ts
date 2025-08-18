@@ -20,6 +20,7 @@ import {
   documentAccessLog,
   fileUploadEvents,
   documentAnalysisResults,
+  stage1AnalysisEvents,
   portalAccessTokens,
   externalDocumentSubmissions,
   portalDocumentRequirements,
@@ -70,6 +71,8 @@ import {
   type InsertFileUploadEvent,
   type DocumentAnalysisResult,
   type InsertDocumentAnalysisResult,
+  type Stage1AnalysisEvent,
+  type InsertStage1AnalysisEvent,
   type PortalAccessToken,
   type InsertPortalAccessToken,
   type ExternalDocumentSubmission,
@@ -338,6 +341,23 @@ export interface IStorage {
   createDocumentAnalysisResult(result: InsertDocumentAnalysisResult): Promise<DocumentAnalysisResult>;
   getDocumentAnalysisResults(documentId: number): Promise<DocumentAnalysisResult[]>;
   getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]>;
+
+  // File Upload Events methods
+  createFileUploadEvent(event: InsertFileUploadEvent): Promise<FileUploadEvent>;
+  getFileUploadEvent(eventId: number): Promise<FileUploadEvent | undefined>;
+  updateFileUploadEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date): Promise<FileUploadEvent | undefined>;
+  getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+  }>;
+
+  // Stage 1 Analysis Events methods
+  createStage1AnalysisEvent(event: InsertStage1AnalysisEvent): Promise<Stage1AnalysisEvent>;
+  getStage1AnalysisEvent(eventId: number): Promise<Stage1AnalysisEvent | undefined>;
+  getStage1AnalysisEventsByCompany(targetCompanyId: number, userCompanyId: number): Promise<Stage1AnalysisEvent[]>;
+  updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number): Promise<Stage1AnalysisEvent | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -697,7 +717,11 @@ export class DatabaseStorage implements IStorage {
     const [company] = await db
       .select()
       .from(targetCompanies)
-      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
+      .where(
+        userCompanyId === 0 
+          ? eq(targetCompanies.id, id) // Internal call - don't check userCompanyId
+          : and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId))
+      );
     return company || undefined;
   }
 
@@ -3248,6 +3272,83 @@ export class DatabaseStorage implements IStorage {
       isComplete: completedTypes.length === requiredTypes.length,
       completionPercentage: Math.round((completedTypes.length / requiredTypes.length) * 100)
     };
+  }
+
+  // File Upload Events methods implementation
+  async createFileUploadEvent(event: InsertFileUploadEvent): Promise<FileUploadEvent> {
+    const [result] = await db
+      .insert(fileUploadEvents)
+      .values(event)
+      .returning();
+    return result;
+  }
+
+  async getFileUploadEvent(eventId: number): Promise<FileUploadEvent | undefined> {
+    const [event] = await db
+      .select()
+      .from(fileUploadEvents)
+      .where(eq(fileUploadEvents.id, eventId));
+    return event || undefined;
+  }
+
+  async updateFileUploadEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date): Promise<FileUploadEvent | undefined> {
+    const [updated] = await db
+      .update(fileUploadEvents)
+      .set({
+        webhookStatus: status,
+        webhookResponse: response,
+        webhookSentAt: sentAt,
+        webhookSent: status === 'success'
+      })
+      .where(eq(fileUploadEvents.id, eventId))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Stage 1 Analysis Events methods implementation
+  async createStage1AnalysisEvent(event: InsertStage1AnalysisEvent): Promise<Stage1AnalysisEvent> {
+    const [result] = await db
+      .insert(stage1AnalysisEvents)
+      .values(event)
+      .returning();
+    return result;
+  }
+
+  async getStage1AnalysisEvent(eventId: number): Promise<Stage1AnalysisEvent | undefined> {
+    const [event] = await db
+      .select()
+      .from(stage1AnalysisEvents)
+      .where(eq(stage1AnalysisEvents.id, eventId));
+    return event || undefined;
+  }
+
+  async getStage1AnalysisEventsByCompany(targetCompanyId: number, userCompanyId: number): Promise<Stage1AnalysisEvent[]> {
+    // First verify access to the company
+    const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      throw new Error('Company not found or access denied');
+    }
+
+    return await db
+      .select()
+      .from(stage1AnalysisEvents)
+      .where(eq(stage1AnalysisEvents.targetCompanyId, targetCompanyId))
+      .orderBy(desc(stage1AnalysisEvents.createdAt));
+  }
+
+  async updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number): Promise<Stage1AnalysisEvent | undefined> {
+    const [updated] = await db
+      .update(stage1AnalysisEvents)
+      .set({
+        webhookStatus: status,
+        webhookResponse: response,
+        webhookSentAt: sentAt,
+        webhookSent: status === 'success',
+        processingTime: processingTime
+      })
+      .where(eq(stage1AnalysisEvents.id, eventId))
+      .returning();
+    return updated || undefined;
   }
 }
 

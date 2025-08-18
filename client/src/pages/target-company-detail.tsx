@@ -36,8 +36,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw } from "lucide-react";
-import type { TargetCompany, TargetContact } from "@shared/schema";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart } from "lucide-react";
+import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { ActivityManagement } from "@/components/activity-management";
@@ -120,6 +120,12 @@ export default function TargetCompanyDetail() {
     staleTime: 0,
     // Force refetch on mount
     refetchOnMount: 'always',
+  });
+
+  // Get stage 1 analysis events
+  const { data: stage1Events = [], isLoading: analysisLoading } = useQuery<Stage1AnalysisEvent[]>({
+    queryKey: ["/api/target-companies", id, "stage1-analysis"],
+    enabled: !!id,
   });
 
   // Extract company and contacts from profile
@@ -440,7 +446,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -452,6 +458,10 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Documents
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="flex items-center gap-2">
+              <BarChart className="w-4 h-4" />
+              Analysis
             </TabsTrigger>
             <TabsTrigger value="activities" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
@@ -864,6 +874,83 @@ export default function TargetCompanyDetail() {
               targetCompanyId={parseInt(id!)}
               companyName={company.companyName}
             />
+          </TabsContent>
+
+          <TabsContent value="analysis" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <BarChart className="w-5 h-5" />
+                  Company Analysis
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive financial and operational analysis of {company.companyName}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analysisLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-32 w-full" />
+                  </div>
+                ) : stage1Events.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No analysis available yet</p>
+                    <p className="text-sm mb-4">Analysis will be automatically generated when all 5 required documents are uploaded and analyzed</p>
+                    <div className="text-xs text-muted-foreground">
+                      Required documents: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {stage1Events.map((event) => (
+                      <Card key={event.id} className="border-l-4 border-l-blue-500">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold">Stage 1 Analysis</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Generated on {new Date(event.createdAt).toLocaleDateString()} at {new Date(event.createdAt).toLocaleTimeString()}
+                              </p>
+                            </div>
+                            <Badge variant={event.status === 'completed' ? 'default' : event.status === 'failed' ? 'destructive' : 'secondary'}>
+                              {event.status}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {event.status === 'completed' && event.analysisResult ? (
+                            <div className="prose dark:prose-invert max-w-none">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {event.analysisResult}
+                              </ReactMarkdown>
+                            </div>
+                          ) : event.status === 'failed' ? (
+                            <div className="text-red-600 dark:text-red-400">
+                              <p className="font-medium">Analysis failed</p>
+                              {event.errorMessage && (
+                                <p className="text-sm mt-1">{event.errorMessage}</p>
+                              )}
+                            </div>
+                          ) : event.status === 'in_progress' ? (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Analysis in progress...</span>
+                            </div>
+                          ) : (
+                            <div className="text-muted-foreground">
+                              <p>Analysis pending...</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="activities" className="space-y-6">

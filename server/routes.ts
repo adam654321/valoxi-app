@@ -235,6 +235,136 @@ async function sendFileUploadWebhook(eventId: number) {
 }
 
 // Function to process webhook response and store analysis results
+async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number) {
+  try {
+    console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}`);
+    
+    // Get the target company to find the userCompanyId
+    const targetCompany = await storage.getTargetCompany(targetCompanyId, 0);
+    if (!targetCompany) {
+      console.error(`[STAGE1_ANALYSIS] Company ${targetCompanyId} not found`);
+      return;
+    }
+
+    // Get the current completion status
+    const completionStatus = await storage.getAnalysisCompletionStatus(targetCompanyId, targetCompany.userCompanyId);
+    
+    if (!completionStatus.isComplete) {
+      console.log(`[STAGE1_ANALYSIS] Analysis not yet complete for company ${targetCompanyId}. Completed: ${completionStatus.completedTypes.join(', ')}. Missing: ${completionStatus.missingTypes.join(', ')}`);
+      return;
+    }
+
+    console.log(`[STAGE1_ANALYSIS] All 5 document analyses complete for company ${targetCompanyId}. Triggering stage 1 webhook.`);
+
+    // Get all analysis data for concatenation
+    const analysisData = await storage.getDocumentAnalysisResultsByType('asset_register', targetCompany.userCompanyId);
+    const salesLedgerData = await storage.getDocumentAnalysisResultsByType('sales_ledger', targetCompany.userCompanyId);
+    const staffMatrixData = await storage.getDocumentAnalysisResultsByType('staff_matrix', targetCompany.userCompanyId);
+    const profitLossData = await storage.getDocumentAnalysisResultsByType('profit_and_loss', targetCompany.userCompanyId);
+    const balanceSheetData = await storage.getDocumentAnalysisResultsByType('balance_sheet', targetCompany.userCompanyId);
+
+    // Concatenate all analysis data
+    const concatenatedData = {
+      asset_register: analysisData.filter(d => d.documentId && d.documentId > 0),
+      sales_ledger: salesLedgerData.filter(d => d.documentId && d.documentId > 0),
+      staff_matrix: staffMatrixData.filter(d => d.documentId && d.documentId > 0),
+      profit_and_loss: profitLossData.filter(d => d.documentId && d.documentId > 0),
+      balance_sheet: balanceSheetData.filter(d => d.documentId && d.documentId > 0),
+      timestamp: new Date().toISOString(),
+      company_id: targetCompanyId
+    };
+
+    // Create a stage 1 analysis event
+    const stage1Event = await storage.createStage1AnalysisEvent({
+      targetCompanyId,
+      triggeredBy,
+      concatenatedData
+    });
+
+    console.log(`[STAGE1_ANALYSIS] Created stage 1 analysis event ${stage1Event.id} for company ${targetCompanyId}`);
+
+    // Send webhook asynchronously
+    setTimeout(() => {
+      sendStage1AnalysisWebhook(stage1Event.id);
+    }, 100);
+
+  } catch (error) {
+    console.error(`[STAGE1_ANALYSIS] Failed to check and trigger stage 1 analysis for company ${targetCompanyId}:`, error);
+  }
+}
+
+async function sendStage1AnalysisWebhook(eventId: number) {
+  const webhookUrl = process.env.stage1_json_analyser;
+  if (!webhookUrl) {
+    console.log(`[STAGE1_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
+    return;
+  }
+
+  try {
+    // Get the stage 1 analysis event
+    const event = await storage.getStage1AnalysisEvent(eventId);
+    if (!event) {
+      console.error(`[STAGE1_ANALYSIS_WEBHOOK] Event ${eventId} not found`);
+      return;
+    }
+
+    const startTime = Date.now();
+    
+    // Prepare webhook payload
+    const webhookPayload = {
+      event_type: "stage1_analysis_complete",
+      timestamp: new Date().toISOString(),
+      company_info: {
+        id: event.targetCompanyId,
+        triggered_by: event.triggeredBy,
+      },
+      concatenated_analysis_data: event.concatenatedData,
+    };
+
+    console.log(`[STAGE1_ANALYSIS_WEBHOOK] Sending webhook for event ${eventId}:`, JSON.stringify(webhookPayload, null, 2));
+
+    // Send webhook
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookPayload),
+    });
+
+    const processingTime = Date.now() - startTime;
+    const responseText = await response.text();
+
+    const webhookStatus = response.ok ? 'success' : 'failed';
+
+    // Update the event with webhook response (expecting markdown format)
+    await storage.updateStage1AnalysisEventWebhookStatus(
+      eventId, 
+      webhookStatus, 
+      responseText, // Store markdown response directly
+      new Date(),
+      processingTime
+    );
+
+    console.log(`[STAGE1_ANALYSIS_WEBHOOK] Webhook sent for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
+
+    if (response.ok) {
+      console.log(`[STAGE1_ANALYSIS_WEBHOOK] Received markdown analysis response for event ${eventId}, length: ${responseText.length} characters`);
+    }
+
+  } catch (error) {
+    console.error(`[STAGE1_ANALYSIS_WEBHOOK] Failed to send webhook for event ${eventId}:`, error);
+    
+    // Update event with error status
+    await storage.updateStage1AnalysisEventWebhookStatus(
+      eventId, 
+      'failed', 
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      new Date()
+    );
+  }
+}
+
 async function processFileUploadWebhookResponse(webhookResponse: any, eventId: number) {
   try {
     console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
@@ -307,6 +437,9 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     }
 
     console.log(`[FILE_UPLOAD_WEBHOOK] Successfully processed ${results.length} analysis result(s) for event ${eventId}`);
+
+    // After storing analysis results, check if all 5 required types are now complete
+    await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
 
   } catch (error) {
     console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response for event ${eventId}:`, error);
@@ -3645,6 +3778,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(completionStatus);
     } catch (error) {
       console.error("Get analysis completion error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get stage 1 analysis events for a target company
+  app.get("/api/target-companies/:id/stage1-analysis", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      const events = await storage.getStage1AnalysisEventsByCompany(targetCompanyId, userCompanyId);
+      res.json(events);
+    } catch (error) {
+      console.error("Get stage 1 analysis events error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
