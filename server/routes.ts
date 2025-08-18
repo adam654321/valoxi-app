@@ -368,6 +368,8 @@ async function sendStage1AnalysisWebhook(eventId: number) {
 async function processFileUploadWebhookResponse(webhookResponse: any, eventId: number) {
   try {
     console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response type: ${typeof webhookResponse}, isArray: ${Array.isArray(webhookResponse)}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response:`, JSON.stringify(webhookResponse, null, 2));
     
     // Get the file upload event to get document details
     const event = await storage.getFileUploadEvent(eventId);
@@ -381,7 +383,9 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     
     if (Array.isArray(webhookResponse)) {
       // Direct array response format - multiple document types
+      console.log(`[FILE_UPLOAD_WEBHOOK] Processing array format with ${webhookResponse.length} items`);
       for (const item of webhookResponse) {
+        console.log(`[FILE_UPLOAD_WEBHOOK] Processing array item:`, JSON.stringify(item, null, 2));
         if (item.document_type && item.data) {
           analysisItems.push({
             documentType: item.document_type,
@@ -390,10 +394,14 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
               ...(item.summary && { summary: item.summary })
             }
           });
+          console.log(`[FILE_UPLOAD_WEBHOOK] Added analysis item for type: ${item.document_type}`);
+        } else {
+          console.warn(`[FILE_UPLOAD_WEBHOOK] Skipping invalid array item (missing document_type or data):`, item);
         }
       }
     } else if (webhookResponse.data && webhookResponse.data.document_type) {
       // Nested response format (single document type)
+      console.log(`[FILE_UPLOAD_WEBHOOK] Processing nested format`);
       analysisItems.push({
         documentType: webhookResponse.data.document_type,
         analysisData: {
@@ -403,6 +411,7 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       });
     } else if (webhookResponse.document_type && webhookResponse.data) {
       // Direct object response format (single document type)
+      console.log(`[FILE_UPLOAD_WEBHOOK] Processing direct object format`);
       analysisItems.push({
         documentType: webhookResponse.document_type,
         analysisData: {
@@ -3478,7 +3487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(webhookPayload),
-          timeout: 30000, // 30 second timeout
+          // timeout: 30000, // 30 second timeout
         });
 
         const processingTime = Date.now() - startTime;
