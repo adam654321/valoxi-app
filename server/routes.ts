@@ -258,12 +258,12 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 
     console.log(`[STAGE1_ANALYSIS] All 5 document analyses complete for company ${targetCompanyId}. Triggering stage 1 webhook.`);
 
-    // Get all analysis data for concatenation
-    const analysisData = await storage.getDocumentAnalysisResultsByType('asset_register', targetCompany.userCompanyId);
-    const salesLedgerData = await storage.getDocumentAnalysisResultsByType('sales_ledger', targetCompany.userCompanyId);
-    const staffMatrixData = await storage.getDocumentAnalysisResultsByType('staff_matrix', targetCompany.userCompanyId);
-    const profitLossData = await storage.getDocumentAnalysisResultsByType('profit_and_loss', targetCompany.userCompanyId);
-    const balanceSheetData = await storage.getDocumentAnalysisResultsByType('balance_sheet', targetCompany.userCompanyId);
+    // Get all analysis data for this specific target company only
+    const analysisData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'asset_register');
+    const salesLedgerData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'sales_ledger');
+    const staffMatrixData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'staff_matrix');
+    const profitLossData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'profit_and_loss');
+    const balanceSheetData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'balance_sheet');
 
     // Concatenate all analysis data
     const concatenatedData = {

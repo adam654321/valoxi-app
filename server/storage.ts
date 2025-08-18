@@ -3249,6 +3249,30 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
+  async getDocumentAnalysisResultsByTargetCompany(targetCompanyId: number, documentType: string): Promise<DocumentAnalysisResult[]> {
+    const results = await db
+      .select({
+        id: documentAnalysisResults.id,
+        documentId: documentAnalysisResults.documentId,
+        fileUploadEventId: documentAnalysisResults.fileUploadEventId,
+        documentType: documentAnalysisResults.documentType,
+        analysisData: documentAnalysisResults.analysisData,
+        processingTime: documentAnalysisResults.processingTime,
+        createdAt: documentAnalysisResults.createdAt
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(
+        and(
+          eq(documentAnalysisResults.documentType, documentType),
+          eq(documents.targetCompanyId, targetCompanyId)
+        )
+      )
+      .orderBy(desc(documentAnalysisResults.createdAt));
+    
+    return results;
+  }
+
   async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
     completedTypes: string[];
     missingTypes: string[];

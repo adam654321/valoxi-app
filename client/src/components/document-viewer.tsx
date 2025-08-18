@@ -29,7 +29,7 @@ import {
   Plus,
   Calendar,
   List,
-  RefreshCw
+
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -97,34 +97,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     }
   }, [document?.id, isOpen, analysisResults, analysisLoading, analysisError]);
 
-  // Retrigger analysis mutation
-  const retriggerAnalysisMutation = useMutation({
-    mutationFn: async (fileUploadEventId: number) => {
-      const response = await fetch(`/api/webhook/${fileUploadEventId}`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to retrigger analysis');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Analysis Retriggered",
-        description: "Document analysis has been retriggered. Results may take a few moments to update.",
-      });
-      // Refetch analysis results
-      queryClient.invalidateQueries({ queryKey: ["/api/documents", document?.id, "analysis"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to retrigger analysis. Please try again.",
-        variant: "destructive",
-      });
-      console.error('Retrigger analysis error:', error);
-    },
-  });
+
 
   // Reset states when dialog opens/closes
   useEffect(() => {
@@ -1024,35 +997,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
 
     return (
       <div className="space-y-6">
-        {/* Header with retrigger button */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">Analysis Results ({results.length})</h3>
-            <p className="text-sm text-muted-foreground">
-              Document contains {results.length} analysis type{results.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          {results.length === 1 && (
-            <Button
-              onClick={() => retriggerAnalysisMutation.mutate(results[0].fileUploadEventId)}
-              disabled={retriggerAnalysisMutation.isPending}
-              variant="outline"
-              size="sm"
-              data-testid="button-retrigger-analysis"
-            >
-              {retriggerAnalysisMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Retriggering...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Retrigger Analysis
-                </>
-              )}
-            </Button>
-          )}
+        {/* Header */}
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">Analysis Results ({results.length})</h3>
+          <p className="text-sm text-muted-foreground">
+            Document contains {results.length} analysis type{results.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
         {results.map((result) => (
