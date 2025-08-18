@@ -4394,9 +4394,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied to this company" });
       }
 
-      // Allow webhook URL to be configured via environment variable
-      // For testing, you can use: https://webhook.site/#!/unique-url-here
-      const webhookUrl = process.env.FILE_UPLOAD_WEBHOOK_URL || "https://hooks.zapier.com/hooks/catch/20337406/2mjxvns/";
+      // Use the configured webhook URL from secrets
+      const webhookUrl = process.env.file_upload_webhook;
+      
+      if (!webhookUrl) {
+        return res.status(400).json({ error: "File upload webhook URL not configured" });
+      }
       
       // Update the event to mark webhook as being sent
       await storage.updateFileUploadEvent(eventId, {
