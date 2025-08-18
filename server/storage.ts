@@ -3339,6 +3339,49 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
+  async updateFileUploadEvent(eventId: number, updates: Partial<FileUploadEvent>): Promise<FileUploadEvent | undefined> {
+    const [updated] = await db
+      .update(fileUploadEvents)
+      .set(updates)
+      .where(eq(fileUploadEvents.id, eventId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getPendingFileUploadEvents(userCompanyId: number): Promise<(FileUploadEvent & { targetCompanyName: string; fileName: string })[]> {
+    const results = await db
+      .select({
+        id: fileUploadEvents.id,
+        documentId: fileUploadEvents.documentId,
+        targetCompanyId: fileUploadEvents.targetCompanyId,
+        uploadedBy: fileUploadEvents.uploadedBy,
+        fileName: fileUploadEvents.fileName,
+        fileUrl: fileUploadEvents.fileUrl,
+        webhookSent: fileUploadEvents.webhookSent,
+        webhookStatus: fileUploadEvents.webhookStatus,
+        webhookSentAt: fileUploadEvents.webhookSentAt,
+        webhookCompletedAt: fileUploadEvents.webhookCompletedAt,
+        webhookResponse: fileUploadEvents.webhookResponse,
+        analysisCompleted: fileUploadEvents.analysisCompleted,
+        createdAt: fileUploadEvents.createdAt,
+        targetCompanyName: targetCompanies.companyName,
+      })
+      .from(fileUploadEvents)
+      .innerJoin(targetCompanies, eq(fileUploadEvents.targetCompanyId, targetCompanies.id))
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          or(
+            eq(fileUploadEvents.webhookStatus, 'pending'),
+            eq(fileUploadEvents.webhookStatus, 'sent')
+          )
+        )
+      )
+      .orderBy(desc(fileUploadEvents.createdAt));
+    
+    return results;
+  }
+
   // Stage 1 Analysis Events methods implementation
   async createStage1AnalysisEvent(event: InsertStage1AnalysisEvent): Promise<Stage1AnalysisEvent> {
     const [result] = await db

@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
   Send, 
   RefreshCw, 
@@ -13,7 +16,9 @@ import {
   FileText, 
   ExternalLink,
   Download,
-  Users
+  Users,
+  Play,
+  Upload
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -50,6 +55,8 @@ export default function FileUploadTest() {
   const { toast } = useToast();
   const [expandedResponse, setExpandedResponse] = useState<number | null>(null);
   const [selectedDocumentAnalysis, setSelectedDocumentAnalysis] = useState<DocumentAnalysisResult[] | null>(null);
+  const [manualWebhookResponse, setManualWebhookResponse] = useState("");
+  const [selectedEventForManualWebhook, setSelectedEventForManualWebhook] = useState<number | null>(null);
 
   // Fetch file upload events
   const { data: fileUploadEvents = [], isLoading: eventsLoading } = useQuery<FileUploadEvent[]>({
@@ -284,6 +291,61 @@ export default function FileUploadTest() {
     },
   });
 
+  // Manual webhook trigger mutation
+  const triggerManualWebhookMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const response = await fetch(`/api/file-upload-events/${eventId}/trigger-webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to trigger webhook");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Webhook Ready",
+        description: `Webhook URL provided. You can now call: ${data.webhookUrl}`
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Webhook Trigger Failed", 
+        description: error?.message || "Failed to trigger webhook",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Manual webhook response processing mutation
+  const processManualWebhookMutation = useMutation({
+    mutationFn: async ({ eventId, webhookResponse }: { eventId: number; webhookResponse: string }) => {
+      const response = await fetch(`/api/file-upload-events/${eventId}/process-response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ webhookResponse }),
+      });
+      if (!response.ok) throw new Error("Failed to process webhook response");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Webhook Response Processed",
+        description: `Successfully processed ${data.processedAnalyses.length} analysis results`
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
+      setManualWebhookResponse("");
+      setSelectedEventForManualWebhook(null);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Processing Failed", 
+        description: error?.message || "Failed to process webhook response",
+        variant: "destructive" 
+      });
+    },
+  });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -478,33 +540,67 @@ export default function FileUploadTest() {
                       View Analysis
                     </Button>
                     <Button
-                      onClick={() => sendWebhookMutation.mutate(event.id)}
-                      disabled={sendWebhookMutation.isPending}
-                      data-testid={`button-send-webhook-${event.id}`}
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      {sendWebhookMutation.isPending ? "Sending..." : "Send Webhook"}
-                    </Button>
-                    <Button
-                      variant="secondary"
+                      variant="default"
                       size="sm"
-                      onClick={() => testStaffMatrixMutation.mutate(event.id)}
-                      disabled={testStaffMatrixMutation.isPending}
-                      data-testid={`button-test-staff-matrix-${event.id}`}
+                      onClick={() => triggerManualWebhookMutation.mutate(event.id)}
+                      disabled={triggerManualWebhookMutation.isPending}
+                      data-testid={`button-trigger-webhook-${event.id}`}
                     >
-                      <Users className="w-4 h-4 mr-2" />
-                      {testStaffMatrixMutation.isPending ? "Adding..." : "Test Staff Matrix"}
+                      <Play className="w-4 h-4 mr-2" />
+                      {triggerManualWebhookMutation.isPending ? "Triggering..." : "Trigger Webhook"}
                     </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => testMultipleAnalysisTypesMutation.mutate(event.id)}
-                      disabled={testMultipleAnalysisTypesMutation.isPending}
-                      data-testid={`button-test-multiple-types-${event.id}`}
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      {testMultipleAnalysisTypesMutation.isPending ? "Adding..." : "Test 3 Types"}
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setSelectedEventForManualWebhook(event.id)}
+                          data-testid={`button-process-response-${event.id}`}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Process Response
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Process Webhook Response</DialogTitle>
+                          <DialogDescription>
+                            Paste the JSON response from the external webhook service for file: {event.fileName}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="webhook-response">Webhook Response JSON</Label>
+                            <Textarea
+                              id="webhook-response"
+                              placeholder='[{"document_type": "balance_sheet", "data": {...}, "id": 123}]'
+                              value={manualWebhookResponse}
+                              onChange={(e) => setManualWebhookResponse(e.target.value)}
+                              rows={12}
+                              className="font-mono text-sm"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <DialogTrigger asChild>
+                              <Button variant="outline">Cancel</Button>
+                            </DialogTrigger>
+                            <Button
+                              onClick={() => {
+                                if (selectedEventForManualWebhook && manualWebhookResponse.trim()) {
+                                  processManualWebhookMutation.mutate({
+                                    eventId: selectedEventForManualWebhook,
+                                    webhookResponse: manualWebhookResponse
+                                  });
+                                }
+                              }}
+                              disabled={!manualWebhookResponse.trim() || processManualWebhookMutation.isPending}
+                            >
+                              {processManualWebhookMutation.isPending ? "Processing..." : "Process Response"}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
 
