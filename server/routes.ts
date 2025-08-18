@@ -371,6 +371,9 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
   try {
     console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
     console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response type: ${typeof webhookResponse}, isArray: ${Array.isArray(webhookResponse)}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response constructor: ${webhookResponse?.constructor?.name}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response length (if array): ${Array.isArray(webhookResponse) ? webhookResponse.length : 'N/A'}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response first element (if array):`, Array.isArray(webhookResponse) && webhookResponse.length > 0 ? JSON.stringify(webhookResponse[0], null, 2) : 'N/A');
     console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response:`, JSON.stringify(webhookResponse, null, 2));
     
     // Special handling: if webhookResponse is not an array but contains array data, extract it
@@ -390,9 +393,15 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     // Handle multiple document analysis types in a single response
     let analysisItems: Array<{documentType: string, analysisData: any}> = [];
     
+    console.log(`[FILE_UPLOAD_WEBHOOK] Checking conditional branches...`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] - Array.isArray(webhookResponse): ${Array.isArray(webhookResponse)}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] - webhookResponse.data exists: ${!!(webhookResponse.data)}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] - Array.isArray(webhookResponse.data): ${Array.isArray(webhookResponse.data)}`);
+    console.log(`[FILE_UPLOAD_WEBHOOK] - webhookResponse.document_type exists: ${!!(webhookResponse.document_type)}`);
+
     if (Array.isArray(webhookResponse)) {
       // Direct array response format - multiple document types
-      console.log(`[FILE_UPLOAD_WEBHOOK] Processing array format with ${webhookResponse.length} items`);
+      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing array format with ${webhookResponse.length} items`);
       for (const item of webhookResponse) {
         console.log(`[FILE_UPLOAD_WEBHOOK] Processing array item:`, JSON.stringify(item, null, 2));
         if (item.document_type && item.data) {
@@ -410,7 +419,7 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       }
     } else if (webhookResponse.data && Array.isArray(webhookResponse.data)) {
       // Nested array response format - extract array from data field
-      console.log(`[FILE_UPLOAD_WEBHOOK] Processing nested array format with ${webhookResponse.data.length} items`);
+      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing nested array format with ${webhookResponse.data.length} items`);
       for (const item of webhookResponse.data) {
         console.log(`[FILE_UPLOAD_WEBHOOK] Processing nested array item:`, JSON.stringify(item, null, 2));
         if (item.document_type && item.data) {
@@ -428,7 +437,7 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       }
     } else if (webhookResponse.data && webhookResponse.data.document_type) {
       // Nested response format (single document type)
-      console.log(`[FILE_UPLOAD_WEBHOOK] Processing nested format`);
+      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing nested format`);
       analysisItems.push({
         documentType: webhookResponse.data.document_type,
         analysisData: {
@@ -438,7 +447,7 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
       });
     } else if (webhookResponse.document_type && webhookResponse.data) {
       // Direct object response format (single document type)
-      console.log(`[FILE_UPLOAD_WEBHOOK] Processing direct object format`);
+      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing direct object format`);
       analysisItems.push({
         documentType: webhookResponse.document_type,
         analysisData: {
@@ -447,7 +456,7 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
         }
       });
     } else {
-      console.error(`[FILE_UPLOAD_WEBHOOK] Invalid webhook response structure for event ${eventId}:`, webhookResponse);
+      console.error(`[FILE_UPLOAD_WEBHOOK] ❌ NO MATCH: Invalid webhook response structure for event ${eventId}:`, webhookResponse);
       console.error(`[FILE_UPLOAD_WEBHOOK] Expected formats:
       1. Direct array: [{document_type: 'type', data: {...}}, ...]
       2. Nested array: {data: [{document_type: 'type', data: {...}}, ...]}
@@ -3560,7 +3569,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (Array.isArray(responseData) && responseData.length > 0 && responseData[0].document_type) || // Multiple document types
           (responseData.data && responseData.data.document_type) // Nested format
         )) {
-          console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis results for event ${eventId}`);
+          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK ANALYSIS: Processing analysis results for event ${eventId}`);
+          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK responseData type: ${typeof responseData}, isArray: ${Array.isArray(responseData)}`);
+          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK responseData length: ${Array.isArray(responseData) ? responseData.length : 'N/A'}`);
+          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK responseData:`, JSON.stringify(responseData, null, 2));
           await processFileUploadWebhookResponse(responseData, eventId);
         }
         
@@ -3612,7 +3624,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const responseData = req.body;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Received webhook response for event ${eventId}:`, responseData);
+      console.log(`[FILE_UPLOAD_WEBHOOK] Received webhook response for event ${eventId}:`, JSON.stringify(responseData, null, 2));
+      console.log(`[FILE_UPLOAD_WEBHOOK] Request body type: ${typeof responseData}, isArray: ${Array.isArray(responseData)}, length: ${Array.isArray(responseData) ? responseData.length : 'N/A'}`);
+      console.log(`[FILE_UPLOAD_WEBHOOK] Request body constructor: ${responseData?.constructor?.name}`);
 
       // Process the analysis results
       await processFileUploadWebhookResponse(responseData, eventId);
