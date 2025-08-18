@@ -294,7 +294,7 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 }
 
 async function sendStage1AnalysisWebhook(eventId: number) {
-  const webhookUrl = process.env.stage1_json_analyser;
+  const webhookUrl = process.env.STAGE1_JSON_ANALYSER_WEBHOOK_URL;
   if (!webhookUrl) {
     console.log(`[STAGE1_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
     return;
