@@ -144,97 +144,7 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
   }
 }
 
-// Function to automatically send webhook for file uploads
-async function sendFileUploadWebhook(eventId: number) {
-  const webhookUrl = process.env.file_upload_webhook;
-  if (!webhookUrl) {
-    console.log(`[FILE_UPLOAD_WEBHOOK] No webhook URL configured for event ${eventId}`);
-    return;
-  }
 
-  try {
-    // Get the file upload event
-    const event = await storage.getFileUploadEvent(eventId);
-    if (!event) {
-      console.error(`[FILE_UPLOAD_WEBHOOK] Event ${eventId} not found`);
-      return;
-    }
-
-    const startTime = Date.now();
-    
-    // Prepare webhook payload
-    const webhookPayload = {
-      event_type: "file_uploaded",
-      timestamp: new Date().toISOString(),
-      file_info: {
-        id: event.id,
-        document_id: event.documentId,
-        target_company_id: event.targetCompanyId,
-        uploaded_by: event.uploadedBy,
-        file_name: event.fileName,
-        file_url: event.fileUrl,
-        uploaded_at: event.uploadedAt,
-      },
-    };
-
-    console.log(`[FILE_UPLOAD_WEBHOOK] Sending webhook for event ${eventId}:`, webhookPayload);
-
-    // Send webhook
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookPayload),
-    });
-
-    const processingTime = Date.now() - startTime;
-    const responseText = await response.text();
-    let responseData;
-    
-    try {
-      responseData = JSON.parse(responseText);
-    } catch {
-      responseData = responseText;
-    }
-
-    const webhookStatus = response.ok ? 'success' : 'failed';
-    const webhookResponse = JSON.stringify({
-      status: response.status,
-      statusText: response.statusText,
-      data: responseData,
-      processingTime: processingTime
-    }, null, 2);
-
-    // Update the event with webhook response
-    await storage.updateFileUploadEventWebhookStatus(
-      eventId, 
-      webhookStatus, 
-      webhookResponse, 
-      new Date()
-    );
-
-    if (response.ok && responseData) {
-      // Process and store the analysis results if we have valid response data
-      console.log(`[FILE_UPLOAD_WEBHOOK] About to process responseData for event ${eventId}:`, JSON.stringify(responseData, null, 2));
-      console.log(`[FILE_UPLOAD_WEBHOOK] responseData type: ${typeof responseData}, isArray: ${Array.isArray(responseData)}`);
-      await processFileUploadWebhookResponse(responseData, eventId);
-    }
-
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
-
-  } catch (error) {
-    console.error(`[FILE_UPLOAD_WEBHOOK] Failed to send webhook for event ${eventId}:`, error);
-    
-    // Update event with error status
-    await storage.updateFileUploadEventWebhookStatus(
-      eventId, 
-      'failed', 
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
-      new Date()
-    );
-  }
-}
 
 // Function to process webhook response and store analysis results
 async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number) {
@@ -367,147 +277,7 @@ async function sendStage1AnalysisWebhook(eventId: number) {
   }
 }
 
-async function processFileUploadWebhookResponse(webhookResponse: any, eventId: number) {
-  try {
-    console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response type: ${typeof webhookResponse}, isArray: ${Array.isArray(webhookResponse)}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response constructor: ${webhookResponse?.constructor?.name}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response length (if array): ${Array.isArray(webhookResponse) ? webhookResponse.length : 'N/A'}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response first element (if array):`, Array.isArray(webhookResponse) && webhookResponse.length > 0 ? JSON.stringify(webhookResponse[0], null, 2) : 'N/A');
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook response:`, JSON.stringify(webhookResponse, null, 2));
-    
-    // Special handling: if webhookResponse is not an array but contains array data, extract it
-    if (!Array.isArray(webhookResponse) && webhookResponse.data && Array.isArray(webhookResponse.data)) {
-      console.log(`[FILE_UPLOAD_WEBHOOK] Found array data nested in response object, extracting...`);
-      webhookResponse = webhookResponse.data;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Extracted array with ${webhookResponse.length} items`);
-    }
-    
-    // Get the file upload event to get document details
-    const event = await storage.getFileUploadEvent(eventId);
-    if (!event) {
-      console.error(`[FILE_UPLOAD_WEBHOOK] Event ${eventId} not found for processing`);
-      return;
-    }
 
-    // Handle multiple document analysis types in a single response
-    let analysisItems: Array<{documentType: string, analysisData: any}> = [];
-    
-    console.log(`[FILE_UPLOAD_WEBHOOK] Checking conditional branches...`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] - Array.isArray(webhookResponse): ${Array.isArray(webhookResponse)}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] - webhookResponse.data exists: ${!!(webhookResponse.data)}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] - Array.isArray(webhookResponse.data): ${Array.isArray(webhookResponse.data)}`);
-    console.log(`[FILE_UPLOAD_WEBHOOK] - webhookResponse.document_type exists: ${!!(webhookResponse.document_type)}`);
-
-    if (Array.isArray(webhookResponse)) {
-      // Direct array response format - multiple document types
-      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing array format with ${webhookResponse.length} items`);
-      for (const item of webhookResponse) {
-        console.log(`[FILE_UPLOAD_WEBHOOK] Processing array item:`, JSON.stringify(item, null, 2));
-        if (item.document_type && item.data) {
-          analysisItems.push({
-            documentType: item.document_type,
-            analysisData: {
-              ...item.data,
-              ...(item.summary && { summary: item.summary })
-            }
-          });
-          console.log(`[FILE_UPLOAD_WEBHOOK] Added analysis item for type: ${item.document_type}`);
-        } else {
-          console.warn(`[FILE_UPLOAD_WEBHOOK] Skipping invalid array item (missing document_type or data):`, item);
-        }
-      }
-    } else if (webhookResponse.data && Array.isArray(webhookResponse.data)) {
-      // Nested array response format - extract array from data field
-      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing nested array format with ${webhookResponse.data.length} items`);
-      for (const item of webhookResponse.data) {
-        console.log(`[FILE_UPLOAD_WEBHOOK] Processing nested array item:`, JSON.stringify(item, null, 2));
-        if (item.document_type && item.data) {
-          analysisItems.push({
-            documentType: item.document_type,
-            analysisData: {
-              ...item.data,
-              ...(item.summary && { summary: item.summary })
-            }
-          });
-          console.log(`[FILE_UPLOAD_WEBHOOK] Added analysis item for type: ${item.document_type}`);
-        } else {
-          console.warn(`[FILE_UPLOAD_WEBHOOK] Skipping invalid nested array item (missing document_type or data):`, item);
-        }
-      }
-    } else if (webhookResponse.data && webhookResponse.data.document_type) {
-      // Nested response format (single document type)
-      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing nested format`);
-      analysisItems.push({
-        documentType: webhookResponse.data.document_type,
-        analysisData: {
-          ...webhookResponse.data.data,
-          ...(webhookResponse.data.summary && { summary: webhookResponse.data.summary })
-        }
-      });
-    } else if (webhookResponse.document_type && webhookResponse.data) {
-      // Direct object response format (single document type)
-      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ MATCHED: Processing direct object format`);
-      analysisItems.push({
-        documentType: webhookResponse.document_type,
-        analysisData: {
-          ...webhookResponse.data,
-          ...(webhookResponse.summary && { summary: webhookResponse.summary })
-        }
-      });
-    } else {
-      console.error(`[FILE_UPLOAD_WEBHOOK] ❌ NO MATCH: Invalid webhook response structure for event ${eventId}:`, webhookResponse);
-      console.error(`[FILE_UPLOAD_WEBHOOK] Expected formats:
-      1. Direct array: [{document_type: 'type', data: {...}}, ...]
-      2. Nested array: {data: [{document_type: 'type', data: {...}}, ...]}
-      3. Nested object: {data: {document_type: 'type', data: {...}}}
-      4. Direct object: {document_type: 'type', data: {...}}`);
-      return;
-    }
-
-    if (analysisItems.length === 0) {
-      console.error(`[FILE_UPLOAD_WEBHOOK] No valid analysis items found in webhook response for event ${eventId}`);
-      return;
-    }
-
-    // Store each document analysis type as a separate result
-    const results = [];
-    for (const item of analysisItems) {
-      const analysisResult = {
-        documentId: event.documentId,
-        fileUploadEventId: eventId,
-        documentType: item.documentType,
-        analysisData: item.analysisData,
-        processingTime: webhookResponse.processingTime || null,
-      };
-
-      const result = await storage.createDocumentAnalysisResult(analysisResult);
-      results.push(result);
-      console.log(`[FILE_UPLOAD_WEBHOOK] Analysis results stored for document ${event.documentId}, type: ${item.documentType}, result ID: ${result.id}`);
-    }
-
-    console.log(`[FILE_UPLOAD_WEBHOOK] Successfully processed ${results.length} analysis result(s) for event ${eventId}`);
-    
-    // Check if we're expecting more webhook calls for this event
-    const currentAnalysisResults = await storage.getDocumentAnalysisResults(event.documentId);
-    const currentTypes = currentAnalysisResults.map(r => r.documentType);
-    const expectedTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
-    const missingTypes = expectedTypes.filter(type => !currentTypes.includes(type));
-    
-    if (missingTypes.length > 0) {
-      console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 WEBHOOK MONITORING: Event ${eventId} may receive additional calls for: ${missingTypes.join(', ')}`);
-      console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 WEBHOOK MONITORING: Current types received: ${currentTypes.join(', ')}`);
-    } else {
-      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ COMPLETE: Event ${eventId} has received all expected analysis types`);
-    }
-
-    // After storing analysis results, check if all 5 required types are now complete
-    await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
-
-  } catch (error) {
-    console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response for event ${eventId}:`, error);
-  }
-}
 
 // Extend session type
 declare module 'express-session' {
@@ -2470,8 +2240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const uploadEvent = await storage.createFileUploadEvent(fileUploadEventData);
         
-        // Automatically trigger webhook for file upload
-        await sendFileUploadWebhook(uploadEvent.id);
+
         
         res.json({
           success: true,
@@ -2895,8 +2664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const uploadEvent = await storage.createFileUploadEvent(fileUploadEventData);
         
-        // Automatically trigger webhook for portal file upload
-        await sendFileUploadWebhook(uploadEvent.id);
+
         
         // Auto-approve the submission since it integrated successfully
         await storage.reviewDocumentSubmission(
@@ -3576,18 +3344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
         
-        // Process analysis results if webhook was successful and contains analysis data
-        if (response.ok && responseData && (
-          responseData.document_type || // Single document type
-          (Array.isArray(responseData) && responseData.length > 0 && responseData[0].document_type) || // Multiple document types
-          (responseData.data && responseData.data.document_type) // Nested format
-        )) {
-          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK ANALYSIS: Processing analysis results for event ${eventId}`);
-          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK responseData type: ${typeof responseData}, isArray: ${Array.isArray(responseData)}`);
-          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK responseData length: ${Array.isArray(responseData) ? responseData.length : 'N/A'}`);
-          console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 SEND-WEBHOOK responseData:`, JSON.stringify(responseData, null, 2));
-          await processFileUploadWebhookResponse(responseData, eventId);
-        }
+
         
         res.json({
           success: true,
@@ -3627,30 +3384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Webhook response handler for file upload analysis results
-  app.post("/api/file-upload-events/:eventId/webhook-response", async (req: Request, res: Response) => {
-    try {
-      const eventId = parseInt(req.params.eventId);
-      
-      if (isNaN(eventId)) {
-        return res.status(400).json({ message: "Invalid event ID" });
-      }
 
-      const responseData = req.body;
-      console.log(`[FILE_UPLOAD_WEBHOOK] Received webhook response for event ${eventId}:`, JSON.stringify(responseData, null, 2));
-      console.log(`[FILE_UPLOAD_WEBHOOK] Request body type: ${typeof responseData}, isArray: ${Array.isArray(responseData)}, length: ${Array.isArray(responseData) ? responseData.length : 'N/A'}`);
-      console.log(`[FILE_UPLOAD_WEBHOOK] Request body constructor: ${responseData?.constructor?.name}`);
-
-      // Process the analysis results
-      await processFileUploadWebhookResponse(responseData, eventId);
-      
-      res.json({ success: true, message: "Webhook response processed successfully" });
-      
-    } catch (error) {
-      console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response:`, error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Test webhook endpoint
   app.post("/api/webhook/test", async (req: Request, res: Response) => {
@@ -4620,151 +4354,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to switch company:", error);
       res.status(500).json({ error: "Failed to switch company" });
-    }
-  });
-
-  // ========================================
-  // TEST ENDPOINT FOR WEBHOOK SIMULATION
-  // ========================================
-
-  // Test endpoint to simulate correct webhook response with multiple document types
-  app.post("/api/test/simulate-webhook/:eventId", async (req: Request, res: Response) => {
-    try {
-      const eventId = parseInt(req.params.eventId);
-      
-      // Simulate the correct webhook response format as shown in the uploaded JSON
-      const simulatedWebhookResponse = [
-        {
-          "document_type": "asset_register",
-          "data": {
-            "total_assets_cost": 4250,
-            "total_accumulated_depreciation": 1782,
-            "total_net_book_value": 2468,
-            "asset_breakdown": [
-              {
-                "category": "IT Equipment",
-                "cost": 1370,
-                "accumulated_depreciation": 464,
-                "net_book_value": 906
-              },
-              {
-                "category": "Office Furniture",
-                "cost": 1380,
-                "accumulated_depreciation": 1068,
-                "net_book_value": 312
-              },
-              {
-                "category": "Software Licenses",
-                "cost": 1500,
-                "accumulated_depreciation": 250,
-                "net_book_value": 1250
-              }
-            ],
-            "recent_additions_summary": "## Recent Additions\n- IT Equipment: 420\n- Software Licenses: 1500",
-            "depreciation_this_year": null,
-            "observations": "- The Office Furniture category shows significant aging, with approximately 77% of its original cost already depreciated. The Conference Table, purchased in 2018, is 80% depreciated.\n- Software Licenses represent the most recent significant investment (purchased 2023) and have a relatively low accumulated depreciation (16.7%), indicating their newer status.\n- The asset base is a mix of older, heavily depreciated items and newer acquisitions, with no assets added in the last year leading up to the register's generation date (April 2025).",
-            "asset_breakdown_list": "* IT Equipment: Cost 1370, Accumulated depreciation 464, Net book value 906\n* Office Furniture: Cost 1380, Accumulated depreciation 1068, Net book value 312\n* Software Licenses: Cost 1500, Accumulated depreciation 250, Net book value 1250"
-          },
-          "id": 35
-        },
-        {
-          "document_type": "sales_ledger",
-          "data": {
-            "total_invoice_count": 6,
-            "total_invoice_value": 7195,
-            "total_amount_paid": 3580,
-            "total_outstanding": 3615,
-            "invoice_status_summary": {
-              "Paid": {
-                "count": 3,
-                "value": 3080
-              },
-              "Part Paid": {
-                "count": 1,
-                "value": 1375
-              },
-              "Unpaid": {
-                "count": 2,
-                "value": 2740
-              }
-            },
-            "customer_exposure": [
-              {
-                "customer_name": "ABC Cleaning Supplies",
-                "total_invoiced": 1250,
-                "total_paid": 1250,
-                "total_outstanding": 0
-              },
-              {
-                "customer_name": "Bright Homes Ltd",
-                "total_invoiced": 880,
-                "total_paid": 880,
-                "total_outstanding": 0
-              },
-              {
-                "customer_name": "Sparkle Maintenance",
-                "total_invoiced": 1375,
-                "total_paid": 500,
-                "total_outstanding": 875
-              },
-              {
-                "customer_name": "Urban Property Group",
-                "total_invoiced": 1620,
-                "total_paid": 0,
-                "total_outstanding": 1620
-              },
-              {
-                "customer_name": "Crystal Contracting",
-                "total_invoiced": 950,
-                "total_paid": 950,
-                "total_outstanding": 0
-              },
-              {
-                "customer_name": "Shiny Spaces Ltd",
-                "total_invoiced": 1120,
-                "total_paid": 0,
-                "total_outstanding": 1120
-              }
-            ],
-            "observations": "* Urban Property Group has £1620.00 overdue.\n* Sparkle Maintenance has only part-paid their latest invoice.\n* Top 3 customers account for 58.99% of total invoice value."
-          },
-          "id": 35
-        },
-        {
-          "document_type": "staff_matrix",
-          "data": {
-            "total_employee_count": 5,
-            "total_annual_payroll": 140000,
-            "average_salary": 28000,
-            "employment_type_breakdown": {
-              "Full-Time": 4,
-              "Part-Time": 1
-            },
-            "status_summary": {
-              "Active": 4,
-              "Maternity Leave": 1
-            },
-            "longest_tenured_employees": "* Lisa Chow – Finance Assistant (start_date: 01/09/17; years_of_service: 7)\n* Alice Thompson – Operations Manager (start_date: 01/05/18; years_of_service: 7)\n* James Patel – Cleaning Supervisor (start_date: 15/11/19; years_of_service: 5)",
-            "observations": "* The majority of staff are active full-time employees.\n* Two employees have been with the company for over 7 years.\n* Only one employee is currently on maternity leave."
-          },
-          "id": 35
-        }
-      ];
-
-      console.log(`[TEST_WEBHOOK] Simulating correct webhook response for event ${eventId}`);
-      
-      // Process the simulated response using the same function
-      await processFileUploadWebhookResponse(simulatedWebhookResponse, eventId);
-      
-      res.json({ 
-        success: true, 
-        message: `Simulated webhook processing for event ${eventId}`,
-        processedTypes: simulatedWebhookResponse.map(item => item.document_type)
-      });
-      
-    } catch (error) {
-      console.error(`[TEST_WEBHOOK] Failed to simulate webhook for event ${req.params.eventId}:`, error);
-      res.status(500).json({ error: "Failed to simulate webhook" });
     }
   });
 
