@@ -257,19 +257,31 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
     console.log(`[STAGE1_ANALYSIS] All 5 document analyses complete for company ${targetCompanyId}. Triggering stage 1 webhook.`);
 
     // Get all analysis data for concatenation
-    const analysisData = await storage.getDocumentAnalysisResultsByType('asset_register', targetCompany.userCompanyId);
-    const salesLedgerData = await storage.getDocumentAnalysisResultsByType('sales_ledger', targetCompany.userCompanyId);
-    const staffMatrixData = await storage.getDocumentAnalysisResultsByType('staff_matrix', targetCompany.userCompanyId);
-    const profitLossData = await storage.getDocumentAnalysisResultsByType('profit_and_loss', targetCompany.userCompanyId);
-    const balanceSheetData = await storage.getDocumentAnalysisResultsByType('balance_sheet', targetCompany.userCompanyId);
+    const analysisData = await storage.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
+    const salesLedgerData = await storage.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
+    const staffMatrixData = await storage.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
+    const profitLossData = await storage.getDocumentAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
+    const balanceSheetData = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
 
-    // Concatenate all analysis data
+    console.log(`[STAGE1_ANALYSIS] Debug - Retrieved analysis data counts:`, {
+      asset_register: analysisData.length,
+      sales_ledger: salesLedgerData.length, 
+      staff_matrix: staffMatrixData.length,
+      profit_and_loss: profitLossData.length,
+      balance_sheet: balanceSheetData.length
+    });
+
+    if (analysisData.length > 0) {
+      console.log(`[STAGE1_ANALYSIS] Debug - Sample asset_register data:`, JSON.stringify(analysisData[0].analysisData, null, 2));
+    }
+
+    // Concatenate all analysis data - extract analysisData field from each result
     const concatenatedData = {
-      asset_register: analysisData.filter(d => d.documentId && d.documentId > 0),
-      sales_ledger: salesLedgerData.filter(d => d.documentId && d.documentId > 0),
-      staff_matrix: staffMatrixData.filter(d => d.documentId && d.documentId > 0),
-      profit_and_loss: profitLossData.filter(d => d.documentId && d.documentId > 0),
-      balance_sheet: balanceSheetData.filter(d => d.documentId && d.documentId > 0),
+      asset_register: analysisData.map(d => d.analysisData).filter(data => data),
+      sales_ledger: salesLedgerData.map(d => d.analysisData).filter(data => data),
+      staff_matrix: staffMatrixData.map(d => d.analysisData).filter(data => data),
+      profit_and_loss: profitLossData.map(d => d.analysisData).filter(data => data),
+      balance_sheet: balanceSheetData.map(d => d.analysisData).filter(data => data),
       timestamp: new Date().toISOString(),
       company_id: targetCompanyId
     };
@@ -4577,6 +4589,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Manual webhook trigger error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/test/fresh-stage1-analysis/:companyId", async (req: Request, res: Response) => {
+    try {
+      const companyId = parseInt(req.params.companyId);
+      
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      console.log(`[TEST] Manually triggering fresh Stage 1 analysis for company ${companyId}`);
+      
+      // Trigger fresh analysis asynchronously
+      setTimeout(() => {
+        checkAndTriggerStage1Analysis(companyId, 1); // Use user ID 1 for test
+      }, 100);
+
+      res.json({ 
+        success: true, 
+        message: `Fresh Stage 1 analysis triggered for company ${companyId}` 
+      });
+    } catch (error) {
+      console.error("Manual fresh analysis trigger error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -341,6 +341,7 @@ export interface IStorage {
   createDocumentAnalysisResult(result: InsertDocumentAnalysisResult): Promise<DocumentAnalysisResult>;
   getDocumentAnalysisResults(documentId: number): Promise<DocumentAnalysisResult[]>;
   getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]>;
+  getDocumentAnalysisResultsByTypeForCompany(documentType: string, targetCompanyId: number): Promise<DocumentAnalysisResult[]>;
 
   // File Upload Events methods
   createFileUploadEvent(event: InsertFileUploadEvent): Promise<FileUploadEvent>;
@@ -3237,6 +3238,30 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(documentAnalysisResults.createdAt));
+  }
+
+  async getDocumentAnalysisResultsByTypeForCompany(documentType: string, targetCompanyId: number): Promise<DocumentAnalysisResult[]> {
+    const results = await db
+      .select({
+        id: documentAnalysisResults.id,
+        documentId: documentAnalysisResults.documentId,
+        fileUploadEventId: documentAnalysisResults.fileUploadEventId,
+        documentType: documentAnalysisResults.documentType,
+        analysisData: documentAnalysisResults.analysisData,
+        processingTime: documentAnalysisResults.processingTime,
+        createdAt: documentAnalysisResults.createdAt,
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(
+        and(
+          eq(documentAnalysisResults.documentType, documentType),
+          eq(documents.targetCompanyId, targetCompanyId)
+        )
+      )
+      .orderBy(desc(documentAnalysisResults.createdAt));
+    
+    return results;
   }
 
   async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
