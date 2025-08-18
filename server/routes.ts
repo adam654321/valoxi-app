@@ -487,6 +487,19 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     }
 
     console.log(`[FILE_UPLOAD_WEBHOOK] Successfully processed ${results.length} analysis result(s) for event ${eventId}`);
+    
+    // Check if we're expecting more webhook calls for this event
+    const currentAnalysisResults = await storage.getDocumentAnalysisResults(event.documentId);
+    const currentTypes = currentAnalysisResults.map(r => r.documentType);
+    const expectedTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
+    const missingTypes = expectedTypes.filter(type => !currentTypes.includes(type));
+    
+    if (missingTypes.length > 0) {
+      console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 WEBHOOK MONITORING: Event ${eventId} may receive additional calls for: ${missingTypes.join(', ')}`);
+      console.log(`[FILE_UPLOAD_WEBHOOK] 🔍 WEBHOOK MONITORING: Current types received: ${currentTypes.join(', ')}`);
+    } else {
+      console.log(`[FILE_UPLOAD_WEBHOOK] ✅ COMPLETE: Event ${eventId} has received all expected analysis types`);
+    }
 
     // After storing analysis results, check if all 5 required types are now complete
     await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
