@@ -4,11 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Send, 
   RefreshCw, 
@@ -18,12 +13,7 @@ import {
   FileText, 
   ExternalLink,
   Download,
-  Users,
-  Play,
-  Upload,
-  User,
-  Settings,
-  LogOut
+  Users
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -60,9 +50,6 @@ export default function FileUploadTest() {
   const { toast } = useToast();
   const [expandedResponse, setExpandedResponse] = useState<number | null>(null);
   const [selectedDocumentAnalysis, setSelectedDocumentAnalysis] = useState<DocumentAnalysisResult[] | null>(null);
-  const [manualWebhookResponse, setManualWebhookResponse] = useState("");
-  const [selectedEventForManualWebhook, setSelectedEventForManualWebhook] = useState<number | null>(null);
-
 
   // Fetch file upload events
   const { data: fileUploadEvents = [], isLoading: eventsLoading } = useQuery<FileUploadEvent[]>({
@@ -146,213 +133,6 @@ export default function FileUploadTest() {
       toast({ 
         title: "Simulation Failed", 
         description: errorMessage,
-        variant: "destructive" 
-      });
-    },
-  });
-
-  // Test multiple document types webhook simulation (based on the user's JSON example)
-  const testMultipleAnalysisTypesMutation = useMutation({
-    mutationFn: async (eventId: number) => {
-      const testData = [
-        {
-          "document_type": "asset_register",
-          "data": {
-            "total_assets_cost": 4250,
-            "total_accumulated_depreciation": 1782,
-            "total_net_book_value": 2468,
-            "asset_breakdown": [
-              {
-                "category": "IT Equipment",
-                "cost": 1370,
-                "accumulated_depreciation": 464,
-                "net_book_value": 906
-              },
-              {
-                "category": "Office Furniture",
-                "cost": 1380,
-                "accumulated_depreciation": 1068,
-                "net_book_value": 312
-              },
-              {
-                "category": "Software Licenses",
-                "cost": 1500,
-                "accumulated_depreciation": 250,
-                "net_book_value": 1250
-              }
-            ],
-            "recent_additions_summary": "## Recent Additions\n- IT Equipment: 420\n- Software Licenses: 1500",
-            "depreciation_this_year": null,
-            "observations": "- The asset base shows a significant investment in Software Licenses (1,500), which represents a substantial portion of the total asset cost and has relatively low accumulated depreciation, suggesting a long remaining useful life or recent acquisition.\n- The Office Furniture category appears to be aging, with a high proportion of its original cost already depreciated (e.g., Conference Table at 80% depreciated), indicating these assets are nearing the end of their useful lives.\n- Recent additions, primarily in IT Equipment and Software Licenses, suggest ongoing investment in technology and digital infrastructure.",
-            "asset_breakdown_list": "* IT Equipment: Cost 1370, Accumulated depreciation 464, Net book value 906\n* Office Furniture: Cost 1380, Accumulated depreciation 1068, Net book value 312\n* Software Licenses: Cost 1500, Accumulated depreciation 250, Net book value 1250"
-          },
-          "id": 37
-        },
-        {
-          "document_type": "sales_ledger",
-          "data": {
-            "total_invoice_count": 6,
-            "total_invoice_value": 7195,
-            "total_amount_paid": 3580,
-            "total_outstanding": 3615,
-            "invoice_status_summary": {
-              "Paid": {
-                "count": 3,
-                "value": 3080
-              },
-              "Part Paid": {
-                "count": 1,
-                "value": 1375
-              },
-              "Unpaid": {
-                "count": 2,
-                "value": 2740
-              }
-            },
-            "customer_exposure": [
-              {
-                "customer_name": "ABC Cleaning Supplies",
-                "total_invoiced": 1250,
-                "total_paid": 1250,
-                "total_outstanding": 0
-              },
-              {
-                "customer_name": "Bright Homes Ltd",
-                "total_invoiced": 880,
-                "total_paid": 880,
-                "total_outstanding": 0
-              },
-              {
-                "customer_name": "Sparkle Maintenance",
-                "total_invoiced": 1375,
-                "total_paid": 500,
-                "total_outstanding": 875
-              },
-              {
-                "customer_name": "Urban Property Group",
-                "total_invoiced": 1620,
-                "total_paid": 0,
-                "total_outstanding": 1620
-              },
-              {
-                "customer_name": "Crystal Contracting",
-                "total_invoiced": 950,
-                "total_paid": 950,
-                "total_outstanding": 0
-              },
-              {
-                "customer_name": "Shiny Spaces Ltd",
-                "total_invoiced": 1120,
-                "total_paid": 0,
-                "total_outstanding": 1120
-              }
-            ],
-            "observations": "* Urban Property Group has £1620.00 overdue.\n* Sparkle Maintenance has only part-paid their latest invoice.\n* Top 3 customers account for 59.00% of total invoice value."
-          },
-          "id": 37
-        },
-        {
-          "document_type": "staff_matrix",
-          "data": {
-            "total_employee_count": 5,
-            "total_annual_payroll": 140000,
-            "average_salary": 28000,
-            "employment_type_breakdown": {
-              "Full-Time": 4,
-              "Part-Time": 1
-            },
-            "status_summary": {
-              "Active": 4,
-              "Maternity Leave": 1
-            },
-            "longest_tenured_employees": "* Lisa Chow – Finance Assistant (start_date: 01/09/17; years_of_service: 7)\n* Alice Thompson – Operations Manager (start_date: 01/05/18; years_of_service: 7)\n* James Patel – Cleaning Supervisor (start_date: 15/11/19; years_of_service: 5)",
-            "observations": "* The majority of staff are active full-time employees.\n* Two employees have been with the company for over 7 years.\n* Only one employee is currently on maternity leave."
-          },
-          "id": 37
-        }
-      ];
-
-      const response = await fetch(`/api/file-upload-events/${eventId}/webhook-response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testData),
-      });
-      if (!response.ok) throw new Error("Failed to simulate multiple analysis types webhook");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({ 
-        title: "Multiple Analysis Types Added",
-        description: "Test results for 3 document types (asset register, sales ledger, staff matrix) have been stored successfully"
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
-    },
-    onError: (error: any) => {
-      const errorMessage = error?.message || "Failed to simulate multiple analysis types webhook";
-      toast({ 
-        title: "Simulation Failed", 
-        description: errorMessage,
-        variant: "destructive" 
-      });
-    },
-  });
-
-  // Manual webhook trigger mutation
-  const triggerManualWebhookMutation = useMutation({
-    mutationFn: async (eventId: number) => {
-      const response = await fetch(`/api/file-upload-events/${eventId}/trigger-webhook`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("Failed to trigger webhook");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      // Show appropriate toast
-      toast({ 
-        title: data.success ? "Webhook Call Successful!" : "Webhook Call Failed",
-        description: data.success ? "Response received from external service" : data.error || "Check the webhook response below",
-        variant: data.success ? "default" : "destructive",
-        duration: 5000
-      });
-      
-      console.log('Webhook Response:', data);
-      
-      queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
-    },
-    onError: (error: any) => {
-      toast({ 
-        title: "Webhook Trigger Failed", 
-        description: error?.message || "Failed to trigger webhook",
-        variant: "destructive" 
-      });
-    },
-  });
-
-  // Manual webhook response processing mutation
-  const processManualWebhookMutation = useMutation({
-    mutationFn: async ({ eventId, webhookResponse }: { eventId: number; webhookResponse: string }) => {
-      const response = await fetch(`/api/file-upload-events/${eventId}/process-response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhookResponse }),
-      });
-      if (!response.ok) throw new Error("Failed to process webhook response");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({ 
-        title: "Webhook Response Processed",
-        description: `Successfully processed ${data.processedAnalyses.length} analysis results`
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
-      setManualWebhookResponse("");
-      setSelectedEventForManualWebhook(null);
-    },
-    onError: (error: any) => {
-      toast({ 
-        title: "Processing Failed", 
-        description: error?.message || "Failed to process webhook response",
         variant: "destructive" 
       });
     },
@@ -449,137 +229,14 @@ export default function FileUploadTest() {
             Monitor file uploads and test webhook responses for target company documents
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] })}
-            data-testid="button-refresh"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          
-          {/* User Profile Dropdown with Manual Webhook Tools */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="button-user-menu">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Manual Webhook Tools</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    Process external webhook responses manually
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              
-              {fileUploadEvents.length > 0 && (
-                <>
-                  {fileUploadEvents.slice(0, 3).map((event) => (
-                    <div key={event.id} className="p-2 space-y-2 border-b last:border-b-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium truncate flex-1 mr-2" title={event.fileName}>
-                          {event.fileName}
-                        </span>
-                        <Badge variant={getStatusBadgeVariant(event.webhookStatus)} className="text-xs">
-                          {event.webhookStatus}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-6 px-2"
-                          onClick={() => triggerManualWebhookMutation.mutate(event.id)}
-                          disabled={triggerManualWebhookMutation.isPending}
-                          data-testid={`dropdown-trigger-webhook-${event.id}`}
-                        >
-                          <Play className="w-3 h-3 mr-1" />
-                          {triggerManualWebhookMutation.isPending ? "..." : "Trigger"}
-                        </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="text-xs h-6 px-2"
-                              onClick={() => setSelectedEventForManualWebhook(event.id)}
-                              data-testid={`dropdown-process-response-${event.id}`}
-                            >
-                              <Upload className="w-3 h-3 mr-1" />
-                              Process
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Process Webhook Response</DialogTitle>
-                              <DialogDescription>
-                                Paste the JSON response from the external webhook service for file: {event.fileName}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="dropdown-webhook-response">Webhook Response JSON</Label>
-                                <Textarea
-                                  id="dropdown-webhook-response"
-                                  placeholder='[{"document_type": "balance_sheet", "data": {...}, "id": 123}]'
-                                  value={manualWebhookResponse}
-                                  onChange={(e) => setManualWebhookResponse(e.target.value)}
-                                  rows={12}
-                                  className="font-mono text-sm"
-                                />
-                              </div>
-                              <div className="flex justify-end gap-2">
-                                <DialogTrigger asChild>
-                                  <Button variant="outline">Cancel</Button>
-                                </DialogTrigger>
-                                <Button
-                                  onClick={() => {
-                                    if (selectedEventForManualWebhook && manualWebhookResponse.trim()) {
-                                      processManualWebhookMutation.mutate({
-                                        eventId: selectedEventForManualWebhook,
-                                        webhookResponse: manualWebhookResponse
-                                      });
-                                    }
-                                  }}
-                                  disabled={!manualWebhookResponse.trim() || processManualWebhookMutation.isPending}
-                                >
-                                  {processManualWebhookMutation.isPending ? "Processing..." : "Process Response"}
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
-                  ))}
-                  {fileUploadEvents.length > 3 && (
-                    <div className="p-2 text-center">
-                      <span className="text-xs text-muted-foreground">
-                        Showing 3 of {fileUploadEvents.length} files
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {fileUploadEvents.length === 0 && (
-                <div className="p-4 text-center">
-                  <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">
-                    No uploaded files available for webhook processing
-                  </p>
-                </div>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] })}
+          data-testid="button-refresh"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       <div className="grid gap-4">
@@ -675,67 +332,23 @@ export default function FileUploadTest() {
                       View Analysis
                     </Button>
                     <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => triggerManualWebhookMutation.mutate(event.id)}
-                      disabled={triggerManualWebhookMutation.isPending}
-                      data-testid={`button-trigger-webhook-${event.id}`}
+                      onClick={() => sendWebhookMutation.mutate(event.id)}
+                      disabled={sendWebhookMutation.isPending}
+                      data-testid={`button-send-webhook-${event.id}`}
                     >
-                      <Play className="w-4 h-4 mr-2" />
-                      {triggerManualWebhookMutation.isPending ? "Triggering..." : "Trigger Webhook"}
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendWebhookMutation.isPending ? "Sending..." : "Send Webhook"}
                     </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setSelectedEventForManualWebhook(event.id)}
-                          data-testid={`button-process-response-${event.id}`}
-                        >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Process Response
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Process Webhook Response</DialogTitle>
-                          <DialogDescription>
-                            Paste the JSON response from the external webhook service for file: {event.fileName}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="webhook-response">Webhook Response JSON</Label>
-                            <Textarea
-                              id="webhook-response"
-                              placeholder='[{"document_type": "balance_sheet", "data": {...}, "id": 123}]'
-                              value={manualWebhookResponse}
-                              onChange={(e) => setManualWebhookResponse(e.target.value)}
-                              rows={12}
-                              className="font-mono text-sm"
-                            />
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <DialogTrigger asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogTrigger>
-                            <Button
-                              onClick={() => {
-                                if (selectedEventForManualWebhook && manualWebhookResponse.trim()) {
-                                  processManualWebhookMutation.mutate({
-                                    eventId: selectedEventForManualWebhook,
-                                    webhookResponse: manualWebhookResponse
-                                  });
-                                }
-                              }}
-                              disabled={!manualWebhookResponse.trim() || processManualWebhookMutation.isPending}
-                            >
-                              {processManualWebhookMutation.isPending ? "Processing..." : "Process Response"}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => testStaffMatrixMutation.mutate(event.id)}
+                      disabled={testStaffMatrixMutation.isPending}
+                      data-testid={`button-test-staff-matrix-${event.id}`}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      {testStaffMatrixMutation.isPending ? "Adding..." : "Test Staff Matrix"}
+                    </Button>
                   </div>
                 </div>
 
@@ -827,8 +440,6 @@ export default function FileUploadTest() {
           </div>
         </div>
       )}
-
-
     </div>
   );
 }

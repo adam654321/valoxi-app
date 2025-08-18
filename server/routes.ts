@@ -144,7 +144,95 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
   }
 }
 
+// Function to automatically send webhook for file uploads
+async function sendFileUploadWebhook(eventId: number) {
+  const webhookUrl = process.env.file_upload_webhook;
+  if (!webhookUrl) {
+    console.log(`[FILE_UPLOAD_WEBHOOK] No webhook URL configured for event ${eventId}`);
+    return;
+  }
 
+  try {
+    // Get the file upload event
+    const event = await storage.getFileUploadEvent(eventId);
+    if (!event) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] Event ${eventId} not found`);
+      return;
+    }
+
+    const startTime = Date.now();
+    
+    // Prepare webhook payload
+    const webhookPayload = {
+      event_type: "file_uploaded",
+      timestamp: new Date().toISOString(),
+      file_info: {
+        id: event.id,
+        document_id: event.documentId,
+        target_company_id: event.targetCompanyId,
+        uploaded_by: event.uploadedBy,
+        file_name: event.fileName,
+        file_url: event.fileUrl,
+        uploaded_at: event.uploadedAt,
+      },
+    };
+
+    console.log(`[FILE_UPLOAD_WEBHOOK] Sending webhook for event ${eventId}:`, webhookPayload);
+
+    // Send webhook
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookPayload),
+    });
+
+    const processingTime = Date.now() - startTime;
+    const responseText = await response.text();
+    let responseData;
+    
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
+    }
+
+    const webhookStatus = response.ok ? 'success' : 'failed';
+    const webhookResponse = JSON.stringify({
+      status: response.status,
+      statusText: response.statusText,
+      data: responseData,
+      processingTime: processingTime
+    }, null, 2);
+
+    // Update the event with webhook response
+    await storage.updateFileUploadEventWebhookStatus(
+      eventId, 
+      webhookStatus, 
+      webhookResponse, 
+      new Date()
+    );
+
+    if (response.ok && responseData) {
+      // Process and store the analysis results if we have valid response data
+      await processFileUploadWebhookResponse(responseData, eventId);
+    }
+
+    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
+
+  } catch (error) {
+    console.error(`[FILE_UPLOAD_WEBHOOK] Failed to send webhook for event ${eventId}:`, error);
+    
+    // Update event with error status
+    await storage.updateFileUploadEventWebhookStatus(
+      eventId, 
+      'failed', 
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      new Date()
+    );
+  }
+}
 
 // Function to process webhook response and store analysis results
 async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number) {
@@ -168,12 +256,12 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 
     console.log(`[STAGE1_ANALYSIS] All 5 document analyses complete for company ${targetCompanyId}. Triggering stage 1 webhook.`);
 
-    // Get all analysis data for this specific target company only
-    const analysisData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'asset_register');
-    const salesLedgerData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'sales_ledger');
-    const staffMatrixData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'staff_matrix');
-    const profitLossData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'profit_and_loss');
-    const balanceSheetData = await storage.getDocumentAnalysisResultsByTargetCompany(targetCompanyId, 'balance_sheet');
+    // Get all analysis data for concatenation
+    const analysisData = await storage.getDocumentAnalysisResultsByType('asset_register', targetCompany.userCompanyId);
+    const salesLedgerData = await storage.getDocumentAnalysisResultsByType('sales_ledger', targetCompany.userCompanyId);
+    const staffMatrixData = await storage.getDocumentAnalysisResultsByType('staff_matrix', targetCompany.userCompanyId);
+    const profitLossData = await storage.getDocumentAnalysisResultsByType('profit_and_loss', targetCompany.userCompanyId);
+    const balanceSheetData = await storage.getDocumentAnalysisResultsByType('balance_sheet', targetCompany.userCompanyId);
 
     // Concatenate all analysis data
     const concatenatedData = {
@@ -206,7 +294,7 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 }
 
 async function sendStage1AnalysisWebhook(eventId: number) {
-  const webhookUrl = process.env.STAGE1_JSON_ANALYSER_WEBHOOK_URL;
+  const webhookUrl = process.env.stage1_json_analyser;
   if (!webhookUrl) {
     console.log(`[STAGE1_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
     return;
@@ -277,7 +365,86 @@ async function sendStage1AnalysisWebhook(eventId: number) {
   }
 }
 
+async function processFileUploadWebhookResponse(webhookResponse: any, eventId: number) {
+  try {
+    console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
+    
+    // Get the file upload event to get document details
+    const event = await storage.getFileUploadEvent(eventId);
+    if (!event) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] Event ${eventId} not found for processing`);
+      return;
+    }
 
+    // Handle multiple document analysis types in a single response
+    let analysisItems: Array<{documentType: string, analysisData: any}> = [];
+    
+    if (Array.isArray(webhookResponse)) {
+      // Direct array response format - multiple document types
+      for (const item of webhookResponse) {
+        if (item.document_type && item.data) {
+          analysisItems.push({
+            documentType: item.document_type,
+            analysisData: {
+              ...item.data,
+              ...(item.summary && { summary: item.summary })
+            }
+          });
+        }
+      }
+    } else if (webhookResponse.data && webhookResponse.data.document_type) {
+      // Nested response format (single document type)
+      analysisItems.push({
+        documentType: webhookResponse.data.document_type,
+        analysisData: {
+          ...webhookResponse.data.data,
+          ...(webhookResponse.data.summary && { summary: webhookResponse.data.summary })
+        }
+      });
+    } else if (webhookResponse.document_type && webhookResponse.data) {
+      // Direct object response format (single document type)
+      analysisItems.push({
+        documentType: webhookResponse.document_type,
+        analysisData: {
+          ...webhookResponse.data,
+          ...(webhookResponse.summary && { summary: webhookResponse.summary })
+        }
+      });
+    } else {
+      console.error(`[FILE_UPLOAD_WEBHOOK] Invalid webhook response structure for event ${eventId}:`, webhookResponse);
+      return;
+    }
+
+    if (analysisItems.length === 0) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] No valid analysis items found in webhook response for event ${eventId}`);
+      return;
+    }
+
+    // Store each document analysis type as a separate result
+    const results = [];
+    for (const item of analysisItems) {
+      const analysisResult = {
+        documentId: event.documentId,
+        fileUploadEventId: eventId,
+        documentType: item.documentType,
+        analysisData: item.analysisData,
+        processingTime: webhookResponse.processingTime || null,
+      };
+
+      const result = await storage.createDocumentAnalysisResult(analysisResult);
+      results.push(result);
+      console.log(`[FILE_UPLOAD_WEBHOOK] Analysis results stored for document ${event.documentId}, type: ${item.documentType}, result ID: ${result.id}`);
+    }
+
+    console.log(`[FILE_UPLOAD_WEBHOOK] Successfully processed ${results.length} analysis result(s) for event ${eventId}`);
+
+    // After storing analysis results, check if all 5 required types are now complete
+    await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
+
+  } catch (error) {
+    console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response for event ${eventId}:`, error);
+  }
+}
 
 // Extend session type
 declare module 'express-session' {
@@ -2240,7 +2407,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const uploadEvent = await storage.createFileUploadEvent(fileUploadEventData);
         
-
+        // Automatically trigger webhook for file upload
+        await sendFileUploadWebhook(uploadEvent.id);
         
         res.json({
           success: true,
@@ -2664,7 +2832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const uploadEvent = await storage.createFileUploadEvent(fileUploadEventData);
         
-
+        // Automatically trigger webhook for portal file upload
+        await sendFileUploadWebhook(uploadEvent.id);
         
         // Auto-approve the submission since it integrated successfully
         await storage.reviewDocumentSubmission(
@@ -3309,7 +3478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(webhookPayload),
-          // timeout: 30000, // 30 second timeout
+          timeout: 30000, // 30 second timeout
         });
 
         const processingTime = Date.now() - startTime;
@@ -3344,7 +3513,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
         
-
+        // Process analysis results if webhook was successful and contains analysis data
+        if (response.ok && responseData && (
+          responseData.document_type || // Single document type
+          (Array.isArray(responseData) && responseData.length > 0 && responseData[0].document_type) || // Multiple document types
+          (responseData.data && responseData.data.document_type) // Nested format
+        )) {
+          console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis results for event ${eventId}`);
+          await processFileUploadWebhookResponse(responseData, eventId);
+        }
         
         res.json({
           success: true,
@@ -3384,7 +3561,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Webhook response handler for file upload analysis results
+  app.post("/api/file-upload-events/:eventId/webhook-response", async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
 
+      const responseData = req.body;
+      console.log(`[FILE_UPLOAD_WEBHOOK] Received webhook response for event ${eventId}:`, responseData);
+
+      // Process the analysis results
+      await processFileUploadWebhookResponse(responseData, eventId);
+      
+      res.json({ success: true, message: "Webhook response processed successfully" });
+      
+    } catch (error) {
+      console.error(`[FILE_UPLOAD_WEBHOOK] Failed to process webhook response:`, error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Test webhook endpoint
   app.post("/api/webhook/test", async (req: Request, res: Response) => {
@@ -3952,7 +4150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           // Update template usage if template was used
-          if (template?.id) {
+          if (template && template.id) {
             await storage.incrementTemplateUsage(template.id);
           }
 
@@ -4077,11 +4275,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get Stage 1 requirements with submission status
-      const requirements: any[] = []; // Simplified - removed complex portal requirements
+      const requirements = await storage.getStage1RequirementsForPortal(tokenData.target_company_id);
       
       // Calculate overall progress
       const totalRequirements = requirements.length;
-      const completedRequirements = requirements.filter((req: any) => 
+      const completedRequirements = requirements.filter(req => 
         req.requirement_status === 'submitted' || req.requirement_status === 'approved'
       ).length;
       
@@ -4120,7 +4318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get progress
-      const progress = { progress_percentage: 0, completed_requirements: 0, total_requirements: 0 };
+      const progress = await storage.getStage1Progress(tokenData.target_company_id);
       
       res.json({
         company_name: tokenData.company_name,
@@ -4148,7 +4346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get detailed progress
-      const progress = { stage1: {}, stage2: {}, overall: {} };
+      const progress = await storage.getDetailedCompanyProgress(targetCompanyId);
       
       res.json({
         company: company,
@@ -4166,7 +4364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userCompanyId = req.session.userCompanyId;
       
-      const result = { companies: [], summary: {} };
+      const result = await storage.getDocumentProgressDashboard(userCompanyId!);
       
       res.json(result);
       
@@ -4354,225 +4552,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to switch company:", error);
       res.status(500).json({ error: "Failed to switch company" });
-    }
-  });
-
-  // ========================================
-  // MANUAL WEBHOOK SYSTEM FOR FILE PROCESSING
-  // ========================================
-
-  // Get all file upload events that are available for webhook processing
-  app.get("/api/file-upload-events/pending", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId!;
-      
-      // Get all pending file upload events for this user's company
-      const events = await storage.getPendingFileUploadEvents(userCompanyId);
-      
-      res.json(events);
-    } catch (error) {
-      console.error("Failed to get pending file upload events:", error);
-      res.status(500).json({ error: "Failed to get pending events" });
-    }
-  });
-
-  // Manually trigger webhook for a specific file upload event
-  app.post("/api/file-upload-events/:eventId/trigger-webhook", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const eventId = parseInt(req.params.eventId);
-      const userCompanyId = req.session.userCompanyId!;
-      
-      // Get the upload event and verify access
-      const event = await storage.getFileUploadEvent(eventId);
-      if (!event) {
-        return res.status(404).json({ error: "File upload event not found" });
-      }
-
-      // Verify user has access to this company
-      const company = await storage.getTargetCompany(event.targetCompanyId, userCompanyId);
-      if (!company) {
-        return res.status(403).json({ error: "Access denied to this company" });
-      }
-
-      // Use the configured webhook URL from secrets
-      const webhookUrl = process.env.file_upload_webhook;
-      
-      if (!webhookUrl) {
-        return res.status(400).json({ error: "File upload webhook URL not configured" });
-      }
-      
-      // Update the event to mark webhook as being sent
-      await storage.updateFileUploadEvent(eventId, {
-        webhookSent: true,
-        webhookStatus: 'sending',
-        webhookSentAt: new Date()
-      });
-
-      console.log(`[WEBHOOK_TRIGGER] Sending file URL to external service: ${event.fileUrl}`);
-      
-      // Actually call the external webhook service
-      let webhookResponse;
-      let webhookError = null;
-      
-      try {
-        const webhookPayload = {
-          file_url: event.fileUrl,
-          filename: event.fileName,
-          event_id: eventId,
-          target_company_id: event.targetCompanyId
-        };
-
-        console.log(`[WEBHOOK_TRIGGER] Calling ${webhookUrl} with payload:`, webhookPayload);
-
-        const webhookResult = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookPayload),
-          timeout: 30000 // 30 second timeout
-        });
-
-        if (webhookResult.ok) {
-          webhookResponse = await webhookResult.text();
-          console.log(`[WEBHOOK_TRIGGER] ✅ Success response:`, webhookResponse);
-          
-          // Update event with successful response
-          await storage.updateFileUploadEvent(eventId, {
-            webhookStatus: 'success',
-            webhookResponse: webhookResponse
-          });
-          
-        } else {
-          // Try to get response body for more details
-          let errorBody = '';
-          try {
-            errorBody = await webhookResult.text();
-          } catch (e) {
-            // Ignore if we can't read the error body
-          }
-          
-          webhookError = `HTTP ${webhookResult.status}: ${webhookResult.statusText}`;
-          if (errorBody) {
-            webhookError += ` - ${errorBody}`;
-          }
-          
-          console.log(`[WEBHOOK_TRIGGER] ❌ HTTP error:`, webhookError);
-          console.log(`[WEBHOOK_TRIGGER] Response headers:`, Object.fromEntries(webhookResult.headers.entries()));
-          
-          // Update event with error status
-          await storage.updateFileUploadEvent(eventId, {
-            webhookStatus: 'failed',
-            webhookResponse: webhookError
-          });
-        }
-
-      } catch (fetchError: any) {
-        webhookError = fetchError.message || 'Network error calling webhook';
-        console.log(`[WEBHOOK_TRIGGER] ❌ Network error:`, webhookError);
-        
-        // Update event with error status
-        await storage.updateFileUploadEvent(eventId, {
-          webhookStatus: 'failed',
-          webhookResponse: webhookError
-        });
-      }
-
-      // Return the response to the frontend
-      res.json({
-        success: !webhookError,
-        message: webhookError ? "Webhook call failed" : "Webhook call completed successfully",
-        webhookResponse: webhookResponse || webhookError,
-        webhookUrl: webhookUrl,
-        fileUrl: event.fileUrl,
-        fileName: event.fileName,
-        eventId: eventId,
-        error: webhookError
-      });
-
-    } catch (error) {
-      console.error("Failed to trigger webhook:", error);
-      res.status(500).json({ error: "Failed to trigger webhook" });
-    }
-  });
-
-  // Manually process webhook response JSON
-  app.post("/api/file-upload-events/:eventId/process-response", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const eventId = parseInt(req.params.eventId);
-      const userCompanyId = req.session.userCompanyId!;
-      const { webhookResponse } = req.body;
-
-      if (!webhookResponse) {
-        return res.status(400).json({ error: "No webhook response provided" });
-      }
-
-      // Get the upload event and verify access
-      const event = await storage.getFileUploadEvent(eventId);
-      if (!event) {
-        return res.status(404).json({ error: "File upload event not found" });
-      }
-
-      // Verify user has access to this company
-      const company = await storage.getTargetCompany(event.targetCompanyId, userCompanyId);
-      if (!company) {
-        return res.status(403).json({ error: "Access denied to this company" });
-      }
-
-      // Process the webhook response
-      let analysisData;
-      try {
-        // Parse JSON if it's a string
-        analysisData = typeof webhookResponse === 'string' ? JSON.parse(webhookResponse) : webhookResponse;
-      } catch (parseError) {
-        return res.status(400).json({ error: "Invalid JSON format in webhook response" });
-      }
-
-      // Handle both array and single object responses
-      const analysisArray = Array.isArray(analysisData) ? analysisData : [analysisData];
-      
-      console.log(`[MANUAL_WEBHOOK] Processing ${analysisArray.length} analysis results for event ${eventId}`);
-      
-      const results = [];
-      for (const analysis of analysisArray) {
-        if (!analysis.document_type || !analysis.data) {
-          console.warn(`[MANUAL_WEBHOOK] Skipping invalid analysis:`, analysis);
-          continue;
-        }
-
-        // Create analysis result
-        const analysisResult = await storage.createDocumentAnalysisResult({
-          documentId: event.documentId,
-          fileUploadEventId: eventId,
-          documentType: analysis.document_type,
-          analysisData: analysis.data
-        });
-
-        results.push({
-          analysisType: analysis.document_type,
-          analysisId: analysisResult.id
-        });
-
-        console.log(`[MANUAL_WEBHOOK] ✅ Created ${analysis.document_type} analysis (ID: ${analysisResult.id})`);
-      }
-
-      // Update the file upload event
-      await storage.updateFileUploadEvent(eventId, {
-        webhookStatus: 'completed'
-      });
-
-      // Note: Stage 1 analysis check would go here if function exists
-
-      res.json({
-        success: true,
-        message: `Successfully processed ${results.length} analysis results`,
-        processedAnalyses: results,
-        eventId: eventId
-      });
-
-    } catch (error) {
-      console.error("Failed to process webhook response:", error);
-      res.status(500).json({ error: "Failed to process webhook response" });
     }
   });
 

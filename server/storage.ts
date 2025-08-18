@@ -3225,16 +3225,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
-    const results = await db
-      .select({
-        id: documentAnalysisResults.id,
-        documentId: documentAnalysisResults.documentId,
-        fileUploadEventId: documentAnalysisResults.fileUploadEventId,
-        documentType: documentAnalysisResults.documentType,
-        analysisData: documentAnalysisResults.analysisData,
-        processingTime: documentAnalysisResults.processingTime,
-        createdAt: documentAnalysisResults.createdAt
-      })
+    return await db
+      .select()
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .leftJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
@@ -3245,32 +3237,6 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(documentAnalysisResults.createdAt));
-    
-    return results;
-  }
-
-  async getDocumentAnalysisResultsByTargetCompany(targetCompanyId: number, documentType: string): Promise<DocumentAnalysisResult[]> {
-    const results = await db
-      .select({
-        id: documentAnalysisResults.id,
-        documentId: documentAnalysisResults.documentId,
-        fileUploadEventId: documentAnalysisResults.fileUploadEventId,
-        documentType: documentAnalysisResults.documentType,
-        analysisData: documentAnalysisResults.analysisData,
-        processingTime: documentAnalysisResults.processingTime,
-        createdAt: documentAnalysisResults.createdAt
-      })
-      .from(documentAnalysisResults)
-      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
-      .where(
-        and(
-          eq(documentAnalysisResults.documentType, documentType),
-          eq(documents.targetCompanyId, targetCompanyId)
-        )
-      )
-      .orderBy(desc(documentAnalysisResults.createdAt));
-    
-    return results;
   }
 
   async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
@@ -3337,49 +3303,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(fileUploadEvents.id, eventId))
       .returning();
     return updated || undefined;
-  }
-
-  async updateFileUploadEvent(eventId: number, updates: Partial<FileUploadEvent>): Promise<FileUploadEvent | undefined> {
-    const [updated] = await db
-      .update(fileUploadEvents)
-      .set(updates)
-      .where(eq(fileUploadEvents.id, eventId))
-      .returning();
-    return updated || undefined;
-  }
-
-  async getPendingFileUploadEvents(userCompanyId: number): Promise<(FileUploadEvent & { targetCompanyName: string; fileName: string })[]> {
-    const results = await db
-      .select({
-        id: fileUploadEvents.id,
-        documentId: fileUploadEvents.documentId,
-        targetCompanyId: fileUploadEvents.targetCompanyId,
-        uploadedBy: fileUploadEvents.uploadedBy,
-        fileName: fileUploadEvents.fileName,
-        fileUrl: fileUploadEvents.fileUrl,
-        webhookSent: fileUploadEvents.webhookSent,
-        webhookStatus: fileUploadEvents.webhookStatus,
-        webhookSentAt: fileUploadEvents.webhookSentAt,
-        webhookCompletedAt: fileUploadEvents.webhookCompletedAt,
-        webhookResponse: fileUploadEvents.webhookResponse,
-        analysisCompleted: fileUploadEvents.analysisCompleted,
-        createdAt: fileUploadEvents.createdAt,
-        targetCompanyName: targetCompanies.companyName,
-      })
-      .from(fileUploadEvents)
-      .innerJoin(targetCompanies, eq(fileUploadEvents.targetCompanyId, targetCompanies.id))
-      .where(
-        and(
-          eq(targetCompanies.userCompanyId, userCompanyId),
-          or(
-            eq(fileUploadEvents.webhookStatus, 'pending'),
-            eq(fileUploadEvents.webhookStatus, 'sent')
-          )
-        )
-      )
-      .orderBy(desc(fileUploadEvents.createdAt));
-    
-    return results;
   }
 
   // Stage 1 Analysis Events methods implementation

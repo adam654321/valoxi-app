@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,8 +28,7 @@ import {
   Clock,
   Plus,
   Calendar,
-  List,
-
+  List
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -73,7 +72,6 @@ interface DocumentViewerProps {
 
 export function DocumentViewer({ document, isOpen, onClose, onDownload }: DocumentViewerProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
 
@@ -96,8 +94,6 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
       });
     }
   }, [document?.id, isOpen, analysisResults, analysisLoading, analysisError]);
-
-
 
   // Reset states when dialog opens/closes
   useEffect(() => {
@@ -997,14 +993,6 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
 
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">Analysis Results ({results.length})</h3>
-          <p className="text-sm text-muted-foreground">
-            Document contains {results.length} analysis type{results.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-
         {results.map((result) => (
           <div key={result.id}>
             <div className="flex items-center justify-between mb-4">

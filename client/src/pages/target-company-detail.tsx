@@ -924,16 +924,7 @@ export default function TargetCompanyDetail() {
                           {event.webhookStatus === 'success' && event.webhookResponse ? (
                             <div className="prose dark:prose-invert max-w-none">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {(() => {
-                                  try {
-                                    // Parse the JSON webhook response and extract the analysis markdown
-                                    const parsedResponse = JSON.parse(event.webhookResponse);
-                                    return parsedResponse.analysis || event.webhookResponse;
-                                  } catch {
-                                    // If parsing fails, display the raw response
-                                    return event.webhookResponse;
-                                  }
-                                })()}
+                                {event.webhookResponse}
                               </ReactMarkdown>
                             </div>
                           ) : event.webhookStatus === 'failed' ? (
