@@ -7,6 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Send, 
   RefreshCw, 
@@ -18,7 +20,10 @@ import {
   Download,
   Users,
   Play,
-  Upload
+  Upload,
+  User,
+  Settings,
+  LogOut
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -437,14 +442,137 @@ export default function FileUploadTest() {
             Monitor file uploads and test webhook responses for target company documents
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] })}
-          data-testid="button-refresh"
-        >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] })}
+            data-testid="button-refresh"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          
+          {/* User Profile Dropdown with Manual Webhook Tools */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="button-user-menu">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>U</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">Manual Webhook Tools</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    Process external webhook responses manually
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              {fileUploadEvents.length > 0 && (
+                <>
+                  {fileUploadEvents.slice(0, 3).map((event) => (
+                    <div key={event.id} className="p-2 space-y-2 border-b last:border-b-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium truncate flex-1 mr-2" title={event.fileName}>
+                          {event.fileName}
+                        </span>
+                        <Badge variant={getStatusBadgeVariant(event.webhookStatus)} className="text-xs">
+                          {event.webhookStatus}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-6 px-2"
+                          onClick={() => triggerManualWebhookMutation.mutate(event.id)}
+                          disabled={triggerManualWebhookMutation.isPending}
+                          data-testid={`dropdown-trigger-webhook-${event.id}`}
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          {triggerManualWebhookMutation.isPending ? "..." : "Trigger"}
+                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="text-xs h-6 px-2"
+                              onClick={() => setSelectedEventForManualWebhook(event.id)}
+                              data-testid={`dropdown-process-response-${event.id}`}
+                            >
+                              <Upload className="w-3 h-3 mr-1" />
+                              Process
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Process Webhook Response</DialogTitle>
+                              <DialogDescription>
+                                Paste the JSON response from the external webhook service for file: {event.fileName}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="dropdown-webhook-response">Webhook Response JSON</Label>
+                                <Textarea
+                                  id="dropdown-webhook-response"
+                                  placeholder='[{"document_type": "balance_sheet", "data": {...}, "id": 123}]'
+                                  value={manualWebhookResponse}
+                                  onChange={(e) => setManualWebhookResponse(e.target.value)}
+                                  rows={12}
+                                  className="font-mono text-sm"
+                                />
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <DialogTrigger asChild>
+                                  <Button variant="outline">Cancel</Button>
+                                </DialogTrigger>
+                                <Button
+                                  onClick={() => {
+                                    if (selectedEventForManualWebhook && manualWebhookResponse.trim()) {
+                                      processManualWebhookMutation.mutate({
+                                        eventId: selectedEventForManualWebhook,
+                                        webhookResponse: manualWebhookResponse
+                                      });
+                                    }
+                                  }}
+                                  disabled={!manualWebhookResponse.trim() || processManualWebhookMutation.isPending}
+                                >
+                                  {processManualWebhookMutation.isPending ? "Processing..." : "Process Response"}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  ))}
+                  {fileUploadEvents.length > 3 && (
+                    <div className="p-2 text-center">
+                      <span className="text-xs text-muted-foreground">
+                        Showing 3 of {fileUploadEvents.length} files
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {fileUploadEvents.length === 0 && (
+                <div className="p-4 text-center">
+                  <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">
+                    No uploaded files available for webhook processing
+                  </p>
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="grid gap-4">
