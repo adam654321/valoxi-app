@@ -62,6 +62,12 @@ export default function FileUploadTest() {
   const [selectedDocumentAnalysis, setSelectedDocumentAnalysis] = useState<DocumentAnalysisResult[] | null>(null);
   const [manualWebhookResponse, setManualWebhookResponse] = useState("");
   const [selectedEventForManualWebhook, setSelectedEventForManualWebhook] = useState<number | null>(null);
+  const [webhookUrlDialog, setWebhookUrlDialog] = useState<{
+    open: boolean;
+    webhookUrl: string;
+    fileUrl: string;
+    fileName: string;
+  }>({ open: false, webhookUrl: "", fileUrl: "", fileName: "" });
 
   // Fetch file upload events
   const { data: fileUploadEvents = [], isLoading: eventsLoading } = useQuery<FileUploadEvent[]>({
@@ -307,10 +313,36 @@ export default function FileUploadTest() {
       return response.json();
     },
     onSuccess: (data) => {
-      toast({ 
-        title: "Webhook Ready",
-        description: `Webhook URL provided. You can now call: ${data.webhookUrl}`
+      // Show webhook URL dialog
+      setWebhookUrlDialog({
+        open: true,
+        webhookUrl: data.webhookUrl,
+        fileUrl: data.fileUrl,
+        fileName: data.fileName
       });
+      
+      // Also copy to clipboard and show toast
+      navigator.clipboard.writeText(data.webhookUrl).then(() => {
+        toast({ 
+          title: "Webhook URL Ready & Copied!",
+          description: "Use the dialog to call the external service",
+          duration: 5000
+        });
+      }).catch(() => {
+        toast({ 
+          title: "Webhook URL Ready",
+          description: "Check the dialog for details",
+          duration: 5000
+        });
+      });
+      
+      console.log('Webhook Details:', {
+        webhookUrl: data.webhookUrl,
+        fileUrl: data.fileUrl,
+        fileName: data.fileName,
+        eventId: data.eventId
+      });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/file-upload-events"] });
     },
     onError: (error: any) => {
@@ -820,6 +852,73 @@ export default function FileUploadTest() {
           </div>
         </div>
       )}
+
+      {/* Webhook URL Dialog */}
+      <Dialog open={webhookUrlDialog.open} onOpenChange={(open) => setWebhookUrlDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Webhook URL Ready</DialogTitle>
+            <DialogDescription>
+              Use this information to call the external webhook service for: {webhookUrlDialog.fileName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Webhook URL (already copied to clipboard)</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono flex-1 break-all select-all">
+                  {webhookUrlDialog.webhookUrl}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(webhookUrlDialog.webhookUrl);
+                    toast({ title: "Copied!", description: "Webhook URL copied to clipboard" });
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">File URL to send with webhook</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono flex-1 break-all select-all">
+                  {webhookUrlDialog.fileUrl}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(webhookUrlDialog.fileUrl);
+                    toast({ title: "Copied!", description: "File URL copied to clipboard" });
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md">
+              <h4 className="text-sm font-medium mb-2">Next Steps:</h4>
+              <ol className="text-sm space-y-1 list-decimal list-inside text-gray-700 dark:text-gray-300">
+                <li>Call the webhook URL with the file URL as parameter</li>
+                <li>Copy the JSON response from the external service</li>
+                <li>Use "Process Response" button to paste the results</li>
+                <li>The system will create analysis results automatically</li>
+              </ol>
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setWebhookUrlDialog(prev => ({ ...prev, open: false }))}>
+                Got it!
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
