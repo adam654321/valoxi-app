@@ -294,7 +294,7 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 }
 
 async function sendStage1AnalysisWebhook(eventId: number) {
-  const webhookUrl = process.env.stage1_json_analyser;
+  const webhookUrl = process.env.STAGE1_JSON_ANALYSER_WEBHOOK_URL;
   if (!webhookUrl) {
     console.log(`[STAGE1_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
     return;
@@ -4552,6 +4552,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to switch company:", error);
       res.status(500).json({ error: "Failed to switch company" });
+    }
+  });
+
+  // Test endpoint to manually trigger Stage 1 webhook
+  app.post("/api/test/stage1-webhook/:eventId", async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      console.log(`[TEST] Manually triggering Stage 1 webhook for event ${eventId}`);
+      
+      // Trigger webhook asynchronously
+      setTimeout(() => {
+        sendStage1AnalysisWebhook(eventId);
+      }, 100);
+
+      res.json({ 
+        success: true, 
+        message: `Stage 1 webhook triggered for event ${eventId}` 
+      });
+    } catch (error) {
+      console.error("Manual webhook trigger error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
