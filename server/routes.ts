@@ -4394,7 +4394,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied to this company" });
       }
 
-      const webhookUrl = "https://hooks.zapier.com/hooks/catch/20337406/2mjxvns/";
+      // Allow webhook URL to be configured via environment variable
+      // For testing, you can use: https://webhook.site/#!/unique-url-here
+      const webhookUrl = process.env.FILE_UPLOAD_WEBHOOK_URL || "https://hooks.zapier.com/hooks/catch/20337406/2mjxvns/";
       
       // Update the event to mark webhook as being sent
       await storage.updateFileUploadEvent(eventId, {
@@ -4439,8 +4441,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
         } else {
+          // Try to get response body for more details
+          let errorBody = '';
+          try {
+            errorBody = await webhookResult.text();
+          } catch (e) {
+            // Ignore if we can't read the error body
+          }
+          
           webhookError = `HTTP ${webhookResult.status}: ${webhookResult.statusText}`;
+          if (errorBody) {
+            webhookError += ` - ${errorBody}`;
+          }
+          
           console.log(`[WEBHOOK_TRIGGER] ❌ HTTP error:`, webhookError);
+          console.log(`[WEBHOOK_TRIGGER] Response headers:`, Object.fromEntries(webhookResult.headers.entries()));
           
           // Update event with error status
           await storage.updateFileUploadEvent(eventId, {
