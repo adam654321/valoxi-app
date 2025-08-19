@@ -6,6 +6,11 @@ This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and m
 - **Unified Document Upload Process**: Portal uploads now use the same backend process as internal uploads, ensuring consistent categorization, folder placement, and webhook integration
 - **Document Category Mapping**: Portal document types (company_accounts_1-5, balance_sheet, etc.) are automatically mapped to internal categories (Financial Statements, etc.)
 - **External Submission Tracking**: Added external_submission_id column to track portal submissions while maintaining unified document management
+- **Enhanced Stage 1 Webhook Logic**: Modified STAGE1_JSON_ANALYSER_WEBHOOK_URL trigger to require:
+  - Exactly 5 files uploaded with 'Company Accounts' category (direct upload or portal)
+  - At least 1 file in each of the 5 specific categories: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
+  - Only triggers once per target company (prevents duplicate webhook calls)
+  - Logic based on actual document categories, not analysis results from Company Accounts files
 
 # User Preferences
 

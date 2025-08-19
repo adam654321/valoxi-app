@@ -234,6 +234,42 @@ async function sendFileUploadWebhook(eventId: number) {
   }
 }
 
+// Function to check if Stage 1 webhook should be triggered based on document categories
+async function checkStage1RequirementsByCategory(targetCompanyId: number): Promise<{shouldTrigger: boolean, status: string}> {
+  try {
+    // Check for 5 Company Accounts files
+    const companyAccountsCount = await storage.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
+    
+    // Check for at least 1 file in each of the 5 required categories
+    const requiredCategories = ['Profit and Loss', 'Balance Sheet', 'Staff Matrix', 'Sales Ledger', 'Asset Register'];
+    const categoryCounts: {[key: string]: number} = {};
+    
+    for (const category of requiredCategories) {
+      categoryCounts[category] = await storage.getDocumentCountByCategory(targetCompanyId, category);
+    }
+    
+    // Check if we have 5 Company Accounts files
+    const hasCompanyAccounts = companyAccountsCount >= 5;
+    
+    // Check if we have at least 1 file in each required category
+    const hasAllCategories = requiredCategories.every(category => categoryCounts[category] > 0);
+    
+    const status = `Company Accounts: ${companyAccountsCount}/5, ` + 
+      requiredCategories.map(cat => `${cat}: ${categoryCounts[cat]}`).join(', ');
+    
+    console.log(`[STAGE1_ANALYSIS] Document category status for company ${targetCompanyId}: ${status}`);
+    
+    return {
+      shouldTrigger: hasCompanyAccounts && hasAllCategories,
+      status
+    };
+    
+  } catch (error) {
+    console.error(`[STAGE1_ANALYSIS] Error checking category requirements:`, error);
+    return { shouldTrigger: false, status: 'Error checking requirements' };
+  }
+}
+
 // Function to process webhook response and store analysis results
 async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number) {
   try {
@@ -246,15 +282,22 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
       return;
     }
 
-    // Get the current completion status
-    const completionStatus = await storage.getAnalysisCompletionStatus(targetCompanyId, targetCompany.userCompanyId);
-    
-    if (!completionStatus.isComplete) {
-      console.log(`[STAGE1_ANALYSIS] Analysis not yet complete for company ${targetCompanyId}. Completed: ${completionStatus.completedTypes.join(', ')}. Missing: ${completionStatus.missingTypes.join(', ')}`);
+    // Check if we already have a successful Stage 1 analysis for this company
+    const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
+    if (existingEvent && existingEvent.webhookStatus === 'success') {
+      console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id})`);
       return;
     }
 
-    console.log(`[STAGE1_ANALYSIS] All 5 document analyses complete for company ${targetCompanyId}. Triggering stage 1 webhook.`);
+    // Check requirements based on document categories (not analysis results)
+    const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
+    
+    if (!categoryCheck.shouldTrigger) {
+      console.log(`[STAGE1_ANALYSIS] Stage 1 requirements not met for company ${targetCompanyId}. Status: ${categoryCheck.status}`);
+      return;
+    }
+
+    console.log(`[STAGE1_ANALYSIS] All Stage 1 requirements met for company ${targetCompanyId}. Triggering stage 1 webhook.`);
 
     // Get all analysis data for concatenation
     const analysisData = await storage.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
@@ -2579,6 +2622,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update document error:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Check Stage 1 webhook requirements status
+  app.get("/api/target-companies/:id/stage1-status", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+
+      // Verify access to company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ error: 'Company not found' });
+      }
+
+      // Check Stage 1 requirements
+      const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
+      
+      // Check for existing successful Stage 1 analysis
+      const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
+      
+      res.json({
+        shouldTrigger: categoryCheck.shouldTrigger,
+        status: categoryCheck.status,
+        hasExistingAnalysis: existingEvent?.webhookStatus === 'success',
+        existingEventId: existingEvent?.id || null,
+        lastAnalysisDate: existingEvent?.createdAt || null
+      });
+    } catch (error) {
+      console.error('Error checking Stage 1 status:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

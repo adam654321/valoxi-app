@@ -3368,6 +3368,31 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
+  async getDocumentCountByCategory(targetCompanyId: number, categoryName: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.targetCompanyId, targetCompanyId),
+          eq(documents.documentCategory, categoryName)
+        )
+      );
+    
+    return result[0]?.count || 0;
+  }
+
+  async getLatestStage1AnalysisEvent(targetCompanyId: number): Promise<Stage1AnalysisEvent | null> {
+    const result = await db
+      .select()
+      .from(stage1AnalysisEvents)
+      .where(eq(stage1AnalysisEvents.targetCompanyId, targetCompanyId))
+      .orderBy(desc(stage1AnalysisEvents.createdAt))
+      .limit(1);
+    
+    return result[0] || null;
+  }
+
   async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
     completedTypes: string[];
     missingTypes: string[];
@@ -3403,36 +3428,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // File Upload Events methods implementation
-  async createFileUploadEvent(event: InsertFileUploadEvent): Promise<FileUploadEvent> {
-    const [result] = await db
-      .insert(fileUploadEvents)
-      .values(event)
-      .returning();
-    return result;
-  }
 
-  async getFileUploadEvent(eventId: number): Promise<FileUploadEvent | undefined> {
-    const [event] = await db
-      .select()
-      .from(fileUploadEvents)
-      .where(eq(fileUploadEvents.id, eventId));
-    return event || undefined;
-  }
-
-  async updateFileUploadEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date): Promise<FileUploadEvent | undefined> {
-    const [updated] = await db
-      .update(fileUploadEvents)
-      .set({
-        webhookStatus: status,
-        webhookResponse: response,
-        webhookSentAt: sentAt,
-        webhookSent: status === 'success'
-      })
-      .where(eq(fileUploadEvents.id, eventId))
-      .returning();
-    return updated || undefined;
-  }
 
   // Stage 1 Analysis Events methods implementation
   async createStage1AnalysisEvent(event: InsertStage1AnalysisEvent): Promise<Stage1AnalysisEvent> {
