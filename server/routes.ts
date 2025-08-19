@@ -2746,7 +2746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
     fileFilter: (req, file, cb) => {
       // Allow common business document types - be more permissive with extensions
-      const allowedExtensions = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|jpg|jpeg|png|gif)$/i;
+      const allowedExtensions = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|jpg|jpeg|png|gif)$/i;
       
       // Log file upload attempts for debugging
       console.log('File upload attempt:', file.originalname, file.mimetype);
@@ -2855,7 +2855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Auto-approved upon successful integration to main document system'
         );
         
-        console.log('Portal access token created, email sending skipped for now');
+        console.log('[PORTAL] Integration completed successfully, webhook triggered');
         
       } catch (integrationError: any) {
         console.error('[PORTAL] ❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
