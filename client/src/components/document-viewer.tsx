@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import { 
   Download, 
   X, 
@@ -979,6 +980,35 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     );
   };
 
+  // Manual webhook retry for documents with missing analysis
+  const handleRetryWebhook = async () => {
+    if (!document?.id) return;
+    
+    try {
+      const response = await fetch(`/api/documents/${document.id}/retry-webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Webhook Triggered",
+          description: "Analysis webhook has been sent. Results should appear shortly.",
+        });
+        // Refetch analysis results
+        queryClient.invalidateQueries(["/api/documents", document.id, "analysis"]);
+      } else {
+        throw new Error('Failed to trigger webhook');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to trigger analysis webhook. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Render analysis results based on document type
   const renderAnalysisResults = (results: DocumentAnalysisResult[]) => {
     if (results.length === 0) {
@@ -987,6 +1017,17 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
           <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>No analysis results available for this document yet.</p>
           <p className="text-sm mt-2">Analysis results will appear here after processing.</p>
+          <div className="mt-4">
+            <Button 
+              onClick={handleRetryWebhook}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Retry Analysis
+            </Button>
+          </div>
         </div>
       );
     }

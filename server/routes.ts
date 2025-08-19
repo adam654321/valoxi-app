@@ -3456,6 +3456,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Retry webhook for a specific document
+  app.post("/api/documents/:id/retry-webhook", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId;
+      
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      // Verify user has access to this document
+      const document = await storage.getDocument(documentId, userCompanyId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found or access denied" });
+      }
+
+      // Find the file upload event for this document
+      const events = await storage.getFileUploadEventsWithDetails(userCompanyId);
+      const event = events.find(e => e.documentId === documentId);
+      
+      if (!event) {
+        return res.status(404).json({ message: "No upload event found for this document" });
+      }
+
+      // Send webhook manually
+      await sendFileUploadWebhook(event.id);
+      
+      res.json({ 
+        success: true, 
+        message: "Webhook triggered successfully",
+        eventId: event.id
+      });
+    } catch (error) {
+      console.error("Retry webhook error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Send webhook for file upload event
   app.post("/api/file-upload-events/:eventId/send-webhook", isAuthenticated, async (req: Request, res: Response) => {
     try {
