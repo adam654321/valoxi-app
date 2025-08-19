@@ -394,7 +394,16 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     if (Array.isArray(webhookResponse)) {
       // Direct array response format - multiple document types
       for (const item of webhookResponse) {
-        if (item.document_type && item.data) {
+        if (item.document === 'company_accounts' && item.data) {
+          // Special case for company_accounts format
+          analysisItems.push({
+            documentType: item.data.document_type,
+            analysisData: {
+              document: 'company_accounts', // Preserve the company_accounts indicator
+              data: item.data
+            }
+          });
+        } else if (item.document_type && item.data) {
           analysisItems.push({
             documentType: item.document_type,
             analysisData: {
