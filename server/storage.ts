@@ -3069,69 +3069,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async submitSimplePortalDocument(tokenData: any, uploadedFile: any, documentType: string, submissionNotes?: string): Promise<any> {
-    try {
-      // Check if this document type has already been submitted for this portal
-      const existingSubmissions = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(externalDocumentSubmissions)
-        .where(and(
-          eq(externalDocumentSubmissions.portalTokenId, tokenData.id),
-          eq(externalDocumentSubmissions.submissionNotes, documentType)
-        ));
-      
-      const existingCount = existingSubmissions[0]?.count || 0;
-      
-      // For company accounts, allow up to 5 submissions
-      if (documentType.startsWith('company_accounts_') && existingCount >= 1) {
-        throw new Error('This company accounts file has already been submitted');
-      }
-      
-      // For other document types, allow only 1 submission
-      if (!documentType.startsWith('company_accounts_') && existingCount >= 1) {
-        throw new Error('This document type has already been submitted');
-      }
-      
-      // Check total submissions for this portal (max 10)
-      const totalSubmissions = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(externalDocumentSubmissions)
-        .where(eq(externalDocumentSubmissions.portalTokenId, tokenData.id));
-      
-      if ((totalSubmissions[0]?.count || 0) >= 10) {
-        throw new Error('Maximum of 10 documents already submitted');
-      }
-      
-      // Create external document submission record
-      const [document] = await db
-        .insert(externalDocumentSubmissions)
-        .values({
-          portalTokenId: tokenData.id,
-          targetCompanyId: tokenData.targetCompanyId, // Fix: use correct field name
-          targetContactId: tokenData.targetContactId, // Fix: use correct field name
-          originalFilename: uploadedFile.originalname,
-          storedFilename: uploadedFile.filename, // Add the stored filename
-          filePath: uploadedFile.path,
-          fileSize: uploadedFile.size,
-          fileType: uploadedFile.mimetype,
-          submissionNotes: documentType, // Store document type in submissionNotes field
-          processingStatus: 'uploaded'
-        })
-        .returning();
-      
-      console.log(`[PORTAL] Document submitted: ${documentType} - ${uploadedFile.originalname}`);
-      
-      return {
-        success: true,
-        document_id: document.id,
-        document_type: documentType,
-        filename: uploadedFile.originalname
-      };
-    } catch (error) {
-      console.error('Error in submitSimplePortalDocument:', error);
-      throw error;
-    }
-  }
+  // REMOVED: submitSimplePortalDocument - now using unified upload process
 
   async getSimplePortalProgress(portalTokenId: number): Promise<{ submittedTypes: string[], totalSubmissions: number }> {
     try {

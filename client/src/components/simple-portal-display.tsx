@@ -73,7 +73,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
       formData.append('documentType', documentType);
       formData.append('submissionNotes', notes);
 
-      const response = await fetch(`/api/portal/${token}/documents/submit`, {
+      const response = await fetch(`/api/portal/${token}/submit`, {
         method: 'POST',
         body: formData
       });

@@ -4425,44 +4425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit document for specific requirement
-  app.post('/api/portal/:token/documents/submit', portalUpload.single('document'), async (req: Request, res: Response) => {
-    try {
-      const token = req.params.token;
-      const { documentType, submissionNotes } = req.body;
-      const uploadedFile = req.file;
-
-      if (!uploadedFile) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-
-      if (!documentType) {
-        return res.status(400).json({ message: 'Document type is required' });
-      }
-
-      // Validate token
-      const tokenData = await storage.getValidPortalToken(token);
-      if (!tokenData) {
-        return res.status(401).json({ message: 'Invalid or expired portal token' });
-      }
-
-      // Submit document using simple method
-      const result = await storage.submitSimplePortalDocument(
-        tokenData,
-        uploadedFile,
-        documentType,
-        submissionNotes
-      );
-
-      res.json(result);
-
-    } catch (error) {
-      console.error('Document submission error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : 'Failed to submit document' 
-      });
-    }
-  });
+  // REMOVED: Old portal upload route - now using unified upload process via /api/portal/:token/submit
 
   // ========================================
   // COMPANY ACCOUNT MANAGEMENT SYSTEM
