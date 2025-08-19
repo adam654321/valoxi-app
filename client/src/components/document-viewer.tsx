@@ -125,7 +125,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   };
 
   // Format document type for display
-  const formatDocumentType = (documentType: string) => {
+  const formatDocumentType = (documentType: string, analysisData?: any) => {
+    // Special case for company_accounts - check if analysisData has "document": "company_accounts"
+    if (analysisData && analysisData.document === 'company_accounts') {
+      return 'Company Accounts';
+    }
+    
     const typeMap: Record<string, string> = {
       'sales_ledger': 'Sales Ledger',
       'staff_matrix': 'Staff Matrix',
@@ -137,7 +142,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   };
 
   // Get document type color
-  const getDocumentTypeColor = (documentType: string) => {
+  const getDocumentTypeColor = (documentType: string, analysisData?: any) => {
+    // Special case for company_accounts - check if analysisData has "document": "company_accounts"
+    if (analysisData && analysisData.document === 'company_accounts') {
+      return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
+    }
+    
     const colorMap: Record<string, string> = {
       'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -806,6 +816,44 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     );
   };
 
+  // Render company accounts analysis
+  const renderCompanyAccountsAnalysis = (analysisData: any) => {
+    // Extract the nested data from the company_accounts structure
+    const accountsData = analysisData.data;
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="bg-teal-100 dark:bg-teal-900 px-4 py-2 rounded-full">
+            <span className="text-teal-800 dark:text-teal-200 font-semibold text-base">Company Accounts</span>
+          </div>
+          <span className="text-muted-foreground text-sm">Financial Records Analysis</span>
+        </div>
+
+        {/* Detect nested document type and render accordingly */}
+        {accountsData.document_type === 'sales_ledger' && renderSalesLedgerAnalysis(accountsData.data)}
+        {accountsData.document_type === 'staff_matrix' && renderStaffMatrixAnalysis(accountsData.data)}
+        {accountsData.document_type === 'asset_register' && renderAssetRegisterAnalysis(accountsData.data)}
+        {accountsData.document_type === 'profit_and_loss' && renderProfitAndLossAnalysis(accountsData.data)}
+        {accountsData.document_type === 'balance_sheet' && renderBalanceSheetAnalysis(accountsData.data)}
+        
+        {/* If no specific document type is matched, show raw data */}
+        {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(accountsData.document_type) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Accounts Data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
+                {JSON.stringify(accountsData, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   // Render balance sheet analysis
   const renderBalanceSheetAnalysis = (analysisData: any) => {
     return (
@@ -996,7 +1044,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
           description: "File upload analysis webhook has been sent. Results should appear shortly.",
         });
         // Refetch analysis results
-        queryClient.invalidateQueries(["/api/documents", document.id, "analysis"]);
+        queryClient.invalidateQueries({ queryKey: ["/api/documents", document.id, "analysis"] });
       } else {
         throw new Error('Failed to trigger analysis webhook');
       }
@@ -1042,8 +1090,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <span>Type:</span>
-                    <span className={`px-3 py-1 rounded-md text-sm font-medium ${getDocumentTypeColor(result.documentType)}`}>
-                      {formatDocumentType(result.documentType)}
+                    <span className={`px-3 py-1 rounded-md text-sm font-medium ${getDocumentTypeColor(result.documentType, result.analysisData)}`}>
+                      {formatDocumentType(result.documentType, result.analysisData)}
                     </span>
                   </div>
                   <span>•</span>
@@ -1061,13 +1109,17 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               </div>
             </div>
             
-            {result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
-            {result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
-            {result.documentType === 'asset_register' && renderAssetRegisterAnalysis(result.analysisData)}
-            {result.documentType === 'profit_and_loss' && renderProfitAndLossAnalysis(result.analysisData)}
-            {result.documentType === 'balance_sheet' && renderBalanceSheetAnalysis(result.analysisData)}
+            {/* Special case for company_accounts documents */}
+            {result.analysisData && result.analysisData.document === 'company_accounts' && renderCompanyAccountsAnalysis(result.analysisData)}
             
-            {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(result.documentType) && (
+            {/* Standard document types */}
+            {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
+            {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
+            {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'asset_register' && renderAssetRegisterAnalysis(result.analysisData)}
+            {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'profit_and_loss' && renderProfitAndLossAnalysis(result.analysisData)}
+            {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'balance_sheet' && renderBalanceSheetAnalysis(result.analysisData)}
+            
+            {(!result.analysisData || result.analysisData.document !== 'company_accounts') && !['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(result.documentType) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Analysis Data</CardTitle>
