@@ -134,12 +134,32 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
     id: number;
     documentType: string;
     createdAt: string;
+    analysisData: any;
   }>>({
     queryKey: ["/api/documents", documentId, "analysis"],
   });
 
   if (isLoading || analysisResults.length === 0) {
     return null;
+  }
+
+  // Check if any analysis result is a company_accounts document
+  const hasCompanyAccounts = analysisResults.some(result => 
+    result.analysisData && result.analysisData.document === 'company_accounts'
+  );
+
+  // If it's a company accounts document, only show the Company Accounts badge
+  if (hasCompanyAccounts) {
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        <Badge 
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          data-testid="analysis-badge-company-accounts"
+        >
+          Company Accounts
+        </Badge>
+      </div>
+    );
   }
 
   return (
