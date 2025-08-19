@@ -2613,6 +2613,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all company documents (admin function)
+  app.delete("/api/documents/clear-all", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId!;
+      const userId = req.session.userId!;
+      
+      console.log(`[API] Clearing all documents for user company ${userCompanyId}, requested by user ${userId}`);
+      
+      const result = await storage.clearAllCompanyDocuments(userCompanyId);
+      
+      console.log(`[API] Document clearing completed:`, result);
+      
+      res.json({
+        success: true,
+        message: 'All company documents have been cleared successfully',
+        details: result
+      });
+    } catch (error) {
+      console.error("Clear all documents error:", error);
+      res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // ========================================
   // External Document Portal Routes
   // ========================================

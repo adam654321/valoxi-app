@@ -2300,6 +2300,167 @@ export class DatabaseStorage implements IStorage {
     return !!deletedDocument;
   }
 
+  async clearAllCompanyDocuments(userCompanyId: number): Promise<{ 
+    deletedDocuments: number;
+    deletedExternalSubmissions: number;
+    deletedAnalysisResults: number;
+    deletedUploadEvents: number;
+    deletedDocumentAccessLogs: number;
+    filesDeleted: string[];
+    filesNotFound: string[];
+  }> {
+    console.log(`[STORAGE] Starting comprehensive document cleanup for user company ${userCompanyId}`);
+    
+    let deletedDocuments = 0;
+    let deletedExternalSubmissions = 0;
+    let deletedAnalysisResults = 0;
+    let deletedUploadEvents = 0;
+    let deletedDocumentAccessLogs = 0;
+    const filesDeleted: string[] = [];
+    const filesNotFound: string[] = [];
+
+    try {
+      // Get all documents for this user company
+      const allDocuments = await db
+        .select({
+          id: documents.id,
+          filePath: documents.filePath,
+          targetCompanyId: documents.targetCompanyId,
+        })
+        .from(documents)
+        .innerJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
+        .where(eq(targetCompanies.userCompanyId, userCompanyId));
+
+      // Get all external document submissions
+      const externalSubmissions = await db
+        .select({
+          id: externalDocumentSubmissions.id,
+          filePath: externalDocumentSubmissions.filePath,
+          targetCompanyId: externalDocumentSubmissions.targetCompanyId,
+        })
+        .from(externalDocumentSubmissions)
+        .innerJoin(targetCompanies, eq(externalDocumentSubmissions.targetCompanyId, targetCompanies.id))
+        .where(eq(targetCompanies.userCompanyId, userCompanyId));
+
+      const allDocumentIds = allDocuments.map(doc => doc.id);
+      const allFilePaths = [
+        ...allDocuments.map(doc => doc.filePath),
+        ...externalSubmissions.map(doc => doc.filePath)
+      ];
+
+      console.log(`[STORAGE] Found ${allDocuments.length} documents and ${externalSubmissions.length} external submissions to delete`);
+
+      // Delete in correct order to maintain referential integrity:
+
+      // 1. Delete document analysis results first
+      if (allDocumentIds.length > 0) {
+        const analysisResultsDeleted = await db
+          .delete(documentAnalysisResults)
+          .where(sql`${documentAnalysisResults.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedAnalysisResults = analysisResultsDeleted.rowCount || 0;
+        console.log(`[STORAGE] Deleted ${deletedAnalysisResults} document analysis results`);
+      }
+
+      // 2. Delete document access logs
+      if (allDocumentIds.length > 0) {
+        const accessLogsDeleted = await db
+          .delete(documentAccessLog)
+          .where(sql`${documentAccessLog.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedDocumentAccessLogs = accessLogsDeleted.rowCount || 0;
+        console.log(`[STORAGE] Deleted ${deletedDocumentAccessLogs} document access logs`);
+      }
+
+      // 3. Delete file upload events
+      if (allDocumentIds.length > 0) {
+        const uploadEventsDeleted = await db
+          .delete(fileUploadEvents)
+          .where(sql`${fileUploadEvents.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedUploadEvents = uploadEventsDeleted.rowCount || 0;
+        console.log(`[STORAGE] Deleted ${deletedUploadEvents} file upload events`);
+      }
+
+      // 4. Delete external document submissions
+      if (externalSubmissions.length > 0) {
+        const externalSubmissionIds = externalSubmissions.map(sub => sub.id);
+        const externalSubmissionsDeleted = await db
+          .delete(externalDocumentSubmissions)
+          .where(sql`${externalDocumentSubmissions.id} IN (${sql.join(externalSubmissionIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedExternalSubmissions = externalSubmissionsDeleted.rowCount || 0;
+        console.log(`[STORAGE] Deleted ${deletedExternalSubmissions} external document submissions`);
+      }
+
+      // 5. Delete documents
+      if (allDocumentIds.length > 0) {
+        const documentsDeleted = await db
+          .delete(documents)
+          .where(sql`${documents.id} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedDocuments = documentsDeleted.rowCount || 0;
+        console.log(`[STORAGE] Deleted ${deletedDocuments} documents from database`);
+      }
+
+      // 6. Delete physical files
+      const fs = await import('fs/promises');
+      for (const filePath of allFilePaths) {
+        if (!filePath) continue;
+        
+        try {
+          await fs.unlink(filePath);
+          filesDeleted.push(filePath);
+          console.log(`[STORAGE] Deleted file: ${filePath}`);
+        } catch (err: any) {
+          if (err.code === 'ENOENT') {
+            filesNotFound.push(filePath);
+            console.log(`[STORAGE] File not found (already deleted?): ${filePath}`);
+          } else {
+            console.error(`[STORAGE] Error deleting file ${filePath}:`, err);
+            filesNotFound.push(filePath);
+          }
+        }
+      }
+
+      // 7. Clean up empty company folders
+      const path = await import('path');
+      try {
+        const companiesUploadPath = path.join(process.cwd(), 'uploads', 'companies');
+        const companyIdsSet = new Set([...allDocuments.map(doc => doc.targetCompanyId), ...externalSubmissions.map(doc => doc.targetCompanyId)]);
+        const companyIds = Array.from(companyIdsSet);
+        
+        for (const companyId of companyIds) {
+          const companyDir = path.join(companiesUploadPath, companyId.toString());
+          try {
+            const dirContents = await fs.readdir(companyDir);
+            if (dirContents.length === 0) {
+              await fs.rmdir(companyDir);
+              console.log(`[STORAGE] Deleted empty company directory: ${companyDir}`);
+            }
+          } catch (err) {
+            // Directory might not exist or might not be empty, which is fine
+            console.log(`[STORAGE] Could not clean up directory ${companyDir}:`, err);
+          }
+        }
+      } catch (err) {
+        console.log(`[STORAGE] Could not clean up company directories:`, err);
+      }
+
+      const result = {
+        deletedDocuments,
+        deletedExternalSubmissions,
+        deletedAnalysisResults,
+        deletedUploadEvents,
+        deletedDocumentAccessLogs,
+        filesDeleted,
+        filesNotFound,
+      };
+
+      console.log(`[STORAGE] Document cleanup completed:`, result);
+      return result;
+
+    } catch (error) {
+      console.error(`[STORAGE] Error during document cleanup:`, error);
+      throw error;
+    }
+  }
+
   async logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void> {
     await db
       .insert(documentAccessLog)

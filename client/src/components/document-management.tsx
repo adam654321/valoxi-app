@@ -44,6 +44,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { DocumentViewer } from "@/components/document-viewer";
@@ -62,7 +73,8 @@ import {
   File,
   CheckCircle,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle
 } from "lucide-react";
 
 interface DocumentManagementProps {
@@ -359,6 +371,27 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     },
   });
 
+  // Clear all documents mutation
+  const clearAllDocumentsMutation = useMutation({
+    mutationFn: () =>
+      apiRequest("DELETE", "/api/documents/clear-all", {}),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Success",
+        description: `All company documents cleared successfully. ${data?.details?.deletedDocuments || 0} documents and ${data?.details?.deletedExternalSubmissions || 0} portal submissions removed.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to clear documents",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -395,6 +428,10 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     if (confirm("Are you sure you want to delete this document?")) {
       deleteMutation.mutate(documentId);
     }
+  };
+
+  const handleClearAllDocuments = () => {
+    clearAllDocumentsMutation.mutate();
   };
 
   const handleCloseViewer = () => {
@@ -455,14 +492,59 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                 Manage documents for {companyName} ({totalDocuments} documents)
               </CardDescription>
             </div>
-            <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Document
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+            <div className="flex items-center gap-2">
+              {totalDocuments > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Clear All
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                        Clear All Company Documents
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete all {totalDocuments} documents and portal submissions 
+                        for {companyName}, including:
+                        <br />
+                        <br />
+                        • All uploaded documents and their physical files
+                        <br />
+                        • All document analysis results
+                        <br />
+                        • All portal document submissions
+                        <br />
+                        • All document access logs
+                        <br />
+                        <br />
+                        <strong>This action cannot be undone.</strong>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearAllDocuments}
+                        className="bg-red-600 hover:bg-red-700"
+                        disabled={clearAllDocumentsMutation.isPending}
+                      >
+                        {clearAllDocumentsMutation.isPending ? "Clearing..." : "Clear All Documents"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Document
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                   <DialogTitle>Upload New Document</DialogTitle>
                 </DialogHeader>
@@ -588,6 +670,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                 </Form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
