@@ -2803,8 +2803,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filePath: file.path,
         fileSize: file.size,
         fileType: file.mimetype,
-        documentCategory: req.body.document_category || 'general',
-        submissionNotes: req.body.submission_notes || null,
+        documentCategory: req.body.documentType || req.body.document_category || 'general',
+        submissionNotes: req.body.submissionNotes || req.body.submission_notes || null,
         submissionIp: req.ip,
         submissionUserAgent: req.get('User-Agent'),
         documentRequirementId: req.body.requirement_id ? parseInt(req.body.requirement_id) : null,
@@ -2812,7 +2812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Also create a document in the main document management system for integration
       try {
-        console.log('Attempting portal-to-main integration for:', file.originalname);
+        console.log('[PORTAL] Attempting portal-to-main integration for:', file.originalname);
         
         // Use the storage interface to create the document in main system
         const mainDocument = await storage.createDocument({
@@ -2823,12 +2823,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filePath: file.path,
           fileSize: file.size,
           fileType: file.mimetype,
-          documentCategory: req.body.document_category || 'General',
-          description: `Submitted via external portal${req.body.submission_notes ? ': ' + req.body.submission_notes : ''}`,
+          documentCategory: req.body.documentType || req.body.document_category || 'General',
+          description: `Submitted via external portal${req.body.submissionNotes || req.body.submission_notes ? ': ' + (req.body.submissionNotes || req.body.submission_notes) : ''}`,
           isConfidential: false,
         });
         
-        console.log('✅ SUCCESS: Portal document integrated into main system! Document ID:', mainDocument.id);
+        console.log('[PORTAL] ✅ SUCCESS: Portal document integrated into main system! Document ID:', mainDocument.id);
         
         // Create file upload event for webhook monitoring
         const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -2858,8 +2858,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Portal access token created, email sending skipped for now');
         
       } catch (integrationError: any) {
-        console.error('❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
-        console.error('Full error:', integrationError);
+        console.error('[PORTAL] ❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
+        console.error('[PORTAL] Full error:', integrationError);
+        console.error('[PORTAL] Stack trace:', integrationError?.stack);
         // Continue anyway - portal submission is still valid
       }
       

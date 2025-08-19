@@ -47,7 +47,7 @@ Preferred communication style: Simple, everyday language.
 - **Team Management**: User roles, permissions, invitation workflow, and deal-specific team assignments.
 - **Activity Management**: Logging of various activity types (calls, emails, meetings, notes) linked to contacts and displayed in a timeline.
 - **Document Management**: Advanced viewer for various file types (PDF, images, Office documents) with secure handling.
-- **External Document Portal**: Simple, secure portal for collecting documents from target companies, sending links via email, and tracking submissions.
+- **External Document Portal**: Simple, secure portal for collecting documents from target companies, sending links via email, and tracking submissions. Portal uploads are automatically integrated into the main document system and trigger analysis webhooks.
 - **Email Integration**: Simple email system using Nodemailer with Google Workspace SMTP for invitations and portal access notifications.
 - **Team Invitation System**: Complete token-based invitation workflow with secure signup forms.
 - **Webhook Integration**:
