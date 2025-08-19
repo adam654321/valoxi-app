@@ -13,6 +13,8 @@ This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and m
   - Logic based on actual document categories, not analysis results from Company Accounts files
 - **Fixed Category Name Mismatch Issue**: Critical bug fix where Stage 1 webhook was checking for 'Profit and Loss' but database contained 'Profit & Loss', preventing webhook triggers
 - **Stage 1 Analysis Display**: Implemented missing `/api/target-companies/:id/stage1-analysis` endpoint to fetch and display Stage 1 analysis results in the Analysis tab
+- **Fixed Duplicate Document Display Issue (Aug 19, 2025)**: Resolved issue where portal-uploaded documents appeared twice in documents folder by updating getCompanyDocuments query to exclude external submissions already processed into main documents table
+- **Portal Document Counting Fix (Aug 19, 2025)**: Fixed bug where portal document progress wasn't displaying correctly by updating query to use documentCategory field instead of submissionNotes field
 
 # User Preferences
 

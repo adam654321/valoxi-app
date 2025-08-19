@@ -2190,6 +2190,7 @@ export class DatabaseStorage implements IStorage {
         lastAccessed: documents.lastAccessed,
         accessCount: documents.accessCount,
         createdAt: documents.createdAt,
+        externalSubmissionId: documents.externalSubmissionId,
         uploadedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
         categoryDescription: sql<string | undefined>`${documentCategories.description}`,
       })
@@ -2199,7 +2200,8 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.targetCompanyId, targetCompanyId))
       .orderBy(documents.documentCategory, desc(documents.uploadDate));
 
-    // Get external document submissions from portals
+    // Get external document submissions from portals that haven't been processed into main documents table
+    // Since we now use unified upload process, we only want external submissions that don't have a corresponding main document
     const externalDocuments = await db
       .select({
         id: externalDocumentSubmissions.id,
@@ -2217,16 +2219,23 @@ export class DatabaseStorage implements IStorage {
         lastAccessed: sql<Date | null>`NULL`,
         accessCount: sql<number>`0`,
         createdAt: externalDocumentSubmissions.createdAt,
+        externalSubmissionId: externalDocumentSubmissions.id,
         uploadedByName: sql<string>`COALESCE(${targetContacts.firstName} || ' ' || ${targetContacts.lastName}, 'Portal User')`,
         categoryDescription: sql<string | undefined>`${documentCategories.description}`,
       })
       .from(externalDocumentSubmissions)
       .leftJoin(targetContacts, eq(externalDocumentSubmissions.targetContactId, targetContacts.id))
       .leftJoin(documentCategories, eq(externalDocumentSubmissions.documentCategory, documentCategories.categoryName))
-      .where(eq(externalDocumentSubmissions.targetCompanyId, targetCompanyId))
+      .where(
+        and(
+          eq(externalDocumentSubmissions.targetCompanyId, targetCompanyId),
+          // Only include external submissions that don't have a corresponding document in main table
+          sql`${externalDocumentSubmissions.id} NOT IN (SELECT external_submission_id FROM documents WHERE external_submission_id IS NOT NULL)`
+        )
+      )
       .orderBy(desc(externalDocumentSubmissions.submittedAt));
 
-    // Combine and sort both types of documents
+    // Combine regular documents (which already include processed portal submissions) with unprocessed external submissions
     const allDocuments = [...regularDocuments, ...externalDocuments];
     return allDocuments.sort((a, b) => {
       // Sort by category first, then by upload date (newest first)
@@ -3191,7 +3200,7 @@ export class DatabaseStorage implements IStorage {
             required: req.required,
             submitted: req.submitted,
             isGroup: true,
-            isComplete: req.submitted >= req.required,
+            isComplete: (req.submitted || 0) >= req.required,
             submissions: req.submissions
           };
         } else {
@@ -3241,7 +3250,9 @@ export class DatabaseStorage implements IStorage {
         .from(externalDocumentSubmissions)
         .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId));
       
-      const submittedTypes = submissions.map(s => s.submissionNotes).filter(Boolean);
+      const submittedTypes = submissions
+        .map(s => s.submissionNotes)
+        .filter((note): note is string => Boolean(note));
       
       return {
         submittedTypes,
@@ -3330,8 +3341,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDocumentAnalysisResultsByType(documentType: string, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: documentAnalysisResults.id,
+        documentId: documentAnalysisResults.documentId,
+        fileUploadEventId: documentAnalysisResults.fileUploadEventId,
+        documentType: documentAnalysisResults.documentType,
+        analysisData: documentAnalysisResults.analysisData,
+        processingTime: documentAnalysisResults.processingTime,
+        createdAt: documentAnalysisResults.createdAt,
+      })
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .leftJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
@@ -3342,6 +3361,8 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(documentAnalysisResults.createdAt));
+    
+    return results;
   }
 
   async getDocumentAnalysisResultsByTypeForCompany(documentType: string, targetCompanyId: number): Promise<DocumentAnalysisResult[]> {
