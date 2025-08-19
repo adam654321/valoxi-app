@@ -2146,10 +2146,15 @@ export class DatabaseStorage implements IStorage {
 
   // Document operations
   async getDocumentCategories(): Promise<DocumentCategory[]> {
-    return await db
-      .select()
-      .from(documentCategories)
-      .orderBy(documentCategories.sortOrder, documentCategories.categoryName);
+    // Return the 5 standardized document categories aligned with the portal
+    return [
+      { categoryName: 'Company Accounts', description: 'Company annual accounts and financial statements (up to 5 files)', sortOrder: 1 },
+      { categoryName: 'Profit & Loss', description: 'Profit and loss statements', sortOrder: 2 },
+      { categoryName: 'Balance Sheet', description: 'Balance sheet documents', sortOrder: 3 },
+      { categoryName: 'Sales Ledger', description: 'Sales ledger and transaction records', sortOrder: 4 },
+      { categoryName: 'Asset Register', description: 'Asset register and fixed asset records', sortOrder: 5 },
+      { categoryName: 'Staff Matrix', description: 'Staff matrix and employee information', sortOrder: 6 }
+    ];
   }
 
   async createDocument(document: InsertDocument): Promise<Document> {
