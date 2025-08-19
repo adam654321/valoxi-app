@@ -2399,15 +2399,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Create document record
+        const documentCategory = req.body.document_category || 'Company Accounts';
+        const originalFilename = req.file.originalname;
+        
+        // Prefix filename with 'COMPANY ACCOUNTS- ' if category is 'Company Accounts'
+        const prefixedFilename = documentCategory === 'Company Accounts' 
+          ? `COMPANY ACCOUNTS- ${originalFilename}`
+          : originalFilename;
+        
         const documentData = {
           targetCompanyId,
           uploadedBy: userId,
-          documentName: req.body.document_name || req.file.originalname,
-          originalFilename: req.file.originalname,
+          documentName: req.body.document_name || prefixedFilename,
+          originalFilename: prefixedFilename,
           filePath: req.file.path,
           fileSize: req.file.size,
           fileType: req.file.mimetype,
-          documentCategory: req.body.document_category || 'Company Accounts',
+          documentCategory: documentCategory,
           description: req.body.description || '',
           isConfidential: req.body.is_confidential !== 'false'
         };
@@ -2420,7 +2428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           documentId: document.id,
           targetCompanyId: targetCompanyId,
           uploadedBy: userId,
-          fileName: req.file.originalname,
+          fileName: prefixedFilename, // Use prefixed filename for webhook
           fileUrl: `${baseUrl}/api/public/documents/${document.id}/download`, // Public URL for external webhook access
           webhookSent: false,
           webhookStatus: 'pending',
@@ -2826,12 +2834,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const submittedDocumentType = req.body.documentType || req.body.document_category || 'general';
       const mappedCategory = portalToInternalCategoryMap[submittedDocumentType as keyof typeof portalToInternalCategoryMap] || 'Company Accounts';
 
+      // Prefix filename with 'COMPANY ACCOUNTS- ' if mapped category is 'Company Accounts'
+      const originalFilename = file.originalname;
+      const prefixedFilename = mappedCategory === 'Company Accounts' 
+        ? `COMPANY ACCOUNTS- ${originalFilename}`
+        : originalFilename;
+
       // Create submission record first for tracking
       const submission = await storage.createExternalDocumentSubmission({
         portalTokenId: portalToken.id,
         targetCompanyId: portalToken.targetCompanyId,
         targetContactId: portalToken.targetContactId,
-        originalFilename: file.originalname,
+        originalFilename: prefixedFilename,
         storedFilename: file.filename,
         filePath: file.path,
         fileSize: file.size,
@@ -2844,13 +2858,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Create document directly in main system (unified approach)
-      console.log('[PORTAL] Creating document using unified upload process for:', file.originalname);
+      console.log('[PORTAL] Creating document using unified upload process for:', prefixedFilename);
       
       const mainDocument = await storage.createDocument({
         targetCompanyId: portalToken.targetCompanyId,
         uploadedBy: 1, // System user for portal submissions
-        documentName: file.originalname,
-        originalFilename: file.originalname,
+        documentName: prefixedFilename,
+        originalFilename: prefixedFilename,
         filePath: file.path,
         fileSize: file.size,
         fileType: file.mimetype,
@@ -2868,7 +2882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentId: mainDocument.id,
         targetCompanyId: portalToken.targetCompanyId,
         uploadedBy: 1,
-        fileName: file.originalname,
+        fileName: prefixedFilename, // Use prefixed filename for webhook
         fileUrl: `${baseUrl}/api/public/documents/${mainDocument.id}/download`,
         webhookSent: false,
         webhookStatus: 'pending',
@@ -2894,7 +2908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         portalTokenId: portalToken.id,
         targetContactId: portalToken.targetContactId,
         activityType: "document_submitted",
-        activityDescription: `Document submitted: ${file.originalname}`,
+        activityDescription: `Document submitted: ${prefixedFilename}`,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
         relatedDocumentId: submission.id,
@@ -2904,7 +2918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         submissionId: submission.id,
         message: "Document submitted successfully",
-        filename: file.originalname,
+        filename: prefixedFilename,
       });
     } catch (error) {
       console.error("Portal document submission error:", error);
