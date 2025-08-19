@@ -2793,7 +2793,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Document upload not permitted for this portal" });
       }
       
-      // Create submission record
+      // Map portal document types to internal categories
+      const portalToInternalCategoryMap = {
+        'company_accounts_1': 'Financial Statements',
+        'company_accounts_2': 'Financial Statements', 
+        'company_accounts_3': 'Financial Statements',
+        'company_accounts_4': 'Financial Statements',
+        'company_accounts_5': 'Financial Statements',
+        'sales_ledger': 'Financial Statements',
+        'balance_sheet': 'Financial Statements',
+        'profit_loss': 'Financial Statements',
+        'staff_matrix': 'Operational',
+        'asset_register': 'Financial Statements',
+        'legal_documents': 'Legal Documents',
+        'correspondence': 'Correspondence',
+        'marketing': 'Marketing Materials',
+        'technical': 'Technical Documentation',
+        'other': 'Other',
+        'general': 'Other'
+      };
+
+      const submittedDocumentType = req.body.documentType || req.body.document_category || 'general';
+      const mappedCategory = portalToInternalCategoryMap[submittedDocumentType as keyof typeof portalToInternalCategoryMap] || 'Other';
+
+      // Create submission record first for tracking
       const submission = await storage.createExternalDocumentSubmission({
         portalTokenId: portalToken.id,
         targetCompanyId: portalToken.targetCompanyId,
@@ -2803,66 +2826,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filePath: file.path,
         fileSize: file.size,
         fileType: file.mimetype,
-        documentCategory: req.body.documentType || req.body.document_category || 'general',
+        documentCategory: submittedDocumentType,
         submissionNotes: req.body.submissionNotes || req.body.submission_notes || null,
         submissionIp: req.ip,
         submissionUserAgent: req.get('User-Agent'),
         documentRequirementId: req.body.requirement_id ? parseInt(req.body.requirement_id) : null,
       });
 
-      // Also create a document in the main document management system for integration
-      try {
-        console.log('[PORTAL] Attempting portal-to-main integration for:', file.originalname);
-        
-        // Use the storage interface to create the document in main system
-        const mainDocument = await storage.createDocument({
-          targetCompanyId: portalToken.targetCompanyId,
-          uploadedBy: 1, // System user for portal submissions
-          documentName: file.originalname,
-          originalFilename: file.originalname,
-          filePath: file.path,
-          fileSize: file.size,
-          fileType: file.mimetype,
-          documentCategory: req.body.documentType || req.body.document_category || 'General',
-          description: `Submitted via external portal${req.body.submissionNotes || req.body.submission_notes ? ': ' + (req.body.submissionNotes || req.body.submission_notes) : ''}`,
-          isConfidential: false,
-        });
-        
-        console.log('[PORTAL] ✅ SUCCESS: Portal document integrated into main system! Document ID:', mainDocument.id);
-        
-        // Create file upload event for webhook monitoring
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const fileUploadEventData = {
-          documentId: mainDocument.id,
-          targetCompanyId: portalToken.targetCompanyId,
-          uploadedBy: 1, // System user for portal submissions
-          fileName: file.originalname,
-          fileUrl: `${baseUrl}/api/public/documents/${mainDocument.id}/download`,
-          webhookSent: false,
-          webhookStatus: 'pending',
-        };
-        
-        const uploadEvent = await storage.createFileUploadEvent(fileUploadEventData);
-        
-        // Automatically trigger webhook for portal file upload
-        await sendFileUploadWebhook(uploadEvent.id);
-        
-        // Auto-approve the submission since it integrated successfully
-        await storage.reviewDocumentSubmission(
-          submission.id, 
-          portalToken.createdBy, 
-          'approved', 
-          'Auto-approved upon successful integration to main document system'
-        );
-        
-        console.log('[PORTAL] Integration completed successfully, webhook triggered');
-        
-      } catch (integrationError: any) {
-        console.error('[PORTAL] ❌ FAILED: Portal integration error:', integrationError?.message || 'Unknown error');
-        console.error('[PORTAL] Full error:', integrationError);
-        console.error('[PORTAL] Stack trace:', integrationError?.stack);
-        // Continue anyway - portal submission is still valid
-      }
+      // Create document directly in main system (unified approach)
+      console.log('[PORTAL] Creating document using unified upload process for:', file.originalname);
+      
+      const mainDocument = await storage.createDocument({
+        targetCompanyId: portalToken.targetCompanyId,
+        uploadedBy: 1, // System user for portal submissions
+        documentName: file.originalname,
+        originalFilename: file.originalname,
+        filePath: file.path,
+        fileSize: file.size,
+        fileType: file.mimetype,
+        documentCategory: mappedCategory, // Use mapped internal category
+        description: `Submitted via external portal${req.body.submissionNotes || req.body.submission_notes ? ': ' + (req.body.submissionNotes || req.body.submission_notes) : ''}`,
+        isConfidential: false,
+        externalSubmissionId: submission.id, // Link to portal submission
+      });
+      
+      console.log('[PORTAL] ✅ SUCCESS: Document created using unified process! Document ID:', mainDocument.id);
+      
+      // Create file upload event and trigger webhook (same as internal uploads)
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const uploadEvent = await storage.createFileUploadEvent({
+        documentId: mainDocument.id,
+        targetCompanyId: portalToken.targetCompanyId,
+        uploadedBy: 1,
+        fileName: file.originalname,
+        fileUrl: `${baseUrl}/api/public/documents/${mainDocument.id}/download`,
+        webhookSent: false,
+        webhookStatus: 'pending',
+      });
+      
+      // Trigger webhook automatically
+      await sendFileUploadWebhook(uploadEvent.id);
+      
+      // Auto-approve the submission
+      await storage.reviewDocumentSubmission(
+        submission.id, 
+        portalToken.createdBy, 
+        'approved', 
+        'Auto-approved - unified upload process'
+      );
+      
+      console.log('[PORTAL] Unified upload process completed successfully, webhook triggered');
+      
+      // Remove the old integration code since we're using unified process
       
       // Log activity
       await storage.logPortalActivity({

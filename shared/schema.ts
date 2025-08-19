@@ -409,6 +409,7 @@ export const documents = pgTable("documents", {
   uploadDate: timestamp("upload_date").defaultNow(),
   lastAccessed: timestamp("last_accessed"),
   accessCount: integer("access_count").default(0),
+  externalSubmissionId: integer("external_submission_id").references(() => externalDocumentSubmissions.id), // Links to portal submission if applicable
   createdAt: timestamp("created_at").defaultNow(),
 });
 
