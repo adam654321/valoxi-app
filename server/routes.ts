@@ -3456,8 +3456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Retry webhook for a specific document
-  app.post("/api/documents/:id/retry-webhook", isAuthenticated, async (req: Request, res: Response) => {
+  // Retry file upload analysis webhook for a specific document
+  app.post("/api/documents/:id/retry-analysis-webhook", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const documentId = parseInt(req.params.id);
       const userCompanyId = req.session.userCompanyId;
@@ -3480,16 +3480,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No upload event found for this document" });
       }
 
-      // Send webhook manually
+      // Send FILE UPLOAD ANALYSIS webhook manually (not website analysis)
       await sendFileUploadWebhook(event.id);
       
       res.json({ 
         success: true, 
-        message: "Webhook triggered successfully",
+        message: "File upload analysis webhook triggered successfully",
         eventId: event.id
       });
     } catch (error) {
-      console.error("Retry webhook error:", error);
+      console.error("Retry file upload analysis webhook error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

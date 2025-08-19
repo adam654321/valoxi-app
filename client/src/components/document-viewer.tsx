@@ -980,30 +980,30 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     );
   };
 
-  // Manual webhook retry for documents with missing analysis
+  // Manual file upload analysis webhook retry for documents with missing analysis
   const handleRetryWebhook = async () => {
     if (!document?.id) return;
     
     try {
-      const response = await fetch(`/api/documents/${document.id}/retry-webhook`, {
+      const response = await fetch(`/api/documents/${document.id}/retry-analysis-webhook`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       
       if (response.ok) {
         toast({
-          title: "Webhook Triggered",
-          description: "Analysis webhook has been sent. Results should appear shortly.",
+          title: "Analysis Webhook Triggered",
+          description: "File upload analysis webhook has been sent. Results should appear shortly.",
         });
         // Refetch analysis results
         queryClient.invalidateQueries(["/api/documents", document.id, "analysis"]);
       } else {
-        throw new Error('Failed to trigger webhook');
+        throw new Error('Failed to trigger analysis webhook');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to trigger analysis webhook. Please try again.",
+        description: "Failed to trigger file upload analysis webhook. Please try again.",
         variant: "destructive",
       });
     }
