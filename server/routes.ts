@@ -241,7 +241,7 @@ async function checkStage1RequirementsByCategory(targetCompanyId: number): Promi
     const companyAccountsCount = await storage.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
     
     // Check for at least 1 file in each of the 5 required categories
-    const requiredCategories = ['Profit and Loss', 'Balance Sheet', 'Staff Matrix', 'Sales Ledger', 'Asset Register'];
+    const requiredCategories = ['Profit & Loss', 'Balance Sheet', 'Staff Matrix', 'Sales Ledger', 'Asset Register'];
     const categoryCounts: {[key: string]: number} = {};
     
     for (const category of requiredCategories) {
@@ -2656,7 +2656,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Manual trigger for Stage 1 analysis (for testing)
+  // Manual trigger for Stage 1 analysis (for testing) - No auth for debugging
+  app.post("/api/debug/trigger-stage1/:id", async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+
+      console.log(`[MANUAL_TRIGGER] Starting Stage 1 analysis check for company ${targetCompanyId}`);
+      
+      // First, check the category requirements directly
+      const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
+      console.log(`[MANUAL_TRIGGER] Category check result:`, categoryCheck);
+      
+      // Manually trigger Stage 1 analysis check with user ID 2 (admin)
+      console.log(`[MANUAL_TRIGGER] Calling checkAndTriggerStage1Analysis for company ${targetCompanyId}`);
+      await checkAndTriggerStage1Analysis(targetCompanyId, 2);
+      console.log(`[MANUAL_TRIGGER] Completed checkAndTriggerStage1Analysis for company ${targetCompanyId}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Stage 1 analysis check triggered',
+        categoryCheck
+      });
+    } catch (error) {
+      console.error('[MANUAL_TRIGGER] Error triggering Stage 1 analysis:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Original authenticated trigger
   app.post("/api/target-companies/:id/trigger-stage1", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const targetCompanyId = parseInt(req.params.id);
