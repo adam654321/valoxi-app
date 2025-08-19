@@ -2656,6 +2656,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual trigger for Stage 1 analysis (for testing)
+  app.post("/api/target-companies/:id/trigger-stage1", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      const userId = req.session.userId!;
+
+      // Verify access to company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ error: 'Company not found' });
+      }
+
+      // Manually trigger Stage 1 analysis check
+      console.log(`[MANUAL_TRIGGER] Checking Stage 1 analysis for company ${targetCompanyId}`);
+      await checkAndTriggerStage1Analysis(targetCompanyId, userId);
+      
+      res.json({ success: true, message: 'Stage 1 analysis check triggered' });
+    } catch (error) {
+      console.error('Error triggering Stage 1 analysis:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Delete document
   app.delete("/api/documents/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
