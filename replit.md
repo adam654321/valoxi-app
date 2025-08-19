@@ -85,6 +85,20 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Major Changes
 
+## 2025-08-19: Codebase Cleanup & Optimization
+
+**Cleanup Actions Completed**:
+- **Removed obsolete files**: Deleted `target-company-detail-old.tsx`, `target-company-detail-broken.tsx`, and `PortalPage-backup.tsx` that were no longer referenced in the application routing
+- **Cleaned up test artifacts**: Removed 14 standalone .txt test files from root directory (integration_test.txt, final_test.txt, debug_test.txt, etc.) that were no longer needed
+- **Verified application integrity**: Confirmed all active routes, components, and functionality remain intact
+- **Maintained development tools**: Preserved EmailTest.tsx, webhook-test.tsx, and file-upload-test.tsx as they are actively used for debugging
+
+**Benefits**:
+- Reduced codebase clutter and potential confusion
+- Eliminated LSP errors from broken files
+- Improved development environment cleanliness
+- Maintained all functional capabilities without breaking changes
+
 ## 2025-08-15: Document Requirements System - Corrective Simplification
 
 **Problem**: The previous template-based document requirements system was overly complex with:
