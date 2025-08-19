@@ -124,6 +124,14 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     });
   };
 
+  // Helper function to process text with escaped newlines and markdown
+  const processObservationsText = (text: string) => {
+    return text
+      .replace(/\\n/g, '\n') // Convert literal \n to actual newlines
+      .replace(/\n\*/g, '\n• ') // Convert bullet points to better formatting
+      .replace(/^\*/g, '• '); // Convert first bullet point
+  };
+
   // Format document type for display
   const formatDocumentType = (documentType: string, analysisData?: any) => {
     // Special case for company_accounts - check if analysisData has "document": "company_accounts"
@@ -452,7 +460,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="whitespace-pre-line text-sm">{analysisData.observations}</div>
+              <div className="whitespace-pre-line text-sm">{processObservationsText(analysisData.observations)}</div>
             </CardContent>
           </Card>
         )}
