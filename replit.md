@@ -2,6 +2,11 @@
 
 This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and manage potential acquisition targets through their deal pipeline. It provides tools for M&A professionals, business buyers, and investment firms to manage target companies from initial identification to deal completion. Key capabilities include comprehensive target and contact management, robust team collaboration with role-based access control, integrated activity tracking, and a secure external document portal for due diligence. The platform streamlines the M&A process, enhances communication, and centralizes all deal-related information.
 
+## Recent Changes (August 2025)
+- **Unified Document Upload Process**: Portal uploads now use the same backend process as internal uploads, ensuring consistent categorization, folder placement, and webhook integration
+- **Document Category Mapping**: Portal document types (company_accounts_1-5, balance_sheet, etc.) are automatically mapped to internal categories (Financial Statements, etc.)
+- **External Submission Tracking**: Added external_submission_id column to track portal submissions while maintaining unified document management
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
