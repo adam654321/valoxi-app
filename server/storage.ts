@@ -3142,7 +3142,7 @@ export class DatabaseStorage implements IStorage {
       const submissions = await db
         .select({
           id: externalDocumentSubmissions.id,
-          documentType: externalDocumentSubmissions.submissionNotes,
+          documentType: externalDocumentSubmissions.documentCategory,
           filename: externalDocumentSubmissions.originalFilename,
           submittedAt: externalDocumentSubmissions.createdAt,
           status: externalDocumentSubmissions.processingStatus
