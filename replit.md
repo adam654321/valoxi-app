@@ -11,6 +11,8 @@ This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and m
   - At least 1 file in each of the 5 specific categories: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
   - Only triggers once per target company (prevents duplicate webhook calls)
   - Logic based on actual document categories, not analysis results from Company Accounts files
+- **Fixed Category Name Mismatch Issue**: Critical bug fix where Stage 1 webhook was checking for 'Profit and Loss' but database contained 'Profit & Loss', preventing webhook triggers
+- **Stage 1 Analysis Display**: Implemented missing `/api/target-companies/:id/stage1-analysis` endpoint to fetch and display Stage 1 analysis results in the Analysis tab
 
 # User Preferences
 

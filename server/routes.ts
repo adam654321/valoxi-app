@@ -2625,6 +2625,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get Stage 1 analysis events for a company
+  app.get("/api/target-companies/:id/stage1-analysis", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+
+      // Verify access to company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ error: 'Company not found' });
+      }
+
+      // Get all Stage 1 analysis events for this company
+      const events = await storage.getStage1AnalysisEventsByCompany(targetCompanyId, userCompanyId);
+      
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching Stage 1 analysis events:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Check Stage 1 webhook requirements status
   app.get("/api/target-companies/:id/stage1-status", isAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -2679,7 +2701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('[MANUAL_TRIGGER] Error triggering Stage 1 analysis:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
