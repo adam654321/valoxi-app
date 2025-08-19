@@ -287,13 +287,17 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   <SelectContent>
                     {DOCUMENT_TYPES
                       .filter(type => {
-                        const docStatus = portalData.document_status?.find(doc => {
-                          if (type.value.startsWith('company_accounts_')) {
-                            return doc.type === 'company_accounts';
-                          }
-                          return doc.type === type.value;
-                        });
-                        return !docStatus?.isComplete;
+                        // For company_accounts types, check if the group has space for more submissions
+                        if (type.value.startsWith('company_accounts_')) {
+                          const companyAccountsStatus = portalData.document_status?.find(doc => doc.type === 'company_accounts');
+                          if (!companyAccountsStatus) return true;
+                          // Allow submissions if the group isn't complete
+                          return !companyAccountsStatus.isComplete;
+                        }
+                        
+                        // For individual document types, check if already submitted
+                        const docStatus = portalData.document_status?.find(doc => doc.type === type.value);
+                        return !docStatus?.submitted;
                       })
                       .map(type => (
                         <SelectItem key={type.value} value={type.value}>
