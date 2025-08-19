@@ -2398,7 +2398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filePath: req.file.path,
           fileSize: req.file.size,
           fileType: req.file.mimetype,
-          documentCategory: req.body.document_category || 'Other',
+          documentCategory: req.body.document_category || 'Company Accounts',
           description: req.body.description || '',
           isConfidential: req.body.is_confidential !== 'false'
         };
@@ -2793,28 +2793,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Document upload not permitted for this portal" });
       }
       
-      // Map portal document types to internal categories
+      // Map portal document types to internal categories - only 6 categories
       const portalToInternalCategoryMap = {
-        'company_accounts_1': 'Financial Statements',
-        'company_accounts_2': 'Financial Statements', 
-        'company_accounts_3': 'Financial Statements',
-        'company_accounts_4': 'Financial Statements',
-        'company_accounts_5': 'Financial Statements',
-        'sales_ledger': 'Financial Statements',
-        'balance_sheet': 'Financial Statements',
-        'profit_loss': 'Financial Statements',
-        'staff_matrix': 'Operational',
-        'asset_register': 'Financial Statements',
-        'legal_documents': 'Legal Documents',
-        'correspondence': 'Correspondence',
-        'marketing': 'Marketing Materials',
-        'technical': 'Technical Documentation',
-        'other': 'Other',
-        'general': 'Other'
+        'company_accounts_1': 'Company Accounts',
+        'company_accounts_2': 'Company Accounts', 
+        'company_accounts_3': 'Company Accounts',
+        'company_accounts_4': 'Company Accounts',
+        'company_accounts_5': 'Company Accounts',
+        'sales_ledger': 'Sales Ledger',
+        'balance_sheet': 'Balance Sheet',
+        'profit_loss': 'Profit and Loss',
+        'staff_matrix': 'Staff Matrix',
+        'asset_register': 'Asset Register',
+        // Default fallbacks to one of the 6 categories
+        'legal_documents': 'Company Accounts',
+        'correspondence': 'Company Accounts',
+        'marketing': 'Company Accounts',
+        'technical': 'Company Accounts',
+        'other': 'Company Accounts',
+        'general': 'Company Accounts'
       };
 
       const submittedDocumentType = req.body.documentType || req.body.document_category || 'general';
-      const mappedCategory = portalToInternalCategoryMap[submittedDocumentType as keyof typeof portalToInternalCategoryMap] || 'Other';
+      const mappedCategory = portalToInternalCategoryMap[submittedDocumentType as keyof typeof portalToInternalCategoryMap] || 'Company Accounts';
 
       // Create submission record first for tracking
       const submission = await storage.createExternalDocumentSubmission({
