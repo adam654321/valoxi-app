@@ -945,15 +945,15 @@ export default function TargetCompanyDetail() {
                       parts.forEach(part => {
                         const trimmed = part.trim();
                         if (trimmed.startsWith('Strengths:')) {
-                          sections.strengths = trimmed.replace('Strengths:', '').trim();
+                          sections.strengths = trimmed.replace('Strengths:', '').trim().replace(/\*\*/g, '');
                         } else if (trimmed.startsWith('Weaknesses:')) {
-                          sections.weaknesses = trimmed.replace('Weaknesses:', '').trim();
+                          sections.weaknesses = trimmed.replace('Weaknesses:', '').trim().replace(/\*\*/g, '');
                         } else if (trimmed.startsWith('Opportunities for Growth:')) {
-                          sections.opportunities = trimmed.replace('Opportunities for Growth:', '').trim();
+                          sections.opportunities = trimmed.replace('Opportunities for Growth:', '').trim().replace(/\*\*/g, '');
                         } else if (trimmed.startsWith('Risks:')) {
-                          sections.risks = trimmed.replace('Risks:', '').trim();
+                          sections.risks = trimmed.replace('Risks:', '').trim().replace(/\*\*/g, '');
                         } else if (trimmed.startsWith('Recommendation:')) {
-                          sections.recommendation = trimmed.replace('Recommendation:', '').trim();
+                          sections.recommendation = trimmed.replace('Recommendation:', '').trim().replace(/\*\*/g, '');
                         }
                       });
 
