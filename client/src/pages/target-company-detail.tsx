@@ -929,7 +929,7 @@ export default function TargetCompanyDetail() {
                       return recMatch ? recMatch[0] : null;
                     };
 
-                    // Extract structured sections from the content
+                    // Extract structured sections from the content - simple approach
                     const extractStructuredSections = (content: string) => {
                       const sections = {
                         strengths: '',
@@ -939,63 +939,23 @@ export default function TargetCompanyDetail() {
                         recommendation: ''
                       };
 
-                      // Split content into lines and find section headers
-                      const lines = content.split('\n');
-                      let currentSection = '';
-                      let currentContent: string[] = [];
-
-                      for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        
-                        // Check if this line is a section header
-                        if (line === 'Strengths:') {
-                          // Save previous section if exists
-                          if (currentSection && currentContent.length > 0) {
-                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
-                          }
-                          currentSection = 'strengths';
-                          currentContent = [];
-                        } else if (line === 'Weaknesses:') {
-                          if (currentSection && currentContent.length > 0) {
-                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
-                          }
-                          currentSection = 'weaknesses';
-                          currentContent = [];
-                        } else if (line === 'Opportunities for Growth:' || line === 'Opportunities:') {
-                          if (currentSection && currentContent.length > 0) {
-                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
-                          }
-                          currentSection = 'opportunities';
-                          currentContent = [];
-                        } else if (line === 'Risks:') {
-                          if (currentSection && currentContent.length > 0) {
-                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
-                          }
-                          currentSection = 'risks';
-                          currentContent = [];
-                        } else if (line.startsWith('Recommendation:')) {
-                          if (currentSection && currentContent.length > 0) {
-                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
-                          }
-                          currentSection = 'recommendation';
-                          currentContent = [];
-                          // Include the recommendation text that comes after "Recommendation:" on same line
-                          const recommendationText = line.replace(/^Recommendation:\s*/, '').trim();
-                          if (recommendationText) {
-                            currentContent.push(recommendationText);
-                          }
-                        } else if (currentSection) {
-                          // Add content to current section, including empty lines for proper formatting
-                          if (line || currentContent.length > 0) {
-                            currentContent.push(line);
-                          }
+                      // Simple split approach
+                      const parts = content.split(/(?=Strengths:|Weaknesses:|Opportunities for Growth:|Risks:|Recommendation:)/);
+                      
+                      parts.forEach(part => {
+                        const trimmed = part.trim();
+                        if (trimmed.startsWith('Strengths:')) {
+                          sections.strengths = trimmed.replace('Strengths:', '').trim();
+                        } else if (trimmed.startsWith('Weaknesses:')) {
+                          sections.weaknesses = trimmed.replace('Weaknesses:', '').trim();
+                        } else if (trimmed.startsWith('Opportunities for Growth:')) {
+                          sections.opportunities = trimmed.replace('Opportunities for Growth:', '').trim();
+                        } else if (trimmed.startsWith('Risks:')) {
+                          sections.risks = trimmed.replace('Risks:', '').trim();
+                        } else if (trimmed.startsWith('Recommendation:')) {
+                          sections.recommendation = trimmed.replace('Recommendation:', '').trim();
                         }
-                      }
-
-                      // Don't forget the last section
-                      if (currentSection && currentContent.length > 0) {
-                        sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
-                      }
+                      });
 
                       return sections;
                     };
