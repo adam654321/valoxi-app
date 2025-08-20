@@ -202,9 +202,9 @@ export default function TargetCompanies() {
   const formatCurrency = (amount: number | string | null) => {
     if (!amount) return "Not specified";
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(num);

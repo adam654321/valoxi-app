@@ -351,9 +351,9 @@ export default function EnhancedTargetCompanies() {
   const formatCurrency = (amount: string | number | null) => {
     if (!amount) return "Not specified";
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(num);
@@ -480,7 +480,7 @@ export default function EnhancedTargetCompanies() {
                     {/* Revenue Range */}
                     <div>
                       <label className="text-sm font-medium text-textPrimary mb-2 block">
-                        Revenue Range ($)
+                        Revenue Range (£)
                       </label>
                       <div className="flex gap-2">
                         <Input
