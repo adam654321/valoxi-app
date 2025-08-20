@@ -1,0 +1,565 @@
+{
+  "event_type": "stage1_analysis_complete",
+  "timestamp": "2025-08-20T01:03:48.000Z",
+  "company_info": {
+    "id": 8,
+    "triggered_by": 1
+  },
+  "concatenated_analysis_data": {
+    "asset_register": [
+      {
+        "total_assets_cost": 216000,
+        "total_accumulated_depreciation": 177300,
+        "total_net_book_value": 38700,
+        "asset_breakdown": [
+          {
+            "category": "Fixtures and Fittings",
+            "cost": 24500,
+            "accumulated_depreciation": 17850,
+            "net_book_value": 6650
+          },
+          {
+            "category": "IT Equipment",
+            "cost": 24000,
+            "accumulated_depreciation": 18250,
+            "net_book_value": 5750
+          },
+          {
+            "category": "Office Furniture",
+            "cost": 10000,
+            "accumulated_depreciation": 8500,
+            "net_book_value": 1500
+          },
+          {
+            "category": "Plant and Machinery",
+            "cost": 42500,
+            "accumulated_depreciation": 30900,
+            "net_book_value": 11600
+          },
+          {
+            "category": "Property Improvements",
+            "cost": 32000,
+            "accumulated_depreciation": 20000,
+            "net_book_value": 12000
+          },
+          {
+            "category": "Software",
+            "cost": 11000,
+            "accumulated_depreciation": 9500,
+            "net_book_value": 1500
+          },
+          {
+            "category": "Vehicles",
+            "cost": 72000,
+            "accumulated_depreciation": 52300,
+            "net_book_value": 19700
+          }
+        ],
+        "recent_additions_summary": "## Recent Additions\n- IT Equipment: 9000\n- Plant and Machinery: 12000",
+        "depreciation_this_year": null,
+        "observations": "- The asset base appears mature, with a high proportion of accumulated depreciation (approx. 82% of total cost) and a relatively low net book value (approx. 18% of total cost), indicating many assets are nearing the end of their useful lives.\n- Recent investments in 2023, totaling £21,000, primarily focused on IT Equipment (£9,000) and Plant and Machinery (£12,000), suggesting an upgrade in operational and administrative technology.\n- There are inconsistencies in the provided data: the sum of individual asset accumulated depreciation (£177,300) does not match the sum of accumulated depreciation by category (£157,300), and the calculated total net book value (£38,700) differs from the stated total (~£41,500).",
+        "asset_breakdown_list": "* Fixtures and Fittings: Cost 24500, Accumulated depreciation 17850, Net book value 6650\n* IT Equipment: Cost 24000, Accumulated depreciation 18250, Net book value 5750\n* Office Furniture: Cost 10000, Accumulated depreciation 8500, Net book value 1500\n* Plant and Machinery: Cost 42500, Accumulated depreciation 30900, Net book value 11600\n* Property Improvements: Cost 32000, Accumulated depreciation 20000, Net book value 12000\n* Software: Cost 11000, Accumulated depreciation 9500, Net book value 1500\n* Vehicles: Cost 72000, Accumulated depreciation 52300, Net book value 19700"
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "asset_register",
+          "data": {
+            "total_assets_cost": 98718,
+            "total_accumulated_depreciation": 69626,
+            "total_net_book_value": 29092,
+            "asset_breakdown": [
+              {
+                "category": "Plant and machinery etc",
+                "cost": 98718,
+                "accumulated_depreciation": 69626,
+                "net_book_value": 29092
+              }
+            ],
+            "recent_additions_summary": "## Recent Additions\n- Plant and machinery etc: 8,733",
+            "depreciation_this_year": 9230,
+            "observations": "- The company's tangible assets consist solely of 'Plant and machinery etc'.\n- There was new investment in 'Plant and machinery etc' during the year (£8,733), but also significant disposals.\n- The accumulated depreciation represents a high proportion of the total cost (approximately 70.5%), indicating a mature asset base.",
+            "asset_breakdown_list": "* Plant and machinery etc: Cost 98718, Accumulated depreciation 69626, Net book value 29092"
+          },
+          "id": 81
+        }
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "asset_register",
+          "data": {
+            "total_assets_cost": 106289,
+            "total_accumulated_depreciation": 73117,
+            "total_net_book_value": 33172,
+            "asset_breakdown": [
+              {
+                "category": "Plant and machinery etc",
+                "cost": 106289,
+                "accumulated_depreciation": 73117,
+                "net_book_value": 33172
+              }
+            ],
+            "recent_additions_summary": "## Recent Additions\n- Plant and machinery etc: 217",
+            "depreciation_this_year": 13928,
+            "observations": "- The company made minimal additions to its tangible fixed assets during the year (£217).\n- Accumulated depreciation represents a significant portion of the total asset cost (~68.8%), indicating a relatively mature asset base.\n- The net book value of tangible assets decreased from £46,883 in 2020 to £33,172 in 2021, primarily due to the depreciation charge exceeding new investments.",
+            "asset_breakdown_list": "* Plant and machinery etc: Cost 106289, Accumulated depreciation 73117, Net book value 33172"
+          },
+          "id": 80
+        }
+      }
+    ],
+    "sales_ledger": [
+      {
+        "total_invoice_count": 30,
+        "total_invoice_value": 102900,
+        "total_amount_paid": 0,
+        "total_outstanding": 102900,
+        "invoice_status_summary": {
+          "Paid": {
+            "count": 0,
+            "value": 0
+          },
+          "Part Paid": {
+            "count": 0,
+            "value": 0
+          },
+          "Unpaid": {
+            "count": 30,
+            "value": 102900
+          }
+        },
+        "customer_exposure": [
+          {
+            "customer_name": "ABC Builders Ltd",
+            "total_invoiced": 4200,
+            "total_paid": 0,
+            "total_outstanding": 4200
+          },
+          {
+            "customer_name": "Smith & Co Homes",
+            "total_invoiced": 3500,
+            "total_paid": 0,
+            "total_outstanding": 3500
+          },
+          {
+            "customer_name": "Green Estates",
+            "total_invoiced": 3100,
+            "total_paid": 0,
+            "total_outstanding": 3100
+          },
+          {
+            "customer_name": "Mr J Brown",
+            "total_invoiced": 2800,
+            "total_paid": 0,
+            "total_outstanding": 2800
+          },
+          {
+            "customer_name": "Oakridge School",
+            "total_invoiced": 2400,
+            "total_paid": 0,
+            "total_outstanding": 2400
+          },
+          {
+            "customer_name": "BlueSky Ltd",
+            "total_invoiced": 2600,
+            "total_paid": 0,
+            "total_outstanding": 2600
+          },
+          {
+            "customer_name": "Mrs A Patel",
+            "total_invoiced": 3300,
+            "total_paid": 0,
+            "total_outstanding": 3300
+          },
+          {
+            "customer_name": "City Council",
+            "total_invoiced": 3700,
+            "total_paid": 0,
+            "total_outstanding": 3700
+          },
+          {
+            "customer_name": "EcoHomes Ltd",
+            "total_invoiced": 2900,
+            "total_paid": 0,
+            "total_outstanding": 2900
+          },
+          {
+            "customer_name": "Mr & Mrs Hughes",
+            "total_invoiced": 1800,
+            "total_paid": 0,
+            "total_outstanding": 1800
+          },
+          {
+            "customer_name": "FastFit Contractors",
+            "total_invoiced": 2200,
+            "total_paid": 0,
+            "total_outstanding": 2200
+          },
+          {
+            "customer_name": "Mr L Thomas",
+            "total_invoiced": 4100,
+            "total_paid": 0,
+            "total_outstanding": 4100
+          },
+          {
+            "customer_name": "St Mary's Trust",
+            "total_invoiced": 2700,
+            "total_paid": 0,
+            "total_outstanding": 2700
+          },
+          {
+            "customer_name": "Sunrise Nursing",
+            "total_invoiced": 1600,
+            "total_paid": 0,
+            "total_outstanding": 1600
+          },
+          {
+            "customer_name": "Mr & Mrs Wilson",
+            "total_invoiced": 3400,
+            "total_paid": 0,
+            "total_outstanding": 3400
+          },
+          {
+            "customer_name": "Acme Joinery",
+            "total_invoiced": 2800,
+            "total_paid": 0,
+            "total_outstanding": 2800
+          },
+          {
+            "customer_name": "Bramble Developments",
+            "total_invoiced": 4600,
+            "total_paid": 0,
+            "total_outstanding": 4600
+          },
+          {
+            "customer_name": "Horizon Housing",
+            "total_invoiced": 3900,
+            "total_paid": 0,
+            "total_outstanding": 3900
+          },
+          {
+            "customer_name": "Cedar Park Care",
+            "total_invoiced": 3200,
+            "total_paid": 0,
+            "total_outstanding": 3200
+          },
+          {
+            "customer_name": "Riverbank Leisure",
+            "total_invoiced": 3600,
+            "total_paid": 0,
+            "total_outstanding": 3600
+          },
+          {
+            "customer_name": "Pioneer Construction",
+            "total_invoiced": 4300,
+            "total_paid": 0,
+            "total_outstanding": 4300
+          },
+          {
+            "customer_name": "Eastside Colleges",
+            "total_invoiced": 3700,
+            "total_paid": 0,
+            "total_outstanding": 3700
+          },
+          {
+            "customer_name": "Nova Property Services",
+            "total_invoiced": 2900,
+            "total_paid": 0,
+            "total_outstanding": 2900
+          },
+          {
+            "customer_name": "Harper & Vale",
+            "total_invoiced": 3000,
+            "total_paid": 0,
+            "total_outstanding": 3000
+          },
+          {
+            "customer_name": "Elmwood Housing",
+            "total_invoiced": 3400,
+            "total_paid": 0,
+            "total_outstanding": 3400
+          },
+          {
+            "customer_name": "Kite Facilities",
+            "total_invoiced": 3800,
+            "total_paid": 0,
+            "total_outstanding": 3800
+          },
+          {
+            "customer_name": "Brighton Retail Park",
+            "total_invoiced": 2700,
+            "total_paid": 0,
+            "total_outstanding": 2700
+          },
+          {
+            "customer_name": "Newleaf Gardens",
+            "total_invoiced": 4300,
+            "total_paid": 0,
+            "total_outstanding": 4300
+          },
+          {
+            "customer_name": "Northshore Council",
+            "total_invoiced": 3500,
+            "total_paid": 0,
+            "total_outstanding": 3500
+          },
+          {
+            "customer_name": "Moss & Sons",
+            "total_invoiced": 8900,
+            "total_paid": 0,
+            "total_outstanding": 8900
+          }
+        ],
+        "observations": "* City Council has £3,700.00 overdue.\n* Moss & Sons has the highest single outstanding invoice of £8,900.00.\n* Top 3 customers account for 17.30% of total invoice value."
+      }
+    ],
+    "staff_matrix": [
+      {
+        "total_employee_count": 20,
+        "total_annual_payroll": 679000,
+        "average_salary": 33950,
+        "employment_type_breakdown": {
+          "Full-Time": 20,
+          "Part-Time": 0
+        },
+        "status_summary": {
+          "Active": 20,
+          "Maternity Leave": 0
+        },
+        "longest_tenured_employees": "* John Smith – Managing Director (start_date: 01/03/10; years_of_service: 15)\n* Sarah Johnson – Sales Director (start_date: 12/07/15; years_of_service: 10)\n* Emily Clark – Operations Manager (start_date: 19/09/16; years_of_service: 8)",
+        "observations": "* All employees are full-time and currently active.\n* The longest-serving employee, John Smith, has been with the company for 15 years.\n* The Operations department is the largest, comprising 11 out of 20 employees."
+      }
+    ],
+    "profit_and_loss": [
+      {
+        "years_covered": "* 2024",
+        "years": {
+          "2024": {
+            "year": 2024,
+            "profit_and_loss": {
+              "revenue": 485000,
+              "cost_of_sales": 297000,
+              "gross_profit": 188000,
+              "administrative_expenses": 160000,
+              "other_operating_income": null,
+              "operating_profit": 28000,
+              "interest_receivable": null,
+              "interest_payable": 2000,
+              "profit_before_tax": 26000,
+              "tax": 5000,
+              "net_profit": 21000
+            }
+          }
+        },
+        "summary": "🧠 Summary Insights\n\n- **Data Limitation:** The provided financial data only includes figures for the year 2024. A second consecutive year's data is required to perform a comparative analysis of changes and trends.\n- **Revenue & Gross Profit (2024):** The company reported revenue of £485,000 in 2024. Gross profit stood at £188,000, resulting in a gross margin of approximately 38.8%.\n- **Operating & Net Profit (2024):** Operating profit was £28,000, leading to a net profit of £21,000 after tax, representing a net margin of about 4.3%.\n- **Financial Stability (2024):** The company demonstrates robust financial stability regarding debt servicing, with operating profit covering interest payments 14 times over.\n- **Further Analysis:** To provide a comprehensive analysis of performance trends and key changes, data for at least one prior year would be necessary."
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "profit_and_loss",
+          "data": {
+            "years_covered": "* 2021\n* 2022",
+            "years": {
+              "2021": {
+                "year": 2021,
+                "profit_and_loss": {
+                  "revenue": 726819,
+                  "cost_of_sales": 433733,
+                  "gross_profit": 293086,
+                  "administrative_expenses": 211038,
+                  "other_operating_income": 0,
+                  "operating_profit": 82048,
+                  "interest_receivable": 0,
+                  "interest_payable": 5904,
+                  "profit_before_tax": 82048,
+                  "tax": 15684,
+                  "net_profit": 66364
+                }
+              },
+              "2022": {
+                "year": 2022,
+                "profit_and_loss": {
+                  "revenue": 921359,
+                  "cost_of_sales": 563929,
+                  "gross_profit": 357430,
+                  "administrative_expenses": 222131,
+                  "other_operating_income": 80,
+                  "operating_profit": 135299,
+                  "interest_receivable": 80,
+                  "interest_payable": 4727,
+                  "profit_before_tax": 135379,
+                  "tax": 25532,
+                  "net_profit": 109847
+                }
+              }
+            }
+          },
+          "id": 81,
+          "summary": "🧠 Summary Insights\n\n-   Revenue demonstrated robust growth, increasing by 26.8% from £726,819 in 2021 to £921,359 in 2022.\n-   Gross profit rose by 22.0% to £357,430, although the gross margin saw a slight contraction from 40.3% to 38.8%.\n-   Operating profit surged by 64.9% to £135,299, with the operating margin significantly improving from 11.3% to 14.7%, indicating enhanced operational efficiency.\n-   Net profit after tax experienced a substantial 65.5% increase, rising from £66,364 in 2021 to £109,847 in 2022, reflecting strong bottom-line performance.\n-   The company's financial stability improved markedly, with the interest coverage ratio more than doubling from 13.9x to 28.6x, demonstrating a significantly enhanced ability to cover interest obligations."
+        }
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "profit_and_loss",
+          "data": {
+            "years_covered": "* 2020\n* 2021",
+            "years": {
+              "2020": {
+                "year": 2020,
+                "profit_and_loss": {
+                  "revenue": 607938,
+                  "cost_of_sales": 355988,
+                  "gross_profit": 251950,
+                  "administrative_expenses": 213361,
+                  "other_operating_income": 35023,
+                  "operating_profit": 73612,
+                  "interest_receivable": null,
+                  "interest_payable": 4630,
+                  "profit_before_tax": 68982,
+                  "tax": 13107,
+                  "net_profit": 55875
+                }
+              },
+              "2021": {
+                "year": 2021,
+                "profit_and_loss": {
+                  "revenue": 726819,
+                  "cost_of_sales": 433733,
+                  "gross_profit": 293086,
+                  "administrative_expenses": 211038,
+                  "other_operating_income": 0,
+                  "operating_profit": 82048,
+                  "interest_receivable": null,
+                  "interest_payable": 0,
+                  "profit_before_tax": 82048,
+                  "tax": 15684,
+                  "net_profit": 66364
+                }
+              }
+            }
+          },
+          "id": 80,
+          "summary": "🧠 Summary Insights\n\n*   **Strong Revenue Growth:** The company demonstrated robust top-line growth, with revenue increasing by nearly 20% from £607,938 in 2020 to £726,819 in 2021.\n*   **Profitability Gains:** Gross profit rose by over 16% to £293,086, while net profit also saw a significant improvement of almost 19% to £66,364.\n*   **Stable Margins:** Despite the growth, gross margin remained largely stable, seeing only a slight dip from 41.4% to 40.3%. Net margin also held steady at approximately 9.1%.\n*   **Improved Operational Performance:** Operating profit increased by 11.5% to £82,048, a positive trend especially considering the absence of 'Other Operating Income' in 2021 (which contributed £35,023 in 2020). This suggests stronger performance from core business activities.\n*   **Enhanced Financial Stability:** A notable improvement in financial health is evident with the complete elimination of interest payable in 2021, down from £4,630 in 2020, indicating reduced debt burden or more efficient capital management."
+        }
+      }
+    ],
+    "balance_sheet": [
+      {
+        "years_covered": "* 2024",
+        "years": {
+          "2024": {
+            "year": 2024,
+            "balance_sheet": {
+              "fixed_assets": 41500,
+              "debtors": 95000,
+              "cash_at_bank": 365000,
+              "total_current_assets": 530000,
+              "creditors_within_one_year": 151727,
+              "net_current_assets": 378273,
+              "total_assets_less_current_liabilities": 419773,
+              "creditors_after_one_year": null,
+              "net_assets": 414773,
+              "called_up_share_capital": 100,
+              "profit_and_loss_reserve": 414673
+            }
+          }
+        },
+        "summary": "🧠 Summary Insights\n\n- Analysis is based solely on the 2024 balance sheet data provided, limiting the ability to perform comparative trend analysis.\n- **Assets:** Total assets stand at £571,500, with a significant majority (£530,000 or 92.7%) being current assets. Cash at bank represents a substantial £365,000 (63.9% of total assets), indicating a very strong liquidity position.\n- **Liabilities:** Total liabilities amount to £151,727, all of which are due within one year. This results in a healthy current ratio of 3.5:1 (current assets to current liabilities).\n- **Equity:** The company has minimal share capital (£100) with retained earnings of £414,673, reflecting substantial accumulated profits over time.\n- **Financial Health:** The company exhibits excellent liquidity and solvency with minimal debt burden. The high cash reserves suggest either recent strong cash generation, conservative financial management, or potential for investment opportunities."
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "balance_sheet",
+          "data": {
+            "years_covered": "* 2021\n* 2022",
+            "years": {
+              "2021": {
+                "year": 2021,
+                "balance_sheet": {
+                  "fixed_assets": 29092,
+                  "debtors": 181509,
+                  "cash_at_bank": 109133,
+                  "total_current_assets": 299642,
+                  "creditors_within_one_year": 169709,
+                  "net_current_assets": 129933,
+                  "total_assets_less_current_liabilities": 159025,
+                  "creditors_after_one_year": null,
+                  "net_assets": 159025,
+                  "called_up_share_capital": 100,
+                  "profit_and_loss_reserve": 158925
+                }
+              },
+              "2022": {
+                "year": 2022,
+                "balance_sheet": {
+                  "fixed_assets": 33172,
+                  "debtors": 202377,
+                  "cash_at_bank": 163398,
+                  "total_current_assets": 374775,
+                  "creditors_within_one_year": 140003,
+                  "net_current_assets": 234772,
+                  "total_assets_less_current_liabilities": 267944,
+                  "creditors_after_one_year": null,
+                  "net_assets": 267944,
+                  "called_up_share_capital": 100,
+                  "profit_and_loss_reserve": 267844
+                }
+              }
+            }
+          },
+          "id": 81,
+          "summary": "🧠 Summary Insights\n\n-   **Asset Growth:** Total assets increased substantially by 25.0% from £328,734 to £407,947, driven primarily by growth in current assets which rose from £299,642 to £374,775.\n-   **Strong Cash Position:** Cash at bank improved significantly by 49.7% from £109,133 to £163,398, indicating strong cash generation and liquidity management.\n-   **Working Capital Improvement:** Net current assets grew robustly by 80.7% from £129,933 to £234,772, while the current ratio improved from 1.77:1 to 2.68:1, demonstrating enhanced short-term financial stability.\n-   **Debt Management:** Current liabilities decreased by 17.5% from £169,709 to £140,003, showing effective liability management alongside revenue growth.\n-   **Equity Growth:** Net assets increased by 68.5% from £159,025 to £267,944, with retained earnings growing by 68.5% from £158,925 to £267,844, reflecting the company's ability to generate and retain profits effectively."
+        }
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "balance_sheet",
+          "data": {
+            "years_covered": "* 2020\n* 2021",
+            "years": {
+              "2020": {
+                "year": 2020,
+                "balance_sheet": {
+                  "fixed_assets": 46883,
+                  "debtors": 129000,
+                  "cash_at_bank": 64985,
+                  "total_current_assets": 201985,
+                  "creditors_within_one_year": 156324,
+                  "net_current_assets": 45661,
+                  "total_assets_less_current_liabilities": 92544,
+                  "creditors_after_one_year": null,
+                  "net_assets": 92544,
+                  "called_up_share_capital": 100,
+                  "profit_and_loss_reserve": 92444
+                }
+              },
+              "2021": {
+                "year": 2021,
+                "balance_sheet": {
+                  "fixed_assets": 29092,
+                  "debtors": 181509,
+                  "cash_at_bank": 109133,
+                  "total_current_assets": 299642,
+                  "creditors_within_one_year": 169709,
+                  "net_current_assets": 129933,
+                  "total_assets_less_current_liabilities": 159025,
+                  "creditors_after_one_year": null,
+                  "net_assets": 159025,
+                  "called_up_share_capital": 100,
+                  "profit_and_loss_reserve": 158925
+                }
+              }
+            }
+          },
+          "id": 80,
+          "summary": "🧠 Summary Insights\n\n*   **Working Capital Transformation:** The company experienced a significant improvement in working capital, with net current assets increasing dramatically by 184.6% from £45,661 to £129,933, indicating much stronger short-term liquidity.\n*   **Cash Generation Excellence:** Cash at bank nearly doubled, rising by 67.9% from £64,985 to £109,133, demonstrating strong operational cash flow generation.\n*   **Asset Structure Shift:** While fixed assets declined from £46,883 to £29,092 (a 38.0% decrease), this was more than offset by the substantial growth in current assets from £201,985 to £299,642 (48.4% increase).\n*   **Enhanced Financial Stability:** Net assets grew by 71.9% from £92,544 to £159,025, with retained earnings increasing correspondingly from £92,444 to £158,925, reflecting strong profit retention and reinvestment capability.\n*   **Improved Liquidity Ratios:** The current ratio improved significantly from 1.29:1 to 1.77:1, indicating better ability to meet short-term obligations and reduced financial risk."
+        }
+      }
+    ],
+    "timestamp": "2025-08-20T01:03:48.000Z",
+    "company_id": 8
+  }
+}
