@@ -234,7 +234,7 @@ async function sendFileUploadWebhook(eventId: number) {
   }
 }
 
-// Function to check if Stage 1 webhook should be triggered based on document categories
+// Function to check if Stage 1 webhook should be triggered based on document categories and analysis results
 async function checkStage1RequirementsByCategory(targetCompanyId: number): Promise<{shouldTrigger: boolean, status: string}> {
   try {
     // Check for 5 Company Accounts files
@@ -248,10 +248,20 @@ async function checkStage1RequirementsByCategory(targetCompanyId: number): Promi
       categoryCounts[category] = await storage.getDocumentCountByCategory(targetCompanyId, category);
     }
     
+    console.log(`[STAGE1_ANALYSIS] Debug - Initial category counts:`, categoryCounts);
+    
+    // For Balance Sheet, also check if we have balance_sheet analysis results (for Company Accounts uploads)
+    if (categoryCounts['Balance Sheet'] === 0) {
+      const balanceSheetAnalysis = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+      if (balanceSheetAnalysis.length > 0) {
+        categoryCounts['Balance Sheet'] = balanceSheetAnalysis.length;
+      }
+    }
+    
     // Check if we have 5 Company Accounts files
     const hasCompanyAccounts = companyAccountsCount >= 5;
     
-    // Check if we have at least 1 file in each required category
+    // Check if we have at least 1 file in each required category (or corresponding analysis)
     const hasAllCategories = requiredCategories.every(category => categoryCounts[category] > 0);
     
     const status = `Company Accounts: ${companyAccountsCount}/5, ` + 
@@ -2731,15 +2741,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
       console.log(`[MANUAL_TRIGGER] Category check result:`, categoryCheck);
       
-      // Manually trigger Stage 1 analysis check with user ID 2 (admin)
-      console.log(`[MANUAL_TRIGGER] Calling checkAndTriggerStage1Analysis for company ${targetCompanyId}`);
-      await checkAndTriggerStage1Analysis(targetCompanyId, 2);
+      // Debug - Check what analysis results actually exist
+      const companyAccountsData = await storage.getDocumentAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
+      const balanceSheetData = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+      const profitLossData = await storage.getDocumentAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
+      const assetRegisterData = await storage.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
+      const salesLedgerData = await storage.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
+      const staffMatrixData = await storage.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
+      
+      console.log(`[MANUAL_TRIGGER] Available analysis data counts:`, {
+        company_accounts: companyAccountsData.length,
+        balance_sheet: balanceSheetData.length,
+        profit_and_loss: profitLossData.length,
+        asset_register: assetRegisterData.length,
+        sales_ledger: salesLedgerData.length,
+        staff_matrix: staffMatrixData.length
+      });
+      
+      // Manually trigger Stage 1 analysis check with user ID 2 (admin) - bypass requirements
+      console.log(`[MANUAL_TRIGGER] Calling checkAndTriggerStage1Analysis for company ${targetCompanyId} with bypass=true`);
+      await checkAndTriggerStage1Analysis(targetCompanyId, 2, true);
       console.log(`[MANUAL_TRIGGER] Completed checkAndTriggerStage1Analysis for company ${targetCompanyId}`);
       
       res.json({ 
         success: true, 
-        message: 'Stage 1 analysis check triggered',
-        categoryCheck
+        message: 'Stage 1 analysis check triggered (bypassed requirements)',
+        categoryCheck,
+        analysisDataCounts: {
+          company_accounts: companyAccountsData.length,
+          balance_sheet: balanceSheetData.length,
+          profit_and_loss: profitLossData.length,
+          asset_register: assetRegisterData.length,
+          sales_ledger: salesLedgerData.length,
+          staff_matrix: staffMatrixData.length
+        }
       });
     } catch (error) {
       console.error('[MANUAL_TRIGGER] Error triggering Stage 1 analysis:', error);
