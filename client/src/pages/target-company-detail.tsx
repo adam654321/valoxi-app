@@ -880,102 +880,236 @@ export default function TargetCompanyDetail() {
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BarChart className="w-5 h-5" />
-                  Company Analysis
-                </CardTitle>
-                <CardDescription>
-                  Latest comprehensive financial and operational analysis of {company.companyName}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {analysisLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-32 w-full" />
-                  </div>
-                ) : stage1Events.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">No analysis available yet</p>
-                    <p className="text-sm mb-4">Analysis will be automatically generated when all 5 required documents are uploaded and analyzed</p>
-                    <div className="text-xs text-muted-foreground">
-                      Required documents: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
+            {analysisLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-32 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+                <Skeleton className="h-64 w-full" />
+              </div>
+            ) : stage1Events.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">No analysis available yet</p>
+                <p className="text-sm mb-4">Analysis will be automatically generated when all 5 required documents are uploaded and analyzed</p>
+                <div className="text-xs text-muted-foreground">
+                  Required documents: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Investment Summary Dashboard - Featured at Top */}
+                {(() => {
+                  const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
+                  const eventToShow = successfulEvent || stage1Events[0];
+                  
+                  if (!eventToShow || eventToShow.webhookStatus !== 'success' || !eventToShow.webhookResponse) {
+                    return null;
+                  }
+
+                  try {
+                    // Parse the webhook response and extract the analysis content
+                    const responseData = JSON.parse(eventToShow.webhookResponse);
+                    const analysisContent = responseData.analysis || responseData.data?.analysis || eventToShow.webhookResponse;
+                    
+                    // Extract Investment Summary section from the analysis
+                    const extractInvestmentSummary = (content: string) => {
+                      // Look for Investment Summary & Recommendation section
+                      const summaryMatch = content.match(/(?:6\.\s*)?✅?\s*Investment Summary[^#]*?(?=(?:\n##|\n#|$))/is);
+                      if (summaryMatch) {
+                        return summaryMatch[0];
+                      }
+                      
+                      // Fallback: look for recommendation section
+                      const recMatch = content.match(/(?:recommendation|summary)[^#]*?(?=(?:\n##|\n#|$))/is);
+                      return recMatch ? recMatch[0] : null;
+                    };
+
+                    // Extract key metrics from the analysis
+                    const extractKeyMetrics = (content: string) => {
+                      const metrics = [];
+                      
+                      // Look for revenue figures
+                      const revenueMatch = content.match(/revenue[^\.]*?£?([\d,]+)/i);
+                      if (revenueMatch) {
+                        metrics.push({ label: "Latest Revenue", value: `£${revenueMatch[1]}`, type: "currency" });
+                      }
+                      
+                      // Look for profit figures
+                      const profitMatch = content.match(/(?:net )?profit[^\.]*?£?([\d,]+)/i);
+                      if (profitMatch) {
+                        metrics.push({ label: "Net Profit", value: `£${profitMatch[1]}`, type: "currency" });
+                      }
+                      
+                      // Look for assets
+                      const assetsMatch = content.match(/(?:net )?assets[^\.]*?£?([\d,]+)/i);
+                      if (assetsMatch) {
+                        metrics.push({ label: "Net Assets", value: `£${assetsMatch[1]}`, type: "currency" });
+                      }
+                      
+                      return metrics;
+                    };
+
+                    // Extract risk assessment
+                    const extractRiskLevel = (content: string) => {
+                      const lowerContent = content.toLowerCase();
+                      if (lowerContent.includes('high risk') || lowerContent.includes('major red flag') || lowerContent.includes('severe')) {
+                        return { level: "High", color: "bg-red-500", description: "Significant concerns identified" };
+                      } else if (lowerContent.includes('medium risk') || lowerContent.includes('moderate')) {
+                        return { level: "Medium", color: "bg-yellow-500", description: "Some risks to consider" };
+                      } else if (lowerContent.includes('low risk') || lowerContent.includes('attractive')) {
+                        return { level: "Low", color: "bg-green-500", description: "Favorable investment profile" };
+                      }
+                      return { level: "Under Review", color: "bg-gray-500", description: "Analysis in progress" };
+                    };
+
+                    const investmentSummary = extractInvestmentSummary(analysisContent);
+                    const keyMetrics = extractKeyMetrics(analysisContent);
+                    const riskAssessment = extractRiskLevel(analysisContent);
+
+                    return (
+                      <>
+                        {/* Investment Summary Dashboard Card */}
+                        <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+                          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                            <CardTitle className="text-xl flex items-center gap-3">
+                              <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              Investment Summary & Recommendation
+                            </CardTitle>
+                            <CardDescription className="text-base">
+                              Executive overview and investment recommendation for {company.companyName}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                              {/* Risk Assessment */}
+                              <Card className="border-l-4 border-l-blue-500">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-muted-foreground">Risk Level</span>
+                                    <div className={`w-3 h-3 rounded-full ${riskAssessment.color}`}></div>
+                                  </div>
+                                  <div className="font-semibold text-lg">{riskAssessment.level}</div>
+                                  <div className="text-xs text-muted-foreground mt-1">{riskAssessment.description}</div>
+                                </CardContent>
+                              </Card>
+
+                              {/* Key Metrics */}
+                              {keyMetrics.slice(0, 2).map((metric, index) => (
+                                <Card key={index} className="border-l-4 border-l-green-500">
+                                  <CardContent className="p-4">
+                                    <div className="text-sm font-medium text-muted-foreground mb-2">{metric.label}</div>
+                                    <div className="font-semibold text-lg">{metric.value}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">From financial analysis</div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+
+                            {/* Investment Summary Content */}
+                            {investmentSummary && (
+                              <div className="prose dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {investmentSummary}
+                                </ReactMarkdown>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </>
+                    );
+                  } catch (error) {
+                    return null;
+                  }
+                })()}
+
+                {/* Detailed Analysis Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <BarChart className="w-5 h-5" />
+                      Detailed Financial Analysis
+                    </CardTitle>
+                    <CardDescription>
+                      Complete Stage 1 analysis with all financial and operational details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Show the most recent successful event, or latest event if none succeeded */}
+                      {(() => {
+                        const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
+                        const eventToShow = successfulEvent || stage1Events[0];
+                        return eventToShow ? [eventToShow] : [];
+                      })().map((event) => (
+                        <Card key={event.id} className="border-l-4 border-l-blue-500">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="font-semibold">Stage 1 Analysis</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Generated on {new Date(event.createdAt || new Date()).toLocaleDateString()} at {new Date(event.createdAt || new Date()).toLocaleTimeString()}
+                                </p>
+                              </div>
+                              <Badge variant={event.webhookStatus === 'success' ? 'default' : event.webhookStatus === 'failed' ? 'destructive' : 'secondary'}>
+                                {event.webhookStatus === 'success' ? 'completed' : event.webhookStatus === 'failed' ? 'failed' : 'pending'}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {event.webhookStatus === 'success' && event.webhookResponse ? (() => {
+                              try {
+                                // Parse the webhook response JSON to extract the analysis content
+                                const responseData = JSON.parse(event.webhookResponse);
+                                const analysisContent = responseData.analysis || responseData.data?.analysis || event.webhookResponse;
+                                
+                                return (
+                                  <div className="prose dark:prose-invert max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {analysisContent}
+                                    </ReactMarkdown>
+                                  </div>
+                                );
+                              } catch (error) {
+                                // Fallback to rendering the raw response if JSON parsing fails
+                                return (
+                                  <div className="prose dark:prose-invert max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {event.webhookResponse}
+                                    </ReactMarkdown>
+                                  </div>
+                                );
+                              }
+                            })() : event.webhookStatus === 'failed' ? (
+                              <div className="text-red-600 dark:text-red-400">
+                                <p className="font-medium">Analysis failed</p>
+                                {event.webhookResponse && (
+                                  <p className="text-sm mt-1">{event.webhookResponse}</p>
+                                )}
+                              </div>
+                            ) : event.webhookStatus === 'pending' && event.webhookSent ? (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                <span>Analysis in progress...</span>
+                              </div>
+                            ) : (
+                              <div className="text-muted-foreground">
+                                <p>Analysis pending...</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Show the most recent successful event, or latest event if none succeeded */}
-                    {(() => {
-                      const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
-                      const eventToShow = successfulEvent || stage1Events[0];
-                      return eventToShow ? [eventToShow] : [];
-                    })().map((event) => (
-                      <Card key={event.id} className="border-l-4 border-l-blue-500">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold">Stage 1 Analysis</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Generated on {new Date(event.createdAt || new Date()).toLocaleDateString()} at {new Date(event.createdAt || new Date()).toLocaleTimeString()}
-                              </p>
-                            </div>
-                            <Badge variant={event.webhookStatus === 'success' ? 'default' : event.webhookStatus === 'failed' ? 'destructive' : 'secondary'}>
-                              {event.webhookStatus === 'success' ? 'completed' : event.webhookStatus === 'failed' ? 'failed' : 'pending'}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          {event.webhookStatus === 'success' && event.webhookResponse ? (() => {
-                            try {
-                              // Parse the webhook response JSON to extract the analysis content
-                              const responseData = JSON.parse(event.webhookResponse);
-                              const analysisContent = responseData.analysis || responseData.data?.analysis || event.webhookResponse;
-                              
-                              return (
-                                <div className="prose dark:prose-invert max-w-none">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {analysisContent}
-                                  </ReactMarkdown>
-                                </div>
-                              );
-                            } catch (error) {
-                              // Fallback to rendering the raw response if JSON parsing fails
-                              return (
-                                <div className="prose dark:prose-invert max-w-none">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {event.webhookResponse}
-                                  </ReactMarkdown>
-                                </div>
-                              );
-                            }
-                          })() : event.webhookStatus === 'failed' ? (
-                            <div className="text-red-600 dark:text-red-400">
-                              <p className="font-medium">Analysis failed</p>
-                              {event.webhookResponse && (
-                                <p className="text-sm mt-1">{event.webhookResponse}</p>
-                              )}
-                            </div>
-                          ) : event.webhookStatus === 'pending' && event.webhookSent ? (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                              <span>Analysis in progress...</span>
-                            </div>
-                          ) : (
-                            <div className="text-muted-foreground">
-                              <p>Analysis pending...</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="activities" className="space-y-6">
