@@ -908,8 +908,12 @@ export default function TargetCompanyDetail() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* Show only the latest analysis event */}
-                    {stage1Events.slice(0, 1).map((event) => (
+                    {/* Show the most recent successful event, or latest event if none succeeded */}
+                    {(() => {
+                      const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
+                      const eventToShow = successfulEvent || stage1Events[0];
+                      return eventToShow ? [eventToShow] : [];
+                    })().map((event) => (
                       <Card key={event.id} className="border-l-4 border-l-blue-500">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">

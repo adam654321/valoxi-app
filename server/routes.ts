@@ -12,7 +12,10 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 
-// We'll use storage methods instead of direct db queries
+// Import db and schema for direct queries when needed
+import { db } from "./db";
+import { stage1AnalysisEvents } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
@@ -2727,6 +2730,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error checking Stage 1 status:', error);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Debug Stage 1 analysis events - No auth for debugging  
+  app.get("/api/debug/stage1-events/:id", async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      
+      // Get all Stage 1 analysis events for this company (bypass auth for debug)
+      const events = await db
+        .select()
+        .from(stage1AnalysisEvents)
+        .where(eq(stage1AnalysisEvents.targetCompanyId, targetCompanyId))
+        .orderBy(desc(stage1AnalysisEvents.createdAt));
+      
+      console.log(`[DEBUG] Found ${events.length} Stage 1 analysis events for company ${targetCompanyId}:`);
+      events.forEach(event => {
+        console.log(`[DEBUG] Event ${event.id}: status=${event.webhookStatus}, sent=${event.webhookSent}, response length=${event.webhookResponse?.length || 0}`);
+      });
+      
+      res.json({ 
+        success: true,
+        events: events.map(event => ({
+          id: event.id,
+          webhookStatus: event.webhookStatus,
+          webhookSent: event.webhookSent,
+          webhookSentAt: event.webhookSentAt,
+          createdAt: event.createdAt,
+          responseLength: event.webhookResponse?.length || 0,
+          responsePreview: event.webhookResponse?.substring(0, 100) || null
+        }))
+      });
+    } catch (error) {
+      console.error('[DEBUG] Error getting Stage 1 analysis events:', error);
+      res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
