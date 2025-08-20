@@ -3438,36 +3438,26 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
 
-    // Get all analysis results for completion tracking
-    const allAnalysisResults = await db
+    const completedTypes = analysisTypes.map(a => a.documentType).filter(type => requiredTypes.includes(type));
+    
+    // Count company accounts documents
+    const companyAccountsAnalysis = await db
       .select({
-        documentId: documentAnalysisResults.documentId,
-        documentType: documentAnalysisResults.documentType,
+        id: documentAnalysisResults.id,
         analysisData: documentAnalysisResults.analysisData
       })
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
     
-    // For completion tracking, count actual document types regardless of whether they're from company accounts
-    // The key insight: profit_and_loss and balance_sheet analysis can come from any document type
-    const completedAnalysisTypes = allAnalysisResults
-      .map(result => result.documentType)
-      .filter(type => requiredTypes.includes(type));
-    
-    // Get unique completed types
-    const completedTypes = Array.from(new Set(completedAnalysisTypes));
-    
-    // Count company accounts documents (those with company_accounts in analysisData.document)
-    const companyAccountsCount = allAnalysisResults.filter(result => {
+    // Filter for company accounts and count them
+    const companyAccountsCount = companyAccountsAnalysis.filter(result => {
       if (result.analysisData && typeof result.analysisData === 'object') {
         const data = result.analysisData as any;
         return data.document === 'company_accounts';
       }
       return false;
     }).length;
-    
-
 
     // We need 5 company accounts documents + 5 main document types = 10 total
     const totalRequired = 10;

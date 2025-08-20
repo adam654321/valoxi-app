@@ -119,23 +119,18 @@ const documentSchema = z.object({
 type DocumentFormData = z.infer<typeof documentSchema>;
 
 // Utility functions for analysis types (shared between components)
-const formatDocumentType = (type: string): string => {
+const formatDocumentType = (type: string) => {
   switch (type) {
     case 'asset_register': return 'Asset Register';
     case 'sales_ledger': return 'Sales Ledger';
     case 'staff_matrix': return 'Staff Matrix';
     case 'profit_and_loss': return 'Profit & Loss';
     case 'balance_sheet': return 'Balance Sheet';
-    case 'company_accounts_1': return 'Company Accounts 1';
-    case 'company_accounts_2': return 'Company Accounts 2';
-    case 'company_accounts_3': return 'Company Accounts 3';
-    case 'company_accounts_4': return 'Company Accounts 4';
-    case 'company_accounts_5': return 'Company Accounts 5';
-    default: return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    default: return type;
   }
 };
 
-const getDocumentTypeColor = (type: string): string => {
+const getDocumentTypeColor = (type: string) => {
   switch (type) {
     case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
     case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
@@ -206,21 +201,13 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     completionPercentage: number;
   }>({
     queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
-    staleTime: 0, // Always refetch
-    gcTime: 0, // Don't cache (React Query v5 uses gcTime instead of cacheTime)
   });
 
   // Mutation to trigger Stage 1 analysis
   const triggerAnalysisMutation = useMutation({
     mutationFn: async () => {
-      return await fetch(`/api/target-companies/${targetCompanyId}/trigger-stage1`, {
+      return apiRequest(`/api/target-companies/${targetCompanyId}/trigger-stage1`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then(res => {
-        if (!res.ok) throw new Error('Failed to trigger analysis');
-        return res.json();
       });
     },
     onSuccess: () => {
