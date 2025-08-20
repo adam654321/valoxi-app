@@ -2172,6 +2172,8 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
+    console.log(`[getCompanyDocuments] Fetching documents for targetCompanyId: ${targetCompanyId}, userCompanyId: ${userCompanyId}`);
+
     // Get regular documents
     const regularDocuments = await db
       .select({
@@ -2235,8 +2237,19 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(externalDocumentSubmissions.submittedAt));
 
+    console.log(`[getCompanyDocuments] Regular documents found: ${regularDocuments.length}`);
+    console.log(`[getCompanyDocuments] External unprocessed documents found: ${externalDocuments.length}`);
+    
+    // Log document details for debugging
+    regularDocuments.forEach((doc, index) => {
+      console.log(`[getCompanyDocuments] Regular doc ${index + 1}: ID=${doc.id}, name="${doc.documentName}", category="${doc.documentCategory}", externalSubmissionId=${doc.externalSubmissionId}`);
+    });
+
     // Combine regular documents (which already include processed portal submissions) with unprocessed external submissions
     const allDocuments = [...regularDocuments, ...externalDocuments];
+    
+    console.log(`[getCompanyDocuments] Total combined documents: ${allDocuments.length}`);
+    
     return allDocuments.sort((a, b) => {
       // Sort by category first, then by upload date (newest first)
       if (a.documentCategory !== b.documentCategory) {
