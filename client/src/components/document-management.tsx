@@ -397,6 +397,11 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
             queryKey: ["/api/target-companies", targetCompanyId, "documents"] 
           });
           
+          // Invalidate analysis completion query to update progress section
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
+          });
+          
           // Also invalidate analysis queries for immediate display
           queryClient.invalidateQueries({ 
             queryKey: ["/api/documents", data.documentId, "analysis"] 
@@ -406,6 +411,18 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           toast({
             title: "New Document Available",
             description: "A document was uploaded via the portal and is now available.",
+          });
+        } else if (data.type === 'analysis_completed' && data.targetCompanyId === targetCompanyId) {
+          console.log('[SSE] Document analysis completed, refreshing progress:', data);
+          
+          // Invalidate analysis completion query to update progress section
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
+          });
+          
+          // Invalidate specific document analysis queries
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/documents", data.documentId, "analysis"] 
           });
         } else if (data.type === 'connected') {
           console.log('[SSE] Connected to document update stream for company:', data.targetCompanyId);
@@ -453,6 +470,11 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         description: "Document uploaded successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+      
+      // Invalidate analysis completion query to update progress section
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
+      });
       
       // Invalidate analysis cache for the newly uploaded document
       if (data?.document?.id) {

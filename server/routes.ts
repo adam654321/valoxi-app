@@ -504,6 +504,21 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
 
       const result = await storage.createDocumentAnalysisResult(analysisResult);
       results.push(result);
+      
+      // Notify connected clients about analysis completion (for real-time UI updates)
+      if (global.documentUpdateListeners) {
+        global.documentUpdateListeners.forEach((listener) => {
+          if (listener.targetCompanyId === event.targetCompanyId) {
+            listener.res.write(`data: ${JSON.stringify({ 
+              type: 'analysis_completed', 
+              targetCompanyId: event.targetCompanyId,
+              documentId: event.documentId,
+              documentType: item.documentType,
+              timestamp: new Date().toISOString()
+            })}\n\n`);
+          }
+        });
+      }
       console.log(`[FILE_UPLOAD_WEBHOOK] Analysis results stored for document ${event.documentId}, type: ${item.documentType}, result ID: ${result.id}`);
     }
 
