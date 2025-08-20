@@ -2992,7 +2992,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'company_accounts_5': 'Company Accounts',
         'sales_ledger': 'Sales Ledger',
         'balance_sheet': 'Balance Sheet',
-        'profit_loss': 'Profit and Loss',
+        'profit_loss': 'Profit & Loss',
+        'p_and_l': 'Profit & Loss', // Fix for the actual submitted type
         'staff_matrix': 'Staff Matrix',
         'asset_register': 'Asset Register',
         // Default fallbacks to one of the 6 categories
