@@ -15,6 +15,12 @@ This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and m
 - **Stage 1 Analysis Display**: Implemented missing `/api/target-companies/:id/stage1-analysis` endpoint to fetch and display Stage 1 analysis results in the Analysis tab
 - **Fixed Duplicate Document Display Issue (Aug 19, 2025)**: Resolved issue where portal-uploaded documents appeared twice in documents folder by updating getCompanyDocuments query to exclude external submissions already processed into main documents table
 - **Portal Document Counting Fix (Aug 19, 2025)**: Fixed bug where portal document progress wasn't displaying correctly by updating query to use documentCategory field instead of submissionNotes field
+- **Fixed Document Categorization Bug (Aug 20, 2025)**: Resolved critical issue where "Profit & Loss (June 2024).pdf" was incorrectly categorized as "Company Accounts" instead of "Profit & Loss":
+  - Updated portal mapping to include both 'profit_loss' and 'p_and_l' document types
+  - Fixed category name mismatch: changed "Profit and Loss" to "Profit & Loss" in portal mapping
+  - Corrected document 100 category from "Company Accounts" to "Profit & Loss" 
+  - Fixed external submission filtering by setting correct external_submission_id to prevent duplicate display
+  - Removed duplicate frontend reference to old "COMPANY ACCOUNTS-" prefixed filename
 
 # User Preferences
 
