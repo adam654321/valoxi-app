@@ -939,25 +939,55 @@ export default function TargetCompanyDetail() {
                         recommendation: ''
                       };
 
-                      // Extract Strengths section
-                      const strengthsMatch = content.match(/Strengths:\s*([\s\S]*?)(?=\n(?:Weaknesses|Opportunities|Risks|Recommendation):|$)/i);
-                      if (strengthsMatch) sections.strengths = strengthsMatch[1].trim();
+                      // Split content into paragraphs and find section headers
+                      const lines = content.split('\n');
+                      let currentSection = '';
+                      let currentContent: string[] = [];
 
-                      // Extract Weaknesses section
-                      const weaknessesMatch = content.match(/Weaknesses:\s*([\s\S]*?)(?=\n(?:Opportunities|Risks|Recommendation):|$)/i);
-                      if (weaknessesMatch) sections.weaknesses = weaknessesMatch[1].trim();
+                      for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        
+                        // Check if this line is a section header
+                        if (line.match(/^Strengths:$/i)) {
+                          if (currentSection && currentContent.length > 0) {
+                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+                          }
+                          currentSection = 'strengths';
+                          currentContent = [];
+                        } else if (line.match(/^Weaknesses:$/i)) {
+                          if (currentSection && currentContent.length > 0) {
+                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+                          }
+                          currentSection = 'weaknesses';
+                          currentContent = [];
+                        } else if (line.match(/^Opportunities[^:]*:$/i)) {
+                          if (currentSection && currentContent.length > 0) {
+                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+                          }
+                          currentSection = 'opportunities';
+                          currentContent = [];
+                        } else if (line.match(/^Risks:$/i)) {
+                          if (currentSection && currentContent.length > 0) {
+                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+                          }
+                          currentSection = 'risks';
+                          currentContent = [];
+                        } else if (line.match(/^Recommendation:$/i)) {
+                          if (currentSection && currentContent.length > 0) {
+                            sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+                          }
+                          currentSection = 'recommendation';
+                          currentContent = [];
+                        } else if (currentSection && line) {
+                          // Add content to current section if we're in a section
+                          currentContent.push(line);
+                        }
+                      }
 
-                      // Extract Opportunities section
-                      const opportunitiesMatch = content.match(/Opportunities[^:]*?:\s*([\s\S]*?)(?=\n(?:Risks|Recommendation):|$)/i);
-                      if (opportunitiesMatch) sections.opportunities = opportunitiesMatch[1].trim();
-
-                      // Extract Risks section
-                      const risksMatch = content.match(/Risks:\s*([\s\S]*?)(?=\n(?:Recommendation):|$)/i);
-                      if (risksMatch) sections.risks = risksMatch[1].trim();
-
-                      // Extract Recommendation section
-                      const recommendationMatch = content.match(/Recommendation:\s*([\s\S]*?)$/i);
-                      if (recommendationMatch) sections.recommendation = recommendationMatch[1].trim();
+                      // Don't forget the last section
+                      if (currentSection && currentContent.length > 0) {
+                        sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+                      }
 
                       return sections;
                     };
