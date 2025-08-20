@@ -206,9 +206,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
   // Mutation to trigger Stage 1 analysis
   const triggerAnalysisMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/target-companies/${targetCompanyId}/trigger-stage1`, {
-        method: 'POST',
-      });
+      return apiRequest('POST', `/api/target-companies/${targetCompanyId}/trigger-stage1`);
     },
     onSuccess: () => {
       toast({
