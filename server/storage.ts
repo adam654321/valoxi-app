@@ -3439,13 +3439,42 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.targetCompanyId, targetCompanyId));
 
     const completedTypes = analysisTypes.map(a => a.documentType).filter(type => requiredTypes.includes(type));
+    
+    // Count company accounts documents
+    const companyAccountsAnalysis = await db
+      .select({
+        id: documentAnalysisResults.id,
+        analysisData: documentAnalysisResults.analysisData
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+
+    // Filter for company accounts and count them
+    const companyAccountsCount = companyAccountsAnalysis.filter(result => {
+      if (result.analysisData && typeof result.analysisData === 'object') {
+        const data = result.analysisData as any;
+        return data.document === 'company_accounts';
+      }
+      return false;
+    }).length;
+
+    // We need 5 company accounts documents + 5 main document types = 10 total
+    const totalRequired = 10;
+    const completedCount = completedTypes.length + Math.min(companyAccountsCount, 5); // Cap company accounts at 5
     const missingTypes = requiredTypes.filter(type => !completedTypes.includes(type));
+    
+    // Add missing company accounts to missing types
+    const missingCompanyAccounts = Math.max(0, 5 - companyAccountsCount);
+    for (let i = 0; i < missingCompanyAccounts; i++) {
+      missingTypes.push(`company_accounts_${i + 1}`);
+    }
 
     return {
-      completedTypes,
+      completedTypes: [...completedTypes, ...Array(Math.min(companyAccountsCount, 5)).fill('company_accounts').map((_, i) => `company_accounts_${i + 1}`)],
       missingTypes,
-      isComplete: completedTypes.length === requiredTypes.length,
-      completionPercentage: Math.round((completedTypes.length / requiredTypes.length) * 100)
+      isComplete: completedCount === totalRequired,
+      completionPercentage: Math.round((completedCount / totalRequired) * 100)
     };
   }
 
