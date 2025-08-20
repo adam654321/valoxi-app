@@ -271,9 +271,9 @@ async function checkStage1RequirementsByCategory(targetCompanyId: number): Promi
 }
 
 // Function to process webhook response and store analysis results
-async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number) {
+async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number, bypassRequirements = false) {
   try {
-    console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}`);
+    console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}${bypassRequirements ? ' (bypassing requirements)' : ''}`);
     
     // Get the target company to find the userCompanyId
     const targetCompany = await storage.getTargetCompany(targetCompanyId, 0);
@@ -284,22 +284,27 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 
     // Check if we already have a successful Stage 1 analysis for this company
     const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
-    if (existingEvent && existingEvent.webhookStatus === 'success') {
+    if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
       console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id})`);
       return;
     }
 
-    // Check requirements based on document categories (not analysis results)
-    const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
-    
-    if (!categoryCheck.shouldTrigger) {
-      console.log(`[STAGE1_ANALYSIS] Stage 1 requirements not met for company ${targetCompanyId}. Status: ${categoryCheck.status}`);
-      return;
+    if (!bypassRequirements) {
+      // Check requirements based on document categories (not analysis results)
+      const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
+      
+      if (!categoryCheck.shouldTrigger) {
+        console.log(`[STAGE1_ANALYSIS] Stage 1 requirements not met for company ${targetCompanyId}. Status: ${categoryCheck.status}`);
+        return;
+      }
+
+      console.log(`[STAGE1_ANALYSIS] All Stage 1 requirements met for company ${targetCompanyId}. Triggering stage 1 webhook.`);
+    } else {
+      console.log(`[STAGE1_ANALYSIS] Bypassing requirements check for company ${targetCompanyId}. Triggering stage 1 webhook with available documents.`);
     }
 
-    console.log(`[STAGE1_ANALYSIS] All Stage 1 requirements met for company ${targetCompanyId}. Triggering stage 1 webhook.`);
-
     // Get all analysis data for concatenation
+    const companyAccountsData = await storage.getDocumentAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
     const analysisData = await storage.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
     const salesLedgerData = await storage.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
     const staffMatrixData = await storage.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
@@ -307,6 +312,7 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
     const balanceSheetData = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
 
     console.log(`[STAGE1_ANALYSIS] Debug - Retrieved analysis data counts:`, {
+      company_accounts: companyAccountsData.length,
       asset_register: analysisData.length,
       sales_ledger: salesLedgerData.length, 
       staff_matrix: staffMatrixData.length,
@@ -314,12 +320,13 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
       balance_sheet: balanceSheetData.length
     });
 
-    if (analysisData.length > 0) {
-      console.log(`[STAGE1_ANALYSIS] Debug - Sample asset_register data:`, JSON.stringify(analysisData[0].analysisData, null, 2));
+    if (companyAccountsData.length > 0) {
+      console.log(`[STAGE1_ANALYSIS] Debug - Sample company_accounts data:`, JSON.stringify(companyAccountsData[0].analysisData, null, 2));
     }
 
     // Concatenate all analysis data - extract analysisData field from each result
     const concatenatedData = {
+      company_accounts: companyAccountsData.map(d => d.analysisData).filter(data => data),
       asset_register: analysisData.map(d => d.analysisData).filter(data => data),
       sales_ledger: salesLedgerData.map(d => d.analysisData).filter(data => data),
       staff_matrix: staffMatrixData.map(d => d.analysisData).filter(data => data),
@@ -2718,11 +2725,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Company not found' });
       }
 
-      // Manually trigger Stage 1 analysis check
-      console.log(`[MANUAL_TRIGGER] Checking Stage 1 analysis for company ${targetCompanyId}`);
-      await checkAndTriggerStage1Analysis(targetCompanyId, userId);
+      // Manually trigger Stage 1 analysis check with bypass
+      console.log(`[MANUAL_TRIGGER] Checking Stage 1 analysis for company ${targetCompanyId} (bypassing requirements)`);
+      await checkAndTriggerStage1Analysis(targetCompanyId, userId, true);
       
-      res.json({ success: true, message: 'Stage 1 analysis check triggered' });
+      res.json({ success: true, message: 'Stage 1 analysis triggered with available documents (bypassed requirements)' });
     } catch (error) {
       console.error('Error triggering Stage 1 analysis:', error);
       res.status(500).json({ error: 'Internal server error' });
