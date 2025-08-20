@@ -249,7 +249,7 @@ export function AddTargetCompanyButton() {
                     name="annualRevenue"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Annual Revenue ($)</FormLabel>
+                        <FormLabel>Annual Revenue (£)</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="1000000" {...field} />
                         </FormControl>

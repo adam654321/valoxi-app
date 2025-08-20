@@ -812,7 +812,7 @@ export default function EnhancedTargetCompanies() {
                     name="annualRevenue"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Annual Revenue ($)</FormLabel>
+                        <FormLabel>Annual Revenue (£)</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="1000000" {...field} data-testid="input-annual-revenue" />
                         </FormControl>
