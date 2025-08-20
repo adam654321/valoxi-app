@@ -211,6 +211,9 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     completionPercentage: number;
   }>({
     queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+    refetchInterval: 15000, // Poll every 15 seconds to catch analysis completion
+    refetchIntervalInBackground: false, // Only poll when tab is active
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   // Mutation to trigger Stage 1 analysis
