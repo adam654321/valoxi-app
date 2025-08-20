@@ -221,14 +221,14 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{completionPercentage}%</div>
-          <div className="text-xs text-blue-600 dark:text-blue-400">{completedTypes.length}/5 Types</div>
+          <div className="text-xs text-blue-600 dark:text-blue-400">{completedTypes.length}/10 Types</div>
         </div>
       </div>
 
       <div className="mb-3">
         <div className="flex justify-between text-sm mb-1">
           <span className="text-blue-700 dark:text-blue-300">Analysis Coverage</span>
-          <span className="text-blue-600 dark:text-blue-400">{completedTypes.length} of 5 completed</span>
+          <span className="text-blue-600 dark:text-blue-400">{completedTypes.length} of 10 completed</span>
         </div>
         <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
           <div 
