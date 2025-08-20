@@ -153,7 +153,7 @@ const getDocumentTypeColor = (type: string) => {
 
 // Document analysis badges component
 function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
-  const { data: analysisResults = [], isLoading } = useQuery<Array<{
+  const { data: analysisResults = [], isLoading: analysisLoading } = useQuery<Array<{
     id: number;
     documentType: string;
     createdAt: string;
@@ -162,16 +162,36 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
     queryKey: ["/api/documents", documentId, "analysis"],
   });
 
-  if (isLoading || analysisResults.length === 0) {
+  const { data: documentInfo, isLoading: documentLoading } = useQuery<Document>({
+    queryKey: ["/api/documents", documentId],
+  });
+
+  if (analysisLoading || documentLoading || analysisResults.length === 0) {
     return null;
   }
 
-  // Check if any analysis result is a company_accounts document
+  // If the document was uploaded with "Company Accounts" category, always show only Company Accounts badge
+  // This ensures consistency with portal behavior where Company Accounts documents only show Company Accounts badge
+  if (documentInfo?.documentCategory === 'Company Accounts') {
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        <Badge 
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          data-testid="analysis-badge-company-accounts"
+        >
+          Company Accounts
+        </Badge>
+      </div>
+    );
+  }
+
+  // For non-Company Accounts documents, show badges based on analysis results
+  // Check if any analysis result is a company_accounts document  
   const hasCompanyAccounts = analysisResults.some(result => 
     result.analysisData && result.analysisData.document === 'company_accounts'
   );
 
-  // If it's a company accounts document, only show the Company Accounts badge
+  // If it's a company accounts document (by analysis), only show the Company Accounts badge
   if (hasCompanyAccounts) {
     return (
       <div className="flex flex-wrap gap-1 mt-2">
