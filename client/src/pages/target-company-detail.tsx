@@ -36,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3 } from "lucide-react";
 import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -917,15 +917,49 @@ export default function TargetCompanyDetail() {
                     
                     // Extract Investment Summary section from the analysis
                     const extractInvestmentSummary = (content: string) => {
-                      // Look for Investment Summary & Recommendation section
+                      // Look for Investment Summary & Recommendation section and clean it
                       const summaryMatch = content.match(/(?:6\.\s*)?✅?\s*Investment Summary[^#]*?(?=(?:\n##|\n#|$))/is);
                       if (summaryMatch) {
-                        return summaryMatch[0];
+                        // Remove the section number and emoji if present
+                        return summaryMatch[0].replace(/^(?:6\.\s*)?✅?\s*Investment Summary & Recommendation\s*\n?/i, '');
                       }
                       
                       // Fallback: look for recommendation section
                       const recMatch = content.match(/(?:recommendation|summary)[^#]*?(?=(?:\n##|\n#|$))/is);
                       return recMatch ? recMatch[0] : null;
+                    };
+
+                    // Extract structured sections from the content
+                    const extractStructuredSections = (content: string) => {
+                      const sections = {
+                        strengths: '',
+                        weaknesses: '',
+                        opportunities: '',
+                        risks: '',
+                        recommendation: ''
+                      };
+
+                      // Extract Strengths section
+                      const strengthsMatch = content.match(/Strengths:\s*([\s\S]*?)(?=\n(?:Weaknesses|Opportunities|Risks|Recommendation):|$)/i);
+                      if (strengthsMatch) sections.strengths = strengthsMatch[1].trim();
+
+                      // Extract Weaknesses section
+                      const weaknessesMatch = content.match(/Weaknesses:\s*([\s\S]*?)(?=\n(?:Opportunities|Risks|Recommendation):|$)/i);
+                      if (weaknessesMatch) sections.weaknesses = weaknessesMatch[1].trim();
+
+                      // Extract Opportunities section
+                      const opportunitiesMatch = content.match(/Opportunities[^:]*?:\s*([\s\S]*?)(?=\n(?:Risks|Recommendation):|$)/i);
+                      if (opportunitiesMatch) sections.opportunities = opportunitiesMatch[1].trim();
+
+                      // Extract Risks section
+                      const risksMatch = content.match(/Risks:\s*([\s\S]*?)(?=\n(?:Recommendation):|$)/i);
+                      if (risksMatch) sections.risks = risksMatch[1].trim();
+
+                      // Extract Recommendation section
+                      const recommendationMatch = content.match(/Recommendation:\s*([\s\S]*?)$/i);
+                      if (recommendationMatch) sections.recommendation = recommendationMatch[1].trim();
+
+                      return sections;
                     };
 
                     // Extract key metrics from the analysis
@@ -969,6 +1003,7 @@ export default function TargetCompanyDetail() {
                     const investmentSummary = extractInvestmentSummary(analysisContent);
                     const keyMetrics = extractKeyMetrics(analysisContent);
                     const riskAssessment = extractRiskLevel(analysisContent);
+                    const structuredSections = extractStructuredSections(investmentSummary || '');
 
                     return (
                       <>
@@ -985,8 +1020,9 @@ export default function TargetCompanyDetail() {
                               Executive overview and investment recommendation for {company.companyName}
                             </CardDescription>
                           </CardHeader>
-                          <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                          <CardContent className="pt-6 space-y-6">
+                            {/* Key Metrics Dashboard */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                               {/* Risk Assessment */}
                               <Card className="border-l-4 border-l-blue-500">
                                 <CardContent className="p-4">
@@ -1011,14 +1047,118 @@ export default function TargetCompanyDetail() {
                               ))}
                             </div>
 
-                            {/* Investment Summary Content */}
-                            {investmentSummary && (
-                              <div className="prose dark:prose-invert max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                  {investmentSummary}
-                                </ReactMarkdown>
-                              </div>
-                            )}
+                            <Separator />
+
+                            {/* Structured Analysis Sections */}
+                            <div className="space-y-6">
+                              {/* Strengths Section */}
+                              {structuredSections.strengths && (
+                                <Card className="border-l-4 border-l-green-500">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
+                                      <CheckCircle className="w-5 h-5" />
+                                      Strengths
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {structuredSections.strengths}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+
+                              {/* Weaknesses Section */}
+                              {structuredSections.weaknesses && (
+                                <Card className="border-l-4 border-l-red-500">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+                                      <AlertTriangle className="w-5 h-5" />
+                                      Weaknesses
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {structuredSections.weaknesses}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+
+                              {/* Opportunities Section */}
+                              {structuredSections.opportunities && (
+                                <Card className="border-l-4 border-l-blue-500">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                                      <TrendingUp className="w-5 h-5" />
+                                      Opportunities for Growth
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {structuredSections.opportunities}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+
+                              {/* Risks Section */}
+                              {structuredSections.risks && (
+                                <Card className="border-l-4 border-l-orange-500">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                                      <AlertTriangle className="w-5 h-5" />
+                                      Risks
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {structuredSections.risks}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+
+                              {/* Final Recommendation Section */}
+                              {structuredSections.recommendation && (
+                                <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                                      <BarChart3 className="w-5 h-5" />
+                                      Final Recommendation
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {structuredSections.recommendation}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+
+                              {/* Fallback: Show full content if sections can't be extracted */}
+                              {!structuredSections.strengths && !structuredSections.weaknesses && !structuredSections.recommendation && investmentSummary && (
+                                <Card>
+                                  <CardContent className="pt-6">
+                                    <div className="prose dark:prose-invert max-w-none">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {investmentSummary}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
                       </>
