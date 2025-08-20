@@ -74,7 +74,8 @@ import {
   CheckCircle,
   BarChart3,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Play
 } from "lucide-react";
 
 interface DocumentManagementProps {
@@ -191,6 +192,8 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
 
 // Analysis completion indicator component
 function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: number }) {
+  const { toast } = useToast();
+  
   const { data: completionStatus, isLoading } = useQuery<{
     completedTypes: string[];
     missingTypes: string[];
@@ -199,6 +202,36 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
   }>({
     queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
   });
+
+  // Mutation to trigger Stage 1 analysis
+  const triggerAnalysisMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest(`/api/target-companies/${targetCompanyId}/trigger-stage1`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis Triggered",
+        description: "Stage 1 analysis has been initiated. This may take a few minutes to complete.",
+      });
+      // Refresh completion status after triggering
+      queryClient.invalidateQueries({
+        queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to trigger analysis. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleProgressToAnalysis = () => {
+    triggerAnalysisMutation.mutate();
+  };
 
   if (isLoading || !completionStatus) {
     return null;
@@ -269,6 +302,37 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
           <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <TrendingUp className="w-4 h-4" />
             <span className="text-sm font-medium">All financial analysis types completed! Ready for comprehensive due diligence review.</span>
+          </div>
+        </div>
+      )}
+
+      {!isComplete && completedTypes.length > 0 && (
+        <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {completedTypes.length < 10 ? 'Partial documentation available - you can proceed with analysis if needed' : 'Ready for analysis'}
+              </span>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={handleProgressToAnalysis}
+              disabled={triggerAnalysisMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {triggerAnalysisMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Triggering...
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Progress to Analysis
+                </>
+              )}
+            </Button>
           </div>
         </div>
       )}
