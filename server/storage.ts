@@ -3449,7 +3449,7 @@ export class DatabaseStorage implements IStorage {
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
-
+    
     // Filter for company accounts and count them
     const companyAccountsCount = companyAccountsAnalysis.filter(result => {
       if (result.analysisData && typeof result.analysisData === 'object') {
