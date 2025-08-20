@@ -3442,16 +3442,28 @@ export class DatabaseStorage implements IStorage {
     // Define the 5 required analysis types
     const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
 
-    // Get distinct analysis types for this company
+    // Get distinct analysis types for this company, but exclude webhook-detected types for portal "Company Accounts" uploads
     const analysisTypes = await db
       .selectDistinct({
-        documentType: documentAnalysisResults.documentType
+        documentType: documentAnalysisResults.documentType,
+        documentCategory: documents.documentCategory,
+        externalSubmissionId: documents.externalSubmissionId
       })
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
 
-    const completedTypes = analysisTypes.map(a => a.documentType).filter(type => requiredTypes.includes(type));
+    // Filter out webhook-detected types for documents that were uploaded via portal as "Company Accounts"
+    const completedTypes = analysisTypes
+      .filter(a => {
+        // If this is a portal upload (has externalSubmissionId) with "Company Accounts" category,
+        // don't include the individual webhook-detected types like balance_sheet, profit_and_loss etc.
+        if (a.externalSubmissionId && a.documentCategory === 'Company Accounts') {
+          return false; // Skip webhook-detected types for portal Company Accounts uploads
+        }
+        return requiredTypes.includes(a.documentType);
+      })
+      .map(a => a.documentType);
     
     // Count company accounts documents
     const companyAccountsAnalysis = await db
