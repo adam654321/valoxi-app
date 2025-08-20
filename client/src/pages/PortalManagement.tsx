@@ -371,7 +371,7 @@ export default function PortalManagement() {
                     </div>
                   ) : contactsLoading ? (
                     <div className="text-sm text-muted-foreground">Loading contacts...</div>
-                  ) : primaryContacts.length === 0 ? (
+                  ) : !contactsLoading && primaryContacts.length === 0 ? (
                     <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                       <div className="text-sm text-yellow-800">
                         No primary contact found for this company. Portal links can only be sent to primary contacts.
@@ -418,7 +418,8 @@ export default function PortalManagement() {
                     selectedContactIds.length === 0 || 
                     createPortalToken.isPending || 
                     companyHasPortal || 
-                    primaryContacts.length === 0
+                    contactsLoading ||
+                    (!contactsLoading && primaryContacts.length === 0)
                   }
                 >
                   {createPortalToken.isPending ? 'Sending...' : 'Send Portal Link'}
