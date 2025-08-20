@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -361,10 +361,59 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     queryKey: ["/api/document-categories"],
   });
 
-  // Get company documents
+  // Get company documents with real-time updates via SSE
   const { data: groupedDocuments = {}, isLoading: documentsLoading } = useQuery<Record<string, Document[]>>({
     queryKey: ["/api/target-companies", targetCompanyId, "documents"],
+    refetchInterval: 10000, // Backup polling every 10 seconds (reduced from 5s since we have SSE)
+    refetchIntervalInBackground: false, // Only refetch when tab is active
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
+
+  // Set up Server-Sent Events for real-time document updates
+  useEffect(() => {
+    const eventSource = new EventSource(`/api/document-updates/stream/${targetCompanyId}`, {
+      withCredentials: true
+    });
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'document_uploaded' && data.targetCompanyId === targetCompanyId) {
+          console.log('[SSE] Document uploaded, refreshing document list:', data);
+          
+          // Invalidate and refetch the documents query
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/target-companies", targetCompanyId, "documents"] 
+          });
+          
+          // Also invalidate analysis queries for immediate display
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/documents", data.documentId, "analysis"] 
+          });
+          
+          // Show a toast notification
+          toast({
+            title: "New Document Available",
+            description: "A document was uploaded via the portal and is now available.",
+          });
+        } else if (data.type === 'connected') {
+          console.log('[SSE] Connected to document update stream for company:', data.targetCompanyId);
+        }
+      } catch (error) {
+        console.error('[SSE] Error parsing event data:', error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('[SSE] EventSource error:', error);
+    };
+
+    // Cleanup on unmount
+    return () => {
+      eventSource.close();
+    };
+  }, [targetCompanyId, toast]);
 
   // Upload document mutation
   const uploadMutation = useMutation({

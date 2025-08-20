@@ -3087,6 +3087,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[PORTAL] Unified upload process completed successfully, webhook triggered');
       
+      // Notify connected clients about document update (for real-time UI updates)
+      if (global.documentUpdateListeners) {
+        global.documentUpdateListeners.forEach((listener) => {
+          if (listener.targetCompanyId === portalToken.targetCompanyId) {
+            listener.res.write(`data: ${JSON.stringify({ 
+              type: 'document_uploaded', 
+              targetCompanyId: portalToken.targetCompanyId,
+              documentId: mainDocument.id,
+              timestamp: new Date().toISOString()
+            })}\n\n`);
+          }
+        });
+      }
+      
       // Remove the old integration code since we're using unified process
       
       // Log activity
@@ -3644,6 +3658,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Public download document error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
+  });
+
+  // ========================
+  // Server-Sent Events for Real-time Updates
+  // ========================
+  
+  // Initialize global listeners array
+  declare global {
+    var documentUpdateListeners: Array<{ targetCompanyId: number; res: any }> | undefined;
+  }
+  
+  if (!global.documentUpdateListeners) {
+    global.documentUpdateListeners = [];
+  }
+  
+  // SSE endpoint for document updates
+  app.get("/api/document-updates/stream/:targetCompanyId", isAuthenticated, async (req: Request, res: Response) => {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const userCompanyId = req.session.userCompanyId!;
+    
+    // Verify user has access to this company
+    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found or access denied' });
+    }
+    
+    // Set up SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+    
+    // Add this connection to the listeners
+    const listener = { targetCompanyId, res };
+    global.documentUpdateListeners.push(listener);
+    
+    // Send initial connection confirmation
+    res.write(`data: ${JSON.stringify({ type: 'connected', targetCompanyId })}\n\n`);
+    
+    // Clean up on disconnect
+    req.on('close', () => {
+      const index = global.documentUpdateListeners.indexOf(listener);
+      if (index > -1) {
+        global.documentUpdateListeners.splice(index, 1);
+      }
+    });
   });
 
   // ========================
