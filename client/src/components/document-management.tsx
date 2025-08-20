@@ -120,6 +120,11 @@ type DocumentFormData = z.infer<typeof documentSchema>;
 
 // Utility functions for analysis types (shared between components)
 const formatDocumentType = (type: string) => {
+  // Handle company accounts files (company_accounts_1, company_accounts_2, etc.)
+  if (type.startsWith('company_accounts')) {
+    return 'Company Accounts';
+  }
+  
   switch (type) {
     case 'asset_register': return 'Asset Register';
     case 'sales_ledger': return 'Sales Ledger';
@@ -131,6 +136,11 @@ const formatDocumentType = (type: string) => {
 };
 
 const getDocumentTypeColor = (type: string) => {
+  // Handle company accounts files (company_accounts_1, company_accounts_2, etc.)
+  if (type.startsWith('company_accounts')) {
+    return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
+  }
+  
   switch (type) {
     case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
     case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
