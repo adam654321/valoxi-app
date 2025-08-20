@@ -34,9 +34,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown } from "lucide-react";
 import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -1206,11 +1207,62 @@ export default function TargetCompanyDetail() {
                                 const responseData = JSON.parse(event.webhookResponse);
                                 const analysisContent = responseData.analysis || responseData.data?.analysis || event.webhookResponse;
                                 
+                                // Create collapsible sections for detailed analysis
+                                const createCollapsibleSections = (content: string) => {
+                                  // Split content by numbered sections (1., 2., 3., etc.)
+                                  const sections = content.split(/(?=\d+\.\s*[🧾📈🧩📊⚠️🎯])/);
+                                  
+                                  return sections.filter(section => section.trim()).map((section, index) => {
+                                    const trimmedSection = section.trim();
+                                    if (!trimmedSection) return null;
+                                    
+                                    // Extract the heading (first line)
+                                    const lines = trimmedSection.split('\n');
+                                    const heading = lines[0]?.trim() || '';
+                                    const content = lines.slice(1).join('\n').trim();
+                                    
+                                    if (!heading.match(/^\d+\./)) return null;
+                                    
+                                    return (
+                                      <Collapsible key={index} className="mb-4">
+                                        <CollapsibleTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            className="w-full justify-between p-4 h-auto text-left hover:bg-muted/50 rounded-lg border"
+                                          >
+                                            <span className="font-semibold text-base">{heading}</span>
+                                            <ChevronDown className="w-4 h-4 transition-transform duration-200 data-[state=open]:rotate-180" />
+                                          </Button>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="mt-2">
+                                          <Card className="border-l-4 border-l-blue-500">
+                                            <CardContent className="p-4">
+                                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                  {content}
+                                                </ReactMarkdown>
+                                              </div>
+                                            </CardContent>
+                                          </Card>
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    );
+                                  }).filter(Boolean);
+                                };
+
+                                const collapsibleSections = createCollapsibleSections(analysisContent);
+                                
                                 return (
-                                  <div className="prose dark:prose-invert max-w-none">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                      {analysisContent}
-                                    </ReactMarkdown>
+                                  <div className="space-y-4">
+                                    {collapsibleSections.length > 0 ? (
+                                      collapsibleSections
+                                    ) : (
+                                      <div className="prose dark:prose-invert max-w-none">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                          {analysisContent}
+                                        </ReactMarkdown>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               } catch (error) {
