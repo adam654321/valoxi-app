@@ -3456,10 +3456,10 @@ export class DatabaseStorage implements IStorage {
     // Filter out webhook-detected types for documents that were uploaded via portal as "Company Accounts"
     const completedTypes = analysisTypes
       .filter(a => {
-        // If this is a portal upload (has externalSubmissionId) with "Company Accounts" category,
-        // don't include the individual webhook-detected types like balance_sheet, profit_and_loss etc.
+        // Only skip webhook-detected types for portal uploads categorized as "Company Accounts"
+        // Portal uploads with specific categories (Balance Sheet, Profit & Loss, etc.) should be included
         if (a.externalSubmissionId && a.documentCategory === 'Company Accounts') {
-          return false; // Skip webhook-detected types for portal Company Accounts uploads
+          return false; // Skip webhook-detected types for portal Company Accounts uploads only
         }
         return requiredTypes.includes(a.documentType);
       })
