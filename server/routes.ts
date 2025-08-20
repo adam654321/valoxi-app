@@ -2519,6 +2519,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {});
       
+      console.log(`[API] Returning ${documents.length} documents grouped into ${Object.keys(groupedDocuments).length} categories for company ${targetCompanyId}`);
+      Object.keys(groupedDocuments).forEach(category => {
+        console.log(`[API] Category "${category}": ${groupedDocuments[category].length} documents`);
+      });
+      
       res.json(groupedDocuments);
     } catch (error) {
       console.error("Get company documents error:", error);
