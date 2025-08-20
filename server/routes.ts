@@ -412,6 +412,21 @@ async function sendStage1AnalysisWebhook(eventId: number) {
 
     if (response.ok) {
       console.log(`[STAGE1_ANALYSIS_WEBHOOK] Received markdown analysis response for event ${eventId}, length: ${responseText.length} characters`);
+      
+      // Notify connected clients about Stage 1 analysis completion (for real-time UI updates)
+      if (global.documentUpdateListeners) {
+        global.documentUpdateListeners.forEach((listener) => {
+          if (listener.targetCompanyId === event.targetCompanyId) {
+            listener.res.write(`data: ${JSON.stringify({ 
+              type: 'stage1_analysis_completed', 
+              targetCompanyId: event.targetCompanyId,
+              eventId: eventId,
+              timestamp: new Date().toISOString()
+            })}\n\n`);
+          }
+        });
+      }
+      console.log(`[STAGE1_ANALYSIS_WEBHOOK] SSE notification sent for Stage 1 analysis completion of company ${event.targetCompanyId}`);
     }
 
   } catch (error) {

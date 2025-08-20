@@ -427,6 +427,19 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           queryClient.invalidateQueries({ 
             queryKey: ["/api/documents", data.documentId, "analysis"] 
           });
+        } else if (data.type === 'stage1_analysis_completed' && data.targetCompanyId === targetCompanyId) {
+          console.log('[SSE] Stage 1 analysis completed, refreshing analysis tab:', data);
+          
+          // Invalidate Stage 1 analysis results to display in Analysis tab
+          queryClient.invalidateQueries({ 
+            queryKey: ["/api/target-companies", targetCompanyId, "stage1-analysis"] 
+          });
+          
+          // Show a toast notification
+          toast({
+            title: "Stage 1 Analysis Complete",
+            description: "Strategic analysis results are now available in the Analysis tab.",
+          });
         } else if (data.type === 'connected') {
           console.log('[SSE] Connected to document update stream for company:', data.targetCompanyId);
         }

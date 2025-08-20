@@ -126,6 +126,9 @@ export default function TargetCompanyDetail() {
   const { data: stage1Events = [], isLoading: analysisLoading } = useQuery<Stage1AnalysisEvent[]>({
     queryKey: ["/api/target-companies", id, "stage1-analysis"],
     enabled: !!id,
+    refetchInterval: 30000, // Poll every 30 seconds for new Stage 1 analysis results
+    refetchIntervalInBackground: false, // Only poll when tab is active
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 
   // Extract company and contacts from profile
