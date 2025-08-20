@@ -1,0 +1,213 @@
+{
+  "event_type": "stage1_analysis_complete",
+  "timestamp": "2025-08-20T01:03:48.000Z",
+  "company_info": {
+    "id": 8,
+    "triggered_by": 1
+  },
+  "concatenated_analysis_data": {
+    "asset_register": [
+      {
+        "total_assets_cost": 216000,
+        "total_accumulated_depreciation": 177300,
+        "total_net_book_value": 38700,
+        "asset_breakdown": [
+          {
+            "category": "Fixtures and Fittings",
+            "cost": 24500,
+            "accumulated_depreciation": 17850,
+            "net_book_value": 6650
+          },
+          {
+            "category": "IT Equipment",
+            "cost": 24000,
+            "accumulated_depreciation": 18250,
+            "net_book_value": 5750
+          },
+          {
+            "category": "Office Furniture",
+            "cost": 10000,
+            "accumulated_depreciation": 8500,
+            "net_book_value": 1500
+          },
+          {
+            "category": "Plant and Machinery",
+            "cost": 42500,
+            "accumulated_depreciation": 30900,
+            "net_book_value": 11600
+          },
+          {
+            "category": "Property Improvements",
+            "cost": 32000,
+            "accumulated_depreciation": 20000,
+            "net_book_value": 12000
+          },
+          {
+            "category": "Software",
+            "cost": 11000,
+            "accumulated_depreciation": 9500,
+            "net_book_value": 1500
+          },
+          {
+            "category": "Vehicles",
+            "cost": 72000,
+            "accumulated_depreciation": 52300,
+            "net_book_value": 19700
+          }
+        ],
+        "recent_additions_summary": "Recent Additions: IT Equipment 9000, Plant and Machinery 12000",
+        "depreciation_this_year": null,
+        "observations": "The asset base appears mature, with a high proportion of accumulated depreciation (approx. 82% of total cost) and a relatively low net book value (approx. 18% of total cost), indicating many assets are nearing the end of their useful lives."
+      }
+    ],
+    "sales_ledger": [
+      {
+        "total_invoice_count": 30,
+        "total_invoice_value": 102900,
+        "total_amount_paid": 0,
+        "total_outstanding": 102900,
+        "invoice_status_summary": {
+          "Paid": {
+            "count": 0,
+            "value": 0
+          },
+          "Part Paid": {
+            "count": 0,
+            "value": 0
+          },
+          "Unpaid": {
+            "count": 30,
+            "value": 102900
+          }
+        },
+        "customer_exposure": [
+          {
+            "customer_name": "ABC Builders Ltd",
+            "total_invoiced": 4200,
+            "total_paid": 0,
+            "total_outstanding": 4200
+          },
+          {
+            "customer_name": "Moss & Sons",
+            "total_invoiced": 8900,
+            "total_paid": 0,
+            "total_outstanding": 8900
+          }
+        ],
+        "observations": "City Council has £3,700.00 overdue. Moss & Sons has the highest single outstanding invoice of £8,900.00. Top 3 customers account for 17.30% of total invoice value."
+      }
+    ],
+    "staff_matrix": [
+      {
+        "total_employee_count": 20,
+        "total_annual_payroll": 679000,
+        "average_salary": 33950,
+        "employment_type_breakdown": {
+          "Full-Time": 20,
+          "Part-Time": 0
+        },
+        "status_summary": {
+          "Active": 20,
+          "Maternity Leave": 0
+        },
+        "longest_tenured_employees": "John Smith – Managing Director (start_date: 01/03/10; years_of_service: 15), Sarah Johnson – Sales Director (start_date: 12/07/15; years_of_service: 10), Emily Clark – Operations Manager (start_date: 19/09/16; years_of_service: 8)",
+        "observations": "All employees are full-time and currently active. The longest-serving employee, John Smith, has been with the company for 15 years. The Operations department is the largest, comprising 11 out of 20 employees."
+      }
+    ],
+    "profit_and_loss": [
+      {
+        "years_covered": "2024",
+        "years": {
+          "2024": {
+            "year": 2024,
+            "profit_and_loss": {
+              "revenue": 485000,
+              "cost_of_sales": 297000,
+              "gross_profit": 188000,
+              "administrative_expenses": 160000,
+              "other_operating_income": null,
+              "operating_profit": 28000,
+              "interest_receivable": null,
+              "interest_payable": 2000,
+              "profit_before_tax": 26000,
+              "tax": 5000,
+              "net_profit": 21000
+            }
+          }
+        },
+        "summary": "Data Limitation: The provided financial data only includes figures for the year 2024. Revenue & Gross Profit (2024): The company reported revenue of £485,000 in 2024. Gross profit stood at £188,000, resulting in a gross margin of approximately 38.8%. Operating & Net Profit (2024): Operating profit was £28,000, leading to a net profit of £21,000 after tax, representing a net margin of about 4.3%."
+      },
+      {
+        "document": "company_accounts",
+        "data": {
+          "document_type": "profit_and_loss",
+          "data": {
+            "years_covered": "2021, 2022",
+            "years": {
+              "2021": {
+                "year": 2021,
+                "profit_and_loss": {
+                  "revenue": 726819,
+                  "cost_of_sales": 433733,
+                  "gross_profit": 293086,
+                  "administrative_expenses": 211038,
+                  "other_operating_income": 0,
+                  "operating_profit": 82048,
+                  "interest_receivable": 0,
+                  "interest_payable": 5904,
+                  "profit_before_tax": 82048,
+                  "tax": 15684,
+                  "net_profit": 66364
+                }
+              },
+              "2022": {
+                "year": 2022,
+                "profit_and_loss": {
+                  "revenue": 921359,
+                  "cost_of_sales": 563929,
+                  "gross_profit": 357430,
+                  "administrative_expenses": 222131,
+                  "other_operating_income": 80,
+                  "operating_profit": 135299,
+                  "interest_receivable": 80,
+                  "interest_payable": 4727,
+                  "profit_before_tax": 135379,
+                  "tax": 25532,
+                  "net_profit": 109847
+                }
+              }
+            }
+          },
+          "id": 81,
+          "summary": "Revenue demonstrated robust growth, increasing by 26.8% from £726,819 in 2021 to £921,359 in 2022. Gross profit rose by 22.0% to £357,430, although the gross margin saw a slight contraction from 40.3% to 38.8%. Operating profit surged by 64.9% to £135,299."
+        }
+      }
+    ],
+    "balance_sheet": [
+      {
+        "years_covered": "2024",
+        "years": {
+          "2024": {
+            "year": 2024,
+            "balance_sheet": {
+              "fixed_assets": 41500,
+              "debtors": 95000,
+              "cash_at_bank": 365000,
+              "total_current_assets": 530000,
+              "creditors_within_one_year": 151727,
+              "net_current_assets": 378273,
+              "total_assets_less_current_liabilities": 419773,
+              "creditors_after_one_year": null,
+              "net_assets": 414773,
+              "called_up_share_capital": 100,
+              "profit_and_loss_reserve": 414673
+            }
+          }
+        },
+        "summary": "Analysis is based solely on the 2024 balance sheet data provided. Assets: Total assets stand at £571,500, with a significant majority (£530,000 or 92.7%) being current assets. Cash at bank represents a substantial £365,000 (63.9% of total assets), indicating a very strong liquidity position."
+      }
+    ],
+    "timestamp": "2025-08-20T01:03:48.000Z",
+    "company_id": 8
+  }
+}
