@@ -939,7 +939,7 @@ export default function TargetCompanyDetail() {
                         recommendation: ''
                       };
 
-                      // Split content into paragraphs and find section headers
+                      // Split content into lines and find section headers
                       const lines = content.split('\n');
                       let currentSection = '';
                       let currentContent: string[] = [];
@@ -948,39 +948,47 @@ export default function TargetCompanyDetail() {
                         const line = lines[i].trim();
                         
                         // Check if this line is a section header
-                        if (line.match(/^Strengths:$/i)) {
+                        if (line === 'Strengths:') {
+                          // Save previous section if exists
                           if (currentSection && currentContent.length > 0) {
                             sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
                           }
                           currentSection = 'strengths';
                           currentContent = [];
-                        } else if (line.match(/^Weaknesses:$/i)) {
+                        } else if (line === 'Weaknesses:') {
                           if (currentSection && currentContent.length > 0) {
                             sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
                           }
                           currentSection = 'weaknesses';
                           currentContent = [];
-                        } else if (line.match(/^Opportunities[^:]*:$/i)) {
+                        } else if (line === 'Opportunities for Growth:' || line === 'Opportunities:') {
                           if (currentSection && currentContent.length > 0) {
                             sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
                           }
                           currentSection = 'opportunities';
                           currentContent = [];
-                        } else if (line.match(/^Risks:$/i)) {
+                        } else if (line === 'Risks:') {
                           if (currentSection && currentContent.length > 0) {
                             sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
                           }
                           currentSection = 'risks';
                           currentContent = [];
-                        } else if (line.match(/^Recommendation:$/i)) {
+                        } else if (line.startsWith('Recommendation:')) {
                           if (currentSection && currentContent.length > 0) {
                             sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
                           }
                           currentSection = 'recommendation';
                           currentContent = [];
-                        } else if (currentSection && line) {
-                          // Add content to current section if we're in a section
-                          currentContent.push(line);
+                          // Include the recommendation text that comes after "Recommendation:" on same line
+                          const recommendationText = line.replace(/^Recommendation:\s*/, '').trim();
+                          if (recommendationText) {
+                            currentContent.push(recommendationText);
+                          }
+                        } else if (currentSection) {
+                          // Add content to current section, including empty lines for proper formatting
+                          if (line || currentContent.length > 0) {
+                            currentContent.push(line);
+                          }
                         }
                       }
 
