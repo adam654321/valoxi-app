@@ -306,11 +306,17 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         <div className="mb-3">
           <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">✅ Analyzed:</div>
           <div className="flex flex-wrap gap-1">
-            {completedTypes.map(type => (
-              <Badge key={type} className={`text-xs ${getDocumentTypeColor(type)}`}>
-                {formatDocumentType(type)}
-              </Badge>
-            ))}
+            {(() => {
+              // Normalize and deduplicate types for display
+              const normalize = (t: string) => t.startsWith("company_accounts") ? "company_accounts" : t;
+              const displayCompleted = Array.from(new Set(completedTypes.map(normalize)));
+              
+              return displayCompleted.map(normalizedType => (
+                <Badge key={normalizedType} className={`text-xs ${getDocumentTypeColor(normalizedType)}`}>
+                  {formatDocumentType(normalizedType)}
+                </Badge>
+              ));
+            })()}
           </div>
         </div>
       )}
