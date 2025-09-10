@@ -38,12 +38,8 @@ interface SimplePortalDisplayProps {
 }
 
 const DOCUMENT_TYPES = [
-  { value: 'company_accounts_1', label: 'Company Accounts (File 1 of 5)' },
-  { value: 'company_accounts_2', label: 'Company Accounts (File 2 of 5)' },
-  { value: 'company_accounts_3', label: 'Company Accounts (File 3 of 5)' },
-  { value: 'company_accounts_4', label: 'Company Accounts (File 4 of 5)' },
-  { value: 'company_accounts_5', label: 'Company Accounts (File 5 of 5)' },
-  { value: 'p_and_l', label: 'P&L Statement' },
+  { value: 'company_accounts', label: 'Company Accounts' },
+  { value: 'p_and_l', label: 'Profit and Loss' },
   { value: 'balance_sheet', label: 'Balance Sheet' },
   { value: 'sales_ledger', label: 'Sales Ledger' },
   { value: 'asset_register', label: 'Asset Register' },
@@ -287,17 +283,16 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   <SelectContent>
                     {DOCUMENT_TYPES
                       .filter(type => {
-                        // For company_accounts types, check if the group has space for more submissions
-                        if (type.value.startsWith('company_accounts_')) {
-                          const companyAccountsStatus = portalData.document_status?.find(doc => doc.type === 'company_accounts');
-                          if (!companyAccountsStatus) return true;
-                          // Allow submissions if the group isn't complete
-                          return !companyAccountsStatus.isComplete;
+                        const docStatus = portalData.document_status?.find(doc => doc.type === type.value);
+                        if (!docStatus) return true; // Show if no status found yet
+                        
+                        // For grouped types (like Company Accounts), check if group is complete
+                        if (docStatus.isGroup) {
+                          return !docStatus.isComplete;
                         }
                         
                         // For individual document types, check if already submitted
-                        const docStatus = portalData.document_status?.find(doc => doc.type === type.value);
-                        return !docStatus?.submitted;
+                        return !docStatus.submitted;
                       })
                       .map(type => (
                         <SelectItem key={type.value} value={type.value}>
