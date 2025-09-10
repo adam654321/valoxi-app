@@ -3466,24 +3466,38 @@ export class DatabaseStorage implements IStorage {
       })
       .map(a => a.documentType);
     
-    // Count company accounts documents
-    const companyAccountsAnalysis = await db
-      .select({
-        id: documentAnalysisResults.id,
-        analysisData: documentAnalysisResults.analysisData
+    // Count distinct company accounts documents (not analysis results)
+    const companyAccountsDocuments = await db
+      .selectDistinct({
+        documentId: documentAnalysisResults.documentId,
       })
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
     
-    // Filter for company accounts and count them
-    const companyAccountsCount = companyAccountsAnalysis.filter(result => {
-      if (result.analysisData && typeof result.analysisData === 'object') {
-        const data = result.analysisData as any;
-        return data.document === 'company_accounts';
-      }
-      return false;
-    }).length;
+    // Filter for documents with company accounts analysis and count distinct documents
+    const companyAccountsAnalysisResults = await db
+      .select({
+        documentId: documentAnalysisResults.documentId,
+        analysisData: documentAnalysisResults.analysisData
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+
+    const uniqueCompanyAccountsDocuments = new Set(
+      companyAccountsAnalysisResults
+        .filter(result => {
+          if (result.analysisData && typeof result.analysisData === 'object') {
+            const data = result.analysisData as any;
+            return data.document === 'company_accounts';
+          }
+          return false;
+        })
+        .map(result => result.documentId)
+    );
+    
+    const companyAccountsCount = uniqueCompanyAccountsDocuments.size;
 
     // We need 5 company accounts documents + 5 main document types = 10 total
     const totalRequired = 10;
