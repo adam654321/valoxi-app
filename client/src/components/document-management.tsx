@@ -311,9 +311,15 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
               const normalize = (t: string) => t.startsWith("company_accounts") ? "company_accounts" : t;
               const displayCompleted = Array.from(new Set(completedTypes.map(normalize)));
               
+              // Count company accounts documents
+              const companyAccountsCount = completedTypes.filter(t => t.startsWith("company_accounts")).length;
+              
               return displayCompleted.map(normalizedType => (
                 <Badge key={normalizedType} className={`text-xs ${getDocumentTypeColor(normalizedType)}`}>
-                  {formatDocumentType(normalizedType)}
+                  {normalizedType === "company_accounts" 
+                    ? `Company Accounts (${companyAccountsCount})`
+                    : formatDocumentType(normalizedType)
+                  }
                 </Badge>
               ));
             })()}
