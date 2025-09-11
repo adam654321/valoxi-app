@@ -3160,18 +3160,49 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Get ALL submitted documents for this COMPANY (not just this portal token)
-      // This way all portals for the same company show the same data
-      const submissions = await db
+      // This includes both portal submissions AND direct library uploads
+      const portalSubmissions = await db
         .select({
           id: externalDocumentSubmissions.id,
           documentType: externalDocumentSubmissions.documentCategory,
           filename: externalDocumentSubmissions.originalFilename,
           submittedAt: externalDocumentSubmissions.createdAt,
-          status: externalDocumentSubmissions.processingStatus
+          status: externalDocumentSubmissions.processingStatus,
+          source: sql<string>`'portal'`
         })
         .from(externalDocumentSubmissions)
         .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId))
         .orderBy(sql`${externalDocumentSubmissions.createdAt} DESC`);
+
+      // Get direct library uploads for the same company
+      const libraryUploads = await db
+        .select({
+          id: documents.id,
+          documentType: sql<string>`CASE 
+            WHEN ${documents.documentCategory} = 'Company Accounts' THEN 'company_accounts'
+            WHEN ${documents.documentCategory} = 'Profit & Loss' THEN 'p_and_l'  
+            WHEN ${documents.documentCategory} = 'Balance Sheet' THEN 'balance_sheet'
+            WHEN ${documents.documentCategory} = 'Sales Ledger' THEN 'sales_ledger'
+            WHEN ${documents.documentCategory} = 'Asset Register' THEN 'asset_register'
+            WHEN ${documents.documentCategory} = 'Staff Matrix' THEN 'staff_matrix'
+            ELSE LOWER(REPLACE(${documents.documentCategory}, ' ', '_'))
+          END`,
+          filename: documents.documentName,
+          submittedAt: documents.uploadDate,
+          status: sql<string>`'completed'`,
+          source: sql<string>`'library'`
+        })
+        .from(documents)
+        .where(
+          and(
+            eq(documents.targetCompanyId, tokenInfo.targetCompanyId),
+            isNull(documents.externalSubmissionId) // Only direct uploads (not from portal)
+          )
+        )
+        .orderBy(sql`${documents.uploadDate} DESC`);
+
+      // Combine both sources
+      const submissions = [...portalSubmissions, ...libraryUploads];
 
       // Get target company name
       const [company] = await db
@@ -3454,7 +3485,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.targetCompanyId, targetCompanyId));
 
     // Filter out webhook-detected types for documents that were uploaded as "Company Accounts"
-    const completedTypes = [...new Set(analysisTypes
+    const completedTypes = Array.from(new Set(analysisTypes
       .filter(a => {
         // Skip webhook-detected types for any document categorized as "Company Accounts"
         // This applies to both portal uploads and direct uploads
@@ -3464,7 +3495,7 @@ export class DatabaseStorage implements IStorage {
         }
         return requiredTypes.includes(a.documentType);
       })
-      .map(a => a.documentType))];
+      .map(a => a.documentType)));
     
     // Count distinct company accounts documents (not analysis results)
     const companyAccountsDocuments = await db
