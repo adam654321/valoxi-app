@@ -3184,7 +3184,7 @@ export class DatabaseStorage implements IStorage {
 
       // Count company accounts submissions
       const companyAccountsSubmissions = submissions.filter(s => 
-        s.documentType?.startsWith('company_accounts_')
+        s.documentType === 'company_accounts'
       );
 
       // Define the condensed document requirements
