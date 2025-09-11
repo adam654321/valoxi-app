@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -402,7 +402,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   });
 
   // Get document categories
-  const { data: categories } = useQuery<DocumentCategory[]>({
+  const { data: allCategories } = useQuery<DocumentCategory[]>({
     queryKey: ["/api/document-categories"],
   });
 
@@ -413,6 +413,24 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     refetchIntervalInBackground: false, // Only refetch when tab is active
     staleTime: 30000, // Consider data stale after 30 seconds
   });
+
+  // Filter categories based on existing documents
+  const categories = useMemo(() => {
+    if (!allCategories || !groupedDocuments) return allCategories;
+
+    return allCategories.filter((category: DocumentCategory) => {
+      const categoryName = category.categoryName;
+      const existingDocs = groupedDocuments[categoryName] || [];
+      
+      // For Company Accounts, allow upload until we have 5 documents
+      if (categoryName === 'Company Accounts') {
+        return existingDocs.length < 5;
+      }
+      
+      // For all other document types, only allow if no documents exist
+      return existingDocs.length === 0;
+    });
+  }, [allCategories, groupedDocuments]);
 
   // Set up Server-Sent Events for real-time document updates
   useEffect(() => {
