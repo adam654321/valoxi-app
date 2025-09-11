@@ -3454,7 +3454,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.targetCompanyId, targetCompanyId));
 
     // Filter out webhook-detected types for documents that were uploaded as "Company Accounts"
-    const completedTypes = analysisTypes
+    const completedTypes = [...new Set(analysisTypes
       .filter(a => {
         // Skip webhook-detected types for any document categorized as "Company Accounts"
         // This applies to both portal uploads and direct uploads
@@ -3464,7 +3464,7 @@ export class DatabaseStorage implements IStorage {
         }
         return requiredTypes.includes(a.documentType);
       })
-      .map(a => a.documentType);
+      .map(a => a.documentType))];
     
     // Count distinct company accounts documents (not analysis results)
     const companyAccountsDocuments = await db
