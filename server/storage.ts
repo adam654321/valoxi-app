@@ -3499,6 +3499,12 @@ export class DatabaseStorage implements IStorage {
     
     const companyAccountsCount = uniqueCompanyAccountsDocuments.size;
 
+    console.log('[DEBUG] Analysis completion status for company', targetCompanyId, 'at', new Date().toISOString());
+    console.log('[DEBUG] completedTypes:', completedTypes);
+    console.log('[DEBUG] companyAccountsCount:', companyAccountsCount);  
+    console.log('[DEBUG] completedCount calculation:', completedTypes.length, '+', Math.min(companyAccountsCount, 5), '=', completedTypes.length + Math.min(companyAccountsCount, 5));
+    console.log('[DEBUG] analysisTypes raw:', analysisTypes.map(a => ({type: a.documentType, category: a.documentCategory})));
+
     // We need 5 company accounts documents + 5 main document types = 10 total
     const totalRequired = 10;
     const completedCount = completedTypes.length + Math.min(companyAccountsCount, 5); // Cap company accounts at 5
