@@ -39,43 +39,44 @@ function Router() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        {/* Public portal route - accessible without authentication */}
+        <Route path="/portal/:token" component={PortalPage} />
+        
+        {/* Public invitation route - accessible without authentication */}
+        <Route path="/invite/:token" component={AcceptInvitation} />
+        
+        <Route path="/" component={Login} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route path="/accept-invitation" component={AcceptInvitation} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
   return (
-    <Switch>
-      {/* Public portal route - accessible without authentication */}
-      <Route path="/portal/:token" component={PortalPage} />
-      
-      {/* Public invitation route - accessible without authentication */}
-      <Route path="/invite/:token" component={AcceptInvitation} />
-      
-      {!isAuthenticated ? (
-        <>
-          <Route path="/" component={Login} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route path="/accept-invitation" component={AcceptInvitation} />
-        </>
-      ) : (
-        <Layout>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/pipeline" component={Pipeline} />
-            <Route path="/target-companies" component={EnhancedTargetCompanies} />
-            <Route path="/target-companies/:id" component={TargetCompanyDetail} />
-            <Route path="/contacts" component={Contacts} />
-            <Route path="/team" component={TeamManagement} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/notifications" component={NotificationsPage} />
-            <Route path="/portal-management" component={PortalManagement} />
-            <Route path="/email-test" component={EmailTest} />
-            <Route path="/webhook-test" component={WebhookTest} />
-            <Route path="/file-upload-test" component={FileUploadTest} />
-            <Route path="/company-accounts" component={CompanyAccounts} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
-      )}
-    </Switch>
+    <Layout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/pipeline" component={Pipeline} />
+        <Route path="/target-companies" component={EnhancedTargetCompanies} />
+        <Route path="/target-companies/:id" component={TargetCompanyDetail} />
+        <Route path="/contacts" component={Contacts} />
+        <Route path="/team" component={TeamManagement} />
+        <Route path="/reports" component={Reports} />
+        <Route path="/notifications" component={NotificationsPage} />
+        <Route path="/portal-management" component={PortalManagement} />
+        <Route path="/email-test" component={EmailTest} />
+        <Route path="/webhook-test" component={WebhookTest} />
+        <Route path="/file-upload-test" component={FileUploadTest} />
+        <Route path="/company-accounts" component={CompanyAccounts} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
   );
 }
 
