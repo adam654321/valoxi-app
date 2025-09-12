@@ -102,6 +102,45 @@ function TokenCompletionDisplay({ accessToken }: { accessToken: string }) {
   );
 }
 
+// Component to display average completion percentage for a business with multiple tokens
+function BusinessCompletionDisplay({ tokens }: { tokens: PortalToken[] }) {
+  const completionQueries = tokens.map(token => 
+    useTokenCompletion(token.accessToken)
+  );
+  
+  const isLoading = completionQueries.some(query => query.isLoading);
+  const completionData = completionQueries.map(query => query.data).filter(Boolean);
+  
+  if (isLoading) {
+    return (
+      <div className="text-right">
+        <div className="text-2xl font-bold text-gray-400">...</div>
+        <div className="text-xs text-muted-foreground">Loading</div>
+      </div>
+    );
+  }
+  
+  if (completionData.length === 0) {
+    return (
+      <div className="text-right">
+        <div className="text-2xl font-bold text-gray-400">N/A</div>
+        <div className="text-xs text-muted-foreground">No data</div>
+      </div>
+    );
+  }
+  
+  const averageCompletion = completionData.reduce((sum, data) => sum + (data?.completionPercentage || 0), 0) / completionData.length;
+  
+  return (
+    <div className="text-right">
+      <div className="text-2xl font-bold text-blue-600">
+        {Math.round(averageCompletion)}%
+      </div>
+      <div className="text-xs text-muted-foreground">Complete</div>
+    </div>
+  );
+}
+
 export default function PortalManagement() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
@@ -517,14 +556,11 @@ export default function PortalManagement() {
                         </div>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {business.totalSubmissions} document{business.totalSubmissions !== 1 ? 's' : ''} submitted across {business.totalLinks} portal link{business.totalLinks !== 1 ? 's' : ''}
+                        Portal completion status across {business.totalLinks} portal link{business.totalLinks !== 1 ? 's' : ''}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">{business.totalSubmissions}</div>
-                        <div className="text-xs text-muted-foreground">Documents</div>
-                      </div>
+                      <BusinessCompletionDisplay tokens={business.tokens} />
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
