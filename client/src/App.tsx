@@ -58,25 +58,34 @@ function Router() {
   }
 
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/pipeline" component={Pipeline} />
-        <Route path="/target-companies" component={EnhancedTargetCompanies} />
-        <Route path="/target-companies/:id" component={TargetCompanyDetail} />
-        <Route path="/contacts" component={Contacts} />
-        <Route path="/team" component={TeamManagement} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/notifications" component={NotificationsPage} />
-        <Route path="/portal-management" component={PortalManagement} />
-        <Route path="/email-test" component={EmailTest} />
-        <Route path="/webhook-test" component={WebhookTest} />
-        <Route path="/file-upload-test" component={FileUploadTest} />
-        <Route path="/company-accounts" component={CompanyAccounts} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      {/* Public routes accessible even when authenticated */}
+      <Route path="/portal/:token" component={PortalPage} />
+      <Route path="/invite/:token" component={AcceptInvitation} />
+      
+      {/* Authenticated routes */}
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/pipeline" component={Pipeline} />
+            <Route path="/target-companies" component={EnhancedTargetCompanies} />
+            <Route path="/target-companies/:id" component={TargetCompanyDetail} />
+            <Route path="/contacts" component={Contacts} />
+            <Route path="/team" component={TeamManagement} />
+            <Route path="/reports" component={Reports} />
+            <Route path="/notifications" component={NotificationsPage} />
+            <Route path="/portal-management" component={PortalManagement} />
+            <Route path="/email-test" component={EmailTest} />
+            <Route path="/webhook-test" component={WebhookTest} />
+            <Route path="/file-upload-test" component={FileUploadTest} />
+            <Route path="/company-accounts" component={CompanyAccounts} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 
