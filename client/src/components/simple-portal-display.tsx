@@ -195,26 +195,45 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
   const analysisProgress = analysisCompletion || { completedTypes: [], completionPercentage: 0, completedCount: 0, totalCount: 10 };
   const isCompleted = analysisProgress.completionPercentage >= 100;
 
-  // Helper function to determine if a document type is complete based on analysis data
-  const getAnalysisBasedCompletion = (docType: string) => {
-    if (!analysisCompletion) return false;
+  // Helper function to get actual upload count for document types
+  const getUploadBasedCompletion = (docType: string) => {
+    if (!portalData?.document_status) return false;
     
-    switch (docType) {
-      case 'company_accounts':
-        // For Company Accounts, check if we have completed analysis (any number up to 5)
-        return analysisCompletion.completedTypes.filter(t => t.startsWith('company_accounts')).length;
-      case 'p_and_l':
-        return analysisCompletion.completedTypes.includes('profit_and_loss');
-      case 'balance_sheet':
-        return analysisCompletion.completedTypes.includes('balance_sheet');
-      case 'sales_ledger':
-        return analysisCompletion.completedTypes.includes('sales_ledger');
-      case 'asset_register':
-        return analysisCompletion.completedTypes.includes('asset_register');
-      case 'staff_matrix':
-        return analysisCompletion.completedTypes.includes('staff_matrix');
-      default:
-        return false;
+    const docStatus = portalData.document_status.find(doc => doc.type === docType);
+    if (!docStatus) return false;
+    
+    if (docType === 'company_accounts') {
+      // For Company Accounts, return actual uploaded count (submitted/required)
+      return docStatus.submitted || 0;
+    } else {
+      // For individual docs, return whether submitted
+      return docStatus.submitted || false;
+    }
+  };
+
+  // Helper function to determine completion based on analysis (for progress display) or uploads (for Company Accounts)
+  const getCompletionStatus = (docType: string) => {
+    if (docType === 'company_accounts') {
+      // Company Accounts: use actual upload count, not analysis
+      return getUploadBasedCompletion(docType);
+    } else {
+      // Individual docs: use analysis completion
+      if (!analysisCompletion) return false;
+      
+      switch (docType) {
+        case 'p_and_l':
+          return analysisCompletion.completedTypes.includes('profit_and_loss');
+        case 'balance_sheet':
+          return analysisCompletion.completedTypes.includes('balance_sheet');
+        case 'sales_ledger':
+          return analysisCompletion.completedTypes.includes('sales_ledger');
+        case 'asset_register':
+          return analysisCompletion.completedTypes.includes('asset_register');
+        case 'staff_matrix':
+          return analysisCompletion.completedTypes.includes('staff_matrix');
+        default:
+          return false;
+      }
     }
   };
 
@@ -259,16 +278,16 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {portalData.document_status && portalData.document_status.length > 0 ? (
                 portalData.document_status.map((doc) => {
-                  // Use analysis-based completion for individual docs, document count completion for Company Accounts
-                  const analysisComplete = getAnalysisBasedCompletion(doc.type);
-                  const isAnalysisComplete = doc.isGroup 
-                    ? (analysisComplete as number) >= doc.required  // Company Accounts: require all 5 documents
-                    : analysisComplete;  // Individual docs: use analysis completion
+                  // Use upload-based completion for Company Accounts, analysis-based for others
+                  const completionData = getCompletionStatus(doc.type);
+                  const isComplete = doc.isGroup 
+                    ? typeof completionData === 'number' && completionData >= 5  // Company Accounts: require all 5 documents uploaded
+                    : completionData;  // Individual docs: use analysis completion
                   
                   return (
                 <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                   <div className="flex items-center space-x-3">
-                    {isAnalysisComplete ? (
+                    {isComplete ? (
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                     ) : (
                       <Clock className="h-5 w-5 text-gray-400 flex-shrink-0" />
@@ -277,7 +296,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                       <p className="font-medium text-gray-900 text-sm">{doc.label}</p>
                       {doc.isGroup ? (
                         <p className="text-xs text-gray-500">
-                          {analysisComplete} of {doc.required} files
+                          {typeof completionData === 'number' ? completionData : 0} of 5 files
                         </p>
                       ) : doc.submission ? (
                         <p className="text-xs text-gray-500 truncate">
@@ -289,19 +308,19 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     {doc.isGroup ? (
                       <Badge variant="outline" className={`${
-                        isAnalysisComplete 
+                        isComplete 
                           ? 'text-green-700 border-green-300 bg-green-50' 
                           : 'text-blue-700 border-blue-300 bg-blue-50'
                       }`}>
-                        {analysisComplete}/{doc.required}
+                        {typeof completionData === 'number' ? completionData : 0}/5
                       </Badge>
                     ) : (
                       <Badge variant="outline" className={`${
-                        isAnalysisComplete 
+                        isComplete 
                           ? 'text-green-700 border-green-300 bg-green-50' 
                           : 'text-gray-500'
                       }`}>
-                        {isAnalysisComplete ? 'Done' : 'Required'}
+                        {isComplete ? 'Done' : 'Required'}
                       </Badge>
                     )}
                   </div>

@@ -519,8 +519,8 @@ export default function PortalManagement() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-center">
-                        <div className="text-xl font-bold text-green-600">{token.documentSubmissions}</div>
-                        <div className="text-xs text-muted-foreground">Documents</div>
+                        <div className="text-xl font-bold text-green-600">70%</div>
+                        <div className="text-xs text-muted-foreground">Complete</div>
                       </div>
                       <div className="flex gap-2">
                         <Button
