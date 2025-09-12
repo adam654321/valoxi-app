@@ -259,9 +259,11 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {portalData.document_status && portalData.document_status.length > 0 ? (
                 portalData.document_status.map((doc) => {
-                  // Use analysis-based completion instead of document-based completion
+                  // Use analysis-based completion for individual docs, document count completion for Company Accounts
                   const analysisComplete = getAnalysisBasedCompletion(doc.type);
-                  const isAnalysisComplete = doc.isGroup ? (analysisComplete as number) > 0 : analysisComplete;
+                  const isAnalysisComplete = doc.isGroup 
+                    ? (analysisComplete as number) >= doc.required  // Company Accounts: require all 5 documents
+                    : analysisComplete;  // Individual docs: use analysis completion
                   
                   return (
                 <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
