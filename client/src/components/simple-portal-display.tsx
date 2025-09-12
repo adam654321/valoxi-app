@@ -31,6 +31,7 @@ interface PortalData {
   progress_percentage: number;
   document_status: DocumentStatus[];
   portal_expires_at: string;
+  targetCompanyId: number;
 }
 
 interface SimplePortalDisplayProps {
@@ -70,7 +71,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
     completedCount: number;
     totalCount: number;
   }>({
-    queryKey: ['/api/portal', token, 'analysis-completion'],
+    queryKey: [`/api/portal/${token}/analysis-completion`],
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,

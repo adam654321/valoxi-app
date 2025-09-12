@@ -352,6 +352,16 @@ export interface IStorage {
     missingTypes: string[];
     isComplete: boolean;
     completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
+  }>;
+  getPortalAnalysisCompletionStatus(targetCompanyId: number): Promise<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
   }>;
 
   // Stage 1 Analysis Events methods
@@ -3275,7 +3285,8 @@ export class DatabaseStorage implements IStorage {
         total_submitted: totalDocuments,
         progress_percentage: progressPercentage,
         document_status: documentStatus,
-        portal_expires_at: tokenInfo.expiresAt
+        portal_expires_at: tokenInfo.expiresAt,
+        targetCompanyId: tokenInfo.targetCompanyId
       };
     } catch (error) {
       console.error('Error in getSimplePortalData:', error);
@@ -3458,17 +3469,44 @@ export class DatabaseStorage implements IStorage {
     return result[0] || null;
   }
 
+  // Portal-specific version without user access check  
+  async getPortalAnalysisCompletionStatus(targetCompanyId: number): Promise<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
+  }> {
+    return this._getAnalysisCompletionStatusCore(targetCompanyId);
+  }
+
   async getAnalysisCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<{
     completedTypes: string[];
     missingTypes: string[];
     isComplete: boolean;
     completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
   }> {
     // First verify access to the company
     const company = await this.getTargetCompany(targetCompanyId, userCompanyId);
     if (!company) {
       throw new Error('Company not found or access denied');
     }
+
+    return this._getAnalysisCompletionStatusCore(targetCompanyId);
+  }
+
+  // Core analysis completion logic shared by both methods
+  private async _getAnalysisCompletionStatusCore(targetCompanyId: number): Promise<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
+  }> {
 
     // Define the 5 required analysis types
     const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
@@ -3551,7 +3589,9 @@ export class DatabaseStorage implements IStorage {
       completedTypes: [...completedTypes, ...Array(Math.min(companyAccountsCount, 5)).fill('company_accounts').map((_, i) => `company_accounts_${i + 1}`)],
       missingTypes,
       isComplete: completedCount === totalRequired,
-      completionPercentage: Math.round((completedCount / totalRequired) * 100)
+      completionPercentage: Math.round((completedCount / totalRequired) * 100),
+      completedCount,
+      totalCount: totalRequired
     };
   }
 

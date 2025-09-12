@@ -3239,6 +3239,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get analysis completion status for portal (public endpoint)
+  app.get("/api/portal/:token/analysis-completion", async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      // Get analysis completion status using the portal-specific method
+      const analysisStatus = await storage.getPortalAnalysisCompletionStatus(
+        portalToken.targetCompanyId
+      );
+      
+      // Log activity
+      await storage.logPortalActivity({
+        portalTokenId: portalToken.id,
+        targetContactId: portalToken.targetContactId,
+        activityType: "analysis_status_viewed",
+        activityDescription: "Document analysis completion status viewed",
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json(analysisStatus);
+    } catch (error) {
+      console.error("Get portal analysis completion error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get portal submissions history (public endpoint)
   app.get("/api/portal/:token/submissions", async (req: Request, res: Response) => {
     try {
