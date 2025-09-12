@@ -268,7 +268,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     return null;
   }
 
-  const { completedTypes, missingTypes, isComplete, completionPercentage } = completionStatus;
+  const { completedTypes, missingTypes, isComplete, completionPercentage, completedCount } = completionStatus;
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
@@ -285,14 +285,14 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{completionPercentage}%</div>
-          <div className="text-xs text-blue-600 dark:text-blue-400">{completedTypes.length}/10 Types</div>
+          <div className="text-xs text-blue-600 dark:text-blue-400">{completedCount}/10 Types</div>
         </div>
       </div>
 
       <div className="mb-3">
         <div className="flex justify-between text-sm mb-1">
           <span className="text-blue-700 dark:text-blue-300">Analysis Coverage</span>
-          <span className="text-blue-600 dark:text-blue-400">{completedTypes.length} of 10 completed</span>
+          <span className="text-blue-600 dark:text-blue-400">{completedCount} of 10 completed</span>
         </div>
         <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
           <div 
@@ -302,7 +302,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         </div>
       </div>
 
-      {completedTypes.length > 0 && (
+      {completedCount > 0 && (
         <div className="mb-3">
           <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">✅ Analyzed:</div>
           <div className="flex flex-wrap gap-1">
@@ -349,13 +349,13 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         </div>
       )}
 
-      {!isComplete && completedTypes.length > 0 && (
+      {!isComplete && completedCount > 0 && (
         <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
               <AlertTriangle className="w-4 h-4" />
               <span className="text-sm font-medium">
-                {completedTypes.length < 10 ? 'Partial documentation available - you can proceed with analysis if needed' : 'Ready for analysis'}
+                {completedCount < 10 ? 'Partial documentation available - you can proceed with analysis if needed' : 'Ready for analysis'}
               </span>
             </div>
             <Button 
@@ -420,6 +420,8 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     missingTypes: string[];
     isComplete: boolean;
     completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
   }>({
     queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
     refetchInterval: 10000,

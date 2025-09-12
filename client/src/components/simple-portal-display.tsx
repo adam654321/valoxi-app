@@ -61,6 +61,22 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
     enabled: !!token
   });
 
+  // Get analysis completion status for badge-based filtering
+  const { data: analysisCompletion } = useQuery<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
+  }>({
+    queryKey: ['/api/portal', token, 'analysis-completion'],
+    refetchInterval: 10000,
+    refetchIntervalInBackground: false,
+    staleTime: 30000,
+    enabled: !!token && !!portalData,
+  });
+
   // Submit document mutation
   const submitDocumentMutation = useMutation({
     mutationFn: async ({ file, documentType, notes }: { file: File; documentType: string; notes: string }) => {
@@ -173,7 +189,9 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
     );
   }
 
-  const isCompleted = (portalData.total_submitted || 0) >= 10;
+  // Calculate analysis-based completion
+  const analysisProgress = analysisCompletion || { completedTypes: [], completionPercentage: 0, completedCount: 0, totalCount: 10 };
+  const isCompleted = analysisProgress.completionPercentage >= 100;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -196,13 +214,13 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">
-                  Progress: {portalData.total_submitted || 0} of {portalData.total_documents_required} documents
+                  Analysis Progress: {analysisProgress.completedCount} of {analysisProgress.totalCount} types analyzed
                 </span>
                 <span className="text-sm text-gray-500">
-                  {portalData.progress_percentage || 0}% Complete
+                  {Math.round(analysisProgress.completionPercentage)}% Complete
                 </span>
               </div>
-              <Progress value={portalData.progress_percentage || 0} className="h-3" />
+              <Progress value={analysisProgress.completionPercentage} className="h-3" />
             </div>
           </CardContent>
         </Card>
@@ -283,16 +301,38 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   <SelectContent>
                     {DOCUMENT_TYPES
                       .filter(type => {
-                        const docStatus = portalData.document_status?.find(doc => doc.type === type.value);
-                        if (!docStatus) return true; // Show if no status found yet
+                        if (!analysisCompletion) return true; // Show all if no analysis data yet
                         
-                        // For grouped types (like Company Accounts), check if group is complete
-                        if (docStatus.isGroup) {
-                          return !docStatus.isComplete;
+                        // Map portal document types to analysis types
+                        let analysisType: string;
+                        switch (type.value) {
+                          case 'company_accounts':
+                            // For Company Accounts, count how many company_accounts_* types are completed
+                            const companyAccountsCompleted = analysisCompletion.completedTypes.filter(t => 
+                              t.startsWith('company_accounts')
+                            ).length;
+                            return companyAccountsCompleted < 5;
+                          case 'asset_register':
+                            analysisType = 'asset_register';
+                            break;
+                          case 'balance_sheet':
+                            analysisType = 'balance_sheet';
+                            break;
+                          case 'p_and_l':
+                            analysisType = 'profit_and_loss';
+                            break;
+                          case 'sales_ledger':
+                            analysisType = 'sales_ledger';
+                            break;
+                          case 'staff_matrix':
+                            analysisType = 'staff_matrix';
+                            break;
+                          default:
+                            return true; // Allow unknown types
                         }
                         
-                        // For individual document types, check if already submitted
-                        return !docStatus.submitted;
+                        // For other document types, only allow if analysis type is not completed
+                        return !analysisCompletion.completedTypes.includes(analysisType);
                       })
                       .map(type => (
                         <SelectItem key={type.value} value={type.value}>
