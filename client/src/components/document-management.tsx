@@ -414,23 +414,58 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     staleTime: 30000, // Consider data stale after 30 seconds
   });
 
-  // Filter categories based on existing documents
+  // Get analysis completion status for badge-based filtering
+  const { data: analysisCompletion } = useQuery<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+  }>({
+    queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+    refetchInterval: 10000,
+    refetchIntervalInBackground: false,
+    staleTime: 30000,
+  });
+
+  // Filter categories based on analysis badges instead of document count
   const categories = useMemo(() => {
-    if (!allCategories || !groupedDocuments) return allCategories;
+    if (!allCategories || !analysisCompletion) return allCategories;
 
     return allCategories.filter((category: DocumentCategory) => {
       const categoryName = category.categoryName;
-      const existingDocs = groupedDocuments[categoryName] || [];
       
-      // For Company Accounts, allow upload until we have 5 documents
-      if (categoryName === 'Company Accounts') {
-        return existingDocs.length < 5;
+      // Map category names to analysis types
+      let analysisType: string;
+      switch (categoryName) {
+        case 'Company Accounts':
+          // For Company Accounts, count how many company_accounts_* types are completed
+          const companyAccountsCompleted = analysisCompletion.completedTypes.filter(type => 
+            type.startsWith('company_accounts')
+          ).length;
+          return companyAccountsCompleted < 5;
+        case 'Asset Register':
+          analysisType = 'asset_register';
+          break;
+        case 'Balance Sheet':
+          analysisType = 'balance_sheet';
+          break;
+        case 'Profit & Loss':
+          analysisType = 'profit_and_loss';
+          break;
+        case 'Sales Ledger':
+          analysisType = 'sales_ledger';
+          break;
+        case 'Staff Matrix':
+          analysisType = 'staff_matrix';
+          break;
+        default:
+          return true; // Allow unknown categories
       }
       
-      // For all other document types, only allow if no documents exist
-      return existingDocs.length === 0;
+      // For other document types, only allow if analysis type is not completed
+      return !analysisCompletion.completedTypes.includes(analysisType);
     });
-  }, [allCategories, groupedDocuments]);
+  }, [allCategories, analysisCompletion]);
 
   // Set up Server-Sent Events for real-time document updates
   useEffect(() => {
