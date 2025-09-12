@@ -54,6 +54,54 @@ interface BusinessOverview {
   tokens: PortalToken[];
 }
 
+interface AnalysisCompletion {
+  completedTypes: string[];
+  completionPercentage: number;
+  completedCount: number;
+  totalCount: number;
+}
+
+// Hook to fetch completion percentage for a token
+function useTokenCompletion(accessToken: string) {
+  return useQuery<AnalysisCompletion>({
+    queryKey: [`/api/portal/${accessToken}/analysis-completion`],
+    enabled: !!accessToken,
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+}
+
+// Component to display completion percentage for a token
+function TokenCompletionDisplay({ accessToken }: { accessToken: string }) {
+  const { data: completionData, isLoading } = useTokenCompletion(accessToken);
+  
+  if (isLoading) {
+    return (
+      <div className="text-center">
+        <div className="text-xl font-bold text-gray-400">...</div>
+        <div className="text-xs text-muted-foreground">Loading</div>
+      </div>
+    );
+  }
+  
+  if (!completionData) {
+    return (
+      <div className="text-center">
+        <div className="text-xl font-bold text-gray-400">N/A</div>
+        <div className="text-xs text-muted-foreground">No data</div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="text-center">
+      <div className="text-xl font-bold text-green-600">
+        {Math.round(completionData.completionPercentage || 0)}%
+      </div>
+      <div className="text-xs text-muted-foreground">Complete</div>
+    </div>
+  );
+}
+
 export default function PortalManagement() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
@@ -518,10 +566,7 @@ export default function PortalManagement() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-green-600">70%</div>
-                        <div className="text-xs text-muted-foreground">Complete</div>
-                      </div>
+                      <TokenCompletionDisplay accessToken={token.accessToken} />
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
