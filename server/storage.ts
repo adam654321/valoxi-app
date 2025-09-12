@@ -307,6 +307,7 @@ export interface IStorage {
   getDocument(documentId: number, userCompanyId: number): Promise<Document | undefined>;
   updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined>;
   deleteDocument(documentId: number, userCompanyId: number): Promise<boolean>;
+  getExternalSubmission(submissionId: number, userCompanyId: number): Promise<any | null>;
   deleteExternalSubmission(submissionId: number, userCompanyId: number): Promise<boolean>;
   logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void>;
 
@@ -2331,6 +2332,31 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.id, documentId))
       .returning();
     return !!deletedDocument;
+  }
+
+  async getExternalSubmission(submissionId: number, userCompanyId: number): Promise<any | null> {
+    try {
+      const result = await db
+        .select()
+        .from(externalDocumentSubmissions)
+        .innerJoin(targetCompanies, eq(externalDocumentSubmissions.targetCompanyId, targetCompanies.id))
+        .where(
+          and(
+            eq(externalDocumentSubmissions.id, submissionId),
+            eq(targetCompanies.userCompanyId, userCompanyId)
+          )
+        )
+        .limit(1);
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      return result[0].external_document_submissions;
+    } catch (error) {
+      console.error(`[STORAGE] Error getting external submission ${submissionId}:`, error);
+      return null;
+    }
   }
 
   async deleteExternalSubmission(submissionId: number, userCompanyId: number): Promise<boolean> {

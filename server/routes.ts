@@ -2844,41 +2844,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete document
+  // Delete document (handles both regular documents and external submissions)
   app.delete("/api/documents/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const documentId = parseInt(req.params.id);
       const userCompanyId = req.session.userCompanyId!;
       
-      // Get document before deletion to remove file and check for external submission
+      // First try to find in main documents table
       const document = await storage.getDocument(documentId, userCompanyId);
-      if (!document) {
-        return res.status(404).json({ error: 'Document not found or access denied' });
-      }
       
-      const success = await storage.deleteDocument(documentId, userCompanyId);
-      if (!success) {
-        return res.status(500).json({ error: 'Failed to delete document' });
-      }
-      
-      // If this document came from a portal submission, also delete the external submission
-      if (document.externalSubmissionId) {
-        try {
-          console.log(`[DOCUMENT_DELETE] Deleting external submission ${document.externalSubmissionId} for document ${documentId}`);
-          await storage.deleteExternalSubmission(document.externalSubmissionId, userCompanyId);
-        } catch (err) {
-          console.warn("Could not delete external submission:", document.externalSubmissionId, err);
+      if (document) {
+        // It's a regular document, delete it normally
+        const success = await storage.deleteDocument(documentId, userCompanyId);
+        if (!success) {
+          return res.status(500).json({ error: 'Failed to delete document' });
         }
+        
+        // If this document came from a portal submission, also delete the external submission
+        if (document.externalSubmissionId) {
+          try {
+            console.log(`[DOCUMENT_DELETE] Deleting external submission ${document.externalSubmissionId} for document ${documentId}`);
+            // First get the external submission to retrieve its file path for cleanup
+            const externalSubmission = await storage.getExternalSubmission(document.externalSubmissionId, userCompanyId);
+            if (externalSubmission) {
+              // Remove the external submission's file from filesystem
+              try {
+                await fs.unlink(externalSubmission.filePath);
+                console.log(`[DOCUMENT_DELETE] Removed external submission file: ${externalSubmission.filePath}`);
+              } catch (fileErr) {
+                console.warn("Could not remove external submission file:", externalSubmission.filePath, fileErr);
+              }
+            }
+            // Then delete the external submission from database
+            await storage.deleteExternalSubmission(document.externalSubmissionId, userCompanyId);
+          } catch (err) {
+            console.warn("Could not delete external submission:", document.externalSubmissionId, err);
+          }
+        }
+        
+        // Remove file from filesystem
+        try {
+          await fs.unlink(document.filePath);
+        } catch (err) {
+          console.warn("Could not remove file:", document.filePath, err);
+        }
+        
+        res.json({ success: true });
+      } else {
+        // Not found in main documents table, check if it's an external submission
+        const externalSubmission = await storage.getExternalSubmission(documentId, userCompanyId);
+        
+        if (!externalSubmission) {
+          return res.status(404).json({ error: 'Document not found or access denied' });
+        }
+        
+        // It's an external submission, delete it
+        console.log(`[DOCUMENT_DELETE] Deleting external submission ${documentId} directly`);
+        const success = await storage.deleteExternalSubmission(documentId, userCompanyId);
+        if (!success) {
+          return res.status(500).json({ error: 'Failed to delete external submission' });
+        }
+        
+        // Remove file from filesystem
+        try {
+          await fs.unlink(externalSubmission.filePath);
+        } catch (err) {
+          console.warn("Could not remove file:", externalSubmission.filePath, err);
+        }
+        
+        res.json({ success: true });
       }
-      
-      // Remove file from filesystem
-      try {
-        await fs.unlink(document.filePath);
-      } catch (err) {
-        console.warn("Could not remove file:", document.filePath, err);
-      }
-      
-      res.json({ success: true });
     } catch (error) {
       console.error("Delete document error:", error);
       res.status(500).json({ message: "Internal server error" });
