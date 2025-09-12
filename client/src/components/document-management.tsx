@@ -1016,25 +1016,13 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                                   <Download className="w-4 h-4 mr-2" />
                                   Download
                                 </DropdownMenuItem>
-                                {document.uploadedBy !== -1 && (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDelete(document.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                )}
-                                {document.uploadedBy === -1 && (
-                                  <DropdownMenuItem 
-                                    disabled
-                                    className="text-gray-400 cursor-not-allowed"
-                                    title="External submissions cannot be deleted directly. They must be processed first."
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete (Unavailable)
-                                  </DropdownMenuItem>
-                                )}
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(document.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                             </div>
