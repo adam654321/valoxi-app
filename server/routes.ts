@@ -2850,7 +2850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentId = parseInt(req.params.id);
       const userCompanyId = req.session.userCompanyId!;
       
-      // Get document before deletion to remove file
+      // Get document before deletion to remove file and check for external submission
       const document = await storage.getDocument(documentId, userCompanyId);
       if (!document) {
         return res.status(404).json({ error: 'Document not found or access denied' });
@@ -2859,6 +2859,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = await storage.deleteDocument(documentId, userCompanyId);
       if (!success) {
         return res.status(500).json({ error: 'Failed to delete document' });
+      }
+      
+      // If this document came from a portal submission, also delete the external submission
+      if (document.externalSubmissionId) {
+        try {
+          console.log(`[DOCUMENT_DELETE] Deleting external submission ${document.externalSubmissionId} for document ${documentId}`);
+          await storage.deleteExternalSubmission(document.externalSubmissionId, userCompanyId);
+        } catch (err) {
+          console.warn("Could not delete external submission:", document.externalSubmissionId, err);
+        }
       }
       
       // Remove file from filesystem

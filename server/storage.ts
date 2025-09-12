@@ -307,6 +307,7 @@ export interface IStorage {
   getDocument(documentId: number, userCompanyId: number): Promise<Document | undefined>;
   updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined>;
   deleteDocument(documentId: number, userCompanyId: number): Promise<boolean>;
+  deleteExternalSubmission(submissionId: number, userCompanyId: number): Promise<boolean>;
   logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void>;
 
   // External Document Portal operations
@@ -2330,6 +2331,40 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.id, documentId))
       .returning();
     return !!deletedDocument;
+  }
+
+  async deleteExternalSubmission(submissionId: number, userCompanyId: number): Promise<boolean> {
+    try {
+      // First verify the user has access to this external submission
+      const existingSubmission = await db
+        .select()
+        .from(externalDocumentSubmissions)
+        .innerJoin(targetCompanies, eq(externalDocumentSubmissions.targetCompanyId, targetCompanies.id))
+        .where(
+          and(
+            eq(externalDocumentSubmissions.id, submissionId),
+            eq(targetCompanies.userCompanyId, userCompanyId)
+          )
+        )
+        .limit(1);
+
+      if (existingSubmission.length === 0) {
+        console.warn(`[STORAGE] External submission ${submissionId} not found or access denied for user company ${userCompanyId}`);
+        return false;
+      }
+
+      // Delete the external submission
+      const [deletedSubmission] = await db
+        .delete(externalDocumentSubmissions)
+        .where(eq(externalDocumentSubmissions.id, submissionId))
+        .returning();
+
+      console.log(`[STORAGE] Successfully deleted external submission ${submissionId}`);
+      return !!deletedSubmission;
+    } catch (error) {
+      console.error(`[STORAGE] Error deleting external submission ${submissionId}:`, error);
+      return false;
+    }
   }
 
   async clearAllCompanyDocuments(userCompanyId: number): Promise<{ 
