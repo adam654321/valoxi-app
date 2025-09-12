@@ -109,8 +109,9 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
       setSelectedDocumentType('');
       setSubmissionNotes('');
       
-      // Refresh portal data
+      // Refresh portal data and analysis completion status
       queryClient.invalidateQueries({ queryKey: ['/api/portal', token] });
+      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
     },
     onError: (error: Error) => {
       toast({
@@ -194,6 +195,29 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
   const analysisProgress = analysisCompletion || { completedTypes: [], completionPercentage: 0, completedCount: 0, totalCount: 10 };
   const isCompleted = analysisProgress.completionPercentage >= 100;
 
+  // Helper function to determine if a document type is complete based on analysis data
+  const getAnalysisBasedCompletion = (docType: string) => {
+    if (!analysisCompletion) return false;
+    
+    switch (docType) {
+      case 'company_accounts':
+        // For Company Accounts, check if we have completed analysis (any number up to 5)
+        return analysisCompletion.completedTypes.filter(t => t.startsWith('company_accounts')).length;
+      case 'p_and_l':
+        return analysisCompletion.completedTypes.includes('profit_and_loss');
+      case 'balance_sheet':
+        return analysisCompletion.completedTypes.includes('balance_sheet');
+      case 'sales_ledger':
+        return analysisCompletion.completedTypes.includes('sales_ledger');
+      case 'asset_register':
+        return analysisCompletion.completedTypes.includes('asset_register');
+      case 'staff_matrix':
+        return analysisCompletion.completedTypes.includes('staff_matrix');
+      default:
+        return false;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -234,10 +258,15 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {portalData.document_status && portalData.document_status.length > 0 ? (
-                portalData.document_status.map((doc) => (
+                portalData.document_status.map((doc) => {
+                  // Use analysis-based completion instead of document-based completion
+                  const analysisComplete = getAnalysisBasedCompletion(doc.type);
+                  const isAnalysisComplete = doc.isGroup ? (analysisComplete as number) > 0 : analysisComplete;
+                  
+                  return (
                 <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                   <div className="flex items-center space-x-3">
-                    {doc.isComplete ? (
+                    {isAnalysisComplete ? (
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                     ) : (
                       <Clock className="h-5 w-5 text-gray-400 flex-shrink-0" />
@@ -246,7 +275,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                       <p className="font-medium text-gray-900 text-sm">{doc.label}</p>
                       {doc.isGroup ? (
                         <p className="text-xs text-gray-500">
-                          {doc.submitted} of {doc.required} files
+                          {analysisComplete} of {doc.required} files
                         </p>
                       ) : doc.submission ? (
                         <p className="text-xs text-gray-500 truncate">
@@ -258,24 +287,25 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     {doc.isGroup ? (
                       <Badge variant="outline" className={`${
-                        doc.isComplete 
+                        isAnalysisComplete 
                           ? 'text-green-700 border-green-300 bg-green-50' 
                           : 'text-blue-700 border-blue-300 bg-blue-50'
                       }`}>
-                        {doc.submitted}/{doc.required}
+                        {analysisComplete}/{doc.required}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className={`${
-                        doc.isComplete 
+                        isAnalysisComplete 
                           ? 'text-green-700 border-green-300 bg-green-50' 
                           : 'text-gray-500'
                       }`}>
-                        {doc.isComplete ? 'Done' : 'Required'}
+                        {isAnalysisComplete ? 'Done' : 'Required'}
                       </Badge>
                     )}
                   </div>
                 </div>
-                ))
+                  )
+                })
               ) : (
                 <div className="col-span-full text-center py-8 text-gray-500">
                   No document requirements found
