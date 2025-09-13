@@ -551,7 +551,15 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                                   )}
                                 </div>
                                 
-                                {/* Document analysis badges would go here if available */}
+                                {/* Document type badges */}
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  <Badge 
+                                    className={`text-xs ${getDocumentTypeColor(document.documentCategory.toLowerCase().replace(/\s+/g, '_').replace(/&/g, 'and'))}`}
+                                    data-testid={`badge-document-type-${document.id}`}
+                                  >
+                                    {document.documentCategory}
+                                  </Badge>
+                                </div>
                               </div>
                             </div>
                             
