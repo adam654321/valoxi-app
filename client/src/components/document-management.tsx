@@ -354,6 +354,31 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
   );
 }
 
+// Helper function to invalidate all caches (document library + portal)
+const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
+  // Always invalidate document library caches
+  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
+  
+  try {
+    // Get portal tokens for this target company and invalidate their caches too
+    const response = await fetch(`/api/target-companies/${targetCompanyId}/portal-tokens`);
+    if (response.ok) {
+      const { tokens } = await response.json();
+      
+      // Invalidate portal caches for each active token
+      tokens.forEach((token: string) => {
+        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+      });
+    }
+  } catch (error) {
+    // If we can't get portal tokens, that's okay - just log it
+    console.log("Could not invalidate portal caches:", error);
+  }
+};
+
 export function DocumentManagement({ targetCompanyId, companyName }: DocumentManagementProps) {
   const { toast } = useToast();
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -543,12 +568,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         title: "Success",
         description: "Document uploaded successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
       
-      // Invalidate analysis completion query to update progress section
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
-      });
+      // Invalidate all caches (document library + portal)
+      invalidateAllDocumentCaches(targetCompanyId);
       
       // Invalidate analysis cache for the newly uploaded document
       if (data?.document?.id) {
@@ -577,7 +599,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         title: "Success",
         description: "Document deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+      
+      // Invalidate all caches (document library + portal)
+      invalidateAllDocumentCaches(targetCompanyId);
     },
     onError: (error: any) => {
       toast({

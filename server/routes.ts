@@ -2466,6 +2466,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get active portal tokens for a target company (for cache invalidation)
+  app.get("/api/target-companies/:id/portal-tokens", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      
+      // Verify user has access to this target company
+      const targetCompany = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!targetCompany) {
+        return res.status(404).json({ message: "Target company not found" });
+      }
+      
+      // Get active portal tokens for this target company
+      const tokens = await storage.getActivePortalTokensForTargetCompany(targetCompanyId);
+      
+      res.json({ tokens: tokens.map(token => token.accessToken) });
+    } catch (error) {
+      console.error("Error getting portal tokens:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Upload document
   app.post("/api/target-companies/:id/documents", isAuthenticated, (req: Request, res: Response) => {
     upload.single('document')(req, res, async (err) => {

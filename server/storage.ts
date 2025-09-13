@@ -2621,6 +2621,18 @@ export class DatabaseStorage implements IStorage {
     return !!deletedToken;
   }
 
+  async getActivePortalTokensForTargetCompany(targetCompanyId: number): Promise<PortalAccessToken[]> {
+    const tokens = await db
+      .select()
+      .from(portalAccessTokens)
+      .where(and(
+        eq(portalAccessTokens.targetCompanyId, targetCompanyId),
+        eq(portalAccessTokens.isActive, true),
+        sql`${portalAccessTokens.expiresAt} > NOW()`
+      ));
+    return tokens;
+  }
+
   async getPortalTokensForCompany(userCompanyId: number): Promise<any[]> {
     return await db
       .select({
