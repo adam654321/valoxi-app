@@ -2214,40 +2214,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.targetCompanyId, targetCompanyId))
       .orderBy(documents.documentCategory, desc(documents.uploadDate));
 
-    // Get external document submissions from portals that haven't been processed into main documents table
-    // Since we now use unified upload process, we only want external submissions that don't have a corresponding main document
-    const externalDocuments = await db
-      .select({
-        id: externalDocumentSubmissions.id,
-        targetCompanyId: externalDocumentSubmissions.targetCompanyId,
-        uploadedBy: sql<number>`-1`, // Use -1 for portal submissions to indicate external upload
-        documentName: externalDocumentSubmissions.originalFilename,
-        originalFilename: externalDocumentSubmissions.originalFilename,
-        filePath: externalDocumentSubmissions.filePath,
-        fileSize: externalDocumentSubmissions.fileSize,
-        fileType: sql<string>`COALESCE(${externalDocumentSubmissions.fileType}, 'application/octet-stream')`,
-        documentCategory: sql<string>`COALESCE(${externalDocumentSubmissions.documentCategory}, 'general')`,
-        description: sql<string>`COALESCE(${externalDocumentSubmissions.submissionNotes}, 'Portal submission')`,
-        isConfidential: sql<boolean>`true`, // Portal submissions are confidential by default
-        uploadDate: externalDocumentSubmissions.submittedAt,
-        lastAccessed: sql<Date | null>`NULL`,
-        accessCount: sql<number>`0`,
-        createdAt: externalDocumentSubmissions.createdAt,
-        externalSubmissionId: externalDocumentSubmissions.id,
-        uploadedByName: sql<string>`COALESCE(${targetContacts.firstName} || ' ' || ${targetContacts.lastName}, 'Portal User')`,
-        categoryDescription: sql<string | undefined>`${documentCategories.description}`,
-      })
-      .from(externalDocumentSubmissions)
-      .leftJoin(targetContacts, eq(externalDocumentSubmissions.targetContactId, targetContacts.id))
-      .leftJoin(documentCategories, eq(externalDocumentSubmissions.documentCategory, documentCategories.categoryName))
-      .where(
-        and(
-          eq(externalDocumentSubmissions.targetCompanyId, targetCompanyId),
-          // Only include external submissions that don't have a corresponding document in main table
-          sql`${externalDocumentSubmissions.id} NOT IN (SELECT external_submission_id FROM documents WHERE external_submission_id IS NOT NULL)`
-        )
-      )
-      .orderBy(desc(externalDocumentSubmissions.submittedAt));
+    // For now, we'll only use regular documents since we have a unified upload process
+    // External submissions that have been processed are already in the main documents table
+    // This eliminates the duplication issue where the same document appears twice
+    const externalDocuments: any[] = [];
 
     console.log(`[getCompanyDocuments] Regular documents found: ${regularDocuments.length}`);
     console.log(`[getCompanyDocuments] External unprocessed documents found: ${externalDocuments.length}`);
