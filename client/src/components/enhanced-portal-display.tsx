@@ -229,7 +229,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   // Fetch portal data
   const { data: portalData, isLoading: isPortalLoading } = useQuery<PortalData>({
-    queryKey: ['/api/portal', token],
+    queryKey: [`/api/portal/${token}`],
     enabled: !!token
   });
 
@@ -246,13 +246,13 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,
-    enabled: !!token && !!portalData,
+    enabled: !!token,
   });
 
   // Get all documents for the company
   const { data: documents = [], isLoading: isDocumentsLoading } = useQuery<Document[]>({
     queryKey: [`/api/portal/${token}/documents`],
-    enabled: !!token && !!portalData,
+    enabled: !!token,
   });
 
   // Submit document mutation
@@ -287,7 +287,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       setSubmissionNotes('');
       
       // Refresh all portal data
-      queryClient.invalidateQueries({ queryKey: ['/api/portal', token] });
+      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
       queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
     },
@@ -310,7 +310,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
         description: "Document deleted successfully",
       });
       // Refresh all portal data
-      queryClient.invalidateQueries({ queryKey: ['/api/portal', token] });
+      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
       queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
     },
