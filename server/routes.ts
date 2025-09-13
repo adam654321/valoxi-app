@@ -2551,6 +2551,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const uploadEvent = await storage.createFileUploadEvent(fileUploadEventData);
         
+        // Send SSE notification for immediate document list updates
+        if (global.documentUpdateListeners) {
+          global.documentUpdateListeners.forEach((listener) => {
+            if (listener.targetCompanyId === targetCompanyId) {
+              listener.res.write(`data: ${JSON.stringify({ 
+                type: 'document_uploaded', 
+                targetCompanyId: targetCompanyId,
+                documentId: document.id,
+                timestamp: new Date().toISOString()
+              })}\n\n`);
+            }
+          });
+        }
+        
         // Automatically trigger webhook for file upload
         await sendFileUploadWebhook(uploadEvent.id);
         
