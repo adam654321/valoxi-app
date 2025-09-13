@@ -594,9 +594,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                                 <h4 className="font-medium text-gray-900 truncate" data-testid={`text-filename-${document.id}`}>
                                   {document.originalFilename}
                                 </h4>
-                                <p className="text-sm text-gray-600 mt-1" data-testid={`text-document-name-${document.id}`}>
-                                  {document.documentName}
-                                </p>
                                 
                                 <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                                   <span className="flex items-center gap-1" data-testid={`text-upload-date-${document.id}`}>

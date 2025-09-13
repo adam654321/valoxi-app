@@ -962,7 +962,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                                 </div>
                                 
                                 <p className="text-sm text-muted-foreground mb-2">
-                                  {document.originalFilename} • {formatFileSize(document.fileSize)}
+                                  {formatFileSize(document.fileSize)}
                                 </p>
                                 
                                 {document.description && (
