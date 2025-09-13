@@ -112,6 +112,70 @@ function DocumentAnalysisBadges({ analysisResults }: { analysisResults: any[] })
   );
 }
 
+// Portal version of DocumentAnalysisBadges component that fetches analysis results
+function PortalDocumentAnalysisBadges({ documentId, documentCategory }: { documentId: number; documentCategory: string }) {
+  const { data: analysisResults = [], isLoading: analysisLoading } = useQuery<Array<{
+    id: number;
+    documentType: string;
+    createdAt: string;
+    analysisData: any;
+  }>>({
+    queryKey: ["/api/documents", documentId, "analysis"],
+  });
+
+  if (analysisLoading || analysisResults.length === 0) {
+    return null;
+  }
+
+  // If the document was uploaded with "Company Accounts" category, always show only Company Accounts badge
+  if (documentCategory === 'Company Accounts') {
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        <Badge 
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          data-testid="portal-analysis-badge-company-accounts"
+        >
+          Company Accounts
+        </Badge>
+      </div>
+    );
+  }
+
+  // For non-Company Accounts documents, show badges based on analysis results
+  // Check if any analysis result is a company_accounts document  
+  const hasCompanyAccounts = analysisResults.some(result => 
+    result.analysisData && result.analysisData.document === 'company_accounts'
+  );
+
+  // If it's a company accounts document (by analysis), only show the Company Accounts badge
+  if (hasCompanyAccounts) {
+    return (
+      <div className="flex flex-wrap gap-1 mt-2">
+        <Badge 
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          data-testid="portal-analysis-badge-company-accounts"
+        >
+          Company Accounts
+        </Badge>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-2">
+      {analysisResults.map((result) => (
+        <Badge 
+          key={result.id} 
+          className={`text-xs ${getDocumentTypeColor(result.documentType)}`}
+          data-testid={`portal-analysis-badge-${result.documentType}`}
+        >
+          {formatDocumentType(result.documentType)}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 // Analysis completion indicator component adapted for portal
 function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetCompanyId: number; token: string }) {
   const { data: completionStatus, isLoading } = useQuery<{
@@ -551,15 +615,8 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                                   )}
                                 </div>
                                 
-                                {/* Document type badges */}
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  <Badge 
-                                    className={`text-xs ${getDocumentTypeColor(document.documentCategory.toLowerCase().replace(/\s+/g, '_').replace(/&/g, 'and'))}`}
-                                    data-testid={`badge-document-type-${document.id}`}
-                                  >
-                                    {document.documentCategory}
-                                  </Badge>
-                                </div>
+                                {/* Document analysis badges */}
+                                <PortalDocumentAnalysisBadges documentId={document.id} documentCategory={document.documentCategory} />
                               </div>
                             </div>
                             
