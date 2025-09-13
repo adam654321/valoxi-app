@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatDocumentType, getDocumentTypeColor } from "@/lib/documentUtils";
 import { DocumentViewer } from "@/components/document-viewer";
 import { 
   FileText, 
@@ -118,38 +119,6 @@ const documentSchema = z.object({
 
 type DocumentFormData = z.infer<typeof documentSchema>;
 
-// Utility functions for analysis types (shared between components)
-const formatDocumentType = (type: string) => {
-  // Handle company accounts files (company_accounts_1, company_accounts_2, etc.)
-  if (type.startsWith('company_accounts')) {
-    return 'Company Accounts';
-  }
-  
-  switch (type) {
-    case 'asset_register': return 'Asset Register';
-    case 'sales_ledger': return 'Sales Ledger';
-    case 'staff_matrix': return 'Staff Matrix';
-    case 'profit_and_loss': return 'Profit & Loss';
-    case 'balance_sheet': return 'Balance Sheet';
-    default: return type;
-  }
-};
-
-const getDocumentTypeColor = (type: string) => {
-  // Handle company accounts files (company_accounts_1, company_accounts_2, etc.)
-  if (type.startsWith('company_accounts')) {
-    return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
-  }
-  
-  switch (type) {
-    case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-    case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-    case 'staff_matrix': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    case 'profit_and_loss': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
-    case 'balance_sheet': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-  }
-};
 
 // Document analysis badges component
 function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
@@ -229,6 +198,8 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     missingTypes: string[];
     isComplete: boolean;
     completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
   }>({
     queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
     refetchInterval: 15000, // Poll every 15 seconds to catch analysis completion

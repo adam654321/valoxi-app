@@ -1,5 +1,5 @@
 import { useParams } from 'wouter';
-import { SimplePortalDisplay } from '@/components/simple-portal-display';
+import { EnhancedPortalDisplay } from '@/components/enhanced-portal-display';
 
 export default function PortalPage() {
   const { token } = useParams();
@@ -15,5 +15,5 @@ export default function PortalPage() {
     );
   }
 
-  return <SimplePortalDisplay token={token} />;
+  return <EnhancedPortalDisplay token={token} />;
 }

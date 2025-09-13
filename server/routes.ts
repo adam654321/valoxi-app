@@ -3860,6 +3860,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ========================
+  // Portal Document Management
+  // ========================
+  
+  // Get all documents for a company via portal token (public endpoint)
+  app.get("/api/portal/:token/documents", async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      const documents = await storage.getCompanyDocuments(portalToken.targetCompanyId);
+      res.json(documents);
+      
+    } catch (error) {
+      console.error("Portal documents error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Delete document via portal token (public endpoint)
+  app.delete("/api/portal/:token/documents/:id", async (req: Request, res: Response) => {
+    try {
+      const accessToken = req.params.token;
+      const documentId = parseInt(req.params.id);
+      
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      
+      const portalToken = await storage.validatePortalToken(accessToken);
+      if (!portalToken) {
+        return res.status(404).json({ message: "Invalid or expired access token" });
+      }
+      
+      // Get document to verify it belongs to the portal's company
+      const document = await storage.getDocumentById(documentId);
+      if (!document || document.targetCompanyId !== portalToken.targetCompanyId) {
+        return res.status(404).json({ message: "Document not found or access denied" });
+      }
+      
+      // Use the unified deletion logic
+      const result = await storage.deleteDocument(documentId);
+      
+      if (result) {
+        res.json({ message: "Document deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Document not found" });
+      }
+      
+    } catch (error) {
+      console.error("Portal document deletion error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ========================
   // Server-Sent Events for Real-time Updates
   // ========================
   
