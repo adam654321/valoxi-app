@@ -79,6 +79,38 @@ import {
   Play
 } from "lucide-react";
 
+// Helper function to invalidate all caches (document library + portal)
+const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
+  console.log(`[CACHE] Invalidating all document caches for target company ${targetCompanyId}`);
+  
+  // Always invalidate document library caches
+  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
+  
+  try {
+    // Get portal tokens for this target company and invalidate their caches too
+    console.log(`[CACHE] Fetching portal tokens for target company ${targetCompanyId}`);
+    const response = await fetch(`/api/target-companies/${targetCompanyId}/portal-tokens`);
+    if (response.ok) {
+      const { tokens } = await response.json();
+      console.log(`[CACHE] Found ${tokens.length} portal tokens to invalidate:`, tokens);
+      
+      // Invalidate portal caches for each active token
+      tokens.forEach((token: string) => {
+        console.log(`[CACHE] Invalidating portal cache for token: ${token.substring(0, 8)}...`);
+        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+      });
+    } else {
+      console.log(`[CACHE] Could not fetch portal tokens: ${response.status}`);
+    }
+  } catch (error) {
+    // If we can't get portal tokens, that's okay - just log it
+    console.log("[CACHE] Could not invalidate portal caches:", error);
+  }
+};
+
 interface DocumentManagementProps {
   targetCompanyId: number;
   companyName: string;
@@ -353,31 +385,6 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     </div>
   );
 }
-
-// Helper function to invalidate all caches (document library + portal)
-const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
-  // Always invalidate document library caches
-  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
-  
-  try {
-    // Get portal tokens for this target company and invalidate their caches too
-    const response = await fetch(`/api/target-companies/${targetCompanyId}/portal-tokens`);
-    if (response.ok) {
-      const { tokens } = await response.json();
-      
-      // Invalidate portal caches for each active token
-      tokens.forEach((token: string) => {
-        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
-      });
-    }
-  } catch (error) {
-    // If we can't get portal tokens, that's okay - just log it
-    console.log("Could not invalidate portal caches:", error);
-  }
-};
 
 export function DocumentManagement({ targetCompanyId, companyName }: DocumentManagementProps) {
   const { toast } = useToast();
