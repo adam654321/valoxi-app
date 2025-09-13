@@ -3894,7 +3894,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete document via portal token (public endpoint)
   app.delete("/api/portal/:token/documents/:id", async (req: Request, res: Response) => {
-    console.log(`[PORTAL DELETE START] Method: ${req.method}, URL: ${req.originalUrl}`);
     try {
       const accessToken = req.params.token;
       const documentId = parseInt(req.params.id);
@@ -3908,35 +3907,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Invalid or expired access token" });
       }
       
-      // Get document to verify it belongs to the portal's company
-      console.log(`[PORTAL DELETE] Attempting to get document ${documentId} for company ${portalToken.userCompanyId}`);
+      // Get document to verify it belongs to the portal's company  
       const document = await storage.getDocument(documentId, portalToken.userCompanyId);
-      console.log(`[PORTAL DELETE] Document found:`, document ? `${document.id}, targetCompanyId: ${document.targetCompanyId}` : 'null');
-      console.log(`[PORTAL DELETE] Portal target company: ${portalToken.targetCompanyId}`);
       
       if (!document || document.targetCompanyId !== portalToken.targetCompanyId) {
-        console.log(`[PORTAL DELETE] Document not found or access denied. Document exists: ${!!document}, Company match: ${document?.targetCompanyId === portalToken.targetCompanyId}`);
         return res.status(404).json({ message: "Document not found or access denied" });
       }
       
-      // Use the unified deletion logic with correct parameters
-      console.log(`[PORTAL DELETE] About to call storage.deleteDocument(${documentId}, ${portalToken.userCompanyId})`);
-      
-      try {
-        const result = await storage.deleteDocument(documentId, portalToken.userCompanyId);
-        console.log(`[PORTAL DELETE] Deletion result:`, result);
-        
-        if (result) {
-          console.log(`[PORTAL DELETE] Success - sending 200 response`);
-          res.json({ message: "Document deleted successfully" });
-        } else {
-          console.log(`[PORTAL DELETE] Failed - sending 404 response`);
-          res.status(404).json({ message: "Document not found" });
-        }
-      } catch (deleteError) {
-        console.error(`[PORTAL DELETE] Error during deletion:`, deleteError);
-        res.status(500).json({ message: "Error deleting document" });
+      // Delete the document using the same method as document library
+      const success = await storage.deleteDocument(documentId, portalToken.userCompanyId);
+      if (!success) {
+        return res.status(500).json({ error: 'Failed to delete document' });
       }
+      
+      res.json({ message: "Document deleted successfully" });
       
     } catch (error) {
       console.error("Portal document deletion error:", error);
