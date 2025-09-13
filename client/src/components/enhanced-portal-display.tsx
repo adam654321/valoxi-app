@@ -250,30 +250,30 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   });
 
   // Get all documents for the company
-  const documentsQuery = useQuery<Document[]>({
+  const { data: documents = [], isLoading: isDocumentsLoading, error: documentsError } = useQuery<Document[]>({
     queryKey: [`/api/portal/${token}/documents`],
     enabled: !!token,
-    retry: 1,
-    onError: (error) => {
-      console.error('[PORTAL] Documents query error:', error);
-    },
-    onSuccess: (data) => {
-      console.log('[PORTAL] Documents query success:', data?.length || 0, 'documents');
-    }
+    retry: 1
   });
-
-  const { data: documents = [], isLoading: isDocumentsLoading, error: documentsError } = documentsQuery;
 
   // Debug logging - log every render
-  console.log('[PORTAL] Render Debug:', {
-    token: token ? `${token.substring(0, 20)}...` : 'undefined',
-    tokenEnabled: !!token,
+  console.log('[PORTAL] Component Debug:', {
+    token: token ? `${token.substring(0, 20)}...` : 'no-token',
+    tokenExists: !!token,
     portalDataExists: !!portalData,
-    documentsEnabled: documentsQuery.fetchStatus,
     documentsLoading: isDocumentsLoading,
     documentsCount: documents?.length || 0,
-    documentsError: documentsError?.message || 'none'
+    documentsError: documentsError?.message || 'none',
+    timestamp: new Date().toISOString()
   });
+
+  // Log document query results
+  if (documents && documents.length > 0) {
+    console.log('[PORTAL] Documents found:', documents);
+  }
+  if (documentsError) {
+    console.error('[PORTAL] Documents error:', documentsError);
+  }
 
   // Submit document mutation
   const submitDocumentMutation = useMutation({

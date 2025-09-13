@@ -3873,8 +3873,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Invalid or expired access token" });
       }
       
-      const documents = await storage.getCompanyDocuments(portalToken.targetCompanyId, portalToken.userCompanyId);
-      res.json(documents);
+      const groupedDocuments = await storage.getCompanyDocuments(portalToken.targetCompanyId, portalToken.userCompanyId);
+      
+      // Flatten the grouped documents into a single array for portal use
+      const flatDocuments = Object.values(groupedDocuments).flat();
+      
+      console.log(`[PORTAL DOCUMENTS] Token: ${accessToken.substring(0, 20)}..., Found ${flatDocuments.length} documents`);
+      
+      res.json(flatDocuments);
       
     } catch (error) {
       console.error("Portal documents error:", error);
