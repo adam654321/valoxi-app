@@ -601,14 +601,15 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   const deleteMutation = useMutation({
     mutationFn: (documentId: number) =>
       apiRequest("DELETE", `/api/documents/${documentId}`, {}),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Success",
         description: "Document deleted successfully",
       });
       
       // Invalidate all caches (document library + portal)
-      invalidateAllDocumentCaches(targetCompanyId);
+      await invalidateAllDocumentCaches(targetCompanyId);
+      console.log('[ADMIN] Cache invalidation completed');
     },
     onError: (error: any) => {
       toast({

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -256,6 +256,45 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     retry: 1
   });
 
+  // SSE subscription for real-time document updates
+  useEffect(() => {
+    if (!portalData?.targetCompanyId) return;
+
+    const targetCompanyId = portalData.targetCompanyId;
+    console.log(`[PORTAL] Setting up SSE for company ${targetCompanyId}`);
+    
+    const eventSource = new EventSource(`/api/document-updates/stream/${targetCompanyId}`);
+    
+    eventSource.onopen = () => {
+      console.log(`[PORTAL SSE] Connected to document update stream for company: ${targetCompanyId}`);
+    };
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log(`[PORTAL SSE] Received update:`, data);
+        
+        if (data.type === 'document_uploaded' || data.type === 'document_deleted') {
+          console.log(`[PORTAL SSE] Invalidating portal caches for token: ${token.substring(0, 8)}...`);
+          // Invalidate all portal queries
+          queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+        }
+      } catch (error) {
+        console.error('[PORTAL SSE] Error parsing SSE data:', error);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      console.error('[PORTAL SSE] Connection error:', error);
+    };
+    
+    return () => {
+      console.log(`[PORTAL SSE] Disconnecting from document update stream for company: ${targetCompanyId}`);
+      eventSource.close();
+    };
+  }, [portalData?.targetCompanyId, token]);
 
   // Submit document mutation
   const submitDocumentMutation = useMutation({
