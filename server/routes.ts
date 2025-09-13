@@ -3920,11 +3920,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Use the unified deletion logic
+      console.log(`[PORTAL DELETE] Calling storage.deleteDocument(${documentId})`);
       const result = await storage.deleteDocument(documentId);
+      console.log(`[PORTAL DELETE] Deletion result:`, result);
       
       if (result) {
+        console.log(`[PORTAL DELETE] Success - sending 200 response`);
         res.json({ message: "Document deleted successfully" });
       } else {
+        console.log(`[PORTAL DELETE] Failed - sending 404 response`);
         res.status(404).json({ message: "Document not found" });
       }
       
