@@ -3886,8 +3886,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Debug route matcher to see what's hitting this endpoint
+  app.all("/api/portal/:token/documents/:id", (req: Request, res: Response, next: any) => {
+    console.log(`[PORTAL DELETE MATCH] ${req.method} ${req.originalUrl}`);
+    next();
+  });
+
   // Delete document via portal token (public endpoint)
   app.delete("/api/portal/:token/documents/:id", async (req: Request, res: Response) => {
+    console.log(`[PORTAL DELETE START] Method: ${req.method}, URL: ${req.originalUrl}`);
     try {
       const accessToken = req.params.token;
       const documentId = parseInt(req.params.id);
