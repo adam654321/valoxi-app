@@ -256,24 +256,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     retry: 1
   });
 
-  // Debug logging - log every render
-  console.log('[PORTAL] Component Debug:', {
-    token: token ? `${token.substring(0, 20)}...` : 'no-token',
-    tokenExists: !!token,
-    portalDataExists: !!portalData,
-    documentsLoading: isDocumentsLoading,
-    documentsCount: documents?.length || 0,
-    documentsError: documentsError?.message || 'none',
-    timestamp: new Date().toISOString()
-  });
-
-  // Log document query results
-  if (documents && documents.length > 0) {
-    console.log('[PORTAL] Documents found:', documents);
-  }
-  if (documentsError) {
-    console.error('[PORTAL] Documents error:', documentsError);
-  }
 
   // Submit document mutation
   const submitDocumentMutation = useMutation({

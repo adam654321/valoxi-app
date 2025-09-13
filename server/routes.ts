@@ -3878,8 +3878,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Flatten the grouped documents into a single array for portal use
       const flatDocuments = Object.values(groupedDocuments).flat();
       
-      console.log(`[PORTAL DOCUMENTS] Token: ${accessToken.substring(0, 20)}..., Found ${flatDocuments.length} documents`);
-      
       res.json(flatDocuments);
       
     } catch (error) {
@@ -3904,7 +3902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get document to verify it belongs to the portal's company
-      const document = await storage.getDocumentById(documentId);
+      const document = await storage.getDocument(documentId, portalToken.userCompanyId);
       if (!document || document.targetCompanyId !== portalToken.targetCompanyId) {
         return res.status(404).json({ message: "Document not found or access denied" });
       }
