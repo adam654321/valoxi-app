@@ -3902,8 +3902,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get document to verify it belongs to the portal's company
+      console.log(`[PORTAL DELETE] Attempting to get document ${documentId} for company ${portalToken.userCompanyId}`);
       const document = await storage.getDocument(documentId, portalToken.userCompanyId);
+      console.log(`[PORTAL DELETE] Document found:`, document ? `${document.id}, targetCompanyId: ${document.targetCompanyId}` : 'null');
+      console.log(`[PORTAL DELETE] Portal target company: ${portalToken.targetCompanyId}`);
+      
       if (!document || document.targetCompanyId !== portalToken.targetCompanyId) {
+        console.log(`[PORTAL DELETE] Document not found or access denied. Document exists: ${!!document}, Company match: ${document?.targetCompanyId === portalToken.targetCompanyId}`);
         return res.status(404).json({ message: "Document not found or access denied" });
       }
       
