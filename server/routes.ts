@@ -3873,7 +3873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Invalid or expired access token" });
       }
       
-      const documents = await storage.getCompanyDocuments(portalToken.targetCompanyId);
+      const documents = await storage.getCompanyDocuments(portalToken.targetCompanyId, portalToken.userCompanyId);
       res.json(documents);
       
     } catch (error) {
