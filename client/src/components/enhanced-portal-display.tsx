@@ -250,9 +250,29 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   });
 
   // Get all documents for the company
-  const { data: documents = [], isLoading: isDocumentsLoading } = useQuery<Document[]>({
+  const documentsQuery = useQuery<Document[]>({
     queryKey: [`/api/portal/${token}/documents`],
     enabled: !!token,
+    retry: 1,
+    onError: (error) => {
+      console.error('[PORTAL] Documents query error:', error);
+    },
+    onSuccess: (data) => {
+      console.log('[PORTAL] Documents query success:', data?.length || 0, 'documents');
+    }
+  });
+
+  const { data: documents = [], isLoading: isDocumentsLoading, error: documentsError } = documentsQuery;
+
+  // Debug logging - log every render
+  console.log('[PORTAL] Render Debug:', {
+    token: token ? `${token.substring(0, 20)}...` : 'undefined',
+    tokenEnabled: !!token,
+    portalDataExists: !!portalData,
+    documentsEnabled: documentsQuery.fetchStatus,
+    documentsLoading: isDocumentsLoading,
+    documentsCount: documents?.length || 0,
+    documentsError: documentsError?.message || 'none'
   });
 
   // Submit document mutation
