@@ -3919,20 +3919,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Document not found or access denied" });
       }
       
-      // Use alternative deletion logic to bypass hanging issue
-      console.log(`[PORTAL DELETE] Using alternative deletion approach for document ${documentId}`);
+      // Use the unified deletion logic with correct parameters
+      console.log(`[PORTAL DELETE] About to call storage.deleteDocument(${documentId}, ${portalToken.userCompanyId})`);
       
       try {
-        // Delete document directly using database query to bypass hanging storage method
-        await storage.db.delete(storage.schema.documents).where(storage.eq(storage.schema.documents.id, documentId));
+        const result = await storage.deleteDocument(documentId, portalToken.userCompanyId);
+        console.log(`[PORTAL DELETE] Deletion result:`, result);
         
-        // Also delete related document analysis results
-        await storage.db.delete(storage.schema.document_analysis_results)
-          .where(storage.eq(storage.schema.document_analysis_results.documentId, documentId));
-        
-        console.log(`[PORTAL DELETE] Successfully deleted document ${documentId} and related data`);
-        res.json({ message: "Document deleted successfully" });
-        
+        if (result) {
+          console.log(`[PORTAL DELETE] Success - sending 200 response`);
+          res.json({ message: "Document deleted successfully" });
+        } else {
+          console.log(`[PORTAL DELETE] Failed - sending 404 response`);
+          res.status(404).json({ message: "Document not found" });
+        }
       } catch (deleteError) {
         console.error(`[PORTAL DELETE] Error during deletion:`, deleteError);
         res.status(500).json({ message: "Error deleting document" });
