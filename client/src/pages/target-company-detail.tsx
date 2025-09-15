@@ -919,14 +919,14 @@ export default function TargetCompanyDetail() {
                     // Extract Investment Summary section from the analysis
                     const extractInvestmentSummary = (content: string) => {
                       // Look for Investment Summary & Recommendation section and clean it
-                      const summaryMatch = content.match(/(?:6\.\s*)?✅?\s*Investment Summary[^#]*?(?=(?:\n##|\n#|$))/is);
+                      const summaryMatch = content.match(/(?:6\.\s*)?✅?\s*Investment Summary[^#]*?(?=(?:\n##|\n#|$))/i);
                       if (summaryMatch) {
                         // Remove the section number and emoji if present
                         return summaryMatch[0].replace(/^(?:6\.\s*)?✅?\s*Investment Summary & Recommendation\s*\n?/i, '');
                       }
                       
                       // Fallback: look for recommendation section
-                      const recMatch = content.match(/(?:recommendation|summary)[^#]*?(?=(?:\n##|\n#|$))/is);
+                      const recMatch = content.match(/(?:recommendation|summary)[^#]*?(?=(?:\n##|\n#|$))/i);
                       return recMatch ? recMatch[0] : null;
                     };
 
@@ -961,26 +961,160 @@ export default function TargetCompanyDetail() {
                       return sections;
                     };
 
-                    // Extract key metrics from the analysis
+                    // Parse financial data from the most recent full year of accounts
+                    const parseFinancials = (content: string) => {
+                      interface YearMatch {
+                        year: number;
+                        index: number;
+                        contextStart: number;
+                        contextEnd: number;
+                      }
+                      
+                      interface FinancialData {
+                        year: number;
+                        revenue: number | null;
+                        netProfit: number | null;
+                      }
+                      
+                      const financialsByYear: FinancialData[] = [];
+                      
+                      // Year context patterns - using simpler approach for compatibility
+                      const yearPatterns = [
+                        /(?:year(?:s)?\s+(?:ended|to)|for\s+the\s+year(?:\s+ended)?|y\/e|fy)\s*(?:on\s*)?(?:the\s*)?(?:\d{1,2}\s*[a-zA-Z]{3,9}\s*)?(\d{4})/g,
+                        /(?:accounts|financial\s+year|period)\s+(?:for\s+)?(?:the\s+)?(?:year\s+)?(?:ended?\s*)?(?:on\s*)?(?:the\s*)?(?:\d{1,2}\s*[a-zA-Z]{3,9}\s*)?(\d{4})/g,
+                        /(\d{4})\s*(?:financial\s+)?(?:year|accounts)/g
+                      ];
+                      
+                      // Find all year mentions with context
+                      const yearMatches: YearMatch[] = [];
+                      yearPatterns.forEach(pattern => {
+                        let match;
+                        while ((match = pattern.exec(content)) !== null) {
+                          const year = parseInt(match[1]);
+                          if (year >= 2015 && year <= 2030) { // Reasonable year range
+                            yearMatches.push({
+                              year,
+                              index: match.index,
+                              contextStart: Math.max(0, match.index - 200),
+                              contextEnd: Math.min(content.length, match.index + 500)
+                            });
+                          }
+                        }
+                      });
+                      
+                      // Extract financial data for each year
+                      yearMatches.forEach(yearMatch => {
+                        const yearContext = content.slice(yearMatch.contextStart, yearMatch.contextEnd);
+                        
+                        // Look for revenue/turnover in this year's context
+                        const revenuePatterns = [
+                          /(?:turnover|revenue|sales)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
+                          /((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:million|thousand)?\s*(?:turnover|revenue)/gi
+                        ];
+                        
+                        // Look for net profit in this year's context
+                        const profitPatterns = [
+                          /(?:net\s+profit|profit\s+(?:for|after)\s+(?:tax|the\s+year)|profit\s+after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
+                          /(?:net\s+)?(?:loss|profit)\s+(?:for\s+the\s+year|after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi
+                        ];
+                        
+                        let revenue: number | null = null;
+                        let netProfit: number | null = null;
+                        
+                        // Extract revenue
+                        revenuePatterns.forEach(pattern => {
+                          if (revenue === null) {
+                            // Reset regex for each use
+                            pattern.lastIndex = 0;
+                            const match = pattern.exec(yearContext);
+                            if (match) {
+                              let value = parseFloat(match[1].replace(/,/g, ''));
+                              if (match[2] === 'k') value *= 1000;
+                              if (match[2] === 'm') value *= 1000000;
+                              if (value > 1000) { // Reasonable minimum for company revenue
+                                revenue = value;
+                              }
+                            }
+                          }
+                        });
+                        
+                        // Extract net profit
+                        profitPatterns.forEach(pattern => {
+                          if (netProfit === null) {
+                            // Reset regex for each use
+                            pattern.lastIndex = 0;
+                            const match = pattern.exec(yearContext);
+                            if (match) {
+                              let value = parseFloat(match[1].replace(/,/g, ''));
+                              if (match[2] === 'k') value *= 1000;
+                              if (match[2] === 'm') value *= 1000000;
+                              
+                              // Check if it's a loss (negative)
+                              const contextBefore = yearContext.slice(Math.max(0, match.index - 50), match.index);
+                              const contextAfter = yearContext.slice(match.index, Math.min(yearContext.length, match.index + 100));
+                              if (contextBefore.includes('loss') || contextAfter.includes('loss') || match[0].includes('(')) {
+                                value = -Math.abs(value);
+                              }
+                              
+                              netProfit = value;
+                            }
+                          }
+                        });
+                        
+                        if (revenue !== null || netProfit !== null) {
+                          financialsByYear.push({
+                            year: yearMatch.year,
+                            revenue,
+                            netProfit
+                          });
+                        }
+                      });
+                      
+                      // Sort by year and get the most recent with data
+                      financialsByYear.sort((a, b) => b.year - a.year);
+                      
+                      // Prefer most recent year with both revenue and profit, fallback to any data
+                      const mostRecentComplete = financialsByYear.find(f => f.revenue && f.netProfit);
+                      const mostRecent = mostRecentComplete || financialsByYear[0];
+                      
+                      return {
+                        latestYear: mostRecent?.year,
+                        latestRevenue: mostRecent?.revenue,
+                        latestNetProfit: mostRecent?.netProfit,
+                        byYear: financialsByYear
+                      };
+                    };
+
+                    // Extract key metrics using the robust parser
                     const extractKeyMetrics = (content: string) => {
                       const metrics = [];
+                      const financials = parseFinancials(content);
                       
-                      // Look for revenue figures
-                      const revenueMatch = content.match(/revenue[^\.]*?£?([\d,]+)/i);
-                      if (revenueMatch) {
-                        metrics.push({ label: "Latest Revenue", value: `£${revenueMatch[1]}`, type: "currency" });
+                      if (financials.latestRevenue) {
+                        const revenueLabel = financials.latestYear ? `Latest Revenue (${financials.latestYear})` : "Latest Revenue";
+                        metrics.push({ 
+                          label: revenueLabel, 
+                          value: formatCurrency(financials.latestRevenue), 
+                          type: "currency" 
+                        });
                       }
                       
-                      // Look for profit figures
-                      const profitMatch = content.match(/(?:net )?profit[^\.]*?£?([\d,]+)/i);
-                      if (profitMatch) {
-                        metrics.push({ label: "Net Profit", value: `£${profitMatch[1]}`, type: "currency" });
+                      if (financials.latestNetProfit !== null && financials.latestNetProfit !== undefined) {
+                        const profitLabel = financials.latestYear ? `Net Profit (${financials.latestYear})` : "Net Profit";
+                        metrics.push({ 
+                          label: profitLabel, 
+                          value: formatCurrency(financials.latestNetProfit), 
+                          type: "currency" 
+                        });
                       }
                       
-                      // Look for assets
-                      const assetsMatch = content.match(/(?:net )?assets[^\.]*?£?([\d,]+)/i);
+                      // Look for assets (keep existing simple pattern for now)
+                      const assetsMatch = content.match(/(?:net\s+)?assets[^\.]*?£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}))/i);
                       if (assetsMatch) {
-                        metrics.push({ label: "Net Assets", value: `£${assetsMatch[1]}`, type: "currency" });
+                        const value = parseFloat(assetsMatch[1].replace(/,/g, ''));
+                        if (value > 1000) {
+                          metrics.push({ label: "Net Assets", value: formatCurrency(value), type: "currency" });
+                        }
                       }
                       
                       return metrics;
