@@ -1013,28 +1013,24 @@ export default function TargetCompanyDetail() {
                       yearMatches.forEach(yearMatch => {
                         const yearContext = content.slice(yearMatch.contextStart, yearMatch.contextEnd);
                         
-                        // Look for revenue/turnover in this year's context (enhanced patterns)
+                        // Look for revenue in Revenue Growth section specifically
                         const revenuePatterns = [
-                          // Standard patterns
-                          /(?:turnover|revenue|sales)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
-                          /((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:million|thousand)?\s*(?:turnover|revenue)/gi,
-                          // Table format patterns
-                          /\|\s*(?:total\s+)?(?:revenue|turnover|sales)\s*\|\s*(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*/gi,
-                          /(?:revenue|turnover|sales)[\s\|]*(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
-                          // Direct amount patterns near revenue mentions
-                          /£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:.*(?:revenue|turnover|sales)|(?:revenue|turnover|sales).*)/gi
+                          // Match "YYYY: £amount" format in Revenue Growth section
+                          new RegExp(`${yearMatch.year}:\\s*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?`, 'gi'),
+                          // Match revenue line items in structured format
+                          new RegExp(`${yearMatch.year}[^\\n]*revenue[^\\n]*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?`, 'gi'),
+                          // Match within Revenue Growth context
+                          /Revenue Growth:[\s\S]*?(\d{4}):\s*£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi
                         ];
                         
-                        // Look for net profit in this year's context (enhanced patterns)
+                        // Look for net profit in Net Profit & Margins section specifically  
                         const profitPatterns = [
-                          // Standard patterns
-                          /(?:net\s+profit|profit\s+(?:for|after)\s+(?:tax|the\s+year)|profit\s+after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
-                          /(?:net\s+)?(?:loss|profit)\s+(?:for\s+the\s+year|after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
-                          // Table format patterns
-                          /\|\s*(?:net\s+)?profit\s*(?:after\s+tax)?\s*\|\s*(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?\s*/gi,
-                          /(?:net\s+)?profit[\s\|]*(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
-                          // Direct amount patterns near profit mentions
-                          /£\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?\s*(?:.*(?:net\s+profit|profit)|(?:net\s+profit|profit).*)/gi
+                          // Match "YYYY: £amount" format in Net Profit section
+                          new RegExp(`${yearMatch.year}:\\s*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?\\s*\\([\\d.]+%\\s*of\\s*Revenue\\)`, 'gi'),
+                          // Match within Net Profit & Margins context
+                          /Net Profit & Margins:[\s\S]*?(\d{4}):\s*£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
+                          // Match profit line with percentage
+                          new RegExp(`${yearMatch.year}[^\\n]*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?\\s*\\([\\d.]+%\\s*of\\s*Revenue\\)`, 'gi')
                         ];
                         
                         let revenue: number | null = null;
@@ -1068,10 +1064,17 @@ export default function TargetCompanyDetail() {
                               if (match[2] === 'k') value *= 1000;
                               if (match[2] === 'm') value *= 1000000;
                               
-                              // Check if it's a loss (negative)
-                              const contextBefore = yearContext.slice(Math.max(0, match.index - 50), match.index);
-                              const contextAfter = yearContext.slice(match.index, Math.min(yearContext.length, match.index + 100));
-                              if (contextBefore.includes('loss') || contextAfter.includes('loss') || match[0].includes('(')) {
+                              // Check if it's a loss (negative) - be more specific about loss indicators
+                              const contextBefore = yearContext.slice(Math.max(0, match.index - 100), match.index);
+                              const contextAfter = yearContext.slice(match.index, Math.min(yearContext.length, match.index + 150));
+                              
+                              // Only mark as negative if explicitly mentioned as loss or in parentheses without positive context
+                              const isExplicitLoss = contextBefore.includes('loss for') || contextAfter.includes('loss for') || 
+                                                    contextBefore.includes('net loss') || contextAfter.includes('net loss');
+                              const inParentheses = match[0].includes('(') && match[0].includes(')');
+                              const hasPositiveContext = contextAfter.includes('profit') || contextAfter.includes('% of Revenue');
+                              
+                              if (isExplicitLoss || (inParentheses && !hasPositiveContext)) {
                                 value = -Math.abs(value);
                               }
                               
@@ -1089,18 +1092,54 @@ export default function TargetCompanyDetail() {
                         }
                       });
                       
-                      // Sort by year and get the most recent with data
-                      financialsByYear.sort((a, b) => b.year - a.year);
+                      // Remove duplicates and consolidate by year, keeping the best values
+                      const consolidatedByYear: { [year: number]: FinancialData } = {};
                       
-                      // Prefer most recent year with both revenue and profit, fallback to any data
-                      const mostRecentComplete = financialsByYear.find(f => f.revenue && f.netProfit);
-                      const mostRecent = mostRecentComplete || financialsByYear[0];
+                      financialsByYear.forEach(entry => {
+                        if (!consolidatedByYear[entry.year]) {
+                          consolidatedByYear[entry.year] = { year: entry.year, revenue: null, netProfit: null };
+                        }
+                        
+                        // For revenue, prefer the largest reasonable value (likely to be the main revenue figure)
+                        if (entry.revenue && entry.revenue > 50000 && (!consolidatedByYear[entry.year].revenue || entry.revenue > consolidatedByYear[entry.year].revenue!)) {
+                          consolidatedByYear[entry.year].revenue = entry.revenue;
+                        }
+                        
+                        // For net profit, prefer positive values, but keep the most reasonable value
+                        if (entry.netProfit !== null) {
+                          if (!consolidatedByYear[entry.year].netProfit || 
+                              (entry.netProfit > 0 && consolidatedByYear[entry.year].netProfit! <= 0) ||
+                              (entry.netProfit > 0 && entry.netProfit < consolidatedByYear[entry.year].netProfit!) ||
+                              (entry.netProfit > consolidatedByYear[entry.year].netProfit! && consolidatedByYear[entry.year].netProfit! < 0)) {
+                            consolidatedByYear[entry.year].netProfit = entry.netProfit;
+                          }
+                        }
+                      });
+                      
+                      // Convert back to array and sort by year
+                      const consolidatedArray = Object.values(consolidatedByYear).sort((a, b) => b.year - a.year);
+                      
+                      // Find the most recent year with both revenue and profit, fallback to most recent with either
+                      const mostRecentComplete = consolidatedArray.find(f => f.revenue && f.netProfit !== null);
+                      const mostRecentWithRevenue = consolidatedArray.find(f => f.revenue);
+                      const mostRecent = mostRecentComplete || mostRecentWithRevenue || consolidatedArray[0];
+                      
+                      // If we have revenue but no profit for the same year, try to find profit from same year in original data
+                      let finalRevenue = mostRecent?.revenue || null;
+                      let finalNetProfit = mostRecent?.netProfit || null;
+                      
+                      if (finalRevenue && !finalNetProfit && mostRecent) {
+                        const samYearWithProfit = consolidatedArray.find(f => f.year === mostRecent.year && f.netProfit !== null);
+                        if (samYearWithProfit) {
+                          finalNetProfit = samYearWithProfit.netProfit;
+                        }
+                      }
                       
                       return {
                         latestYear: mostRecent?.year,
-                        latestRevenue: mostRecent?.revenue,
-                        latestNetProfit: mostRecent?.netProfit,
-                        byYear: financialsByYear
+                        latestRevenue: finalRevenue,
+                        latestNetProfit: finalNetProfit,
+                        byYear: consolidatedArray
                       };
                     };
 
