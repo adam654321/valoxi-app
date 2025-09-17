@@ -978,11 +978,18 @@ export default function TargetCompanyDetail() {
                       
                       const financialsByYear: FinancialData[] = [];
                       
-                      // Year context patterns - using simpler approach for compatibility
+                      // Year context patterns - match the actual analysis format
                       const yearPatterns = [
+                        // Standard formal patterns
                         /(?:year(?:s)?\s+(?:ended|to)|for\s+the\s+year(?:\s+ended)?|y\/e|fy)\s*(?:on\s*)?(?:the\s*)?(?:\d{1,2}\s*[a-zA-Z]{3,9}\s*)?(\d{4})/g,
                         /(?:accounts|financial\s+year|period)\s+(?:for\s+)?(?:the\s+)?(?:year\s+)?(?:ended?\s*)?(?:on\s*)?(?:the\s*)?(?:\d{1,2}\s*[a-zA-Z]{3,9}\s*)?(\d{4})/g,
-                        /(\d{4})\s*(?:financial\s+)?(?:year|accounts)/g
+                        /(\d{4})\s*(?:financial\s+)?(?:year|accounts)/g,
+                        // Table headers and markdown patterns common in analysis
+                        /\|\s*(20\d{2})\s*\|/g,
+                        /^(20\d{2})$/gm,
+                        // Specific patterns for this analysis format
+                        /(?:covers?\s+the\s+years?\s+)(?:\d{4}(?:,\s*)?)*(?:and\s+)?(\d{4})/g,
+                        /(?:\b|\s)(20\d{2})(?=\s*[:|,.\s]|\s*$)/g
                       ];
                       
                       // Find all year mentions with context
@@ -1006,16 +1013,28 @@ export default function TargetCompanyDetail() {
                       yearMatches.forEach(yearMatch => {
                         const yearContext = content.slice(yearMatch.contextStart, yearMatch.contextEnd);
                         
-                        // Look for revenue/turnover in this year's context
+                        // Look for revenue/turnover in this year's context (enhanced patterns)
                         const revenuePatterns = [
+                          // Standard patterns
                           /(?:turnover|revenue|sales)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
-                          /((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:million|thousand)?\s*(?:turnover|revenue)/gi
+                          /((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:million|thousand)?\s*(?:turnover|revenue)/gi,
+                          // Table format patterns
+                          /\|\s*(?:total\s+)?(?:revenue|turnover|sales)\s*\|\s*(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*/gi,
+                          /(?:revenue|turnover|sales)[\s\|]*(?:£)?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
+                          // Direct amount patterns near revenue mentions
+                          /£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:.*(?:revenue|turnover|sales)|(?:revenue|turnover|sales).*)/gi
                         ];
                         
-                        // Look for net profit in this year's context
+                        // Look for net profit in this year's context (enhanced patterns)
                         const profitPatterns = [
+                          // Standard patterns
                           /(?:net\s+profit|profit\s+(?:for|after)\s+(?:tax|the\s+year)|profit\s+after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
-                          /(?:net\s+)?(?:loss|profit)\s+(?:for\s+the\s+year|after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi
+                          /(?:net\s+)?(?:loss|profit)\s+(?:for\s+the\s+year|after\s+tax)\s*[:\-]?\s*(?:of\s*)?(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
+                          // Table format patterns
+                          /\|\s*(?:net\s+)?profit\s*(?:after\s+tax)?\s*\|\s*(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?\s*/gi,
+                          /(?:net\s+)?profit[\s\|]*(?:£)?\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?/gi,
+                          // Direct amount patterns near profit mentions
+                          /£\s*(?:\()?\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?\s*(?:\))?\s*(?:.*(?:net\s+profit|profit)|(?:net\s+profit|profit).*)/gi
                         ];
                         
                         let revenue: number | null = null;
