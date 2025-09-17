@@ -1108,15 +1108,6 @@ export default function TargetCompanyDetail() {
                         });
                       }
                       
-                      // Look for assets (keep existing simple pattern for now)
-                      const assetsMatch = content.match(/(?:net\s+)?assets[^\.]*?£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}))/i);
-                      if (assetsMatch) {
-                        const value = parseFloat(assetsMatch[1].replace(/,/g, ''));
-                        if (value > 1000) {
-                          metrics.push({ label: "Net Assets", value: formatCurrency(value), type: "currency" });
-                        }
-                      }
-                      
                       return metrics;
                     };
 
