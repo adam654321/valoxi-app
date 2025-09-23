@@ -29,7 +29,8 @@ import {
   Clock,
   Plus,
   Calendar,
-  List
+  List,
+  Code
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1211,7 +1212,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
 
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="document" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="document" className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
                 Document
@@ -1219,6 +1220,15 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               <TabsTrigger value="analysis" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Analysis
+                {analysisResults.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {analysisResults.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="webhook-json" className="flex items-center gap-2">
+                <Code className="w-4 h-4" />
+                Webhook JSON
                 {analysisResults.length > 0 && (
                   <Badge variant="secondary" className="ml-1 text-xs">
                     {analysisResults.length}
@@ -1371,6 +1381,75 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                 </div>
               ) : (
                 renderAnalysisResults(analysisResults)
+              )}
+            </TabsContent>
+            
+            <TabsContent value="webhook-json" className="flex-1 overflow-auto p-4">
+              {analysisLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                    <p className="text-muted-foreground">Loading analysis results...</p>
+                  </div>
+                </div>
+              ) : analysisResults.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Code className="w-5 h-5" />
+                    <h3 className="text-lg font-semibold">Webhook JSON Data</h3>
+                    <Badge variant="outline" className="text-xs">
+                      Raw analysis data sent to external webhook
+                    </Badge>
+                  </div>
+                  
+                  {analysisResults.map((result, index) => (
+                    <Card key={result.id}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Badge 
+                            className={getDocumentTypeColor(result.documentType, result.analysisData)}
+                          >
+                            {formatDocumentType(result.documentType, result.analysisData)}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Document Analysis #{index + 1}
+                          </span>
+                        </CardTitle>
+                        <CardDescription>
+                          Raw JSON data that would be sent to the analysis webhook for this document
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
+                          <pre className="text-sm whitespace-pre-wrap break-words">
+                            <code>
+                              {JSON.stringify(result.analysisData, null, 2)}
+                            </code>
+                          </pre>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>Document Type: {result.documentType}</span>
+                          <span>•</span>
+                          <span>Created: {formatDate(result.createdAt)}</span>
+                          {result.processingTime && (
+                            <>
+                              <span>•</span>
+                              <span>Processing Time: {result.processingTime}ms</span>
+                            </>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <Code className="w-16 h-16 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Analysis Data</h3>
+                  <p className="text-muted-foreground">
+                    No webhook analysis data is available for this document yet.
+                  </p>
+                </div>
               )}
             </TabsContent>
           </Tabs>
