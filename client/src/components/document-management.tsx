@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -76,7 +77,8 @@ import {
   BarChart3,
   TrendingUp,
   AlertTriangle,
-  Play
+  Play,
+  Code
 } from "lucide-react";
 
 // Helper function to invalidate all caches (document library + portal)
@@ -152,6 +154,93 @@ const documentSchema = z.object({
 type DocumentFormData = z.infer<typeof documentSchema>;
 
 
+// Stage 1 JSON Modal Component for Main CRM
+function Stage1JsonModal({ targetCompanyId, isOpen, onClose }: { targetCompanyId: number; isOpen: boolean; onClose: () => void }) {
+  const { data: stage1Analysis, isLoading } = useQuery<any[]>({
+    queryKey: [`/api/target-companies/${targetCompanyId}/stage1-analysis`],
+    enabled: isOpen && !!targetCompanyId,
+  });
+
+  // Get the most recent Stage 1 analysis event
+  const latestAnalysis = stage1Analysis && stage1Analysis.length > 0 ? stage1Analysis[0] : null;
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Code className="w-5 h-5" />
+            Stage 1 Aggregated JSON
+          </DialogTitle>
+          <DialogDescription>
+            Complete aggregated JSON data sent to Stage 1 analysis webhook
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="overflow-auto">
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Loading Stage 1 analysis data...</span>
+            </div>
+          )}
+          
+          {!isLoading && !latestAnalysis && (
+            <div className="text-center py-8 text-gray-500">
+              No Stage 1 analysis data found for this company.
+            </div>
+          )}
+          
+          {!isLoading && latestAnalysis && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                <span>Analysis ID: {latestAnalysis.id}</span>
+                <span>•</span>
+                <span>Status: {latestAnalysis.webhookStatus}</span>
+                <span>•</span>
+                <span>Created: {formatDate(latestAnalysis.createdAt)}</span>
+                {latestAnalysis.webhookSentAt && (
+                  <>
+                    <span>•</span>
+                    <span>Webhook Sent: {formatDate(latestAnalysis.webhookSentAt)}</span>
+                  </>
+                )}
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
+                <pre className="text-sm whitespace-pre-wrap break-words">
+                  <code>
+                    {JSON.stringify(latestAnalysis.concatenatedData, null, 2)}
+                  </code>
+                </pre>
+              </div>
+              
+              {latestAnalysis.webhookError && (
+                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Webhook Error</h4>
+                  <pre className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
+                    {latestAnalysis.webhookError}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Document analysis badges component
 function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
   const { data: analysisResults = [], isLoading: analysisLoading } = useQuery<Array<{
@@ -224,6 +313,7 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
 // Analysis completion indicator component
 function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: number }) {
   const { toast } = useToast();
+  const [showStage1JsonModal, setShowStage1JsonModal] = useState(false);
   
   const { data: completionStatus, isLoading } = useQuery<{
     completedTypes: string[];
@@ -280,10 +370,22 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
           <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h3 className="font-semibold text-blue-900 dark:text-blue-100">Document Analysis Progress</h3>
           {isComplete && (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300">
-              <CheckCircle className="w-3 h-3 mr-1" />
-              Complete
-            </Badge>
+            <>
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Complete
+              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowStage1JsonModal(true)}
+                className="ml-2 h-7 text-xs"
+                data-testid="button-view-stage1-json"
+              >
+                <Code className="w-3 h-3 mr-1" />
+                See json sent to webhook
+              </Button>
+            </>
           )}
         </div>
         <div className="text-right">
@@ -382,6 +484,13 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
           </div>
         </div>
       )}
+      
+      {/* Stage 1 JSON Modal */}
+      <Stage1JsonModal 
+        targetCompanyId={targetCompanyId}
+        isOpen={showStage1JsonModal}
+        onClose={() => setShowStage1JsonModal(false)}
+      />
     </div>
   );
 }
