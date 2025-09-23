@@ -3465,24 +3465,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get analysis completion status for portal (public endpoint)
-  app.get("/api/portal/:token/analysis-completion", async (req: Request, res: Response) => {
-    try {
-      const accessToken = req.params.token;
-      
-      const portalToken = await storage.validatePortalToken(accessToken);
-      if (!portalToken) {
-        return res.status(404).json({ message: "Invalid or expired access token" });
-      }
-      
-      const completionStatus = await storage.getAnalysisCompletionStatus(portalToken.targetCompanyId);
-      
-      res.json(completionStatus);
-    } catch (error) {
-      console.error("Get portal analysis completion error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Portal token creation (NEW route for Portal Management page)
   app.post("/api/portal-tokens", isAuthenticated, async (req: Request, res: Response) => {
