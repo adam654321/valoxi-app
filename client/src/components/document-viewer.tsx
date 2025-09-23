@@ -167,6 +167,74 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
   };
 
+  // Function to enhance display data with calculated financial ratios for existing data
+  const enhanceDisplayData = (analysisData: any, documentType: string) => {
+    // Only enhance profit & loss documents
+    if (documentType !== 'profit_and_loss') {
+      return analysisData;
+    }
+
+    try {
+      // Create a deep copy to avoid modifying the original
+      const enhanced = JSON.parse(JSON.stringify(analysisData));
+      
+      // Check if we have years data with profit and loss information
+      if (enhanced.years && typeof enhanced.years === 'object') {
+        Object.keys(enhanced.years).forEach(year => {
+          const yearData = enhanced.years[year];
+          
+          // Ensure profit_and_loss object exists
+          if (yearData.profit_and_loss) {
+            const pl = yearData.profit_and_loss;
+            
+            // Only add calculations if they don't already exist
+            // Calculate Gross Margin % = (Gross Profit / Revenue) * 100
+            if (!pl.gross_margin_percentage && pl.revenue && pl.gross_profit && pl.revenue > 0) {
+              pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
+            }
+            
+            // Calculate Net Margin % = (Net Profit / Revenue) * 100
+            if (!pl.net_margin_percentage && pl.revenue && pl.net_profit && pl.revenue > 0) {
+              pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
+            }
+            
+            // Calculate Interest Coverage Ratio = Operating Profit / Interest Payable
+            if (!pl.interest_coverage_ratio && pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+              pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
+            }
+          }
+        });
+      }
+      
+      // Also check for direct profit_and_loss data (without years structure)
+      if (enhanced.profit_and_loss && typeof enhanced.profit_and_loss === 'object') {
+        const pl = enhanced.profit_and_loss;
+        
+        // Only add calculations if they don't already exist
+        // Calculate Gross Margin % = (Gross Profit / Revenue) * 100
+        if (!pl.gross_margin_percentage && pl.revenue && pl.gross_profit && pl.revenue > 0) {
+          pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
+        }
+        
+        // Calculate Net Margin % = (Net Profit / Revenue) * 100
+        if (!pl.net_margin_percentage && pl.revenue && pl.net_profit && pl.revenue > 0) {
+          pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
+        }
+        
+        // Calculate Interest Coverage Ratio = Operating Profit / Interest Payable
+        if (!pl.interest_coverage_ratio && pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+          pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
+        }
+      }
+      
+      return enhanced;
+      
+    } catch (error) {
+      console.error('Error enhancing display data:', error);
+      return analysisData; // Return original data if enhancement fails
+    }
+  };
+
   // Get invoice status background color
   const getInvoiceStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
@@ -1423,7 +1491,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
                           <pre className="text-sm whitespace-pre-wrap break-words">
                             <code>
-                              {JSON.stringify(result.analysisData, null, 2)}
+                              {JSON.stringify(enhanceDisplayData(result.analysisData, result.documentType), null, 2)}
                             </code>
                           </pre>
                         </div>
