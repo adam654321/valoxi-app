@@ -354,19 +354,18 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
             if (yearData.profit_and_loss) {
               const pl = yearData.profit_and_loss;
               
-              // Only add calculations if they don't already exist
               // Calculate Gross Margin % = (Gross Profit / Revenue) * 100
-              if (!pl.gross_margin_percentage && pl.revenue && pl.gross_profit && pl.revenue > 0) {
+              if (pl.revenue && pl.gross_profit && pl.revenue > 0) {
                 pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
               }
               
               // Calculate Net Margin % = (Net Profit / Revenue) * 100
-              if (!pl.net_margin_percentage && pl.revenue && pl.net_profit && pl.revenue > 0) {
+              if (pl.revenue && pl.net_profit && pl.revenue > 0) {
                 pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
               }
               
               // Calculate Interest Coverage Ratio = Operating Profit / Interest Payable
-              if (!pl.interest_coverage_ratio && pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+              if (pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
                 pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
               }
             }
@@ -377,16 +376,16 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
         if (enhanced.profit_and_loss) {
           const pl = enhanced.profit_and_loss;
           
-          // Only add calculations if they don't already exist
-          if (!pl.gross_margin_percentage && pl.revenue && pl.gross_profit && pl.revenue > 0) {
+          // Calculate ratios
+          if (pl.revenue && pl.gross_profit && pl.revenue > 0) {
             pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
           }
           
-          if (!pl.net_margin_percentage && pl.revenue && pl.net_profit && pl.revenue > 0) {
+          if (pl.revenue && pl.net_profit && pl.revenue > 0) {
             pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
           }
           
-          if (!pl.interest_coverage_ratio && pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+          if (pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
             pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
           }
         }
