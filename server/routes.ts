@@ -337,13 +337,74 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
       console.log(`[STAGE1_ANALYSIS] Debug - Sample company_accounts data:`, JSON.stringify(companyAccountsData[0].analysisData, null, 2));
     }
 
+    // Function to enhance profit & loss data with financial ratios
+    const enhanceProfitLossData = (analysisData: any) => {
+      if (!analysisData) return analysisData;
+
+      try {
+        // Create a deep copy to avoid modifying the original
+        const enhanced = JSON.parse(JSON.stringify(analysisData));
+        
+        // Check if we have years data with profit and loss information
+        if (enhanced.years && typeof enhanced.years === 'object') {
+          Object.keys(enhanced.years).forEach(year => {
+            const yearData = enhanced.years[year];
+            
+            // Ensure profit_and_loss object exists
+            if (yearData.profit_and_loss) {
+              const pl = yearData.profit_and_loss;
+              
+              // Only add calculations if they don't already exist
+              // Calculate Gross Margin % = (Gross Profit / Revenue) * 100
+              if (!pl.gross_margin_percentage && pl.revenue && pl.gross_profit && pl.revenue > 0) {
+                pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
+              }
+              
+              // Calculate Net Margin % = (Net Profit / Revenue) * 100
+              if (!pl.net_margin_percentage && pl.revenue && pl.net_profit && pl.revenue > 0) {
+                pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
+              }
+              
+              // Calculate Interest Coverage Ratio = Operating Profit / Interest Payable
+              if (!pl.interest_coverage_ratio && pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+                pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
+              }
+            }
+          });
+        }
+        
+        // Also check for direct profit_and_loss data (without years structure)
+        if (enhanced.profit_and_loss) {
+          const pl = enhanced.profit_and_loss;
+          
+          // Only add calculations if they don't already exist
+          if (!pl.gross_margin_percentage && pl.revenue && pl.gross_profit && pl.revenue > 0) {
+            pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
+          }
+          
+          if (!pl.net_margin_percentage && pl.revenue && pl.net_profit && pl.revenue > 0) {
+            pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
+          }
+          
+          if (!pl.interest_coverage_ratio && pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+            pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
+          }
+        }
+        
+        return enhanced;
+      } catch (error) {
+        console.error('Error enhancing profit & loss data for aggregated JSON:', error);
+        return analysisData;
+      }
+    };
+
     // Concatenate all analysis data - extract analysisData field from each result
     const concatenatedData = {
       company_accounts: companyAccountsData.map(d => d.analysisData).filter(data => data),
       asset_register: analysisData.map(d => d.analysisData).filter(data => data),
       sales_ledger: salesLedgerData.map(d => d.analysisData).filter(data => data),
       staff_matrix: staffMatrixData.map(d => d.analysisData).filter(data => data),
-      profit_and_loss: profitLossData.map(d => d.analysisData).filter(data => data),
+      profit_and_loss: profitLossData.map(d => enhanceProfitLossData(d.analysisData)).filter(data => data),
       balance_sheet: balanceSheetData.map(d => d.analysisData).filter(data => data),
       timestamp: new Date().toISOString(),
       company_id: targetCompanyId
