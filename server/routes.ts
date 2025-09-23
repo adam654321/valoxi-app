@@ -455,6 +455,70 @@ async function sendStage1AnalysisWebhook(eventId: number) {
   }
 }
 
+// Function to enhance profit & loss data with calculated financial ratios
+function enhanceProfitLossWithCalculations(analysisData: any): any {
+  try {
+    // Create a deep copy to avoid modifying the original
+    const enhanced = JSON.parse(JSON.stringify(analysisData));
+    
+    // Check if we have years data with profit and loss information
+    if (enhanced.years && typeof enhanced.years === 'object') {
+      Object.keys(enhanced.years).forEach(year => {
+        const yearData = enhanced.years[year];
+        
+        // Ensure profit_and_loss object exists
+        if (!yearData.profit_and_loss) {
+          yearData.profit_and_loss = {};
+        }
+        
+        const pl = yearData.profit_and_loss;
+        
+        // Calculate Gross Margin % = (Gross Profit / Revenue) * 100
+        if (pl.revenue && pl.gross_profit && pl.revenue > 0) {
+          pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
+        }
+        
+        // Calculate Net Margin % = (Net Profit / Revenue) * 100
+        if (pl.revenue && pl.net_profit && pl.revenue > 0) {
+          pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
+        }
+        
+        // Calculate Interest Coverage Ratio = Operating Profit / Interest Payable
+        if (pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+          pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
+        }
+      });
+    }
+    
+    // Also check for direct profit_and_loss data (without years structure)
+    if (enhanced.profit_and_loss && typeof enhanced.profit_and_loss === 'object') {
+      const pl = enhanced.profit_and_loss;
+      
+      // Calculate Gross Margin % = (Gross Profit / Revenue) * 100
+      if (pl.revenue && pl.gross_profit && pl.revenue > 0) {
+        pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
+      }
+      
+      // Calculate Net Margin % = (Net Profit / Revenue) * 100
+      if (pl.revenue && pl.net_profit && pl.revenue > 0) {
+        pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
+      }
+      
+      // Calculate Interest Coverage Ratio = Operating Profit / Interest Payable
+      if (pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
+        pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
+      }
+    }
+    
+    console.log(`[PROFIT_LOSS_ENHANCEMENT] Added calculated ratios to profit & loss data`);
+    return enhanced;
+    
+  } catch (error) {
+    console.error(`[PROFIT_LOSS_ENHANCEMENT] Error enhancing profit & loss data:`, error);
+    return analysisData; // Return original data if enhancement fails
+  }
+}
+
 async function processFileUploadWebhookResponse(webhookResponse: any, eventId: number) {
   try {
     console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
@@ -522,11 +586,17 @@ async function processFileUploadWebhookResponse(webhookResponse: any, eventId: n
     // Store each document analysis type as a separate result
     const results = [];
     for (const item of analysisItems) {
+      // Add calculated financial ratios for profit & loss documents
+      let enhancedAnalysisData = item.analysisData;
+      if (item.documentType === 'profit_and_loss') {
+        enhancedAnalysisData = enhanceProfitLossWithCalculations(item.analysisData);
+      }
+
       const analysisResult = {
         documentId: event.documentId,
         fileUploadEventId: eventId,
         documentType: item.documentType,
-        analysisData: item.analysisData,
+        analysisData: enhancedAnalysisData,
         processingTime: webhookResponse.processingTime || null,
       };
 
