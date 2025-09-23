@@ -264,124 +264,9 @@ function PortalDocumentAnalysisBadges({ documentId, documentCategory }: { docume
   );
 }
 
-// Stage 1 JSON Modal Component
-function Stage1JsonModal({ targetCompanyId, isOpen, onClose }: { targetCompanyId: number; isOpen: boolean; onClose: () => void }) {
-  const { data: stage1Analysis, isLoading } = useQuery<any[]>({
-    queryKey: [`/api/target-companies/${targetCompanyId}/stage1-analysis`],
-    enabled: isOpen && !!targetCompanyId,
-  });
-
-  // Get the most recent Stage 1 analysis event
-  const latestAnalysis = stage1Analysis && stage1Analysis.length > 0 ? stage1Analysis[0] : null;
-
-  // Function to enhance aggregated data by applying financial ratios to profit & loss documents
-  const enhanceAggregatedData = (concatenatedData: any) => {
-    if (!concatenatedData) return concatenatedData;
-
-    try {
-      // Create a deep copy
-      const enhanced = JSON.parse(JSON.stringify(concatenatedData));
-      
-      // Iterate through all documents in the concatenated data
-      Object.keys(enhanced).forEach(key => {
-        const documentData = enhanced[key];
-        
-        // Check if this document contains profit_and_loss data
-        if (documentData && typeof documentData === 'object') {
-          // Try to determine document type from the data structure or key
-          const hasPlData = documentData.years && 
-            Object.values(documentData.years).some((yearData: any) => yearData.profit_and_loss) ||
-            documentData.profit_and_loss;
-          
-          if (hasPlData) {
-            enhanced[key] = enhanceDisplayData(documentData, 'profit_and_loss');
-          }
-        }
-      });
-      
-      return enhanced;
-    } catch (error) {
-      console.error('Error enhancing aggregated data:', error);
-      return concatenatedData;
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Code className="w-5 h-5" />
-            Stage 1 Aggregated JSON
-          </DialogTitle>
-          <DialogDescription>
-            Complete aggregated JSON data sent to Stage 1 analysis webhook
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="overflow-auto">
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2">Loading Stage 1 analysis data...</span>
-            </div>
-          )}
-          
-          {!isLoading && !latestAnalysis && (
-            <div className="text-center py-8 text-gray-500">
-              No Stage 1 analysis data found for this company.
-            </div>
-          )}
-          
-          {!isLoading && latestAnalysis && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                <span>Analysis ID: {latestAnalysis.id}</span>
-                <span>•</span>
-                <span>Status: {latestAnalysis.webhookStatus}</span>
-                <span>•</span>
-                <span>Created: {formatDate(latestAnalysis.createdAt)}</span>
-                {latestAnalysis.webhookSentAt && (
-                  <>
-                    <span>•</span>
-                    <span>Webhook Sent: {formatDate(latestAnalysis.webhookSentAt)}</span>
-                  </>
-                )}
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
-                <pre className="text-sm whitespace-pre-wrap break-words">
-                  <code>
-                    {JSON.stringify(enhanceAggregatedData(latestAnalysis.concatenatedData), null, 2)}
-                  </code>
-                </pre>
-              </div>
-              
-              {latestAnalysis.webhookStatus === 'failed' && latestAnalysis.webhookResponse && (
-                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <h4 className="font-medium text-red-900 dark:text-red-100 mb-2">Webhook Error Response</h4>
-                  <pre className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
-                    {latestAnalysis.webhookResponse}
-                  </pre>
-                </div>
-              )}
-              
-              {latestAnalysis.processingTime && (
-                <div className="text-xs text-muted-foreground">
-                  Processing time: {latestAnalysis.processingTime}ms
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // Analysis completion indicator component adapted for portal
 function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetCompanyId: number; token: string }) {
-  const [showStage1JsonModal, setShowStage1JsonModal] = useState(false);
 
   const { data: completionStatus, isLoading } = useQuery<{
     completedTypes: string[];
@@ -420,22 +305,10 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
           <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h3 className="font-semibold text-blue-900 dark:text-blue-100" data-testid="text-analysis-progress-title">Document Analysis Progress</h3>
           {isComplete && (
-            <>
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Complete
-              </Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowStage1JsonModal(true)}
-                className="ml-2 h-7 text-xs"
-                data-testid="button-view-stage1-json"
-              >
-                <Code className="w-3 h-3 mr-1" />
-                See json sent to webhook
-              </Button>
-            </>
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Complete
+            </Badge>
           )}
         </div>
         <div className="text-right">
@@ -494,13 +367,6 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
         </div>
         )}
       </div>
-      
-      {/* Stage 1 JSON Modal */}
-      <Stage1JsonModal 
-        targetCompanyId={targetCompanyId}
-        isOpen={showStage1JsonModal}
-        onClose={() => setShowStage1JsonModal(false)}
-      />
     </div>
   );
 }
