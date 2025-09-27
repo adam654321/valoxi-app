@@ -448,15 +448,13 @@ async function sendStage1AnalysisWebhook(eventId: number) {
 
     const startTime = Date.now();
     
-    // Prepare webhook payload
+    // Prepare webhook payload - flatten structure to root level
     const webhookPayload = {
       event_type: "stage1_analysis_complete",
       timestamp: new Date().toISOString(),
-      company_info: {
-        id: event.targetCompanyId,
-        triggered_by: event.triggeredBy,
-      },
-      concatenated_analysis_data: event.concatenatedData,
+      id: event.targetCompanyId,
+      triggered_by: event.triggeredBy,
+      ...event.concatenatedData,
     };
 
     console.log(`[STAGE1_ANALYSIS_WEBHOOK] Sending webhook for event ${eventId}:`, JSON.stringify(webhookPayload, null, 2));
