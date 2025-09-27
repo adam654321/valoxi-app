@@ -295,6 +295,7 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
       return;
     }
 
+
     // Check if we already have a successful Stage 1 analysis for this company
     const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
     if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
@@ -399,6 +400,8 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 
     // Concatenate all analysis data - extract analysisData field from each result
     const concatenatedData = {
+      company_name: targetCompany.companyName,
+      industry: targetCompany.industry,
       company_accounts: companyAccountsData.map(d => d.analysisData).filter(data => data),
       asset_register: analysisData.map(d => d.analysisData).filter(data => data),
       sales_ledger: salesLedgerData.map(d => d.analysisData).filter(data => data),
