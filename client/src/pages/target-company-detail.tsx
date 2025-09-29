@@ -1529,7 +1529,7 @@ export default function TargetCompanyDetail() {
                                 Asset Management & Capital Efficiency Analysis
                               </CardTitle>
                               <CardDescription className="text-base">
-                                {detailedData.report_metadata?.analysis_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                                {detailedData.report_metadata?.analysis_type?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())} 
                                 for {detailedData.company_name || company.companyName}
                               </CardDescription>
                             </CardHeader>
