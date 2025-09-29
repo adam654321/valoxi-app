@@ -1497,14 +1497,13 @@ export default function TargetCompanyDetail() {
 
                 <TabsContent value="detailed-analysis" className="space-y-6">
                   {(() => {
-                    // Check for detailed analysis data
+                    // Check for detailed analysis data - first look at detailedAnalysisData field
                     const detailedAnalysisEvent = stage1Events.find(event => 
                       event.webhookStatus === 'success' && 
-                      event.webhookResponse &&
-                      JSON.parse(event.webhookResponse).report_metadata
+                      event.detailedAnalysisData
                     );
 
-                    if (!detailedAnalysisEvent || !detailedAnalysisEvent.webhookResponse) {
+                    if (!detailedAnalysisEvent || !detailedAnalysisEvent.detailedAnalysisData) {
                       return (
                         <div className="text-center py-12 text-muted-foreground">
                           <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -1515,7 +1514,9 @@ export default function TargetCompanyDetail() {
                     }
 
                     try {
-                      const detailedData = JSON.parse(detailedAnalysisEvent.webhookResponse);
+                      const detailedData = typeof detailedAnalysisEvent.detailedAnalysisData === 'string' 
+                        ? JSON.parse(detailedAnalysisEvent.detailedAnalysisData)
+                        : detailedAnalysisEvent.detailedAnalysisData;
                       
                       return (
                         <div className="space-y-6">
