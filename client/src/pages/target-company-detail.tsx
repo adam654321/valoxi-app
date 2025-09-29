@@ -901,7 +901,18 @@ export default function TargetCompanyDetail() {
                 </div>
               </div>
             ) : (
-              <>
+              <Tabs defaultValue="investment-summary" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="investment-summary" data-testid="tab-investment-summary">
+                    Investment Summary & Recommendation
+                  </TabsTrigger>
+                  <TabsTrigger value="detailed-analysis" data-testid="tab-detailed-analysis">
+                    Detailed Analysis
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="investment-summary" className="space-y-6">
+                  <div className="space-y-6">
                 {/* Investment Summary Dashboard - Featured at Top */}
                 {(() => {
                   const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
@@ -1481,7 +1492,271 @@ export default function TargetCompanyDetail() {
                     </div>
                   </CardContent>
                 </Card>
-              </>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="detailed-analysis" className="space-y-6">
+                  {(() => {
+                    // Check for detailed analysis data
+                    const detailedAnalysisEvent = stage1Events.find(event => 
+                      event.webhookStatus === 'success' && 
+                      event.webhookResponse &&
+                      JSON.parse(event.webhookResponse).report_metadata
+                    );
+
+                    if (!detailedAnalysisEvent || !detailedAnalysisEvent.webhookResponse) {
+                      return (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg font-medium mb-2">Detailed analysis not available</p>
+                          <p className="text-sm">Asset management and capital efficiency analysis will appear here when available</p>
+                        </div>
+                      );
+                    }
+
+                    try {
+                      const detailedData = JSON.parse(detailedAnalysisEvent.webhookResponse);
+                      
+                      return (
+                        <div className="space-y-6">
+                          {/* Report Metadata Header */}
+                          <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                            <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                              <CardTitle className="text-xl flex items-center gap-3">
+                                <div className="flex items-center justify-center w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
+                                  <BarChart3 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                Asset Management & Capital Efficiency Analysis
+                              </CardTitle>
+                              <CardDescription className="text-base">
+                                {detailedData.report_metadata?.analysis_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                                for {detailedData.company_name || company.companyName}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                                  <p className="text-sm font-medium text-muted-foreground">Confidence Score</p>
+                                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                    {detailedData.report_metadata?.confidence_score || 0}%
+                                  </p>
+                                </div>
+                                <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                                  <p className="text-sm font-medium text-muted-foreground">Analysis Year</p>
+                                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    {detailedData.report_metadata?.years_analyzed?.[0] || 'N/A'}
+                                  </p>
+                                </div>
+                                <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
+                                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 capitalize">
+                                    {detailedData.report_metadata?.status || 'Unknown'}
+                                  </p>
+                                </div>
+                                <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg">
+                                  <p className="text-sm font-medium text-muted-foreground">Sector</p>
+                                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 capitalize">
+                                    {detailedData.report_metadata?.sector || 'Unknown'}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Key Asset Metrics */}
+                          {detailedData.key_asset_metrics && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                  <DollarSign className="w-5 h-5" />
+                                  Key Asset Metrics
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {/* Fixed Assets */}
+                                  {detailedData.key_asset_metrics.fixed_assets && (
+                                    <div className="space-y-3">
+                                      <h4 className="font-semibold text-blue-700 dark:text-blue-400">Fixed Assets</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Value</span>
+                                          <span className="font-medium">£{detailedData.key_asset_metrics.fixed_assets.value?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">% of Total Assets</span>
+                                          <span className="font-medium">{detailedData.key_asset_metrics.fixed_assets.as_pct_of_total_assets}%</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Revenue Multiple</span>
+                                          <span className="font-medium">{detailedData.key_asset_metrics.fixed_assets.revenue_multiple}x</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Current Assets */}
+                                  {detailedData.key_asset_metrics.current_assets && (
+                                    <div className="space-y-3">
+                                      <h4 className="font-semibold text-green-700 dark:text-green-400">Current Assets</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Total</span>
+                                          <span className="font-medium">£{detailedData.key_asset_metrics.current_assets.total?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Cash</span>
+                                          <span className="font-medium">£{detailedData.key_asset_metrics.current_assets.cash?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Cash %</span>
+                                          <span className="font-medium">{detailedData.key_asset_metrics.current_assets.cash_pct_of_current}%</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Asset Turnover */}
+                                  {detailedData.key_asset_metrics.asset_turnover && (
+                                    <div className="space-y-3">
+                                      <h4 className="font-semibold text-purple-700 dark:text-purple-400">Asset Turnover</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Total Asset</span>
+                                          <span className="font-medium">{detailedData.key_asset_metrics.asset_turnover.total_asset_turnover}x</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Fixed Asset</span>
+                                          <span className="font-medium">{detailedData.key_asset_metrics.asset_turnover.fixed_asset_turnover}x</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Working Capital</span>
+                                          <span className="font-medium">{detailedData.key_asset_metrics.asset_turnover.working_capital_turnover}x</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Working Capital Management */}
+                          {detailedData.working_capital_management && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                  <TrendingUp className="w-5 h-5" />
+                                  Working Capital Management
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Liquidity Position */}
+                                  {detailedData.working_capital_management.liquidity_position && (
+                                    <div className="space-y-3">
+                                      <h4 className="font-semibold text-blue-700 dark:text-blue-400">Liquidity Position</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Current Ratio</span>
+                                          <span className="font-medium">{detailedData.working_capital_management.liquidity_position.current_ratio}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Net Working Capital</span>
+                                          <span className="font-medium">£{detailedData.working_capital_management.liquidity_position.net_working_capital?.toLocaleString()}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Receivables Analysis */}
+                                  {detailedData.working_capital_management.receivables_analysis && (
+                                    <div className="space-y-3">
+                                      <h4 className="font-semibold text-orange-700 dark:text-orange-400">Receivables Analysis</h4>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Collection Quality</span>
+                                          <Badge variant={detailedData.working_capital_management.receivables_analysis.collection_quality === 'poor' ? 'destructive' : 'default'}>
+                                            {detailedData.working_capital_management.receivables_analysis.collection_quality}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Risk Level</span>
+                                          <Badge variant={detailedData.working_capital_management.receivables_analysis.receivables_risk_level === 'high' ? 'destructive' : 'default'}>
+                                            {detailedData.working_capital_management.receivables_analysis.receivables_risk_level}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">Collection Rate</span>
+                                          <span className="font-medium">{(detailedData.working_capital_management.receivables_analysis.collection_rate * 100)}%</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Asset Risk Assessment */}
+                          {detailedData.asset_risk_assessment && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                  <AlertTriangle className="w-5 h-5" />
+                                  Asset Risk Assessment
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-4">
+                                  {detailedData.asset_risk_assessment.liquidity_risks && (
+                                    <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-l-4 border-yellow-500">
+                                      <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 mb-2">Liquidity Risks</h4>
+                                      <p className="text-sm text-muted-foreground mb-2">
+                                        Risk: {detailedData.asset_risk_assessment.liquidity_risks.cash_concentration_risk?.replace(/_/g, ' ')}
+                                      </p>
+                                      <p className="text-sm">
+                                        Recommendation: {detailedData.asset_risk_assessment.liquidity_risks.recommendation?.replace(/_/g, ' ')}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Full Report */}
+                          {detailedData.asset_analysis?.full_report && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                  <FileText className="w-5 h-5" />
+                                  Full Analysis Report
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {detailedData.asset_analysis.full_report}
+                                  </ReactMarkdown>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </div>
+                      );
+                    } catch (error) {
+                      return (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg font-medium mb-2">Error loading detailed analysis</p>
+                          <p className="text-sm">Unable to parse detailed analysis data</p>
+                        </div>
+                      );
+                    }
+                  })()}
+                </TabsContent>
+              </Tabs>
             )}
           </TabsContent>
 
