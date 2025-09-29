@@ -1,0 +1,671 @@
+[
+    {
+        "report_metadata": {
+            "analysis_type": "asset_management_and_capital_efficiency",
+            "company_name": "Unknown Co.",
+            "sector": "unknown",
+            "confidence_score": 79,
+            "asset_efficiency_score": 0,
+            "status": "basic",
+            "analysis_timestamp": "2025-09-27T13:45:27.926Z",
+            "years_analyzed": [
+                "2024"
+            ],
+            "data_limitations": [
+                "multi_year_asset_trends",
+                "fixed_asset_analysis",
+                "asset_efficiency_metrics",
+                "asset_condition_and_age_data_limited",
+                "market_valuations_not_included"
+            ]
+        },
+        "asset_analysis": {
+            "full_report": ":\n\n## Asset Management & Capital Efficiency Analysis - 2024\n\n**Executive Summary:**\n\nThis analysis assesses the asset management and capital efficiency of the business based on the provided 2024 financial data and asset register. The business demonstrates strong profitability with a 70.84% gross margin and 21.21% net margin. However, there are opportunities to improve capital efficiency, particularly regarding debtors and asset utilization. The asset base is modest, with a concentration in IT Equipment, Office Furniture, and Software Licenses.\n\n**Data Quality Assessment:**\n\nThe data provided is sufficient for a preliminary analysis. However, the lack of historical data (beyond 2024) limits the ability to perform robust trend analysis. The absence of depreciation schedules and recent additions/disposals further restricts a comprehensive assessment.  I will proceed with a moderate level of confidence, highlighting areas where more data would be beneficial.\n\n**I. Financial Performance & Key Ratios:**\n\n*   **Profitability:** The business is highly profitable, with a net margin of 21.21%. The interest coverage ratio of 86.9 indicates a strong ability to meet debt obligations.\n*   **Liquidity:** Net current assets of 93550 are positive, suggesting short-term solvency. However, a deeper dive into the composition of current assets and liabilities is needed.\n*   **Asset Turnover:**  The overall asset turnover ratio (Revenue / Total Assets) is 0.56 (475000/84950). This is a moderate turnover, indicating that the business generates 56p of revenue for every £1 of assets. This is a key area for potential improvement.\n*   **Return on Assets (ROA):** ROA is 11.83% (100745/84950). This is a good return, but could be improved by increasing asset utilization.\n\n**II. Asset Composition & Utilization:**\n\n*   **Fixed Asset Breakdown:**\n    *   **IT Equipment (34.3% of Net Book Value):**  Represents the largest portion of the asset base. Depreciation is relatively low (25%), suggesting recent acquisition or a long useful life.\n    *   **Office Furniture (17.1% of Net Book Value):**  Shows the highest accumulated depreciation (63.6%), indicating an aging asset base. This category warrants further investigation for potential replacement or disposal.\n    *   **Software Licenses (23.1% of Net Book Value):**  Depreciation is low (20%), similar to IT Equipment.\n*   **Asset Quality:** The asset register indicates a total cost of £5700 and net book value of £3500. This suggests a reasonable level of depreciation, but a detailed depreciation schedule would provide a clearer picture.\n*   **Working Capital:**\n    *   **Debtors:**  £51900 represents a significant portion of current assets. The sales ledger analysis reveals:\n        *   **Outstanding Invoices:** £3615 (7.6% of total invoice value) is outstanding.\n        *   **Customer Concentration:**  A few customers account for a large portion of outstanding invoices.  \"Sparkle\" and \"Urban\" have significant outstanding balances.\n        *   **Collection Efficiency:**  While some customers (ABC Cleaning, Bright Homes) pay promptly, others (Sparkle, Urban) have outstanding balances.\n\n**III. Capital Efficiency Recommendations:**\n\n1.  **Debtor Management:**\n    *   **Reduce Days Sales Outstanding (DSO):** Implement stricter credit terms and more aggressive collection procedures to reduce the DSO.  Target a DSO reduction of 10-15%.\n    *   **Customer Risk Assessment:**  Conduct a thorough risk assessment of customers with outstanding balances.  Consider offering early payment discounts or requiring security for high-risk customers.\n    *   **Invoice Factoring:** Explore invoice factoring as a short-term solution to improve cash flow.\n2.  **Fixed Asset Optimization:**\n    *   **Office Furniture Replacement:**  Given the high accumulated depreciation, evaluate the replacement of aging office furniture.  A cost-benefit analysis should be performed, considering the cost of replacement versus the potential productivity gains from newer equipment.\n    *   **Asset Utilization Review:**  Assess the utilization of all fixed assets.  Are there any assets that are underutilized or no longer needed?  Consider disposal options for these assets.\n    *   **Depreciation Policy Review:**  Ensure the depreciation policy accurately reflects the useful life of each asset category.\n3.  **Working Capital Management:**\n    *   **Inventory Management:** (Not directly addressed in the data, but important) Optimize inventory levels to minimize holding costs and reduce the risk of obsolescence.\n    *   **Creditor Management:**  Negotiate favorable payment terms with suppliers to extend payment cycles without damaging relationships.\n4.  **Capital Investment Planning:**\n    *   **ROI Analysis:**  Before making any new capital investments, conduct a thorough ROI analysis to ensure that the investment will generate sufficient returns.\n    *   **Prioritization:**  Prioritize capital investments based on their potential impact on profitability and capital efficiency.\n\n**IV. Data Gaps & Further Analysis:**\n\n*   **Historical Data:**  Obtain financial data for at least the past 3-5 years to perform trend analysis and identify patterns.\n*   **Detailed Depreciation Schedules:**  Request detailed depreciation schedules for all fixed assets.\n*   **Capital Expenditure Plans:**  Review any planned capital expenditures to assess their potential impact on capital efficiency.\n*   **Industry Benchmarks:**  Compare the business's key ratios (asset turnover, ROA, DSO) to industry benchmarks to identify areas for improvement.\n*   **Cash Flow Statement:** A cash flow statement would provide a more complete picture of the business's liquidity position.\n\n**Conclusion:**\n\nThe business is financially sound with strong profitability. However, there are opportunities to improve capital efficiency by focusing on debtor management, fixed asset optimization, and working capital management. Addressing the data gaps identified above will enable a more comprehensive and accurate assessment.  Implementing the recommendations outlined in this analysis will help the business maximize its return on investment and improve its overall financial performance.",
+            "analysis_confidence": 79,
+            "limitations_noted": [
+                "multi_year_asset_trends",
+                "fixed_asset_analysis",
+                "asset_efficiency_metrics",
+                "asset_condition_and_age_data_limited",
+                "market_valuations_not_included"
+            ],
+            "data_quality_assessment": "moderate"
+        },
+        "key_asset_metrics": {
+            "fixed_assets": {
+                "latest_year": "2024",
+                "value": 92450,
+                "as_pct_of_total_assets": 40.6,
+                "revenue_multiple": 0.19
+            },
+            "current_assets": {
+                "latest_year": "2024",
+                "total": 135300,
+                "cash": 83400,
+                "cash_pct_of_current": 61.6,
+                "non_cash_current": 51900
+            },
+            "asset_turnover": {
+                "latest_year": "2024",
+                "total_asset_turnover": 2.09,
+                "fixed_asset_turnover": 5.14,
+                "working_capital_turnover": 5.08
+            },
+            "working_capital": {
+                "latest_year": "2024",
+                "net_working_capital": 93550,
+                "current_ratio": 3.24,
+                "working_capital_ratio_pct_of_revenue": 19.7
+            },
+            "cash_position": {
+                "latest_year": "2024",
+                "cash_at_bank": 83400
+            },
+            "capex_patterns": []
+        },
+        "asset_efficiency": {
+            "productivity_metrics": {
+                "revenue_per_fixed_asset_pound": 5.14
+            },
+            "turnover_analysis": [],
+            "utilization_assessment": {},
+            "optimization_opportunities": []
+        },
+        "working_capital_management": {
+            "liquidity_position": {
+                "current_ratio": 3.24,
+                "net_working_capital": 93550
+            },
+            "cash_management": {
+                "cash_pct_of_current_assets": 61.6
+            },
+            "receivables_analysis": {
+                "receivables_as_asset": true,
+                "collection_quality": "poor",
+                "receivables_risk_level": "high",
+                "outstanding_ratio": 0.5,
+                "collection_rate": 0.5,
+                "working_capital_impact": 3615
+            },
+            "optimization_strategy": {
+                "immediate_priorities": [],
+                "efficiency_target": null,
+                "working_capital_goal": null
+            }
+        },
+        "capital_investment_analysis": {
+            "capex_analysis": {},
+            "investment_patterns": {},
+            "replacement_strategy": {
+                "immediate_need": "review_register_for_end_of_life_assets",
+                "focus_areas": "assets_with_high_depreciation_or_low_productivity",
+                "strategy": "lifecycle_planning_with_roi_thresholds",
+                "priority": "operational_efficiency_optimisation"
+            },
+            "future_needs": {}
+        },
+        "asset_risk_assessment": {
+            "liquidity_risks": {
+                "cash_concentration_risk": "high_cash_concentration",
+                "recommendation": "deploy_surplus_cash_strategically"
+            },
+            "asset_quality_risks": {
+                "register_status": "comprehensive"
+            },
+            "concentration_risks": {},
+            "mitigation_strategies": {}
+        },
+        "asset_scores": {
+            "fixed_asset_efficiency_score": 0,
+            "working_capital_management_score": 0,
+            "liquidity_management_score": 0,
+            "capital_allocation_score": 0,
+            "asset_productivity_score": 0,
+            "overall_asset_score": 0
+        },
+        "workflow_status": {
+            "asset_analysis_complete": true,
+            "valuation_analysis_pending": true,
+            "final_compilation_pending": true
+        },
+        "debug_info": {
+            "years_seen": [
+                "2024"
+            ],
+            "latest_year_key": "2024",
+            "used_structured_data": true,
+            "from_code_node_strings": true,
+            "from_code_node_objects": true,
+            "from_current_item_strings": false,
+            "from_current_item_objects": false,
+            "llm_text_length": 6220
+        },
+        "id": 37,
+        "company_name": "Test Aesthetics"
+    },
+    {
+        "report_metadata": {
+            "analysis_type": "cashflow_analysis",
+            "latest_year": "2024",
+            "analysis_timestamp": "2025-09-28T18:06:01.893Z"
+        },
+        "cashflow_analysis": {
+            "full_report": "## EXECUTIVE SUMMARY\n- The company shows a **strong liquidity position** with a current ratio of **3.24** and cash covering **200%** of its short‑term liabilities.  \n- Operating profitability is robust; operating profit of **£126,000** translates to a cash generation estimate of **£124,645** for the year.\n- However, **receivables management is a key weakness** – 38.3% of current assets are tied up in debtors and the calculated Days Sales Outstanding (DSO) is **≈183 days**, indicating slow collection.\n- Customer concentration is moderate (top 3 customers represent **≈48.8%** of invoiced sales) and two customers together account for **£2,740** of overdue amounts.\n- The business is lightly leveraged with an equity ratio of **52.8%** and an interest coverage ratio of **86.9x**.\n- Operational risk stems from a very small workforce (5 employees) and reliance on a few key personnel.\n\n---\n\n## CASH FLOW ANALYSIS\n| Metric | 2024 |\n|---|---|\n| **Cash at Bank** | £83,400 |\n| **Operating Profit (EBIT)** | £126,000 |\n| **Interest Receivable** | £95 |\n| **Interest Payable** | £1,450 |\n| **Estimated Cash Generated from Operations** | £124,645 |\n| **Cash‑to‑Operating‑Profit Ratio** | 0.67 |\n\n**Interpretation**: Cash on hand represents about 67% of the annual operating profit, indicating the business can comfortably fund its operations but would benefit from a larger cash buffer to absorb any short‑term shocks.\n\n---\n\n## LIQUIDITY ASSESSMENT\n| Ratio | Calculation | 2024 |\n|---|---|---|\n| **Current Ratio** | Total Current Assets ÷ Current Liabilities | 135,300 ÷ 41,750 = **3.24** |\n| **Quick Ratio** *(cash + debtors)* | (Cash + Debtors) ÷ Current Liabilities | (83,400 + 51,900) ÷ 41,750 = **3.24** |\n| **Cash‑to‑Current‑Liabilities** | Cash ÷ Current Liabilities | 83,400 ÷ 41,750 = **2.00** |\n| **Equity Ratio** | Net Assets ÷ Total Assets | 120,250 ÷ 227,750 = **52.8%** |\n| **Debt Ratio** | (Long‑Term Debt + Current Liabilities) ÷ Total Assets | (64,750 + 41,750) ÷ 227,750 = **46.8%** |\n\n**Interpretation**: Liquidity is ample; the firm can meet its short‑term obligations twice over with cash alone. The equity base provides a solid cushion against solvency risk.\n\n---\n\n## WORKING CAPITAL MANAGEMENT\n- **Working Capital** = Net Current Assets = **£93,550** (135,300 – 41,750).  \n- **Working Capital / Revenue** = 93,550 ÷ 475,000 = **19.7%** of sales, indicating a healthy buffer.\n- **Current Asset Composition**: Cash **£83,400** (61.6% of current assets) and Debtors **£51,900** (38.4%). No inventory data is available, so the quick ratio equals the current ratio.\n- **Creditor Payment Pattern**: Current creditors total **£41,750**; long‑term creditors **£64,750**. No explicit payment terms are provided, but the high current ratio suggests the firm is not pressured to accelerate payments.\n- **Optimization Opportunities**: Reduce debtor days, negotiate better payment terms with suppliers, and consider using excess cash to discount early payments where beneficial.\n\n---\n\n## DEBT AND SOLVENCY ANALYSIS\n- **Interest Coverage Ratio** = Operating Profit ÷ Interest Payable = 126,000 ÷ 1,450 = **86.9x** (provided). This shows negligible interest burden.\n- **Long‑Term Debt** = £64,750 (creditors after one year).\n- **Debt Serviceability**: With operating cash generation of £124,645, the firm can cover its total debt (long‑term + current) of £106,500 comfortably.\n- **Leverage**: Equity ratio of 52.8% and debt ratio of 46.8% place the company in a low‑to‑moderate leverage bracket.\n\n---\n\n## CUSTOMER AND CREDIT RISK\n- **Total Invoice Value**: £7,195 (6 invoices).\n- **Outstanding Receivables**: £3,615 (50.2% of invoiced value).\n- **Days Sales Outstanding (DSO)** = (Outstanding ÷ Total Invoice Value) × 365 = (3,615 ÷ 7,195) × 365 ≈ **183 days**.\n- **Receivables to Revenue** = 51,900 ÷ 475,000 = **10.9%**.\n- **Customer Concentration**: Top 3 customers account for **£3,505** of sales, **48.8%** of total invoiced value.\n- **Key Risks**: \n  - Two customers (Urban Property Group and Sparkle Maintenance) represent **£2,740** of overdue amounts (≈38% of outstanding). \n  - High DSO suggests collection inefficiencies and potential cash flow strain.\n- **Recommendations**: Tighten credit terms, introduce early‑payment discounts, and monitor high‑risk accounts closely.\n\n---\n\n## OPERATIONAL RISK ASSESSMENT\n- **Staffing**: 5 employees, 4 active, 1 on maternity leave. Small team heightens key‑person risk.\n- **Key Personnel**: Longest‑serving employee has 5.97 years; loss of any senior staff could disrupt operations.\n- **Operational Leverage**: Fixed assets are £92,450 (≈40% of total assets), indicating moderate fixed‑cost burden.\n- **Market/Competitive Risks**: Not quantified in the data, but reliance on a limited customer base and a small workforce could affect scalability.\n- **Mitigation**: Cross‑train staff, document processes, and diversify the client portfolio.\n\n---\n\n## CONCLUSION & ACTION PLAN\n1. **Accelerate Receivables** – Implement stricter credit checks, enforce payment terms, and consider factoring for high‑value overdue accounts.\n2. **Maintain Liquidity Buffer** – Keep cash at least 1.5× current liabilities; current level (2.0×) is satisfactory.\n3. **Diversify Customer Base** – Reduce reliance on the top 3 customers to below 40% of sales.\n4. **Operational Resilience** – Develop succession plans for key staff and explore part‑time or temporary support to cover maternity leave.\n5. **Monitor Working Capital** – Track debtor days monthly and aim to bring DSO below 90 days.\n\n*Prepared by: Senior Financial Analyst – Cash Flow & Risk*",
+            "analysis_confidence": 61,
+            "limitations_noted": [
+                "Single-year dataset limits trend and cash flow seasonality analysis."
+            ],
+            "key_metrics": {
+                "cash_position": {
+                    "2024": 83400
+                },
+                "working_capital": {
+                    "2024": 93550
+                },
+                "current_ratio": {
+                    "2024": "3.24"
+                },
+                "quick_ratio": {
+                    "2024": "3.24"
+                },
+                "cash_to_current_liabilities": {
+                    "2024": "2.00"
+                },
+                "equity_ratio": {
+                    "2024": "52.8%"
+                },
+                "debt_ratio": {
+                    "2024": "46.8%"
+                },
+                "interest_coverage_ratio": {
+                    "2024": "86.9x"
+                },
+                "dso_days": {
+                    "2024": 183
+                },
+                "receivables_to_revenue_pct": {
+                    "2024": "10.9%"
+                },
+                "top_3_customer_concentration_pct": {
+                    "2024": "48.8%"
+                }
+            },
+            "key_findings": {
+                "strengths": [
+                    "Current ratio of 3.24 indicates excellent short‑term liquidity.",
+                    "Interest coverage ratio of 86.9x shows negligible debt service pressure.",
+                    "Equity ratio above 50% provides a solid solvency cushion."
+                ],
+                "concerns": [
+                    "High outstanding receivables (38.3% of current assets) and DSO of ~183 days.",
+                    "Customer concentration – top 3 customers represent nearly 49% of sales.",
+                    "Small workforce creates key‑person and operational continuity risk."
+                ],
+                "recommendations": [
+                    "Implement tighter credit controls and early‑payment incentives to reduce DSO.",
+                    "Diversify the client portfolio to lower concentration risk.",
+                    "Maintain cash buffer of at least 1.5× current liabilities.",
+                    "Cross‑train staff and develop succession plans for critical roles.",
+                    "Monitor working capital metrics monthly and target debtor days <90."
+                ]
+            },
+            "snapshot_years": [
+                "2024"
+            ],
+            "latest_year": "2024",
+            "cash_position_used": 83400,
+            "working_capital_used": 93550,
+            "current_ratio_used": "3.24",
+            "dso_days_used": 183
+        },
+        "id": 37,
+        "company_name": "Test Aesthetics"
+    },
+    {
+        "report_metadata": {
+            "analysis_type": "financial_analysis",
+            "latest_year": "2024",
+            "analysis_timestamp": "2025-09-28T17:56:17.029Z"
+        },
+        "financial_analysis": {
+            "full_report": "## EXECUTIVE SUMMARY\n\n- The business delivered a solid financial performance in 2024, generating **£475,000** of revenue with a strong **gross margin of 70.8%** and a **net margin of 21.2%**.  \n- Liquidity is excellent (current ratio **3.24**) and profitability is high (ROA **44.3%**, interest coverage **86.9x**).  \n- The primary concerns are the **high administrative expense ratio (45.7% of revenue)**, modest asset base with aging office furniture, and a **customer concentration risk** (top three customers represent 59% of invoiced sales).  \n- With only a single year of data, trend analysis is limited, but the snapshot suggests a financially healthy operation that must focus on cost discipline and diversification to sustain growth.\n\n## REVENUE PERFORMANCE\n\n- **2024 Revenue:** £475,000.  \n- No prior years are available, so year‑over‑year growth cannot be calculated; the analysis therefore treats 2024 as the baseline.\n- **Revenue volatility:** Not assessable due to single‑year data.  \n- **Customer exposure:** £3,615 (0.76% of revenue) remains outstanding. The two largest unpaid balances are from *Urban Property Group* (£1,620) and *Sparkle Maintenance* (£875). Top three customers account for **59%** of total invoiced value, indicating moderate concentration.\n\n## PROFITABILITY ASSESSMENT\n\n| Metric                | 2024 (£) | % of Revenue |\n|-----------------------|----------|--------------|\n| Gross Profit          | 336,500  | 70.8% |\n| Operating Profit      | 126,000  | 26.5% |\n| Net Profit            | 100,745  | 21.2% |\n| Other Operating Income| 6,500    | 1.4% |\n| Interest Expense      | 1,450    | 0.3% |\n\n- **Gross profit** reflects a healthy cost‑of‑sales ratio of **29.2%** (138,500 / 475,000).  \n- **Operating profit** benefits from modest other income and a very low interest burden (interest coverage **86.9x**).  \n- **Net profit** is robust, delivering a **21.2%** margin, but the margin is partially offset by high administrative costs (see Cost Structure).\n- Sustainability: The strong ROA (**44.3%**) indicates that the current asset base is generating high returns, but the high admin expense ratio could erode future profitability if not managed.\n\n## BALANCE SHEET STRENGTH\n\n- **Total assets:** £227,750 (fixed assets £92,450 + current assets £135,300).  \n- **Net assets (equity):** £120,250 (≈53% of total assets).  \n- **Current ratio:** **3.24** (current assets £135,300 / current liabilities £41,750).  \n- **Debt ratio:** **46.8%** (total liabilities £106,500 / total assets £227,750).  \n- **Working capital:** £93,550 (net current assets).  \n- **Return on Assets (ROA):** **44.3%** (100,745 / 227,750).  \n- **Leverage:** The business relies on a moderate level of debt; interest expense is minimal relative to earnings.\n\n## COST STRUCTURE ANALYSIS\n\n- **Cost of sales:** £138,500 (29.2% of revenue).  \n- **Administrative expenses:** £217,000 (45.7% of revenue) – the largest cost driver and a potential area for efficiency gains.  \n- **Overall cost structure:** Gross profit is strong, but the high admin expense compresses operating profit to **26.5%**.  \n- **Cost inflation:** Not measurable with a single year, but the admin expense proportion suggests limited cost control.\n\n## GROWTH ANALYSIS\n\n- **YoY growth rates:** Not available (single year).  \n- **CAGR:** Cannot be computed with only one data point; placeholder set to **null**.  \n- **Growth quality:** The current snapshot shows high profitability and liquidity, indicating good short‑term performance.  \n- **Drivers:** Strong gross margin, low financing costs, and modest receivables support profitability.  \n- **Constraints:** Administrative cost intensity, asset aging, and customer concentration could limit sustainable growth.\n\n## KEY METRICS TABLE\n\n| Year | Revenue (£) | Rev YoY% | Gross Profit (£) | Gross % | Operating Profit (£) | Op % | Net Profit (£) | Net % | Current Ratio | Debt Ratio |\n|------|-------------|----------|------------------|--------|----------------------|------|----------------|------|----------------|------------|\n| 2024 | 475,000 | – | 336,500 | 70.8% | 126,000 | 26.5% | 100,745 | 21.2% | 3.24 | 46.8% |\n\n## FINANCIAL STRENGTHS\n\n1. **High profitability:** Gross margin **70.8%** and net margin **21.2%** are well above typical service‑industry benchmarks.\n2. **Excellent liquidity:** Current ratio **3.24** provides a strong buffer for short‑term obligations.\n3. **Robust asset efficiency:** ROA of **44.3%** shows the asset base is generating substantial returns.\n4. **Low financing cost:** Interest coverage of **86.9x** indicates negligible debt pressure.\n5. **Controlled receivables:** Outstanding invoices represent less than 1% of revenue.\n\n## AREAS FOR IMPROVEMENT\n\n1. **Administrative expense management:** At **45.7%** of revenue, admin costs are the primary margin drag.\n2. **Asset renewal:** Office furniture shows 63.6% accumulated depreciation, signalling a need for replacement planning.\n3. **Customer concentration:** Over half of invoiced sales come from the top three clients; diversification is advisable.\n4. **Data depth:** Lack of multi‑year data limits trend analysis; establishing consistent annual reporting will improve strategic insight.\n5. **Cost structure monitoring:** Track admin expense trends to prevent future margin compression.\n\n## CONFIDENCE ASSESSMENT\n\n- **Data quality score:** **69%** (rated *acceptable*).  \n- The analysis is constrained to a single fiscal year, so trend‑based conclusions are limited.  \n- Ratios and profitability metrics are reliable for the snapshot, but growth‑rate calculations and CAGR are unavailable.  \n- Recommendations emphasize building a richer historical dataset to enable more robust trend and forecasting work.",
+            "analysis_confidence": 69,
+            "limitations_noted": [
+                "Single-year dataset limits trend analysis and CAGR."
+            ],
+            "key_metrics": {
+                "revenue": {
+                    "2024": 475000
+                },
+                "net_profit": {
+                    "2024": 100745
+                },
+                "growth_rates": {
+                    "revenue": {},
+                    "profit": {}
+                },
+                "margins": {
+                    "gross": {
+                        "2024": "70.8"
+                    },
+                    "net": {
+                        "2024": "21.2"
+                    }
+                }
+            },
+            "key_findings": {
+                "strengths": [
+                    "High gross (70.8%) and net (21.2%) margins indicate strong pricing power and cost efficiency.",
+                    "Robust liquidity with a current ratio of 3.24 provides ample short‑term financial flexibility.",
+                    "Exceptional return on assets (44.3%) demonstrates efficient use of the asset base.",
+                    "Very low financing burden (interest coverage 86.9x) and minimal receivables relative to revenue."
+                ],
+                "concerns": [
+                    "Administrative expenses consume 45.7% of revenue, limiting operating margin expansion.",
+                    "Aging office furniture (63.6% depreciation) may require capital replacement soon.",
+                    "Customer concentration: top three customers account for 59% of invoiced sales.",
+                    "Single‑year data prevents assessment of revenue or profit trends over time."
+                ],
+                "recommendations": [
+                    "Implement a cost‑control program targeting administrative overhead to improve operating margin.",
+                    "Develop a capital‑expenditure plan to replace highly depreciated office furniture.",
+                    "Diversify the client portfolio to reduce reliance on the top three customers.",
+                    "Establish a consistent multi‑year financial reporting framework to enable trend analysis and forecasting."
+                ]
+            },
+            "snapshot_years": [
+                "2024"
+            ],
+            "latest_year": "2024",
+            "revenue_used": 475000,
+            "net_profit_used": 100745
+        },
+        "id": 37,
+        "company_name": "Test Aesthetics"
+    },
+    {
+        "report_metadata": {
+            "analysis_type": "legal_compliance_risk",
+            "company_name": "Test Aesthetics",
+            "sector": "unknown",
+            "confidence_score": 65,
+            "legal_risk_score": 52,
+            "status": "basic",
+            "analysis_timestamp": "2025-09-27T13:37:17.952Z",
+            "employee_count_context": 5,
+            "revenue_context": "£475,000",
+            "data_limitations": [
+                "Tax Compliance Assessment",
+                "Financial Reporting Standards",
+                "Sector Compliance Context",
+                "Dispute Risk Assessment",
+                "Legal risk assessment based on financial and operational data only",
+                "Detailed legal document review not included"
+            ]
+        },
+        "legal_analysis": {
+            "full_report": "\n## Legal Compliance & Risk Assessment - Test Aesthetics\n\nThis assessment analyzes the provided data for Test Aesthetics, a healthcare company, focusing on potential legal and compliance risks. The data is limited, primarily focusing on financial aspects, but enough to identify several areas of concern and recommend mitigation strategies.\n\n**I. Overview & Key Findings**\n\nTest Aesthetics appears to be a small business (5 employees) with modest assets. The financial data suggests some issues with accounts receivable and potential need for better financial management. The lack of detailed information on the company's operations, services, and specific healthcare focus limits a comprehensive assessment. However, based on the data, the primary areas of risk are:\n\n*   **Financial Compliance & Credit Control:** Significant outstanding invoices and reliance on a few customers.\n*   **Employment Law:** Potential issues with employee contracts and compliance with employment regulations.\n*   **Data Protection & Privacy:**  Software licenses and IT equipment suggest data handling, raising privacy concerns.\n*   **Contract Management:**  Lack of detail on contracts with suppliers and customers.\n*   **Industry-Specific Regulations (Healthcare):**  The healthcare industry is heavily regulated.  The data doesn't provide insight into compliance with these regulations.\n\n**II. Detailed Risk Assessment & Mitigation Strategies**\n\n**1. Financial Compliance & Credit Control (High Risk)**\n\n*   **Risk:**  High outstanding invoices (over 40% of total invoiced value) pose a significant cash flow risk.  Reliance on a few customers (top 3 account for 59% of revenue) creates vulnerability.  Urban Property Group and Shiny Spaces Ltd have substantial outstanding balances.\n*   **Legal Implications:** Potential for bad debt write-offs, legal action to recover debts, and impact on financial stability.\n*   **Mitigation:**\n    *   **Credit Checks:** Implement credit checks on new customers.\n    *   **Invoice Terms:**  Clearly defined payment terms on all invoices.\n    *   **Debt Collection Procedures:**  Formalize a debt collection process (e.g., reminder letters, late payment fees, legal action).\n    *   **Customer Diversification:**  Actively seek to diversify the customer base.\n    *   **Credit Insurance:** Consider credit insurance to protect against bad debts.\n\n**2. Employment Law (Medium Risk)**\n\n*   **Risk:**  The data indicates 3 full-time and 2 part-time employees.  The \"observations\" section mentions \"employment,\" \"staff matrix,\" and \"payroll\" but lacks detail on contracts, policies, and compliance.\n*   **Legal Implications:**  Non-compliance with employment laws (e.g., minimum wage, working hours, discrimination, unfair dismissal) can lead to costly legal claims and penalties.\n*   **Mitigation:**\n    *   **Employment Contracts:**  Ensure all employees have written contracts of employment that comply with current legislation.\n    *   **HR Policies:**  Develop and implement comprehensive HR policies covering key areas (e.g., anti-discrimination, harassment, grievance procedures, disciplinary procedures).\n    *   **Payroll Compliance:**  Ensure accurate and timely payroll processing, including tax deductions and reporting.\n    *   **Training:**  Provide training to managers on employment law and HR best practices.\n\n**3. Data Protection & Privacy (Medium Risk)**\n\n*   **Risk:**  The presence of IT equipment and software licenses suggests the company handles personal data.  The healthcare industry is subject to stringent data protection regulations (e.g., GDPR, HIPAA if applicable).\n*   **Legal Implications:**  Data breaches and non-compliance with data protection laws can result in significant fines, reputational damage, and legal claims.\n*   **Mitigation:**\n    *   **Data Protection Policy:**  Develop and implement a comprehensive data protection policy.\n    *   **Data Security Measures:**  Implement appropriate technical and organizational measures to protect personal data (e.g., encryption, access controls, firewalls).\n    *   **Privacy Notices:**  Provide clear and concise privacy notices to individuals whose data is collected.\n    *   **Data Breach Response Plan:**  Develop a plan for responding to data breaches.\n    *   **Compliance Training:**  Train employees on data protection principles and procedures.\n\n**4. Contract Management (Low-Medium Risk)**\n\n*   **Risk:**  The data doesn't provide details on contracts with suppliers or customers.  Poorly drafted or unmanaged contracts can lead to disputes and financial losses.\n*   **Legal Implications:**  Breach of contract claims, disputes over terms and conditions, and potential for financial penalties.\n*   **Mitigation:**\n    *   **Standard Contract Templates:**  Develop standard contract templates for common transactions.\n    *   **Contract Review:**  Have all contracts reviewed by legal counsel before signing.\n    *   **Contract Management System:**  Implement a system for tracking and managing contracts.\n    *   **Regular Review:**  Regularly review contracts to ensure they remain up-to-date and compliant.\n\n**5. Industry-Specific Regulations (Healthcare - High Risk - Requires Further Investigation)**\n\n*   **Risk:**  The healthcare industry is heavily regulated.  The data doesn't provide any information on compliance with relevant regulations.\n*   **Legal Implications:**  Non-compliance with healthcare regulations can result in severe penalties, including fines, license revocation, and criminal prosecution.\n*   **Mitigation:**\n    *   **Identify Applicable Regulations:**  Identify all relevant healthcare regulations (e.g., licensing requirements, patient safety standards, data privacy laws).\n    *   **Compliance Audit:**  Conduct a comprehensive compliance audit to assess current practices.\n    *   **Compliance Program:**  Develop and implement a compliance program to ensure ongoing compliance.\n    *   **Training:**  Provide training to employees on relevant healthcare regulations.\n\n**III.  Recommendations & Next Steps**\n\n1.  **Legal Audit:** Conduct a comprehensive legal audit to identify all potential compliance gaps.\n2.  **Risk Prioritization:** Prioritize risks based on their likelihood and potential impact.\n3.  **Policy Development:** Develop and implement comprehensive policies and procedures to address identified risks.\n4.  **Training:** Provide training to employees on relevant legal and compliance issues.\n5.  **Ongoing Monitoring:**  Establish a system for ongoing monitoring and review of compliance.\n6.  **Seek Legal Counsel:**  Engage legal counsel specializing in healthcare law to provide ongoing guidance and support.\n\n**IV. Disclaimer**\n\nThis assessment is based solely on the limited data provided. A more thorough assessment would require access to additional information about Test Aesthetics' operations, services, and specific regulatory environment. This is not legal advice and should not be substituted for the advice of a qualified legal professional.",
+            "analysis_confidence": 65,
+            "limitations_noted": [
+                "Tax Compliance Assessment",
+                "Financial Reporting Standards",
+                "Sector Compliance Context",
+                "Dispute Risk Assessment",
+                "Legal risk assessment based on financial and operational data only",
+                "Detailed legal document review not included"
+            ]
+        },
+        "compliance_assessment": {
+            "corporate_governance": {
+                "tax_compliance": "actions_recommended"
+            },
+            "employment_law": {
+                "contracts_and_payroll": "needs_standardisation",
+                "health_and_safety": "policy_required"
+            },
+            "commercial_law": {
+                "contract_management": "standard_terms_needed",
+                "credit_control": "strengthen_collection_policy"
+            },
+            "regulatory_compliance": {
+                "sector": "unknown",
+                "data_protection": "gdpr_measures_required",
+                "licensing_permits": "review_required"
+            },
+            "intellectual_property": {
+                "confidential_information": "controls_recommended"
+            }
+        },
+        "risk_analysis": {
+            "high_priority": [
+                "Data protection compliance framework",
+                "Receivables & payment terms enforcement"
+            ],
+            "medium_priority": [
+                "Employment contracts & payroll compliance",
+                "Insurance coverage review",
+                "Regulatory license compliance audit"
+            ],
+            "low_priority": [],
+            "immediate_actions": [
+                "Implement GDPR compliance procedures",
+                "Introduce strict payment terms and collection workflow"
+            ],
+            "compliance_gaps": [
+                "Standardized contract templates needed"
+            ]
+        },
+        "legal_recommendations": {
+            "immediate_phase": {
+                "priority_actions": [
+                    "Customer payment terms and collection procedures",
+                    "Issue written employment contracts & core HR policies",
+                    "Implement GDPR privacy notice and data records",
+                    "Introduce standardized customer T&Cs"
+                ],
+                "estimated_cost": "£3k–£6k",
+                "expected_outcome": "Material risk reduction and compliance foundation"
+            },
+            "short_term_phase": {
+                "priority_actions": [
+                    "H&S policy and risk assessments",
+                    "Commercial insurance review",
+                    "Regulatory compliance audit",
+                    "Simple legal document management system"
+                ],
+                "estimated_cost": "£3k–£5k",
+                "expected_outcome": "Comprehensive basic compliance framework"
+            },
+            "medium_term_phase": {
+                "priority_actions": [
+                    "IP (trademark) protection",
+                    "Supplier contract standardization",
+                    "Annual governance & compliance review"
+                ],
+                "estimated_cost": "£2k–£4k",
+                "expected_outcome": "Strategic legal readiness for growth"
+            },
+            "investment_priorities": {
+                "highest_roi": "Customer contracts & payment enforcement",
+                "most_urgent": "HR contracts & GDPR",
+                "strategic_value": "Governance documentation & IP protection",
+                "growth_enabler": "Regulatory compliance audit & insurance coverage"
+            },
+            "strategic_initiatives": [
+                "Establish a legal/compliance calendar",
+                "Centralize contracts and policies",
+                "Annual legal health-check with counsel"
+            ]
+        },
+        "compliance_scores": {
+            "overall_legal_risk_score": 52,
+            "corporate_governance_score": 55,
+            "employment_compliance_score": 55,
+            "commercial_law_score": 50,
+            "regulatory_compliance_score": 50,
+            "litigation_risk_score": 50
+        },
+        "legal_risk_matrix": {
+            "critical_risks": [
+                "Data protection compliance framework",
+                "Receivables & payment terms enforcement"
+            ],
+            "important_risks": [
+                "Employment contracts & payroll compliance",
+                "Insurance coverage review",
+                "Regulatory license compliance audit"
+            ],
+            "monitoring_items": [],
+            "immediate_actions_required": [
+                "Implement GDPR compliance procedures",
+                "Introduce strict payment terms and collection workflow"
+            ],
+            "compliance_improvement_areas": [
+                "Standardized contract templates needed"
+            ]
+        },
+        "sector_compliance": {
+            "industry": "unknown",
+            "consumer_protection_requirements": "context_dependent",
+            "data_protection_obligations": "gdpr_applicable",
+            "licensing_requirements": "context_dependent",
+            "health_safety_regulations": "general_duties_apply",
+            "product_liability_considerations": "context_dependent"
+        },
+        "employment_law_analysis": {
+            "current_compliance_level": "needs_documentation",
+            "workforce_size_impact": "low_complexity",
+            "employment_practices_health": "unknown",
+            "policy_documentation_needs": [
+                "Employment contracts and payroll compliance",
+                "Health & Safety policy and risk assessments"
+            ],
+            "employment_risk_level": "medium"
+        },
+        "commercial_law_analysis": {
+            "contract_management_status": "needs_improvement",
+            "customer_relationship_risks": "moderate",
+            "payment_terms_effectiveness": "requires_optimization",
+            "collection_procedures_adequacy": "insufficient",
+            "commercial_dispute_risk": "elevated",
+            "contract_standardization_priority": "high"
+        },
+        "corporate_governance": {
+            "governance_framework_strength": "fair",
+            "financial_transparency": "limited",
+            "tax_compliance_status": "discussed",
+            "record_keeping_standards": "unknown",
+            "governance_documentation_gaps": [
+                "Corporate bylaws and resolutions",
+                "Shareholder agreements",
+                "Board meeting minutes",
+                "Compliance monitoring procedures"
+            ]
+        },
+        "legal_investment_strategy": {
+            "total_investment_recommended": "phased (see recommendations)",
+            "roi_potential": "risk reduction and avoided penalties/claims",
+            "priority_ranking": [
+                "Receivables & customer T&Cs",
+                "Employment contracts & HR policies",
+                "GDPR privacy & records",
+                "H&S policy & assessments",
+                "Insurance & supplier contracts"
+            ],
+            "cost_benefit_analysis": {
+                "preventive_legal_investment": "low five-figures over 12–24 months",
+                "potential_reactive_legal_costs": "high five- to six-figures if issues arise",
+                "risk_mitigation_value": "substantial"
+            }
+        },
+        "documentation_priorities": {
+            "critical_documents_needed": [
+                "Standardized customer contracts and terms",
+                "Employment contracts and HR policies",
+                "Data protection and privacy policies",
+                "Health and safety procedures",
+                "Supplier agreements and terms"
+            ],
+            "policy_development_needs": [
+                "Customer payment and collection policy",
+                "Employee handbook and procedures",
+                "Data handling and protection policy",
+                "Complaint handling and dispute resolution",
+                "Regulatory compliance monitoring"
+            ],
+            "legal_document_management_system": "recommended for growth scaling"
+        },
+        "strategic_legal_planning": {
+            "growth_stage_considerations": "small_business",
+            "legal_infrastructure_needs": "foundational_compliance_framework",
+            "future_legal_requirements": "preparation_for_expansion_and_regulatory_scrutiny",
+            "legal_advisory_needs": "establish_ongoing_legal_counsel_relationship",
+            "compliance_monitoring_framework": "systematic_quarterly_review"
+        },
+        "workflow_status": {
+            "legal_analysis_complete": true,
+            "final_compilation_pending": true
+        },
+        "debug_info": {
+            "inputs_received": {
+                "llm_from_node": true,
+                "prep_from_node": true
+            },
+            "had_legal_assessment_obj": true,
+            "had_financial_data_obj": true,
+            "years_available": [
+                "2024"
+            ],
+            "latest_year": "2024",
+            "employee_count_used": 5,
+            "revenue_used": 475000
+        },
+        "id": 37,
+        "company_name": "Test Aesthetics"
+    },
+    {
+        "report_metadata": {
+            "analysis_type": "staff_workforce",
+            "company_name": "Unknown Company",
+            "sector": "unknown",
+            "confidence_score": 80,
+            "status": "comprehensive",
+            "analysis_timestamp": "2025-09-27T13:41:42.137Z",
+            "employee_count_analyzed": 5,
+            "data_limitations": []
+        },
+        "staff_analysis": {
+            "full_report": "\n## Workforce Structure and Operational Efficiency Analysis - Test Aesthetics\n\nThis analysis assesses the workforce structure and operational efficiency of Test Aesthetics, based on the provided data. Due to the fragmented nature of the data, this is a preliminary assessment. A more comprehensive analysis would require more detailed information on roles, responsibilities, and performance metrics.\n\n**I. Overview**\n\n*   **Industry:** Healthcare\n*   **Total Employees:** 5 (3 Full-Time, 2 Part-Time)\n*   **Total Payroll:** £140,000 (Average £28,000 per employee)\n*   **Asset Base:** Modest, with a net book value of £3,500. Office Furniture shows the highest depreciation, suggesting potential need for replacement.\n\n**II. Workforce Structure Analysis**\n\n*   **Composition:** The workforce is a mix of full-time and part-time employees. This can be beneficial for flexibility but requires careful management to ensure consistent service delivery and team cohesion.\n*   **Tenure:** The data highlights a focus on employee tenure, with mentions of \"years\" and \"longest.\" This is positive, as experienced employees often contribute to higher productivity and lower training costs. However, the data doesn't provide specific tenure details for each employee.\n*   **Maternity Leave:** One employee is currently on maternity leave. This requires contingency planning to cover their responsibilities and maintain service levels.\n*   **Risk:** The repeated mention of \"risk\" and \"operational risk\" suggests a concern about potential disruptions. However, the specific risks are not identified.\n\n**III. Operational Efficiency Analysis**\n\n*   **Financial Performance:**\n    *   **Sales:** Total invoice value is £7,195, with £3,580 paid and £3,615 outstanding.\n    *   **Accounts Receivable:** There are outstanding invoices, with Urban Property Group and Shiny Spaces Ltd owing significant amounts (£1,620 and £1,120 respectively). This impacts cash flow.\n    *   **Customer Concentration:** The top three customers account for 59% of the invoice value, indicating a potential risk of revenue loss if one of these customers is lost.\n*   **Asset Utilization:** The asset base is relatively small. The high depreciation of Office Furniture suggests a potential need for investment in new equipment.\n*   **Payroll Costs:** £140,000 for 5 employees is a significant cost. The analysis needs to determine if this cost is justified by the revenue generated.\n*   **Productivity:** The data mentions \"productivity metrics\" but doesn't provide specific numbers. This is a critical gap in the analysis.\n\n**IV. Key Observations & Concerns**\n\n*   **Cash Flow:** The outstanding invoices pose a risk to cash flow.\n*   **Customer Dependency:** Reliance on a few key customers is a vulnerability.\n*   **Lack of Productivity Metrics:** The absence of specific productivity metrics makes it difficult to assess workforce efficiency.\n*   **Unclear Risk Factors:** The repeated mention of \"risk\" without specific details hinders effective risk management.\n*   **Fragmented Data:** The data is presented in a fragmented and unstructured manner, making it difficult to draw definitive conclusions.\n\n**V. Recommendations**\n\n1.  **Accounts Receivable Management:** Implement a robust accounts receivable process to reduce outstanding invoices. This includes setting clear payment terms, sending timely reminders, and potentially offering early payment discounts.\n2.  **Customer Diversification:** Actively seek new customers to reduce reliance on the top three.\n3.  **Develop Productivity Metrics:** Define and track key productivity metrics for each role. This could include revenue per employee, service completion rates, or customer satisfaction scores.\n4.  **Risk Assessment:** Conduct a comprehensive risk assessment to identify potential operational risks and develop mitigation strategies.\n5.  **Asset Management:** Evaluate the condition of the Office Furniture and consider replacement if necessary.\n6.  **Data Consolidation:** Consolidate all workforce data into a centralized system to facilitate more comprehensive analysis.\n7.  **Succession Planning:** Develop a succession plan to address the impact of employee turnover, including maternity leave.\n8.  **Payroll Optimization:** Analyze payroll costs in relation to productivity metrics to identify potential areas for optimization.\n9.  **Training and Development:** Invest in training and development to enhance employee skills and improve productivity.\n\n**VI. Next Steps**\n\nTo provide a more accurate and actionable analysis, the following information is needed:\n\n*   **Detailed Job Descriptions:** Roles and responsibilities of each employee.\n*   **Performance Metrics:** Specific productivity metrics for each role.\n*   **Revenue Breakdown:** Revenue generated by each service or product.\n*   **Detailed Financial Statements:** Income statement, balance sheet, and cash flow statement.\n*   **Risk Register:** A list of identified operational risks and mitigation strategies.\n*   **Employee Tenure Data:** Specific tenure for each employee.\n\n\n\nThis preliminary analysis provides a starting point for improving workforce efficiency and reducing operational risks at Test Aesthetics. By addressing the identified concerns and implementing the recommended actions, the company can improve its financial performance and ensure long-term sustainability.",
+            "analysis_confidence": 80,
+            "limitations_noted": []
+        },
+        "key_metrics": {
+            "workforce_structure": {
+                "total_employee_count": 5,
+                "full_time_employees": 3,
+                "part_time_employees": 2,
+                "active_employees": 4,
+                "employees": [
+                    {
+                        "name": "Lisa Chow",
+                        "years_of_service": 5.97
+                    },
+                    {
+                        "name": "Alice Thompson",
+                        "years_of_service": 5.3
+                    },
+                    {
+                        "name": "James Patel",
+                        "years_of_service": 3.76
+                    }
+                ]
+            },
+            "productivity_metrics": {
+                "latest_year": 2024,
+                "revenue": 475000,
+                "operating_profit": 126000,
+                "revenue_per_employee": 95000,
+                "operating_profit_per_employee": 25200
+            },
+            "cost_efficiency": {
+                "total_annual_payroll": 140000,
+                "average_salary": 28000,
+                "payroll_as_percentage_of_revenue": 29.47368421052631,
+                "payroll_to_operating_profit_ratio": 1.1111111111111112
+            },
+            "risk_factors": {},
+            "organizational_health": {
+                "tenured_employees": [
+                    {
+                        "name": "Lisa Chow",
+                        "years_of_service": 5.97
+                    },
+                    {
+                        "name": "Alice Thompson",
+                        "years_of_service": 5.3
+                    },
+                    {
+                        "name": "James Patel",
+                        "years_of_service": 3.76
+                    }
+                ]
+            }
+        },
+        "workforce_insights": {
+            "payroll_efficiency_level": "elevated"
+        },
+        "productivity_assessment": {
+            "revenue_efficiency": "strong",
+            "profit_generation": "strong",
+            "cost_effectiveness": "elevated",
+            "overall_productivity_rating": "balanced"
+        },
+        "organizational_structure": {
+            "team_size_assessment": "small_with_constraints",
+            "management_layers": "flat_structure",
+            "operational_redundancy": "minimal"
+        },
+        "risk_assessment": {
+            "operational_risks": [
+                "Reduced active capacity"
+            ],
+            "overall_risk_level": "moderate"
+        },
+        "organizational_strengths": {
+            "productivity_strengths": [
+                "High revenue per employee"
+            ],
+            "financial_advantages": []
+        },
+        "improvement_areas": {
+            "critical_concerns": [],
+            "organizational_gaps": [
+                "Limited operational redundancy"
+            ],
+            "strategic_needs": [
+                "Cross-training and basic succession coverage"
+            ]
+        },
+        "recommendations": {
+            "immediate_priorities": [
+                "Document key processes and assign backups"
+            ],
+            "medium_term_goals": [
+                "Plan targeted hire to reduce key-person risk"
+            ],
+            "risk_mitigation": [
+                "Maintain knowledge repository",
+                "Cross-train for critical functions"
+            ]
+        },
+        "workforce_kpis": {
+            "productivity_score": 79,
+            "cost_efficiency_score": 71,
+            "retention_score": 79,
+            "risk_score": 50,
+            "overall_workforce_health": null
+        },
+        "industry_comparison": {
+            "sector": "unknown",
+            "revenue_per_employee_vs_industry": null,
+            "payroll_efficiency_vs_industry": null
+        },
+        "workflow_status": {
+            "financial_analysis_complete": true,
+            "staff_analysis_complete": true,
+            "operational_efficiency_analysis_pending": false,
+            "final_compilation_pending": false
+        },
+        "debug_info": {
+            "inputs_received": 1,
+            "analysis_text_available": true,
+            "latest_year_found": 2024,
+            "llm_from_named_node": true,
+            "code8_from_named_node": true,
+            "employees_count": 3,
+            "tenured_count": 3
+        },
+        "id": 37,
+        "company_name": "Test Aesthetics"
+    }
+]
