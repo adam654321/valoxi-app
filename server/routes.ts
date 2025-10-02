@@ -5379,6 +5379,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to manually trigger ONLY Detailed Analysis webhook
+  app.post("/api/test/detailed-analysis-webhook/:eventId", async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      console.log(`[TEST] Manually triggering Detailed Analysis webhook ONLY for event ${eventId}`);
+      
+      // Trigger detailed analysis webhook asynchronously
+      setTimeout(() => {
+        sendDetailedAnalysisWebhook(eventId);
+      }, 100);
+
+      res.json({ 
+        success: true, 
+        message: `Detailed Analysis webhook triggered for event ${eventId}`
+      });
+    } catch (error) {
+      console.error("Failed to trigger Detailed Analysis webhook:", error);
+      res.status(500).json({ error: "Failed to trigger webhook" });
+    }
+  });
+
   app.post("/api/test/fresh-stage1-analysis/:companyId", async (req: Request, res: Response) => {
     try {
       const companyId = parseInt(req.params.companyId);
