@@ -1514,9 +1514,14 @@ export default function TargetCompanyDetail() {
                     }
 
                     try {
-                      const detailedDataArray = typeof detailedAnalysisEvent.detailedAnalysisData === 'string' 
+                      const detailedData = typeof detailedAnalysisEvent.detailedAnalysisData === 'string' 
                         ? JSON.parse(detailedAnalysisEvent.detailedAnalysisData)
                         : detailedAnalysisEvent.detailedAnalysisData;
+                      
+                      // Handle both array and wrapper object structures
+                      const detailedDataArray = Array.isArray(detailedData) 
+                        ? detailedData 
+                        : (detailedData?.reports || []);
                       
                       // Extract each analysis type from the array
                       const assetAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'asset_management_and_capital_efficiency');
