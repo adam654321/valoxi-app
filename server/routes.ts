@@ -421,9 +421,10 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 
     console.log(`[STAGE1_ANALYSIS] Created stage 1 analysis event ${stage1Event.id} for company ${targetCompanyId}`);
 
-    // Send webhook asynchronously
+    // Send both webhooks asynchronously in parallel
     setTimeout(() => {
       sendStage1AnalysisWebhook(stage1Event.id);
+      sendDetailedAnalysisWebhook(stage1Event.id);
     }, 100);
 
   } catch (error) {
@@ -513,6 +514,85 @@ async function sendStage1AnalysisWebhook(eventId: number) {
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
       new Date()
     );
+  }
+}
+
+async function sendDetailedAnalysisWebhook(eventId: number) {
+  const webhookUrl = process.env.STAGE1_Detailed_Analysis_URL;
+  if (!webhookUrl) {
+    console.log(`[DETAILED_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
+    return;
+  }
+
+  try {
+    // Get the stage 1 analysis event
+    const event = await storage.getStage1AnalysisEvent(eventId);
+    if (!event) {
+      console.error(`[DETAILED_ANALYSIS_WEBHOOK] Event ${eventId} not found`);
+      return;
+    }
+
+    const startTime = Date.now();
+    
+    // Prepare webhook payload - same as stage1 webhook
+    const webhookPayload = {
+      event_type: "stage1_analysis_complete",
+      timestamp: new Date().toISOString(),
+      id: event.targetCompanyId,
+      triggered_by: event.triggeredBy,
+      ...event.concatenatedData,
+    };
+
+    console.log(`[DETAILED_ANALYSIS_WEBHOOK] Sending webhook for event ${eventId}:`, JSON.stringify(webhookPayload, null, 2));
+
+    // Send webhook
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookPayload),
+    });
+
+    const processingTime = Date.now() - startTime;
+    const responseText = await response.text();
+
+    if (response.ok) {
+      console.log(`[DETAILED_ANALYSIS_WEBHOOK] Webhook sent successfully for event ${eventId}, time: ${processingTime}ms`);
+      
+      // Try to parse response as JSON
+      try {
+        const detailedData = JSON.parse(responseText);
+        
+        // Store the detailed analysis data
+        await storage.updateStage1AnalysisEventDetailedData(eventId, detailedData);
+        
+        console.log(`[DETAILED_ANALYSIS_WEBHOOK] Stored detailed analysis data for event ${eventId}, length: ${responseText.length} characters`);
+        
+        // Notify connected clients about detailed analysis completion (for real-time UI updates)
+        if (global.documentUpdateListeners) {
+          global.documentUpdateListeners.forEach((listener) => {
+            if (listener.targetCompanyId === event.targetCompanyId) {
+              listener.res.write(`data: ${JSON.stringify({ 
+                type: 'detailed_analysis_completed', 
+                targetCompanyId: event.targetCompanyId,
+                eventId: eventId,
+                timestamp: new Date().toISOString()
+              })}\n\n`);
+            }
+          });
+        }
+        console.log(`[DETAILED_ANALYSIS_WEBHOOK] SSE notification sent for detailed analysis completion of company ${event.targetCompanyId}`);
+      } catch (parseError) {
+        console.error(`[DETAILED_ANALYSIS_WEBHOOK] Failed to parse response as JSON for event ${eventId}:`, parseError);
+        console.log(`[DETAILED_ANALYSIS_WEBHOOK] Response text:`, responseText);
+      }
+    } else {
+      console.error(`[DETAILED_ANALYSIS_WEBHOOK] Webhook failed for event ${eventId}, status: ${response.status}, response: ${responseText}`);
+    }
+
+  } catch (error) {
+    console.error(`[DETAILED_ANALYSIS_WEBHOOK] Failed to send webhook for event ${eventId}:`, error);
   }
 }
 

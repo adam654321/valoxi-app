@@ -371,6 +371,7 @@ export interface IStorage {
   getStage1AnalysisEvent(eventId: number): Promise<Stage1AnalysisEvent | undefined>;
   getStage1AnalysisEventsByCompany(targetCompanyId: number, userCompanyId: number): Promise<Stage1AnalysisEvent[]>;
   updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number): Promise<Stage1AnalysisEvent | undefined>;
+  updateStage1AnalysisEventDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3680,6 +3681,17 @@ export class DatabaseStorage implements IStorage {
         webhookSentAt: sentAt,
         webhookSent: status === 'success',
         processingTime: processingTime
+      })
+      .where(eq(stage1AnalysisEvents.id, eventId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateStage1AnalysisEventDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined> {
+    const [updated] = await db
+      .update(stage1AnalysisEvents)
+      .set({
+        detailedAnalysisData: detailedData
       })
       .where(eq(stage1AnalysisEvents.id, eventId))
       .returning();
