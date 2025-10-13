@@ -951,21 +951,31 @@ export default function TargetCompanyDetail() {
                         recommendation: ''
                       };
 
+                      // Helper function to clean markdown and remove code blocks
+                      const cleanContent = (text: string): string => {
+                        return text
+                          .replace(/```[\s\S]*?```/g, '') // Remove code blocks with triple backticks
+                          .replace(/`([^`]+)`/g, '$1') // Remove inline code backticks
+                          .replace(/\*\*/g, '') // Remove bold markers
+                          .replace(/^[ \t]+/gm, '') // Remove leading whitespace/indentation that creates code blocks
+                          .trim();
+                      };
+
                       // Simple split approach
                       const parts = content.split(/(?=Strengths:|Weaknesses:|Opportunities for Growth:|Risks:|Recommendation:)/);
                       
                       parts.forEach(part => {
                         const trimmed = part.trim();
                         if (trimmed.startsWith('Strengths:')) {
-                          sections.strengths = trimmed.replace('Strengths:', '').trim().replace(/\*\*/g, '');
+                          sections.strengths = cleanContent(trimmed.replace('Strengths:', ''));
                         } else if (trimmed.startsWith('Weaknesses:')) {
-                          sections.weaknesses = trimmed.replace('Weaknesses:', '').trim().replace(/\*\*/g, '');
+                          sections.weaknesses = cleanContent(trimmed.replace('Weaknesses:', ''));
                         } else if (trimmed.startsWith('Opportunities for Growth:')) {
-                          sections.opportunities = trimmed.replace('Opportunities for Growth:', '').trim().replace(/\*\*/g, '');
+                          sections.opportunities = cleanContent(trimmed.replace('Opportunities for Growth:', ''));
                         } else if (trimmed.startsWith('Risks:')) {
-                          sections.risks = trimmed.replace('Risks:', '').trim().replace(/\*\*/g, '');
+                          sections.risks = cleanContent(trimmed.replace('Risks:', ''));
                         } else if (trimmed.startsWith('Recommendation:')) {
-                          sections.recommendation = trimmed.replace('Recommendation:', '').trim().replace(/\*\*/g, '');
+                          sections.recommendation = cleanContent(trimmed.replace('Recommendation:', ''));
                         }
                       });
 
