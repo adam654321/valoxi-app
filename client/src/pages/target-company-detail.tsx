@@ -958,6 +958,8 @@ export default function TargetCompanyDetail() {
                           .replace(/`([^`]+)`/g, '$1') // Remove inline code backticks
                           .replace(/\*\*/g, '') // Remove bold markers
                           .replace(/^[ \t]+/gm, '') // Remove leading whitespace/indentation that creates code blocks
+                          .replace(/^\s*[\*\-\+]\s+/gm, '') // Remove bullet point markers (*, -, +)
+                          .replace(/\n\n+/g, '\n\n') // Normalize multiple line breaks to double
                           .trim();
                       };
 
