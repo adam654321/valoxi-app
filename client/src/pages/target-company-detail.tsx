@@ -1523,22 +1523,42 @@ export default function TargetCompanyDetail() {
                         ? detailedData 
                         : (detailedData?.reports || []);
                       
-                      // Extract each analysis type from the array
+                      // Extract all 9 analysis types from the array
                       const assetAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'asset_management_and_capital_efficiency');
                       const cashflowAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'cashflow_analysis');
                       const financialAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'financial_analysis');
                       const legalAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'legal_compliance_risk');
                       const staffAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'staff_workforce');
+                      const sectorAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'sector_competitive_intelligence');
+                      const growthAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'growth_opportunities');
+                      const valuationAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'comprehensive_business_valuation');
+                      const dealStructureAnalysis = detailedDataArray.find((item: any) => item.report_metadata?.analysis_type === 'comprehensive_deal_structure_financing');
                       
                       return (
-                        <Tabs defaultValue="asset" className="space-y-6">
-                          <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="asset" data-testid="tab-asset-analysis">Asset Analysis</TabsTrigger>
-                            <TabsTrigger value="cashflow" data-testid="tab-cashflow-analysis">Cashflow Analysis</TabsTrigger>
-                            <TabsTrigger value="financial" data-testid="tab-financial-analysis">Financial Analysis</TabsTrigger>
-                            <TabsTrigger value="legal" data-testid="tab-legal-analysis">Legal Analysis</TabsTrigger>
-                            <TabsTrigger value="staff" data-testid="tab-staff-analysis">Staff Analysis</TabsTrigger>
+                        <Tabs defaultValue="financial-group" className="space-y-6">
+                          <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="financial-group" data-testid="tab-financial-group" className="flex items-center gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              Financial Analysis
+                            </TabsTrigger>
+                            <TabsTrigger value="operational-group" data-testid="tab-operational-group" className="flex items-center gap-2">
+                              <BarChart3 className="w-4 h-4" />
+                              Operational Analysis
+                            </TabsTrigger>
+                            <TabsTrigger value="strategic-group" data-testid="tab-strategic-group" className="flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4" />
+                              Strategic Analysis
+                            </TabsTrigger>
                           </TabsList>
+
+                          {/* Financial Group */}
+                          <TabsContent value="financial-group" className="space-y-6">
+                            <Tabs defaultValue="asset" className="space-y-6">
+                              <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="asset" data-testid="tab-asset-analysis">Asset Management</TabsTrigger>
+                                <TabsTrigger value="cashflow" data-testid="tab-cashflow-analysis">Cashflow</TabsTrigger>
+                                <TabsTrigger value="financial" data-testid="tab-financial-analysis">Financial</TabsTrigger>
+                              </TabsList>
 
                           {/* Asset Analysis Tab */}
                           <TabsContent value="asset" className="space-y-6">
@@ -1673,154 +1693,412 @@ export default function TargetCompanyDetail() {
                               </div>
                             )}
                           </TabsContent>
-
-                          {/* Legal Analysis Tab */}
-                          <TabsContent value="legal" className="space-y-6">
-                            {legalAnalysis ? (
-                              <div className="space-y-6">
-                                <Card className="border-2 border-red-200 dark:border-red-800">
-                                  <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
-                                    <CardTitle className="text-xl">Legal Compliance & Risk Assessment</CardTitle>
-                                    <CardDescription>Confidence: {legalAnalysis.legal_analysis?.analysis_confidence}% | Risk Score: {legalAnalysis.report_metadata?.legal_risk_score}</CardDescription>
-                                  </CardHeader>
-                                  <CardContent className="pt-6">
-                                    {legalAnalysis.risk_analysis && (
-                                      <div className="space-y-4 mb-6">
-                                        {legalAnalysis.risk_analysis.high_priority?.length > 0 && (
-                                          <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border-l-4 border-red-500">
-                                            <h3 className="font-semibold text-red-700 dark:text-red-400 mb-2">High Priority Risks</h3>
-                                            <ul className="list-disc pl-5 space-y-1">
-                                              {legalAnalysis.risk_analysis.high_priority.map((item: string, idx: number) => (
-                                                <li key={idx} className="text-sm">{item}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {legalAnalysis.risk_analysis.medium_priority?.length > 0 && (
-                                          <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border-l-4 border-orange-500">
-                                            <h3 className="font-semibold text-orange-700 dark:text-orange-400 mb-2">Medium Priority Risks</h3>
-                                            <ul className="list-disc pl-5 space-y-1">
-                                              {legalAnalysis.risk_analysis.medium_priority.map((item: string, idx: number) => (
-                                                <li key={idx} className="text-sm">{item}</li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {legalAnalysis.legal_analysis?.full_report || 'No report available'}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            ) : (
-                              <div className="text-center py-12 text-muted-foreground">
-                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p>Legal analysis not available</p>
-                              </div>
-                            )}
+                            </Tabs>
                           </TabsContent>
 
-                          {/* Staff Analysis Tab */}
-                          <TabsContent value="staff" className="space-y-6">
-                            {staffAnalysis ? (
-                              <div className="space-y-6">
-                                <Card className="border-2 border-purple-200 dark:border-purple-800">
-                                  <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-                                    <CardTitle className="text-xl">Workforce Structure & Operational Efficiency</CardTitle>
-                                    <CardDescription>Confidence: {staffAnalysis.staff_analysis?.analysis_confidence}% | Employees: {staffAnalysis.report_metadata?.employee_count_analyzed}</CardDescription>
-                                  </CardHeader>
-                                  <CardContent className="pt-6">
-                                    {staffAnalysis.key_metrics && (
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                        {staffAnalysis.key_metrics.productivity_metrics && (
-                                          <Card>
-                                            <CardHeader>
-                                              <CardTitle className="text-base">Productivity Metrics</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                              <div className="space-y-2">
-                                                <div className="flex justify-between">
-                                                  <span className="text-sm text-muted-foreground">Revenue per Employee</span>
-                                                  <span className="font-medium">£{staffAnalysis.key_metrics.productivity_metrics.revenue_per_employee?.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                  <span className="text-sm text-muted-foreground">Operating Profit per Employee</span>
-                                                  <span className="font-medium">£{staffAnalysis.key_metrics.productivity_metrics.operating_profit_per_employee?.toLocaleString()}</span>
-                                                </div>
-                                              </div>
-                                            </CardContent>
-                                          </Card>
-                                        )}
-                                        {staffAnalysis.key_metrics.cost_efficiency && (
-                                          <Card>
-                                            <CardHeader>
-                                              <CardTitle className="text-base">Cost Efficiency</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                              <div className="space-y-2">
-                                                <div className="flex justify-between">
-                                                  <span className="text-sm text-muted-foreground">Total Payroll</span>
-                                                  <span className="font-medium">£{staffAnalysis.key_metrics.cost_efficiency.total_annual_payroll?.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                  <span className="text-sm text-muted-foreground">Payroll % of Revenue</span>
-                                                  <span className="font-medium">{staffAnalysis.key_metrics.cost_efficiency.payroll_as_percentage_of_revenue?.toFixed(1)}%</span>
-                                                </div>
-                                              </div>
-                                            </CardContent>
-                                          </Card>
-                                        )}
-                                      </div>
-                                    )}
-                                    {staffAnalysis.recommendations && (
-                                      <div className="space-y-4 mb-6">
-                                        <Card>
-                                          <CardHeader>
-                                            <CardTitle className="text-base">Recommendations</CardTitle>
-                                          </CardHeader>
-                                          <CardContent>
-                                            {staffAnalysis.recommendations.immediate_priorities?.length > 0 && (
-                                              <div className="mb-4">
-                                                <h4 className="font-semibold text-sm mb-2">Immediate Priorities</h4>
+                          {/* Operational Group */}
+                          <TabsContent value="operational-group" className="space-y-6">
+                            <Tabs defaultValue="legal" className="space-y-6">
+                              <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="legal" data-testid="tab-legal-analysis">Legal & Compliance</TabsTrigger>
+                                <TabsTrigger value="staff" data-testid="tab-staff-analysis">Staff & Workforce</TabsTrigger>
+                              </TabsList>
+
+                              {/* Legal Analysis Tab */}
+                              <TabsContent value="legal" className="space-y-6">
+                                {legalAnalysis ? (
+                                  <div className="space-y-6">
+                                    <Card className="border-2 border-red-200 dark:border-red-800">
+                                      <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
+                                        <CardTitle className="text-xl">Legal Compliance & Risk Assessment</CardTitle>
+                                        <CardDescription>Confidence: {legalAnalysis.legal_analysis?.analysis_confidence}% | Risk Score: {legalAnalysis.report_metadata?.legal_risk_score}</CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        {legalAnalysis.risk_analysis && (
+                                          <div className="space-y-4 mb-6">
+                                            {legalAnalysis.risk_analysis.high_priority?.length > 0 && (
+                                              <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border-l-4 border-red-500">
+                                                <h3 className="font-semibold text-red-700 dark:text-red-400 mb-2">High Priority Risks</h3>
                                                 <ul className="list-disc pl-5 space-y-1">
-                                                  {staffAnalysis.recommendations.immediate_priorities.map((item: string, idx: number) => (
+                                                  {legalAnalysis.risk_analysis.high_priority.map((item: string, idx: number) => (
                                                     <li key={idx} className="text-sm">{item}</li>
                                                   ))}
                                                 </ul>
                                               </div>
                                             )}
-                                            {staffAnalysis.recommendations.medium_term_goals?.length > 0 && (
-                                              <div>
-                                                <h4 className="font-semibold text-sm mb-2">Medium-Term Goals</h4>
+                                            {legalAnalysis.risk_analysis.medium_priority?.length > 0 && (
+                                              <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border-l-4 border-orange-500">
+                                                <h3 className="font-semibold text-orange-700 dark:text-orange-400 mb-2">Medium Priority Risks</h3>
                                                 <ul className="list-disc pl-5 space-y-1">
-                                                  {staffAnalysis.recommendations.medium_term_goals.map((item: string, idx: number) => (
+                                                  {legalAnalysis.risk_analysis.medium_priority.map((item: string, idx: number) => (
                                                     <li key={idx} className="text-sm">{item}</li>
                                                   ))}
                                                 </ul>
                                               </div>
                                             )}
-                                          </CardContent>
-                                        </Card>
-                                      </div>
-                                    )}
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {staffAnalysis.staff_analysis?.full_report || 'No report available'}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            ) : (
-                              <div className="text-center py-12 text-muted-foreground">
-                                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p>Staff analysis not available</p>
-                              </div>
-                            )}
+                                          </div>
+                                        )}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {legalAnalysis.legal_analysis?.full_report || 'No report available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-12 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Legal analysis not available</p>
+                                  </div>
+                                )}
+                              </TabsContent>
+
+                              {/* Staff Analysis Tab */}
+                              <TabsContent value="staff" className="space-y-6">
+                                {staffAnalysis ? (
+                                  <div className="space-y-6">
+                                    <Card className="border-2 border-purple-200 dark:border-purple-800">
+                                      <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                                        <CardTitle className="text-xl">Workforce Structure & Operational Efficiency</CardTitle>
+                                        <CardDescription>Confidence: {staffAnalysis.staff_analysis?.analysis_confidence}% | Employees: {staffAnalysis.report_metadata?.employee_count_analyzed}</CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        {staffAnalysis.key_metrics && (
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                            {staffAnalysis.key_metrics.productivity_metrics && (
+                                              <Card>
+                                                <CardHeader>
+                                                  <CardTitle className="text-base">Productivity Metrics</CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                  <div className="space-y-2">
+                                                    <div className="flex justify-between">
+                                                      <span className="text-sm text-muted-foreground">Revenue per Employee</span>
+                                                      <span className="font-medium">£{staffAnalysis.key_metrics.productivity_metrics.revenue_per_employee?.toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                      <span className="text-sm text-muted-foreground">Operating Profit per Employee</span>
+                                                      <span className="font-medium">£{staffAnalysis.key_metrics.productivity_metrics.operating_profit_per_employee?.toLocaleString()}</span>
+                                                    </div>
+                                                  </div>
+                                                </CardContent>
+                                              </Card>
+                                            )}
+                                            {staffAnalysis.key_metrics.cost_efficiency && (
+                                              <Card>
+                                                <CardHeader>
+                                                  <CardTitle className="text-base">Cost Efficiency</CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                  <div className="space-y-2">
+                                                    <div className="flex justify-between">
+                                                      <span className="text-sm text-muted-foreground">Total Payroll</span>
+                                                      <span className="font-medium">£{staffAnalysis.key_metrics.cost_efficiency.total_annual_payroll?.toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                      <span className="text-sm text-muted-foreground">Payroll % of Revenue</span>
+                                                      <span className="font-medium">{staffAnalysis.key_metrics.cost_efficiency.payroll_as_percentage_of_revenue?.toFixed(1)}%</span>
+                                                    </div>
+                                                  </div>
+                                                </CardContent>
+                                              </Card>
+                                            )}
+                                          </div>
+                                        )}
+                                        {staffAnalysis.recommendations && (
+                                          <div className="space-y-4 mb-6">
+                                            <Card>
+                                              <CardHeader>
+                                                <CardTitle className="text-base">Recommendations</CardTitle>
+                                              </CardHeader>
+                                              <CardContent>
+                                                {staffAnalysis.recommendations.immediate_priorities?.length > 0 && (
+                                                  <div className="mb-4">
+                                                    <h4 className="font-semibold text-sm mb-2">Immediate Priorities</h4>
+                                                    <ul className="list-disc pl-5 space-y-1">
+                                                      {staffAnalysis.recommendations.immediate_priorities.map((item: string, idx: number) => (
+                                                        <li key={idx} className="text-sm">{item}</li>
+                                                      ))}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                                {staffAnalysis.recommendations.medium_term_goals?.length > 0 && (
+                                                  <div>
+                                                    <h4 className="font-semibold text-sm mb-2">Medium-Term Goals</h4>
+                                                    <ul className="list-disc pl-5 space-y-1">
+                                                      {staffAnalysis.recommendations.medium_term_goals.map((item: string, idx: number) => (
+                                                        <li key={idx} className="text-sm">{item}</li>
+                                                      ))}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                              </CardContent>
+                                            </Card>
+                                          </div>
+                                        )}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {staffAnalysis.staff_analysis?.full_report || 'No report available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-12 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Staff analysis not available</p>
+                                  </div>
+                                )}
+                              </TabsContent>
+                            </Tabs>
+                          </TabsContent>
+
+                          {/* Strategic Group - NEW 4 ANALYSIS TYPES */}
+                          <TabsContent value="strategic-group" className="space-y-6">
+                            <Tabs defaultValue="sector" className="space-y-6">
+                              <TabsList className="grid w-full grid-cols-4">
+                                <TabsTrigger value="sector" data-testid="tab-sector-analysis">Business Sector</TabsTrigger>
+                                <TabsTrigger value="growth" data-testid="tab-growth-analysis">Growth Opportunities</TabsTrigger>
+                                <TabsTrigger value="valuation" data-testid="tab-valuation-analysis">Business Valuation</TabsTrigger>
+                                <TabsTrigger value="deal" data-testid="tab-deal-analysis">Deal Structure</TabsTrigger>
+                              </TabsList>
+
+                              {/* Business Sector Analysis Tab */}
+                              <TabsContent value="sector" className="space-y-6">
+                                {sectorAnalysis ? (
+                                  <div className="space-y-6">
+                                    <Card className="border-2 border-teal-200 dark:border-teal-800">
+                                      <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20">
+                                        <CardTitle className="text-xl">Business Sector & Competitive Intelligence</CardTitle>
+                                        <CardDescription>
+                                          Confidence: {sectorAnalysis.report_metadata?.confidence_score}% | 
+                                          Sector Score: {sectorAnalysis.sector_scores?.overall_sector_score}
+                                        </CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        {sectorAnalysis.industry_benchmarking && (
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                            <Card>
+                                              <CardHeader>
+                                                <CardTitle className="text-base">Revenue Performance</CardTitle>
+                                              </CardHeader>
+                                              <CardContent>
+                                                <div className="space-y-2">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-sm text-muted-foreground">Revenue per Employee</span>
+                                                    <span className="font-medium">£{sectorAnalysis.industry_benchmarking.revenue_performance?.business_revenue_per_employee?.toLocaleString()}</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-sm text-muted-foreground">vs Industry Average</span>
+                                                    <span className="font-medium text-green-600">{sectorAnalysis.industry_benchmarking.revenue_performance?.performance_variance}</span>
+                                                  </div>
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                            <Card>
+                                              <CardHeader>
+                                                <CardTitle className="text-base">Profitability Performance</CardTitle>
+                                              </CardHeader>
+                                              <CardContent>
+                                                <div className="space-y-2">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-sm text-muted-foreground">Gross Margin</span>
+                                                    <span className="font-medium">{sectorAnalysis.industry_benchmarking.profitability_performance?.business_gross_margin}%</span>
+                                                  </div>
+                                                  <div className="flex justify-between">
+                                                    <span className="text-sm text-muted-foreground">Margin Advantage</span>
+                                                    <span className="font-medium text-green-600">{sectorAnalysis.industry_benchmarking.profitability_performance?.margin_advantage}</span>
+                                                  </div>
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                          </div>
+                                        )}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {sectorAnalysis.sector_analysis?.full_report || 'No report available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-12 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Sector analysis not available</p>
+                                  </div>
+                                )}
+                              </TabsContent>
+
+                              {/* Growth Opportunities Analysis Tab */}
+                              <TabsContent value="growth" className="space-y-6">
+                                {growthAnalysis ? (
+                                  <div className="space-y-6">
+                                    <Card className="border-2 border-emerald-200 dark:border-emerald-800">
+                                      <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20">
+                                        <CardTitle className="text-xl">Growth Opportunities & Strategic Expansion</CardTitle>
+                                        <CardDescription>
+                                          Confidence: {growthAnalysis.report_metadata?.confidence_score}% | 
+                                          Growth Potential: {growthAnalysis.growth_scores?.overall_growth_potential}
+                                        </CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        {growthAnalysis.growth_strategies && (
+                                          <div className="space-y-4 mb-6">
+                                            {growthAnalysis.growth_strategies.immediate_opportunities?.length > 0 && (
+                                              <Card>
+                                                <CardHeader>
+                                                  <CardTitle className="text-base text-emerald-700 dark:text-emerald-400">Immediate Opportunities</CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                  <ul className="list-disc pl-5 space-y-1">
+                                                    {growthAnalysis.growth_strategies.immediate_opportunities.map((item: string, idx: number) => (
+                                                      <li key={idx} className="text-sm">{item}</li>
+                                                    ))}
+                                                  </ul>
+                                                </CardContent>
+                                              </Card>
+                                            )}
+                                            {growthAnalysis.growth_strategies.medium_term_strategies?.length > 0 && (
+                                              <Card>
+                                                <CardHeader>
+                                                  <CardTitle className="text-base text-blue-700 dark:text-blue-400">Medium-Term Strategies</CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                  <ul className="list-disc pl-5 space-y-1">
+                                                    {growthAnalysis.growth_strategies.medium_term_strategies.map((item: string, idx: number) => (
+                                                      <li key={idx} className="text-sm">{item}</li>
+                                                    ))}
+                                                  </ul>
+                                                </CardContent>
+                                              </Card>
+                                            )}
+                                          </div>
+                                        )}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {growthAnalysis.growth_analysis?.full_report || 'No report available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-12 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Growth analysis not available</p>
+                                  </div>
+                                )}
+                              </TabsContent>
+
+                              {/* Business Valuation Analysis Tab */}
+                              <TabsContent value="valuation" className="space-y-6">
+                                {valuationAnalysis ? (
+                                  <div className="space-y-6">
+                                    <Card className="border-2 border-amber-200 dark:border-amber-800">
+                                      <CardHeader className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+                                        <CardTitle className="text-xl">Comprehensive Business Valuation</CardTitle>
+                                        <CardDescription>
+                                          Confidence: {valuationAnalysis.report_metadata?.confidence_score}% | 
+                                          Reliability Score: {valuationAnalysis.report_metadata?.valuation_reliability_score}
+                                        </CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        {valuationAnalysis.valuation_summary && (
+                                          <div className="mb-6">
+                                            <Card>
+                                              <CardHeader>
+                                                <CardTitle className="text-base">Valuation Summary</CardTitle>
+                                              </CardHeader>
+                                              <CardContent>
+                                                <div className="space-y-2">
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-muted-foreground">Primary Valuation</span>
+                                                    <span className="text-xl font-bold text-amber-700 dark:text-amber-400">
+                                                      £{valuationAnalysis.valuation_summary.primary_valuation_estimate?.toLocaleString()}
+                                                    </span>
+                                                  </div>
+                                                  {valuationAnalysis.valuation_range && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                      Range: £{valuationAnalysis.valuation_range.minimum_valuation?.toLocaleString()} - 
+                                                      £{valuationAnalysis.valuation_range.maximum_valuation?.toLocaleString()}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                          </div>
+                                        )}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {valuationAnalysis.valuation_analysis?.full_report || 'No report available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-12 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Valuation analysis not available</p>
+                                  </div>
+                                )}
+                              </TabsContent>
+
+                              {/* Deal Structure Analysis Tab */}
+                              <TabsContent value="deal" className="space-y-6">
+                                {dealStructureAnalysis ? (
+                                  <div className="space-y-6">
+                                    <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                                      <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20">
+                                        <CardTitle className="text-xl">Deal Structure & Financing Strategy</CardTitle>
+                                        <CardDescription>
+                                          Confidence: {dealStructureAnalysis.report_metadata?.confidence_score}% | 
+                                          Structure Score: {dealStructureAnalysis.report_metadata?.deal_structure_score}
+                                        </CardDescription>
+                                      </CardHeader>
+                                      <CardContent className="pt-6">
+                                        {dealStructureAnalysis.deal_structure_summary && (
+                                          <div className="mb-6">
+                                            <Card>
+                                              <CardHeader>
+                                                <CardTitle className="text-base">Recommended Structure</CardTitle>
+                                              </CardHeader>
+                                              <CardContent>
+                                                <div className="space-y-2">
+                                                  <div className="flex justify-between">
+                                                    <span className="text-sm text-muted-foreground">Financing Type</span>
+                                                    <span className="font-medium">{dealStructureAnalysis.deal_structure_summary.recommended_financing_structure}</span>
+                                                  </div>
+                                                  {dealStructureAnalysis.deal_structure_summary.dscr_compliance && (
+                                                    <div className="flex justify-between">
+                                                      <span className="text-sm text-muted-foreground">DSCR Compliance</span>
+                                                      <span className="font-medium text-green-600">{dealStructureAnalysis.deal_structure_summary.dscr_compliance}</span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </CardContent>
+                                            </Card>
+                                          </div>
+                                        )}
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {dealStructureAnalysis.deal_structure_analysis?.full_report || 'No report available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-12 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>Deal structure analysis not available</p>
+                                  </div>
+                                )}
+                              </TabsContent>
+                            </Tabs>
                           </TabsContent>
                         </Tabs>
                       );
