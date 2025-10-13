@@ -2067,15 +2067,40 @@ export default function TargetCompanyDetail() {
                                                 <CardTitle className="text-base">Recommended Structure</CardTitle>
                                               </CardHeader>
                                               <CardContent>
-                                                <div className="space-y-2">
+                                                <div className="space-y-3">
                                                   <div className="flex justify-between">
                                                     <span className="text-sm text-muted-foreground">Financing Type</span>
                                                     <span className="font-medium">{dealStructureAnalysis.deal_structure_summary.recommended_financing_structure}</span>
                                                   </div>
                                                   {dealStructureAnalysis.deal_structure_summary.dscr_compliance && (
-                                                    <div className="flex justify-between">
-                                                      <span className="text-sm text-muted-foreground">DSCR Compliance</span>
-                                                      <span className="font-medium text-green-600">{dealStructureAnalysis.deal_structure_summary.dscr_compliance}</span>
+                                                    <div className="space-y-2 pt-2 border-t">
+                                                      <h4 className="text-sm font-semibold">DSCR Analysis</h4>
+                                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                                        {dealStructureAnalysis.deal_structure_summary.dscr_compliance.forecasted_dscr && (
+                                                          <div>
+                                                            <span className="text-muted-foreground">Forecasted DSCR:</span>
+                                                            <span className="font-medium ml-1">{dealStructureAnalysis.deal_structure_summary.dscr_compliance.forecasted_dscr}</span>
+                                                          </div>
+                                                        )}
+                                                        {dealStructureAnalysis.deal_structure_summary.dscr_compliance.minimum_requirement && (
+                                                          <div>
+                                                            <span className="text-muted-foreground">Min Required:</span>
+                                                            <span className="font-medium ml-1">{dealStructureAnalysis.deal_structure_summary.dscr_compliance.minimum_requirement}</span>
+                                                          </div>
+                                                        )}
+                                                        {dealStructureAnalysis.deal_structure_summary.dscr_compliance.compliance_margin && (
+                                                          <div>
+                                                            <span className="text-muted-foreground">Compliance Margin:</span>
+                                                            <span className="font-medium ml-1 text-green-600">{dealStructureAnalysis.deal_structure_summary.dscr_compliance.compliance_margin}</span>
+                                                          </div>
+                                                        )}
+                                                        {dealStructureAnalysis.deal_structure_summary.dscr_compliance.stress_test_result && (
+                                                          <div>
+                                                            <span className="text-muted-foreground">Stress Test:</span>
+                                                            <span className="font-medium ml-1">{dealStructureAnalysis.deal_structure_summary.dscr_compliance.stress_test_result}</span>
+                                                          </div>
+                                                        )}
+                                                      </div>
                                                     </div>
                                                   )}
                                                 </div>
