@@ -1246,7 +1246,7 @@ export default function TargetCompanyDetail() {
                             <div className="space-y-6">
                               {/* Strengths Section */}
                               {structuredSections.strengths && (
-                                <Card className="border-l-4 border-l-green-500">
+                                <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
                                   <CardHeader className="pb-3">
                                     <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
                                       <CheckCircle className="w-5 h-5" />
@@ -1254,7 +1254,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <div className="prose dark:prose-invert max-w-none">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.strengths}
                                       </ReactMarkdown>
@@ -1265,7 +1265,7 @@ export default function TargetCompanyDetail() {
 
                               {/* Weaknesses Section */}
                               {structuredSections.weaknesses && (
-                                <Card className="border-l-4 border-l-red-500">
+                                <Card className="border-2 border-red-200 dark:border-red-800 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20">
                                   <CardHeader className="pb-3">
                                     <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
                                       <AlertTriangle className="w-5 h-5" />
@@ -1273,7 +1273,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <div className="prose dark:prose-invert max-w-none">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.weaknesses}
                                       </ReactMarkdown>
@@ -1284,7 +1284,7 @@ export default function TargetCompanyDetail() {
 
                               {/* Opportunities Section */}
                               {structuredSections.opportunities && (
-                                <Card className="border-l-4 border-l-blue-500">
+                                <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
                                   <CardHeader className="pb-3">
                                     <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-400">
                                       <TrendingUp className="w-5 h-5" />
@@ -1292,7 +1292,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <div className="prose dark:prose-invert max-w-none">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.opportunities}
                                       </ReactMarkdown>
@@ -1303,7 +1303,7 @@ export default function TargetCompanyDetail() {
 
                               {/* Risks Section */}
                               {structuredSections.risks && (
-                                <Card className="border-l-4 border-l-orange-500">
+                                <Card className="border-2 border-orange-200 dark:border-orange-800 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
                                   <CardHeader className="pb-3">
                                     <CardTitle className="text-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
                                       <AlertTriangle className="w-5 h-5" />
@@ -1311,7 +1311,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <div className="prose dark:prose-invert max-w-none">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.risks}
                                       </ReactMarkdown>
