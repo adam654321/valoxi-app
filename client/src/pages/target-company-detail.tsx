@@ -1376,7 +1376,7 @@ export default function TargetCompanyDetail() {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <BarChart className="w-5 h-5" />
-                      Detailed Financial Analysis
+                      Financial analysis
                     </CardTitle>
                     <CardDescription>
                       Complete Stage 1 analysis with all financial and operational details
