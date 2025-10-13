@@ -958,8 +958,6 @@ export default function TargetCompanyDetail() {
                           .replace(/`([^`]+)`/g, '$1') // Remove inline code backticks
                           .replace(/\*\*/g, '') // Remove bold markers
                           .replace(/^[ \t]+/gm, '') // Remove leading whitespace/indentation that creates code blocks
-                          .replace(/^\s*[\*\-\+]\s+/gm, '') // Remove bullet point markers (*, -, +)
-                          .replace(/\n\n+/g, '\n\n') // Normalize multiple line breaks to double
                           .trim();
                       };
 
@@ -1266,7 +1264,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose dark:prose-invert max-w-none">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.strengths}
                                       </ReactMarkdown>
@@ -1285,7 +1283,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose dark:prose-invert max-w-none">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.weaknesses}
                                       </ReactMarkdown>
@@ -1304,7 +1302,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose dark:prose-invert max-w-none">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.opportunities}
                                       </ReactMarkdown>
@@ -1323,7 +1321,7 @@ export default function TargetCompanyDetail() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <div className="prose dark:prose-invert max-w-none">
+                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
                                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {structuredSections.risks}
                                       </ReactMarkdown>
