@@ -399,10 +399,15 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
     };
 
     // Concatenate all analysis data - extract analysisData field from each result
+    const sector = targetCompany.industry || '';
+    const subSector = targetCompany.subSector || '';
+    const industry = subSector ? `${sector}- ${subSector}` : sector;
+    
     const concatenatedData = {
       company_name: targetCompany.companyName,
-      sector: targetCompany.industry,
-      sub_sector: targetCompany.subSector || null,
+      sector: sector,
+      sub_sector: subSector || null,
+      industry: industry || null,
       company_accounts: companyAccountsData.map(d => d.analysisData).filter(data => data),
       asset_register: analysisData.map(d => d.analysisData).filter(data => data),
       sales_ledger: salesLedgerData.map(d => d.analysisData).filter(data => data),
