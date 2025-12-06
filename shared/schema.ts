@@ -66,6 +66,7 @@ export const targetCompanies = pgTable("target_companies", {
   userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
   companyName: varchar("company_name", { length: 255 }).notNull(),
   industry: varchar("industry", { length: 100 }),
+  subSector: varchar("sub_sector", { length: 100 }),
   website: varchar("website", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),

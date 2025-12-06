@@ -177,6 +177,7 @@ interface TargetCompanyWithStats {
   userCompanyId: number;
   companyName: string;
   industry: string | null;
+  subSector: string | null;
   website: string | null;
   phone: string | null;
   email: string | null;
@@ -298,12 +299,17 @@ export default function EnhancedTargetCompanies() {
   const createMutation = useMutation({
     mutationFn: async (data: TargetCompanyForm) => {
       const payload = {
-        ...data,
+        companyName: data.companyName,
+        industry: data.sector,
+        subSector: data.subSector || null,
         website: data.website || null,
         email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
         annualRevenue: data.annualRevenue ? Number(data.annualRevenue) : null,
         employeeCount: data.employeeCount ? Number(data.employeeCount) : null,
         yearEstablished: data.yearEstablished ? Number(data.yearEstablished) : null,
+        description: data.description || null,
       };
       return await apiRequest("POST", "/api/target-companies", payload);
     },
@@ -341,12 +347,17 @@ export default function EnhancedTargetCompanies() {
     mutationFn: async (data: TargetCompanyForm) => {
       if (!editingCompany) return;
       const payload = {
-        ...data,
+        companyName: data.companyName,
+        industry: data.sector,
+        subSector: data.subSector || null,
         website: data.website || null,
         email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
         annualRevenue: data.annualRevenue ? Number(data.annualRevenue) : null,
         employeeCount: data.employeeCount ? Number(data.employeeCount) : null,
         yearEstablished: data.yearEstablished ? Number(data.yearEstablished) : null,
+        description: data.description || null,
       };
       return await apiRequest("PUT", `/api/target-companies/${editingCompany.id}`, payload);
     },
@@ -418,7 +429,7 @@ export default function EnhancedTargetCompanies() {
     form.reset({
       companyName: company.companyName,
       sector: company.industry || "",
-      subSector: "",
+      subSector: company.subSector || "",
       website: company.website || "",
       phone: company.phone || "",
       email: company.email || "",
