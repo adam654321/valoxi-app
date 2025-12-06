@@ -1,0 +1,101 @@
+{
+  "Agriculture": [
+    "Agri-tech",
+    "Crop Production",
+    "Forestry & Timber",
+    "Livestock & Dairy",
+    "Sustainable Farming Practices"
+  ],
+  "Construction": [
+    "Commercial Construction",
+    "Infrastructure & Civil Engineering",
+    "Property Refurbishment",
+    "Residential Building",
+    "Specialist Trades & Building Services"
+  ],
+  "Education": [
+    "Early Years & Schools",
+    "Educational Technology",
+    "Higher Education",
+    "Private Training & Development",
+    "Vocational & Apprenticeship Training"
+  ],
+  "Energy": [
+    "Fossil Fuels",
+    "Grid & Power Distribution",
+    "Nuclear Energy",
+    "Renewable Energy",
+    "Smart Energy Systems & Storage"
+  ],
+  "Entertainment": [
+    "Film & Television",
+    "Gaming",
+    "Music & Live Events",
+    "Publishing & Media Production",
+    "Sports & Recreation"
+  ],
+  "Financial Services": [
+    "Banking & Payments",
+    "FinTech",
+    "Insurance",
+    "Lending & Credit Services",
+    "Wealth & Investment Management"
+  ],
+  "Food & Beverage": [
+    "Food Manufacturing",
+    "Hospitality & Restaurants",
+    "Packaging & Food Distribution",
+    "Retail & Wholesale Food Supply",
+    "Soft Drinks & Alcohol Production"
+  ],
+  "Healthcare": [
+    "Hospitals & Secondary Care",
+    "Medical Devices & Diagnostics",
+    "Non-Surgical Aesthetics",
+    "Pharmaceuticals & Biotech",
+    "Primary Care & Medical Clinics"
+  ],
+  "Manufacturing": [
+    "Automotive Manufacturing",
+    "Chemicals & Materials",
+    "Electronics & Components",
+    "Industrial & Machinery",
+    "Textiles & Consumer Goods"
+  ],
+  "Professional Services": [
+    "Accountancy & Finance",
+    "Consultancy & Advisory",
+    "HR & Recruitment",
+    "Legal Services",
+    "Marketing & Creative Services"
+  ],
+  "Real Estate": [
+    "Commercial Property",
+    "Estate Management & Maintenance",
+    "Property Development",
+    "PropTech",
+    "Residential Property Sales & Lettings"
+  ],
+  "Retail": [
+    "E-commerce",
+    "Fashion & Apparel",
+    "General Retail",
+    "Grocery & Convenience Retail",
+    "Luxury & Specialist Retail"
+  ],
+  "Technology": [
+    "Artificial Intelligence",
+    "Cloud Computing",
+    "Cyber Security",
+    "Hardware & Electronics",
+    "Software & SaaS"
+  ],
+  "Transportation": [
+    "Automotive Transport",
+    "Aviation",
+    "Logistics & Freight",
+    "Public Transport",
+    "Shipping & Maritime"
+  ],
+  "Other": []
+}
