@@ -30,30 +30,116 @@ import {
   Calendar
 } from "lucide-react";
 
-const industries = [
-  'Technology',
-  'Manufacturing',
-  'Retail',
-  'Healthcare',
-  'Financial Services',
-  'Real Estate',
-  'Construction',
-  'Transportation',
-  'Food & Beverage',
-  'Professional Services',
-  'Education',
-  'Entertainment',
-  'Agriculture',
-  'Energy',
-  'Other'
-];
+const sectorsData: Record<string, string[]> = {
+  "Agriculture": [
+    "Agri-tech",
+    "Crop Production",
+    "Forestry & Timber",
+    "Livestock & Dairy",
+    "Sustainable Farming Practices"
+  ],
+  "Construction": [
+    "Commercial Construction",
+    "Infrastructure & Civil Engineering",
+    "Property Refurbishment",
+    "Residential Building",
+    "Specialist Trades & Building Services"
+  ],
+  "Education": [
+    "Early Years & Schools",
+    "Educational Technology",
+    "Higher Education",
+    "Private Training & Development",
+    "Vocational & Apprenticeship Training"
+  ],
+  "Energy": [
+    "Fossil Fuels",
+    "Grid & Power Distribution",
+    "Nuclear Energy",
+    "Renewable Energy",
+    "Smart Energy Systems & Storage"
+  ],
+  "Entertainment": [
+    "Film & Television",
+    "Gaming",
+    "Music & Live Events",
+    "Publishing & Media Production",
+    "Sports & Recreation"
+  ],
+  "Financial Services": [
+    "Banking & Payments",
+    "FinTech",
+    "Insurance",
+    "Lending & Credit Services",
+    "Wealth & Investment Management"
+  ],
+  "Food & Beverage": [
+    "Food Manufacturing",
+    "Hospitality & Restaurants",
+    "Packaging & Food Distribution",
+    "Retail & Wholesale Food Supply",
+    "Soft Drinks & Alcohol Production"
+  ],
+  "Healthcare": [
+    "Hospitals & Secondary Care",
+    "Medical Devices & Diagnostics",
+    "Non-Surgical Aesthetics",
+    "Pharmaceuticals & Biotech",
+    "Primary Care & Medical Clinics"
+  ],
+  "Manufacturing": [
+    "Automotive Manufacturing",
+    "Chemicals & Materials",
+    "Electronics & Components",
+    "Industrial & Machinery",
+    "Textiles & Consumer Goods"
+  ],
+  "Other": [],
+  "Professional Services": [
+    "Accountancy & Finance",
+    "Consultancy & Advisory",
+    "HR & Recruitment",
+    "Legal Services",
+    "Marketing & Creative Services"
+  ],
+  "Real Estate": [
+    "Commercial Property",
+    "Estate Management & Maintenance",
+    "Property Development",
+    "PropTech",
+    "Residential Property Sales & Lettings"
+  ],
+  "Retail": [
+    "E-commerce",
+    "Fashion & Apparel",
+    "General Retail",
+    "Grocery & Convenience Retail",
+    "Luxury & Specialist Retail"
+  ],
+  "Technology": [
+    "Artificial Intelligence",
+    "Cloud Computing",
+    "Cyber Security",
+    "Hardware & Electronics",
+    "Software & SaaS"
+  ],
+  "Transportation": [
+    "Automotive Transport",
+    "Aviation",
+    "Logistics & Freight",
+    "Public Transport",
+    "Shipping & Maritime"
+  ]
+};
+
+const sectors = Object.keys(sectorsData).sort();
 
 const targetCompanySchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
-  industry: z.string().min(1, "Industry is required"),
+  sector: z.string().min(1, "Sector is required"),
+  subSector: z.string(),
   website: z.string().optional().or(z.literal("")).refine((val) => {
     if (!val || val === "") return true;
-    // Allow URLs with or without protocol - we'll add https:// automatically
     const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
     return urlPattern.test(val);
   }, "Please enter a valid website URL (example.com or https://example.com)"),
@@ -64,13 +150,19 @@ const targetCompanySchema = z.object({
   employeeCount: z.union([z.string(), z.number()]).optional(),
   yearEstablished: z.union([z.string(), z.number()]).optional(),
   description: z.string().optional(),
+}).refine((data) => {
+  if (data.sector === "Other") return true;
+  return data.subSector && data.subSector.length > 0;
+}, {
+  message: "Sub-sector is required",
+  path: ["subSector"],
 });
 
 type TargetCompanyForm = z.infer<typeof targetCompanySchema>;
 
 interface SearchFilters {
   q: string;
-  industry: string;
+  sector: string;
   minRevenue: string;
   maxRevenue: string;
   minEmployees: string;
@@ -101,6 +193,7 @@ interface TargetCompanyWithStats {
 
 interface FilterOptions {
   industries: string[];
+  sectors: string[];
   revenueRange: {
     min: number | null;
     max: number | null;
@@ -125,7 +218,7 @@ export default function EnhancedTargetCompanies() {
   
   const [filters, setFilters] = useState<SearchFilters>({
     q: "",
-    industry: "all",
+    sector: "all",
     minRevenue: "",
     maxRevenue: "",
     minEmployees: "",
@@ -139,7 +232,8 @@ export default function EnhancedTargetCompanies() {
     resolver: zodResolver(targetCompanySchema),
     defaultValues: {
       companyName: "",
-      industry: "",
+      sector: "",
+      subSector: "",
       website: "",
       phone: "",
       email: "",
@@ -150,6 +244,9 @@ export default function EnhancedTargetCompanies() {
       description: "",
     },
   });
+
+  const selectedSector = form.watch("sector");
+  const availableSubSectors = selectedSector ? sectorsData[selectedSector] || [] : [];
 
   // Debounce search
   const [searchTerm, setSearchTerm] = useState("");
@@ -170,7 +267,7 @@ export default function EnhancedTargetCompanies() {
     const params = new URLSearchParams();
     
     if (filters.q) params.set('q', filters.q);
-    if (filters.industry && filters.industry !== 'all') params.set('industry', filters.industry);
+    if (filters.sector && filters.sector !== 'all') params.set('industry', filters.sector);
     if (filters.minRevenue) params.set('minRevenue', filters.minRevenue);
     if (filters.maxRevenue) params.set('maxRevenue', filters.maxRevenue);
     if (filters.minEmployees) params.set('minEmployees', filters.minEmployees);
@@ -320,7 +417,8 @@ export default function EnhancedTargetCompanies() {
     setEditingCompany(company);
     form.reset({
       companyName: company.companyName,
-      industry: company.industry || "",
+      sector: company.industry || "",
+      subSector: "",
       website: company.website || "",
       phone: company.phone || "",
       email: company.email || "",
@@ -362,7 +460,7 @@ export default function EnhancedTargetCompanies() {
   const resetFilters = () => {
     setFilters({
       q: "",
-      industry: "all",
+      sector: "all",
       minRevenue: "",
       maxRevenue: "",
       minEmployees: "",
@@ -378,7 +476,7 @@ export default function EnhancedTargetCompanies() {
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filters.q) count++;
-    if (filters.industry && filters.industry !== 'all') count++;
+    if (filters.sector && filters.sector !== 'all') count++;
     if (filters.minRevenue) count++;
     if (filters.maxRevenue) count++;
     if (filters.minEmployees) count++;
@@ -456,21 +554,21 @@ export default function EnhancedTargetCompanies() {
                 <>
                   <Separator />
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Industry Filter */}
+                    {/* Sector Filter */}
                     <div>
-                      <label className="text-sm font-medium text-textPrimary mb-2 block">Industry</label>
+                      <label className="text-sm font-medium text-textPrimary mb-2 block">Sector</label>
                       <Select 
-                        value={filters.industry} 
-                        onValueChange={(value) => setFilters(prev => ({ ...prev, industry: value }))}
+                        value={filters.sector} 
+                        onValueChange={(value) => setFilters(prev => ({ ...prev, sector: value }))}
                       >
-                        <SelectTrigger data-testid="select-industry-filter">
+                        <SelectTrigger data-testid="select-sector-filter">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Industries</SelectItem>
-                          {filterOptions?.industries.map((industry) => (
-                            <SelectItem key={industry} value={industry}>
-                              {industry}
+                          <SelectItem value="all">All Sectors</SelectItem>
+                          {sectors.map((sector) => (
+                            <SelectItem key={sector} value={sector}>
+                              {sector}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -747,20 +845,26 @@ export default function EnhancedTargetCompanies() {
                   
                   <FormField
                     control={form.control}
-                    name="industry"
+                    name="sector"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Industry *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Sector *</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            form.setValue("subSector", "");
+                          }} 
+                          value={field.value}
+                        >
                           <FormControl>
-                            <SelectTrigger data-testid="select-industry">
-                              <SelectValue placeholder="Select industry" />
+                            <SelectTrigger data-testid="select-sector">
+                              <SelectValue placeholder="Select sector" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {industries.map((industry) => (
-                              <SelectItem key={industry} value={industry}>
-                                {industry}
+                            {sectors.map((sector) => (
+                              <SelectItem key={sector} value={sector}>
+                                {sector}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -770,6 +874,35 @@ export default function EnhancedTargetCompanies() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="subSector"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sub-sector *</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={!selectedSector || selectedSector === "Other"}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-sub-sector">
+                            <SelectValue placeholder={selectedSector === "Other" ? "No sub-sectors for Other" : "Select sub-sector"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableSubSectors.map((subSector) => (
+                            <SelectItem key={subSector} value={subSector}>
+                              {subSector}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField

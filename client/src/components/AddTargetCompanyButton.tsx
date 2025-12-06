@@ -13,27 +13,114 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const industries = [
-  'Technology',
-  'Manufacturing',
-  'Retail',
-  'Healthcare',
-  'Financial Services',
-  'Real Estate',
-  'Construction',
-  'Transportation',
-  'Food & Beverage',
-  'Professional Services',
-  'Education',
-  'Entertainment',
-  'Agriculture',
-  'Energy',
-  'Other'
-];
+const sectorsData: Record<string, string[]> = {
+  "Agriculture": [
+    "Agri-tech",
+    "Crop Production",
+    "Forestry & Timber",
+    "Livestock & Dairy",
+    "Sustainable Farming Practices"
+  ],
+  "Construction": [
+    "Commercial Construction",
+    "Infrastructure & Civil Engineering",
+    "Property Refurbishment",
+    "Residential Building",
+    "Specialist Trades & Building Services"
+  ],
+  "Education": [
+    "Early Years & Schools",
+    "Educational Technology",
+    "Higher Education",
+    "Private Training & Development",
+    "Vocational & Apprenticeship Training"
+  ],
+  "Energy": [
+    "Fossil Fuels",
+    "Grid & Power Distribution",
+    "Nuclear Energy",
+    "Renewable Energy",
+    "Smart Energy Systems & Storage"
+  ],
+  "Entertainment": [
+    "Film & Television",
+    "Gaming",
+    "Music & Live Events",
+    "Publishing & Media Production",
+    "Sports & Recreation"
+  ],
+  "Financial Services": [
+    "Banking & Payments",
+    "FinTech",
+    "Insurance",
+    "Lending & Credit Services",
+    "Wealth & Investment Management"
+  ],
+  "Food & Beverage": [
+    "Food Manufacturing",
+    "Hospitality & Restaurants",
+    "Packaging & Food Distribution",
+    "Retail & Wholesale Food Supply",
+    "Soft Drinks & Alcohol Production"
+  ],
+  "Healthcare": [
+    "Hospitals & Secondary Care",
+    "Medical Devices & Diagnostics",
+    "Non-Surgical Aesthetics",
+    "Pharmaceuticals & Biotech",
+    "Primary Care & Medical Clinics"
+  ],
+  "Manufacturing": [
+    "Automotive Manufacturing",
+    "Chemicals & Materials",
+    "Electronics & Components",
+    "Industrial & Machinery",
+    "Textiles & Consumer Goods"
+  ],
+  "Other": [],
+  "Professional Services": [
+    "Accountancy & Finance",
+    "Consultancy & Advisory",
+    "HR & Recruitment",
+    "Legal Services",
+    "Marketing & Creative Services"
+  ],
+  "Real Estate": [
+    "Commercial Property",
+    "Estate Management & Maintenance",
+    "Property Development",
+    "PropTech",
+    "Residential Property Sales & Lettings"
+  ],
+  "Retail": [
+    "E-commerce",
+    "Fashion & Apparel",
+    "General Retail",
+    "Grocery & Convenience Retail",
+    "Luxury & Specialist Retail"
+  ],
+  "Technology": [
+    "Artificial Intelligence",
+    "Cloud Computing",
+    "Cyber Security",
+    "Hardware & Electronics",
+    "Software & SaaS"
+  ],
+  "Transportation": [
+    "Automotive Transport",
+    "Aviation",
+    "Logistics & Freight",
+    "Public Transport",
+    "Shipping & Maritime"
+  ]
+};
+
+const sectors = Object.keys(sectorsData).sort();
 
 const targetCompanySchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
-  industry: z.string().min(1, "Industry is required"),
+  sector: z.string().min(1, "Sector is required"),
+  subSector: z.string(),
   website: z.string().url("Please enter a valid website URL").optional().or(z.literal("")),
   phone: z.string().optional(),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
@@ -42,6 +129,12 @@ const targetCompanySchema = z.object({
   employeeCount: z.union([z.string(), z.number()]).optional(),
   yearEstablished: z.union([z.string(), z.number()]).optional(),
   description: z.string().optional(),
+}).refine((data) => {
+  if (data.sector === "Other") return true;
+  return data.subSector && data.subSector.length > 0;
+}, {
+  message: "Sub-sector is required",
+  path: ["subSector"],
 });
 
 type TargetCompanyForm = z.infer<typeof targetCompanySchema>;
@@ -55,7 +148,8 @@ export function AddTargetCompanyButton() {
     resolver: zodResolver(targetCompanySchema),
     defaultValues: {
       companyName: "",
-      industry: "",
+      sector: "",
+      subSector: "",
       website: "",
       phone: "",
       email: "",
@@ -66,6 +160,9 @@ export function AddTargetCompanyButton() {
       description: "",
     },
   });
+
+  const selectedSector = form.watch("sector");
+  const availableSubSectors = selectedSector ? sectorsData[selectedSector] || [] : [];
 
   const createMutation = useMutation({
     mutationFn: async (data: TargetCompanyForm) => {
@@ -145,20 +242,26 @@ export function AddTargetCompanyButton() {
                   
                   <FormField
                     control={form.control}
-                    name="industry"
+                    name="sector"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Industry *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Sector *</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            form.setValue("subSector", "");
+                          }}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select industry" />
+                              <SelectValue placeholder="Select sector" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {industries.map((industry) => (
-                              <SelectItem key={industry} value={industry}>
-                                {industry}
+                            {sectors.map((sector) => (
+                              <SelectItem key={sector} value={sector}>
+                                {sector}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -168,6 +271,35 @@ export function AddTargetCompanyButton() {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="subSector"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sub-sector *</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!selectedSector || selectedSector === "Other"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={selectedSector === "Other" ? "No sub-sectors for Other" : "Select sub-sector"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableSubSectors.map((subSector) => (
+                            <SelectItem key={subSector} value={subSector}>
+                              {subSector}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
