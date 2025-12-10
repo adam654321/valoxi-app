@@ -11,6 +11,9 @@ interface DetailedAnalysisData {
   deal_snapshot?: any;
   sector_analysis?: any;
   growth_analysis?: any;
+  valuation_analysis?: any;
+  deal_structure?: any;
+  acquisition_summary?: any;
 }
 
 interface RiskScore {
@@ -72,7 +75,7 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
 
   return (
     <Tabs defaultValue="deal-snapshot" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="deal-snapshot" className="flex items-center gap-2">
           <Building2 className="w-4 h-4" />
           Deal Snapshot
@@ -84,6 +87,18 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
         <TabsTrigger value="growth-analysis" className="flex items-center gap-2">
           <Zap className="w-4 h-4" />
           Growth Analysis
+        </TabsTrigger>
+        <TabsTrigger value="valuation" className="flex items-center gap-2">
+          <DollarSign className="w-4 h-4" />
+          Valuation
+        </TabsTrigger>
+        <TabsTrigger value="deal-structure" className="flex items-center gap-2">
+          <Building2 className="w-4 h-4" />
+          Deal Structure
+        </TabsTrigger>
+        <TabsTrigger value="acquisition" className="flex items-center gap-2">
+          <TrendingUp className="w-4 h-4" />
+          Acquisition Summary
         </TabsTrigger>
       </TabsList>
 
@@ -706,6 +721,191 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+      </TabsContent>
+
+      {/* Valuation Tab */}
+      <TabsContent value="valuation" className="space-y-6">
+        {data.valuation_analysis && (
+          <div className="space-y-6">
+            <Card className="border-2 border-amber-200 dark:border-amber-800">
+              <CardHeader className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Business Valuation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">Low Estimate</p>
+                      <p className="text-2xl font-bold">{formatCurrency(data.valuation_analysis.ev_low)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{data.valuation_analysis.ebitda_multiple_low}x EBITDA</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Most Likely</p>
+                      <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">{formatCurrency(data.valuation_analysis.ev_most_likely)}</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">5.25x EBITDA</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">High Estimate</p>
+                      <p className="text-2xl font-bold">{formatCurrency(data.valuation_analysis.ev_high)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{data.valuation_analysis.ebitda_multiple_high}x EBITDA</p>
+                    </div>
+                  </div>
+                  {data.valuation_analysis.valuation_rationale && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Valuation Rationale</p>
+                      <p className="text-sm text-muted-foreground">{data.valuation_analysis.valuation_rationale}</p>
+                    </div>
+                  )}
+                  {data.valuation_analysis.positive_value_drivers && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-green-700 dark:text-green-400">Positive Value Drivers</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.valuation_analysis.positive_value_drivers.map((driver: string, idx: number) => (
+                          <li key={idx} className="text-sm">{driver}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {data.valuation_analysis.negative_value_drivers && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-red-700 dark:text-red-400">Negative Value Drivers</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.valuation_analysis.negative_value_drivers.map((driver: string, idx: number) => (
+                          <li key={idx} className="text-sm">{driver}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </TabsContent>
+
+      {/* Deal Structure Tab */}
+      <TabsContent value="deal-structure" className="space-y-6">
+        {data.deal_structure && (
+          <div className="space-y-6">
+            <Card className="border-2 border-purple-200 dark:border-purple-800">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                <CardTitle>Headline Deal Structure</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="p-4 rounded-lg border">
+                      <p className="text-xs text-muted-foreground mb-1">Price Target</p>
+                      <p className="text-xl font-bold">{formatCurrency(data.deal_structure.headline_value.headline_price_target)}</p>
+                    </div>
+                    <div className="p-4 rounded-lg border">
+                      <p className="text-xs text-muted-foreground mb-1">Upfront (65%)</p>
+                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix.upfront_cash_amount)}</p>
+                    </div>
+                    <div className="p-4 rounded-lg border">
+                      <p className="text-xs text-muted-foreground mb-1">Deferred (15%)</p>
+                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix.deferred_amount)}</p>
+                    </div>
+                    <div className="p-4 rounded-lg border">
+                      <p className="text-xs text-muted-foreground mb-1">Earn-out (20%)</p>
+                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix.earnout_amount)}</p>
+                    </div>
+                  </div>
+                  {data.deal_structure.earnout_terms && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-3">Earn-out Terms</p>
+                      <div className="space-y-2">
+                        <p className="text-sm"><span className="font-medium">Duration:</span> {data.deal_structure.earnout_terms.duration_years} years</p>
+                        {data.deal_structure.earnout_terms.metrics && data.deal_structure.earnout_terms.metrics.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Metrics:</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {data.deal_structure.earnout_terms.metrics.map((metric: string, idx: number) => (
+                                <li key={idx} className="text-sm">{metric}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {data.deal_structure.conditions_precedent && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Conditions Precedent</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.deal_structure.conditions_precedent.map((cond: string, idx: number) => (
+                          <li key={idx} className="text-sm text-muted-foreground">{cond}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </TabsContent>
+
+      {/* Acquisition Summary Tab */}
+      <TabsContent value="acquisition" className="space-y-6">
+        {data.acquisition_summary && (
+          <div className="space-y-6">
+            <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20">
+                <CardTitle>Acquisition Investment Thesis</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  {data.acquisition_summary.investment_thesis && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Summary</p>
+                      <p className="text-sm text-muted-foreground">{data.acquisition_summary.investment_thesis.summary}</p>
+                    </div>
+                  )}
+                  {data.acquisition_summary.investment_thesis?.key_strengths && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-green-700 dark:text-green-400">Key Strengths</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.acquisition_summary.investment_thesis.key_strengths.map((strength: string, idx: number) => (
+                          <li key={idx} className="text-sm">{strength}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {data.acquisition_summary.investment_thesis?.key_risks && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-red-700 dark:text-red-400">Key Risks</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.acquisition_summary.investment_thesis.key_risks.map((risk: string, idx: number) => (
+                          <li key={idx} className="text-sm">{risk}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {data.acquisition_summary.red_flags && (
+                    <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                      <p className="text-sm font-medium mb-2 text-red-700 dark:text-red-400">Red Flags</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.acquisition_summary.red_flags.map((flag: string, idx: number) => (
+                          <li key={idx} className="text-sm text-red-600 dark:text-red-300">{flag}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {data.acquisition_summary.overall_recommendation && (
+                    <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                      <p className="text-sm font-medium mb-2">Overall Recommendation</p>
+                      <p className="text-sm text-amber-900 dark:text-amber-100">{data.acquisition_summary.overall_recommendation}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </TabsContent>
