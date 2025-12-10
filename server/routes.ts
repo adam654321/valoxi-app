@@ -5436,6 +5436,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to inject detailed analysis JSON directly
+  app.post("/api/test/inject-detailed-analysis/:eventId", async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const detailedData = req.body;
+      
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      if (!detailedData) {
+        return res.status(400).json({ message: "No data provided" });
+      }
+
+      console.log(`[TEST] Injecting detailed analysis data for event ${eventId}`);
+      
+      // Store the detailed analysis data
+      await storage.updateStage1AnalysisEventDetailedData(eventId, detailedData);
+      
+      console.log(`[TEST] Successfully stored detailed analysis data for event ${eventId}`);
+      
+      res.json({ 
+        success: true, 
+        message: `Detailed analysis data injected for event ${eventId}` 
+      });
+    } catch (error) {
+      console.error("Failed to inject detailed analysis data:", error);
+      res.status(500).json({ message: "Internal server error", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
