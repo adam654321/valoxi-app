@@ -41,18 +41,22 @@ const getRiskColor = (risk: string) => {
   return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
 };
 
-const renderRiskScore = (riskKey: string, riskValue: string) => {
-  const displayLabel = riskKey
+const formatLabel = (text: string) => {
+  return text
     .replace(/_/g, ' ')
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+};
+
+const renderRiskScore = (riskKey: string, riskValue: string) => {
+  const displayLabel = formatLabel(riskKey);
 
   return (
     <div key={riskKey} className="flex items-center justify-between p-3 rounded-lg border">
       <span className="font-medium text-sm">{displayLabel}</span>
       <Badge className={getRiskColor(riskValue)}>
-        {riskValue.replace(/_/g, ' ')}
+        {formatLabel(riskValue)}
       </Badge>
     </div>
   );
@@ -145,7 +149,7 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                       <p className="text-sm font-medium mb-3 text-orange-700 dark:text-orange-400">Key Limitations</p>
                       <ul className="list-disc pl-5 space-y-1">
                         {dealSnapshot.meta.key_limitations.map((limitation: string, idx: number) => (
-                          <li key={idx} className="text-sm text-muted-foreground">{limitation}</li>
+                          <li key={idx} className="text-sm text-muted-foreground">{formatLabel(limitation)}</li>
                         ))}
                       </ul>
                     </div>
