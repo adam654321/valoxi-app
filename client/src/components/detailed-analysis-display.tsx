@@ -644,6 +644,51 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                 </CardContent>
               </Card>
             )}
+
+            {/* Risk Notes */}
+            {sectorAnalysis.risk_notes && sectorAnalysis.risk_notes.length > 0 && (
+              <Card className="border-2 border-orange-200 dark:border-orange-800">
+                <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+                  <CardTitle>Risk Notes</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {sectorAnalysis.risk_notes.map((note: string, idx: number) => (
+                      <li key={idx} className="text-sm">{note}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Confidence */}
+            {sectorAnalysis.confidence && (
+              <Card className="border-2 border-gray-200 dark:border-gray-700">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/20 dark:to-slate-950/20">
+                  <CardTitle>Confidence Assessment</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Overall Confidence</p>
+                      <Badge className={getRiskColor(sectorAnalysis.confidence.overall_confidence)}>
+                        {sectorAnalysis.confidence.overall_confidence}
+                      </Badge>
+                    </div>
+                    {sectorAnalysis.confidence.data_limitations && sectorAnalysis.confidence.data_limitations.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Data Limitations</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {sectorAnalysis.confidence.data_limitations.map((limitation: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{limitation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </TabsContent>
@@ -725,6 +770,67 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                 </CardContent>
               </Card>
             )}
+
+            {/* KPI Focus */}
+            {growthAnalysis.kpi_focus && growthAnalysis.kpi_focus.length > 0 && (
+              <Card className="border-2 border-purple-200 dark:border-purple-800">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <CardTitle>KPI Focus Areas</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {growthAnalysis.kpi_focus.map((kpi: string, idx: number) => (
+                      <li key={idx} className="text-sm">{kpi}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Required Capabilities */}
+            {growthAnalysis.required_capabilities && growthAnalysis.required_capabilities.length > 0 && (
+              <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                  <CardTitle>Required Capabilities</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {growthAnalysis.required_capabilities.map((cap: string, idx: number) => (
+                      <li key={idx} className="text-sm">{cap}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Confidence */}
+            {growthAnalysis.confidence && (
+              <Card className="border-2 border-gray-200 dark:border-gray-700">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/20 dark:to-slate-950/20">
+                  <CardTitle>Confidence Assessment</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Overall Confidence</p>
+                      <Badge className={getRiskColor(growthAnalysis.confidence.overall_confidence)}>
+                        {growthAnalysis.confidence.overall_confidence}
+                      </Badge>
+                    </div>
+                    {growthAnalysis.confidence.data_limitations && growthAnalysis.confidence.data_limitations.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Data Limitations</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {growthAnalysis.confidence.data_limitations.map((limitation: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{limitation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </TabsContent>
@@ -788,6 +894,82 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                 </div>
               </CardContent>
             </Card>
+
+            {/* Risk Adjustments */}
+            {data.valuation_analysis.risk_adjustments && (
+              <Card className="border-2 border-orange-200 dark:border-orange-800">
+                <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+                  <CardTitle>Risk Adjustments (Discounts)</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(data.valuation_analysis.risk_adjustments).map(([key, value]: [string, any]) => (
+                      <div key={key} className="p-3 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">{formatLabel(key.replace('_pct', ''))}</p>
+                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{value}%</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sensitivity Analysis */}
+            {data.valuation_analysis.sensitivity_analysis && data.valuation_analysis.sensitivity_analysis.length > 0 && (
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+                  <CardTitle>Sensitivity Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {data.valuation_analysis.sensitivity_analysis.map((item: string, idx: number) => (
+                      <li key={idx} className="text-sm">{item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Investment View */}
+            {data.valuation_analysis.investment_view && (
+              <Card className="border-2 border-green-200 dark:border-green-800">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                  <CardTitle>Investment View</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <p className="text-sm">{data.valuation_analysis.investment_view}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Confidence */}
+            {data.valuation_analysis.confidence && (
+              <Card className="border-2 border-gray-200 dark:border-gray-700">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/20 dark:to-slate-950/20">
+                  <CardTitle>Confidence Assessment</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Overall Confidence</p>
+                      <Badge className={getRiskColor(data.valuation_analysis.confidence.overall_confidence)}>
+                        {data.valuation_analysis.confidence.overall_confidence}
+                      </Badge>
+                    </div>
+                    {data.valuation_analysis.confidence.limitations && data.valuation_analysis.confidence.limitations.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Limitations</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.valuation_analysis.confidence.limitations.map((limitation: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{limitation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </TabsContent>
@@ -805,21 +987,27 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                   <div className="grid grid-cols-4 gap-4">
                     <div className="p-4 rounded-lg border">
                       <p className="text-xs text-muted-foreground mb-1">Price Target</p>
-                      <p className="text-xl font-bold">{formatCurrency(data.deal_structure.headline_value.headline_price_target)}</p>
+                      <p className="text-xl font-bold">{formatCurrency(data.deal_structure.headline_value?.headline_price_target)}</p>
                     </div>
                     <div className="p-4 rounded-lg border">
-                      <p className="text-xs text-muted-foreground mb-1">Upfront (65%)</p>
-                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix.upfront_cash_amount)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Upfront ({data.deal_structure.payment_mix?.upfront_cash_pct}%)</p>
+                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix?.upfront_cash_amount)}</p>
                     </div>
                     <div className="p-4 rounded-lg border">
-                      <p className="text-xs text-muted-foreground mb-1">Deferred (15%)</p>
-                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix.deferred_amount)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Deferred ({data.deal_structure.payment_mix?.deferred_pct}%)</p>
+                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix?.deferred_amount)}</p>
                     </div>
                     <div className="p-4 rounded-lg border">
-                      <p className="text-xs text-muted-foreground mb-1">Earn-out (20%)</p>
-                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix.earnout_amount)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Earn-out ({data.deal_structure.payment_mix?.earnout_pct}%)</p>
+                      <p className="text-lg font-bold">{formatCurrency(data.deal_structure.payment_mix?.earnout_amount)}</p>
                     </div>
                   </div>
+                  {data.deal_structure.headline_value?.headline_rationale && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Headline Rationale</p>
+                      <p className="text-sm text-muted-foreground">{data.deal_structure.headline_value.headline_rationale}</p>
+                    </div>
+                  )}
                   {data.deal_structure.earnout_terms && (
                     <div className="pt-4 border-t">
                       <p className="text-sm font-medium mb-3">Earn-out Terms</p>
@@ -833,6 +1021,12 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                                 <li key={idx} className="text-sm">{metric}</li>
                               ))}
                             </ul>
+                          </div>
+                        )}
+                        {data.deal_structure.earnout_terms.metric_rationale && (
+                          <div className="mt-2">
+                            <p className="text-sm font-medium mb-1">Metric Rationale:</p>
+                            <p className="text-sm text-muted-foreground">{data.deal_structure.earnout_terms.metric_rationale}</p>
                           </div>
                         )}
                       </div>
@@ -851,6 +1045,106 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                 </div>
               </CardContent>
             </Card>
+
+            {/* Protections */}
+            {data.deal_structure.protections && (
+              <Card className="border-2 border-red-200 dark:border-red-800">
+                <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20">
+                  <CardTitle>Deal Protections</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {data.deal_structure.protections.warranty_focus_areas && data.deal_structure.protections.warranty_focus_areas.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Warranty Focus Areas</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.deal_structure.protections.warranty_focus_areas.map((area: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{area}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.deal_structure.protections.indemnity_focus_areas && data.deal_structure.protections.indemnity_focus_areas.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Indemnity Focus Areas</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.deal_structure.protections.indemnity_focus_areas.map((area: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{area}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.deal_structure.protections.escrow_or_holdback_recommendations && data.deal_structure.protections.escrow_or_holdback_recommendations.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Escrow/Holdback Recommendations</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.deal_structure.protections.escrow_or_holdback_recommendations.map((rec: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{rec}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Post Completion Priorities */}
+            {data.deal_structure.post_completion_priorities && data.deal_structure.post_completion_priorities.length > 0 && (
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+                  <CardTitle>Post-Completion Priorities</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {data.deal_structure.post_completion_priorities.map((priority: string, idx: number) => (
+                      <li key={idx} className="text-sm">{priority}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Deal Structure Rationale */}
+            {data.deal_structure.deal_structure_rationale && (
+              <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                  <CardTitle>Deal Structure Rationale</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <p className="text-sm">{data.deal_structure.deal_structure_rationale}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Confidence */}
+            {data.deal_structure.confidence && (
+              <Card className="border-2 border-gray-200 dark:border-gray-700">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/20 dark:to-slate-950/20">
+                  <CardTitle>Confidence Assessment</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Overall Confidence</p>
+                      <Badge className={getRiskColor(data.deal_structure.confidence.overall_confidence)}>
+                        {data.deal_structure.confidence.overall_confidence}
+                      </Badge>
+                    </div>
+                    {data.deal_structure.confidence.limitations && data.deal_structure.confidence.limitations.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Limitations</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.deal_structure.confidence.limitations.map((limitation: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{limitation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </TabsContent>
@@ -859,9 +1153,53 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
       <TabsContent value="acquisition" className="space-y-6">
         {data.acquisition_summary && (
           <div className="space-y-6">
+            {/* Deal Overview */}
+            {data.acquisition_summary.deal_overview && (
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                  <CardTitle>Deal Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Company</p>
+                      <p className="font-semibold">{data.acquisition_summary.deal_overview.company_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Industry</p>
+                      <p className="font-semibold">{data.acquisition_summary.deal_overview.industry}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Sub-sector</p>
+                      <p className="font-semibold">{data.acquisition_summary.deal_overview.sub_sector}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Size Classification</p>
+                      <p className="font-semibold capitalize">{data.acquisition_summary.deal_overview.size_classification}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Revenue</p>
+                      <p className="font-semibold">{formatCurrency(data.acquisition_summary.deal_overview.headline_revenue)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Net Profit</p>
+                      <p className="font-semibold">{formatCurrency(data.acquisition_summary.deal_overview.headline_net_profit)}</p>
+                    </div>
+                  </div>
+                  {data.acquisition_summary.deal_overview.business_description && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Business Description</p>
+                      <p className="text-sm text-muted-foreground">{data.acquisition_summary.deal_overview.business_description}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Investment Thesis */}
             <Card className="border-2 border-indigo-200 dark:border-indigo-800">
               <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20">
-                <CardTitle>Acquisition Investment Thesis</CardTitle>
+                <CardTitle>Investment Thesis</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-6">
@@ -891,25 +1229,362 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                       </ul>
                     </div>
                   )}
-                  {data.acquisition_summary.red_flags && (
-                    <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-                      <p className="text-sm font-medium mb-2 text-red-700 dark:text-red-400">Red Flags</p>
+                  {data.acquisition_summary.investment_thesis?.key_mitigants && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 text-blue-700 dark:text-blue-400">Key Mitigants</p>
                       <ul className="list-disc pl-5 space-y-1">
-                        {data.acquisition_summary.red_flags.map((flag: string, idx: number) => (
-                          <li key={idx} className="text-sm text-red-600 dark:text-red-300">{flag}</li>
+                        {data.acquisition_summary.investment_thesis.key_mitigants.map((mitigant: string, idx: number) => (
+                          <li key={idx} className="text-sm">{mitigant}</li>
                         ))}
                       </ul>
-                    </div>
-                  )}
-                  {data.acquisition_summary.overall_recommendation && (
-                    <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                      <p className="text-sm font-medium mb-2">Overall Recommendation</p>
-                      <p className="text-sm text-amber-900 dark:text-amber-100">{data.acquisition_summary.overall_recommendation}</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Financial Snapshot */}
+            {data.acquisition_summary.financial_snapshot && (
+              <Card className="border-2 border-green-200 dark:border-green-800">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                  <CardTitle>Financial Snapshot</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Revenue</p>
+                      <p className="font-semibold">{formatCurrency(data.acquisition_summary.financial_snapshot.revenue)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Net Profit</p>
+                      <p className="font-semibold">{formatCurrency(data.acquisition_summary.financial_snapshot.net_profit)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Gross Margin</p>
+                      <p className="font-semibold">{data.acquisition_summary.financial_snapshot.gross_margin_pct}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Net Margin</p>
+                      <p className="font-semibold">{data.acquisition_summary.financial_snapshot.net_margin_pct}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Cash at Bank</p>
+                      <p className="font-semibold">{formatCurrency(data.acquisition_summary.financial_snapshot.cash_at_bank)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Ratio</p>
+                      <p className="font-semibold">{data.acquisition_summary.financial_snapshot.current_ratio}x</p>
+                    </div>
+                  </div>
+                  {data.acquisition_summary.financial_snapshot.customer_concentration_comment && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Customer Concentration</p>
+                      <p className="text-sm text-muted-foreground">{data.acquisition_summary.financial_snapshot.customer_concentration_comment}</p>
+                    </div>
+                  )}
+                  {data.acquisition_summary.financial_snapshot.other_critical_financial_notes && data.acquisition_summary.financial_snapshot.other_critical_financial_notes.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Other Critical Financial Notes</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {data.acquisition_summary.financial_snapshot.other_critical_financial_notes.map((note: string, idx: number) => (
+                          <li key={idx} className="text-sm text-muted-foreground">{note}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sector Snapshot */}
+            {data.acquisition_summary.sector_snapshot && (
+              <Card className="border-2 border-purple-200 dark:border-purple-800">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <CardTitle>Sector Snapshot</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Sector</p>
+                        <p className="font-semibold">{data.acquisition_summary.sector_snapshot.sector}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Sector Attractiveness</p>
+                        <Badge className={getRiskColor(data.acquisition_summary.sector_snapshot.sector_attractiveness)}>
+                          {data.acquisition_summary.sector_snapshot.sector_attractiveness}
+                        </Badge>
+                      </div>
+                    </div>
+                    {data.acquisition_summary.sector_snapshot.market_size_comment && (
+                      <div>
+                        <p className="text-sm font-medium mb-1">Market Size</p>
+                        <p className="text-sm text-muted-foreground">{data.acquisition_summary.sector_snapshot.market_size_comment}</p>
+                      </div>
+                    )}
+                    {data.acquisition_summary.sector_snapshot.growth_trend_comment && (
+                      <div>
+                        <p className="text-sm font-medium mb-1">Growth Trend</p>
+                        <p className="text-sm text-muted-foreground">{data.acquisition_summary.sector_snapshot.growth_trend_comment}</p>
+                      </div>
+                    )}
+                    {data.acquisition_summary.sector_snapshot.competitive_position_comment && (
+                      <div>
+                        <p className="text-sm font-medium mb-1">Competitive Position</p>
+                        <p className="text-sm text-muted-foreground">{data.acquisition_summary.sector_snapshot.competitive_position_comment}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Growth Summary */}
+            {data.acquisition_summary.growth_summary && (
+              <Card className="border-2 border-emerald-200 dark:border-emerald-800">
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20">
+                  <CardTitle>Growth Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Growth Readiness</p>
+                      <Badge className={getRiskColor(data.acquisition_summary.growth_summary.growth_readiness)}>
+                        {data.acquisition_summary.growth_summary.growth_readiness}
+                      </Badge>
+                    </div>
+                    {data.acquisition_summary.growth_summary.main_growth_drivers && (
+                      <div>
+                        <p className="text-sm font-medium mb-2 text-green-700 dark:text-green-400">Main Growth Drivers</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.growth_summary.main_growth_drivers.map((driver: string, idx: number) => (
+                            <li key={idx} className="text-sm">{driver}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.acquisition_summary.growth_summary.main_growth_constraints && (
+                      <div>
+                        <p className="text-sm font-medium mb-2 text-red-700 dark:text-red-400">Main Growth Constraints</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.growth_summary.main_growth_constraints.map((constraint: string, idx: number) => (
+                            <li key={idx} className="text-sm">{constraint}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.acquisition_summary.growth_summary.priority_growth_moves_12_24_months && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Priority Growth Moves (12-24 Months)</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.growth_summary.priority_growth_moves_12_24_months.map((move: string, idx: number) => (
+                            <li key={idx} className="text-sm">{move}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.acquisition_summary.growth_summary.kpi_focus && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">KPI Focus</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.growth_summary.kpi_focus.map((kpi: string, idx: number) => (
+                            <li key={idx} className="text-sm">{kpi}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Valuation Summary */}
+            {data.acquisition_summary.valuation_summary && (
+              <Card className="border-2 border-amber-200 dark:border-amber-800">
+                <CardHeader className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+                  <CardTitle>Valuation Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="p-3 rounded-lg bg-muted">
+                        <p className="text-xs text-muted-foreground">Low</p>
+                        <p className="text-lg font-bold">{formatCurrency(data.acquisition_summary.valuation_summary.ev_low)}</p>
+                        <p className="text-xs text-muted-foreground">{data.acquisition_summary.valuation_summary.ebitda_multiple_low}x</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Most Likely</p>
+                        <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{formatCurrency(data.acquisition_summary.valuation_summary.ev_most_likely)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted">
+                        <p className="text-xs text-muted-foreground">High</p>
+                        <p className="text-lg font-bold">{formatCurrency(data.acquisition_summary.valuation_summary.ev_high)}</p>
+                        <p className="text-xs text-muted-foreground">{data.acquisition_summary.valuation_summary.ebitda_multiple_high}x</p>
+                      </div>
+                    </div>
+                    {data.acquisition_summary.valuation_summary.valuation_rationale && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Valuation Rationale</p>
+                        <p className="text-sm text-muted-foreground">{data.acquisition_summary.valuation_summary.valuation_rationale}</p>
+                      </div>
+                    )}
+                    {data.acquisition_summary.valuation_summary.positive_value_drivers && (
+                      <div>
+                        <p className="text-sm font-medium mb-2 text-green-700 dark:text-green-400">Positive Value Drivers</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.valuation_summary.positive_value_drivers.map((driver: string, idx: number) => (
+                            <li key={idx} className="text-sm">{driver}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.acquisition_summary.valuation_summary.negative_value_drivers && (
+                      <div>
+                        <p className="text-sm font-medium mb-2 text-red-700 dark:text-red-400">Negative Value Drivers</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.valuation_summary.negative_value_drivers.map((driver: string, idx: number) => (
+                            <li key={idx} className="text-sm">{driver}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Deal Structure Summary */}
+            {data.acquisition_summary.deal_structure_summary && (
+              <Card className="border-2 border-purple-200 dark:border-purple-800">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                  <CardTitle>Deal Structure Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="p-3 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">Price Target</p>
+                        <p className="text-lg font-bold">{formatCurrency(data.acquisition_summary.deal_structure_summary.headline_price_target)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">Upfront</p>
+                        <p className="text-lg font-bold">{data.acquisition_summary.deal_structure_summary.payment_mix?.upfront_cash_pct}%</p>
+                      </div>
+                      <div className="p-3 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">Deferred</p>
+                        <p className="text-lg font-bold">{data.acquisition_summary.deal_structure_summary.payment_mix?.deferred_pct}%</p>
+                      </div>
+                      <div className="p-3 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">Earn-out</p>
+                        <p className="text-lg font-bold">{data.acquisition_summary.deal_structure_summary.payment_mix?.earnout_pct}%</p>
+                      </div>
+                    </div>
+                    {data.acquisition_summary.deal_structure_summary.earnout_headline_terms && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Earn-out Terms</p>
+                        <p className="text-sm text-muted-foreground">{data.acquisition_summary.deal_structure_summary.earnout_headline_terms}</p>
+                      </div>
+                    )}
+                    {data.acquisition_summary.deal_structure_summary.key_conditions_precedent && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Key Conditions Precedent</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.deal_structure_summary.key_conditions_precedent.map((cp: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{cp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {data.acquisition_summary.deal_structure_summary.key_protections && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Key Protections</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.deal_structure_summary.key_protections.map((protection: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{protection}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Red Flags */}
+            {data.acquisition_summary.red_flags && (
+              <Card className="border-2 border-red-200 dark:border-red-800">
+                <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20">
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    Red Flags
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {data.acquisition_summary.red_flags.map((flag: string, idx: number) => (
+                      <li key={idx} className="text-sm text-red-700 dark:text-red-300">{flag}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Execution Priorities */}
+            {data.acquisition_summary.execution_priorities_12_24_months && data.acquisition_summary.execution_priorities_12_24_months.length > 0 && (
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+                  <CardTitle>Execution Priorities (12-24 Months)</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="list-disc pl-5 space-y-2">
+                    {data.acquisition_summary.execution_priorities_12_24_months.map((priority: string, idx: number) => (
+                      <li key={idx} className="text-sm">{priority}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Overall Recommendation */}
+            {data.acquisition_summary.overall_recommendation && (
+              <Card className="border-2 border-amber-200 dark:border-amber-800">
+                <CardHeader className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+                  <CardTitle>Overall Recommendation</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <p className="text-sm">{data.acquisition_summary.overall_recommendation}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Confidence */}
+            {data.acquisition_summary.confidence && (
+              <Card className="border-2 border-gray-200 dark:border-gray-700">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-950/20 dark:to-slate-950/20">
+                  <CardTitle>Confidence Assessment</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Overall Confidence</p>
+                      <Badge className={getRiskColor(data.acquisition_summary.confidence.overall_confidence)}>
+                        {data.acquisition_summary.confidence.overall_confidence}
+                      </Badge>
+                    </div>
+                    {data.acquisition_summary.confidence.limitations && data.acquisition_summary.confidence.limitations.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Limitations</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {data.acquisition_summary.confidence.limitations.map((limitation: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground">{limitation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </TabsContent>
