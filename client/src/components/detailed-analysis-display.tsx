@@ -368,8 +368,8 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                       <div className="space-y-2">
                         {dealSnapshot.workforce_profile.tenured_staff_examples.map((staff: any, idx: number) => (
                           <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-muted">
-                            <span className="text-sm font-medium">{staff.name}</span>
-                            <span className="text-xs text-muted-foreground">{staff.years_of_service.toFixed(1)} yrs</span>
+                            <span className="text-sm font-medium">{staff.name || 'Unknown'}</span>
+                            <span className="text-xs text-muted-foreground">{staff.years_of_service != null ? staff.years_of_service.toFixed(1) : 'N/A'} yrs</span>
                           </div>
                         ))}
                       </div>
