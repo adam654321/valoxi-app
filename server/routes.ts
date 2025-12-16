@@ -299,8 +299,24 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
     // Check if we already have a successful Stage 1 analysis for this company
     const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
     if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
-      console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id})`);
-      return;
+      // Check if any documents have been uploaded/modified after the last successful analysis
+      const latestDocumentUpload = await storage.getLatestDocumentUploadTime(targetCompanyId);
+      
+      if (latestDocumentUpload && existingEvent.createdAt) {
+        const docUploadTime = new Date(latestDocumentUpload).getTime();
+        const eventCreatedTime = new Date(existingEvent.createdAt).getTime();
+        
+        if (docUploadTime > eventCreatedTime) {
+          console.log(`[STAGE1_ANALYSIS] Documents modified after last successful analysis for company ${targetCompanyId}. Latest doc: ${latestDocumentUpload}, Last analysis: ${existingEvent.createdAt}. Re-triggering webhooks.`);
+          // Allow re-triggering - fall through to continue with webhook triggering
+        } else {
+          console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id}). No new documents since then.`);
+          return;
+        }
+      } else {
+        console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id})`);
+        return;
+      }
     }
 
     if (!bypassRequirements) {

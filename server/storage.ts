@@ -372,6 +372,8 @@ export interface IStorage {
   getStage1AnalysisEventsByCompany(targetCompanyId: number, userCompanyId: number): Promise<Stage1AnalysisEvent[]>;
   updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number): Promise<Stage1AnalysisEvent | undefined>;
   updateStage1AnalysisEventDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined>;
+  getLatestStage1AnalysisEvent(targetCompanyId: number): Promise<Stage1AnalysisEvent | null>;
+  getLatestDocumentUploadTime(targetCompanyId: number): Promise<Date | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3513,6 +3515,17 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return result[0] || null;
+  }
+
+  async getLatestDocumentUploadTime(targetCompanyId: number): Promise<Date | null> {
+    const result = await db
+      .select({ createdAt: documents.createdAt })
+      .from(documents)
+      .where(eq(documents.targetCompanyId, targetCompanyId))
+      .orderBy(desc(documents.createdAt))
+      .limit(1);
+    
+    return result[0]?.createdAt || null;
   }
 
   // Portal-specific version without user access check  
