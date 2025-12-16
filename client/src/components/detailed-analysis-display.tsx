@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, DollarSign, TrendingUp, AlertTriangle, CheckCircle, Zap, Users, Building2, BarChart3 } from 'lucide-react';
+import { ChevronDown, DollarSign, TrendingUp, AlertTriangle, CheckCircle, Zap, Users, Building2, BarChart3, FileText, CreditCard, Target, Clock, Shield, Calculator } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -14,6 +14,7 @@ interface DetailedAnalysisData {
   valuation_analysis?: any;
   deal_structure?: any;
   acquisition_summary?: any;
+  deal_sheet?: any;
 }
 
 interface RiskScore {
@@ -79,7 +80,7 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
 
   return (
     <Tabs defaultValue="deal-snapshot" className="w-full">
-      <TabsList className="grid w-full grid-cols-6">
+      <TabsList className="grid w-full grid-cols-7">
         <TabsTrigger value="deal-snapshot" className="flex items-center gap-2">
           <Building2 className="w-4 h-4" />
           Deal Snapshot
@@ -103,6 +104,10 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
         <TabsTrigger value="acquisition" className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           Acquisition Summary
+        </TabsTrigger>
+        <TabsTrigger value="deal-sheet" className="flex items-center gap-2" data-testid="tab-deal-sheet">
+          <FileText className="w-4 h-4" />
+          Deal Sheet
         </TabsTrigger>
       </TabsList>
 
@@ -1585,6 +1590,483 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+      </TabsContent>
+
+      {/* Deal Sheet Tab */}
+      <TabsContent value="deal-sheet" className="space-y-6">
+        {data.deal_sheet ? (
+          <div className="space-y-6" data-testid="deal-sheet-content">
+            {/* Page 1: Deal Summary */}
+            {data.deal_sheet.page_1 && (
+              <>
+                {/* Header Section */}
+                {data.deal_sheet.page_1.header && (
+                  <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                    <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-2xl" data-testid="deal-sheet-title">
+                            {data.deal_sheet.page_1.header.title}
+                          </CardTitle>
+                          {data.deal_sheet.page_1.header.subtitle && (
+                            <CardDescription className="text-base mt-1">
+                              {data.deal_sheet.page_1.header.subtitle}
+                            </CardDescription>
+                          )}
+                        </div>
+                        {data.deal_sheet.page_1.header.badges && data.deal_sheet.page_1.header.badges.length > 0 && (
+                          <div className="flex gap-2">
+                            {data.deal_sheet.page_1.header.badges.map((badge: string, idx: number) => (
+                              <Badge key={idx} variant="secondary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                {badge}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {data.deal_sheet.meta && (
+                        <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+                          {data.deal_sheet.meta.deal_status && (
+                            <span>Status: <strong>{data.deal_sheet.meta.deal_status}</strong></span>
+                          )}
+                          {data.deal_sheet.meta.generated_date_local && (
+                            <span>Generated: {data.deal_sheet.meta.generated_date_local}</span>
+                          )}
+                        </div>
+                      )}
+                    </CardHeader>
+                  </Card>
+                )}
+
+                {/* At-a-Glance Metrics */}
+                {data.deal_sheet.page_1.at_a_glance && (
+                  <Card className="border-2 border-green-200 dark:border-green-800">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5" />
+                        At a Glance
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      {data.deal_sheet.page_1.at_a_glance.metrics && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+                          {data.deal_sheet.page_1.at_a_glance.metrics.map((metric: any, idx: number) => (
+                            <div key={idx} className="text-center p-3 rounded-lg bg-muted" data-testid={`metric-${idx}`}>
+                              <p className="text-xs text-muted-foreground">{metric.label}</p>
+                              <p className="text-lg font-bold">{metric.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {data.deal_sheet.page_1.at_a_glance.valuation_summary && (
+                        <div className="p-4 rounded-lg border-2 border-dashed border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20">
+                          <div className="flex items-center gap-2 mb-3">
+                            <DollarSign className="w-5 h-5 text-green-600" />
+                            <p className="font-semibold text-green-800 dark:text-green-200">Valuation Summary</p>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-xs text-muted-foreground">EV Low</p>
+                              <p className="font-semibold">{formatCurrency(data.deal_sheet.page_1.at_a_glance.valuation_summary.ev_low)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">EV High</p>
+                              <p className="font-semibold">{formatCurrency(data.deal_sheet.page_1.at_a_glance.valuation_summary.ev_high)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Most Likely</p>
+                              <p className="font-semibold text-green-700 dark:text-green-300">{formatCurrency(data.deal_sheet.page_1.at_a_glance.valuation_summary.ev_most_likely)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Target Price</p>
+                              <p className="font-bold text-lg text-green-700 dark:text-green-300">{formatCurrency(data.deal_sheet.page_1.at_a_glance.valuation_summary.headline_price_target)}</p>
+                            </div>
+                          </div>
+                          {data.deal_sheet.page_1.at_a_glance.valuation_summary.multiple_range && (
+                            <p className="text-sm text-muted-foreground mt-2">Multiple Range: {data.deal_sheet.page_1.at_a_glance.valuation_summary.multiple_range}</p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Investment Thesis */}
+                {data.deal_sheet.page_1.investment_thesis && (
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {data.deal_sheet.page_1.investment_thesis.key_strengths && (
+                      <Card className="border-2 border-green-200 dark:border-green-800">
+                        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 pb-3">
+                          <CardTitle className="flex items-center gap-2 text-base">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            Key Strengths
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc pl-5 space-y-2">
+                            {data.deal_sheet.page_1.investment_thesis.key_strengths.map((strength: string, idx: number) => (
+                              <li key={idx} className="text-sm text-green-700 dark:text-green-300">{strength}</li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {data.deal_sheet.page_1.investment_thesis.key_risks && (
+                      <Card className="border-2 border-red-200 dark:border-red-800">
+                        <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 pb-3">
+                          <CardTitle className="flex items-center gap-2 text-base">
+                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                            Key Risks
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc pl-5 space-y-2">
+                            {data.deal_sheet.page_1.investment_thesis.key_risks.map((risk: string, idx: number) => (
+                              <li key={idx} className="text-sm text-red-700 dark:text-red-300">{risk}</li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {data.deal_sheet.page_1.investment_thesis.key_mitigants && (
+                      <Card className="border-2 border-blue-200 dark:border-blue-800">
+                        <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 pb-3">
+                          <CardTitle className="flex items-center gap-2 text-base">
+                            <Shield className="w-5 h-5 text-blue-600" />
+                            Key Mitigants
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc pl-5 space-y-2">
+                            {data.deal_sheet.page_1.investment_thesis.key_mitigants.map((mitigant: string, idx: number) => (
+                              <li key={idx} className="text-sm text-blue-700 dark:text-blue-300">{mitigant}</li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+
+                {/* Deal Structure Overview */}
+                {data.deal_sheet.page_1.deal_structure && (
+                  <Card className="border-2 border-purple-200 dark:border-purple-800">
+                    <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5" />
+                        Deal Structure
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-6">
+                      {data.deal_sheet.page_1.deal_structure.payment_mix && (
+                        <div>
+                          <p className="text-sm font-medium mb-3">Payment Mix</p>
+                          <div className="flex gap-2 mb-4">
+                            <div className="flex-1 bg-green-500 rounded-l-lg text-white text-center py-2 text-sm font-medium" style={{ flexBasis: `${data.deal_sheet.page_1.deal_structure.payment_mix.upfront_cash_pct}%` }}>
+                              Upfront {data.deal_sheet.page_1.deal_structure.payment_mix.upfront_cash_pct}%
+                            </div>
+                            <div className="flex-1 bg-amber-500 text-white text-center py-2 text-sm font-medium" style={{ flexBasis: `${data.deal_sheet.page_1.deal_structure.payment_mix.deferred_pct}%` }}>
+                              Deferred {data.deal_sheet.page_1.deal_structure.payment_mix.deferred_pct}%
+                            </div>
+                            <div className="flex-1 bg-blue-500 rounded-r-lg text-white text-center py-2 text-sm font-medium" style={{ flexBasis: `${data.deal_sheet.page_1.deal_structure.payment_mix.earnout_pct}%` }}>
+                              Earnout {data.deal_sheet.page_1.deal_structure.payment_mix.earnout_pct}%
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {data.deal_sheet.page_1.deal_structure.earnout_terms_headline && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Earn-out Terms</p>
+                          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">{data.deal_sheet.page_1.deal_structure.earnout_terms_headline}</p>
+                        </div>
+                      )}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {data.deal_sheet.page_1.deal_structure.key_conditions_precedent && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Conditions Precedent</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {data.deal_sheet.page_1.deal_structure.key_conditions_precedent.map((cp: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{cp}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {data.deal_sheet.page_1.deal_structure.key_protections && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Key Protections</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {data.deal_sheet.page_1.deal_structure.key_protections.map((protection: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{protection}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Red Flags */}
+                {data.deal_sheet.page_1.red_flags && data.deal_sheet.page_1.red_flags.length > 0 && (
+                  <Card className="border-2 border-red-200 dark:border-red-800">
+                    <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                        Red Flags
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <ul className="list-disc pl-5 space-y-2">
+                        {data.deal_sheet.page_1.red_flags.map((flag: string, idx: number) => (
+                          <li key={idx} className="text-sm text-red-700 dark:text-red-300">{flag}</li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Execution Priorities */}
+                {data.deal_sheet.page_1.execution_priorities && (
+                  <Card className="border-2 border-cyan-200 dark:border-cyan-800">
+                    <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Execution Priorities
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {data.deal_sheet.page_1.execution_priorities.de_risking && (
+                          <div>
+                            <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-amber-600" />
+                              De-risking
+                            </p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {data.deal_sheet.page_1.execution_priorities.de_risking.map((item: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {data.deal_sheet.page_1.execution_priorities.growth_enablement && (
+                          <div>
+                            <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-green-600" />
+                              Growth Enablement
+                            </p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {data.deal_sheet.page_1.execution_priorities.growth_enablement.map((item: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Overall Recommendation */}
+                {data.deal_sheet.page_1.overall_recommendation && (
+                  <Card className="border-2 border-amber-200 dark:border-amber-800">
+                    <CardHeader className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-amber-600" />
+                        Recommendation
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <p className="text-sm font-medium">{data.deal_sheet.page_1.overall_recommendation}</p>
+                      {data.deal_sheet.page_1.confidence && (
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm text-muted-foreground">Confidence:</span>
+                            <Badge className={getRiskColor(data.deal_sheet.page_1.confidence.overall_confidence)}>
+                              {formatLabel(data.deal_sheet.page_1.confidence.overall_confidence)}
+                            </Badge>
+                          </div>
+                          {data.deal_sheet.page_1.confidence.limitations && (
+                            <ul className="list-disc pl-5 space-y-1">
+                              {data.deal_sheet.page_1.confidence.limitations.map((limitation: string, idx: number) => (
+                                <li key={idx} className="text-xs text-muted-foreground">{limitation}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+
+            {/* Page 2: Funding & DSCR */}
+            {data.deal_sheet.page_2?.funding_and_dscr && (
+              <>
+                {/* Funding Summary */}
+                {data.deal_sheet.page_2.funding_and_dscr.funding_summary && (
+                  <Card className="border-2 border-teal-200 dark:border-teal-800">
+                    <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5" />
+                        Funding Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                        <div className="text-center p-3 rounded-lg bg-muted">
+                          <p className="text-xs text-muted-foreground">Target Price</p>
+                          <p className="text-lg font-bold">{formatCurrency(data.deal_sheet.page_2.funding_and_dscr.funding_summary.headline_price_target)}</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
+                          <p className="text-xs text-muted-foreground">Equity</p>
+                          <p className="text-lg font-bold text-green-700 dark:text-green-300">{formatCurrency(data.deal_sheet.page_2.funding_and_dscr.funding_summary.equity_injection)}</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                          <p className="text-xs text-muted-foreground">Senior Debt</p>
+                          <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{formatCurrency(data.deal_sheet.page_2.funding_and_dscr.funding_summary.senior_debt)}</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                          <p className="text-xs text-muted-foreground">Seller Note</p>
+                          <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{formatCurrency(data.deal_sheet.page_2.funding_and_dscr.funding_summary.seller_note)}</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                          <p className="text-xs text-muted-foreground">Escrow/Holdback</p>
+                          <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{formatCurrency(data.deal_sheet.page_2.funding_and_dscr.funding_summary.escrow_or_holdback)}</p>
+                        </div>
+                      </div>
+                      {data.deal_sheet.page_2.funding_and_dscr.funding_summary.notes && (
+                        <div className="bg-muted p-3 rounded-lg">
+                          <p className="text-xs font-medium mb-1">Notes:</p>
+                          <ul className="list-disc pl-4 space-y-1">
+                            {data.deal_sheet.page_2.funding_and_dscr.funding_summary.notes.map((note: string, idx: number) => (
+                              <li key={idx} className="text-xs text-muted-foreground">{note}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* DSCR Model */}
+                {data.deal_sheet.page_2.funding_and_dscr.dscr_model && (
+                  <Card className="border-2 border-indigo-200 dark:border-indigo-800">
+                    <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="w-5 h-5" />
+                        DSCR Model
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-3 rounded-lg border">
+                          <p className="text-xs text-muted-foreground">DSCR Target</p>
+                          <p className="text-lg font-bold">{data.deal_sheet.page_2.funding_and_dscr.dscr_model.dscr_target}x</p>
+                        </div>
+                        <div className="p-3 rounded-lg border">
+                          <p className="text-xs text-muted-foreground">CFADS Basis</p>
+                          <p className="text-lg font-bold">{formatLabel(data.deal_sheet.page_2.funding_and_dscr.dscr_model.cfads_basis)}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border">
+                          <p className="text-xs text-muted-foreground">CFADS (After Haircut)</p>
+                          <p className="text-lg font-bold">{formatCurrency(data.deal_sheet.page_2.funding_and_dscr.dscr_model.cfads_annual_after_haircut)}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border">
+                          <p className="text-xs text-muted-foreground">Lender Feasibility</p>
+                          <Badge className={data.deal_sheet.page_2.funding_and_dscr.dscr_model.lender_feasibility === 'feasible' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800'}>
+                            {formatLabel(data.deal_sheet.page_2.funding_and_dscr.dscr_model.lender_feasibility)}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Scenario Summary Table */}
+                      {data.deal_sheet.page_2.funding_and_dscr.dscr_model.scenario_summary && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Financing Scenarios</p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm border-collapse">
+                              <thead>
+                                <tr className="bg-muted">
+                                  <th className="text-left p-2 border">Scenario</th>
+                                  <th className="text-right p-2 border">Term</th>
+                                  <th className="text-right p-2 border">Interest Rate</th>
+                                  <th className="text-right p-2 border">Annual Debt Service</th>
+                                  <th className="text-right p-2 border">DSCR</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {data.deal_sheet.page_2.funding_and_dscr.dscr_model.scenario_summary.map((scenario: any, idx: number) => (
+                                  <tr key={idx} className="border-b">
+                                    <td className="p-2 border font-medium">{formatLabel(scenario.name)}</td>
+                                    <td className="text-right p-2 border">{scenario.term_months} months</td>
+                                    <td className="text-right p-2 border">{scenario.interest_rate_annual_pct}%</td>
+                                    <td className="text-right p-2 border">{formatCurrency(scenario.annual_debt_service_total)}</td>
+                                    <td className="text-right p-2 border">
+                                      <Badge className={scenario.dscr >= 1.5 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-amber-100 text-amber-800'}>
+                                        {scenario.dscr.toFixed(2)}x
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Repayment Plan Tables */}
+                {data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables && data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables.length > 0 && (
+                  <Card className="border-2 border-slate-200 dark:border-slate-700">
+                    <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950/20 dark:to-gray-950/20">
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="w-5 h-5" />
+                        Repayment Plans
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables.map((plan: any, planIdx: number) => (
+                          <div key={planIdx}>
+                            <p className="text-sm font-medium mb-2">{formatLabel(plan.scenario_name)}</p>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm border-collapse">
+                                <thead>
+                                  <tr className="bg-muted">
+                                    <th className="text-left p-2 border">Year</th>
+                                    <th className="text-right p-2 border">Annual Payment</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {plan.rows.map((row: any, rowIdx: number) => (
+                                    <tr key={rowIdx} className="border-b">
+                                      <td className="p-2 border">Year {row.year}</td>
+                                      <td className="text-right p-2 border font-medium">{formatCurrency(row.annual_payment)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium mb-2">No deal sheet available</p>
+            <p className="text-sm">Deal sheet information will appear here when available</p>
           </div>
         )}
       </TabsContent>
