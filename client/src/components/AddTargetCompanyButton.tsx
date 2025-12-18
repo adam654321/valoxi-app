@@ -183,6 +183,8 @@ export function AddTargetCompanyButton() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setShowForm(false);
       form.reset();
