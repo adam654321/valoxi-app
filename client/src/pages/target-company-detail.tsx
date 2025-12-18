@@ -37,8 +37,8 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2 } from "lucide-react";
-import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote } from "lucide-react";
+import type { TargetCompany, TargetContact, Stage1AnalysisEvent, DealNote } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { ActivityManagement } from "@/components/activity-management";
@@ -75,13 +75,256 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
+// Deal Notes Section Component
+function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
+  const { toast } = useToast();
+  const [showNoteDialog, setShowNoteDialog] = useState(false);
+  const [editingNote, setEditingNote] = useState<DealNote | null>(null);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [reminderDate, setReminderDate] = useState("");
+
+  const { data: notes = [], isLoading } = useQuery<DealNote[]>({
+    queryKey: ["/api/target-companies", targetCompanyId, "notes"],
+    enabled: !!targetCompanyId,
+  });
+
+  const createNoteMutation = useMutation({
+    mutationFn: (data: { title: string; content: string; reminderDate: string | null }) =>
+      apiRequest("POST", `/api/target-companies/${targetCompanyId}/notes`, data),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Note added" });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to add note", variant: "destructive" });
+    },
+  });
+
+  const updateNoteMutation = useMutation({
+    mutationFn: (data: { noteId: number; title: string; content: string; reminderDate: string | null; reminderCompleted?: boolean }) =>
+      apiRequest("PUT", `/api/notes/${data.noteId}`, { title: data.title, content: data.content, reminderDate: data.reminderDate, reminderCompleted: data.reminderCompleted }),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Note updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update note", variant: "destructive" });
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: number) => apiRequest("DELETE", `/api/notes/${noteId}`),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Note deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete note", variant: "destructive" });
+    },
+  });
+
+  const resetForm = () => {
+    setShowNoteDialog(false);
+    setEditingNote(null);
+    setNoteTitle("");
+    setNoteContent("");
+    setReminderDate("");
+  };
+
+  const handleSubmit = () => {
+    if (!noteTitle.trim()) {
+      toast({ title: "Error", description: "Title is required", variant: "destructive" });
+      return;
+    }
+    if (editingNote) {
+      updateNoteMutation.mutate({
+        noteId: editingNote.id,
+        title: noteTitle,
+        content: noteContent,
+        reminderDate: reminderDate || null,
+      });
+    } else {
+      createNoteMutation.mutate({
+        title: noteTitle,
+        content: noteContent,
+        reminderDate: reminderDate || null,
+      });
+    }
+  };
+
+  const openEditDialog = (note: DealNote) => {
+    setEditingNote(note);
+    setNoteTitle(note.title);
+    setNoteContent(note.content || "");
+    setReminderDate(note.reminderDate ? new Date(note.reminderDate).toISOString().slice(0, 16) : "");
+    setShowNoteDialog(true);
+  };
+
+  const toggleReminderComplete = (note: DealNote) => {
+    updateNoteMutation.mutate({
+      noteId: note.id,
+      title: note.title,
+      content: note.content || "",
+      reminderDate: note.reminderDate ? new Date(note.reminderDate).toISOString() : null,
+      reminderCompleted: !note.reminderCompleted,
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <StickyNote className="w-5 h-5 text-muted-foreground" />
+            <CardTitle className="text-lg">Deal Notes</CardTitle>
+          </div>
+          <Button size="sm" onClick={() => setShowNoteDialog(true)} data-testid="button-add-note">
+            <Plus className="w-4 h-4 mr-1" />
+            Add Note
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        ) : notes.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <StickyNote className="w-10 h-10 mx-auto mb-3 opacity-50" />
+            <p>No notes yet. Add notes to track conversations, reminders, and important details.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {notes.map((note) => (
+              <div
+                key={note.id}
+                className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                data-testid={`note-card-${note.id}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{note.title}</h4>
+                      {note.reminderDate && (
+                        <Badge
+                          variant={note.reminderCompleted ? "secondary" : "outline"}
+                          className={`text-xs cursor-pointer ${!note.reminderCompleted && new Date(note.reminderDate) < new Date() ? 'border-red-500 text-red-500' : ''}`}
+                          onClick={() => toggleReminderComplete(note)}
+                          data-testid={`badge-reminder-${note.id}`}
+                        >
+                          <Bell className="w-3 h-3 mr-1" />
+                          {note.reminderCompleted ? 'Done' : new Date(note.reminderDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </Badge>
+                      )}
+                    </div>
+                    {note.content && (
+                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{note.content}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      {new Date(note.createdAt!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => openEditDialog(note)}
+                      data-testid={`button-edit-note-${note.id}`}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => {
+                        if (confirm("Delete this note?")) {
+                          deleteNoteMutation.mutate(note.id);
+                        }
+                      }}
+                      data-testid={`button-delete-note-${note.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={showNoteDialog} onOpenChange={(open) => { if (!open) resetForm(); else setShowNoteDialog(true); }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{editingNote ? "Edit Note" : "Add New Note"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Title *</label>
+              <Input
+                placeholder="e.g., Initial Call Notes, Follow-up Reminder..."
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                data-testid="input-note-title"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Content</label>
+              <Textarea
+                placeholder="Add details, key points, or action items..."
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                rows={4}
+                data-testid="input-note-content"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Reminder (optional)
+                </div>
+              </label>
+              <Input
+                type="datetime-local"
+                value={reminderDate}
+                onChange={(e) => setReminderDate(e.target.value)}
+                data-testid="input-note-reminder"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={resetForm} data-testid="button-cancel-note">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={createNoteMutation.isPending || updateNoteMutation.isPending}
+              data-testid="button-save-note"
+            >
+              {(createNoteMutation.isPending || updateNoteMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {editingNote ? "Save Changes" : "Add Note"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 export default function TargetCompanyDetail() {
   const { id } = useParams();
   const { toast } = useToast();
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<TargetContact | null>(null);
-  const [showDiscussionDialog, setShowDiscussionDialog] = useState(false);
-  const [discussionNotes, setDiscussionNotes] = useState("");
 
   const contactForm = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -208,7 +451,7 @@ export default function TargetCompanyDetail() {
   });
 
   const updateInitialDiscussionMutation = useMutation({
-    mutationFn: (data: { completed: boolean; notes: string | null }) =>
+    mutationFn: (data: { completed: boolean }) =>
       apiRequest("PUT", `/api/target-companies/${id}/initial-discussion`, data),
     onSuccess: () => {
       toast({
@@ -216,8 +459,6 @@ export default function TargetCompanyDetail() {
         description: "Initial discussion status updated",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
-      setShowDiscussionDialog(false);
-      setDiscussionNotes("");
     },
     onError: (error: any) => {
       toast({
@@ -682,89 +923,47 @@ export default function TargetCompanyDetail() {
               </Card>
             </div>
 
-            {/* Initial Discussion with Seller */}
+            {/* Initial Discussion Checkbox */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                    <CardTitle className="text-lg">Initial Discussion with Seller</CardTitle>
+                    <CardTitle className="text-lg">Seller Status</CardTitle>
                   </div>
-                  {company?.initialDiscussionCompleted ? (
-                    <Badge variant="default" className="bg-green-600">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Completed
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">Pending</Badge>
-                  )}
                 </div>
               </CardHeader>
               <CardContent>
-                {company?.initialDiscussionCompleted ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        Discussion held on{" "}
-                        {company.initialDiscussionDate
-                          ? new Date(company.initialDiscussionDate).toLocaleDateString('en-GB', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })
-                          : 'Unknown date'}
-                      </span>
-                    </div>
-                    {company.initialDiscussionNotes && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Notes</h4>
-                        <p className="text-sm bg-muted/50 rounded-lg p-3" data-testid="text-discussion-notes">
-                          {company.initialDiscussionNotes}
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setDiscussionNotes(company.initialDiscussionNotes || "");
-                          setShowDiscussionDialog(true);
-                        }}
-                        data-testid="button-edit-discussion"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Notes
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          if (confirm("Are you sure you want to mark this discussion as incomplete?")) {
-                            updateInitialDiscussionMutation.mutate({ completed: false, notes: null });
-                          }
-                        }}
-                        data-testid="button-mark-incomplete"
-                      >
-                        Mark Incomplete
-                      </Button>
-                    </div>
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="initial-discussion"
+                      checked={company?.initialDiscussionCompleted || false}
+                      onCheckedChange={(checked) => {
+                        updateInitialDiscussionMutation.mutate({ completed: !!checked });
+                      }}
+                      disabled={updateInitialDiscussionMutation.isPending}
+                      data-testid="checkbox-initial-discussion"
+                    />
+                    <label htmlFor="initial-discussion" className="text-sm font-medium cursor-pointer">
+                      Initial discussion completed
+                    </label>
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
-                    <p className="text-muted-foreground mb-4">
-                      No initial discussion recorded yet. Mark as complete when you've had your first conversation with the seller.
-                    </p>
-                    <Button onClick={() => setShowDiscussionDialog(true)} data-testid="button-mark-discussion-complete">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Mark Discussion Complete
-                    </Button>
-                  </div>
-                )}
+                  {company?.initialDiscussionDate && company?.initialDiscussionCompleted && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(company.initialDiscussionDate).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
+                </div>
               </CardContent>
             </Card>
+
+            {/* Deal Notes Section */}
+            <DealNotesSection targetCompanyId={parseInt(id!)} />
 
             {/* System Information */}
             <Card>
@@ -1695,42 +1894,6 @@ export default function TargetCompanyDetail() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Initial Discussion Dialog */}
-      <Dialog open={showDiscussionDialog} onOpenChange={setShowDiscussionDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {company?.initialDiscussionCompleted ? "Edit Discussion Notes" : "Mark Initial Discussion Complete"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Discussion Notes</label>
-              <Textarea
-                placeholder="Add notes about your initial conversation with the seller... (e.g., key points discussed, seller's expectations, timeline, etc.)"
-                value={discussionNotes}
-                onChange={(e) => setDiscussionNotes(e.target.value)}
-                rows={5}
-                data-testid="input-discussion-notes"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowDiscussionDialog(false)} data-testid="button-cancel-discussion">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => updateInitialDiscussionMutation.mutate({ completed: true, notes: discussionNotes || null })}
-              disabled={updateInitialDiscussionMutation.isPending}
-              data-testid="button-save-discussion"
-            >
-              {updateInitialDiscussionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {company?.initialDiscussionCompleted ? "Save Notes" : "Mark Complete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Contact Form Dialog */}
       <Dialog open={showContactForm} onOpenChange={setShowContactForm}>
