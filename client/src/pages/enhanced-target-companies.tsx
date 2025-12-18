@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Link, useLocation } from "wouter";
@@ -216,6 +217,7 @@ export default function EnhancedTargetCompanies() {
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [editingCompany, setEditingCompany] = useState<TargetCompanyWithStats | null>(null);
+  const [companyToDelete, setCompanyToDelete] = useState<TargetCompanyWithStats | null>(null);
   
   const [filters, setFilters] = useState<SearchFilters>({
     q: "",
@@ -753,7 +755,7 @@ export default function EnhancedTargetCompanies() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deleteMutation.mutate(company.id)}
+                        onClick={() => setCompanyToDelete(company)}
                         disabled={deleteMutation.isPending}
                         title="Delete Company"
                         data-testid={`button-delete-${company.id}`}
@@ -1072,6 +1074,32 @@ export default function EnhancedTargetCompanies() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Company</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{companyToDelete?.companyName}"? This action cannot be undone and will remove all associated contacts, documents, and activity history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (companyToDelete) {
+                  deleteMutation.mutate(companyToDelete.id);
+                  setCompanyToDelete(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
