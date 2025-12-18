@@ -80,6 +80,10 @@ export const targetCompanies = pgTable("target_companies", {
   stage: varchar("stage", { length: 50 }).default("New Target"),
   stageUpdatedAt: timestamp("stage_updated_at").defaultNow(),
   stageUpdatedBy: integer("stage_updated_by").references(() => users.id),
+  initialDiscussionCompleted: boolean("initial_discussion_completed").default(false),
+  initialDiscussionDate: timestamp("initial_discussion_date"),
+  initialDiscussionNotes: text("initial_discussion_notes"),
+  initialDiscussionBy: integer("initial_discussion_by").references(() => users.id),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
