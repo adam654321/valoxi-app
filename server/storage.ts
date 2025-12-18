@@ -1946,11 +1946,27 @@ export class DatabaseStorage implements IStorage {
 
     const totalActive = stagesData.reduce((sum, stage) => sum + stage.count, 0);
     
+    // Group null/empty stages as "New Target" and merge with any existing "New Target" entries
+    const stageMap = new Map<string, { count: number; avgDays: number }>();
+    
+    stagesData.forEach(stage => {
+      const stageName = stage.stage && stage.stage.trim() !== '' ? stage.stage : 'New Target';
+      const existing = stageMap.get(stageName);
+      if (existing) {
+        // Merge counts and calculate weighted average for days
+        const totalCount = existing.count + stage.count;
+        const weightedAvg = ((existing.avgDays * existing.count) + ((stage.avgDays || 0) * stage.count)) / totalCount;
+        stageMap.set(stageName, { count: totalCount, avgDays: Math.round(weightedAvg) });
+      } else {
+        stageMap.set(stageName, { count: stage.count, avgDays: stage.avgDays || 0 });
+      }
+    });
+    
     return {
-      stages: stagesData.map(stage => ({
-        stage: stage.stage,
-        count: stage.count,
-        avg_days: stage.avgDays || 0,
+      stages: Array.from(stageMap.entries()).map(([stageName, data]) => ({
+        stage: stageName,
+        count: data.count,
+        avg_days: data.avgDays,
       })),
       totalActive,
       lastUpdated: new Date(),
