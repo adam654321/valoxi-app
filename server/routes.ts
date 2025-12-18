@@ -999,12 +999,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const targetCompanyCount = await storage.getTargetCompanyCount(userCompanyId);
       const totalContactsCount = await storage.getTotalContactsCount(userCompanyId);
+      const dashboardMetrics = await storage.getDashboardMetrics(userCompanyId);
 
       res.json({
         targetCompanies: targetCompanyCount,
-        activeDeals: 0, // Placeholder for future implementation
+        activeDeals: dashboardMetrics.activeDeals,
         totalContacts: totalContactsCount,
-        dealValue: "0", // Placeholder for future implementation
+        dealValue: dashboardMetrics.totalDealValue,
       });
     } catch (error) {
       console.error("Dashboard stats error:", error);

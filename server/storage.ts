@@ -211,6 +211,7 @@ export interface IStorage {
   getFilterOptions(userCompanyId: number): Promise<FilterOptions>;
   getTargetCompanyCount(userCompanyId: number): Promise<number>;
   getTotalContactsCount(userCompanyId: number): Promise<number>;
+  getDashboardMetrics(userCompanyId: number): Promise<{ activeDeals: number; totalDealValue: string }>;
   getTargetCompany(id: number, userCompanyId: number): Promise<TargetCompany | undefined>;
   getCompanyProfile(targetCompanyId: number, userCompanyId: number, userId: number): Promise<CompanyProfile | undefined>;
   createTargetCompany(company: InsertTargetCompany): Promise<TargetCompany>;
@@ -714,6 +715,45 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id))
       .where(eq(targetCompanies.userCompanyId, userCompanyId));
     return result.count;
+  }
+
+  async getDashboardMetrics(userCompanyId: number): Promise<{ activeDeals: number; totalDealValue: string }> {
+    // Count active deals (not in Completion or Not Qualified stages)
+    const [activeResult] = await db
+      .select({ count: count() })
+      .from(targetCompanies)
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`
+        )
+      );
+
+    // Sum total deal value from annual revenue of active deals
+    const [valueResult] = await db
+      .select({
+        total: sql<string>`COALESCE(SUM(${targetCompanies.annualRevenue}), 0)::text`
+      })
+      .from(targetCompanies)
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`,
+          sql`${targetCompanies.annualRevenue} IS NOT NULL`
+        )
+      );
+
+    const totalValue = parseFloat(valueResult?.total || '0');
+    const formattedValue = new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      maximumFractionDigits: 0
+    }).format(totalValue);
+
+    return {
+      activeDeals: activeResult.count,
+      totalDealValue: formattedValue
+    };
   }
 
   async createSession(userId: number, sessionToken: string, expiresAt: Date): Promise<UserSession> {
