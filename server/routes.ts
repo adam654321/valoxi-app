@@ -2377,19 +2377,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found or access denied" });
       }
 
-      const { title, content, reminderDate } = req.body;
+      const { noteType, title, content, reminderDate } = req.body;
       if (!title) {
         return res.status(400).json({ message: "Title is required" });
       }
 
       const note = await storage.createDealNote({
         targetCompanyId: companyId,
+        noteType: noteType || "General",
         title,
         content: content || null,
         reminderDate: reminderDate ? new Date(reminderDate) : null,
         reminderCompleted: false,
         createdBy: userId,
       });
+
+      // Auto-move to Initial Contact stage when Initial Discussion note is added
+      if (noteType === "Initial Discussion" && company.stage === "New Target") {
+        await storage.updateTargetCompanyStage(companyId, "Initial Contact", userId);
+      }
+
       res.json(note);
     } catch (error) {
       console.error("Create deal note error:", error);
@@ -2410,8 +2417,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid note ID" });
       }
 
-      const { title, content, reminderDate, reminderCompleted } = req.body;
+      const { noteType, title, content, reminderDate, reminderCompleted } = req.body;
       const updates: any = {};
+      if (noteType !== undefined) updates.noteType = noteType;
       if (title !== undefined) updates.title = title;
       if (content !== undefined) updates.content = content;
       if (reminderDate !== undefined) updates.reminderDate = reminderDate ? new Date(reminderDate) : null;
