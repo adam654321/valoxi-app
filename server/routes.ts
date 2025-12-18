@@ -2395,7 +2395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Auto-move to Initial Contact stage when Initial Discussion note is added
       if (noteType === "Initial Discussion" && company.stage === "New Target") {
-        await storage.updateTargetCompanyStage(companyId, "Initial Contact", userId);
+        await storage.updateTargetCompany(companyId, { stage: "Initial Contact" }, userCompanyId);
       }
 
       res.json(note);
