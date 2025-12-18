@@ -535,6 +535,7 @@ export const stage1AnalysisEventsRelations = relations(stage1AnalysisEvents, ({ 
 export const dealNotes = pgTable("deal_notes", {
   id: serial("id").primaryKey(),
   targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  noteType: varchar("note_type", { length: 50 }).default("General"),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content"),
   reminderDate: timestamp("reminder_date"),

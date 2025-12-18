@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -75,11 +76,23 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
+// Note type options
+const NOTE_TYPES = [
+  { value: "Initial Discussion", label: "Initial Discussion" },
+  { value: "Broker Discussion", label: "Broker Discussion" },
+  { value: "Follow-up Call", label: "Follow-up Call" },
+  { value: "Meeting Notes", label: "Meeting Notes" },
+  { value: "Due Diligence", label: "Due Diligence" },
+  { value: "Negotiation", label: "Negotiation" },
+  { value: "General", label: "General" },
+];
+
 // Deal Notes Section Component
 function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   const { toast } = useToast();
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [editingNote, setEditingNote] = useState<DealNote | null>(null);
+  const [noteType, setNoteType] = useState("General");
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [reminderDate, setReminderDate] = useState("");
@@ -90,7 +103,7 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   });
 
   const createNoteMutation = useMutation({
-    mutationFn: (data: { title: string; content: string; reminderDate: string | null }) =>
+    mutationFn: (data: { noteType: string; title: string; content: string; reminderDate: string | null }) =>
       apiRequest("POST", `/api/target-companies/${targetCompanyId}/notes`, data),
     onSuccess: () => {
       toast({ title: "Success", description: "Note added" });
@@ -103,8 +116,8 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   });
 
   const updateNoteMutation = useMutation({
-    mutationFn: (data: { noteId: number; title: string; content: string; reminderDate: string | null; reminderCompleted?: boolean }) =>
-      apiRequest("PUT", `/api/notes/${data.noteId}`, { title: data.title, content: data.content, reminderDate: data.reminderDate, reminderCompleted: data.reminderCompleted }),
+    mutationFn: (data: { noteId: number; noteType: string; title: string; content: string; reminderDate: string | null; reminderCompleted?: boolean }) =>
+      apiRequest("PUT", `/api/notes/${data.noteId}`, { noteType: data.noteType, title: data.title, content: data.content, reminderDate: data.reminderDate, reminderCompleted: data.reminderCompleted }),
     onSuccess: () => {
       toast({ title: "Success", description: "Note updated" });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
@@ -129,6 +142,7 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   const resetForm = () => {
     setShowNoteDialog(false);
     setEditingNote(null);
+    setNoteType("General");
     setNoteTitle("");
     setNoteContent("");
     setReminderDate("");
@@ -142,12 +156,14 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
     if (editingNote) {
       updateNoteMutation.mutate({
         noteId: editingNote.id,
+        noteType,
         title: noteTitle,
         content: noteContent,
         reminderDate: reminderDate || null,
       });
     } else {
       createNoteMutation.mutate({
+        noteType,
         title: noteTitle,
         content: noteContent,
         reminderDate: reminderDate || null,
@@ -157,6 +173,7 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
 
   const openEditDialog = (note: DealNote) => {
     setEditingNote(note);
+    setNoteType(note.noteType || "General");
     setNoteTitle(note.title);
     setNoteContent(note.content || "");
     setReminderDate(note.reminderDate ? new Date(note.reminderDate).toISOString().slice(0, 16) : "");
@@ -166,6 +183,7 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   const toggleReminderComplete = (note: DealNote) => {
     updateNoteMutation.mutate({
       noteId: note.id,
+      noteType: note.noteType || "General",
       title: note.title,
       content: note.content || "",
       reminderDate: note.reminderDate ? new Date(note.reminderDate).toISOString() : null,
@@ -208,7 +226,10 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="text-xs">
+                        {note.noteType || "General"}
+                      </Badge>
                       <h4 className="font-medium">{note.title}</h4>
                       {note.reminderDate && (
                         <Badge
@@ -267,6 +288,21 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
             <DialogTitle>{editingNote ? "Edit Note" : "Add New Note"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Note Type</label>
+              <Select value={noteType} onValueChange={setNoteType}>
+                <SelectTrigger data-testid="select-note-type">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NOTE_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Title *</label>
               <Input
@@ -445,25 +481,6 @@ export default function TargetCompanyDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete contact",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateInitialDiscussionMutation = useMutation({
-    mutationFn: (data: { completed: boolean }) =>
-      apiRequest("PUT", `/api/target-companies/${id}/initial-discussion`, data),
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Initial discussion status updated",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update initial discussion",
         variant: "destructive",
       });
     },
@@ -828,33 +845,6 @@ export default function TargetCompanyDetail() {
                       </div>
                     </div>
                   )}
-
-                  {/* Initial Contact with Seller */}
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        id="initial-contact"
-                        checked={company?.initialDiscussionCompleted || false}
-                        onCheckedChange={(checked) => {
-                          updateInitialDiscussionMutation.mutate({ completed: !!checked });
-                        }}
-                        disabled={updateInitialDiscussionMutation.isPending}
-                        data-testid="checkbox-initial-contact"
-                      />
-                      <label htmlFor="initial-contact" className="text-sm font-medium cursor-pointer">
-                        Initial contact with Seller
-                      </label>
-                    </div>
-                    {company?.initialDiscussionDate && company?.initialDiscussionCompleted && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(company.initialDiscussionDate).toLocaleDateString('en-GB', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </span>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
 
