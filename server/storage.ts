@@ -1940,7 +1940,7 @@ export class DatabaseStorage implements IStorage {
       .from(targetCompanies)
       .where(and(
         eq(targetCompanies.userCompanyId, userCompanyId),
-        sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`
+        sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`
       ))
       .groupBy(targetCompanies.stage);
 
