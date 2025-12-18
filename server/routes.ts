@@ -567,14 +567,20 @@ async function sendDetailedAnalysisWebhook(eventId: number) {
 
     console.log(`[DETAILED_ANALYSIS_WEBHOOK] Sending webhook for event ${eventId}:`, JSON.stringify(webhookPayload, null, 2));
 
-    // Send webhook
+    // Send webhook with extended timeout (5 minutes for slow external service)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+    
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(webhookPayload),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     const processingTime = Date.now() - startTime;
     const responseText = await response.text();
