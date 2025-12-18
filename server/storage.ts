@@ -32,6 +32,7 @@ import {
   portalLinkShares,
   companyDocumentRequirements,
   documentStageProgression,
+  dealNotes,
   type User,
   type UserCompany,
   type TargetCompany,
@@ -97,6 +98,8 @@ import {
   type InsertDocumentStageProgression,
   type UserCompanyMembership,
   type InsertUserCompanyMembership,
+  type DealNote,
+  type InsertDealNote,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, desc, asc, sql, or, ilike, gte, lte, isNull, gt, exists } from "drizzle-orm";
@@ -375,6 +378,13 @@ export interface IStorage {
   updateStage1AnalysisEventDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined>;
   getLatestStage1AnalysisEvent(targetCompanyId: number): Promise<Stage1AnalysisEvent | null>;
   getLatestDocumentUploadTime(targetCompanyId: number): Promise<Date | null>;
+  
+  // Deal notes operations
+  getDealNotes(targetCompanyId: number): Promise<DealNote[]>;
+  createDealNote(note: InsertDealNote): Promise<DealNote>;
+  updateDealNote(noteId: number, note: Partial<InsertDealNote>): Promise<DealNote | undefined>;
+  deleteDealNote(noteId: number): Promise<boolean>;
+  toggleInitialDiscussion(companyId: number, completed: boolean, userId: number): Promise<TargetCompany | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3731,6 +3741,53 @@ export class DatabaseStorage implements IStorage {
       .where(eq(stage1AnalysisEvents.id, eventId))
       .returning();
     return updated || undefined;
+  }
+
+  // Deal notes methods
+  async getDealNotes(targetCompanyId: number): Promise<DealNote[]> {
+    return await db
+      .select()
+      .from(dealNotes)
+      .where(eq(dealNotes.targetCompanyId, targetCompanyId))
+      .orderBy(desc(dealNotes.createdAt));
+  }
+
+  async createDealNote(note: InsertDealNote): Promise<DealNote> {
+    const [result] = await db
+      .insert(dealNotes)
+      .values(note)
+      .returning();
+    return result;
+  }
+
+  async updateDealNote(noteId: number, note: Partial<InsertDealNote>): Promise<DealNote | undefined> {
+    const [updated] = await db
+      .update(dealNotes)
+      .set({ ...note, updatedAt: new Date() })
+      .where(eq(dealNotes.id, noteId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDealNote(noteId: number): Promise<boolean> {
+    const result = await db
+      .delete(dealNotes)
+      .where(eq(dealNotes.id, noteId))
+      .returning();
+    return result.length > 0;
+  }
+
+  async toggleInitialDiscussion(companyId: number, completed: boolean, userId: number): Promise<TargetCompany | undefined> {
+    const [updated] = await db
+      .update(targetCompanies)
+      .set({
+        initialDiscussionCompleted: completed,
+        initialDiscussionDate: completed ? new Date() : null,
+        initialDiscussionBy: completed ? userId : null,
+      })
+      .where(eq(targetCompanies.id, companyId))
+      .returning();
+    return updated;
   }
 }
 

@@ -2301,13 +2301,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update initial discussion status for a company
+  // Toggle initial discussion status for a company (simple checkbox)
   app.put("/api/target-companies/:id/initial-discussion", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId;
       const userCompanyId = req.session.userCompanyId;
       const companyId = parseInt(req.params.id);
-      const { completed, notes } = req.body;
+      const { completed } = req.body;
 
       if (!userId || !userCompanyId) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -2323,10 +2323,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found or access denied" });
       }
 
-      const result = await storage.updateInitialDiscussion(companyId, completed, notes, userId);
+      const result = await storage.toggleInitialDiscussion(companyId, completed, userId);
       res.json({ success: true, message: "Initial discussion updated", data: result });
     } catch (error) {
       console.error("Update initial discussion error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Deal Notes CRUD operations
+  app.get("/api/target-companies/:id/notes", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userCompanyId = req.session.userCompanyId;
+      const companyId = parseInt(req.params.id);
+
+      if (!userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      const company = await storage.getTargetCompany(companyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const notes = await storage.getDealNotes(companyId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Get deal notes error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/target-companies/:id/notes", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const companyId = parseInt(req.params.id);
+
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      const company = await storage.getTargetCompany(companyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const { title, content, reminderDate } = req.body;
+      if (!title) {
+        return res.status(400).json({ message: "Title is required" });
+      }
+
+      const note = await storage.createDealNote({
+        targetCompanyId: companyId,
+        title,
+        content: content || null,
+        reminderDate: reminderDate ? new Date(reminderDate) : null,
+        reminderCompleted: false,
+        createdBy: userId,
+      });
+      res.json(note);
+    } catch (error) {
+      console.error("Create deal note error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/notes/:noteId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const noteId = parseInt(req.params.noteId);
+
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(noteId)) {
+        return res.status(400).json({ message: "Invalid note ID" });
+      }
+
+      const { title, content, reminderDate, reminderCompleted } = req.body;
+      const updates: any = {};
+      if (title !== undefined) updates.title = title;
+      if (content !== undefined) updates.content = content;
+      if (reminderDate !== undefined) updates.reminderDate = reminderDate ? new Date(reminderDate) : null;
+      if (reminderCompleted !== undefined) updates.reminderCompleted = reminderCompleted;
+
+      const note = await storage.updateDealNote(noteId, updates);
+      if (!note) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      res.json(note);
+    } catch (error) {
+      console.error("Update deal note error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/notes/:noteId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const noteId = parseInt(req.params.noteId);
+
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(noteId)) {
+        return res.status(400).json({ message: "Invalid note ID" });
+      }
+
+      const deleted = await storage.deleteDealNote(noteId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      res.json({ success: true, message: "Note deleted" });
+    } catch (error) {
+      console.error("Delete deal note error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
