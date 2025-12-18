@@ -2301,6 +2301,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update initial discussion status for a company
+  app.put("/api/target-companies/:id/initial-discussion", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      const userCompanyId = req.session.userCompanyId;
+      const companyId = parseInt(req.params.id);
+      const { completed, notes } = req.body;
+
+      if (!userId || !userCompanyId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+
+      // Verify user has access to this company
+      const company = await storage.getTargetCompany(companyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found or access denied" });
+      }
+
+      const result = await storage.updateInitialDiscussion(companyId, completed, notes, userId);
+      res.json({ success: true, message: "Initial discussion updated", data: result });
+    } catch (error) {
+      console.error("Update initial discussion error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get pipeline overview
   app.get("/api/pipeline/overview", isAuthenticated, async (req: Request, res: Response) => {
     try {

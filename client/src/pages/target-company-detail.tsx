@@ -37,7 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2 } from "lucide-react";
 import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -80,6 +80,8 @@ export default function TargetCompanyDetail() {
   const { toast } = useToast();
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<TargetContact | null>(null);
+  const [showDiscussionDialog, setShowDiscussionDialog] = useState(false);
+  const [discussionNotes, setDiscussionNotes] = useState("");
 
   const contactForm = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -200,6 +202,27 @@ export default function TargetCompanyDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete contact",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateInitialDiscussionMutation = useMutation({
+    mutationFn: (data: { completed: boolean; notes: string | null }) =>
+      apiRequest("PUT", `/api/target-companies/${id}/initial-discussion`, data),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Initial discussion status updated",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+      setShowDiscussionDialog(false);
+      setDiscussionNotes("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update initial discussion",
         variant: "destructive",
       });
     },
@@ -658,6 +681,90 @@ export default function TargetCompanyDetail() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Initial Discussion with Seller */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                    <CardTitle className="text-lg">Initial Discussion with Seller</CardTitle>
+                  </div>
+                  {company?.initialDiscussionCompleted ? (
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Completed
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Pending</Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {company?.initialDiscussionCompleted ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        Discussion held on{" "}
+                        {company.initialDiscussionDate
+                          ? new Date(company.initialDiscussionDate).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })
+                          : 'Unknown date'}
+                      </span>
+                    </div>
+                    {company.initialDiscussionNotes && (
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Notes</h4>
+                        <p className="text-sm bg-muted/50 rounded-lg p-3" data-testid="text-discussion-notes">
+                          {company.initialDiscussionNotes}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setDiscussionNotes(company.initialDiscussionNotes || "");
+                          setShowDiscussionDialog(true);
+                        }}
+                        data-testid="button-edit-discussion"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Notes
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (confirm("Are you sure you want to mark this discussion as incomplete?")) {
+                            updateInitialDiscussionMutation.mutate({ completed: false, notes: null });
+                          }
+                        }}
+                        data-testid="button-mark-incomplete"
+                      >
+                        Mark Incomplete
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground mb-4">
+                      No initial discussion recorded yet. Mark as complete when you've had your first conversation with the seller.
+                    </p>
+                    <Button onClick={() => setShowDiscussionDialog(true)} data-testid="button-mark-discussion-complete">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Mark Discussion Complete
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* System Information */}
             <Card>
@@ -1588,6 +1695,42 @@ export default function TargetCompanyDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Initial Discussion Dialog */}
+      <Dialog open={showDiscussionDialog} onOpenChange={setShowDiscussionDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {company?.initialDiscussionCompleted ? "Edit Discussion Notes" : "Mark Initial Discussion Complete"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Discussion Notes</label>
+              <Textarea
+                placeholder="Add notes about your initial conversation with the seller... (e.g., key points discussed, seller's expectations, timeline, etc.)"
+                value={discussionNotes}
+                onChange={(e) => setDiscussionNotes(e.target.value)}
+                rows={5}
+                data-testid="input-discussion-notes"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowDiscussionDialog(false)} data-testid="button-cancel-discussion">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => updateInitialDiscussionMutation.mutate({ completed: true, notes: discussionNotes || null })}
+              disabled={updateInitialDiscussionMutation.isPending}
+              data-testid="button-save-discussion"
+            >
+              {updateInitialDiscussionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {company?.initialDiscussionCompleted ? "Save Notes" : "Mark Complete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Contact Form Dialog */}
       <Dialog open={showContactForm} onOpenChange={setShowContactForm}>

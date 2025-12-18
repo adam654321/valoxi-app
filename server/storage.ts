@@ -261,6 +261,7 @@ export interface IStorage {
   // Pipeline stage operations
   getPipelineStages(): Promise<PipelineStage[]>;
   updateCompanyStage(companyId: number, newStage: string, userId: number, notes?: string): Promise<{ success: boolean; message: string; oldStage?: string; newStage?: string }>;
+  updateInitialDiscussion(companyId: number, completed: boolean, notes: string | null, userId: number): Promise<TargetCompany | undefined>;
   getStageHistory(targetCompanyId: number): Promise<StageHistory[]>;
   getPipelineOverview(userCompanyId: number): Promise<{
     stageStats: Array<{
@@ -1523,6 +1524,25 @@ export class DatabaseStorage implements IStorage {
       console.error('Error updating company stage:', error);
       return { success: false, message: 'Failed to update stage' };
     }
+  }
+
+  async updateInitialDiscussion(
+    companyId: number,
+    completed: boolean,
+    notes: string | null,
+    userId: number
+  ): Promise<TargetCompany | undefined> {
+    const [updated] = await db
+      .update(targetCompanies)
+      .set({
+        initialDiscussionCompleted: completed,
+        initialDiscussionNotes: notes,
+        initialDiscussionDate: completed ? new Date() : null,
+        initialDiscussionBy: completed ? userId : null,
+      })
+      .where(eq(targetCompanies.id, companyId))
+      .returning();
+    return updated;
   }
 
   async getStageHistory(targetCompanyId: number): Promise<StageHistory[]> {
