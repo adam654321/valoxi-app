@@ -531,6 +531,30 @@ export const stage1AnalysisEventsRelations = relations(stage1AnalysisEvents, ({ 
   }),
 }));
 
+// Deal notes for tracking multiple notes per target company
+export const dealNotes = pgTable("deal_notes", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content"),
+  reminderDate: timestamp("reminder_date"),
+  reminderCompleted: boolean("reminder_completed").default(false),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const dealNotesRelations = relations(dealNotes, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [dealNotes.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [dealNotes.createdBy],
+    references: [users.id],
+  }),
+}));
+
 export const documentAccessLogRelations = relations(documentAccessLog, ({ one }) => ({
   document: one(documents, {
     fields: [documentAccessLog.documentId],
@@ -662,6 +686,14 @@ export const insertStage1AnalysisEventSchema = createInsertSchema(stage1Analysis
   processingTime: true,
 });
 
+export const insertDealNoteSchema = createInsertSchema(dealNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  reminderDate: z.string().datetime().optional().nullable().or(z.date().optional().nullable()),
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -717,6 +749,9 @@ export type InsertDocumentAnalysisResult = z.infer<typeof insertDocumentAnalysis
 export type InsertStage1AnalysisEvent = z.infer<typeof insertStage1AnalysisEventSchema>;
 export type Stage1AnalysisEvent = typeof stage1AnalysisEvents.$inferSelect;
 export type DocumentAnalysisResult = typeof documentAnalysisResults.$inferSelect;
+
+export type InsertDealNote = z.infer<typeof insertDealNoteSchema>;
+export type DealNote = typeof dealNotes.$inferSelect;
 
 // Dashboard preferences table
 export const dashboardPreferences = pgTable("dashboard_preferences", {
