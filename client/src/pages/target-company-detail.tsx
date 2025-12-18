@@ -828,6 +828,33 @@ export default function TargetCompanyDetail() {
                       </div>
                     </div>
                   )}
+
+                  {/* Initial Contact with Seller */}
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        id="initial-contact"
+                        checked={company?.initialDiscussionCompleted || false}
+                        onCheckedChange={(checked) => {
+                          updateInitialDiscussionMutation.mutate({ completed: !!checked });
+                        }}
+                        disabled={updateInitialDiscussionMutation.isPending}
+                        data-testid="checkbox-initial-contact"
+                      />
+                      <label htmlFor="initial-contact" className="text-sm font-medium cursor-pointer">
+                        Initial contact with Seller
+                      </label>
+                    </div>
+                    {company?.initialDiscussionDate && company?.initialDiscussionCompleted && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(company.initialDiscussionDate).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -922,45 +949,6 @@ export default function TargetCompanyDetail() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Initial Discussion Checkbox */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                    <CardTitle className="text-lg">Seller Status</CardTitle>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="initial-discussion"
-                      checked={company?.initialDiscussionCompleted || false}
-                      onCheckedChange={(checked) => {
-                        updateInitialDiscussionMutation.mutate({ completed: !!checked });
-                      }}
-                      disabled={updateInitialDiscussionMutation.isPending}
-                      data-testid="checkbox-initial-discussion"
-                    />
-                    <label htmlFor="initial-discussion" className="text-sm font-medium cursor-pointer">
-                      Initial discussion completed
-                    </label>
-                  </div>
-                  {company?.initialDiscussionDate && company?.initialDiscussionCompleted && (
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(company.initialDiscussionDate).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Deal Notes Section */}
             <DealNotesSection targetCompanyId={parseInt(id!)} />
