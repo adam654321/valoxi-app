@@ -718,14 +718,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDashboardMetrics(userCompanyId: number): Promise<{ activeDeals: number; totalDealValue: string }> {
-    // Count active deals (not in Completion or Not Qualified stages)
+    // Count active deals (not in Completion or Not Qualified stages, including NULL/empty stages)
     const [activeResult] = await db
       .select({ count: count() })
       .from(targetCompanies)
       .where(
         and(
           eq(targetCompanies.userCompanyId, userCompanyId),
-          sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`
+          sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`
         )
       );
 
@@ -738,7 +738,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(targetCompanies.userCompanyId, userCompanyId),
-          sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`,
+          sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`,
           sql`${targetCompanies.annualRevenue} IS NOT NULL`
         )
       );
