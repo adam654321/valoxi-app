@@ -161,24 +161,31 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
       risks: [] as string[]
     };
     
+    const extractItems = (text: string): string[] => {
+      const matches = text.match(/\*\s+([^\n]+)/g) || [];
+      return matches
+        .map(s => s.replace(/^\*\s+/, '').trim())
+        .filter(s => s.length > 0);
+    };
+
     const strengthsMatch = sectionMatch[1].match(/\*\*Strengths:\*\*([\s\S]*?)(?=\*\*Weaknesses|\*\*Opportunities|\*\*Risks|$)/);
     if (strengthsMatch) {
-      swot.strengths = strengthsMatch[1].match(/\*\s+([^\n]+)/g)?.map(s => s.replace(/^\*\s+/, '')) || [];
+      swot.strengths = extractItems(strengthsMatch[1]);
     }
     
     const weaknessesMatch = sectionMatch[1].match(/\*\*Weaknesses:\*\*([\s\S]*?)(?=\*\*Opportunities|\*\*Risks|\*\*Final|$)/);
     if (weaknessesMatch) {
-      swot.weaknesses = weaknessesMatch[1].match(/\*\s+([^\n]+)/g)?.map(s => s.replace(/^\*\s+/, '')) || [];
+      swot.weaknesses = extractItems(weaknessesMatch[1]);
     }
     
     const opportunitiesMatch = sectionMatch[1].match(/\*\*Opportunities:\*\*([\s\S]*?)(?=\*\*Risks|\*\*Final|$)/);
     if (opportunitiesMatch) {
-      swot.opportunities = opportunitiesMatch[1].match(/\*\s+([^\n]+)/g)?.map(s => s.replace(/^\*\s+/, '')) || [];
+      swot.opportunities = extractItems(opportunitiesMatch[1]);
     }
     
     const risksMatch = sectionMatch[1].match(/\*\*Risks:\*\*([\s\S]*?)(?=\*\*Final|$)/);
     if (risksMatch) {
-      swot.risks = risksMatch[1].match(/\*\s+([^\n]+)/g)?.map(s => s.replace(/^\*\s+/, '')) || [];
+      swot.risks = extractItems(risksMatch[1]);
     }
     
     const verdictMatch = sectionMatch[1].match(/\*\*Final Verdict:\*\*[\s\S]*?\*\*"([^"]+)"\*\*/);
@@ -513,7 +520,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                       {investmentSummary.swot.strengths.map((item, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
                           <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
+                          <span className="prose prose-sm dark:prose-invert [&>p]:m-0 [&>p]:inline"><ReactMarkdown remarkPlugins={[remarkGfm]}>{item}</ReactMarkdown></span>
                         </li>
                       ))}
                     </ul>
@@ -532,7 +539,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                       {investmentSummary.swot.weaknesses.map((item, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
                           <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
+                          <span className="prose prose-sm dark:prose-invert [&>p]:m-0 [&>p]:inline"><ReactMarkdown remarkPlugins={[remarkGfm]}>{item}</ReactMarkdown></span>
                         </li>
                       ))}
                     </ul>
@@ -551,7 +558,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                       {investmentSummary.swot.opportunities.map((item, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
                           <Target className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
+                          <span className="prose prose-sm dark:prose-invert [&>p]:m-0 [&>p]:inline"><ReactMarkdown remarkPlugins={[remarkGfm]}>{item}</ReactMarkdown></span>
                         </li>
                       ))}
                     </ul>
@@ -570,7 +577,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                       {investmentSummary.swot.risks.map((item, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm">
                           <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
+                          <span className="prose prose-sm dark:prose-invert [&>p]:m-0 [&>p]:inline"><ReactMarkdown remarkPlugins={[remarkGfm]}>{item}</ReactMarkdown></span>
                         </li>
                       ))}
                     </ul>
