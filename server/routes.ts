@@ -509,7 +509,8 @@ async function runGeminiStage1Analysis(eventId: number, targetCompanyId: number,
         'success', 
         result.markdown, 
         new Date(),
-        result.processingTime
+        result.processingTime,
+        result.usageMetadata
       );
 
       console.log(`[GEMINI_STAGE1_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);

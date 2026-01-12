@@ -376,7 +376,7 @@ export interface IStorage {
   createStage1AnalysisEvent(event: InsertStage1AnalysisEvent): Promise<Stage1AnalysisEvent>;
   getStage1AnalysisEvent(eventId: number): Promise<Stage1AnalysisEvent | undefined>;
   getStage1AnalysisEventsByCompany(targetCompanyId: number, userCompanyId: number): Promise<Stage1AnalysisEvent[]>;
-  updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number): Promise<Stage1AnalysisEvent | undefined>;
+  updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number, usageMetadata?: any): Promise<Stage1AnalysisEvent | undefined>;
   updateStage1AnalysisEventDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined>;
   getLatestStage1AnalysisEvent(targetCompanyId: number): Promise<Stage1AnalysisEvent | null>;
   getLatestDocumentUploadTime(targetCompanyId: number): Promise<Date | null>;
@@ -3801,7 +3801,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(stage1AnalysisEvents.createdAt));
   }
 
-  async updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number): Promise<Stage1AnalysisEvent | undefined> {
+  async updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number, usageMetadata?: any): Promise<Stage1AnalysisEvent | undefined> {
     const [updated] = await db
       .update(stage1AnalysisEvents)
       .set({
@@ -3809,7 +3809,8 @@ export class DatabaseStorage implements IStorage {
         webhookResponse: response,
         webhookSentAt: sentAt,
         webhookSent: status === 'success',
-        processingTime: processingTime
+        processingTime: processingTime,
+        usageMetadata: usageMetadata
       })
       .where(eq(stage1AnalysisEvents.id, eventId))
       .returning();
