@@ -490,6 +490,7 @@ export const stage1AnalysisEvents = pgTable("stage1_analysis_events", {
   webhookSentAt: timestamp("webhook_sent_at"),
   processingTime: integer("processing_time"), // Time taken for webhook processing in ms
   detailedAnalysisData: json("detailed_analysis_data"), // Asset management & capital efficiency detailed analysis
+  usageMetadata: json("usage_metadata"), // Token usage data from Gemini API response
   createdAt: timestamp("created_at").defaultNow(),
 });
 
