@@ -10,6 +10,10 @@ This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and m
   - Modified `checkAndTriggerStage1Analysis()` to use Gemini instead of webhooks
   - Removed automatic detailed analysis webhook (to be implemented as on-demand feature)
   - Full implementation documented in `docs/GEMINI_STAGE1_IMPLEMENTATION.md`
+- **Token Usage Tracking**: Added `usage_metadata` column to `stage1_analysis_events` table to store Gemini API token usage data including:
+  - `promptTokenCount`, `candidatesTokenCount`, `totalTokenCount`
+  - `promptTokensDetails` (breakdown by modality: TEXT, IMAGE)
+  - `thoughtsTokenCount` for model reasoning tokens
 
 ## Recent Changes (August 2025)
 - **Unified Document Upload Process**: Portal uploads now use the same backend process as internal uploads, ensuring consistent categorization, folder placement, and webhook integration
