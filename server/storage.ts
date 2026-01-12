@@ -315,6 +315,7 @@ export interface IStorage {
   getExternalSubmission(submissionId: number, userCompanyId: number): Promise<any | null>;
   deleteExternalSubmission(submissionId: number, userCompanyId: number): Promise<boolean>;
   logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void>;
+  getStage1DocumentFiles(targetCompanyId: number): Promise<{ fileUrl: string; mimeType: string; category: string }[]>;
 
   // External Document Portal operations
   createPortalAccessToken(token: InsertPortalAccessToken): Promise<PortalAccessToken>;
@@ -2452,6 +2453,33 @@ export class DatabaseStorage implements IStorage {
       console.error(`[STORAGE] Error deleting external submission ${submissionId}:`, error);
       return false;
     }
+  }
+
+  async getStage1DocumentFiles(targetCompanyId: number): Promise<{ fileUrl: string; mimeType: string; category: string }[]> {
+    const requiredCategories = ['Company Accounts', 'Asset Register', 'Balance Sheet', 'Profit & Loss', 'Sales Ledger', 'Staff Matrix'];
+    
+    const docs = await db
+      .select({
+        filePath: documents.filePath,
+        fileType: documents.fileType,
+        documentCategory: documents.documentCategory,
+      })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.targetCompanyId, targetCompanyId),
+          sql`${documents.documentCategory} IN (${sql.join(requiredCategories.map(c => sql`${c}`), sql`, `)})`
+        )
+      )
+      .orderBy(documents.documentCategory, desc(documents.uploadDate));
+
+    console.log(`[STORAGE] Found ${docs.length} Stage 1 documents for company ${targetCompanyId}`);
+
+    return docs.map(doc => ({
+      fileUrl: doc.filePath,
+      mimeType: doc.fileType,
+      category: doc.documentCategory,
+    }));
   }
 
   async clearAllCompanyDocuments(userCompanyId: number): Promise<{ 
