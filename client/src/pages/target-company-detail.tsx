@@ -45,6 +45,7 @@ import { PipelineStageManagement } from "@/components/pipeline-stage-management"
 import { ActivityManagement } from "@/components/activity-management";
 import { DocumentManagement } from "@/components/document-management";
 import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
+import { Stage1AnalysisDisplay } from "@/components/stage1-analysis-display";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1197,600 +1198,75 @@ export default function TargetCompanyDetail() {
                 </TabsList>
                 
                 <TabsContent value="investment-summary" className="space-y-6">
-                  <div className="space-y-6">
-                {/* Investment Summary Dashboard - Featured at Top */}
-                {(() => {
-                  const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
-                  const eventToShow = successfulEvent || stage1Events[0];
-                  
-                  if (!eventToShow || eventToShow.webhookStatus !== 'success' || !eventToShow.webhookResponse) {
-                    return null;
-                  }
-
-                  try {
-                    // Parse the webhook response and extract the analysis content
-                    const responseData = JSON.parse(eventToShow.webhookResponse);
-                    const analysisContent = responseData.analysis || responseData.data?.analysis || eventToShow.webhookResponse;
+                  {(() => {
+                    const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
+                    const eventToShow = successfulEvent || stage1Events[0];
                     
-                    // Extract Investment Summary section from the analysis
-                    const extractInvestmentSummary = (content: string) => {
-                      // Look for Investment Summary & Recommendation section and clean it
-                      const summaryMatch = content.match(/(?:6\.\s*)?✅?\s*Investment Summary[^#]*?(?=(?:\n##|\n#|$))/i);
-                      if (summaryMatch) {
-                        // Remove the section number and emoji if present
-                        return summaryMatch[0].replace(/^(?:6\.\s*)?✅?\s*Investment Summary & Recommendation\s*\n?/i, '');
+                    if (!eventToShow) {
+                      return (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg font-medium mb-2">No analysis available</p>
+                          <p className="text-sm">Analysis will appear here when ready</p>
+                        </div>
+                      );
+                    }
+
+                    if (eventToShow.webhookStatus === 'pending') {
+                      return (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <RefreshCw className="w-12 h-12 mx-auto mb-4 animate-spin opacity-50" />
+                          <p className="text-lg font-medium mb-2">Analysis in progress...</p>
+                          <p className="text-sm">Please wait while we analyze your documents</p>
+                        </div>
+                      );
+                    }
+
+                    if (eventToShow.webhookStatus === 'failed') {
+                      return (
+                        <div className="text-center py-12 text-red-600 dark:text-red-400">
+                          <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg font-medium mb-2">Analysis failed</p>
+                          <p className="text-sm">{eventToShow.webhookResponse || 'An error occurred during analysis'}</p>
+                        </div>
+                      );
+                    }
+
+                    if (!eventToShow.webhookResponse) {
+                      return (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg font-medium mb-2">No analysis data</p>
+                          <p className="text-sm">Analysis response is empty</p>
+                        </div>
+                      );
+                    }
+
+                    // Parse usage metadata if available
+                    let usageMetadata = null;
+                    if (eventToShow.usageMetadata) {
+                      try {
+                        usageMetadata = typeof eventToShow.usageMetadata === 'string' 
+                          ? JSON.parse(eventToShow.usageMetadata) 
+                          : eventToShow.usageMetadata;
+                      } catch (e) {
+                        console.error('Failed to parse usage metadata:', e);
                       }
-                      
-                      // Fallback: look for recommendation section
-                      const recMatch = content.match(/(?:recommendation|summary)[^#]*?(?=(?:\n##|\n#|$))/i);
-                      return recMatch ? recMatch[0] : null;
-                    };
+                    }
 
-                    // Extract structured sections from the content - simple approach
-                    const extractStructuredSections = (content: string) => {
-                      const sections = {
-                        strengths: '',
-                        weaknesses: '',
-                        opportunities: '',
-                        risks: '',
-                        recommendation: ''
-                      };
-
-                      // Helper function to clean markdown and remove code blocks
-                      const cleanContent = (text: string): string => {
-                        return text
-                          .replace(/```[\s\S]*?```/g, '') // Remove code blocks with triple backticks
-                          .replace(/`([^`]+)`/g, '$1') // Remove inline code backticks
-                          .replace(/\*\*/g, '') // Remove bold markers
-                          .replace(/^[ \t]+/gm, '') // Remove leading whitespace/indentation that creates code blocks
-                          .replace(/^[-*]\s*$/gm, '') // Remove empty bullet points (lines with just - or * and whitespace)
-                          .replace(/\n{3,}/g, '\n\n') // Clean up excessive newlines created by removing empty bullets
-                          .trim();
-                      };
-
-                      // Simple split approach
-                      const parts = content.split(/(?=Strengths:|Weaknesses:|Opportunities for Growth:|Risks:|Recommendation:)/);
-                      
-                      parts.forEach(part => {
-                        const trimmed = part.trim();
-                        if (trimmed.startsWith('Strengths:')) {
-                          sections.strengths = cleanContent(trimmed.replace('Strengths:', ''));
-                        } else if (trimmed.startsWith('Weaknesses:')) {
-                          sections.weaknesses = cleanContent(trimmed.replace('Weaknesses:', ''));
-                        } else if (trimmed.startsWith('Opportunities for Growth:')) {
-                          sections.opportunities = cleanContent(trimmed.replace('Opportunities for Growth:', ''));
-                        } else if (trimmed.startsWith('Risks:')) {
-                          sections.risks = cleanContent(trimmed.replace('Risks:', ''));
-                        } else if (trimmed.startsWith('Recommendation:')) {
-                          sections.recommendation = cleanContent(trimmed.replace('Recommendation:', ''));
-                        }
-                      });
-
-                      return sections;
-                    };
-
-                    // Parse financial data from the most recent full year of accounts
-                    const parseFinancials = (content: string) => {
-                      interface YearMatch {
-                        year: number;
-                        index: number;
-                        contextStart: number;
-                        contextEnd: number;
-                      }
-                      
-                      interface FinancialData {
-                        year: number;
-                        revenue: number | null;
-                        netProfit: number | null;
-                      }
-                      
-                      const financialsByYear: FinancialData[] = [];
-                      
-                      // Year context patterns - match the actual analysis format
-                      const yearPatterns = [
-                        // Standard formal patterns
-                        /(?:year(?:s)?\s+(?:ended|to)|for\s+the\s+year(?:\s+ended)?|y\/e|fy)\s*(?:on\s*)?(?:the\s*)?(?:\d{1,2}\s*[a-zA-Z]{3,9}\s*)?(\d{4})/g,
-                        /(?:accounts|financial\s+year|period)\s+(?:for\s+)?(?:the\s+)?(?:year\s+)?(?:ended?\s*)?(?:on\s*)?(?:the\s*)?(?:\d{1,2}\s*[a-zA-Z]{3,9}\s*)?(\d{4})/g,
-                        /(\d{4})\s*(?:financial\s+)?(?:year|accounts)/g,
-                        // Table headers and markdown patterns common in analysis
-                        /\|\s*(20\d{2})\s*\|/g,
-                        /^(20\d{2})$/gm,
-                        // Specific patterns for this analysis format
-                        /(?:covers?\s+the\s+years?\s+)(?:\d{4}(?:,\s*)?)*(?:and\s+)?(\d{4})/g,
-                        /(?:\b|\s)(20\d{2})(?=\s*[:|,.\s]|\s*$)/g
-                      ];
-                      
-                      // Find all year mentions with context
-                      const yearMatches: YearMatch[] = [];
-                      yearPatterns.forEach(pattern => {
-                        let match;
-                        while ((match = pattern.exec(content)) !== null) {
-                          const year = parseInt(match[1]);
-                          if (year >= 2015 && year <= 2030) { // Reasonable year range
-                            yearMatches.push({
-                              year,
-                              index: match.index,
-                              contextStart: Math.max(0, match.index - 200),
-                              contextEnd: Math.min(content.length, match.index + 500)
-                            });
-                          }
-                        }
-                      });
-                      
-                      // Extract financial data for each year
-                      yearMatches.forEach(yearMatch => {
-                        const yearContext = content.slice(yearMatch.contextStart, yearMatch.contextEnd);
-                        
-                        // Look for revenue in Revenue Growth section specifically
-                        const revenuePatterns = [
-                          // Match "YYYY: £amount" format in Revenue Growth section
-                          new RegExp(`${yearMatch.year}:\\s*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?`, 'gi'),
-                          // Match revenue line items in structured format
-                          new RegExp(`${yearMatch.year}[^\\n]*revenue[^\\n]*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?`, 'gi'),
-                          // Match within Revenue Growth context
-                          /Revenue Growth:[\s\S]*?(\d{4}):\s*£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi
-                        ];
-                        
-                        // Look for net profit in Net Profit & Margins section specifically  
-                        const profitPatterns = [
-                          // Match "YYYY: £amount" format in Net Profit section
-                          new RegExp(`${yearMatch.year}:\\s*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?\\s*\\([\\d.]+%\\s*of\\s*Revenue\\)`, 'gi'),
-                          // Match within Net Profit & Margins context
-                          /Net Profit & Margins:[\s\S]*?(\d{4}):\s*£\s*((?:\d{1,3}(?:,\d{3})+|\d{4,}|\d+\.\d+))\s*([km])?/gi,
-                          // Match profit line with percentage
-                          new RegExp(`${yearMatch.year}[^\\n]*£\\s*((?:\\d{1,3}(?:,\\d{3})+|\\d{4,}|\\d+\\.\\d+))\\s*([km])?\\s*\\([\\d.]+%\\s*of\\s*Revenue\\)`, 'gi')
-                        ];
-                        
-                        let revenue: number | null = null;
-                        let netProfit: number | null = null;
-                        
-                        // Extract revenue
-                        revenuePatterns.forEach(pattern => {
-                          if (revenue === null) {
-                            // Reset regex for each use
-                            pattern.lastIndex = 0;
-                            const match = pattern.exec(yearContext);
-                            if (match) {
-                              let value = parseFloat(match[1].replace(/,/g, ''));
-                              if (match[2] === 'k') value *= 1000;
-                              if (match[2] === 'm') value *= 1000000;
-                              if (value > 1000) { // Reasonable minimum for company revenue
-                                revenue = value;
-                              }
-                            }
-                          }
-                        });
-                        
-                        // Extract net profit
-                        profitPatterns.forEach(pattern => {
-                          if (netProfit === null) {
-                            // Reset regex for each use
-                            pattern.lastIndex = 0;
-                            const match = pattern.exec(yearContext);
-                            if (match) {
-                              let value = parseFloat(match[1].replace(/,/g, ''));
-                              if (match[2] === 'k') value *= 1000;
-                              if (match[2] === 'm') value *= 1000000;
-                              
-                              // Check if it's a loss (negative) - be more specific about loss indicators
-                              const contextBefore = yearContext.slice(Math.max(0, match.index - 100), match.index);
-                              const contextAfter = yearContext.slice(match.index, Math.min(yearContext.length, match.index + 150));
-                              
-                              // Only mark as negative if explicitly mentioned as loss or in parentheses without positive context
-                              const isExplicitLoss = contextBefore.includes('loss for') || contextAfter.includes('loss for') || 
-                                                    contextBefore.includes('net loss') || contextAfter.includes('net loss');
-                              const inParentheses = match[0].includes('(') && match[0].includes(')');
-                              const hasPositiveContext = contextAfter.includes('profit') || contextAfter.includes('% of Revenue');
-                              
-                              if (isExplicitLoss || (inParentheses && !hasPositiveContext)) {
-                                value = -Math.abs(value);
-                              }
-                              
-                              netProfit = value;
-                            }
-                          }
-                        });
-                        
-                        if (revenue !== null || netProfit !== null) {
-                          financialsByYear.push({
-                            year: yearMatch.year,
-                            revenue,
-                            netProfit
-                          });
-                        }
-                      });
-                      
-                      // Remove duplicates and consolidate by year, keeping the best values
-                      const consolidatedByYear: { [year: number]: FinancialData } = {};
-                      
-                      financialsByYear.forEach(entry => {
-                        if (!consolidatedByYear[entry.year]) {
-                          consolidatedByYear[entry.year] = { year: entry.year, revenue: null, netProfit: null };
-                        }
-                        
-                        // For revenue, prefer the largest reasonable value (likely to be the main revenue figure)
-                        if (entry.revenue && entry.revenue > 50000 && (!consolidatedByYear[entry.year].revenue || entry.revenue > consolidatedByYear[entry.year].revenue!)) {
-                          consolidatedByYear[entry.year].revenue = entry.revenue;
-                        }
-                        
-                        // For net profit, prefer positive values, but keep the most reasonable value
-                        if (entry.netProfit !== null) {
-                          if (!consolidatedByYear[entry.year].netProfit || 
-                              (entry.netProfit > 0 && consolidatedByYear[entry.year].netProfit! <= 0) ||
-                              (entry.netProfit > 0 && entry.netProfit < consolidatedByYear[entry.year].netProfit!) ||
-                              (entry.netProfit > consolidatedByYear[entry.year].netProfit! && consolidatedByYear[entry.year].netProfit! < 0)) {
-                            consolidatedByYear[entry.year].netProfit = entry.netProfit;
-                          }
-                        }
-                      });
-                      
-                      // Convert back to array and sort by year
-                      const consolidatedArray = Object.values(consolidatedByYear).sort((a, b) => b.year - a.year);
-                      
-                      // Find the most recent year with both revenue and profit, fallback to most recent with either
-                      const mostRecentComplete = consolidatedArray.find(f => f.revenue && f.netProfit !== null);
-                      const mostRecentWithRevenue = consolidatedArray.find(f => f.revenue);
-                      const mostRecent = mostRecentComplete || mostRecentWithRevenue || consolidatedArray[0];
-                      
-                      // If we have revenue but no profit for the same year, try to find profit from same year in original data
-                      let finalRevenue = mostRecent?.revenue || null;
-                      let finalNetProfit = mostRecent?.netProfit || null;
-                      
-                      if (finalRevenue && !finalNetProfit && mostRecent) {
-                        const samYearWithProfit = consolidatedArray.find(f => f.year === mostRecent.year && f.netProfit !== null);
-                        if (samYearWithProfit) {
-                          finalNetProfit = samYearWithProfit.netProfit;
-                        }
-                      }
-                      
-                      return {
-                        latestYear: mostRecent?.year,
-                        latestRevenue: finalRevenue,
-                        latestNetProfit: finalNetProfit,
-                        byYear: consolidatedArray
-                      };
-                    };
-
-                    // Extract key metrics using the robust parser
-                    const extractKeyMetrics = (content: string) => {
-                      const metrics = [];
-                      const financials = parseFinancials(content);
-                      
-                      if (financials.latestRevenue) {
-                        const revenueLabel = financials.latestYear ? `Latest Revenue (${financials.latestYear})` : "Latest Revenue";
-                        metrics.push({ 
-                          label: revenueLabel, 
-                          value: formatCurrency(financials.latestRevenue), 
-                          type: "currency" 
-                        });
-                      }
-                      
-                      if (financials.latestNetProfit !== null && financials.latestNetProfit !== undefined) {
-                        const profitLabel = financials.latestYear ? `Net Profit (${financials.latestYear})` : "Net Profit";
-                        metrics.push({ 
-                          label: profitLabel, 
-                          value: formatCurrency(financials.latestNetProfit), 
-                          type: "currency" 
-                        });
-                      }
-                      
-                      return metrics;
-                    };
-
-                    // Extract risk assessment
-                    const extractRiskLevel = (content: string) => {
-                      const lowerContent = content.toLowerCase();
-                      if (lowerContent.includes('high risk') || lowerContent.includes('major red flag') || lowerContent.includes('severe')) {
-                        return { level: "High", color: "bg-red-500", description: "Significant concerns identified" };
-                      } else if (lowerContent.includes('medium risk') || lowerContent.includes('moderate')) {
-                        return { level: "Medium", color: "bg-yellow-500", description: "Some risks to consider" };
-                      } else if (lowerContent.includes('low risk') || lowerContent.includes('attractive')) {
-                        return { level: "Low", color: "bg-green-500", description: "Favorable investment profile" };
-                      }
-                      return { level: "Under Review", color: "bg-gray-500", description: "Analysis in progress" };
-                    };
-
-                    const investmentSummary = extractInvestmentSummary(analysisContent);
-                    const keyMetrics = extractKeyMetrics(analysisContent);
-                    const riskAssessment = extractRiskLevel(analysisContent);
-                    const structuredSections = extractStructuredSections(investmentSummary || '');
+                    // Get the markdown content - the response is stored as the analysis directly
+                    const markdownContent = eventToShow.webhookResponse;
 
                     return (
-                      <>
-                        {/* Investment Summary Dashboard Card */}
-                        <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-                            <CardTitle className="text-xl flex items-center gap-3">
-                              <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                                <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                              </div>
-                              Investment Summary & Recommendation
-                            </CardTitle>
-                            <CardDescription className="text-base">
-                              Executive overview and investment recommendation for {company.companyName}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pt-6 space-y-6">
-                            {/* Key Metrics Dashboard */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                              {/* Risk Assessment */}
-                              <Card className="border-l-4 border-l-blue-500">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-muted-foreground">Risk Level</span>
-                                    <div className={`w-3 h-3 rounded-full ${riskAssessment.color}`}></div>
-                                  </div>
-                                  <div className="font-semibold text-lg">{riskAssessment.level}</div>
-                                  <div className="text-xs text-muted-foreground mt-1">{riskAssessment.description}</div>
-                                </CardContent>
-                              </Card>
-
-                              {/* Key Metrics */}
-                              {keyMetrics.slice(0, 2).map((metric, index) => (
-                                <Card key={index} className="border-l-4 border-l-green-500">
-                                  <CardContent className="p-4">
-                                    <div className="text-sm font-medium text-muted-foreground mb-2">{metric.label}</div>
-                                    <div className="font-semibold text-lg">{metric.value}</div>
-                                    <div className="text-xs text-muted-foreground mt-1">From financial analysis</div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-
-                            <Separator />
-
-                            {/* Structured Analysis Sections */}
-                            <div className="space-y-6">
-                              {/* Strengths Section */}
-                              {structuredSections.strengths && (
-                                <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
-                                  <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
-                                      <CheckCircle className="w-5 h-5" />
-                                      Strengths
-                                    </CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {structuredSections.strengths}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-
-                              {/* Weaknesses Section */}
-                              {structuredSections.weaknesses && (
-                                <Card className="border-2 border-red-200 dark:border-red-800 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20">
-                                  <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2 text-red-700 dark:text-red-400">
-                                      <AlertTriangle className="w-5 h-5" />
-                                      Weaknesses
-                                    </CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {structuredSections.weaknesses}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-
-                              {/* Opportunities Section */}
-                              {structuredSections.opportunities && (
-                                <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-                                  <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                                      <TrendingUp className="w-5 h-5" />
-                                      Opportunities for Growth
-                                    </CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {structuredSections.opportunities}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-
-                              {/* Risks Section */}
-                              {structuredSections.risks && (
-                                <Card className="border-2 border-orange-200 dark:border-orange-800 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
-                                  <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                                      <AlertTriangle className="w-5 h-5" />
-                                      Risks
-                                    </CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none [&_ul]:my-2 [&_li]:my-1">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {structuredSections.risks}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-
-                              {/* Final Recommendation Section */}
-                              {structuredSections.recommendation && (
-                                <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
-                                  <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                                      <BarChart3 className="w-5 h-5" />
-                                      Final Recommendation
-                                    </CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {structuredSections.recommendation}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-
-                              {/* Fallback: Show full content if sections can't be extracted */}
-                              {!structuredSections.strengths && !structuredSections.weaknesses && !structuredSections.recommendation && investmentSummary && (
-                                <Card>
-                                  <CardContent className="pt-6">
-                                    <div className="prose dark:prose-invert max-w-none">
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {investmentSummary}
-                                      </ReactMarkdown>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </>
+                      <Stage1AnalysisDisplay 
+                        markdown={markdownContent}
+                        usageMetadata={usageMetadata}
+                        processingTime={eventToShow.processingTime || undefined}
+                      />
                     );
-                  } catch (error) {
-                    return null;
-                  }
-                })()}
-
-                {/* Detailed Analysis Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <BarChart className="w-5 h-5" />
-                      Financial analysis
-                    </CardTitle>
-                    <CardDescription>
-                      Complete Stage 1 analysis with all financial and operational details
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Show the most recent successful event, or latest event if none succeeded */}
-                      {(() => {
-                        const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
-                        const eventToShow = successfulEvent || stage1Events[0];
-                        return eventToShow ? [eventToShow] : [];
-                      })().map((event) => (
-                        <Card key={event.id} className="border-l-4 border-l-blue-500">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h3 className="font-semibold">Stage 1 Analysis</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  Generated on {new Date(event.createdAt || new Date()).toLocaleDateString()} at {new Date(event.createdAt || new Date()).toLocaleTimeString()}
-                                </p>
-                              </div>
-                              <Badge variant={event.webhookStatus === 'success' ? 'default' : event.webhookStatus === 'failed' ? 'destructive' : 'secondary'}>
-                                {event.webhookStatus === 'success' ? 'completed' : event.webhookStatus === 'failed' ? 'failed' : 'pending'}
-                              </Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            {event.webhookStatus === 'success' && event.webhookResponse ? (() => {
-                              try {
-                                // Parse the webhook response JSON to extract the analysis content
-                                const responseData = JSON.parse(event.webhookResponse);
-                                const analysisContent = responseData.analysis || responseData.data?.analysis || event.webhookResponse;
-                                
-                                // Create collapsible sections for detailed analysis
-                                const createCollapsibleSections = (content: string) => {
-                                  // Split content by numbered sections (1., 2., 3., etc.)
-                                  const sections = content.split(/(?=\d+\.\s*[🧾📈🧩📊⚠️🎯])/);
-                                  
-                                  return sections.filter(section => section.trim()).map((section, index) => {
-                                    const trimmedSection = section.trim();
-                                    if (!trimmedSection) return null;
-                                    
-                                    // Extract the heading (first line)
-                                    const lines = trimmedSection.split('\n');
-                                    const heading = lines[0]?.trim() || '';
-                                    const content = lines.slice(1).join('\n').trim();
-                                    
-                                    if (!heading.match(/^\d+\./)) return null;
-                                    
-                                    return (
-                                      <Collapsible key={index} className="mb-4">
-                                        <CollapsibleTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            className="w-full justify-between p-4 h-auto text-left hover:bg-muted/50 rounded-lg border"
-                                          >
-                                            <span className="font-semibold text-base">{heading}</span>
-                                            <ChevronDown className="w-4 h-4 transition-transform duration-200 data-[state=open]:rotate-180" />
-                                          </Button>
-                                        </CollapsibleTrigger>
-                                        <CollapsibleContent className="mt-2">
-                                          <Card className="border-l-4 border-l-blue-500">
-                                            <CardContent className="p-4">
-                                              <div className="prose prose-sm dark:prose-invert max-w-none">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                  {content}
-                                                </ReactMarkdown>
-                                              </div>
-                                            </CardContent>
-                                          </Card>
-                                        </CollapsibleContent>
-                                      </Collapsible>
-                                    );
-                                  }).filter(Boolean);
-                                };
-
-                                const collapsibleSections = createCollapsibleSections(analysisContent);
-                                
-                                return (
-                                  <div className="space-y-4">
-                                    {collapsibleSections.length > 0 ? (
-                                      collapsibleSections
-                                    ) : (
-                                      <div className="prose dark:prose-invert max-w-none">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                          {analysisContent}
-                                        </ReactMarkdown>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              } catch (error) {
-                                // Fallback to rendering the raw response if JSON parsing fails
-                                return (
-                                  <div className="prose dark:prose-invert max-w-none">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                      {event.webhookResponse}
-                                    </ReactMarkdown>
-                                  </div>
-                                );
-                              }
-                            })() : event.webhookStatus === 'failed' ? (
-                              <div className="text-red-600 dark:text-red-400">
-                                <p className="font-medium">Analysis failed</p>
-                                {event.webhookResponse && (
-                                  <p className="text-sm mt-1">{event.webhookResponse}</p>
-                                )}
-                              </div>
-                            ) : event.webhookStatus === 'pending' && event.webhookSent ? (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                                <span>Analysis in progress...</span>
-                              </div>
-                            ) : (
-                              <div className="text-muted-foreground">
-                                <p>Analysis pending...</p>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                  </div>
+                  })()}
                 </TabsContent>
+
 
                 <TabsContent value="detailed-analysis" className="space-y-6">
                   {(() => {
