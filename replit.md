@@ -2,6 +2,15 @@
 
 This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and manage potential acquisition targets through their deal pipeline. It provides tools for M&A professionals, business buyers, and investment firms to manage target companies from initial identification to deal completion. Key capabilities include comprehensive target and contact management, robust team collaboration with role-based access control, integrated activity tracking, and a secure external document portal for due diligence. The platform streamlines the M&A process, enhances communication, and centralizes all deal-related information.
 
+## Recent Changes (January 2026)
+- **Stage 1 Analysis: Gemini Integration**: Replaced external webhook calls with internal Google Gemini LLM API calls for Stage 1 document analysis. When all 10 required files are uploaded, the system now sends file URLs directly to Gemini (gemini-3-flash-preview) for analysis instead of calling external webhooks. Key changes:
+  - New Gemini service at `server/gemini-stage1-service.ts`
+  - Prompt template at `server/prompts/stage1-analysis-prompt.ts`
+  - New storage function `getStage1DocumentFiles()` to gather file URLs
+  - Modified `checkAndTriggerStage1Analysis()` to use Gemini instead of webhooks
+  - Removed automatic detailed analysis webhook (to be implemented as on-demand feature)
+  - Full implementation documented in `docs/GEMINI_STAGE1_IMPLEMENTATION.md`
+
 ## Recent Changes (August 2025)
 - **Unified Document Upload Process**: Portal uploads now use the same backend process as internal uploads, ensuring consistent categorization, folder placement, and webhook integration
 - **Document Category Mapping**: Portal document types (company_accounts_1-5, balance_sheet, etc.) are automatically mapped to internal categories (Financial Statements, etc.)
@@ -73,7 +82,7 @@ Preferred communication style: Simple, everyday language.
 - **Webhook Integration**:
     - **Website Analysis**: Triggers when target companies are created with websites, sending data to an external service for analysis.
     - **File Upload Analysis**: Triggers on document upload, sending to an external analysis service. Supports sales ledger, staff matrix, asset register, profit & loss, and balance sheet document types, storing results in `document_analysis_results`. Displays financial metrics, employee data, asset breakdowns, profit & loss statements, and balance sheet analysis.
-    - **Stage 1 Analysis**: Triggers when all 5 required document analyses are complete, sending concatenated JSON data to an external `stage1_json_analyser` endpoint. Displays markdown-formatted analysis results in a dedicated "Analysis" tab.
+    - **Stage 1 Analysis (Gemini)**: Triggers when all 10 required documents are uploaded (5 Company Accounts + 5 analysis documents). Uses internal Google Gemini LLM API to analyze documents directly via file URLs, generating a Commercial Due Diligence Report in markdown format. Displays analysis results in a dedicated "Analysis" tab.
 - **Document Requirements System**: Standardized 29-requirement system applied to all deals, with a two-stage collection process (essential financial documents and comprehensive due diligence).
 
 # External Dependencies
