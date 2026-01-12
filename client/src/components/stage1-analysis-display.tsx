@@ -11,6 +11,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell
 } from "recharts";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Stage1AnalysisDisplayProps {
   markdown: string;
@@ -422,7 +424,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                   </div>
                   {assetRegister.insights && (
                     <div className="prose dark:prose-invert max-w-none text-sm">
-                      <div className="whitespace-pre-wrap">{assetRegister.insights}</div>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{assetRegister.insights}</ReactMarkdown>
                     </div>
                   )}
                 </div>
@@ -454,7 +456,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                   </div>
                   {salesLedger.observations && (
                     <div className="prose dark:prose-invert max-w-none text-sm">
-                      <div className="whitespace-pre-wrap">{salesLedger.observations}</div>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{salesLedger.observations}</ReactMarkdown>
                     </div>
                   )}
                 </div>
@@ -486,7 +488,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                   </div>
                   {staffMatrix.observations && (
                     <div className="prose dark:prose-invert max-w-none text-sm">
-                      <div className="whitespace-pre-wrap">{staffMatrix.observations}</div>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{staffMatrix.observations}</ReactMarkdown>
                     </div>
                   )}
                 </div>
@@ -590,7 +592,7 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                     </Badge>
                   </div>
                   <div className="prose dark:prose-invert max-w-none text-sm">
-                    <p>{investmentSummary.justification}</p>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{investmentSummary.justification}</ReactMarkdown>
                   </div>
                 </CardContent>
               </Card>
