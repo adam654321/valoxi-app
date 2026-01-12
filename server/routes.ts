@@ -17,6 +17,9 @@ import { db } from "./db";
 import { stage1AnalysisEvents } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
+// Import Gemini analysis service for Stage 1 analysis
+import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "./gemini-stage1-service";
+
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
   id: number;
@@ -443,14 +446,101 @@ async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredB
 
     console.log(`[STAGE1_ANALYSIS] Created stage 1 analysis event ${stage1Event.id} for company ${targetCompanyId}`);
 
-    // Send both webhooks asynchronously in parallel
+    // Run Gemini-based Stage 1 analysis instead of external webhooks
     setTimeout(() => {
-      sendStage1AnalysisWebhook(stage1Event.id);
-      sendDetailedAnalysisWebhook(stage1Event.id);
+      runGeminiStage1Analysis(stage1Event.id, targetCompanyId, targetCompany.companyName, sector);
     }, 100);
 
   } catch (error) {
     console.error(`[STAGE1_ANALYSIS] Failed to check and trigger stage 1 analysis for company ${targetCompanyId}:`, error);
+  }
+}
+
+// New function to run Gemini-based Stage 1 analysis
+async function runGeminiStage1Analysis(eventId: number, targetCompanyId: number, companyName: string, sector: string) {
+  console.log(`[GEMINI_STAGE1_ANALYSIS] Starting Gemini analysis for event ${eventId}, company ${companyName}`);
+
+  try {
+    // Get the document files for this company
+    const documentFiles = await storage.getStage1DocumentFiles(targetCompanyId);
+    
+    if (documentFiles.length === 0) {
+      console.error(`[GEMINI_STAGE1_ANALYSIS] No documents found for company ${targetCompanyId}`);
+      await storage.updateStage1AnalysisEventWebhookStatus(
+        eventId, 
+        'failed', 
+        'No documents found for analysis', 
+        new Date()
+      );
+      return;
+    }
+
+    console.log(`[GEMINI_STAGE1_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
+
+    // Convert to FileInfo format for Gemini service
+    const files: FileInfo[] = documentFiles.map(doc => ({
+      fileUrl: doc.fileUrl,
+      mimeType: getMimeTypeForFile(doc.mimeType),
+      category: doc.category,
+    }));
+
+    // Run Gemini analysis
+    const result = await runStage1GeminiAnalysis({
+      companyName,
+      sector,
+      files,
+    });
+
+    if (result.success && result.markdown) {
+      // Update the event with success status and markdown response
+      await storage.updateStage1AnalysisEventWebhookStatus(
+        eventId, 
+        'success', 
+        result.markdown, 
+        new Date(),
+        result.processingTime
+      );
+
+      console.log(`[GEMINI_STAGE1_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
+
+      // Get the event to notify clients
+      const event = await storage.getStage1AnalysisEvent(eventId);
+      
+      // Notify connected clients about Stage 1 analysis completion (for real-time UI updates)
+      if (global.documentUpdateListeners && event) {
+        global.documentUpdateListeners.forEach((listener) => {
+          if (listener.targetCompanyId === targetCompanyId) {
+            listener.res.write(`data: ${JSON.stringify({ 
+              type: 'stage1_analysis_completed', 
+              targetCompanyId: targetCompanyId,
+              eventId: eventId,
+              timestamp: new Date().toISOString()
+            })}\n\n`);
+          }
+        });
+      }
+      console.log(`[GEMINI_STAGE1_ANALYSIS] SSE notification sent for Stage 1 analysis completion of company ${targetCompanyId}`);
+    } else {
+      // Update the event with failed status
+      await storage.updateStage1AnalysisEventWebhookStatus(
+        eventId, 
+        'failed', 
+        JSON.stringify({ error: result.error || 'Unknown error' }), 
+        new Date(),
+        result.processingTime
+      );
+
+      console.error(`[GEMINI_STAGE1_ANALYSIS] Analysis failed for event ${eventId}: ${result.error}`);
+    }
+  } catch (error) {
+    console.error(`[GEMINI_STAGE1_ANALYSIS] Error running analysis for event ${eventId}:`, error);
+    
+    await storage.updateStage1AnalysisEventWebhookStatus(
+      eventId, 
+      'failed', 
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      new Date()
+    );
   }
 }
 
