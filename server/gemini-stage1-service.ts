@@ -70,7 +70,7 @@ export async function runStage1GeminiAnalysis(
     }, null, 2));
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
       {
         method: "POST",
         headers: {
