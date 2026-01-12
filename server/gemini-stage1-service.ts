@@ -1,13 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
 import { buildStage1Prompt } from "./prompts/stage1-analysis-prompt";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
 
 export interface FileInfo {
   fileUrl: string;
@@ -37,8 +28,14 @@ export async function runStage1GeminiAnalysis(
     console.log(`[GEMINI_STAGE1] Starting analysis for ${request.companyName}`);
     console.log(`[GEMINI_STAGE1] Processing ${request.files.length} files`);
 
+    const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("AI_INTEGRATIONS_GEMINI_API_KEY is not configured");
+    }
+
     const prompt = buildStage1Prompt(request.companyName, request.sector);
 
+    // Build file_data parts for each document
     const fileParts = request.files.map((file) => ({
       file_data: {
         mime_type: file.mimeType,
@@ -46,28 +43,56 @@ export async function runStage1GeminiAnalysis(
       },
     }));
 
-    const contentParts = [
-      ...fileParts,
-      { text: prompt },
-    ];
-
-    console.log(`[GEMINI_STAGE1] Sending request to Gemini with ${fileParts.length} files`);
-
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [
-        {
-          role: "user",
-          parts: contentParts as any,
-        },
-      ],
-      config: {
+    // Build the request body matching the exact CURL structure
+    const requestBody = {
+      generationConfig: {
         temperature: 0,
       },
-    });
+      contents: [
+        {
+          parts: [
+            ...fileParts,
+            { text: prompt },
+          ],
+        },
+      ],
+    };
+
+    console.log(`[GEMINI_STAGE1] Sending request to Gemini with ${fileParts.length} files`);
+    console.log(`[GEMINI_STAGE1] Request body structure:`, JSON.stringify({
+      generationConfig: requestBody.generationConfig,
+      contents: [{
+        parts: [
+          ...fileParts.map(f => ({ file_data: { mime_type: f.file_data.mime_type, file_uri: f.file_data.file_uri.substring(0, 50) + '...' } })),
+          { text: `<prompt length: ${prompt.length} chars>` }
+        ]
+      }]
+    }, null, 2));
+
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
 
     const processingTime = Date.now() - startTime;
-    const markdown = response.text || "";
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GEMINI_STAGE1] API error response:`, errorText);
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    
+    // Extract text from the response
+    const markdown = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     console.log(`[GEMINI_STAGE1] Analysis completed in ${processingTime}ms, response length: ${markdown.length} characters`);
 
