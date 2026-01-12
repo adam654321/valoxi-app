@@ -12,11 +12,23 @@ export interface Stage1AnalysisRequest {
   files: FileInfo[];
 }
 
+export interface UsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
+  promptTokensDetails?: Array<{
+    modality: string;
+    tokenCount: number;
+  }>;
+  thoughtsTokenCount?: number;
+}
+
 export interface Stage1AnalysisResult {
   success: boolean;
   markdown?: string;
   error?: string;
   processingTime?: number;
+  usageMetadata?: UsageMetadata;
 }
 
 export async function runStage1GeminiAnalysis(
@@ -93,13 +105,26 @@ export async function runStage1GeminiAnalysis(
     
     // Extract text from the response
     const markdown = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    // Extract usage metadata from the response
+    const usageMetadata: UsageMetadata | undefined = responseData?.usageMetadata ? {
+      promptTokenCount: responseData.usageMetadata.promptTokenCount,
+      candidatesTokenCount: responseData.usageMetadata.candidatesTokenCount,
+      totalTokenCount: responseData.usageMetadata.totalTokenCount,
+      promptTokensDetails: responseData.usageMetadata.promptTokensDetails,
+      thoughtsTokenCount: responseData.usageMetadata.thoughtsTokenCount,
+    } : undefined;
 
     console.log(`[GEMINI_STAGE1] Analysis completed in ${processingTime}ms, response length: ${markdown.length} characters`);
+    if (usageMetadata) {
+      console.log(`[GEMINI_STAGE1] Token usage: prompt=${usageMetadata.promptTokenCount}, candidates=${usageMetadata.candidatesTokenCount}, total=${usageMetadata.totalTokenCount}`);
+    }
 
     return {
       success: true,
       markdown,
       processingTime,
+      usageMetadata,
     };
   } catch (error) {
     const processingTime = Date.now() - startTime;
