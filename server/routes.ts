@@ -477,12 +477,23 @@ async function runGeminiStage1Analysis(eventId: number, targetCompanyId: number,
 
     console.log(`[GEMINI_STAGE1_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
 
-    // Convert to FileInfo format for Gemini service
+    // Construct the base URL for public document access
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : process.env.REPL_SLUG && process.env.REPL_OWNER
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+        : 'http://localhost:5000';
+
+    console.log(`[GEMINI_STAGE1_ANALYSIS] Using base URL: ${baseUrl}`);
+
+    // Convert to FileInfo format for Gemini service with public URLs
     const files: FileInfo[] = documentFiles.map(doc => ({
-      fileUrl: doc.fileUrl,
+      fileUrl: `${baseUrl}/api/public/documents/${doc.documentId}/download`,
       mimeType: getMimeTypeForFile(doc.mimeType),
       category: doc.category,
     }));
+
+    console.log(`[GEMINI_STAGE1_ANALYSIS] File URLs:`, files.map(f => f.fileUrl));
 
     // Run Gemini analysis
     const result = await runStage1GeminiAnalysis({

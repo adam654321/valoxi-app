@@ -315,7 +315,7 @@ export interface IStorage {
   getExternalSubmission(submissionId: number, userCompanyId: number): Promise<any | null>;
   deleteExternalSubmission(submissionId: number, userCompanyId: number): Promise<boolean>;
   logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void>;
-  getStage1DocumentFiles(targetCompanyId: number): Promise<{ fileUrl: string; mimeType: string; category: string }[]>;
+  getStage1DocumentFiles(targetCompanyId: number): Promise<{ documentId: number; mimeType: string; category: string }[]>;
 
   // External Document Portal operations
   createPortalAccessToken(token: InsertPortalAccessToken): Promise<PortalAccessToken>;
@@ -2455,12 +2455,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getStage1DocumentFiles(targetCompanyId: number): Promise<{ fileUrl: string; mimeType: string; category: string }[]> {
+  async getStage1DocumentFiles(targetCompanyId: number): Promise<{ documentId: number; mimeType: string; category: string }[]> {
     const requiredCategories = ['Company Accounts', 'Asset Register', 'Balance Sheet', 'Profit & Loss', 'Sales Ledger', 'Staff Matrix'];
     
     const docs = await db
       .select({
-        filePath: documents.filePath,
+        id: documents.id,
         fileType: documents.fileType,
         documentCategory: documents.documentCategory,
       })
@@ -2476,7 +2476,7 @@ export class DatabaseStorage implements IStorage {
     console.log(`[STORAGE] Found ${docs.length} Stage 1 documents for company ${targetCompanyId}`);
 
     return docs.map(doc => ({
-      fileUrl: doc.filePath,
+      documentId: doc.id,
       mimeType: doc.fileType,
       category: doc.documentCategory,
     }));
