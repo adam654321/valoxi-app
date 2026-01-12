@@ -28,9 +28,9 @@ export async function runStage1GeminiAnalysis(
     console.log(`[GEMINI_STAGE1] Starting analysis for ${request.companyName}`);
     console.log(`[GEMINI_STAGE1] Processing ${request.files.length} files`);
 
-    const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("AI_INTEGRATIONS_GEMINI_API_KEY is not configured");
+      throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
     }
 
     const prompt = buildStage1Prompt(request.companyName, request.sector);
