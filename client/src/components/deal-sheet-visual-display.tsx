@@ -28,12 +28,12 @@ interface DealSheetVisualDisplayProps {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
 const formatCurrency = (value: number) => {
-  if (Math.abs(value) >= 1000000) {
-    return `£${(value / 1000000).toFixed(1)}M`;
-  } else if (Math.abs(value) >= 1000) {
-    return `£${(value / 1000).toFixed(0)}K`;
-  }
-  return `£${value.toFixed(0)}`;
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 };
 
 const cleanMarkdown = (text: string): string => {
@@ -70,6 +70,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     const sectionMatch = content.match(/## 2\. FINANCIAL PERFORMANCE[\s\S]*?(?=## 3\.|$)/i);
     if (!sectionMatch) return null;
     
+    const isInThousands = /£000s|£'?000s|in thousands/i.test(sectionMatch[0]);
+    const multiplier = isInThousands ? 1000 : 1;
+    
     const tableMatch = sectionMatch[0].match(/\|[^\n]+\|\n\|[-\s|:]+\|\n((?:\|[^\n]+\|\n?)+)/);
     if (!tableMatch) return null;
     
@@ -86,22 +89,27 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
       const cells = row.split('|').map(c => c.trim()).filter(Boolean);
       if (cells.length >= 2) {
         const metric = cleanMarkdown(cells[0]);
-        const values: Record<string, any> = { metric };
+        const isPercentage = /%/.test(metric);
+        const values: Record<string, any> = { metric, isPercentage };
         years.forEach((year, idx) => {
           const rawValue = cells[idx + 1] || '';
-          const numMatch = rawValue.match(/[\d,]+\.?\d*/);
-          values[year] = numMatch ? parseFloat(numMatch[0].replace(/,/g, '')) : 0;
+          const numMatch = rawValue.match(/-?[\d,]+\.?\d*/);
+          const parsedValue = numMatch ? parseFloat(numMatch[0].replace(/,/g, '')) : 0;
+          values[year] = isPercentage ? parsedValue : parsedValue * multiplier;
         });
         data.push(values);
       }
     });
     
-    return { years, data };
+    return { years, data, isInThousands };
   };
 
   const parseLendingAnalysis = (content: string) => {
     const sectionMatch = content.match(/## 3\. LENDING ANALYSIS[\s\S]*?(?=## 4\.|$)/i);
     if (!sectionMatch) return null;
+    
+    const isInThousands = /£000s|£'?000s|in thousands/i.test(sectionMatch[0]);
+    const multiplier = isInThousands ? 1000 : 1;
     
     const dscrMatch = sectionMatch[0].match(/DSCR[^:]*:\s*([\d.]+)/i);
     const maxDebtMatch = sectionMatch[0].match(/Max(?:imum)?\s*(?:Annual)?\s*Debt[^:]*:\s*£?([\d,]+)/i);
@@ -109,7 +117,7 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     
     return {
       dscr: dscrMatch ? parseFloat(dscrMatch[1]) : null,
-      maxDebt: maxDebtMatch ? parseFloat(maxDebtMatch[1].replace(/,/g, '')) : null,
+      maxDebt: maxDebtMatch ? parseFloat(maxDebtMatch[1].replace(/,/g, '')) * multiplier : null,
       viability: viabilityMatch ? viabilityMatch[1].trim() : null,
       rawSection: sectionMatch[0]
     };
@@ -118,6 +126,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
   const parseValuation = (content: string) => {
     const sectionMatch = content.match(/## 4\. VALUATION[\s\S]*?(?=## 5\.|$)/i);
     if (!sectionMatch) return null;
+    
+    const isInThousands = /£000s|£'?000s|in thousands/i.test(sectionMatch[0]);
+    const multiplier = isInThousands ? 1000 : 1;
     
     const tableMatch = sectionMatch[0].match(/\|[^\n]+\|\n\|[-\s|:]+\|\n((?:\|[^\n]+\|\n?)+)/);
     if (!tableMatch) return null;
@@ -128,19 +139,19 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     rows.forEach(row => {
       const cells = row.split('|').map(c => c.trim()).filter(Boolean);
       if (cells.length >= 4) {
-        const scenario = cells[0].replace(/\*\*/g, '');
+        const scenario = cleanMarkdown(cells[0]);
         const multipleMatch = cells[1]?.match(/([\d.]+)/);
-        const evMatch = cells[2]?.match(/[\d,]+/);
-        const adjustMatch = cells[3]?.match(/[\d,]+/);
-        const equityMatch = cells[4]?.match(/[\d,]+/);
+        const evMatch = cells[2]?.match(/-?[\d,]+/);
+        const adjustMatch = cells[3]?.match(/-?[\d,]+/);
+        const equityMatch = cells[4]?.match(/-?[\d,]+/);
         
         if (scenario && /conservative|base|aggressive/i.test(scenario)) {
           scenarios.push({
             scenario: scenario.charAt(0).toUpperCase() + scenario.slice(1).toLowerCase(),
             multiple: multipleMatch ? parseFloat(multipleMatch[1]) : 0,
-            ev: evMatch ? parseFloat(evMatch[0].replace(/,/g, '')) : 0,
-            adjustment: adjustMatch ? parseFloat(adjustMatch[0].replace(/,/g, '')) : 0,
-            equity: equityMatch ? parseFloat(equityMatch[0].replace(/,/g, '')) : 0,
+            ev: evMatch ? parseFloat(evMatch[0].replace(/,/g, '')) * multiplier : 0,
+            adjustment: adjustMatch ? parseFloat(adjustMatch[0].replace(/,/g, '')) * multiplier : 0,
+            equity: equityMatch ? parseFloat(equityMatch[0].replace(/,/g, '')) * multiplier : 0,
           });
         }
       }
@@ -152,6 +163,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
   const parseBalanceSheet = (content: string) => {
     const sectionMatch = content.match(/## 5\. BALANCE SHEET[\s\S]*?(?=## 6\.|$)/i);
     if (!sectionMatch) return null;
+    
+    const isInThousands = /£000s|£'?000s|in thousands/i.test(sectionMatch[0]);
+    const multiplier = isInThousands ? 1000 : 1;
     
     const assetItems: { name: string; value: number }[] = [];
     
@@ -166,7 +180,7 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     assetPatterns.forEach(({ name, pattern }) => {
       const match = sectionMatch[0].match(pattern);
       if (match) {
-        assetItems.push({ name, value: parseFloat(match[1].replace(/,/g, '')) });
+        assetItems.push({ name, value: parseFloat(match[1].replace(/,/g, '')) * multiplier });
       }
     });
     
@@ -176,10 +190,10 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
       rows.forEach(row => {
         const cells = row.split('|').map(c => c.trim()).filter(Boolean);
         if (cells.length >= 2) {
-          const name = cells[0].replace(/\*\*/g, '');
-          const valueMatch = cells[1]?.match(/[\d,]+/);
+          const name = cleanMarkdown(cells[0]);
+          const valueMatch = cells[1]?.match(/-?[\d,]+/);
           if (valueMatch && !assetItems.find(a => a.name.toLowerCase() === name.toLowerCase())) {
-            assetItems.push({ name, value: parseFloat(valueMatch[0].replace(/,/g, '')) });
+            assetItems.push({ name, value: parseFloat(valueMatch[0].replace(/,/g, '')) * multiplier });
           }
         }
       });
@@ -403,7 +417,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                           <td className="py-2 px-3 font-medium">{row.metric}</td>
                           {financialData.years.map(year => (
                             <td key={year} className="text-right py-2 px-3">
-                              {typeof row[year] === 'number' ? formatCurrency(row[year]) : row[year]}
+                              {typeof row[year] === 'number' 
+                                ? (row.isPercentage ? `${row[year].toFixed(1)}%` : formatCurrency(row[year])) 
+                                : row[year]}
                             </td>
                           ))}
                         </tr>
