@@ -2389,7 +2389,12 @@ export class DatabaseStorage implements IStorage {
       .delete(fileUploadEvents)
       .where(eq(fileUploadEvents.documentId, documentId));
 
-    // 3. Finally delete the document itself
+    // 3. Delete document access log entries (which reference documents)
+    await db
+      .delete(documentAccessLog)
+      .where(eq(documentAccessLog.documentId, documentId));
+
+    // 4. Finally delete the document itself
     const [deletedDocument] = await db
       .delete(documents)
       .where(eq(documents.id, documentId))
