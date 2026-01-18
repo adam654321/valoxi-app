@@ -59,7 +59,7 @@ export async function classifyDocumentWithGemini(
     console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API`);
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
       {
         method: "POST",
         headers: {
