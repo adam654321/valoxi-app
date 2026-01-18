@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   TrendingUp, TrendingDown, DollarSign, Users, Building2, 
   FileText, AlertTriangle, CheckCircle, Target, BarChart3,
-  PieChart as PieChartIcon, Wallet, Scale
+  PieChart as PieChartIcon, Wallet, Scale, Loader2, Play
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -13,8 +13,14 @@ import {
 } from "recharts";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Stage1AnalysisDisplayProps {
+  targetCompanyId: number;
   markdown: string;
   usageMetadata?: {
     promptTokenCount?: number;
@@ -24,11 +30,35 @@ interface Stage1AnalysisDisplayProps {
     thoughtsTokenCount?: number;
   };
   processingTime?: number;
+  detailedAnalysisData?: any;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
-export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime }: Stage1AnalysisDisplayProps) {
+export function Stage1AnalysisDisplay({ targetCompanyId, markdown, usageMetadata, processingTime, detailedAnalysisData }: Stage1AnalysisDisplayProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const detailedAnalysisMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/target-companies/${targetCompanyId}/detailed-analysis`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/target-companies/${targetCompanyId}/stage1-analysis`] });
+      toast({
+        title: "Success",
+        description: "Detailed analysis has been initiated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to initiate detailed analysis.",
+        variant: "destructive",
+      });
+    },
+  });
   const parseProfitabilityTable = (content: string) => {
     const tableMatch = content.match(/\| Metric \| 2020.*?\n(?:\|.*\n)+/);
     if (!tableMatch) return null;
@@ -600,6 +630,50 @@ export function Stage1AnalysisDisplay({ markdown, usageMetadata, processingTime 
                   </div>
                   <div className="prose dark:prose-invert max-w-none text-sm">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{investmentSummary.justification}</ReactMarkdown>
+                  </div>
+
+                  <Separator className="my-6" />
+                  
+                  <div className="flex flex-col items-center gap-4 py-4">
+                    <div className="text-center space-y-2">
+                      <h4 className="font-semibold text-lg">Detailed Analysis</h4>
+                      <p className="text-sm text-muted-foreground max-w-md">
+                        Run a deeper Gemini-powered analysis focusing on asset management, 
+                        capital efficiency, and operational deep-dives.
+                      </p>
+                    </div>
+                    
+                    <Button 
+                      size="lg" 
+                      className="gap-2"
+                      onClick={() => detailedAnalysisMutation.mutate()}
+                      disabled={detailedAnalysisMutation.isPending}
+                    >
+                      {detailedAnalysisMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                      Carry out detailed analysis
+                    </Button>
+                    
+                    {detailedAnalysisData && (
+                      <Card className="w-full mt-6 border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/10">
+                        <CardHeader>
+                          <CardTitle className="text-md flex items-center gap-2">
+                            <BarChart3 className="w-4 h-4 text-blue-500" />
+                            Detailed Analysis Results
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="prose dark:prose-invert max-w-none text-sm">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {typeof detailedAnalysisData === 'string' ? detailedAnalysisData : JSON.stringify(detailedAnalysisData, null, 2)}
+                            </ReactMarkdown>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 </CardContent>
               </Card>
