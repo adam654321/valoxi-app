@@ -175,7 +175,11 @@ async function analyzeUploadedFileWithGemini(eventId: number) {
     console.log(`[FILE_ANALYSIS] Using HTTPS URL: ${fileUrl}`);
 
     // Step 1: Classify the document using Gemini
-    const mimeType = getMimeTypeForFile(event.fileName);
+    // Extract file extension from filename to get proper MIME type
+    const fileExtension = event.fileName.split('.').pop()?.toLowerCase() || 'pdf';
+    const mimeType = getMimeTypeForFile(fileExtension);
+    console.log(`[FILE_ANALYSIS] File extension: ${fileExtension}, MIME type: ${mimeType}`);
+    
     const classificationResult = await classifyDocumentWithGemini({
       fileUrl: fileUrl,
       mimeType: mimeType,
