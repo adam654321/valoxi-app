@@ -164,10 +164,20 @@ async function analyzeUploadedFileWithGemini(eventId: number) {
 
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
+    // Construct HTTPS URL for Gemini (it requires HTTPS URLs)
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : process.env.REPL_SLUG && process.env.REPL_OWNER
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+        : 'https://localhost:5000';
+    
+    const fileUrl = `${baseUrl}/api/public/documents/${event.documentId}/download`;
+    console.log(`[FILE_ANALYSIS] Using HTTPS URL: ${fileUrl}`);
+
     // Step 1: Classify the document using Gemini
     const mimeType = getMimeTypeForFile(event.fileName);
     const classificationResult = await classifyDocumentWithGemini({
-      fileUrl: event.fileUrl,
+      fileUrl: fileUrl,
       mimeType: mimeType,
       fileName: event.fileName,
     });
