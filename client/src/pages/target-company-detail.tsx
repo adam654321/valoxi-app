@@ -487,6 +487,26 @@ export default function TargetCompanyDetail() {
     },
   });
 
+  // Trigger detailed analysis mutation
+  const triggerDetailedAnalysisMutation = useMutation({
+    mutationFn: () =>
+      apiRequest("POST", `/api/target-companies/${id}/trigger-detailed-analysis`),
+    onSuccess: () => {
+      toast({
+        title: "Detailed Analysis Started",
+        description: "The detailed analysis is now being generated. This may take a few minutes.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "stage1-analysis"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start detailed analysis",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Helper functions
   const formatCurrency = (amount: string | number) => {
     const value = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -1270,36 +1290,151 @@ export default function TargetCompanyDetail() {
 
                 <TabsContent value="detailed-analysis" className="space-y-6">
                   {(() => {
-                    const detailedAnalysisEvent = stage1Events.find(event => 
-                      event.webhookStatus === 'success' && 
-                      event.detailedAnalysisData
-                    );
-
-                    if (!detailedAnalysisEvent || !detailedAnalysisEvent.detailedAnalysisData) {
+                    const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
+                    
+                    if (!successfulEvent) {
                       return (
                         <div className="text-center py-12 text-muted-foreground">
                           <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">Detailed analysis not available</p>
-                          <p className="text-sm">Comprehensive analysis will appear here when available</p>
+                          <p className="text-lg font-medium mb-2">Basic analysis required first</p>
+                          <p className="text-sm">Please complete the basic analysis before running detailed analysis</p>
                         </div>
                       );
                     }
 
-                    try {
-                      const detailedData = typeof detailedAnalysisEvent.detailedAnalysisData === 'string' 
-                        ? JSON.parse(detailedAnalysisEvent.detailedAnalysisData)
-                        : detailedAnalysisEvent.detailedAnalysisData;
-                      
-                      return <DetailedAnalysisDisplay data={detailedData} />;
-                    } catch (error) {
+                    if (successfulEvent.detailedAnalysisStatus === 'processing') {
                       return (
                         <div className="text-center py-12 text-muted-foreground">
-                          <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">Error loading detailed analysis</p>
-                          <p className="text-sm">Unable to parse detailed analysis data</p>
+                          <RefreshCw className="w-12 h-12 mx-auto mb-4 animate-spin opacity-50" />
+                          <p className="text-lg font-medium mb-2">Detailed analysis in progress...</p>
+                          <p className="text-sm">This may take a few minutes. The page will update automatically when complete.</p>
                         </div>
                       );
                     }
+
+                    if (successfulEvent.detailedAnalysisStatus === 'failed') {
+                      return (
+                        <div className="text-center py-12">
+                          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500 opacity-70" />
+                          <p className="text-lg font-medium mb-2 text-red-600">Detailed analysis failed</p>
+                          <p className="text-sm text-muted-foreground mb-4">{successfulEvent.detailedAnalysisMarkdown || 'An error occurred during analysis'}</p>
+                          <Button 
+                            onClick={() => triggerDetailedAnalysisMutation.mutate()}
+                            disabled={triggerDetailedAnalysisMutation.isPending}
+                          >
+                            {triggerDetailedAnalysisMutation.isPending ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Starting...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry Detailed Analysis
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    }
+
+                    if (successfulEvent.detailedAnalysisStatus === 'success' && successfulEvent.detailedAnalysisMarkdown) {
+                      let detailedUsageMetadata = null;
+                      if (successfulEvent.detailedAnalysisUsageMetadata) {
+                        try {
+                          detailedUsageMetadata = typeof successfulEvent.detailedAnalysisUsageMetadata === 'string' 
+                            ? JSON.parse(successfulEvent.detailedAnalysisUsageMetadata) 
+                            : successfulEvent.detailedAnalysisUsageMetadata;
+                        } catch (e) {
+                          console.error('Failed to parse detailed analysis usage metadata:', e);
+                        }
+                      }
+
+                      return (
+                        <div className="space-y-6">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-purple-500" />
+                                Deal Sheet - Detailed Analysis
+                              </CardTitle>
+                              <CardDescription>
+                                Comprehensive due diligence report generated from company documents
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="prose dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {successfulEvent.detailedAnalysisMarkdown}
+                                </ReactMarkdown>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {detailedUsageMetadata && (
+                            <Card className="bg-muted/30">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                  <FileText className="w-4 h-4" />
+                                  Detailed Analysis Metadata
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                                  <div>
+                                    <div className="text-muted-foreground">Prompt Tokens</div>
+                                    <div className="font-semibold">{detailedUsageMetadata.promptTokenCount?.toLocaleString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-muted-foreground">Response Tokens</div>
+                                    <div className="font-semibold">{detailedUsageMetadata.candidatesTokenCount?.toLocaleString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-muted-foreground">Thinking Tokens</div>
+                                    <div className="font-semibold">{detailedUsageMetadata.thoughtsTokenCount?.toLocaleString()}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-muted-foreground">Total Tokens</div>
+                                    <div className="font-semibold">{detailedUsageMetadata.totalTokenCount?.toLocaleString()}</div>
+                                  </div>
+                                  {successfulEvent.detailedAnalysisProcessingTime && (
+                                    <div>
+                                      <div className="text-muted-foreground">Processing Time</div>
+                                      <div className="font-semibold">{(successfulEvent.detailedAnalysisProcessingTime / 1000).toFixed(1)}s</div>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">Detailed Analysis Available</p>
+                        <p className="text-sm mb-6">Generate a comprehensive Deal Sheet with detailed due diligence insights</p>
+                        <Button 
+                          onClick={() => triggerDetailedAnalysisMutation.mutate()}
+                          disabled={triggerDetailedAnalysisMutation.isPending}
+                          size="lg"
+                        >
+                          {triggerDetailedAnalysisMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Starting Analysis...
+                            </>
+                          ) : (
+                            <>
+                              <BarChart3 className="w-4 h-4 mr-2" />
+                              Generate Detailed Analysis
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    );
                   })()}
                 </TabsContent>
               </Tabs>
