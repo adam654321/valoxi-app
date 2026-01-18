@@ -378,6 +378,7 @@ export interface IStorage {
   getStage1AnalysisEventsByCompany(targetCompanyId: number, userCompanyId: number): Promise<Stage1AnalysisEvent[]>;
   updateStage1AnalysisEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number, usageMetadata?: any): Promise<Stage1AnalysisEvent | undefined>;
   updateStage1AnalysisEventDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined>;
+  updateDetailedAnalysisStatus(eventId: number, status: string, markdown?: string, processingTime?: number, usageMetadata?: any, triggeredBy?: number): Promise<Stage1AnalysisEvent | undefined>;
   getLatestStage1AnalysisEvent(targetCompanyId: number): Promise<Stage1AnalysisEvent | null>;
   getLatestDocumentUploadTime(targetCompanyId: number): Promise<Date | null>;
   
@@ -3823,6 +3824,33 @@ export class DatabaseStorage implements IStorage {
       .set({
         detailedAnalysisData: detailedData
       })
+      .where(eq(stage1AnalysisEvents.id, eventId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateDetailedAnalysisStatus(eventId: number, status: string, markdown?: string, processingTime?: number, usageMetadata?: any, triggeredBy?: number): Promise<Stage1AnalysisEvent | undefined> {
+    const updateData: Record<string, any> = {
+      detailedAnalysisStatus: status,
+    };
+    
+    if (markdown !== undefined) {
+      updateData.detailedAnalysisMarkdown = markdown;
+    }
+    if (processingTime !== undefined) {
+      updateData.detailedAnalysisProcessingTime = processingTime;
+    }
+    if (usageMetadata !== undefined) {
+      updateData.detailedAnalysisUsageMetadata = usageMetadata;
+    }
+    if (triggeredBy !== undefined) {
+      updateData.detailedAnalysisTriggeredBy = triggeredBy;
+      updateData.detailedAnalysisTriggeredAt = new Date();
+    }
+    
+    const [updated] = await db
+      .update(stage1AnalysisEvents)
+      .set(updateData)
       .where(eq(stage1AnalysisEvents.id, eventId))
       .returning();
     return updated || undefined;
