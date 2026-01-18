@@ -317,21 +317,46 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
               </CardContent>
             </Card>
           )}
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Full Deal Sheet
-              </CardTitle>
-              <CardDescription>Complete analysis document</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="prose dark:prose-invert max-w-none text-sm">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-              </div>
-            </CardContent>
-          </Card>
+
+          {financialData && financialData.data.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-blue-500" />
+                  Financial Summary
+                </CardTitle>
+                <CardDescription>Key financial metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-3 font-semibold">Metric</th>
+                        {financialData.years.map(year => (
+                          <th key={year} className="text-right py-2 px-3 font-semibold">{year}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {financialData.data.slice(0, 6).map((row, idx) => (
+                        <tr key={idx} className="border-b hover:bg-muted/50">
+                          <td className="py-2 px-3 font-medium">{row.metric}</td>
+                          {financialData.years.map(year => (
+                            <td key={year} className="text-right py-2 px-3">
+                              {typeof row[year] === 'number' 
+                                ? (row.isPercentage ? `${row[year].toFixed(1)}%` : formatCurrency(row[year])) 
+                                : row[year]}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="financials" className="space-y-6 mt-6">
@@ -351,7 +376,7 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="year" className="text-xs" />
-                        <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" />
+                        <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" width={110} />
                         <Tooltip 
                           formatter={(value: number) => formatCurrency(value)}
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
@@ -379,7 +404,7 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                       <BarChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="year" className="text-xs" />
-                        <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" />
+                        <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" width={110} />
                         <Tooltip 
                           formatter={(value: number) => formatCurrency(value)}
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
