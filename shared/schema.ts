@@ -491,6 +491,12 @@ export const stage1AnalysisEvents = pgTable("stage1_analysis_events", {
   processingTime: integer("processing_time"), // Time taken for webhook processing in ms
   detailedAnalysisData: json("detailed_analysis_data"), // Asset management & capital efficiency detailed analysis
   usageMetadata: json("usage_metadata"), // Token usage data from Gemini API response
+  detailedAnalysisMarkdown: text("detailed_analysis_markdown"), // Markdown response from detailed analysis
+  detailedAnalysisStatus: varchar("detailed_analysis_status", { length: 50 }).default("pending"), // pending, processing, success, failed
+  detailedAnalysisProcessingTime: integer("detailed_analysis_processing_time"), // Time taken for detailed analysis in ms
+  detailedAnalysisUsageMetadata: json("detailed_analysis_usage_metadata"), // Token usage data from detailed analysis
+  detailedAnalysisTriggeredBy: integer("detailed_analysis_triggered_by").references(() => users.id),
+  detailedAnalysisTriggeredAt: timestamp("detailed_analysis_triggered_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
