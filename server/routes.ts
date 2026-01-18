@@ -19,6 +19,7 @@ import { eq, desc } from "drizzle-orm";
 
 // Import Gemini analysis service for Stage 1 analysis
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "./gemini-stage1-service";
+import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "./gemini-detailed-analysis-service";
 
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
@@ -552,6 +553,98 @@ async function runGeminiStage1Analysis(eventId: number, targetCompanyId: number,
       'failed', 
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
       new Date()
+    );
+  }
+}
+
+// Function to run Gemini-based Detailed analysis
+async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId: number) {
+  console.log(`[GEMINI_DETAILED_ANALYSIS] Starting Gemini detailed analysis for event ${eventId}, company ${targetCompanyId}`);
+
+  try {
+    // Get the document files for this company
+    const documentFiles = await storage.getStage1DocumentFiles(targetCompanyId);
+    
+    if (documentFiles.length === 0) {
+      console.error(`[GEMINI_DETAILED_ANALYSIS] No documents found for company ${targetCompanyId}`);
+      await storage.updateDetailedAnalysisStatus(
+        eventId, 
+        'failed', 
+        'No documents found for analysis'
+      );
+      return;
+    }
+
+    console.log(`[GEMINI_DETAILED_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
+
+    // Construct the base URL for public document access
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : process.env.REPL_SLUG && process.env.REPL_OWNER
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+        : 'http://localhost:5000';
+
+    console.log(`[GEMINI_DETAILED_ANALYSIS] Using base URL: ${baseUrl}`);
+
+    // Convert to FileInfo format for Gemini service with public URLs
+    const files: DetailedFileInfo[] = documentFiles.map(doc => ({
+      fileUrl: `${baseUrl}/api/public/documents/${doc.documentId}/download`,
+      mimeType: getMimeTypeForFile(doc.mimeType),
+      category: doc.category,
+    }));
+
+    console.log(`[GEMINI_DETAILED_ANALYSIS] File URLs:`, files.map(f => f.fileUrl));
+
+    // Run Gemini detailed analysis
+    const result = await runDetailedGeminiAnalysis({
+      files,
+    });
+
+    if (result.success && result.markdown) {
+      // Update the event with success status and markdown response
+      await storage.updateDetailedAnalysisStatus(
+        eventId, 
+        'success', 
+        result.markdown, 
+        result.processingTime,
+        result.usageMetadata
+      );
+
+      console.log(`[GEMINI_DETAILED_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
+
+      // Notify connected clients about detailed analysis completion
+      const event = await storage.getStage1AnalysisEvent(eventId);
+      if (global.documentUpdateListeners && event) {
+        global.documentUpdateListeners.forEach((listener) => {
+          if (listener.targetCompanyId === targetCompanyId) {
+            listener.res.write(`data: ${JSON.stringify({ 
+              type: 'detailed_analysis_completed', 
+              targetCompanyId: targetCompanyId,
+              eventId: eventId,
+              timestamp: new Date().toISOString()
+            })}\n\n`);
+          }
+        });
+      }
+      console.log(`[GEMINI_DETAILED_ANALYSIS] SSE notification sent for detailed analysis completion of company ${targetCompanyId}`);
+    } else {
+      // Update the event with failed status
+      await storage.updateDetailedAnalysisStatus(
+        eventId, 
+        'failed', 
+        result.error || 'Unknown error', 
+        result.processingTime
+      );
+
+      console.error(`[GEMINI_DETAILED_ANALYSIS] Analysis failed for event ${eventId}: ${result.error}`);
+    }
+  } catch (error) {
+    console.error(`[GEMINI_DETAILED_ANALYSIS] Error running analysis for event ${eventId}:`, error);
+    
+    await storage.updateDetailedAnalysisStatus(
+      eventId, 
+      'failed', 
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 }
@@ -3377,6 +3470,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'Stage 1 analysis triggered with available documents (bypassed requirements)' });
     } catch (error) {
       console.error('Error triggering Stage 1 analysis:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Trigger detailed analysis for a target company
+  app.post("/api/target-companies/:id/trigger-detailed-analysis", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const targetCompanyId = parseInt(req.params.id);
+      const userCompanyId = req.session.userCompanyId!;
+      const userId = req.session.userId!;
+
+      // Verify access to company
+      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      if (!company) {
+        return res.status(404).json({ error: 'Company not found' });
+      }
+
+      // Get the latest stage 1 analysis event to update with detailed analysis
+      const latestEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
+      if (!latestEvent) {
+        return res.status(400).json({ error: 'No basic analysis found. Please complete basic analysis first.' });
+      }
+
+      if (latestEvent.webhookStatus !== 'success') {
+        return res.status(400).json({ error: 'Basic analysis is not complete. Please wait for it to finish.' });
+      }
+
+      // Check if detailed analysis is already in progress
+      if (latestEvent.detailedAnalysisStatus === 'processing') {
+        return res.status(400).json({ error: 'Detailed analysis is already in progress.' });
+      }
+
+      // Mark as processing
+      await storage.updateDetailedAnalysisStatus(latestEvent.id, 'processing', undefined, undefined, undefined, userId);
+
+      console.log(`[DETAILED_ANALYSIS] Triggering detailed analysis for company ${targetCompanyId}, event ${latestEvent.id}`);
+      
+      // Run detailed analysis in background
+      setTimeout(() => {
+        runGeminiDetailedAnalysis(latestEvent.id, targetCompanyId);
+      }, 100);
+      
+      res.json({ 
+        success: true, 
+        message: 'Detailed analysis started',
+        eventId: latestEvent.id
+      });
+    } catch (error) {
+      console.error('Error triggering detailed analysis:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
