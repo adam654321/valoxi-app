@@ -407,7 +407,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                         <YAxis tickFormatter={(value) => formatCurrency(value)} className="text-xs" width={110} />
                         <Tooltip 
                           formatter={(value: number) => formatCurrency(value)}
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                          contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                          labelStyle={{ color: '#374151' }}
+                          itemStyle={{ color: '#374151' }}
                         />
                         <Legend />
                         <Bar dataKey="Gross Profit" fill="#3b82f6" radius={[4, 4, 0, 0]} />
@@ -558,7 +560,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                         <YAxis dataKey="scenario" type="category" width={100} className="text-xs" />
                         <Tooltip 
                           formatter={(value: number) => formatCurrency(value)}
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                          contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                          labelStyle={{ color: '#374151' }}
+                          itemStyle={{ color: '#374151' }}
                         />
                         <Legend />
                         <Bar dataKey="ev" name="Enterprise Value" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
@@ -648,7 +652,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                           </Pie>
                           <Tooltip 
                             formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                            contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                            labelStyle={{ color: '#374151' }}
+                            itemStyle={{ color: '#374151' }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -673,7 +679,9 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
                           <YAxis dataKey="name" type="category" width={80} className="text-xs" />
                           <Tooltip 
                             formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                            contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                            labelStyle={{ color: '#374151' }}
+                            itemStyle={{ color: '#374151' }}
                           />
                           <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]}>
                             {balanceSheetData.assetItems.map((_, index) => (
