@@ -46,6 +46,7 @@ import { ActivityManagement } from "@/components/activity-management";
 import { DocumentManagement } from "@/components/document-management";
 import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
 import { Stage1AnalysisDisplay } from "@/components/stage1-analysis-display";
+import { DealSheetVisualDisplay } from "@/components/deal-sheet-visual-display";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -1351,63 +1352,11 @@ export default function TargetCompanyDetail() {
                       }
 
                       return (
-                        <div className="space-y-6">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-purple-500" />
-                                Deal Sheet - Detailed Analysis
-                              </CardTitle>
-                              <CardDescription>
-                                Comprehensive due diligence report generated from company documents
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="prose dark:prose-invert max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                  {successfulEvent.detailedAnalysisMarkdown}
-                                </ReactMarkdown>
-                              </div>
-                            </CardContent>
-                          </Card>
-                          
-                          {detailedUsageMetadata && (
-                            <Card className="bg-muted/30">
-                              <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                  <FileText className="w-4 h-4" />
-                                  Detailed Analysis Metadata
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                                  <div>
-                                    <div className="text-muted-foreground">Prompt Tokens</div>
-                                    <div className="font-semibold">{detailedUsageMetadata.promptTokenCount?.toLocaleString()}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">Response Tokens</div>
-                                    <div className="font-semibold">{detailedUsageMetadata.candidatesTokenCount?.toLocaleString()}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">Thinking Tokens</div>
-                                    <div className="font-semibold">{detailedUsageMetadata.thoughtsTokenCount?.toLocaleString()}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">Total Tokens</div>
-                                    <div className="font-semibold">{detailedUsageMetadata.totalTokenCount?.toLocaleString()}</div>
-                                  </div>
-                                  {successfulEvent.detailedAnalysisProcessingTime && (
-                                    <div>
-                                      <div className="text-muted-foreground">Processing Time</div>
-                                      <div className="font-semibold">{(successfulEvent.detailedAnalysisProcessingTime / 1000).toFixed(1)}s</div>
-                                    </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
+                        <DealSheetVisualDisplay 
+                          markdown={successfulEvent.detailedAnalysisMarkdown}
+                          usageMetadata={detailedUsageMetadata}
+                          processingTime={successfulEvent.detailedAnalysisProcessingTime || undefined}
+                        />
                       );
                     }
 
