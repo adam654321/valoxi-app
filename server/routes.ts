@@ -20,6 +20,7 @@ import { eq, desc } from "drizzle-orm";
 // Import Gemini analysis service for Stage 1 analysis
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "./gemini-stage1-service";
 import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "./gemini-detailed-analysis-service";
+import { classifyDocumentWithGemini, type DocumentClassificationResult } from "./gemini-document-classification-service";
 
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
@@ -151,85 +152,96 @@ async function sendWebhook(website: string, targetCompanyId: number, webhookUrl?
   }
 }
 
-// Function to automatically send webhook for file uploads
-async function sendFileUploadWebhook(eventId: number) {
-  const webhookUrl = process.env.file_upload_webhook;
-  if (!webhookUrl) {
-    console.log(`[FILE_UPLOAD_WEBHOOK] No webhook URL configured for event ${eventId}`);
-    return;
-  }
-
+// Function to analyze uploaded files using Gemini (Step 1: Classification, Step 2: Detailed Analysis)
+async function analyzeUploadedFileWithGemini(eventId: number) {
   try {
     // Get the file upload event
     const event = await storage.getFileUploadEvent(eventId);
     if (!event) {
-      console.error(`[FILE_UPLOAD_WEBHOOK] Event ${eventId} not found`);
+      console.error(`[FILE_ANALYSIS] Event ${eventId} not found`);
       return;
     }
 
-    const startTime = Date.now();
-    
-    // Prepare webhook payload
-    const webhookPayload = {
-      event_type: "file_uploaded",
-      timestamp: new Date().toISOString(),
-      file_info: {
-        id: event.id,
-        document_id: event.documentId,
-        target_company_id: event.targetCompanyId,
-        uploaded_by: event.uploadedBy,
-        file_name: event.fileName,
-        file_url: event.fileUrl,
-        uploaded_at: event.uploadedAt,
-      },
-    };
+    console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
-    console.log(`[FILE_UPLOAD_WEBHOOK] Sending webhook for event ${eventId}:`, webhookPayload);
-
-    // Send webhook
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookPayload),
+    // Step 1: Classify the document using Gemini
+    const mimeType = getMimeTypeForFile(event.fileName);
+    const classificationResult = await classifyDocumentWithGemini({
+      fileUrl: event.fileUrl,
+      mimeType: mimeType,
+      fileName: event.fileName,
     });
 
-    const processingTime = Date.now() - startTime;
-    const responseText = await response.text();
-    let responseData;
-    
-    try {
-      responseData = JSON.parse(responseText);
-    } catch {
-      responseData = responseText;
+    if (!classificationResult.success) {
+      console.error(`[FILE_ANALYSIS] Classification failed for event ${eventId}:`, classificationResult.error);
+      
+      // Update event with error status
+      await storage.updateFileUploadEventWebhookStatus(
+        eventId, 
+        'classification_failed', 
+        JSON.stringify({ 
+          error: classificationResult.error,
+          processingTime: classificationResult.processingTime 
+        }), 
+        new Date()
+      );
+      return;
     }
 
-    const webhookStatus = response.ok ? 'success' : 'failed';
-    const webhookResponse = JSON.stringify({
-      status: response.status,
-      statusText: response.statusText,
-      data: responseData,
-      processingTime: processingTime
-    }, null, 2);
+    console.log(`[FILE_ANALYSIS] Classification successful for event ${eventId}`);
+    console.log(`[FILE_ANALYSIS] Document types: ${classificationResult.documentTypes.join(', ')}`);
+    console.log(`[FILE_ANALYSIS] Confidence: ${classificationResult.confidence}`);
+    console.log(`[FILE_ANALYSIS] Reasoning: ${classificationResult.reasoning}`);
 
-    // Update the event with webhook response
+    // Store classification result in webhook response field for now
+    const classificationData = {
+      step: 'classification',
+      documentTypes: classificationResult.documentTypes,
+      confidence: classificationResult.confidence,
+      reasoning: classificationResult.reasoning,
+      processingTime: classificationResult.processingTime,
+      usageMetadata: classificationResult.usageMetadata,
+    };
+
     await storage.updateFileUploadEventWebhookStatus(
       eventId, 
-      webhookStatus, 
-      webhookResponse, 
+      'classification_complete', 
+      JSON.stringify(classificationData, null, 2), 
       new Date()
     );
 
-    if (response.ok && responseData) {
-      // Process and store the analysis results if we have valid response data
-      await processFileUploadWebhookResponse(responseData, eventId);
+    // If document types is "none", no further analysis needed
+    if (classificationResult.documentTypes.length === 0 || 
+        (classificationResult.documentTypes.length === 1 && classificationResult.documentTypes[0] === 'none')) {
+      console.log(`[FILE_ANALYSIS] No matching document type for event ${eventId}, skipping Step 2 analysis`);
+      return;
     }
 
-    console.log(`[FILE_UPLOAD_WEBHOOK] Webhook sent successfully for event ${eventId}, status: ${webhookStatus}, time: ${processingTime}ms`);
+    // Step 2: For each document type, call the appropriate detailed analysis
+    // (This will be implemented when prompts are provided)
+    console.log(`[FILE_ANALYSIS] Document classified. Ready for Step 2 analysis with types: ${classificationResult.documentTypes.join(', ')}`);
+    
+    // Notify connected clients about classification completion
+    if (global.documentUpdateListeners) {
+      global.documentUpdateListeners.forEach((listener) => {
+        if (listener.targetCompanyId === event.targetCompanyId) {
+          listener.res.write(`data: ${JSON.stringify({ 
+            type: 'classification_completed', 
+            targetCompanyId: event.targetCompanyId,
+            documentId: event.documentId,
+            documentTypes: classificationResult.documentTypes,
+            confidence: classificationResult.confidence,
+            timestamp: new Date().toISOString()
+          })}\n\n`);
+        }
+      });
+    }
+
+    // After classification, check if Stage 1 requirements are met
+    await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
 
   } catch (error) {
-    console.error(`[FILE_UPLOAD_WEBHOOK] Failed to send webhook for event ${eventId}:`, error);
+    console.error(`[FILE_ANALYSIS] Failed to analyze file for event ${eventId}:`, error);
     
     // Update event with error status
     await storage.updateFileUploadEventWebhookStatus(
@@ -239,6 +251,12 @@ async function sendFileUploadWebhook(eventId: number) {
       new Date()
     );
   }
+}
+
+// Legacy webhook function - kept for backward compatibility if needed
+async function sendFileUploadWebhook(eventId: number) {
+  // Now redirects to Gemini-based analysis
+  return analyzeUploadedFileWithGemini(eventId);
 }
 
 // Function to check if Stage 1 webhook should be triggered based on document categories and analysis results
