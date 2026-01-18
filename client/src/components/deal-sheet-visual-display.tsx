@@ -36,6 +36,34 @@ const formatCurrency = (value: number) => {
   return `£${value.toFixed(0)}`;
 };
 
+const cleanMarkdown = (text: string): string => {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .trim();
+};
+
+const parseListItems = (text: string | undefined): string[] => {
+  if (!text) return [];
+  const lines = text.split('\n');
+  const items: string[] = [];
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const bulletMatch = trimmed.match(/^[-•*+]\s+(.+)$/);
+    if (bulletMatch) {
+      const cleaned = cleanMarkdown(bulletMatch[1]);
+      if (cleaned.length > 0) {
+        items.push(cleaned);
+      }
+    }
+  }
+  
+  return items;
+};
+
 export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime }: DealSheetVisualDisplayProps) {
   
   const parseFinancialPerformance = (content: string) => {
@@ -57,7 +85,7 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     dataRows.forEach(row => {
       const cells = row.split('|').map(c => c.trim()).filter(Boolean);
       if (cells.length >= 2) {
-        const metric = cells[0].replace(/\*\*/g, '');
+        const metric = cleanMarkdown(cells[0]);
         const values: Record<string, any> = { metric };
         years.forEach((year, idx) => {
           const rawValue = cells[idx + 1] || '';
@@ -164,18 +192,12 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     const sectionMatch = content.match(/## 6\. DUE DILIGENCE[\s\S]*$/i);
     if (!sectionMatch) return null;
     
-    const criticalMatch = sectionMatch[0].match(/critical[^:]*:([\s\S]*?)(?=operational|$)/i);
+    const criticalMatch = sectionMatch[0].match(/critical[^:]*:([\s\S]*?)(?=###\s*operational|operational\s*risks|$)/i);
     const operationalMatch = sectionMatch[0].match(/operational[^:]*:([\s\S]*?)$/i);
     
-    const parseRiskList = (text: string | undefined) => {
-      if (!text) return [];
-      const items = text.match(/[-•*]\s*([^\n]+)/g) || [];
-      return items.map(item => item.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
-    };
-    
     return {
-      critical: parseRiskList(criticalMatch?.[1]),
-      operational: parseRiskList(operationalMatch?.[1]),
+      critical: parseListItems(criticalMatch?.[1]),
+      operational: parseListItems(operationalMatch?.[1]),
       rawSection: sectionMatch[0]
     };
   };
@@ -184,18 +206,12 @@ export function DealSheetVisualDisplay({ markdown, usageMetadata, processingTime
     const sectionMatch = content.match(/## 1\. EXECUTIVE SUMMARY[\s\S]*?(?=## 2\.|$)/i);
     if (!sectionMatch) return null;
     
-    const opportunityMatch = sectionMatch[0].match(/opportunity[^:]*:([\s\S]*?)(?=key highlights|$)/i);
+    const opportunityMatch = sectionMatch[0].match(/opportunity[^:]*:([\s\S]*?)(?=###\s*key highlights|key highlights|$)/i);
     const highlightsMatch = sectionMatch[0].match(/key highlights[^:]*:([\s\S]*?)$/i);
     
-    const parseHighlightsList = (text: string | undefined) => {
-      if (!text) return [];
-      const items = text.match(/[-•*]\s*([^\n]+)/g) || [];
-      return items.map(item => item.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
-    };
-    
     return {
-      opportunity: opportunityMatch?.[1]?.trim() || '',
-      highlights: parseHighlightsList(highlightsMatch?.[1]),
+      opportunity: cleanMarkdown(opportunityMatch?.[1] || ''),
+      highlights: parseListItems(highlightsMatch?.[1]),
       rawSection: sectionMatch[0]
     };
   };
