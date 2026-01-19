@@ -62,6 +62,11 @@ interface DocumentAnalysisResult {
   documentType: string;
   analysisData: any;
   processingTime?: number;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
   createdAt: string;
 }
 
@@ -1205,6 +1210,40 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                   <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
                     {JSON.stringify(result.analysisData, null, 2)}
                   </pre>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Analysis Metadata - Token usage from Gemini API */}
+            {result.usageMetadata && (
+              <Card className="bg-muted/30 mt-4">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Analysis Metadata
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Prompt Tokens</div>
+                      <div className="font-semibold">{result.usageMetadata.promptTokenCount?.toLocaleString() || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Response Tokens</div>
+                      <div className="font-semibold">{result.usageMetadata.candidatesTokenCount?.toLocaleString() || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Total Tokens</div>
+                      <div className="font-semibold">{result.usageMetadata.totalTokenCount?.toLocaleString() || 0}</div>
+                    </div>
+                    {result.processingTime && (
+                      <div>
+                        <div className="text-muted-foreground">Processing Time</div>
+                        <div className="font-semibold">{(result.processingTime / 1000).toFixed(1)}s</div>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
