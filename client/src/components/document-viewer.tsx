@@ -958,9 +958,9 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             </CardHeader>
             <CardContent>
               <div className="prose prose-sm max-w-none dark:prose-invert">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {analysisData.years_covered}
-                </ReactMarkdown>
+                {Array.isArray(analysisData.years_covered) 
+                  ? analysisData.years_covered.join(', ')
+                  : String(analysisData.years_covered)}
               </div>
             </CardContent>
           </Card>
