@@ -475,6 +475,7 @@ export const documentAnalysisResults = pgTable("document_analysis_results", {
   documentType: varchar("document_type", { length: 100 }).notNull(), // e.g., 'sales_ledger', 'balance_sheet'
   analysisData: json("analysis_data").notNull(), // Structured data from webhook response
   processingTime: integer("processing_time"), // Time taken for webhook processing in ms
+  usageMetadata: json("usage_metadata"), // Token usage data from Gemini API (promptTokenCount, candidatesTokenCount, totalTokenCount)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
