@@ -254,6 +254,7 @@ async function analyzeUploadedFileWithGemini(eventId: number) {
             documentType: result.documentType,
             analysisData: result.analysisData,
             processingTime: result.processingTime || 0,
+            usageMetadata: result.usageMetadata || null,
           });
           console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
         } catch (storeError) {
