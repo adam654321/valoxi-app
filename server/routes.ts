@@ -21,6 +21,7 @@ import { eq, desc } from "drizzle-orm";
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "./gemini-stage1-service";
 import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "./gemini-detailed-analysis-service";
 import { classifyDocumentWithGemini, type DocumentClassificationResult } from "./gemini-document-classification-service";
+import { runStep2AnalysisForTypes, type DocumentType } from "./gemini-step2-analysis-service";
 
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
@@ -232,26 +233,78 @@ async function analyzeUploadedFileWithGemini(eventId: number) {
     }
 
     // Step 2: For each document type, call the appropriate detailed analysis
-    // (This will be implemented when prompts are provided)
-    console.log(`[FILE_ANALYSIS] Document classified. Ready for Step 2 analysis with types: ${classificationResult.documentTypes.join(', ')}`);
+    console.log(`[FILE_ANALYSIS] Starting Step 2 analysis for types: ${classificationResult.documentTypes.join(', ')}`);
     
-    // Notify connected clients about classification completion
+    const step2Results = await runStep2AnalysisForTypes(
+      fileUrl,
+      mimeType,
+      event.fileName,
+      classificationResult.documentTypes
+    );
+
+    // Store Step 2 analysis results in the database
+    for (const result of step2Results) {
+      if (result.success && result.analysisData) {
+        console.log(`[FILE_ANALYSIS] Storing ${result.documentType} analysis result for document ${event.documentId}`);
+        
+        try {
+          await storage.createDocumentAnalysisResult({
+            documentId: event.documentId,
+            fileType: result.documentType,
+            analysisResult: JSON.stringify(result.analysisData),
+            processedAt: new Date(),
+            processingTimeMs: result.processingTime || 0,
+          });
+          console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
+        } catch (storeError) {
+          console.error(`[FILE_ANALYSIS] Failed to store ${result.documentType} analysis:`, storeError);
+        }
+      } else {
+        console.error(`[FILE_ANALYSIS] Step 2 analysis failed for ${result.documentType}:`, result.error);
+      }
+    }
+
+    // Update file upload event with complete status
+    const completeData = {
+      step: 'complete',
+      classification: {
+        documentTypes: classificationResult.documentTypes,
+        confidence: classificationResult.confidence,
+        reasoning: classificationResult.reasoning,
+      },
+      step2Results: step2Results.map(r => ({
+        documentType: r.documentType,
+        success: r.success,
+        processingTime: r.processingTime,
+        error: r.error,
+      })),
+    };
+
+    await storage.updateFileUploadEventWebhookStatus(
+      eventId, 
+      'complete', 
+      JSON.stringify(completeData, null, 2), 
+      new Date()
+    );
+    
+    // Notify connected clients about analysis completion
     if (global.documentUpdateListeners) {
       global.documentUpdateListeners.forEach((listener) => {
         if (listener.targetCompanyId === event.targetCompanyId) {
           listener.res.write(`data: ${JSON.stringify({ 
-            type: 'classification_completed', 
+            type: 'analysis_completed', 
             targetCompanyId: event.targetCompanyId,
             documentId: event.documentId,
             documentTypes: classificationResult.documentTypes,
             confidence: classificationResult.confidence,
+            step2Results: step2Results.map(r => ({ type: r.documentType, success: r.success })),
             timestamp: new Date().toISOString()
           })}\n\n`);
         }
       });
     }
 
-    // After classification, check if Stage 1 requirements are met
+    // After classification and analysis, check if Stage 1 requirements are met
     await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
 
   } catch (error) {
