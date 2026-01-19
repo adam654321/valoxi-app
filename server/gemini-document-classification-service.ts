@@ -1,4 +1,5 @@
 import { buildDocumentClassificationPrompt } from "./prompts/document-classification-prompt";
+import { fetchWithRetry } from "./gemini-retry-utils";
 
 export interface DocumentClassificationRequest {
   fileUrl: string;
@@ -58,7 +59,7 @@ export async function classifyDocumentWithGemini(
 
     console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API`);
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
       {
         method: "POST",

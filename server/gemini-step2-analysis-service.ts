@@ -3,6 +3,7 @@ import { buildBalanceSheetAnalysisPrompt } from "./prompts/step2-balance-sheet-p
 import { buildProfitAndLossAnalysisPrompt } from "./prompts/step2-profit-and-loss-prompt";
 import { buildSalesLedgerAnalysisPrompt } from "./prompts/step2-sales-ledger-prompt";
 import { buildStaffMatrixAnalysisPrompt } from "./prompts/step2-staff-matrix-prompt";
+import { fetchWithRetry } from "./gemini-retry-utils";
 
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
 
@@ -82,27 +83,17 @@ export async function analyzeDocumentWithGemini(
 
     console.log(`[GEMINI_STEP2] Sending request to Gemini API for ${request.documentType}`);
 
-    // Use a 10-minute timeout for large document processing
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
-
-    let response: Response;
-    try {
-      response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
-        }
-      );
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const response = await fetchWithRetry(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
 
     const processingTime = Date.now() - startTime;
 
