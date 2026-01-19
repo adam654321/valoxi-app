@@ -81,6 +81,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const { toast } = useToast();
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
+  const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
 
   // Fetch document analysis results
   const { data: analysisResults = [], isLoading: analysisLoading, error: analysisError } = useQuery<DocumentAnalysisResult[]>({
@@ -1112,7 +1113,13 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
 
   // Manual file upload analysis webhook retry for documents with missing analysis
   const handleRetryWebhook = async () => {
-    if (!document?.id) return;
+    if (!document?.id || isRetryingAnalysis) return;
+    
+    setIsRetryingAnalysis(true);
+    toast({
+      title: "Analysis Started",
+      description: "Document analysis is running. This may take 30-60 seconds...",
+    });
     
     try {
       const response = await fetch(`/api/documents/${document.id}/retry-analysis-webhook`, {
@@ -1122,8 +1129,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
       
       if (response.ok) {
         toast({
-          title: "Analysis Webhook Triggered",
-          description: "File upload analysis webhook has been sent. Results should appear shortly.",
+          title: "Analysis Complete",
+          description: "Document analysis finished successfully.",
         });
         // Refetch analysis results
         queryClient.invalidateQueries({ queryKey: ["/api/documents", document.id, "analysis"] });
@@ -1133,9 +1140,11 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to trigger file upload analysis webhook. Please try again.",
+        description: "Failed to analyze document. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsRetryingAnalysis(false);
     }
   };
 
@@ -1153,9 +1162,19 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
               variant="outline"
               size="sm"
               className="gap-2"
+              disabled={isRetryingAnalysis}
             >
-              <TrendingUp className="w-4 h-4" />
-              Retry Analysis
+              {isRetryingAnalysis ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="w-4 h-4" />
+                  Retry Analysis
+                </>
+              )}
             </Button>
           </div>
         </div>
