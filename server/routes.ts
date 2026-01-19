@@ -250,10 +250,10 @@ async function analyzeUploadedFileWithGemini(eventId: number) {
         try {
           await storage.createDocumentAnalysisResult({
             documentId: event.documentId,
-            fileType: result.documentType,
-            analysisResult: JSON.stringify(result.analysisData),
-            processedAt: new Date(),
-            processingTimeMs: result.processingTime || 0,
+            fileUploadEventId: eventId,
+            documentType: result.documentType,
+            analysisData: result.analysisData,
+            processingTime: result.processingTime || 0,
           });
           console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
         } catch (storeError) {
