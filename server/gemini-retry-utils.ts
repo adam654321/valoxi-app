@@ -16,6 +16,10 @@ export function isRateLimitError(response: Response): boolean {
   return response.status === 429;
 }
 
+export function isRetryableError(response: Response): boolean {
+  return response.status === 429 || response.status === 503;
+}
+
 export function parseRetryDelay(errorBody: string): number | null {
   try {
     const parsed = JSON.parse(errorBody);
@@ -54,25 +58,26 @@ export async function fetchWithRetry(
         clearTimeout(timeoutId);
       }
 
-      if (isRateLimitError(response)) {
+      if (isRetryableError(response)) {
         const errorBody = await response.text();
         const suggestedDelay = parseRetryDelay(errorBody);
         const delay = Math.min(
           suggestedDelay || opts.baseDelayMs * Math.pow(2, attempt),
           opts.maxDelayMs
         );
+        const errorType = response.status === 429 ? 'Rate limited' : 'Model overloaded (503)';
 
         if (attempt < opts.maxRetries) {
           console.log(
-            `[GEMINI_RETRY] Rate limited (attempt ${attempt + 1}/${opts.maxRetries + 1}). Waiting ${Math.round(delay / 1000)}s before retry...`
+            `[GEMINI_RETRY] ${errorType} (attempt ${attempt + 1}/${opts.maxRetries + 1}). Waiting ${Math.round(delay / 1000)}s before retry...`
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         } else {
           console.error(
-            `[GEMINI_RETRY] Rate limited after ${opts.maxRetries + 1} attempts. Giving up.`
+            `[GEMINI_RETRY] ${errorType} after ${opts.maxRetries + 1} attempts. Giving up.`
           );
-          throw new Error(`Gemini API rate limit exceeded after ${opts.maxRetries + 1} attempts`);
+          throw new Error(`Gemini API ${errorType.toLowerCase()} after ${opts.maxRetries + 1} attempts`);
         }
       }
 
