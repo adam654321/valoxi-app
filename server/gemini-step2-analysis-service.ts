@@ -24,6 +24,8 @@ export interface Step2AnalysisResult {
     promptTokenCount?: number;
     candidatesTokenCount?: number;
     totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokensDetails?: Array<{ modality: string; tokenCount: number }>;
   };
 }
 
@@ -111,6 +113,8 @@ export async function analyzeDocumentWithGemini(
       promptTokenCount: responseData.usageMetadata.promptTokenCount,
       candidatesTokenCount: responseData.usageMetadata.candidatesTokenCount,
       totalTokenCount: responseData.usageMetadata.totalTokenCount,
+      thoughtsTokenCount: responseData.usageMetadata.thoughtsTokenCount,
+      promptTokensDetails: responseData.usageMetadata.promptTokensDetails,
     } : undefined;
 
     console.log(`[GEMINI_STEP2] Raw response length: ${responseText.length} chars`);

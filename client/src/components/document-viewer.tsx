@@ -66,6 +66,8 @@ interface DocumentAnalysisResult {
     promptTokenCount?: number;
     candidatesTokenCount?: number;
     totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokensDetails?: Array<{ modality: string; tokenCount: number }>;
   };
   createdAt: string;
 }
@@ -1242,8 +1244,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                     Analysis Metadata
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <div className="text-muted-foreground">Prompt Tokens</div>
                       <div className="font-semibold">{result.usageMetadata.promptTokenCount?.toLocaleString() || 0}</div>
@@ -1252,6 +1254,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                       <div className="text-muted-foreground">Response Tokens</div>
                       <div className="font-semibold">{result.usageMetadata.candidatesTokenCount?.toLocaleString() || 0}</div>
                     </div>
+                    {result.usageMetadata.thoughtsTokenCount !== undefined && result.usageMetadata.thoughtsTokenCount > 0 && (
+                      <div>
+                        <div className="text-muted-foreground">Thinking Tokens</div>
+                        <div className="font-semibold">{result.usageMetadata.thoughtsTokenCount?.toLocaleString() || 0}</div>
+                      </div>
+                    )}
                     <div>
                       <div className="text-muted-foreground">Total Tokens</div>
                       <div className="font-semibold">{result.usageMetadata.totalTokenCount?.toLocaleString() || 0}</div>
@@ -1263,6 +1271,18 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                       </div>
                     )}
                   </div>
+                  {result.usageMetadata.promptTokensDetails && result.usageMetadata.promptTokensDetails.length > 0 && (
+                    <div>
+                      <div className="text-muted-foreground text-sm mb-2">Token Breakdown by Modality</div>
+                      <div className="flex flex-wrap gap-2">
+                        {result.usageMetadata.promptTokensDetails.map((detail, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {detail.modality}: {detail.tokenCount?.toLocaleString()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

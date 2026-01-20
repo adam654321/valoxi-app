@@ -18,6 +18,8 @@ export interface DocumentClassificationResult {
     promptTokenCount?: number;
     candidatesTokenCount?: number;
     totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokensDetails?: Array<{ modality: string; tokenCount: number }>;
   };
 }
 
@@ -87,6 +89,8 @@ export async function classifyDocumentWithGemini(
       promptTokenCount: responseData.usageMetadata.promptTokenCount,
       candidatesTokenCount: responseData.usageMetadata.candidatesTokenCount,
       totalTokenCount: responseData.usageMetadata.totalTokenCount,
+      thoughtsTokenCount: responseData.usageMetadata.thoughtsTokenCount,
+      promptTokensDetails: responseData.usageMetadata.promptTokensDetails,
     } : undefined;
 
     console.log(`[GEMINI_CLASSIFICATION] Raw response: ${responseText}`);
