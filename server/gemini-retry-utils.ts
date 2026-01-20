@@ -2,12 +2,14 @@ export interface RetryOptions {
   maxRetries: number;
   baseDelayMs: number;
   maxDelayMs: number;
+  timeoutMs: number;
 }
 
 const DEFAULT_OPTIONS: RetryOptions = {
   maxRetries: 3,
   baseDelayMs: 45000, // 45 seconds (Gemini suggests ~40s for rate limits)
   maxDelayMs: 120000, // 2 minutes max
+  timeoutMs: 180000, // 3 minutes timeout per request
 };
 
 export function isRateLimitError(response: Response): boolean {
@@ -41,7 +43,16 @@ export async function fetchWithRetry(
 
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
-      const response = await fetch(url, options);
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), opts.timeoutMs);
+      
+      let response: Response;
+      try {
+        response = await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (isRateLimitError(response)) {
         const errorBody = await response.text();
@@ -69,7 +80,18 @@ export async function fetchWithRetry(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       
-      // If it's not a rate limit error, don't retry
+      // Handle timeout (AbortError)
+      if (lastError.name === 'AbortError' || lastError.message.includes('aborted')) {
+        console.log(
+          `[GEMINI_RETRY] Request timed out (attempt ${attempt + 1}/${opts.maxRetries + 1}). Retrying...`
+        );
+        if (attempt < opts.maxRetries) {
+          continue;
+        }
+        throw new Error(`Gemini API request timed out after ${opts.maxRetries + 1} attempts`);
+      }
+      
+      // If it's not a rate limit or timeout error, don't retry
       if (!lastError.message.includes("rate limit")) {
         throw lastError;
       }
