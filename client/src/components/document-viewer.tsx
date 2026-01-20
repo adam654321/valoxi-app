@@ -487,13 +487,13 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
           </Card>
         )}
 
-        {/* Customer Exposure */}
-        {analysisData.customer_exposure && (
+        {/* Top Customers (supports both new top_5_customers and legacy customer_exposure) */}
+        {(analysisData.top_5_customers || analysisData.customer_exposure) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Customer Exposure Analysis
+                {analysisData.top_5_customers ? 'Top 5 Customers by Invoice Value' : 'Customer Exposure Analysis'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -508,7 +508,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                     </tr>
                   </thead>
                   <tbody>
-                    {analysisData.customer_exposure.map((customer: any, index: number) => (
+                    {(analysisData.top_5_customers || analysisData.customer_exposure).map((customer: any, index: number) => (
                       <tr key={index} className="border-b">
                         <td className="py-2 font-medium">{customer.customer_name}</td>
                         <td className="text-right py-2">£{customer.total_invoiced?.toLocaleString()}</td>
