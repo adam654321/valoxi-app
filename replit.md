@@ -101,6 +101,12 @@ server/
 6. ~~Documents~~ ✓ (Completed - core CRUD)
 7. ~~Target Companies~~ ✓ (Completed - core CRUD)
 8. ~~Users/Auth~~ ✓ (Completed - core auth: register, login, logout, me)
+9. ~~Notes~~ ✓ (Completed - deal notes CRUD at `/api/v2/notes/*`)
+10. ~~Dashboard~~ ✓ (Completed - stats, widgets, alerts at `/api/v2/dashboard/*`)
+11. ~~Team Management~~ ✓ (Completed - invitations, members, roles at `/api/v2/team/*`)
+12. ~~Deal Assignments~~ ✓ (Completed - assign/remove team from deals at `/api/v2/deals/*`)
+13. ~~Reports~~ ✓ (Completed - pipeline, activity, performance reports at `/api/v2/reports/*`)
+14. ~~Portal~~ ✓ (Completed - token management, submissions at `/api/v2/portal/*`)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
