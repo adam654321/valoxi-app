@@ -421,10 +421,10 @@ export default function TargetCompanyDetail() {
   const company = profile;
   const contacts = profile?.contacts || [];
 
-  // Add contact mutation
+  // Add contact mutation using v2 endpoint
   const addContactMutation = useMutation({
     mutationFn: (data: ContactFormData) =>
-      apiRequest("POST", `/api/target-companies/${id}/contacts`, {
+      apiRequest("POST", `/api/v2/contacts/company/${id}`, {
         ...data,
         targetCompanyId: parseInt(id!),
       }),
@@ -446,10 +446,10 @@ export default function TargetCompanyDetail() {
     },
   });
 
-  // Edit contact mutation
+  // Edit contact mutation using v2 endpoint
   const editContactMutation = useMutation({
     mutationFn: (data: ContactFormData) =>
-      apiRequest("PUT", `/api/contacts/${editingContact?.id}`, data),
+      apiRequest("PUT", `/api/v2/contacts/${editingContact?.id}`, data),
     onSuccess: () => {
       toast({
         title: "Success",
@@ -469,10 +469,10 @@ export default function TargetCompanyDetail() {
     },
   });
 
-  // Delete contact mutation
+  // Delete contact mutation using v2 endpoint
   const deleteContactMutation = useMutation({
     mutationFn: (contactId: number) =>
-      apiRequest("DELETE", `/api/contacts/${contactId}`),
+      apiRequest("DELETE", `/api/v2/contacts/${contactId}`),
     onSuccess: () => {
       toast({
         title: "Success",

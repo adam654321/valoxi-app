@@ -76,10 +76,11 @@ export default function Contacts() {
   const [showPrimaryOnly, setShowPrimaryOnly] = useState(false);
   const [editingContact, setEditingContact] = useState<ContactWithCompany | null>(null);
 
-  // Get all contacts across all target companies
+  // Get all contacts across all target companies using v2 endpoint
   const { data: allContacts = [], isLoading } = useQuery<ContactWithCompany[]>({
-    queryKey: ["/api/contacts/all"],
+    queryKey: ["/api/v2/contacts/all"],
     enabled: !!user,
+    select: (response: any) => response.data,
   });
 
   // Get target companies for the contact form dropdown
@@ -103,14 +104,14 @@ export default function Contacts() {
     },
   });
 
-  // Create contact mutation
+  // Create contact mutation using v2 endpoint
   const createContactMutation = useMutation({
     mutationFn: async (data: ContactForm) => {
       const { targetCompanyId, ...contactData } = data;
-      return await apiRequest("POST", `/api/target-companies/${targetCompanyId}/contacts`, contactData);
+      return await apiRequest("POST", `/api/v2/contacts/company/${targetCompanyId}`, contactData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       setShowContactForm(false);
       setEditingContact(null);
@@ -129,15 +130,15 @@ export default function Contacts() {
     },
   });
 
-  // Update contact mutation
+  // Update contact mutation using v2 endpoint
   const updateContactMutation = useMutation({
     mutationFn: async (data: ContactForm) => {
       if (!editingContact) return;
       const { targetCompanyId, ...contactData } = data;
-      return await apiRequest("PUT", `/api/contacts/${editingContact.id}`, contactData);
+      return await apiRequest("PUT", `/api/v2/contacts/${editingContact.id}`, contactData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       setShowContactForm(false);
       setEditingContact(null);
@@ -156,13 +157,13 @@ export default function Contacts() {
     },
   });
 
-  // Delete contact mutation
+  // Delete contact mutation using v2 endpoint
   const deleteContactMutation = useMutation({
     mutationFn: async (contact: ContactWithCompany) => {
-      return await apiRequest("DELETE", `/api/contacts/${contact.id}`);
+      return await apiRequest("DELETE", `/api/v2/contacts/${contact.id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       toast({
         title: "Success",
