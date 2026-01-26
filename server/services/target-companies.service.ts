@@ -10,6 +10,7 @@ import {
   dealNotes, 
   stageHistory,
   portalAccessTokens,
+  portalActivityLog,
   externalDocumentSubmissions,
   fileUploadEvents,
   documentAnalysisResults,
@@ -131,6 +132,17 @@ export class TargetCompaniesService {
     
     // Delete portal analytics
     await db.delete(portalAnalytics).where(eq(portalAnalytics.targetCompanyId, id));
+    
+    // Get portal token IDs to delete portal activity log first
+    const portalTokens = await db.select({ id: portalAccessTokens.id })
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.targetCompanyId, id));
+    const portalTokenIds = portalTokens.map(t => t.id);
+    
+    // Delete portal activity log (references portal_access_tokens)
+    if (portalTokenIds.length > 0) {
+      await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, portalTokenIds));
+    }
     
     // Delete portal access tokens
     await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
