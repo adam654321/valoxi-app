@@ -64,12 +64,14 @@ export function PipelineStageManagement({
 
   // Query for available pipeline stages
   const { data: stages, isLoading: stagesLoading } = useQuery<PipelineStage[]>({
-    queryKey: ['/api/pipeline/stages'],
+    queryKey: ['/api/v2/pipeline/stages'],
+    select: (response: any) => response.data,
   });
 
   // Query for stage history
   const { data: stageHistory, isLoading: historyLoading } = useQuery<StageHistory[]>({
-    queryKey: ['/api/target-companies', targetCompanyId, 'stage-history'],
+    queryKey: ['/api/v2/pipeline/companies', targetCompanyId, 'stage-history'],
+    select: (response: any) => response.data,
     enabled: isHistoryDialogOpen,
   });
 
@@ -85,19 +87,16 @@ export function PipelineStageManagement({
   // Mutation for updating company stage
   const updateStageMutation = useMutation({
     mutationFn: async (data: UpdateStageFormValues) => {
-      return await apiRequest(`/api/target-companies/${targetCompanyId}/stage`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('PUT', `/api/v2/pipeline/companies/${targetCompanyId}/stage`, data);
     },
     onSuccess: () => {
       toast({
         title: "Stage updated",
         description: "Company stage has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/target-companies', targetCompanyId, 'profile'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/pipeline/overview'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies', targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline/overview'] });
       setIsStageDialogOpen(false);
       form.reset();
     },

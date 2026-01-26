@@ -1073,129 +1073,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LEGACY NOTIFICATIONS ENDPOINTS REMOVED - Now using /api/v2/notifications/* endpoints
   // See server/routes/notifications.routes.ts for new implementation
 
-  // Pipeline stage management routes
-  // Get all pipeline stages
-  app.get("/api/pipeline/stages", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const stages = await storage.getPipelineStages();
-      res.json(stages);
-    } catch (error) {
-      console.error("Get pipeline stages error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Update company stage
-  app.put("/api/target-companies/:id/stage", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.session.userId;
-      const userCompanyId = req.session.userCompanyId;
-      const companyId = parseInt(req.params.id);
-      const { stage, notes = '' } = req.body;
-
-      if (!userId || !userCompanyId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      if (isNaN(companyId)) {
-        return res.status(400).json({ message: "Invalid company ID" });
-      }
-
-      if (!stage) {
-        return res.status(400).json({ message: "Stage is required" });
-      }
-
-      // Verify user has access to this company
-      const company = await storage.getTargetCompany(companyId, userCompanyId);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found or access denied" });
-      }
-
-      const result = await storage.updateCompanyStage(companyId, stage, userId, notes);
-      res.json(result);
-    } catch (error) {
-      console.error("Update company stage error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get stage history for a company
-  app.get("/api/target-companies/:id/stage-history", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      const companyId = parseInt(req.params.id);
-
-      if (!userCompanyId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      if (isNaN(companyId)) {
-        return res.status(400).json({ message: "Invalid company ID" });
-      }
-
-      // Verify user has access to this company
-      const company = await storage.getTargetCompany(companyId, userCompanyId);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found or access denied" });
-      }
-
-      const history = await storage.getStageHistory(companyId);
-      res.json(history);
-    } catch (error) {
-      console.error("Get stage history error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Toggle initial discussion status for a company (simple checkbox)
-  app.put("/api/target-companies/:id/initial-discussion", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.session.userId;
-      const userCompanyId = req.session.userCompanyId;
-      const companyId = parseInt(req.params.id);
-      const { completed } = req.body;
-
-      if (!userId || !userCompanyId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      if (isNaN(companyId)) {
-        return res.status(400).json({ message: "Invalid company ID" });
-      }
-
-      // Verify user has access to this company
-      const company = await storage.getTargetCompany(companyId, userCompanyId);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found or access denied" });
-      }
-
-      const result = await storage.toggleInitialDiscussion(companyId, completed, userId);
-      res.json({ success: true, message: "Initial discussion updated", data: result });
-    } catch (error) {
-      console.error("Update initial discussion error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // LEGACY NOTES ENDPOINTS REMOVED - Now using /api/v2/notes/* endpoints
-  // See server/routes/notes.routes.ts for new implementation
-
-  // Get pipeline overview
-  app.get("/api/pipeline/overview", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-
-      if (!userCompanyId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      const overview = await storage.getPipelineOverview(userCompanyId);
-      res.json(overview);
-    } catch (error) {
-      console.error("Get pipeline overview error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // LEGACY PIPELINE ENDPOINTS REMOVED - Now using /api/v2/pipeline/* endpoints
+  // See server/routes/pipeline.routes.ts for new implementation
+  // Removed: /api/pipeline/stages, /api/target-companies/:id/stage, /api/target-companies/:id/stage-history,
+  // /api/target-companies/:id/initial-discussion, /api/pipeline/overview
 
   // LEGACY ACTIVITY ENDPOINTS REMOVED - Now using /api/v2/activities/* endpoints
   // See server/routes/activities.routes.ts for new implementation
@@ -1257,18 +1138,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Document Categories endpoint
-  app.get("/api/document-categories", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const categories = await storage.getDocumentCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error("Get document categories error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // LEGACY DOCUMENT CATEGORIES REMOVED - Now using /api/v2/documents/categories endpoint
+  // See server/routes/documents.routes.ts for new implementation
 
-  // Get active portal tokens for a target company (for cache invalidation)
+  // Get active portal tokens for a target company (for cache invalidation) - KEPT for now
   app.get("/api/target-companies/:id/portal-tokens", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const targetCompanyId = parseInt(req.params.id);

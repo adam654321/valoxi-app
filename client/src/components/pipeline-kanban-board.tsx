@@ -77,7 +77,8 @@ export function PipelineKanbanBoard() {
   });
 
   const { data: stages, isLoading: stagesLoading } = useQuery<PipelineStage[]>({
-    queryKey: ['/api/pipeline/stages'],
+    queryKey: ['/api/v2/pipeline/stages'],
+    select: (response: any) => response.data,
   });
 
   const { data: companies, isLoading: companiesLoading } = useQuery<TargetCompany[]>({
@@ -87,7 +88,7 @@ export function PipelineKanbanBoard() {
 
   const updateStageMutation = useMutation({
     mutationFn: async ({ companyId, stage, notes }: { companyId: number; stage: string; notes?: string }) => {
-      const response = await fetch(`/api/target-companies/${companyId}/stage`, {
+      const response = await fetch(`/api/v2/pipeline/companies/${companyId}/stage`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

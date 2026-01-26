@@ -159,7 +159,8 @@ type DocumentFormData = z.infer<typeof documentSchema>;
 // Stage 1 JSON Modal Component for Main CRM
 function Stage1JsonModal({ targetCompanyId, isOpen, onClose }: { targetCompanyId: number; isOpen: boolean; onClose: () => void }) {
   const { data: stage1Analysis, isLoading } = useQuery<any[]>({
-    queryKey: [`/api/target-companies/${targetCompanyId}/stage1-analysis`],
+    queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`],
+    select: (response: any) => response.data,
     enabled: isOpen && !!targetCompanyId,
   });
 
@@ -336,7 +337,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
   // Mutation to trigger Stage 1 analysis
   const triggerAnalysisMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', `/api/target-companies/${targetCompanyId}/trigger-stage1`);
+      return apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`);
     },
     onSuccess: () => {
       toast({
@@ -519,7 +520,8 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
 
   // Get document categories
   const { data: allCategories } = useQuery<DocumentCategory[]>({
-    queryKey: ["/api/document-categories"],
+    queryKey: ["/api/v2/documents/categories"],
+    select: (response: any) => response.data,
   });
 
   // Get company documents with real-time updates via SSE (using v2 endpoint)
