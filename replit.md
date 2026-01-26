@@ -113,6 +113,7 @@ server/
 18. ~~Document Analysis Results~~ ✓ (Completed - display and retrieval at `/api/v2/document-analysis/*` with per-document, per-type, per-company queries and completion status)
 19. ~~Portal Requirements~~ ✓ (Completed - advanced requirements management at `/api/v2/requirements/*` with initialization, progress tracking, overdue detection, and public portal access at `/api/v2/public/portal/*`)
 20. ~~Email/SMTP~~ ✓ (Completed - invitation emails, portal access notifications at `/api/v2/email/*` with connection testing, team invitations, portal links, and document notifications)
+21. ~~Website Analysis~~ ✓ (Completed - Gemini integration for website analysis at `/api/v2/website-analysis/*` with automatic trigger on company creation, re-analysis endpoint, and status checking)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
@@ -144,7 +145,7 @@ server/
 - **Email Integration**: Simple email system using Nodemailer with Google Workspace SMTP for invitations and portal access notifications.
 - **Team Invitation System**: Complete token-based invitation workflow with secure signup forms.
 - **Webhook Integration**:
-    - **Website Analysis**: Triggers when target companies are created with websites, sending data to an external service for analysis.
+    - **Website Analysis (Gemini)**: Triggers when target companies are created with websites. Uses internal Google Gemini 2.0 Flash API to analyze websites directly, extracting structured company data (business name, industry, description, legal structure, etc.) in British English. Results stored as markdown in `websiteAnalysis` field.
     - **File Upload Analysis**: Triggers on document upload, sending to an external analysis service. Supports sales ledger, staff matrix, asset register, profit & loss, and balance sheet document types, storing results in `document_analysis_results`. Displays financial metrics, employee data, asset breakdowns, profit & loss statements, and balance sheet analysis.
     - **Stage 1 Analysis (Gemini)**: Triggers when all 10 required documents are uploaded (5 Company Accounts + 5 analysis documents). Uses internal Google Gemini LLM API to analyze documents directly via file URLs, generating a Commercial Due Diligence Report in markdown format. Displays analysis results in a dedicated "Analysis" tab.
 - **Document Requirements System**: Standardized 29-requirement system applied to all deals, with a two-stage collection process (essential financial documents and comprehensive due diligence).
