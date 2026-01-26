@@ -108,6 +108,7 @@ server/
 13. ~~Reports~~ ✓ (Completed - pipeline, activity, performance reports at `/api/v2/reports/*`)
 14. ~~Portal~~ ✓ (Completed - token management, submissions at `/api/v2/portal/*`)
 15. ~~Document Files~~ ✓ (Completed - upload, view, download, delete at `/api/v2/files/*` with public downloads at `/api/v2/public/documents/*`)
+16. ~~Portal Submissions~~ ✓ (Completed - external document submission flow at `/api/v2/portal-submit/*` with file uploads, token validation, category mapping, and activity logging)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
