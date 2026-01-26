@@ -1,0 +1,145 @@
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { db } from '../db';
+import {
+  documents,
+  documentCategories,
+  documentAccessLog,
+  documentAnalysisResults,
+  fileUploadEvents,
+  targetCompanies,
+  users,
+  type Document,
+  type DocumentCategory,
+  type InsertDocument,
+} from '@shared/schema';
+
+export interface DocumentWithDetails extends Document {
+  uploadedByName: string;
+  categoryDescription?: string;
+}
+
+export class DocumentsRepository {
+  async getDocumentCategories(): Promise<DocumentCategory[]> {
+    return [
+      { id: 1, categoryName: 'Company Accounts', description: 'Company annual accounts and financial statements (up to 5 files)', isRequired: true, sortOrder: 1, createdAt: new Date() },
+      { id: 2, categoryName: 'Profit & Loss', description: 'Profit and loss statements', isRequired: true, sortOrder: 2, createdAt: new Date() },
+      { id: 3, categoryName: 'Balance Sheet', description: 'Balance sheet documents', isRequired: true, sortOrder: 3, createdAt: new Date() },
+      { id: 4, categoryName: 'Sales Ledger', description: 'Sales ledger and transaction records', isRequired: true, sortOrder: 4, createdAt: new Date() },
+      { id: 5, categoryName: 'Asset Register', description: 'Asset register and fixed asset records', isRequired: true, sortOrder: 5, createdAt: new Date() },
+      { id: 6, categoryName: 'Staff Matrix', description: 'Staff matrix and employee information', isRequired: true, sortOrder: 6, createdAt: new Date() }
+    ];
+  }
+
+  async createDocument(document: InsertDocument): Promise<Document> {
+    const [createdDocument] = await db
+      .insert(documents)
+      .values(document)
+      .returning();
+    return createdDocument;
+  }
+
+  async getCompanyDocuments(targetCompanyId: number): Promise<DocumentWithDetails[]> {
+    const result = await db
+      .select({
+        id: documents.id,
+        targetCompanyId: documents.targetCompanyId,
+        uploadedBy: documents.uploadedBy,
+        documentName: documents.documentName,
+        originalFilename: documents.originalFilename,
+        filePath: documents.filePath,
+        fileSize: documents.fileSize,
+        fileType: documents.fileType,
+        documentCategory: documents.documentCategory,
+        description: documents.description,
+        isConfidential: documents.isConfidential,
+        uploadDate: documents.uploadDate,
+        lastAccessed: documents.lastAccessed,
+        accessCount: documents.accessCount,
+        createdAt: documents.createdAt,
+        externalSubmissionId: documents.externalSubmissionId,
+        uploadedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        categoryDescription: sql<string | undefined>`${documentCategories.description}`,
+      })
+      .from(documents)
+      .leftJoin(users, eq(documents.uploadedBy, users.id))
+      .leftJoin(documentCategories, eq(documents.documentCategory, documentCategories.categoryName))
+      .where(eq(documents.targetCompanyId, targetCompanyId))
+      .orderBy(documents.documentCategory, desc(documents.uploadDate));
+
+    return result.sort((a, b) => {
+      if (a.documentCategory !== b.documentCategory) {
+        return (a.documentCategory || '').localeCompare(b.documentCategory || '');
+      }
+      const aDate = a.uploadDate ? new Date(a.uploadDate).getTime() : 0;
+      const bDate = b.uploadDate ? new Date(b.uploadDate).getTime() : 0;
+      return bDate - aDate;
+    });
+  }
+
+  async getDocument(documentId: number, userCompanyId: number): Promise<Document | undefined> {
+    const [document] = await db
+      .select()
+      .from(documents)
+      .leftJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
+      .where(and(
+        eq(documents.id, documentId),
+        eq(targetCompanies.userCompanyId, userCompanyId)
+      ));
+    return document?.documents;
+  }
+
+  async getDocumentByIdPublic(documentId: number): Promise<Document | undefined> {
+    const [document] = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.id, documentId));
+    return document || undefined;
+  }
+
+  async updateDocument(documentId: number, document: Partial<InsertDocument>): Promise<Document | undefined> {
+    const [updatedDocument] = await db
+      .update(documents)
+      .set(document)
+      .where(eq(documents.id, documentId))
+      .returning();
+    return updatedDocument;
+  }
+
+  async deleteDocument(documentId: number): Promise<boolean> {
+    await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
+    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
+    await db.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
+
+    const [deletedDocument] = await db
+      .delete(documents)
+      .where(eq(documents.id, documentId))
+      .returning();
+    return !!deletedDocument;
+  }
+
+  async logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string): Promise<void> {
+    await db.insert(documentAccessLog).values({
+      documentId,
+      accessedBy: userId,
+      accessType,
+      ipAddress: ipAddress || null,
+    });
+
+    await db.update(documents)
+      .set({ 
+        lastAccessed: new Date(),
+        accessCount: sql`${documents.accessCount} + 1`
+      })
+      .where(eq(documents.id, documentId));
+  }
+
+  async targetCompanyBelongsToUser(targetCompanyId: number, userCompanyId: number): Promise<boolean> {
+    const [company] = await db
+      .select({ id: targetCompanies.id })
+      .from(targetCompanies)
+      .where(and(eq(targetCompanies.id, targetCompanyId), eq(targetCompanies.userCompanyId, userCompanyId)));
+    return !!company;
+  }
+}
+
+export const documentsRepository = new DocumentsRepository();
