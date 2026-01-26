@@ -147,10 +147,7 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
         contactId: data.contactId || null,
         durationMinutes: data.durationMinutes || null,
       };
-      return apiRequest(`/api/v2/activities/company/${targetCompanyId}`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      return apiRequest("POST", `/api/v2/activities/company/${targetCompanyId}`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
