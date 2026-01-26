@@ -17,6 +17,7 @@ import documentsFilesRoutes, { publicDocumentRoutes } from './documents-files.ro
 import portalSubmissionsRoutes from './portal-submissions.routes';
 import stage1AnalysisRoutes from './stage1-analysis.routes';
 import documentAnalysisRoutes from './document-analysis.routes';
+import portalRequirementsRoutes, { portalRequirementsPublicRoutes } from './portal-requirements.routes';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -38,4 +39,6 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/portal-submit', portalSubmissionsRoutes);
   app.use('/api/v2/stage1-analysis', isAuthenticated, stage1AnalysisRoutes);
   app.use('/api/v2/document-analysis', isAuthenticated, documentAnalysisRoutes);
+  app.use('/api/v2/requirements', isAuthenticated, portalRequirementsRoutes);
+  app.use('/api/v2/public/portal', portalRequirementsPublicRoutes);
 }
