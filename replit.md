@@ -99,7 +99,7 @@ server/
 4. ~~Activities~~ ✓ (Completed)
 5. ~~Notifications~~ ✓ (Completed)
 6. ~~Documents~~ ✓ (Completed - core CRUD)
-7. Target Companies
+7. ~~Target Companies~~ ✓ (Completed - core CRUD)
 8. Users/Auth (last - security critical)
 
 ## Database Design
