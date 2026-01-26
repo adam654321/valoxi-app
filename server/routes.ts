@@ -198,7 +198,8 @@ async function analyzeUploadedFileWithGemini(eventId: number) {
 }
 
 // Legacy webhook function - kept for backward compatibility if needed
-async function sendFileUploadWebhook(eventId: number) {
+// Exported for use by v2 document upload routes
+export async function sendFileUploadWebhook(eventId: number) {
   // Now redirects to Gemini-based analysis
   return analyzeUploadedFileWithGemini(eventId);
 }

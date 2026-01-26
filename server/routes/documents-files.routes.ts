@@ -5,6 +5,7 @@ import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { sendFileUploadWebhook } from '../routes';
 
 const router = Router();
 
@@ -81,6 +82,12 @@ router.post('/company/:id/upload', (req: Request, res: Response) => {
         fileName: prefixedFilename,
         fileUrl: `${baseUrl}/api/public/documents/${document.id}/download`,
       });
+      
+      // Trigger Gemini file analysis webhook (runs in background)
+      sendFileUploadWebhook(uploadEvent.id).catch(err => {
+        console.error('[V2_UPLOAD] File analysis webhook failed:', err);
+      });
+      
       sendCreated(res, { success: true, document, uploadEventId: uploadEvent.id, message: 'Document uploaded successfully' });
     } catch (error) { sendError(res, error); }
   });
