@@ -100,16 +100,17 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   const [reminderDate, setReminderDate] = useState("");
 
   const { data: notes = [], isLoading } = useQuery<DealNote[]>({
-    queryKey: ["/api/target-companies", targetCompanyId, "notes"],
+    queryKey: ["/api/v2/notes/company", targetCompanyId],
     enabled: !!targetCompanyId,
+    select: (response: any) => response.data,
   });
 
   const createNoteMutation = useMutation({
     mutationFn: (data: { noteType: string; title: string; content: string; reminderDate: string | null }) =>
-      apiRequest("POST", `/api/target-companies/${targetCompanyId}/notes`, data),
+      apiRequest("POST", `/api/v2/notes/company/${targetCompanyId}`, data),
     onSuccess: () => {
       toast({ title: "Success", description: "Note added" });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
       resetForm();
     },
     onError: (error: any) => {
@@ -119,10 +120,10 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
 
   const updateNoteMutation = useMutation({
     mutationFn: (data: { noteId: number; noteType: string; title: string; content: string; reminderDate: string | null; reminderCompleted?: boolean }) =>
-      apiRequest("PUT", `/api/notes/${data.noteId}`, { noteType: data.noteType, title: data.title, content: data.content, reminderDate: data.reminderDate, reminderCompleted: data.reminderCompleted }),
+      apiRequest("PUT", `/api/v2/notes/${data.noteId}`, { noteType: data.noteType, title: data.title, content: data.content, reminderDate: data.reminderDate, reminderCompleted: data.reminderCompleted }),
     onSuccess: () => {
       toast({ title: "Success", description: "Note updated" });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
       resetForm();
     },
     onError: (error: any) => {
@@ -131,10 +132,10 @@ function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
   });
 
   const deleteNoteMutation = useMutation({
-    mutationFn: (noteId: number) => apiRequest("DELETE", `/api/notes/${noteId}`),
+    mutationFn: (noteId: number) => apiRequest("DELETE", `/api/v2/notes/${noteId}`),
     onSuccess: () => {
       toast({ title: "Success", description: "Note deleted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to delete note", variant: "destructive" });
