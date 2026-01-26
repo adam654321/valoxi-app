@@ -13,6 +13,7 @@ import teamRoutes from './team.routes';
 import assignmentsRoutes from './assignments.routes';
 import reportsRoutes from './reports.routes';
 import portalRoutes from './portal.routes';
+import documentsFilesRoutes, { publicDocumentRoutes } from './documents-files.routes';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -29,4 +30,6 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/deals', isAuthenticated, assignmentsRoutes);
   app.use('/api/v2/reports', isAuthenticated, reportsRoutes);
   app.use('/api/v2/portal', portalRoutes);
+  app.use('/api/v2/files', isAuthenticated, documentsFilesRoutes);
+  app.use('/api/v2/public/documents', publicDocumentRoutes);
 }
