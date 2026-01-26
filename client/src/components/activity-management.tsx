@@ -125,17 +125,19 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
     },
   });
 
-  // Get activity types
+  // Get activity types using v2 endpoint
   const { data: activityTypes = [] } = useQuery<ActivityType[]>({
-    queryKey: ["/api/activities/types"],
+    queryKey: ["/api/v2/activities/types"],
+    select: (response: any) => response.data,
   });
 
-  // Get activities timeline
+  // Get activities timeline using v2 endpoint
   const { data: timeline = {}, isLoading: timelineLoading } = useQuery<ActivityTimeline>({
-    queryKey: ["/api/target-companies", targetCompanyId, "activities/timeline"],
+    queryKey: ["/api/v2/activities/company", targetCompanyId, "timeline"],
+    select: (response: any) => response.data,
   });
 
-  // Create activity mutation
+  // Create activity mutation using v2 endpoint
   const createActivityMutation = useMutation({
     mutationFn: async (data: ActivityFormData) => {
       const payload = {
@@ -145,20 +147,20 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
         contactId: data.contactId || null,
         durationMinutes: data.durationMinutes || null,
       };
-      return apiRequest(`/api/target-companies/${targetCompanyId}/activities`, {
+      return apiRequest(`/api/v2/activities/company/${targetCompanyId}`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/target-companies", targetCompanyId, "activities"],
+        queryKey: ["/api/v2/activities/company", targetCompanyId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/target-companies", targetCompanyId, "activities/timeline"],
+        queryKey: ["/api/v2/activities/company", targetCompanyId, "timeline"],
       });
       queryClient.invalidateQueries({
-        queryKey: ["/api/activities/recent"],
+        queryKey: ["/api/v2/activities/recent"],
       });
       setIsDialogOpen(false);
       form.reset();

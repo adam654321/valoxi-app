@@ -57,17 +57,19 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Query notifications
+  // Query notifications using v2 endpoint
   const { data: notifications, isLoading } = useQuery<Notification[]>({
-    queryKey: ['/api/notifications'],
+    queryKey: ['/api/v2/notifications'],
     refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    select: (response: any) => response.data,
   });
 
   // Mark single notification as read
   const markReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`/api/v2/notifications/${notificationId}/read`, {
         method: 'PUT',
+        credentials: 'include',
       });
       if (!response.ok) {
         const error = await response.json();
@@ -76,7 +78,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/notifications'] });
     },
     onError: (error: Error) => {
       toast({
@@ -90,8 +92,9 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
   // Mark all notifications as read
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/notifications/mark-all-read', {
+      const response = await fetch('/api/v2/notifications/mark-all-read', {
         method: 'POST',
+        credentials: 'include',
       });
       if (!response.ok) {
         const error = await response.json();
@@ -100,11 +103,12 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      if (data.count > 0) {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/notifications'] });
+      const count = data.data?.count ?? data.count ?? 0;
+      if (count > 0) {
         toast({
           title: "All notifications marked as read",
-          description: `${data.count} notifications marked as read.`,
+          description: `${count} notifications marked as read.`,
         });
       }
     },
