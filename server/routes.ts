@@ -26,7 +26,8 @@ import { runStep2AnalysisForTypes, type DocumentType } from "./gemini-step2-anal
 // Import modular routes (new architecture)
 import { registerModularRoutes } from "./routes/index";
 
-// Note: Webhook infrastructure removed - website analysis now uses direct Gemini API calls via v2 endpoints
+// Import website analysis service for triggering on new company creation
+import { websiteAnalysisService } from "./services/website-analysis.service";
 
 // Function to analyze uploaded files using Gemini (Step 1: Classification, Step 2: Detailed Analysis)
 async function analyzeUploadedFileWithGemini(eventId: number) {
@@ -1327,7 +1328,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const targetCompany = await storage.createTargetCompany(processedData as any);
 
-      // Note: Website analysis is now handled by v2 target companies service using direct Gemini API
+      // Trigger website analysis if company has a website
+      if (targetCompany.website) {
+        websiteAnalysisService.triggerAnalysisIfNeeded(targetCompany.id, targetCompany.website);
+      }
 
       res.status(201).json(targetCompany);
     } catch (error) {
