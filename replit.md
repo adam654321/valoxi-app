@@ -3,6 +3,13 @@
 This M&A (Mergers & Acquisitions) CRM platform helps business buyers track and manage potential acquisition targets through their deal pipeline. It provides tools for M&A professionals, business buyers, and investment firms to manage target companies from initial identification to deal completion. Key capabilities include comprehensive target and contact management, robust team collaboration with role-based access control, integrated activity tracking, and a secure external document portal for due diligence. The platform streamlines the M&A process, enhances communication, and centralizes all deal-related information.
 
 ## Recent Changes (January 2026)
+- **Architecture Refactoring (Phase 1 - Pipeline)**: Implemented new modular architecture pattern to address code maintainability issues. Extracted pipeline functionality as proof-of-concept:
+  - New layered architecture: Repository → Service → Routes
+  - Created `server/repositories/`, `server/services/`, `server/routes/` folders
+  - Shared utilities in `server/utils/` (errors.ts, response.ts)
+  - New v2 API endpoints at `/api/v2/pipeline/*` running alongside existing endpoints
+  - Old endpoints preserved for backwards compatibility until full migration
+
 - **Stage 1 Analysis: Gemini Integration**: Replaced external webhook calls with internal Google Gemini LLM API calls for Stage 1 document analysis. When all 10 required files are uploaded, the system now sends file URLs directly to Gemini (gemini-3-flash-preview) for analysis instead of calling external webhooks. Key changes:
   - New Gemini service at `server/gemini-stage1-service.ts`
   - Prompt template at `server/prompts/stage1-analysis-prompt.ts`
@@ -53,6 +60,47 @@ Preferred communication style: Simple, everyday language.
 - **Database ORM**: Drizzle ORM.
 - **Authentication**: Session-based using `express-session` and PostgreSQL store, bcrypt for password hashing.
 - **API Design**: RESTful with structured error handling.
+
+### Modular Architecture (New Pattern)
+All new features must follow this layered architecture:
+
+```
+server/
+├── repositories/           # Data Access Layer (DAL)
+│   └── [domain].repository.ts
+├── services/              # Business Logic Layer
+│   └── [domain].service.ts
+├── routes/                # HTTP Layer (thin controllers)
+│   ├── index.ts           # Route aggregator
+│   └── [domain].routes.ts
+├── utils/                 # Shared utilities
+│   ├── errors.ts          # Custom error classes
+│   └── response.ts        # Standardized responses
+├── routes.ts              # Legacy (being migrated)
+└── storage.ts             # Legacy (being migrated)
+```
+
+**Layer Responsibilities:**
+1. **Repository** (`repositories/*.repository.ts`): Pure data access, database queries, no business logic
+2. **Service** (`services/*.service.ts`): Business rules, validation, orchestration between repositories
+3. **Routes** (`routes/*.routes.ts`): HTTP concerns only - request parsing, auth checks, response formatting
+
+**Development Rules:**
+- Max ~300 lines per file; split if larger
+- New endpoints go to v2 API: `/api/v2/[domain]/*`
+- Use custom errors from `utils/errors.ts`
+- Use `sendSuccess()` / `sendError()` from `utils/response.ts`
+- Register routes via `routes/index.ts` → `registerModularRoutes()`
+
+**Migration Priority (from routes.ts/storage.ts):**
+1. ~~Pipeline Stages~~ ✓ (Completed)
+2. User Roles/Permissions
+3. Target Contacts
+4. Activities
+5. Notifications
+6. Documents
+7. Target Companies
+8. Users/Auth (last - security critical)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
