@@ -1154,136 +1154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard stats endpoint
-  app.get("/api/dashboard/stats", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      
-      if (!userCompanyId) {
-        return res.status(400).json({ message: "User company not found" });
-      }
-
-      const targetCompanyCount = await storage.getTargetCompanyCount(userCompanyId);
-      const totalContactsCount = await storage.getTotalContactsCount(userCompanyId);
-      const dashboardMetrics = await storage.getDashboardMetrics(userCompanyId);
-
-      res.json({
-        targetCompanies: targetCompanyCount,
-        activeDeals: dashboardMetrics.activeDeals,
-        totalContacts: totalContactsCount,
-        dealValue: dashboardMetrics.totalDealValue,
-      });
-    } catch (error) {
-      console.error("Dashboard stats error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Enhanced Dashboard Widget API Endpoints
-  app.get("/api/dashboard/data/:widget", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      const widgetType = req.params.widget;
-      
-      if (!userCompanyId) {
-        return res.status(400).json({ message: "User company not found" });
-      }
-
-      let data;
-      switch (widgetType) {
-        case 'pipeline-overview':
-          data = await storage.getPipelineOverviewWidget(userCompanyId);
-          break;
-        case 'recent-activities':
-          data = await storage.getRecentActivitiesWidget(userCompanyId);
-          break;
-        case 'hot-deals':
-          data = await storage.getHotDealsWidget(userCompanyId);
-          break;
-        case 'quick-stats':
-          data = await storage.getQuickStatsWidget(userCompanyId);
-          break;
-        case 'upcoming-reminders':
-          data = await storage.getUpcomingRemindersWidget(req.session.userId!);
-          break;
-        case 'team-activity':
-          data = await storage.getTeamActivityWidget(userCompanyId);
-          break;
-        case 'stage-alerts':
-          data = await storage.getStageAlertsWidget(userCompanyId);
-          break;
-        default:
-          return res.status(400).json({ message: "Invalid widget type" });
-      }
-
-      res.json(data);
-    } catch (error) {
-      console.error(`Dashboard widget ${req.params.widget} error:`, error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Dashboard preferences endpoints
-  app.get("/api/dashboard/widgets", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.session.userId!;
-      const preferences = await storage.getDashboardPreferences(userId);
-      res.json(preferences);
-    } catch (error) {
-      console.error("Get dashboard preferences error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.put("/api/dashboard/widgets", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userId = req.session.userId!;
-      const preferences = req.body;
-      await storage.updateDashboardPreferences(userId, preferences);
-      res.json({ message: "Dashboard preferences updated" });
-    } catch (error) {
-      console.error("Update dashboard preferences error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Dashboard alerts endpoints
-  app.get("/api/dashboard/alerts", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      
-      if (!userCompanyId) {
-        return res.status(400).json({ message: "User company not found" });
-      }
-
-      const alerts = await storage.getDashboardAlerts(userCompanyId);
-      res.json(alerts);
-    } catch (error) {
-      console.error("Get dashboard alerts error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.put("/api/dashboard/alerts/:id/dismiss", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      const alertId = parseInt(req.params.id);
-      
-      if (!userCompanyId) {
-        return res.status(400).json({ message: "User company not found" });
-      }
-
-      const success = await storage.dismissAlert(alertId, userCompanyId);
-      if (success) {
-        res.json({ message: "Alert dismissed" });
-      } else {
-        res.status(404).json({ message: "Alert not found" });
-      }
-    } catch (error) {
-      console.error("Dismiss alert error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // LEGACY DASHBOARD ENDPOINTS REMOVED - Now using /api/v2/dashboard/* endpoints
+  // See server/routes/dashboard.routes.ts for new implementation
 
   // Create target company
   app.post("/api/target-companies", isAuthenticated, async (req: Request, res: Response) => {
@@ -5196,20 +5068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get document progress dashboard (internal users)
-  app.get('/api/dashboard/document-progress', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const userCompanyId = req.session.userCompanyId;
-      
-      const result = await storage.getDocumentProgressDashboard(userCompanyId!);
-      
-      res.json(result);
-      
-    } catch (error) {
-      console.error('Document progress dashboard error:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
+  // LEGACY document-progress endpoint REMOVED - Not used by frontend
 
   // Enhanced Portal API Routes for Stage 1 Document Tracking
 
