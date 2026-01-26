@@ -20,6 +20,7 @@ import documentAnalysisRoutes from './document-analysis.routes';
 import portalRequirementsRoutes, { portalRequirementsPublicRoutes } from './portal-requirements.routes';
 import emailRoutes from './email.routes';
 import websiteAnalysisRoutes from './website-analysis.routes';
+import debugRoutes from './debug.routes';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -45,4 +46,5 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/public/portal', portalRequirementsPublicRoutes);
   app.use('/api/v2/email', isAuthenticated, emailRoutes);
   app.use('/api/v2/website-analysis', isAuthenticated, websiteAnalysisRoutes);
+  app.use('/api/v2/debug', debugRoutes); // No auth for debugging
 }
