@@ -1,4 +1,5 @@
 import { targetCompaniesRepository, type TargetCompanyWithStats, type SearchParams, type FilterOptions } from '../repositories/target-companies.repository';
+import { websiteAnalysisService } from './website-analysis.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import type { TargetCompany, InsertTargetCompany } from '@shared/schema';
 
@@ -43,7 +44,14 @@ export class TargetCompaniesService {
       createdBy: userId,
     };
 
-    return await targetCompaniesRepository.create(processedData as InsertTargetCompany);
+    const company = await targetCompaniesRepository.create(processedData as InsertTargetCompany);
+
+    // Trigger website analysis if company has a website
+    if (company.website) {
+      websiteAnalysisService.triggerAnalysisIfNeeded(company.id, company.website);
+    }
+
+    return company;
   }
 
   async update(id: number, updateData: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany> {
