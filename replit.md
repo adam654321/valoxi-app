@@ -112,6 +112,7 @@ server/
 17. ~~Stage 1 Analysis~~ ✓ (Completed - Gemini integration for document analysis at `/api/v2/stage1-analysis/*` with requirements checking, analysis triggering, and event tracking)
 18. ~~Document Analysis Results~~ ✓ (Completed - display and retrieval at `/api/v2/document-analysis/*` with per-document, per-type, per-company queries and completion status)
 19. ~~Portal Requirements~~ ✓ (Completed - advanced requirements management at `/api/v2/requirements/*` with initialization, progress tracking, overdue detection, and public portal access at `/api/v2/public/portal/*`)
+20. ~~Email/SMTP~~ ✓ (Completed - invitation emails, portal access notifications at `/api/v2/email/*` with connection testing, team invitations, portal links, and document notifications)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
