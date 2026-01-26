@@ -27,7 +27,7 @@ export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
 
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/auth/logout"),
+    mutationFn: () => apiRequest("POST", "/api/v2/auth/logout"),
     onSuccess: () => {
       window.location.href = "/login";
     },

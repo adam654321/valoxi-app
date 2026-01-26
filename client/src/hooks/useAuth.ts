@@ -14,8 +14,9 @@ export interface AuthUser {
 
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery<AuthUser | null>({
-    queryKey: ["/api/auth/me"],
+    queryKey: ["/api/v2/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    select: (response: any) => response?.data || response,
     retry: false,
   });
 

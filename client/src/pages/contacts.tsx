@@ -237,7 +237,7 @@ export default function Contacts() {
   const otherContacts = filteredContacts.filter(c => !c.isPrimary);
 
   const handleLogout = () => {
-    window.location.href = "/api/auth/logout";
+    window.location.href = "/api/v2/auth/logout";
   };
 
   if (isLoading) {

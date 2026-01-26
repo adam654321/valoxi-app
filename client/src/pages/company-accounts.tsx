@@ -85,7 +85,7 @@ export default function CompanyAccounts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       toast({

@@ -98,7 +98,7 @@ export default function AcceptInvitation() {
       
       // Auto-login the user after successful registration
       try {
-        const loginResponse = await apiRequest("POST", "/api/auth/login", {
+        const loginResponse = await apiRequest("POST", "/api/v2/auth/login", {
           email: invitation?.email,
           password: form.getValues("password"),
         });
