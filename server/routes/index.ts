@@ -10,6 +10,8 @@ import authRoutes from './auth.routes';
 import notesRoutes from './notes.routes';
 import dashboardRoutes from './dashboard.routes';
 import teamRoutes from './team.routes';
+import assignmentsRoutes from './assignments.routes';
+import reportsRoutes from './reports.routes';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -23,4 +25,6 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/notes', isAuthenticated, notesRoutes);
   app.use('/api/v2/dashboard', isAuthenticated, dashboardRoutes);
   app.use('/api/v2/team', teamRoutes);
+  app.use('/api/v2/deals', isAuthenticated, assignmentsRoutes);
+  app.use('/api/v2/reports', isAuthenticated, reportsRoutes);
 }
