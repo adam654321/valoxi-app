@@ -94,7 +94,7 @@ server/
 
 **Migration Priority (from routes.ts/storage.ts):**
 1. ~~Pipeline Stages~~ ✓ (Completed)
-2. User Roles/Permissions
+2. ~~User Roles/Permissions~~ ✓ (Completed)
 3. Target Contacts
 4. Activities
 5. Notifications
