@@ -6,11 +6,15 @@ import {
   documentAccessLog,
   documentAnalysisResults,
   fileUploadEvents,
+  externalDocumentSubmissions,
   targetCompanies,
   users,
   type Document,
   type DocumentCategory,
   type InsertDocument,
+  type FileUploadEvent,
+  type InsertFileUploadEvent,
+  type ExternalDocumentSubmission,
 } from '@shared/schema';
 
 export interface DocumentWithDetails extends Document {
@@ -139,6 +143,39 @@ export class DocumentsRepository {
       .from(targetCompanies)
       .where(and(eq(targetCompanies.id, targetCompanyId), eq(targetCompanies.userCompanyId, userCompanyId)));
     return !!company;
+  }
+
+  async createFileUploadEvent(event: InsertFileUploadEvent): Promise<FileUploadEvent> {
+    const [createdEvent] = await db.insert(fileUploadEvents).values(event).returning();
+    return createdEvent;
+  }
+
+  async getExternalSubmission(submissionId: number, userCompanyId: number): Promise<ExternalDocumentSubmission | undefined> {
+    const [submission] = await db
+      .select()
+      .from(externalDocumentSubmissions)
+      .innerJoin(targetCompanies, eq(externalDocumentSubmissions.targetCompanyId, targetCompanies.id))
+      .where(and(
+        eq(externalDocumentSubmissions.id, submissionId),
+        eq(targetCompanies.userCompanyId, userCompanyId)
+      ));
+    return submission?.external_document_submissions;
+  }
+
+  async deleteExternalSubmission(submissionId: number): Promise<boolean> {
+    const [deleted] = await db
+      .delete(externalDocumentSubmissions)
+      .where(eq(externalDocumentSubmissions.id, submissionId))
+      .returning();
+    return !!deleted;
+  }
+
+  async getTargetCompany(targetCompanyId: number, userCompanyId: number): Promise<{ id: number; userCompanyId: number } | undefined> {
+    const [company] = await db
+      .select({ id: targetCompanies.id, userCompanyId: targetCompanies.userCompanyId })
+      .from(targetCompanies)
+      .where(and(eq(targetCompanies.id, targetCompanyId), eq(targetCompanies.userCompanyId, userCompanyId)));
+    return company;
   }
 }
 
