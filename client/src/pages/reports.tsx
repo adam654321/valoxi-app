@@ -59,37 +59,37 @@ export default function Reports() {
   // Fetch all report data using v2 endpoints
   const { data: pipelineData, isLoading: pipelineLoading } = useQuery<PipelineData>({
     queryKey: ['/api/v2/reports/pipeline-overview', dateRange],
-    queryFn: () => fetch(`/api/v2/reports/pipeline-overview?range=${dateRange}`).then(r => r.json()),
+    queryFn: () => fetch(`/api/v2/reports/pipeline-overview?range=${dateRange}`, { credentials: 'include' }).then(r => r.json()),
     select: (response: any) => response.data,
   });
 
   const { data: activityData, isLoading: activityLoading } = useQuery<ActivityData>({
     queryKey: ['/api/v2/reports/activity-summary', dateRange],
-    queryFn: () => fetch(`/api/v2/reports/activity-summary?range=${dateRange}`).then(r => r.json()),
+    queryFn: () => fetch(`/api/v2/reports/activity-summary?range=${dateRange}`, { credentials: 'include' }).then(r => r.json()),
     select: (response: any) => response.data,
   });
 
   const { data: performanceData, isLoading: performanceLoading } = useQuery<PerformanceData>({
     queryKey: ['/api/v2/reports/performance-metrics', dateRange],
-    queryFn: () => fetch(`/api/v2/reports/performance-metrics?range=${dateRange}`).then(r => r.json()),
+    queryFn: () => fetch(`/api/v2/reports/performance-metrics?range=${dateRange}`, { credentials: 'include' }).then(r => r.json()),
     select: (response: any) => response.data,
   });
 
   const { data: stageAnalysisData, isLoading: stageAnalysisLoading } = useQuery<StageAnalysisData[]>({
     queryKey: ['/api/v2/reports/stage-analysis', dateRange],
-    queryFn: () => fetch(`/api/v2/reports/stage-analysis?range=${dateRange}`).then(r => r.json()),
+    queryFn: () => fetch(`/api/v2/reports/stage-analysis?range=${dateRange}`, { credentials: 'include' }).then(r => r.json()),
     select: (response: any) => response.data,
   });
 
   const { data: userPerformanceData, isLoading: userPerformanceLoading } = useQuery<UserPerformanceData[]>({
     queryKey: ['/api/v2/reports/user-performance', dateRange],
-    queryFn: () => fetch(`/api/v2/reports/user-performance?range=${dateRange}`).then(r => r.json()),
+    queryFn: () => fetch(`/api/v2/reports/user-performance?range=${dateRange}`, { credentials: 'include' }).then(r => r.json()),
     select: (response: any) => response.data,
   });
 
   const handleExport = async (reportType: string) => {
     try {
-      const response = await fetch(`/api/v2/reports/export/${reportType}?format=csv`);
+      const response = await fetch(`/api/v2/reports/export/${reportType}?format=csv`, { credentials: 'include' });
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
