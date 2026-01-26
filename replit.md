@@ -114,6 +114,7 @@ server/
 19. ~~Portal Requirements~~ ✓ (Completed - advanced requirements management at `/api/v2/requirements/*` with initialization, progress tracking, overdue detection, and public portal access at `/api/v2/public/portal/*`)
 20. ~~Email/SMTP~~ ✓ (Completed - invitation emails, portal access notifications at `/api/v2/email/*` with connection testing, team invitations, portal links, and document notifications)
 21. ~~Website Analysis~~ ✓ (Completed - Gemini integration for website analysis at `/api/v2/website-analysis/*` with automatic trigger on company creation, re-analysis endpoint, and status checking)
+22. ~~Debug Endpoints~~ ✓ (Completed - Stage 1 analysis debugging at `/api/v2/debug/*` with event viewing and manual trigger capabilities)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
