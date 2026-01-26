@@ -107,6 +107,7 @@ server/
 12. ~~Deal Assignments~~ ✓ (Completed - assign/remove team from deals at `/api/v2/deals/*`)
 13. ~~Reports~~ ✓ (Completed - pipeline, activity, performance reports at `/api/v2/reports/*`)
 14. ~~Portal~~ ✓ (Completed - token management, submissions at `/api/v2/portal/*`)
+15. ~~Document Files~~ ✓ (Completed - upload, view, download, delete at `/api/v2/files/*` with public downloads at `/api/v2/public/documents/*`)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
