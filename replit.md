@@ -100,7 +100,7 @@ server/
 5. ~~Notifications~~ ✓ (Completed)
 6. ~~Documents~~ ✓ (Completed - core CRUD)
 7. ~~Target Companies~~ ✓ (Completed - core CRUD)
-8. Users/Auth (last - security critical)
+8. ~~Users/Auth~~ ✓ (Completed - core auth: register, login, logout, me)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
