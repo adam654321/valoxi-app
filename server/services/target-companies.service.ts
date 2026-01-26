@@ -2,6 +2,26 @@ import { targetCompaniesRepository, type TargetCompanyWithStats, type SearchPara
 import { websiteAnalysisService } from './website-analysis.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import type { TargetCompany, InsertTargetCompany } from '@shared/schema';
+import { db } from '../db';
+import { 
+  targetContacts, 
+  activities, 
+  documents, 
+  dealNotes, 
+  stageHistory,
+  portalAccessTokens,
+  externalDocumentSubmissions,
+  fileUploadEvents,
+  documentAnalysisResults,
+  stage1AnalysisEvents,
+  userDealAssignments,
+  teamNotifications,
+  dashboardAlerts,
+  portalAnalytics,
+  companyDocumentRequirements,
+  documentStageProgression
+} from '@shared/schema';
+import { eq, sql, inArray } from 'drizzle-orm';
 
 export class TargetCompaniesService {
   async getAll(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
@@ -71,6 +91,75 @@ export class TargetCompaniesService {
       throw new BadRequestError('Invalid target company ID');
     }
 
+    // Verify the company exists and belongs to this user company first
+    const company = await targetCompaniesRepository.getById(id, userCompanyId);
+    if (!company) {
+      throw new NotFoundError('Target company not found');
+    }
+
+    // Delete related records in dependency order (most dependent first)
+    // Order matters due to foreign key constraints between related tables
+    
+    // Get file upload event IDs for this target company to delete document analysis results
+    const uploadEvents = await db.select({ id: fileUploadEvents.id })
+      .from(fileUploadEvents)
+      .where(eq(fileUploadEvents.targetCompanyId, id));
+    const uploadEventIds = uploadEvents.map(e => e.id);
+    
+    // Delete document analysis results (via file upload event IDs)
+    if (uploadEventIds.length > 0) {
+      await db.delete(documentAnalysisResults).where(inArray(documentAnalysisResults.fileUploadEventId, uploadEventIds));
+    }
+    
+    // Delete file upload events
+    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.targetCompanyId, id));
+    
+    // Delete documents
+    await db.delete(documents).where(eq(documents.targetCompanyId, id));
+    
+    // Delete document requirement submissions via raw SQL (table exists but not in schema)
+    await db.execute(sql`DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);
+    
+    // Delete document stage progression
+    await db.delete(documentStageProgression).where(eq(documentStageProgression.targetCompanyId, id));
+    
+    // Delete company document requirements
+    await db.delete(companyDocumentRequirements).where(eq(companyDocumentRequirements.targetCompanyId, id));
+    
+    // Delete external document submissions
+    await db.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.targetCompanyId, id));
+    
+    // Delete portal analytics
+    await db.delete(portalAnalytics).where(eq(portalAnalytics.targetCompanyId, id));
+    
+    // Delete portal access tokens
+    await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
+    
+    // Delete stage1 analysis events
+    await db.delete(stage1AnalysisEvents).where(eq(stage1AnalysisEvents.targetCompanyId, id));
+    
+    // Delete stage history
+    await db.delete(stageHistory).where(eq(stageHistory.targetCompanyId, id));
+    
+    // Delete deal notes
+    await db.delete(dealNotes).where(eq(dealNotes.targetCompanyId, id));
+    
+    // Delete activities
+    await db.delete(activities).where(eq(activities.targetCompanyId, id));
+    
+    // Delete contacts
+    await db.delete(targetContacts).where(eq(targetContacts.targetCompanyId, id));
+    
+    // Delete team notifications
+    await db.delete(teamNotifications).where(eq(teamNotifications.targetCompanyId, id));
+    
+    // Delete dashboard alerts
+    await db.delete(dashboardAlerts).where(eq(dashboardAlerts.targetCompanyId, id));
+    
+    // Delete user deal assignments
+    await db.delete(userDealAssignments).where(eq(userDealAssignments.targetCompanyId, id));
+
+    // Now delete the target company itself
     const deleted = await targetCompaniesRepository.delete(id, userCompanyId);
     if (!deleted) {
       throw new NotFoundError('Target company not found');
