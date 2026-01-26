@@ -75,11 +75,13 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
 
   // Queries
   const { data: dealTeam, isLoading: dealTeamLoading } = useQuery<DealAssignment[]>({
-    queryKey: ['/api/deals', targetCompanyId, 'team'],
+    queryKey: ['/api/v2/deals', targetCompanyId, 'team'],
+    select: (response: any) => response.data,
   });
 
   const { data: availableMembers, isLoading: membersLoading } = useQuery<TeamMember[]>({
-    queryKey: ['/api/team/members'],
+    queryKey: ['/api/v2/team/members'],
+    select: (response: any) => response.data,
   });
 
   // Forms
@@ -109,9 +111,10 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
   // Mutations
   const assignMemberMutation = useMutation({
     mutationFn: async (data: AssignMemberFormValues) => {
-      const response = await fetch(`/api/deals/${targetCompanyId}/assign`, {
+      const response = await fetch(`/api/v2/deals/${targetCompanyId}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -125,7 +128,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
         title: "Team member assigned",
         description: "Team member has been assigned to this deal successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/deals', targetCompanyId, 'team'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deals', targetCompanyId, 'team'] });
       setIsAssignDialogOpen(false);
       assignForm.reset();
     },
@@ -140,9 +143,10 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async ({ userId, data }: { userId: number; data: UpdatePermissionsFormValues }) => {
-      const response = await fetch(`/api/deals/${targetCompanyId}/team/${userId}`, {
+      const response = await fetch(`/api/v2/deals/${targetCompanyId}/team/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -156,7 +160,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
         title: "Permissions updated",
         description: "Team member permissions have been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/deals', targetCompanyId, 'team'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deals', targetCompanyId, 'team'] });
       setEditingAssignment(null);
     },
     onError: (error: Error) => {
@@ -170,8 +174,9 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
 
   const removeMemberMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/deals/${targetCompanyId}/assign/${userId}`, {
+      const response = await fetch(`/api/v2/deals/${targetCompanyId}/assign/${userId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!response.ok) {
         const error = await response.json();
@@ -184,7 +189,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
         title: "Team member removed",
         description: "Team member has been removed from this deal.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/deals', targetCompanyId, 'team'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deals', targetCompanyId, 'team'] });
     },
     onError: (error: Error) => {
       toast({
