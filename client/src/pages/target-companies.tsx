@@ -75,7 +75,8 @@ export default function TargetCompanies() {
   });
 
   const { data: targetCompanies = [], isLoading } = useQuery<TargetCompany[]>({
-    queryKey: ["/api/target-companies"],
+    queryKey: ["/api/v2/target-companies"],
+    select: (response: any) => response.data,
   });
 
   const createMutation = useMutation({
@@ -85,10 +86,10 @@ export default function TargetCompanies() {
         website: data.website || null,
         email: data.email || null,
       };
-      return await apiRequest("POST", "/api/target-companies", payload);
+      return await apiRequest("POST", "/api/v2/target-companies", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       setShowForm(false);
       form.reset();
@@ -114,10 +115,10 @@ export default function TargetCompanies() {
         website: data.website || null,
         email: data.email || null,
       };
-      return await apiRequest("PUT", `/api/target-companies/${editingCompany.id}`, payload);
+      return await apiRequest("PUT", `/api/v2/target-companies/${editingCompany.id}`, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       setEditingCompany(null);
       setShowForm(false);
       form.reset();
@@ -137,10 +138,10 @@ export default function TargetCompanies() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/target-companies/${id}`);
+      return await apiRequest("DELETE", `/api/v2/target-companies/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       toast({
         title: "Success",

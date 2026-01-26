@@ -179,12 +179,12 @@ export function AddTargetCompanyButton() {
         yearEstablished: data.yearEstablished ? Number(data.yearEstablished) : null,
         description: data.description || null,
       };
-      return await apiRequest("POST", "/api/target-companies", payload);
+      return await apiRequest("POST", "/api/v2/target-companies", payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       setShowForm(false);
       form.reset();

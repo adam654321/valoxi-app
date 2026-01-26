@@ -81,7 +81,8 @@ export function PipelineKanbanBoard() {
   });
 
   const { data: companies, isLoading: companiesLoading } = useQuery<TargetCompany[]>({
-    queryKey: ['/api/target-companies'],
+    queryKey: ['/api/v2/target-companies'],
+    select: (response: any) => response.data,
   });
 
   const updateStageMutation = useMutation({
@@ -89,6 +90,7 @@ export function PipelineKanbanBoard() {
       const response = await fetch(`/api/target-companies/${companyId}/stage`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ stage, notes }),
       });
       if (!response.ok) throw new Error('Failed to update stage');
@@ -96,7 +98,7 @@ export function PipelineKanbanBoard() {
     },
     onSuccess: () => {
       toast({ title: "Stage Updated", description: "Company moved to the new stage." });
-      queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
       setShowNotesDialog(false);
       setDraggedCompany(null);
       setTargetStage(null);
@@ -104,7 +106,7 @@ export function PipelineKanbanBoard() {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to update stage", variant: "destructive" });
-      queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
     },
   });
 
@@ -162,7 +164,7 @@ export function PipelineKanbanBoard() {
   };
 
   const handleCancelMove = () => {
-    queryClient.invalidateQueries({ queryKey: ['/api/target-companies'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
     setShowNotesDialog(false);
     setDraggedCompany(null);
     setTargetStage(null);

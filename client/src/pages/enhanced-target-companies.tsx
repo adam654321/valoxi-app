@@ -262,7 +262,8 @@ export default function EnhancedTargetCompanies() {
 
   // Get filter options
   const { data: filterOptions } = useQuery<FilterOptions>({
-    queryKey: ["/api/target-companies/filters"],
+    queryKey: ["/api/v2/target-companies/filters"],
+    select: (response: any) => response.data,
   });
 
   // Build search params
@@ -284,15 +285,16 @@ export default function EnhancedTargetCompanies() {
 
   // Get search results
   const { data: searchResults = [], isLoading } = useQuery<TargetCompanyWithStats[]>({
-    queryKey: ["/api/target-companies/search", searchParams],
+    queryKey: ["/api/v2/target-companies/search", searchParams],
     queryFn: async () => {
-      const response = await fetch(`/api/target-companies/search?${searchParams}`, {
+      const response = await fetch(`/api/v2/target-companies/search?${searchParams}`, {
         credentials: 'include'
       });
       if (!response.ok) {
         throw new Error('Failed to fetch search results');
       }
-      return response.json();
+      const data = await response.json();
+      return data.data;
     },
     staleTime: 0, // Always refetch
     gcTime: 0,    // Don't cache
@@ -313,19 +315,19 @@ export default function EnhancedTargetCompanies() {
         yearEstablished: data.yearEstablished ? Number(data.yearEstablished) : null,
         description: data.description || null,
       };
-      return await apiRequest("POST", "/api/target-companies", payload);
+      return await apiRequest("POST", "/api/v2/target-companies", payload);
     },
     onSuccess: () => {
       // Immediately refetch the current search query
       queryClient.refetchQueries({ 
-        queryKey: ["/api/target-companies/search", searchParams.toString()],
+        queryKey: ["/api/v2/target-companies/search", searchParams.toString()],
         exact: true 
       });
       
       // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/quick-stats"] });
       
@@ -361,13 +363,13 @@ export default function EnhancedTargetCompanies() {
         yearEstablished: data.yearEstablished ? Number(data.yearEstablished) : null,
         description: data.description || null,
       };
-      return await apiRequest("PUT", `/api/target-companies/${editingCompany.id}`, payload);
+      return await apiRequest("PUT", `/api/v2/target-companies/${editingCompany.id}`, payload);
     },
     onSuccess: () => {
       // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       setEditingCompany(null);
       setShowForm(false);
@@ -388,13 +390,13 @@ export default function EnhancedTargetCompanies() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/target-companies/${id}`);
+      return await apiRequest("DELETE", `/api/v2/target-companies/${id}`);
     },
     onSuccess: () => {
       // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/filters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       toast({
         title: "Success",
