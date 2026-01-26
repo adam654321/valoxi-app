@@ -110,6 +110,7 @@ server/
 15. ~~Document Files~~ ✓ (Completed - upload, view, download, delete at `/api/v2/files/*` with public downloads at `/api/v2/public/documents/*`)
 16. ~~Portal Submissions~~ ✓ (Completed - external document submission flow at `/api/v2/portal-submit/*` with file uploads, token validation, category mapping, and activity logging)
 17. ~~Stage 1 Analysis~~ ✓ (Completed - Gemini integration for document analysis at `/api/v2/stage1-analysis/*` with requirements checking, analysis triggering, and event tracking)
+18. ~~Document Analysis Results~~ ✓ (Completed - display and retrieval at `/api/v2/document-analysis/*` with per-document, per-type, per-company queries and completion status)
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
