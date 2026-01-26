@@ -85,12 +85,13 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
 
-  // Fetch document analysis results
+  // Fetch document analysis results using v2 endpoint
   const { data: analysisResults = [], isLoading: analysisLoading, error: analysisError } = useQuery<DocumentAnalysisResult[]>({
-    queryKey: ["/api/documents", document?.id, "analysis"],
+    queryKey: ["/api/v2/document-analysis/document", document?.id],
     enabled: !!document?.id && isOpen,
     staleTime: 0, // Always refetch to get latest analysis
     retry: 3,
+    select: (response: any) => response.data,
   });
 
   // Debug logging for analysis results
@@ -261,8 +262,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
   const isText = document.fileType === 'text/plain';
   const isViewable = isPDF || isImage || isText;
 
-  const viewerUrl = `/api/documents/${document.id}/view`;
-  const downloadUrl = `/api/documents/${document.id}/download`;
+  const viewerUrl = `/api/v2/files/${document.id}/view`;
+  const downloadUrl = `/api/v2/files/${document.id}/download`;
 
   const handleViewerLoad = () => {
     setViewerError(false);
@@ -1126,7 +1127,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     try {
       const response = await fetch(`/api/documents/${document.id}/retry-analysis-webhook`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -1134,8 +1136,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
           title: "Analysis Complete",
           description: "Document analysis finished successfully.",
         });
-        // Refetch analysis results
-        queryClient.invalidateQueries({ queryKey: ["/api/documents", document.id, "analysis"] });
+        // Refetch analysis results (v2 endpoint)
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/document-analysis/document", document.id] });
       } else {
         throw new Error('Failed to trigger analysis webhook');
       }

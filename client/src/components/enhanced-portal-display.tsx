@@ -208,7 +208,8 @@ function PortalDocumentAnalysisBadges({ documentId, documentCategory }: { docume
     createdAt: string;
     analysisData: any;
   }>>({
-    queryKey: ["/api/documents", documentId, "analysis"],
+    queryKey: ["/api/v2/document-analysis/document", documentId],
+    select: (response: any) => response.data,
   });
 
   if (analysisLoading || analysisResults.length === 0) {

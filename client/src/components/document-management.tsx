@@ -85,14 +85,16 @@ import {
 const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
   console.log(`[CACHE] Invalidating all document caches for target company ${targetCompanyId}`);
   
-  // Always invalidate document library caches
-  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+  // Always invalidate document library caches (v2 endpoints)
+  queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
   queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
   
   try {
     // Get portal tokens for this target company and invalidate their caches too
     console.log(`[CACHE] Fetching portal tokens for target company ${targetCompanyId}`);
-    const response = await fetch(`/api/target-companies/${targetCompanyId}/portal-tokens`);
+    const response = await fetch(`/api/target-companies/${targetCompanyId}/portal-tokens`, {
+      credentials: 'include'
+    });
     if (response.ok) {
       const { tokens } = await response.json();
       console.log(`[CACHE] Found ${tokens.length} portal tokens to invalidate:`, tokens);
@@ -249,11 +251,13 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
     createdAt: string;
     analysisData: any;
   }>>({
-    queryKey: ["/api/documents", documentId, "analysis"],
+    queryKey: ["/api/v2/document-analysis/document", documentId],
+    select: (response: any) => response.data,
   });
 
   const { data: documentInfo, isLoading: documentLoading } = useQuery<Document>({
-    queryKey: ["/api/documents", documentId],
+    queryKey: ["/api/v2/files", documentId],
+    select: (response: any) => response.data,
   });
 
   if (analysisLoading || documentLoading || analysisResults.length === 0) {
@@ -518,13 +522,16 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     queryKey: ["/api/document-categories"],
   });
 
-  // Get company documents with real-time updates via SSE
-  const { data: groupedDocuments = {}, isLoading: documentsLoading } = useQuery<Record<string, Document[]>>({
-    queryKey: ["/api/target-companies", targetCompanyId, "documents"],
+  // Get company documents with real-time updates via SSE (using v2 endpoint)
+  const { data: documentsData, isLoading: documentsLoading } = useQuery<{ documents: Document[], grouped: Record<string, Document[]>, count: number }>({
+    queryKey: ["/api/v2/files/company", targetCompanyId],
     refetchInterval: 10000, // Backup polling every 10 seconds (reduced from 5s since we have SSE)
     refetchIntervalInBackground: false, // Only refetch when tab is active
     staleTime: 30000, // Consider data stale after 30 seconds
+    select: (response: any) => response.data,
   });
+  
+  const groupedDocuments = documentsData?.grouped || {};
 
   // Get analysis completion status for badge-based filtering
   const { data: analysisCompletion } = useQuery<{
@@ -594,9 +601,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         if (data.type === 'document_uploaded' && data.targetCompanyId === targetCompanyId) {
           console.log('[SSE] Document uploaded, refreshing document list:', data);
           
-          // Invalidate and refetch the documents query
+          // Invalidate and refetch the documents query (v2 endpoint)
           queryClient.invalidateQueries({ 
-            queryKey: ["/api/target-companies", targetCompanyId, "documents"] 
+            queryKey: ["/api/v2/files/company", targetCompanyId] 
           });
           
           // Invalidate analysis completion query to update progress section
@@ -604,9 +611,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
             queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
           });
           
-          // Also invalidate analysis queries for immediate display
+          // Also invalidate analysis queries for immediate display (v2 endpoint)
           queryClient.invalidateQueries({ 
-            queryKey: ["/api/documents", data.documentId, "analysis"] 
+            queryKey: ["/api/v2/document-analysis/document", data.documentId] 
           });
           
           // Show a toast notification
@@ -622,9 +629,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
             queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
           });
           
-          // Invalidate specific document analysis queries
+          // Invalidate specific document analysis queries (v2 endpoint)
           queryClient.invalidateQueries({ 
-            queryKey: ["/api/documents", data.documentId, "analysis"] 
+            queryKey: ["/api/v2/document-analysis/document", data.documentId] 
           });
         } else if (data.type === 'stage1_analysis_completed' && data.targetCompanyId === targetCompanyId) {
           console.log('[SSE] Stage 1 analysis completed, refreshing analysis tab:', data);
@@ -657,7 +664,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     };
   }, [targetCompanyId, toast]);
 
-  // Upload document mutation
+  // Upload document mutation using v2 endpoint
   const uploadMutation = useMutation({
     mutationFn: async (data: DocumentFormData & { file: File }) => {
       const formData = new FormData();
@@ -667,9 +674,10 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
       formData.append('description', data.description || '');
       formData.append('is_confidential', data.is_confidential.toString());
 
-      const response = await fetch(`/api/target-companies/${targetCompanyId}/documents`, {
+      const response = await fetch(`/api/v2/files/company/${targetCompanyId}/upload`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -688,9 +696,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
       // Invalidate all caches (document library + portal)
       invalidateAllDocumentCaches(targetCompanyId);
       
-      // Invalidate analysis cache for the newly uploaded document
-      if (data?.document?.id) {
-        queryClient.invalidateQueries({ queryKey: ["/api/documents", data.document.id, "analysis"] });
+      // Invalidate analysis cache for the newly uploaded document (v2 endpoint)
+      if (data?.data?.document?.id) {
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/document-analysis/document", data.data.document.id] });
       }
       
       setShowUploadForm(false);
@@ -706,10 +714,10 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     },
   });
 
-  // Delete document mutation
+  // Delete document mutation using v2 endpoint
   const deleteMutation = useMutation({
     mutationFn: (documentId: number) =>
-      apiRequest("DELETE", `/api/documents/${documentId}`, {}),
+      apiRequest("DELETE", `/api/v2/files/${documentId}`),
     onSuccess: async () => {
       toast({
         title: "Success",
@@ -729,16 +737,16 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     },
   });
 
-  // Clear all documents mutation
+  // Clear all documents mutation (keeping legacy for now - no v2 equivalent)
   const clearAllDocumentsMutation = useMutation({
     mutationFn: () =>
-      apiRequest("DELETE", "/api/documents/clear-all", {}),
+      apiRequest("DELETE", "/api/documents/clear-all"),
     onSuccess: (data: any) => {
       toast({
         title: "Success",
         description: `All company documents cleared successfully. ${data?.details?.deletedDocuments || 0} documents and ${data?.details?.deletedExternalSubmissions || 0} portal submissions removed.`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "documents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
     },
     onError: (error: any) => {
@@ -779,7 +787,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   };
 
   const handleDownload = (documentId: number, filename: string) => {
-    window.open(`/api/documents/${documentId}/download`, '_blank');
+    window.open(`/api/v2/files/${documentId}/download`, '_blank');
   };
 
   const handleDelete = (documentId: number) => {

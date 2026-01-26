@@ -56,11 +56,14 @@ export default function FileUploadTest() {
     queryKey: ["/api/file-upload-events"],
   });
 
-  // Fetch analysis results for a specific document
+  // Fetch analysis results for a specific document using v2 endpoint
   const fetchAnalysisResults = async (documentId: number): Promise<DocumentAnalysisResult[]> => {
-    const response = await fetch(`/api/documents/${documentId}/analysis`);
+    const response = await fetch(`/api/v2/document-analysis/document/${documentId}`, {
+      credentials: 'include'
+    });
     if (!response.ok) throw new Error("Failed to fetch analysis results");
-    return response.json();
+    const data = await response.json();
+    return data.data;
   };
 
   // Send webhook for file upload event
