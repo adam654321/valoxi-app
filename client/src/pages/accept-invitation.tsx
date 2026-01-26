@@ -55,18 +55,19 @@ export default function AcceptInvitation() {
     }
   }, [params.token]);
 
-  // Query invitation details
+  // Query invitation details - using v2 endpoint
   const { data: invitation, isLoading, error } = useQuery<InvitationDetails>({
-    queryKey: ['/api/team/invitation', token],
+    queryKey: ['/api/v2/team/invitation', token],
     enabled: !!token,
     queryFn: async () => {
       if (!token) throw new Error("No token provided");
-      const response = await fetch(`/api/team/invitation/${token}`);
+      const response = await fetch(`/api/v2/team/invitation/${token}`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to load invitation');
       }
-      return response.json();
+      const result = await response.json();
+      return result.data; // v2 wraps data
     },
   });
 
@@ -80,10 +81,10 @@ export default function AcceptInvitation() {
     },
   });
 
-  // Accept invitation mutation
+  // Accept invitation mutation - using v2 endpoint
   const acceptMutation = useMutation({
     mutationFn: async (data: AcceptFormValues) => {
-      return apiRequest("POST", `/api/team/invitation/${token}/accept`, {
+      return apiRequest("POST", `/api/v2/team/invitation/${token}/accept`, {
         firstName: data.firstName,
         lastName: data.lastName,
         password: data.password,

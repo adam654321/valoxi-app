@@ -41,17 +41,20 @@ export default function TeamManagement() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
-  // Queries
+  // Queries - using v2 endpoints with data unwrapping
   const { data: teamMembers, isLoading: membersLoading } = useQuery<TeamMember[]>({
-    queryKey: ['/api/team/members'],
+    queryKey: ['/api/v2/team/members'],
+    select: (response: any) => response.data,
   });
 
   const { data: invitations, isLoading: invitationsLoading } = useQuery<UserInvitation[]>({
-    queryKey: ['/api/team/invitations'],
+    queryKey: ['/api/v2/team/invitations'],
+    select: (response: any) => response.data,
   });
 
   const { data: roles, isLoading: rolesLoading } = useQuery<UserRole[]>({
-    queryKey: ['/api/team/roles'],
+    queryKey: ['/api/v2/team/roles'],
+    select: (response: any) => response.data,
   });
 
   // Forms
@@ -72,12 +75,13 @@ export default function TeamManagement() {
     },
   });
 
-  // Mutations
+  // Mutations - using v2 endpoints
   const inviteMutation = useMutation({
     mutationFn: async (data: InviteFormValues) => {
-      const response = await fetch('/api/team/invite', {
+      const response = await fetch('/api/v2/team/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -91,7 +95,7 @@ export default function TeamManagement() {
         title: "Invitation sent",
         description: "Team member invitation has been sent successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/team/invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/team/invitations'] });
       setIsInviteDialogOpen(false);
       inviteForm.reset();
     },
@@ -106,9 +110,10 @@ export default function TeamManagement() {
 
   const updateMemberMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: UpdateMemberFormValues }) => {
-      const response = await fetch(`/api/team/members/${id}`, {
+      const response = await fetch(`/api/v2/team/members/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -122,7 +127,7 @@ export default function TeamManagement() {
         title: "Member updated",
         description: "Team member has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/team/members'] });
       setEditingMember(null);
       updateForm.reset();
     },
@@ -137,8 +142,9 @@ export default function TeamManagement() {
 
   const removeMemberMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/team/members/${id}`, {
+      const response = await fetch(`/api/v2/team/members/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!response.ok) {
         const error = await response.json();
@@ -151,7 +157,7 @@ export default function TeamManagement() {
         title: "Member removed",
         description: "Team member has been removed successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/team/members'] });
     },
     onError: (error: Error) => {
       toast({
@@ -164,9 +170,10 @@ export default function TeamManagement() {
 
   const cancelInvitationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/team/invitations/${id}`, {
+      const response = await fetch(`/api/v2/team/invitations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: 'cancelled' }),
       });
       if (!response.ok) {
@@ -180,7 +187,7 @@ export default function TeamManagement() {
         title: "Invitation cancelled",
         description: "The invitation has been cancelled.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/team/invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/team/invitations'] });
     },
     onError: (error: Error) => {
       toast({
@@ -193,9 +200,10 @@ export default function TeamManagement() {
 
   const resendInvitationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/team/invitations/${id}`, {
+      const response = await fetch(`/api/v2/team/invitations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: 'pending' }),
       });
       if (!response.ok) {
@@ -209,7 +217,7 @@ export default function TeamManagement() {
         title: "Invitation resent",
         description: "The invitation has been resent.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/team/invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/team/invitations'] });
     },
     onError: (error: Error) => {
       toast({
