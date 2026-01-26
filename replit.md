@@ -96,7 +96,7 @@ server/
 1. ~~Pipeline Stages~~ ✓ (Completed)
 2. ~~User Roles/Permissions~~ ✓ (Completed)
 3. ~~Target Contacts~~ ✓ (Completed)
-4. Activities
+4. ~~Activities~~ ✓ (Completed)
 5. Notifications
 6. Documents
 7. Target Companies
