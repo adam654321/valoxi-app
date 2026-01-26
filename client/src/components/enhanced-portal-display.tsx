@@ -277,11 +277,12 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
     completedCount: number;
     totalCount: number;
   }>({
-    queryKey: [`/api/portal/${token}/analysis-completion`],
+    queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`],
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,
     enabled: !!token,
+    select: (response: any) => response.data,
   });
 
   if (isLoading || !completionStatus) {
@@ -384,8 +385,9 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   // Fetch portal data
   const { data: portalData, isLoading: isPortalLoading } = useQuery<PortalData>({
-    queryKey: [`/api/portal/${token}`],
-    enabled: !!token
+    queryKey: [`/api/v2/portal-submit/${token}`],
+    enabled: !!token,
+    select: (response: any) => response.data,
   });
 
   // Get analysis completion status
@@ -397,18 +399,20 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     completedCount: number;
     totalCount: number;
   }>({
-    queryKey: [`/api/portal/${token}/analysis-completion`],
+    queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`],
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,
     enabled: !!token,
+    select: (response: any) => response.data,
   });
 
   // Get all documents for the company
   const { data: documents = [], isLoading: isDocumentsLoading, error: documentsError } = useQuery<Document[]>({
-    queryKey: [`/api/portal/${token}/documents`],
+    queryKey: [`/api/v2/portal-submit/${token}/documents`],
     enabled: !!token,
-    retry: 1
+    retry: 1,
+    select: (response: any) => response.data,
   });
 
   // SSE subscription for real-time document updates
@@ -432,9 +436,9 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
         if (data.type === 'document_uploaded' || data.type === 'document_deleted') {
           console.log(`[PORTAL SSE] Invalidating portal caches for token: ${token.substring(0, 8)}...`);
           // Invalidate all portal queries
-          queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
-          queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
-          queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
         }
       } catch (error) {
         console.error('[PORTAL SSE] Error parsing SSE data:', error);
@@ -459,7 +463,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       formData.append('documentType', documentType);
       formData.append('submissionNotes', notes);
 
-      const response = await fetch(`/api/portal/${token}/submit`, {
+      const response = await fetch(`/api/v2/portal-submit/${token}/submit`, {
         method: 'POST',
         body: formData
       });
@@ -483,9 +487,9 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       setSubmissionNotes('');
       
       // Refresh all portal data
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
     },
     onError: (error: Error) => {
       toast({
@@ -499,16 +503,16 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   // Delete document mutation
   const deleteMutation = useMutation({
     mutationFn: (documentId: number) =>
-      apiRequest("DELETE", `/api/portal/${token}/documents/${documentId}`, {}),
+      apiRequest("DELETE", `/api/v2/portal-submit/${token}/documents/${documentId}`, {}),
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Document deleted successfully",
       });
       // Refresh all portal data
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
     },
     onError: (error: any) => {
       toast({

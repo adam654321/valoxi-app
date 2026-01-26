@@ -58,8 +58,9 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
 
   // Fetch portal data
   const { data: portalData, isLoading } = useQuery<PortalData>({
-    queryKey: ['/api/portal', token],
-    enabled: !!token
+    queryKey: ['/api/v2/portal-submit', token],
+    enabled: !!token,
+    select: (response: any) => response.data,
   });
 
   // Get analysis completion status for badge-based filtering
@@ -71,11 +72,12 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
     completedCount: number;
     totalCount: number;
   }>({
-    queryKey: [`/api/portal/${token}/analysis-completion`],
+    queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`],
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,
     enabled: !!token && !!portalData,
+    select: (response: any) => response.data,
   });
 
   // Submit document mutation
@@ -86,7 +88,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
       formData.append('documentType', documentType);
       formData.append('submissionNotes', notes);
 
-      const response = await fetch(`/api/portal/${token}/submit`, {
+      const response = await fetch(`/api/v2/portal-submit/${token}/submit`, {
         method: 'POST',
         body: formData
       });
@@ -110,8 +112,8 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
       setSubmissionNotes('');
       
       // Refresh portal data and analysis completion status
-      queryClient.invalidateQueries({ queryKey: ['/api/portal', token] });
-      queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal-submit', token] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
     },
     onError: (error: Error) => {
       toast({

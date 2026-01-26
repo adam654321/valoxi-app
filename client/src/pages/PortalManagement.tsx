@@ -64,9 +64,10 @@ interface AnalysisCompletion {
 // Hook to fetch completion percentage for a token
 function useTokenCompletion(accessToken: string) {
   return useQuery<AnalysisCompletion>({
-    queryKey: [`/api/portal/${accessToken}/analysis-completion`],
+    queryKey: [`/api/v2/portal-submit/${accessToken}/analysis-completion`],
     enabled: !!accessToken,
     refetchInterval: 10000, // Refresh every 10 seconds
+    select: (response: any) => response.data,
   });
 }
 
@@ -166,7 +167,8 @@ export default function PortalManagement() {
 
   // Fetch existing portal tokens
   const { data: portalTokens = [], isLoading: tokensLoading } = useQuery<PortalToken[]>({
-    queryKey: ['/api/portal-tokens'],
+    queryKey: ['/api/v2/portal/tokens'],
+    select: (response: any) => response.data,
   });
 
   // Get primary contacts only (for portal link creation)
@@ -188,11 +190,12 @@ export default function PortalManagement() {
       contactIds: number[];
       customMessage?: string;
     }) => {
-      const response = await fetch('/api/portal-tokens', {
+      const response = await fetch('/api/v2/portal/tokens', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       if (!response.ok) {
@@ -206,7 +209,7 @@ export default function PortalManagement() {
         title: "Portal link created successfully",
         description: "Portal access email has been sent to the primary contact.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/portal-tokens'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
       setShowCreateForm(false);
       setSelectedCompanyId(null);
       setSelectedContactIds([]);
@@ -224,8 +227,9 @@ export default function PortalManagement() {
   // Remove/expire portal token mutation
   const removePortalToken = useMutation({
     mutationFn: async (tokenId: number) => {
-      const response = await fetch(`/api/portal/deactivate/${tokenId}`, {
+      const response = await fetch(`/api/v2/portal/tokens/${tokenId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error('Failed to remove portal token');
@@ -237,7 +241,7 @@ export default function PortalManagement() {
         title: "Portal link removed",
         description: "The portal link has been deactivated and removed.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/portal-tokens'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
     },
     onError: (error: any) => {
       toast({

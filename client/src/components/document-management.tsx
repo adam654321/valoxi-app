@@ -102,9 +102,9 @@ const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
       // Invalidate portal caches for each active token
       tokens.forEach((token: string) => {
         console.log(`[CACHE] Invalidating portal cache for token: ${token.substring(0, 8)}...`);
-        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/analysis-completion`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/portal/${token}/documents`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
       });
     } else {
       console.log(`[CACHE] Could not fetch portal tokens: ${response.status}`);
