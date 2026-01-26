@@ -23,6 +23,9 @@ import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "./
 import { classifyDocumentWithGemini, type DocumentClassificationResult } from "./gemini-document-classification-service";
 import { runStep2AnalysisForTypes, type DocumentType } from "./gemini-step2-analysis-service";
 
+// Import modular routes (new architecture)
+import { registerModularRoutes } from "./routes/index";
+
 // In-memory webhook logs for testing
 const webhookLogs: Array<{
   id: number;
@@ -1117,6 +1120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
+
+  // Register modular routes (new architecture - v2 API endpoints)
+  registerModularRoutes(app, isAuthenticated);
 
   // Registration schema with password confirmation
   const registerSchema = insertUserSchema.extend({
