@@ -326,8 +326,8 @@ export default function EnhancedTargetCompanies() {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/data/quick-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/quick-stats"] });
       
       setShowForm(false);
       form.reset();
@@ -368,7 +368,7 @@ export default function EnhancedTargetCompanies() {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       setEditingCompany(null);
       setShowForm(false);
       form.reset();
@@ -395,7 +395,7 @@ export default function EnhancedTargetCompanies() {
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/search"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["/api/target-companies/filters"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       toast({
         title: "Success",
         description: "Target company deleted successfully!",

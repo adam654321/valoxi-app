@@ -92,8 +92,9 @@ const getActivityIcon = (type: string) => {
 // Pipeline Overview Widget
 const PipelineOverviewWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<PipelineOverviewData>({
-    queryKey: ["/api/dashboard/data/pipeline-overview"],
+    queryKey: ["/api/v2/dashboard/data/pipeline-overview"],
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -154,8 +155,9 @@ const PipelineOverviewWidget: React.FC = () => {
 // Recent Activities Widget
 const RecentActivitiesWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<RecentActivitiesData>({
-    queryKey: ["/api/dashboard/data/recent-activities"],
+    queryKey: ["/api/v2/dashboard/data/recent-activities"],
     refetchInterval: 2 * 60 * 1000, // Refresh every 2 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -222,8 +224,9 @@ const RecentActivitiesWidget: React.FC = () => {
 // Hot Deals Widget
 const HotDealsWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<HotDealsData>({
-    queryKey: ["/api/dashboard/data/hot-deals"],
+    queryKey: ["/api/v2/dashboard/data/hot-deals"],
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -292,8 +295,9 @@ const HotDealsWidget: React.FC = () => {
 // Quick Stats Widget
 const QuickStatsWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<QuickStatsData>({
-    queryKey: ["/api/dashboard/data/quick-stats"],
+    queryKey: ["/api/v2/dashboard/data/quick-stats"],
     refetchInterval: 10 * 60 * 1000, // Refresh every 10 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -345,8 +349,9 @@ const QuickStatsWidget: React.FC = () => {
 // Upcoming Reminders Widget
 const UpcomingRemindersWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<any>({
-    queryKey: ["/api/dashboard/data/upcoming-reminders"],
+    queryKey: ["/api/v2/dashboard/data/upcoming-reminders"],
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -406,8 +411,9 @@ const UpcomingRemindersWidget: React.FC = () => {
 // Team Activity Widget
 const TeamActivityWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<any>({
-    queryKey: ["/api/dashboard/data/team-activity"],
+    queryKey: ["/api/v2/dashboard/data/team-activity"],
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -467,8 +473,9 @@ const TeamActivityWidget: React.FC = () => {
 // Stage Alerts Widget
 const StageAlertsWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<any>({
-    queryKey: ["/api/dashboard/data/stage-alerts"],
+    queryKey: ["/api/v2/dashboard/data/stage-alerts"],
     refetchInterval: 10 * 60 * 1000, // Refresh every 10 minutes
+    select: (response: any) => response.data,
   });
 
   return (
@@ -534,13 +541,14 @@ export default function Dashboard() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/v2/dashboard/stats"],
+    select: (response: any) => response.data,
   });
 
   // Auto-refresh dashboard every 5 minutes
   useEffect(() => {
     const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/data"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data"] });
       setLastRefresh(new Date());
     }, 5 * 60 * 1000);
 
@@ -548,7 +556,7 @@ export default function Dashboard() {
   }, []);
 
   const refreshDashboard = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard"] });
     setLastRefresh(new Date());
     toast({
       title: "Dashboard Refreshed",
