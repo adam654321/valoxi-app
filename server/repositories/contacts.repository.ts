@@ -8,6 +8,7 @@ import {
   portalDocumentRequirements,
   portalActivityLog,
   portalLinkShares,
+  documents,
   type TargetContact,
   type InsertTargetContact,
 } from '@shared/schema';
@@ -118,6 +119,20 @@ export class ContactsRepository {
     const tokenIds = tokens.map(t => t.id);
 
     if (tokenIds.length > 0) {
+      // Get external submission IDs for these tokens
+      const submissions = await db
+        .select({ id: externalDocumentSubmissions.id })
+        .from(externalDocumentSubmissions)
+        .where(inArray(externalDocumentSubmissions.portalTokenId, tokenIds));
+      const submissionIds = submissions.map(s => s.id);
+
+      // Clear document references to external submissions before deleting them
+      if (submissionIds.length > 0) {
+        await db.update(documents)
+          .set({ externalSubmissionId: null })
+          .where(inArray(documents.externalSubmissionId, submissionIds));
+      }
+
       // Delete child records that reference portal tokens first
       await db.delete(portalLinkShares).where(inArray(portalLinkShares.portalTokenId, tokenIds));
       await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, tokenIds));
@@ -126,6 +141,20 @@ export class ContactsRepository {
       
       // Now delete the portal access tokens
       await db.delete(portalAccessTokens).where(inArray(portalAccessTokens.id, tokenIds));
+    }
+
+    // Get external submission IDs for this contact directly
+    const contactSubmissions = await db
+      .select({ id: externalDocumentSubmissions.id })
+      .from(externalDocumentSubmissions)
+      .where(eq(externalDocumentSubmissions.targetContactId, id));
+    const contactSubmissionIds = contactSubmissions.map(s => s.id);
+
+    // Clear document references before deleting submissions
+    if (contactSubmissionIds.length > 0) {
+      await db.update(documents)
+        .set({ externalSubmissionId: null })
+        .where(inArray(documents.externalSubmissionId, contactSubmissionIds));
     }
 
     // Delete records that directly reference the contact (not via tokens)
