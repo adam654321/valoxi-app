@@ -1,7 +1,7 @@
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { db } from '../db';
 import {
-  portalAccessTokens, externalDocumentSubmissions, portalActivityLog, targetCompanies, targetContacts,
+  portalAccessTokens, externalDocumentSubmissions, portalActivityLog, targetCompanies, targetContacts, documents,
   type PortalAccessToken, type InsertPortalAccessToken, type ExternalDocumentSubmission,
   type InsertExternalDocumentSubmission, type InsertPortalActivityLog,
 } from '@shared/schema';
@@ -31,9 +31,27 @@ export class PortalRepository {
   }
 
   async deleteToken(tokenId: number): Promise<boolean> {
-    await db.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.portalTokenId, tokenId));
-    const [deleted] = await db.delete(portalAccessTokens).where(eq(portalAccessTokens.id, tokenId)).returning();
-    return !!deleted;
+    return await db.transaction(async (tx) => {
+      // Get all submissions for this token
+      const submissions = await tx.select({ id: externalDocumentSubmissions.id })
+        .from(externalDocumentSubmissions)
+        .where(eq(externalDocumentSubmissions.portalTokenId, tokenId));
+      
+      // Unlink documents from submissions (set externalSubmissionId to null)
+      for (const sub of submissions) {
+        await tx.update(documents).set({ externalSubmissionId: null }).where(eq(documents.externalSubmissionId, sub.id));
+      }
+      
+      // Delete portal activity logs
+      await tx.delete(portalActivityLog).where(eq(portalActivityLog.portalTokenId, tokenId));
+      
+      // Delete external document submissions
+      await tx.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.portalTokenId, tokenId));
+      
+      // Delete the portal access token
+      const [deleted] = await tx.delete(portalAccessTokens).where(eq(portalAccessTokens.id, tokenId)).returning();
+      return !!deleted;
+    });
   }
 
   async getTokensForCompany(userCompanyId: number): Promise<any[]> {
