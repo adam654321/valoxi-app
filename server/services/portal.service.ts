@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { portalRepository } from '../repositories/portal.repository';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { emailApiService } from './email.service';
 import type { PortalAccessToken, ExternalDocumentSubmission, InsertPortalAccessToken, InsertExternalDocumentSubmission } from '@shared/schema';
@@ -110,8 +111,7 @@ export class PortalService {
   }
 
   async getActiveTokensForTargetCompany(targetCompanyId: number, userCompanyId: number): Promise<string[]> {
-    const { storage } = await import('../storage');
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Target company not found or access denied');
     const tokens = await portalRepository.getTokensByTargetCompany(targetCompanyId);
     return tokens.map(t => t.accessToken);
