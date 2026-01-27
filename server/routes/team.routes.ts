@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { teamService } from '../services/team.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
-import { storage } from '../storage';
+import { usersRepository } from '../repositories/users.repository';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.post('/invite', async (req: Request, res: Response) => {
     const schema = z.object({ email: z.string().email(), role: z.string().min(1), message: z.string().optional() });
     const { email, role, message } = schema.parse(req.body);
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, storage.getUserWithPermissions.bind(storage), baseUrl);
+    const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, usersRepository.getUserWithPermissions.bind(usersRepository), baseUrl);
     const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
     sendCreated(res, { message: 'Invitation sent successfully', invitation: { id: invitation.id, email: invitation.email, role: invitation.invitedRole, status: invitation.invitationStatus, sentAt: invitation.sentAt, inviteUrl } });
   } catch (error) {
@@ -48,7 +48,7 @@ router.get('/invitations', async (req: Request, res: Response) => {
     const userId = req.session?.userId;
     const userCompanyId = req.session?.userCompanyId;
     if (!userId || !userCompanyId) throw new UnauthorizedError();
-    const invitations = await teamService.getInvitationsByCompany(userId, userCompanyId, storage.getUserWithPermissions.bind(storage));
+    const invitations = await teamService.getInvitationsByCompany(userId, userCompanyId, usersRepository.getUserWithPermissions.bind(usersRepository));
     sendSuccess(res, invitations);
   } catch (error) {
     sendError(res, error);
@@ -61,7 +61,7 @@ router.put('/invitations/:id', async (req: Request, res: Response) => {
     const userCompanyId = req.session?.userCompanyId;
     if (!userId || !userCompanyId) throw new UnauthorizedError();
     const { status } = z.object({ status: z.string() }).parse(req.body);
-    const updated = await teamService.updateInvitation(parseInt(req.params.id), userId, userCompanyId, status, storage.getUserWithPermissions.bind(storage));
+    const updated = await teamService.updateInvitation(parseInt(req.params.id), userId, userCompanyId, status, usersRepository.getUserWithPermissions.bind(usersRepository));
     sendSuccess(res, updated);
   } catch (error) {
     sendError(res, error);
@@ -85,7 +85,7 @@ router.put('/members/:id', async (req: Request, res: Response) => {
     const userCompanyId = req.session?.userCompanyId;
     if (!userId || !userCompanyId) throw new UnauthorizedError();
     const { role, status } = z.object({ role: z.string().optional(), status: z.enum(['active', 'inactive']).optional() }).parse(req.body);
-    await teamService.updateTeamMember(parseInt(req.params.id), userId, userCompanyId, role, status, storage.getUserWithPermissions.bind(storage));
+    await teamService.updateTeamMember(parseInt(req.params.id), userId, userCompanyId, role, status, usersRepository.getUserWithPermissions.bind(usersRepository));
     sendSuccess(res, { message: 'Team member updated successfully' });
   } catch (error) {
     sendError(res, error);
@@ -97,7 +97,7 @@ router.delete('/members/:id', async (req: Request, res: Response) => {
     const userId = req.session?.userId;
     const userCompanyId = req.session?.userCompanyId;
     if (!userId || !userCompanyId) throw new UnauthorizedError();
-    await teamService.removeTeamMember(parseInt(req.params.id), userId, userCompanyId, storage.getUserWithPermissions.bind(storage));
+    await teamService.removeTeamMember(parseInt(req.params.id), userId, userCompanyId, usersRepository.getUserWithPermissions.bind(usersRepository));
     sendSuccess(res, { message: 'Team member removed successfully' });
   } catch (error) {
     sendError(res, error);

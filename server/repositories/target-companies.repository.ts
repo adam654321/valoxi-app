@@ -222,6 +222,72 @@ export class TargetCompaniesRepository {
       .where(and(...conditions))
       .orderBy(orderBy);
   }
+
+  async getCompanyProfile(targetCompanyId: number, userCompanyId: number, _userId: number): Promise<CompanyProfile | undefined> {
+    const [profileData] = await db
+      .select({
+        id: targetCompanies.id,
+        userCompanyId: targetCompanies.userCompanyId,
+        companyName: targetCompanies.companyName,
+        industry: targetCompanies.industry,
+        subSector: targetCompanies.subSector,
+        website: targetCompanies.website,
+        phone: targetCompanies.phone,
+        email: targetCompanies.email,
+        address: targetCompanies.address,
+        annualRevenue: targetCompanies.annualRevenue,
+        employeeCount: targetCompanies.employeeCount,
+        yearEstablished: targetCompanies.yearEstablished,
+        description: targetCompanies.description,
+        websiteAnalysis: targetCompanies.websiteAnalysis,
+        websiteAnalysisProcessedAt: targetCompanies.websiteAnalysisProcessedAt,
+        stage: targetCompanies.stage,
+        stageUpdatedAt: targetCompanies.stageUpdatedAt,
+        stageUpdatedBy: targetCompanies.stageUpdatedBy,
+        initialDiscussionCompleted: targetCompanies.initialDiscussionCompleted,
+        initialDiscussionDate: targetCompanies.initialDiscussionDate,
+        initialDiscussionNotes: targetCompanies.initialDiscussionNotes,
+        initialDiscussionBy: targetCompanies.initialDiscussionBy,
+        createdBy: targetCompanies.createdBy,
+        createdAt: targetCompanies.createdAt,
+        createdByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        userCompanyName: userCompanies.companyName,
+        totalContacts: sql<number>`COALESCE((SELECT COUNT(*) FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id}), 0)`,
+        primaryContactName: sql<string | null>`(SELECT ${targetContacts.firstName} || ' ' || ${targetContacts.lastName} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+        primaryContactEmail: sql<string | null>`(SELECT ${targetContacts.email} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+        primaryContactPhone: sql<string | null>`(SELECT ${targetContacts.phone} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+        primaryContactTitle: sql<string | null>`(SELECT ${targetContacts.title} FROM ${targetContacts} WHERE ${targetContacts.targetCompanyId} = ${targetCompanies.id} AND ${targetContacts.isPrimary} = true LIMIT 1)`,
+      })
+      .from(targetCompanies)
+      .leftJoin(users, eq(targetCompanies.createdBy, users.id))
+      .leftJoin(userCompanies, eq(targetCompanies.userCompanyId, userCompanies.id))
+      .where(and(eq(targetCompanies.id, targetCompanyId), eq(targetCompanies.userCompanyId, userCompanyId)));
+
+    if (!profileData) {
+      return undefined;
+    }
+
+    const contacts = await db
+      .select()
+      .from(targetContacts)
+      .where(eq(targetContacts.targetCompanyId, targetCompanyId))
+      .orderBy(desc(targetContacts.isPrimary), asc(targetContacts.lastName));
+
+    const currentYear = new Date().getFullYear();
+    const yearsInBusiness = profileData.yearEstablished ? currentYear - profileData.yearEstablished : null;
+    
+    const revenuePerEmployee = (profileData.annualRevenue && profileData.employeeCount) 
+      ? parseFloat(profileData.annualRevenue) / profileData.employeeCount 
+      : null;
+
+    return {
+      ...profileData,
+      userCompanyName: profileData.userCompanyName || 'Unknown Organization',
+      yearsInBusiness,
+      revenuePerEmployee,
+      contacts,
+    };
+  }
 }
 
 export const targetCompaniesRepository = new TargetCompaniesRepository();

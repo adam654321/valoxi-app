@@ -190,6 +190,91 @@ export class DocumentsRepository {
       .where(and(eq(targetCompanies.id, targetCompanyId), eq(targetCompanies.userCompanyId, userCompanyId)));
     return company;
   }
+
+  async clearAllCompanyDocuments(userCompanyId: number): Promise<{ 
+    deletedDocuments: number;
+    deletedExternalSubmissions: number;
+    deletedAnalysisResults: number;
+    deletedUploadEvents: number;
+    deletedDocumentAccessLogs: number;
+    filesDeleted: string[];
+    filesNotFound: string[];
+  }> {
+    console.log(`[REPOSITORY] Starting comprehensive document cleanup for user company ${userCompanyId}`);
+    
+    let deletedDocuments = 0;
+    let deletedExternalSubmissions = 0;
+    let deletedAnalysisResults = 0;
+    let deletedUploadEvents = 0;
+    let deletedDocumentAccessLogs = 0;
+    const filesDeleted: string[] = [];
+    const filesNotFound: string[] = [];
+
+    try {
+      const allDocuments = await db
+        .select({ id: documents.id, filePath: documents.filePath, targetCompanyId: documents.targetCompanyId })
+        .from(documents)
+        .innerJoin(targetCompanies, eq(documents.targetCompanyId, targetCompanies.id))
+        .where(eq(targetCompanies.userCompanyId, userCompanyId));
+
+      const allExternalSubmissions = await db
+        .select({ id: externalDocumentSubmissions.id, filePath: externalDocumentSubmissions.filePath, targetCompanyId: externalDocumentSubmissions.targetCompanyId })
+        .from(externalDocumentSubmissions)
+        .innerJoin(targetCompanies, eq(externalDocumentSubmissions.targetCompanyId, targetCompanies.id))
+        .where(eq(targetCompanies.userCompanyId, userCompanyId));
+
+      const allDocumentIds = allDocuments.map(doc => doc.id);
+      const allFilePaths = [
+        ...allDocuments.map(doc => doc.filePath),
+        ...allExternalSubmissions.map(doc => doc.filePath)
+      ];
+
+      console.log(`[REPOSITORY] Found ${allDocuments.length} documents and ${allExternalSubmissions.length} external submissions to delete`);
+
+      if (allDocumentIds.length > 0) {
+        const analysisResultsDeleted = await db.delete(documentAnalysisResults)
+          .where(sql`${documentAnalysisResults.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedAnalysisResults = analysisResultsDeleted.rowCount || 0;
+
+        const accessLogsDeleted = await db.delete(documentAccessLog)
+          .where(sql`${documentAccessLog.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedDocumentAccessLogs = accessLogsDeleted.rowCount || 0;
+
+        const uploadEventsDeleted = await db.delete(fileUploadEvents)
+          .where(sql`${fileUploadEvents.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedUploadEvents = uploadEventsDeleted.rowCount || 0;
+
+        const documentsDeleted = await db.delete(documents)
+          .where(sql`${documents.id} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedDocuments = documentsDeleted.rowCount || 0;
+      }
+
+      if (allExternalSubmissions.length > 0) {
+        const externalSubmissionIds = allExternalSubmissions.map(sub => sub.id);
+        const externalSubmissionsDeleted = await db.delete(externalDocumentSubmissions)
+          .where(sql`${externalDocumentSubmissions.id} IN (${sql.join(externalSubmissionIds.map(id => sql`${id}`), sql`, `)})`);
+        deletedExternalSubmissions = externalSubmissionsDeleted.rowCount || 0;
+      }
+
+      const fs = await import('fs/promises');
+      for (const filePath of allFilePaths) {
+        if (!filePath) continue;
+        try {
+          await fs.unlink(filePath);
+          filesDeleted.push(filePath);
+        } catch (err: any) {
+          if (err.code === 'ENOENT') {
+            filesNotFound.push(filePath);
+          }
+        }
+      }
+
+      return { deletedDocuments, deletedExternalSubmissions, deletedAnalysisResults, deletedUploadEvents, deletedDocumentAccessLogs, filesDeleted, filesNotFound };
+    } catch (error) {
+      console.error(`[REPOSITORY] Error during document cleanup:`, error);
+      throw error;
+    }
+  }
 }
 
 export const documentsRepository = new DocumentsRepository();

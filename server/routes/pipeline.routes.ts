@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { pipelineService } from '../services/pipeline.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { UnauthorizedError, NotFoundError } from '../utils/errors';
-import { storage } from '../storage';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 
 const router = Router();
 
@@ -41,7 +41,7 @@ router.put('/companies/:id/stage', async (req: Request, res: Response) => {
       throw new UnauthorizedError();
     }
 
-    const company = await storage.getTargetCompany(companyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(companyId, userCompanyId);
     if (!company) {
       throw new NotFoundError('Company not found or access denied');
     }
@@ -62,7 +62,7 @@ router.get('/companies/:id/stage-history', async (req: Request, res: Response) =
       throw new UnauthorizedError();
     }
 
-    const company = await storage.getTargetCompany(companyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(companyId, userCompanyId);
     if (!company) {
       throw new NotFoundError('Company not found or access denied');
     }

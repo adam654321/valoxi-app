@@ -1,6 +1,5 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import multer from "multer";
@@ -15,6 +14,11 @@ import {
   runGeminiDetailedAnalysis,
   sendFileUploadWebhook 
 } from "./services/file-analysis.service";
+
+import { usersRepository } from './repositories/users.repository';
+import { targetCompaniesRepository } from './repositories/target-companies.repository';
+import { documentsRepository } from './repositories/documents.repository';
+import { stage1AnalysisRepository } from './repositories/stage1-analysis.repository';
 
 declare module 'express-session' {
   interface SessionData {
@@ -58,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(documentId)) {
         return res.status(400).json({ error: 'Invalid document ID' });
       }
-      const document = await storage.getDocumentByIdPublic(documentId);
+      const document = await documentsRepository.getDocumentByIdPublic(documentId);
       if (!document) {
         return res.status(404).json({ error: 'Document not found' });
       }
@@ -85,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid target company ID" });
       }
 
-      const profile = await storage.getCompanyProfile(targetCompanyId, userCompanyId, userId);
+      const profile = await targetCompaniesRepository.getCompanyProfile(targetCompanyId, userCompanyId, userId);
       
       if (!profile) {
         return res.status(404).json({ message: "Target company not found" });
@@ -169,12 +173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetCompanyId = parseInt(req.params.id);
       const userCompanyId = req.session.userCompanyId!;
 
-      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
       if (!company) {
         return res.status(404).json({ error: 'Company not found' });
       }
 
-      const events = await storage.getStage1AnalysisEventsByCompany(targetCompanyId, userCompanyId);
+      const events = await stage1AnalysisRepository.getStage1AnalysisEventsByCompany(targetCompanyId);
       
       res.json(events);
     } catch (error) {
@@ -188,14 +192,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetCompanyId = parseInt(req.params.id);
       const userCompanyId = req.session.userCompanyId!;
 
-      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
       if (!company) {
         return res.status(404).json({ error: 'Company not found' });
       }
 
       const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
       
-      const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
+      const existingEvent = await stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
       
       res.json({
         shouldTrigger: categoryCheck.shouldTrigger,
@@ -216,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userCompanyId = req.session.userCompanyId!;
       const userId = req.session.userId!;
 
-      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
       if (!company) {
         return res.status(404).json({ error: 'Company not found' });
       }
@@ -237,12 +241,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userCompanyId = req.session.userCompanyId!;
       const userId = req.session.userId!;
 
-      const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+      const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
       if (!company) {
         return res.status(404).json({ error: 'Company not found' });
       }
 
-      const latestEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
+      const latestEvent = await stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
       if (!latestEvent) {
         return res.status(400).json({ error: 'No basic analysis found. Please complete basic analysis first.' });
       }
@@ -255,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Detailed analysis is already in progress.' });
       }
 
-      await storage.updateDetailedAnalysisStatus(latestEvent.id, 'processing', undefined, undefined, undefined, userId);
+      await stage1AnalysisRepository.updateDetailedAnalysisStatus(latestEvent.id, 'processing', undefined, undefined, undefined, userId);
 
       console.log(`[DETAILED_ANALYSIS] Triggering detailed analysis for company ${targetCompanyId}, event ${latestEvent.id}`);
       
@@ -281,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[API] Clearing all documents for user company ${userCompanyId}, requested by user ${userId}`);
       
-      const result = await storage.clearAllCompanyDocuments(userCompanyId);
+      const result = await documentsRepository.clearAllCompanyDocuments(userCompanyId);
       
       console.log(`[API] Document clearing completed:`, result);
       
@@ -303,11 +307,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId!;
       
-      const companies = await storage.getUserCompanies(userId);
+      const companies = await usersRepository.getUserCompanies(userId);
       
       const companiesWithDetails = await Promise.all(
         companies.map(async (membership) => {
-          const company = await storage.getUserCompany(membership.userCompanyId);
+          const company = await usersRepository.getUserCompany(membership.userCompanyId);
           return {
             id: membership.id,
             companyId: membership.userCompanyId,
@@ -336,19 +340,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session.userId!;
       const { companyName, email, phone, address } = req.body;
       
-      const existingCompanies = await storage.getUserCompanies(userId);
+      const existingCompanies = await usersRepository.getUserCompanies(userId);
       if (existingCompanies.length >= 5) {
         return res.status(400).json({ error: "Maximum of 5 companies allowed per user" });
       }
       
-      const newCompany = await storage.createUserCompany({
+      const newCompany = await usersRepository.createUserCompany({
         companyName,
         email: email || null,
         phone: phone || null,
         address: address || null
       });
       
-      const membership = await storage.createUserCompanyMembership({
+      const membership = await usersRepository.createUserCompanyMembership({
         userId,
         userCompanyId: newCompany.id,
         isCompanyAdmin: true,
@@ -357,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (existingCompanies.length === 0) {
-        await storage.switchUserActiveCompany(userId, newCompany.id);
+        await usersRepository.switchUserActiveCompany(userId, newCompany.id);
       }
       
       res.json({
@@ -384,14 +388,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session.userId!;
       const companyId = parseInt(req.params.companyId);
       
-      const companies = await storage.getUserCompanies(userId);
+      const companies = await usersRepository.getUserCompanies(userId);
       const hasAccess = companies.some(c => c.userCompanyId === companyId && c.isActive);
       
       if (!hasAccess) {
         return res.status(403).json({ error: "Access denied to this company" });
       }
       
-      await storage.switchUserActiveCompany(userId, companyId);
+      await usersRepository.switchUserActiveCompany(userId, companyId);
       
       req.session.userCompanyId = companyId;
       
@@ -441,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[TEST] Injecting detailed analysis data for event ${eventId}`);
       
-      await storage.updateStage1AnalysisEventDetailedData(eventId, detailedData);
+      await stage1AnalysisRepository.updateDetailedData(eventId, detailedData);
       
       console.log(`[TEST] Successfully stored detailed analysis data for event ${eventId}`);
       

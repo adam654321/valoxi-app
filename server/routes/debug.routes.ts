@@ -3,7 +3,7 @@ import { eq, desc } from 'drizzle-orm';
 import { db } from '../db';
 import { stage1AnalysisEvents } from '@shared/schema';
 import { sendSuccess, sendError } from '../utils/response';
-import { storage } from '../storage';
+import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
 import { stage1AnalysisService } from '../services/stage1-analysis.service';
 
 const router = Router();
@@ -46,12 +46,12 @@ router.post('/trigger-stage1/:id', async (req: Request, res: Response) => {
     const categoryCheck = await stage1AnalysisService.checkStage1RequirementsByCategory(targetCompanyId);
     console.log(`[MANUAL_TRIGGER] Category check result:`, categoryCheck);
     
-    const companyAccountsData = await storage.getDocumentAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
-    const balanceSheetData = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
-    const profitLossData = await storage.getDocumentAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
-    const assetRegisterData = await storage.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
-    const salesLedgerData = await storage.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
-    const staffMatrixData = await storage.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
+    const companyAccountsData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
+    const balanceSheetData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+    const profitLossData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
+    const assetRegisterData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
+    const salesLedgerData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
+    const staffMatrixData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
     
     const analysisDataCounts = {
       company_accounts: companyAccountsData.length,

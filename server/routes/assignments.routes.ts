@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { assignmentsService } from '../services/assignments.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
-import { storage } from '../storage';
+import { usersRepository } from '../repositories/users.repository';
 
 const router = Router();
 
@@ -21,7 +21,7 @@ router.post('/:dealId/assign', async (req: Request, res: Response) => {
     const data = schema.parse(req.body);
     const assignment = await assignmentsService.assignToDeal(
       dealId, data.userId, userId, userCompanyId, data.role, data.canEditCompany, data.canUploadDocuments,
-      data.canCreateActivities, data.canManageContacts, storage.getUserWithPermissions.bind(storage)
+      data.canCreateActivities, data.canManageContacts, usersRepository.getUserWithPermissions.bind(usersRepository)
     );
     sendCreated(res, assignment);
   } catch (error) {
@@ -49,7 +49,7 @@ router.delete('/:dealId/assign/:assigneeId', async (req: Request, res: Response)
     const assigneeId = parseInt(req.params.assigneeId);
     if (!userId) throw new UnauthorizedError();
     if (isNaN(dealId) || isNaN(assigneeId)) throw new BadRequestError('Invalid parameters');
-    await assignmentsService.removeFromDeal(dealId, assigneeId, userId, storage.getUserWithPermissions.bind(storage));
+    await assignmentsService.removeFromDeal(dealId, assigneeId, userId, usersRepository.getUserWithPermissions.bind(usersRepository));
     sendSuccess(res, { message: 'Team member removed from deal successfully' });
   } catch (error) {
     sendError(res, error);
@@ -70,7 +70,7 @@ router.put('/:dealId/team/:assigneeId', async (req: Request, res: Response) => {
     const data = schema.parse(req.body);
     const updated = await assignmentsService.updatePermissions(
       dealId, assigneeId, userId, data.role, data.canEditCompany, data.canUploadDocuments,
-      data.canCreateActivities, data.canManageContacts, storage.getUserWithPermissions.bind(storage)
+      data.canCreateActivities, data.canManageContacts, usersRepository.getUserWithPermissions.bind(usersRepository)
     );
     sendSuccess(res, updated);
   } catch (error) {

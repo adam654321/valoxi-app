@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { websiteAnalysisService } from '../services/website-analysis.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { BadRequestError, ForbiddenError } from '../utils/errors';
-import { storage } from '../storage';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 
 const router = Router();
 
@@ -20,7 +20,7 @@ router.post('/company/:companyId/analyze', async (req: Request, res: Response) =
     const targetCompanyId = parseInt(req.params.companyId);
     const userCompanyId = req.session.userCompanyId!;
     if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     if (!company.website) throw new BadRequestError('Company has no website URL');
     const result = await websiteAnalysisService.analyzeAndUpdateCompany(targetCompanyId, company.website);
@@ -33,7 +33,7 @@ router.get('/company/:companyId/status', async (req: Request, res: Response) => 
     const targetCompanyId = parseInt(req.params.companyId);
     const userCompanyId = req.session.userCompanyId!;
     if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     sendSuccess(res, {
       hasWebsite: !!company.website,

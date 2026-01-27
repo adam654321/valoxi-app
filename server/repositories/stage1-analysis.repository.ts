@@ -87,6 +87,17 @@ export class Stage1AnalysisRepository {
     const [updated] = await db.update(stage1AnalysisEvents).set(updateData).where(eq(stage1AnalysisEvents.id, eventId)).returning();
     return updated || undefined;
   }
+
+  async updateDetailedData(eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined> {
+    const [updated] = await db.update(stage1AnalysisEvents)
+      .set({ 
+        detailedAnalysisStatus: 'success',
+        detailedAnalysisData: detailedData 
+      })
+      .where(eq(stage1AnalysisEvents.id, eventId))
+      .returning();
+    return updated || undefined;
+  }
 }
 
 export const stage1AnalysisRepository = new Stage1AnalysisRepository();
