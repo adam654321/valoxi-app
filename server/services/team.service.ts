@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { teamRepository, type InvitationWithDetails, type TeamMember } from '../repositories/team.repository';
 import { BadRequestError, NotFoundError, ForbiddenError, UnauthorizedError } from '../utils/errors';
+import { emailApiService } from './email.service';
 import type { UserInvitation, UserRole, User } from '@shared/schema';
 
 interface UserWithPermissions {
@@ -12,7 +13,8 @@ interface UserWithPermissions {
 export class TeamService {
   async createInvitation(
     userId: number, userCompanyId: number, email: string, role: string, message?: string, ipAddress?: string,
-    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>
+    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>,
+    baseUrl?: string
   ): Promise<UserInvitation & { inviteUrl?: string }> {
     if (getUserWithPermissions) {
       const userPerms = await getUserWithPermissions(userId);
@@ -33,6 +35,14 @@ export class TeamService {
       userCompanyId, email: email.toLowerCase(), invitedBy: userId, invitationToken,
       invitedRole: role, invitationMessage: message || '', invitationStatus: 'pending', ipAddressSent: ipAddress,
     });
+    
+    // Send invitation email asynchronously (don't block invitation creation)
+    if (baseUrl) {
+      emailApiService.sendTeamInvitation(invitation.id, baseUrl).catch(err => {
+        console.error(`[TEAM] Failed to send invitation email for invitation ${invitation.id}:`, err.message);
+      });
+    }
+    
     return invitation;
   }
 

@@ -36,10 +36,11 @@ router.post('/tokens', async (req: Request, res: Response) => {
       allowedActions: z.any().optional(), customMessage: z.string().optional(),
     });
     const data = schema.parse(req.body);
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
     const token = await portalService.createToken({
       userCompanyId, targetCompanyId: data.targetCompanyId, targetContactId: data.targetContactId,
       createdBy: userId, expiresInDays: data.expiresInDays, allowedActions: data.allowedActions, customMessage: data.customMessage,
-    });
+    }, baseUrl);
     sendCreated(res, token);
   } catch (error) {
     sendError(res, error);

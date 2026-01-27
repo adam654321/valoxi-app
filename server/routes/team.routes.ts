@@ -14,8 +14,9 @@ router.post('/invite', async (req: Request, res: Response) => {
     if (!userId || !userCompanyId) throw new UnauthorizedError();
     const schema = z.object({ email: z.string().email(), role: z.string().min(1), message: z.string().optional() });
     const { email, role, message } = schema.parse(req.body);
-    const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, storage.getUserWithPermissions.bind(storage));
-    const inviteUrl = `${req.protocol}://${req.get('host')}/invite/${invitation.invitationToken}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, storage.getUserWithPermissions.bind(storage), baseUrl);
+    const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
     sendCreated(res, { message: 'Invitation sent successfully', invitation: { id: invitation.id, email: invitation.email, role: invitation.invitedRole, status: invitation.invitationStatus, sentAt: invitation.sentAt, inviteUrl } });
   } catch (error) {
     sendError(res, error);

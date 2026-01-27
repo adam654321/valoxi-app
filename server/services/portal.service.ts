@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { portalRepository } from '../repositories/portal.repository';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
+import { emailApiService } from './email.service';
 import type { PortalAccessToken, ExternalDocumentSubmission, InsertPortalAccessToken, InsertExternalDocumentSubmission } from '@shared/schema';
 
 export class PortalService {
@@ -25,14 +26,23 @@ export class PortalService {
     };
   }
 
-  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; }): Promise<PortalAccessToken> {
+  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; }, baseUrl?: string): Promise<PortalAccessToken> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + (data.expiresInDays || 30));
-    return await portalRepository.createToken({
+    const token = await portalRepository.createToken({
       accessToken: randomUUID(), userCompanyId: data.userCompanyId, targetCompanyId: data.targetCompanyId,
       targetContactId: data.targetContactId, createdBy: data.createdBy, isActive: true, expiresAt,
       allowedActions: JSON.stringify(data.allowedActions || { upload: true, view: true }), customMessage: data.customMessage,
     });
+    
+    // Send portal access email asynchronously (don't block token creation)
+    if (baseUrl) {
+      emailApiService.sendPortalAccessLink(token.id, baseUrl, data.customMessage).catch(err => {
+        console.error(`[PORTAL] Failed to send portal access email for token ${token.id}:`, err.message);
+      });
+    }
+    
+    return token;
   }
 
   async getTokensForCompany(userCompanyId: number) {
