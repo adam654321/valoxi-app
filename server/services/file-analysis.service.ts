@@ -557,7 +557,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
 }
 
 export async function sendStage1AnalysisWebhook(eventId: number) {
-  const webhookUrl = process.env.STAGE1_JSON_ANALYSER_WEBHOOK_URL;
+  const webhookUrl = config.webhooks.stage1JsonAnalyserUrl;
   if (!webhookUrl) {
     console.log(`[STAGE1_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
     return;
@@ -630,7 +630,7 @@ export async function sendStage1AnalysisWebhook(eventId: number) {
 }
 
 export async function sendDetailedAnalysisWebhook(eventId: number) {
-  const webhookUrl = process.env.STAGE1_Detailed_Analysis_URL;
+  const webhookUrl = config.webhooks.stage1DetailedAnalysisUrl;
   if (!webhookUrl) {
     console.log(`[DETAILED_ANALYSIS_WEBHOOK] No webhook URL configured for event ${eventId}`);
     return;
