@@ -1,0 +1,86 @@
+Replit Agent Prompt: Stage 2 Refactoring Plan
+Context: We are in the middle of a major refactoring of the backend. 
+server/routes.ts
+ has been partially broken down into modular routes in server/routes/, but it still contains significant business logic (~1000 lines) related to file analysis and webhooks. Additionally, server/storage.ts is a monolithic ~4000-line file that manages all database interactions. This needs to be broken down.
+
+Your Goal: Complete "Stage 2" of the refactoring by:
+
+Extracting the remaining business logic from server/routes.ts into dedicated services.
+Refactoring server/storage.ts into domain-specific store modules while maintaining the existing storage export to avoid breaking the application.
+Part 1: Cleanup server/routes.ts
+The file server/routes.ts currently contains heavy logic for Gemini integration, document classification, and webhooks. This violates the separation of concerns.
+
+Action Items:
+
+Create server/services/file-analysis.service.ts:
+
+Move the following functions (and their dependencies) from routes.ts to this new service:
+analyzeUploadedFileWithGemini
+checkStage1RequirementsByCategory
+checkAndTriggerStage1Analysis
+runGeminiStage1Analysis
+runGeminiDetailedAnalysis
+sendStage1AnalysisWebhook
+sendDetailedAnalysisWebhook
+Helper functions like enhanceProfitLossWithCalculations.
+Ensure this service imports necessary schemas and the storage object.
+Clean server/routes.ts:
+
+After extraction, server/routes.ts should ONLY contain:
+Express app setup (if any remaining).
+Imports for registerModularRoutes.
+Global middleware setup.
+The registerModularRoutes(app) call.
+Remove all unused imports (zod, openai/gemini libraries, etc.) from this file.
+Part 2: Refactor server/storage.ts (The Monolith)
+server/storage.ts implements the IStorage interface with a single DatabaseStorage class. We need to split this into domain-specific "Stores" or "Repositories" without changing the public API of the storage object used throughout the app.
+
+Action Items:
+
+Create server/storage/ directory.
+
+Split into Domain Stores: Create the following files in server/storage/ and move the relevant methods from DatabaseStorage into them. passing the db instance or necessary context to them.
+
+user.store.ts: getUser, createUser, user session methods, user invitation methods.
+company.store.ts: getTargetCompanies, createTargetCompany, searchTargetCompanies, getFilterOptions, etc.
+contact.store.ts: getContactsForTargetCompany, createTargetContact, etc.
+deal.store.ts: createDealAssignment, getPipelineStages, updateCompanyStage, deal notes.
+activity.store.ts: createActivity, getActivities, notifications.
+document.store.ts: createDocument, getCompanyDocuments, fileUploadEvents, analysis results.
+portal.store.ts: portal related methods (access tokens, submissions).
+dashboard.store.ts: getDashboardMetrics, widgets, preferences.
+Update server/storage.ts:
+
+Import all the new Store classes.
+Update the DatabaseStorage class to initialize these stores.
+Crucial: Keep the IStorage interface definition in this file (or move to types.ts and re-export) so imports don't break.
+Refactor DatabaseStorage methods to delegate to the specific stores.
+Example Pattern:
+
+// In server/storage.ts
+export class DatabaseStorage implements IStorage {
+  private userStore: UserStore;
+  private companyStore: CompanyStore;
+  // ...
+  constructor() {
+    this.userStore = new UserStore(db);
+    this.companyStore = new CompanyStore(db);
+    // ...
+  }
+  // Delegate
+  async getUser(id: number) {
+    return this.userStore.getUser(id);
+  }
+  
+  async getTargetCompanies(...) {
+    return this.companyStore.getTargetCompanies(...);
+  }
+}
+Part 3: Verification
+Check imports: Ensure strict imports between the new storage modules. Avoid circular dependencies.
+Run the server: The app is an Express + Vite app. Run npm run dev to ensure the server starts and connects to the DB.
+Test Critical Flows:
+Login/Auth (Tests UserStore).
+View Dashboard (Tests DashboardStore).
+View Target Companies (Tests CompanyStore).
+Upload a file (Tests DocumentStore + the newly extracted FileAnalysisService).
