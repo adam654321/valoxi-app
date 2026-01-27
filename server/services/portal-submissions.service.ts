@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
+import { sendFileUploadWebhook } from '../routes';
 
 const PORTAL_CATEGORY_MAP: Record<string, string> = {
   'company_accounts_1': 'Company Accounts', 'company_accounts_2': 'Company Accounts', 'company_accounts_3': 'Company Accounts',
@@ -58,6 +59,11 @@ export class PortalSubmissionsService {
       webhookSent: false, webhookStatus: 'pending',
     });
     await portalSubmissionsRepository.reviewSubmission(submission.id, token.createdBy, 'approved', 'Auto-approved - unified upload process');
+    
+    // Trigger Gemini analysis asynchronously (don't wait for it to complete)
+    sendFileUploadWebhook(uploadEvent.id).catch(err => {
+      console.error(`[PORTAL_UPLOAD] Gemini analysis failed for event ${uploadEvent.id}:`, err);
+    });
     await portalSubmissionsRepository.logActivity({
       portalTokenId: token.id, targetContactId: token.targetContactId, activityType: 'document_submitted',
       activityDescription: `Document submitted: ${prefixedFilename}`, ipAddress, userAgent, relatedDocumentId: submission.id,
