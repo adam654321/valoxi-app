@@ -53,8 +53,8 @@ router.delete('/tokens/:id', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
     const tokenId = parseInt(req.params.id);
     if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
-    await portalService.deactivateToken(tokenId, userCompanyId);
-    sendSuccess(res, { message: 'Token deactivated successfully' });
+    await portalService.deleteToken(tokenId, userCompanyId);
+    sendSuccess(res, { message: 'Portal link removed successfully' });
   } catch (error) {
     sendError(res, error);
   }

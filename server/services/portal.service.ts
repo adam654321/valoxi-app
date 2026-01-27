@@ -56,6 +56,13 @@ export class PortalService {
     return await portalRepository.deactivateToken(tokenId);
   }
 
+  async deleteToken(tokenId: number, userCompanyId: number): Promise<boolean> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to delete this token');
+    return await portalRepository.deleteToken(tokenId);
+  }
+
   async getSubmissionsByToken(accessToken: string): Promise<ExternalDocumentSubmission[]> {
     const token = await portalRepository.validateToken(accessToken);
     if (!token) throw new NotFoundError('Invalid or expired access token');
