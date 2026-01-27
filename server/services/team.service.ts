@@ -68,10 +68,7 @@ export class TeamService {
     if (!invitation || invitation.invitationStatus !== 'pending') {
       throw new BadRequestError('Invalid or expired invitation');
     }
-    const existingUser = await teamRepository.getUserByEmail(invitation.email);
-    if (existingUser) {
-      throw new BadRequestError('An account with this email already exists');
-    }
+    // Repository handles both new users and existing users (updates them to join this company)
     const user = await teamRepository.acceptInvitation(token, {
       firstName, lastName, passwordHash: await bcrypt.hash(password, 10), isActive: true, emailVerified: true,
     });
