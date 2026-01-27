@@ -324,3 +324,5 @@ export class DashboardStore {
     return !!updatedAlert;
   }
 }
+
+export const dashboardStore = new DashboardStore(defaultDb);

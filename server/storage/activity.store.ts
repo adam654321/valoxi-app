@@ -348,3 +348,5 @@ export class ActivityStore {
     return updatedNotifications.length;
   }
 }
+
+export const activityStore = new ActivityStore(db);

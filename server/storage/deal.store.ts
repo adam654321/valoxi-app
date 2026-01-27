@@ -255,17 +255,25 @@ export class DealStore {
   }
 
   async createDealNote(note: InsertDealNote): Promise<DealNote> {
+    const noteData = {
+      ...note,
+      reminderDate: note.reminderDate ? new Date(note.reminderDate) : null
+    };
     const [result] = await this.db
       .insert(dealNotes)
-      .values(note)
+      .values(noteData)
       .returning();
     return result;
   }
 
   async updateDealNote(noteId: number, note: Partial<InsertDealNote>): Promise<DealNote | undefined> {
+    const updateData: Record<string, any> = { ...note, updatedAt: new Date() };
+    if (note.reminderDate !== undefined) {
+      updateData.reminderDate = note.reminderDate ? new Date(note.reminderDate) : null;
+    }
     const [updated] = await this.db
       .update(dealNotes)
-      .set({ ...note, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(dealNotes.id, noteId))
       .returning();
     return updated || undefined;

@@ -776,3 +776,5 @@ export class DocumentStore {
     return company || undefined;
   }
 }
+
+export const documentStore = new DocumentStore(db);
