@@ -28,10 +28,11 @@ export default defineConfig({
         storageState: 'tests/.auth/user.json',
       },
       dependencies: ['setup'],
+      testIgnore: /auth\.spec\.ts/,
     },
     {
       name: 'chromium-no-auth',
-      testMatch: /sanity\.spec\.ts/,
+      testMatch: /(sanity|auth)\.spec\.ts/,
       use: { 
         ...devices['Desktop Chrome'],
       },
