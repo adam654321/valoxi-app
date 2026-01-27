@@ -998,9 +998,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register modular routes (new architecture - v2 API endpoints)
   registerModularRoutes(app, isAuthenticated);
 
-
-  // Register modular routes (new architecture - v2 API endpoints)
-  registerModularRoutes(app, isAuthenticated);
+  // Legacy public documents route (used by Gemini file analysis)
+  // This route must be publicly accessible without authentication
+  app.get("/api/public/documents/:id/download", async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ error: 'Invalid document ID' });
+      }
+      const document = await storage.getDocumentByIdPublic(documentId);
+      if (!document) {
+        return res.status(404).json({ error: 'Document not found' });
+      }
+      const path = await import('path');
+      res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+      res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+      res.sendFile(path.resolve(document.filePath));
+    } catch (error) {
+      console.error('[PUBLIC_DOWNLOAD] Error:', error);
+      res.status(500).json({ error: 'Failed to download document' });
+    }
+  });
 
   // LEGACY AUTH ENDPOINTS REMOVED - Now using /api/v2/auth/* endpoints
   // See server/routes/auth.routes.ts for new implementation
