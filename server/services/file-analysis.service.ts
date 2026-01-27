@@ -1,4 +1,6 @@
-import { documentStore } from "../storage/document.store";
+import { stage1AnalysisRepository } from "../repositories/stage1-analysis.repository";
+import { documentAnalysisRepository } from "../repositories/document-analysis.repository";
+import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "../gemini-stage1-service";
 import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "../gemini-detailed-analysis-service";
@@ -66,7 +68,7 @@ function enhanceProfitLossWithCalculations(analysisData: any): any {
 
 export async function analyzeUploadedFileWithGemini(eventId: number) {
   try {
-    const event = await documentStore.getFileUploadEvent(eventId);
+    const event = await documentsRepository.getFileUploadEvent(eventId);
     if (!event) {
       console.error(`[FILE_ANALYSIS] Event ${eventId} not found`);
       return;
@@ -91,7 +93,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     if (!classificationResult.success) {
       console.error(`[FILE_ANALYSIS] Classification failed for event ${eventId}:`, classificationResult.error);
       
-      await documentStore.updateFileUploadEventWebhookStatus(
+      await documentsRepository.updateFileUploadEventWebhookStatus(
         eventId, 
         'classification_failed', 
         JSON.stringify({ 
@@ -117,7 +119,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       usageMetadata: classificationResult.usageMetadata,
     };
 
-    await documentStore.updateFileUploadEventWebhookStatus(
+    await documentsRepository.updateFileUploadEventWebhookStatus(
       eventId, 
       'classification_complete', 
       JSON.stringify(classificationData, null, 2), 
@@ -144,7 +146,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
         console.log(`[FILE_ANALYSIS] Storing ${result.documentType} analysis result for document ${event.documentId}`);
         
         try {
-          await documentStore.createDocumentAnalysisResult({
+          await documentAnalysisRepository.createAnalysisResult({
             documentId: event.documentId,
             fileUploadEventId: eventId,
             documentType: result.documentType,
@@ -176,7 +178,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       })),
     };
 
-    await documentStore.updateFileUploadEventWebhookStatus(
+    await documentsRepository.updateFileUploadEventWebhookStatus(
       eventId, 
       'complete', 
       JSON.stringify(completeData, null, 2), 
@@ -200,7 +202,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
   } catch (error) {
     console.error(`[FILE_ANALYSIS] Failed to analyze file for event ${eventId}:`, error);
     
-    await documentStore.updateFileUploadEventWebhookStatus(
+    await documentsRepository.updateFileUploadEventWebhookStatus(
       eventId, 
       'failed', 
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
@@ -215,19 +217,19 @@ export async function sendFileUploadWebhook(eventId: number) {
 
 export async function checkStage1RequirementsByCategory(targetCompanyId: number): Promise<{shouldTrigger: boolean, status: string}> {
   try {
-    const companyAccountsCount = await documentStore.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
+    const companyAccountsCount = await stage1AnalysisRepository.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
     
     const requiredCategories = ['Profit & Loss', 'Balance Sheet', 'Staff Matrix', 'Sales Ledger', 'Asset Register'];
     const categoryCounts: {[key: string]: number} = {};
     
     for (const category of requiredCategories) {
-      categoryCounts[category] = await documentStore.getDocumentCountByCategory(targetCompanyId, category);
+      categoryCounts[category] = await stage1AnalysisRepository.getDocumentCountByCategory(targetCompanyId, category);
     }
     
     console.log(`[STAGE1_ANALYSIS] Debug - Initial category counts:`, categoryCounts);
     
     if (categoryCounts['Balance Sheet'] === 0) {
-      const balanceSheetAnalysis = await documentStore.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+      const balanceSheetAnalysis = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
       if (balanceSheetAnalysis.length > 0) {
         categoryCounts['Balance Sheet'] = balanceSheetAnalysis.length;
       }
@@ -263,9 +265,9 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
       return;
     }
 
-    const existingEvent = await documentStore.getLatestStage1AnalysisEvent(targetCompanyId);
+    const existingEvent = await stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
     if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
-      const latestDocumentUpload = await documentStore.getLatestDocumentUploadTime(targetCompanyId);
+      const latestDocumentUpload = await stage1AnalysisRepository.getLatestDocumentUploadTime(targetCompanyId);
       
       if (latestDocumentUpload && existingEvent.createdAt) {
         const docUploadTime = new Date(latestDocumentUpload).getTime();
@@ -296,12 +298,12 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
       console.log(`[STAGE1_ANALYSIS] Bypassing requirements check for company ${targetCompanyId}. Triggering stage 1 webhook with available documents.`);
     }
 
-    const companyAccountsData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
-    const analysisData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
-    const salesLedgerData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
-    const staffMatrixData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
-    const profitLossData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
-    const balanceSheetData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+    const companyAccountsData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
+    const analysisData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
+    const salesLedgerData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
+    const staffMatrixData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
+    const profitLossData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
+    const balanceSheetData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
 
     console.log(`[STAGE1_ANALYSIS] Debug - Retrieved analysis data counts:`, {
       company_accounts: companyAccountsData.length,
@@ -386,7 +388,7 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
       company_id: targetCompanyId
     };
 
-    const stage1Event = await documentStore.createStage1AnalysisEvent({
+    const stage1Event = await stage1AnalysisRepository.createStage1AnalysisEvent({
       targetCompanyId,
       triggeredBy,
       concatenatedData
@@ -407,11 +409,11 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
   console.log(`[GEMINI_STAGE1_ANALYSIS] Starting Gemini analysis for event ${eventId}, company ${companyName}`);
 
   try {
-    const documentFiles = await documentStore.getStage1DocumentFiles(targetCompanyId);
+    const documentFiles = await stage1AnalysisRepository.getStage1DocumentFiles(targetCompanyId);
     
     if (documentFiles.length === 0) {
       console.error(`[GEMINI_STAGE1_ANALYSIS] No documents found for company ${targetCompanyId}`);
-      await documentStore.updateStage1AnalysisEventWebhookStatus(
+      await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
         eventId, 
         'failed', 
         'No documents found for analysis', 
@@ -440,7 +442,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
     });
 
     if (result.success && result.markdown) {
-      await documentStore.updateStage1AnalysisEventWebhookStatus(
+      await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
         eventId, 
         'success', 
         result.markdown, 
@@ -451,7 +453,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
 
       console.log(`[GEMINI_STAGE1_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
 
-      const event = await documentStore.getStage1AnalysisEvent(eventId);
+      const event = await stage1AnalysisRepository.getStage1AnalysisEvent(eventId);
       
       emitDocumentUpdate({
         type: 'stage1_completed',
@@ -461,7 +463,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
       });
       console.log(`[GEMINI_STAGE1_ANALYSIS] EventBus notification sent for Stage 1 analysis completion of company ${targetCompanyId}`);
     } else {
-      await documentStore.updateStage1AnalysisEventWebhookStatus(
+      await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
         eventId, 
         'failed', 
         JSON.stringify({ error: result.error || 'Unknown error' }), 
@@ -474,7 +476,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
   } catch (error) {
     console.error(`[GEMINI_STAGE1_ANALYSIS] Error running analysis for event ${eventId}:`, error);
     
-    await documentStore.updateStage1AnalysisEventWebhookStatus(
+    await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
       eventId, 
       'failed', 
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
@@ -487,11 +489,11 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
   console.log(`[GEMINI_DETAILED_ANALYSIS] Starting Gemini detailed analysis for event ${eventId}, company ${targetCompanyId}`);
 
   try {
-    const documentFiles = await documentStore.getStage1DocumentFiles(targetCompanyId);
+    const documentFiles = await stage1AnalysisRepository.getStage1DocumentFiles(targetCompanyId);
     
     if (documentFiles.length === 0) {
       console.error(`[GEMINI_DETAILED_ANALYSIS] No documents found for company ${targetCompanyId}`);
-      await documentStore.updateDetailedAnalysisStatus(
+      await stage1AnalysisRepository.updateDetailedAnalysisStatus(
         eventId, 
         'failed', 
         'No documents found for analysis'
@@ -517,7 +519,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
     });
 
     if (result.success && result.markdown) {
-      await documentStore.updateDetailedAnalysisStatus(
+      await stage1AnalysisRepository.updateDetailedAnalysisStatus(
         eventId, 
         'success', 
         result.markdown, 
@@ -527,7 +529,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
 
       console.log(`[GEMINI_DETAILED_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
 
-      const event = await documentStore.getStage1AnalysisEvent(eventId);
+      const event = await stage1AnalysisRepository.getStage1AnalysisEvent(eventId);
       emitDocumentUpdate({
         type: 'detailed_analysis_completed',
         targetCompanyId: targetCompanyId,
@@ -536,7 +538,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
       });
       console.log(`[GEMINI_DETAILED_ANALYSIS] EventBus notification sent for detailed analysis completion of company ${targetCompanyId}`);
     } else {
-      await documentStore.updateDetailedAnalysisStatus(
+      await stage1AnalysisRepository.updateDetailedAnalysisStatus(
         eventId, 
         'failed', 
         result.error || 'Unknown error', 
@@ -548,7 +550,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
   } catch (error) {
     console.error(`[GEMINI_DETAILED_ANALYSIS] Error running analysis for event ${eventId}:`, error);
     
-    await documentStore.updateDetailedAnalysisStatus(
+    await stage1AnalysisRepository.updateDetailedAnalysisStatus(
       eventId, 
       'failed', 
       error instanceof Error ? error.message : 'Unknown error'

@@ -150,6 +150,19 @@ export class DocumentsRepository {
     return createdEvent;
   }
 
+  async getFileUploadEvent(eventId: number): Promise<FileUploadEvent | undefined> {
+    const [event] = await db.select().from(fileUploadEvents).where(eq(fileUploadEvents.id, eventId));
+    return event || undefined;
+  }
+
+  async updateFileUploadEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date): Promise<FileUploadEvent | undefined> {
+    const [updated] = await db.update(fileUploadEvents)
+      .set({ webhookStatus: status, webhookResponse: response, webhookSentAt: sentAt, webhookSent: true })
+      .where(eq(fileUploadEvents.id, eventId))
+      .returning();
+    return updated || undefined;
+  }
+
   async getExternalSubmission(submissionId: number, userCompanyId: number): Promise<ExternalDocumentSubmission | undefined> {
     const [submission] = await db
       .select()

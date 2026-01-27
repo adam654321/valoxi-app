@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { portalRequirementsRepository, type RequirementProgress } from '../repositories/portal-requirements.repository';
 import { targetCompaniesRepository } from '../repositories/target-companies.repository';
-import { activityStore } from '../storage/activity.store';
+import { activitiesRepository } from '../repositories/activities.repository';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import { targetCompanies, type CompanyDocumentRequirement } from '@shared/schema';
 
@@ -33,7 +33,7 @@ export class PortalRequirementsService {
     const requirements = await portalRequirementsRepository.getCompanyRequirements(targetCompanyId);
     const stage1 = requirements.filter(r => r.collectionStage === 1).length;
     const stage2 = requirements.filter(r => r.collectionStage === 2).length;
-    try { await activityStore.createActivity({ targetCompanyId, userId, activityType: 'document_requirement', title: 'Document Requirements Initialized', description: `Initialized ${requirements.length} standard document requirements`, activityDate: new Date() }); } catch {}
+    try { await activitiesRepository.createActivity({ targetCompanyId, userId, activityType: 'document_requirement', title: 'Document Requirements Initialized', description: `Initialized ${requirements.length} standard document requirements`, activityDate: new Date() }); } catch {}
     return { stage1Requirements: stage1, stage2Requirements: stage2, totalRequirements: requirements.length, message: 'Standard requirements initialized successfully' };
   }
 
