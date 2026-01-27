@@ -1,0 +1,47 @@
+Role: Senior Backend Architect Context: We have refactored the storage layer, but the Service layer still contains technical debt and "hacky" patterns. Objective: Clean up the codebase to align with best practices, eliminate circular dependencies, and remove global state hacks. Do not implement new user-facing features yet.
+
+Part 1: Fix Global State (Critical)
+1. Implement ServerEventBus
+Current State: 
+stage1-analysis.service.ts
+ uses global.documentUpdateListeners (an untyped array attached to the global object) to handle real-time updates. This is unstable and unsafe. Task:
+
+Create server/services/event-bus.service.ts.
+Implement a typed EventEmitter singleton class using the Node.js events module.
+Define strongly-typed events:
+analysis:completed (payload: completion data)
+file:uploaded (payload: file metadata)
+stage:updated (payload: company id, new stage)
+Refactor: Update 
+file-analysis.service.ts
+ and 
+routes.ts
+ to emit/listen to this Event Bus instead of accessing global.
+Part 2: Service Layer Hygiene
+1. Remove Legacy Storage Imports
+Current State: Services like 
+document-analysis.service.ts
+, 
+portal.service.ts
+, and others import the main storage object (import { storage } from '../storage'). This negates the benefit of the modular stores. Task:
+
+Scan all files in server/services/.
+Replace imports of the monolithic storage object with specific domain repositories/stores.
+Example: Change storage.getUser() to userStore.getUser().
+Ensure strict Dependency Injection principles where possible, or at least strict module separation.
+2. Centralize Configuration
+Current State: Environment variables (e.g., REPLIT_DEV_DOMAIN) are accessed directly in service files, making testing and portability hard. Task:
+
+Create server/config.ts.
+Export a typed configuration object that abstracts the environment variables (e.g., config.baseUrl, config.gemini.apiKey).
+Refactor file-analysis.service.ts and other services to use this config module instead of process.env.
+Part 3: Type Safety & Consistency
+1. Shared Types Check
+Task:
+
+Ensure all interfaces used in Services are imported from @shared/schema or defined in a dedicated types file.
+Remove any ad-hoc interfaces defined inside service files (e.g., AnalysisCompletionStatus in document-analysis.service.ts) and move them to shared definitions if used elsewhere.
+Definition of Done
+global keyword is NOT used for event handling anywhere in server/.
+server/services/*.ts do NOT import the default storage export.
+The application compiles (npm run check) and starts (npm run dev) without errors.
