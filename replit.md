@@ -27,9 +27,18 @@ Preferred communication style: Simple, everyday language.
     - `usersRepository`: User CRUD, sessions, invitations, roles, team management
     - `targetCompaniesRepository`: Target company CRUD with search/filter
     - `contactsRepository`: Contact management with cascade delete handling
-    - `documentAnalysisRepository`: Document analysis results
+    - `documentsRepository`: Document CRUD, file upload events, external submissions
+    - `documentAnalysisRepository`: Document analysis results storage and retrieval
+    - `stage1AnalysisRepository`: Stage 1 analysis events and document categorization
+    - `activitiesRepository`: Activity CRUD, timeline, and recent activities
+    - `portalRepository`: Portal tokens, submissions, and access logging
     - `portalRequirementsRepository`: Document requirements management
-- **Legacy Domain Stores (Deprecated)**: Some stores remain for specialized operations (`server/storage/*.store.ts`): `documentStore`, `activityStore`, `portalStore`. Services should prefer repositories over stores.
+    - `dashboardRepository`: Dashboard metrics, widgets, and preferences
+    - `assignmentsRepository`: Deal team assignments
+    - `pipelineRepository`: Pipeline stages and stage history
+    - `notificationsRepository`: User notifications
+    - `teamRepository`: Team members and roles
+- **Legacy Storage Facade**: The `server/storage.ts` facade remains for route compatibility but services use repositories directly. Legacy stores (`server/storage/*.store.ts`) are deprecated.
 - **Feature Specifications**:
     - **Target Company Management**: Full CRUD operations with detailed information, industry categorization, and card-based views.
     - **Contact Management**: Full CRUD operations, primary contact designation, integrated with target company details.
