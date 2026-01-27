@@ -80,6 +80,33 @@ export class DocumentAnalysisRepository {
     const [created] = await db.insert(documentAnalysisResults).values(result).returning();
     return created;
   }
+
+  async getCompanyAccountsAnalysisCount(targetCompanyId: number): Promise<number> {
+    // Get all analysis results for this company and count distinct documents with company_accounts analysis
+    const results = await db
+      .select({
+        documentId: documentAnalysisResults.documentId,
+        analysisData: documentAnalysisResults.analysisData
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+
+    // Count unique documents that have company_accounts analysis type
+    const uniqueDocuments = new Set(
+      results
+        .filter(result => {
+          if (result.analysisData && typeof result.analysisData === 'object') {
+            const data = result.analysisData as any;
+            return data.document === 'company_accounts';
+          }
+          return false;
+        })
+        .map(result => result.documentId)
+    );
+
+    return uniqueDocuments.size;
+  }
 }
 
 export const documentAnalysisRepository = new DocumentAnalysisRepository();

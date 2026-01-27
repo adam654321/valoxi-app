@@ -46,17 +46,44 @@ export class DocumentAnalysisService {
   private async calculateCompletionStatus(targetCompanyId: number): Promise<AnalysisCompletionStatus> {
     const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
     const analysisTypes = await documentAnalysisRepository.getDistinctAnalysisTypesForCompany(targetCompanyId);
+    
+    // Filter out webhook-detected types for documents that were uploaded as "Company Accounts"
     const completedTypes = Array.from(new Set(
-      analysisTypes.filter(a => a.documentCategory !== 'Company Accounts' && requiredTypes.includes(a.documentType)).map(a => a.documentType)
+      analysisTypes
+        .filter(a => a.documentCategory !== 'Company Accounts' && requiredTypes.includes(a.documentType))
+        .map(a => a.documentType)
     ));
-    const missingTypes = requiredTypes.filter(t => !completedTypes.includes(t));
-    const completedCount = completedTypes.length;
-    const totalCount = requiredTypes.length;
+    
+    // Count company accounts documents with company_accounts analysis
+    const companyAccountsResults = await documentAnalysisRepository.getCompanyAccountsAnalysisCount(targetCompanyId);
+    const companyAccountsCount = companyAccountsResults;
+    
+    // We need 5 company accounts documents + 5 main document types = 10 total
+    const totalRequired = 10;
+    const completedCount = completedTypes.length + Math.min(companyAccountsCount, 5); // Cap company accounts at 5
+    
+    // Missing regular types
+    const missingTypes = requiredTypes.filter(type => !completedTypes.includes(type));
+    
+    // Add missing company accounts to missing types
+    const missingCompanyAccounts = Math.max(0, 5 - companyAccountsCount);
+    for (let i = 0; i < missingCompanyAccounts; i++) {
+      missingTypes.push(`company_accounts_${i + 1}`);
+    }
+    
+    // Build completed types array including company accounts
+    const allCompletedTypes = [
+      ...completedTypes,
+      ...Array(Math.min(companyAccountsCount, 5)).fill('company_accounts').map((_, i) => `company_accounts_${i + 1}`)
+    ];
+    
     return {
-      completedTypes, missingTypes,
-      isComplete: missingTypes.length === 0,
-      completionPercentage: Math.round((completedCount / totalCount) * 100),
-      completedCount, totalCount,
+      completedTypes: allCompletedTypes,
+      missingTypes,
+      isComplete: completedCount === totalRequired,
+      completionPercentage: Math.round((completedCount / totalRequired) * 100),
+      completedCount,
+      totalCount: totalRequired,
     };
   }
 
