@@ -1,0 +1,48 @@
+Role: Senior Backend Architect / Refactoring Specialist Objective: Create a detailed, step-by-step Implementation Plan to complete the "Version 2 API" migration and fix the "Split Brain" architecture in the codebase.
+
+Context
+A code archaeology report has identified that the previous refactoring of 
+server/routes.ts
+ and 
+server/storage.ts
+ was incomplete and introduced regression risks. The system currently uses a hybrid of legacy "God Object" patterns and new modular v2 routes.
+
+Key Findings:
+
+Critical Bug: 
+registerModularRoutes
+ is called twice in 
+server/routes.ts
+ (lines ~999 & ~1003).
+Incomplete Migration: 
+server/routes.ts
+ is still ~1,500 lines long. It retains massive business logic (e.g., 
+analyzeUploadedFileWithGemini
+) that should be in services.
+Legacy Code Leaks: Routes like /api/target-companies/:id/profile, /api/user/companies, and /docs/clear-all are still defined in 
+routes.ts
+ instead of their respective v2 modules.
+Implicit Coupling: Route handlers are tightly coupled to 
+storage.ts
+.
+Your Task
+Using the context above, generate a comprehensive Implementation Plan (implementation_plan.md) to resolve these issues.
+
+The plan must include:
+
+Immediate Hotfix Phase: Instructions to fix the double route registration bug.
+Service Extraction Phase: Detailed steps to extract business logic (specifically 
+analyzeUploadedFileWithGemini
+ and 
+enhanceProfitLossData
+) into a new server/services/analysis.service.ts or similar.
+Route Migration Phase: A checklist to identify every remaining route in 
+server/routes.ts
+ and move it to the appropriate file in server/routes/v2/.
+Cleanup Phase: Strategy to reduce 
+server/routes.ts
+ to a minimal entry point that only calls 
+registerModularRoutes
+.
+Verification Steps: How to ensure no functionality is lost during this migration (e.g., testing the /profile endpoint after the move).
+Output Format: Please respond with the content of the implementation_plan.md file. Do not execute the changes yet; I need to review the plan first.
