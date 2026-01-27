@@ -58,33 +58,45 @@ import {
   type InsertDealNote,
 } from "@shared/schema";
 
-import { UserStore, userStore } from "./storage/user.store";
-import { CompanyStore, companyStore } from "./storage/company.store";
-import { ContactStore, contactStore } from "./storage/contact.store";
-import { DealStore, dealStore } from "./storage/deal.store";
-import { ActivityStore, activityStore } from "./storage/activity.store";
-import { DocumentStore, documentStore } from "./storage/document.store";
-import { PortalStore, portalStore } from "./storage/portal.store";
-import { DashboardStore, dashboardStore } from "./storage/dashboard.store";
+import { usersRepository, type UserWithRole, type TeamMember, type InvitationWithDetails } from "./repositories/users.repository";
+import { targetCompaniesRepository, type TargetCompanyWithStats, type FilterOptions, type CompanyProfile, type SearchParams } from "./repositories/target-companies.repository";
+import { contactsRepository } from "./repositories/contacts.repository";
+import { activitiesRepository, type ActivityWithDetails, type ActivityTimeline } from "./repositories/activities.repository";
+import { notificationsRepository, type NotificationWithDetails } from "./repositories/notifications.repository";
+import { documentsRepository } from "./repositories/documents.repository";
+import { documentAnalysisRepository } from "./repositories/document-analysis.repository";
+import { stage1AnalysisRepository } from "./repositories/stage1-analysis.repository";
+import { portalRepository } from "./repositories/portal.repository";
+import { portalRequirementsRepository } from "./repositories/portal-requirements.repository";
+import { portalSubmissionsRepository } from "./repositories/portal-submissions.repository";
+import { dashboardRepository } from "./repositories/dashboard.repository";
+import { assignmentsRepository } from "./repositories/assignments.repository";
+import { pipelineRepository } from "./repositories/pipeline.repository";
+import { reportsRepository } from "./repositories/reports.repository";
+import { teamRepository } from "./repositories/team.repository";
+import { notesRepository } from "./repositories/notes.repository";
 
 export type {
   SearchParams,
   TargetCompanyWithStats,
   FilterOptions,
   CompanyProfile
-} from "./storage/company.store";
+} from "./repositories/target-companies.repository";
 
 export type {
   UserWithRole,
   TeamMember,
   InvitationWithDetails
-} from "./storage/user.store";
+} from "./repositories/users.repository";
 
 export type {
   ActivityWithDetails,
   ActivityTimeline,
+} from "./repositories/activities.repository";
+
+export type {
   NotificationWithDetails
-} from "./storage/activity.store";
+} from "./repositories/notifications.repository";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -251,202 +263,312 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private userStore: UserStore;
-  private companyStore: CompanyStore;
-  private contactStore: ContactStore;
-  private dealStore: DealStore;
-  private activityStore: ActivityStore;
-  private documentStore: DocumentStore;
-  private portalStore: PortalStore;
-  private dashboardStore: DashboardStore;
+  constructor() {}
 
-  constructor() {
-    this.userStore = userStore;
-    this.companyStore = companyStore;
-    this.contactStore = contactStore;
-    this.dealStore = dealStore;
-    this.activityStore = activityStore;
-    this.documentStore = documentStore;
-    this.portalStore = portalStore;
-    this.dashboardStore = dashboardStore;
-  }
+  // User operations - delegated to UsersRepository
+  getUser = (id: number) => usersRepository.getById(id);
+  getUserByEmail = (email: string) => usersRepository.getByEmail(email);
+  createUser = (user: InsertUser) => usersRepository.create(user);
+  getUserCompany = (id: number) => usersRepository.getUserCompany(id);
+  createUserCompany = (company: InsertUserCompany) => usersRepository.createUserCompany(company);
+  getUserCompanies = (userId: number) => usersRepository.getUserCompanies(userId);
+  createUserCompanyMembership = (membership: InsertUserCompanyMembership) => usersRepository.createUserCompanyMembership(membership);
+  updateUserCompanyMembership = (id: number, membership: Partial<InsertUserCompanyMembership>) => usersRepository.updateUserCompanyMembership(id, membership);
+  deleteUserCompanyMembership = (id: number) => usersRepository.deleteUserCompanyMembership(id);
+  switchUserActiveCompany = (userId: number, companyId: number) => usersRepository.switchUserActiveCompany(userId, companyId);
+  createSession = (userId: number, sessionToken: string, expiresAt: Date) => usersRepository.createSession(userId, sessionToken, expiresAt);
+  getSessionByToken = (sessionToken: string) => usersRepository.getSessionByToken(sessionToken);
+  deleteSession = (sessionToken: string) => usersRepository.deleteSession(sessionToken);
+  deleteExpiredSessions = () => usersRepository.deleteExpiredSessions();
+  createUserInvitation = (invitation: InsertUserInvitation) => usersRepository.createUserInvitation(invitation);
+  getUserInvitationByToken = (token: string) => usersRepository.getUserInvitationByToken(token);
+  getInvitationsByUserCompany = (userCompanyId: number) => usersRepository.getInvitationsByUserCompany(userCompanyId);
+  updateUserInvitation = (id: number, invitation: Partial<InsertUserInvitation>) => usersRepository.updateUserInvitation(id, invitation);
+  acceptInvitation = (token: string, userData: Partial<InsertUser>) => usersRepository.acceptInvitation(token, userData);
+  getUserRoles = () => usersRepository.getUserRoles();
+  getUserRole = (roleName: string) => usersRepository.getUserRole(roleName);
+  getUserWithPermissions = (userId: number) => usersRepository.getUserWithPermissions(userId);
+  getTeamMembers = (userCompanyId: number) => usersRepository.getTeamMembers(userCompanyId);
+  updateUserRole = (userId: number, role: string, userCompanyId: number) => usersRepository.updateUserRole(userId, role, userCompanyId);
+  deactivateUser = (userId: number, userCompanyId: number) => usersRepository.deactivateUser(userId, userCompanyId);
 
-  // User operations - delegated to UserStore
-  getUser = (id: number) => this.userStore.getUser(id);
-  getUserByEmail = (email: string) => this.userStore.getUserByEmail(email);
-  createUser = (user: InsertUser) => this.userStore.createUser(user);
-  getUserCompany = (id: number) => this.userStore.getUserCompany(id);
-  createUserCompany = (company: InsertUserCompany) => this.userStore.createUserCompany(company);
-  getUserCompanies = (userId: number) => this.userStore.getUserCompanies(userId);
-  createUserCompanyMembership = (membership: InsertUserCompanyMembership) => this.userStore.createUserCompanyMembership(membership);
-  updateUserCompanyMembership = (id: number, membership: Partial<InsertUserCompanyMembership>) => this.userStore.updateUserCompanyMembership(id, membership);
-  deleteUserCompanyMembership = (id: number) => this.userStore.deleteUserCompanyMembership(id);
-  switchUserActiveCompany = (userId: number, companyId: number) => this.userStore.switchUserActiveCompany(userId, companyId);
-  createSession = (userId: number, sessionToken: string, expiresAt: Date) => this.userStore.createSession(userId, sessionToken, expiresAt);
-  getSessionByToken = (sessionToken: string) => this.userStore.getSessionByToken(sessionToken);
-  deleteSession = (sessionToken: string) => this.userStore.deleteSession(sessionToken);
-  deleteExpiredSessions = () => this.userStore.deleteExpiredSessions();
-  createUserInvitation = (invitation: InsertUserInvitation) => this.userStore.createUserInvitation(invitation);
-  getUserInvitationByToken = (token: string) => this.userStore.getUserInvitationByToken(token);
-  getInvitationsByUserCompany = (userCompanyId: number) => this.userStore.getInvitationsByUserCompany(userCompanyId);
-  updateUserInvitation = (id: number, invitation: Partial<InsertUserInvitation>) => this.userStore.updateUserInvitation(id, invitation);
-  acceptInvitation = (token: string, userData: Partial<InsertUser>) => this.userStore.acceptInvitation(token, userData);
-  getUserRoles = () => this.userStore.getUserRoles();
-  getUserRole = (roleName: string) => this.userStore.getUserRole(roleName);
-  getUserWithPermissions = (userId: number) => this.userStore.getUserWithPermissions(userId);
-  getTeamMembers = (userCompanyId: number) => this.userStore.getTeamMembers(userCompanyId);
-  updateUserRole = (userId: number, role: string, userCompanyId: number) => this.userStore.updateUserRole(userId, role, userCompanyId);
-  deactivateUser = (userId: number, userCompanyId: number) => this.userStore.deactivateUser(userId, userCompanyId);
+  // Company operations - delegated to TargetCompaniesRepository and DashboardRepository
+  getTargetCompaniesByUserCompany = (userCompanyId: number) => targetCompaniesRepository.getAll(userCompanyId);
+  searchTargetCompanies = (userCompanyId: number, searchParams: any) => targetCompaniesRepository.search(userCompanyId, searchParams);
+  getFilterOptions = (userCompanyId: number) => targetCompaniesRepository.getFilterOptions(userCompanyId);
+  getTargetCompanyCount = (userCompanyId: number) => dashboardRepository.getTargetCompanyCount(userCompanyId);
+  getTotalContactsCount = (userCompanyId: number) => dashboardRepository.getTotalContactsCount(userCompanyId);
+  getDashboardMetrics = (userCompanyId: number) => dashboardRepository.getDashboardMetrics(userCompanyId);
+  getTargetCompany = (id: number, userCompanyId: number) => targetCompaniesRepository.getById(id, userCompanyId);
+  getCompanyProfile = async (targetCompanyId: number, userCompanyId: number, _userId: number): Promise<CompanyProfile | undefined> => {
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+    if (!company) return undefined;
+    const contacts = await contactsRepository.getContactsForTargetCompany(targetCompanyId);
+    const primaryContact = contacts.find(c => c.isPrimary) || contacts[0];
+    const userCompany = await usersRepository.getUserCompany(company.userCompanyId);
+    const createdByUser = company.createdBy ? await usersRepository.getById(company.createdBy) : null;
+    return {
+      ...company,
+      createdByName: createdByUser ? `${createdByUser.firstName} ${createdByUser.lastName}` : 'Unknown',
+      userCompanyName: userCompany?.companyName || 'Unknown',
+      totalContacts: contacts.length,
+      primaryContactName: primaryContact ? `${primaryContact.firstName} ${primaryContact.lastName}` : null,
+      primaryContactEmail: primaryContact?.email || null,
+      primaryContactPhone: primaryContact?.phone || null,
+      primaryContactTitle: primaryContact?.title || null,
+      yearsInBusiness: company.yearEstablished ? new Date().getFullYear() - company.yearEstablished : null,
+      revenuePerEmployee: company.annualRevenue && company.employeeCount ? parseFloat(company.annualRevenue) / company.employeeCount : null,
+      contacts,
+    };
+  };
+  createTargetCompany = (company: InsertTargetCompany) => targetCompaniesRepository.create(company);
+  updateTargetCompany = (id: number, company: Partial<InsertTargetCompany>, userCompanyId: number) => targetCompaniesRepository.update(id, company, userCompanyId);
+  updateTargetCompanyWebsiteAnalysis = async (targetCompanyId: number, analysis: string): Promise<boolean> => {
+    const result = await targetCompaniesRepository.update(targetCompanyId, { websiteAnalysis: analysis, websiteAnalysisProcessedAt: new Date() } as any, 0);
+    return !!result;
+  };
+  deleteTargetCompany = (id: number, userCompanyId: number) => targetCompaniesRepository.delete(id, userCompanyId);
 
-  // Company operations - delegated to CompanyStore
-  getTargetCompaniesByUserCompany = (userCompanyId: number) => this.companyStore.getTargetCompaniesByUserCompany(userCompanyId);
-  searchTargetCompanies = (userCompanyId: number, searchParams: any) => this.companyStore.searchTargetCompanies(userCompanyId, searchParams);
-  getFilterOptions = (userCompanyId: number) => this.companyStore.getFilterOptions(userCompanyId);
-  getTargetCompanyCount = (userCompanyId: number) => this.companyStore.getTargetCompanyCount(userCompanyId);
-  getTotalContactsCount = (userCompanyId: number) => this.companyStore.getTotalContactsCount(userCompanyId);
-  getDashboardMetrics = (userCompanyId: number) => this.companyStore.getDashboardMetrics(userCompanyId);
-  getTargetCompany = (id: number, userCompanyId: number) => this.companyStore.getTargetCompany(id, userCompanyId);
-  getCompanyProfile = (targetCompanyId: number, userCompanyId: number, userId: number) => this.companyStore.getCompanyProfile(targetCompanyId, userCompanyId, userId);
-  createTargetCompany = (company: InsertTargetCompany) => this.companyStore.createTargetCompany(company);
-  updateTargetCompany = (id: number, company: Partial<InsertTargetCompany>, userCompanyId: number) => this.companyStore.updateTargetCompany(id, company, userCompanyId);
-  updateTargetCompanyWebsiteAnalysis = (targetCompanyId: number, analysis: string) => this.companyStore.updateTargetCompanyWebsiteAnalysis(targetCompanyId, analysis);
-  deleteTargetCompany = (id: number, userCompanyId: number) => this.companyStore.deleteTargetCompany(id, userCompanyId);
+  // Contact operations - delegated to ContactsRepository
+  getContactsForTargetCompany = (targetCompanyId: number, _userCompanyId: number) => contactsRepository.getContactsForTargetCompany(targetCompanyId);
+  getTargetContact = (contactId: number, userCompanyId: number) => contactsRepository.getTargetContact(contactId, userCompanyId);
+  createTargetContact = (contact: InsertTargetContact) => contactsRepository.createTargetContact(contact);
+  updateTargetContact = (id: number, contact: Partial<InsertTargetContact>, userCompanyId: number) => contactsRepository.updateTargetContact(id, contact, userCompanyId);
+  deleteTargetContact = (id: number, userCompanyId: number) => contactsRepository.deleteTargetContact(id, userCompanyId);
+  getAllContactsForUserCompany = (userCompanyId: number) => contactsRepository.getAllContactsForUserCompany(userCompanyId);
+  getContactsByCompany = (targetCompanyId: number, _userCompanyId: number) => contactsRepository.getContactsForTargetCompany(targetCompanyId);
 
-  // Contact operations - delegated to ContactStore
-  getContactsForTargetCompany = (targetCompanyId: number, userCompanyId: number) => this.contactStore.getContactsForTargetCompany(targetCompanyId, userCompanyId);
-  getTargetContact = (contactId: number, userCompanyId: number) => this.contactStore.getTargetContact(contactId, userCompanyId);
-  createTargetContact = (contact: InsertTargetContact) => this.contactStore.createTargetContact(contact);
-  updateTargetContact = (id: number, contact: Partial<InsertTargetContact>, userCompanyId: number) => this.contactStore.updateTargetContact(id, contact, userCompanyId);
-  deleteTargetContact = (id: number, userCompanyId: number) => this.contactStore.deleteTargetContact(id, userCompanyId);
-  getAllContactsForUserCompany = (userCompanyId: number) => this.contactStore.getAllContactsForUserCompany(userCompanyId);
-  getContactsByCompany = (targetCompanyId: number, userCompanyId: number) => this.contactStore.getContactsByCompany(targetCompanyId, userCompanyId);
+  // Deal operations - delegated to AssignmentsRepository, PipelineRepository, NotesRepository
+  createDealAssignment = (assignment: InsertUserDealAssignment) => assignmentsRepository.createAssignment(assignment);
+  getDealAssignments = (targetCompanyId: number) => assignmentsRepository.getByDeal(targetCompanyId);
+  getUserDealAssignments = (userId: number) => assignmentsRepository.getByUser(userId);
+  removeDealAssignment = (userId: number, targetCompanyId: number) => assignmentsRepository.remove(userId, targetCompanyId);
+  updateDealAssignment = (userId: number, targetCompanyId: number, assignment: Partial<InsertUserDealAssignment>) => assignmentsRepository.update(userId, targetCompanyId, assignment);
+  getPipelineStages = () => pipelineRepository.getPipelineStages();
+  updateCompanyStage = (companyId: number, newStage: string, userId: number, notes?: string) => pipelineRepository.updateCompanyStage(companyId, newStage, userId, notes);
+  updateInitialDiscussion = async (companyId: number, completed: boolean, notes: string | null, userId: number): Promise<TargetCompany | undefined> => {
+    return targetCompaniesRepository.update(companyId, {
+      initialDiscussionCompleted: completed,
+      initialDiscussionNotes: notes,
+      initialDiscussionDate: completed ? new Date() : null,
+      initialDiscussionBy: completed ? userId : null,
+    } as any, 0);
+  };
+  getStageHistory = (targetCompanyId: number) => pipelineRepository.getStageHistory(targetCompanyId);
+  getPipelineOverview = (userCompanyId: number, dateRange?: string) => pipelineRepository.getPipelineOverview(userCompanyId);
+  getStageAnalysis = (userCompanyId: number, dateRange?: string) => reportsRepository.getStageAnalysis(userCompanyId, dateRange);
+  getDealNotes = (targetCompanyId: number) => notesRepository.getByTargetCompany(targetCompanyId);
+  createDealNote = (note: InsertDealNote) => notesRepository.create(note);
+  updateDealNote = (noteId: number, note: Partial<InsertDealNote>) => notesRepository.update(noteId, note);
+  deleteDealNote = (noteId: number) => notesRepository.delete(noteId);
+  toggleInitialDiscussion = async (companyId: number, completed: boolean, userId: number): Promise<TargetCompany | undefined> => {
+    return targetCompaniesRepository.update(companyId, {
+      initialDiscussionCompleted: completed,
+      initialDiscussionDate: completed ? new Date() : null,
+      initialDiscussionBy: completed ? userId : null,
+    } as any, 0);
+  };
 
-  // Deal operations - delegated to DealStore
-  createDealAssignment = (assignment: InsertUserDealAssignment) => this.dealStore.createDealAssignment(assignment);
-  getDealAssignments = (targetCompanyId: number) => this.dealStore.getDealAssignments(targetCompanyId);
-  getUserDealAssignments = (userId: number) => this.dealStore.getUserDealAssignments(userId);
-  removeDealAssignment = (userId: number, targetCompanyId: number) => this.dealStore.removeDealAssignment(userId, targetCompanyId);
-  updateDealAssignment = (userId: number, targetCompanyId: number, assignment: Partial<InsertUserDealAssignment>) => this.dealStore.updateDealAssignment(userId, targetCompanyId, assignment);
-  getPipelineStages = () => this.dealStore.getPipelineStages();
-  updateCompanyStage = (companyId: number, newStage: string, userId: number, notes?: string) => this.dealStore.updateCompanyStage(companyId, newStage, userId, notes);
-  updateInitialDiscussion = (companyId: number, completed: boolean, notes: string | null, userId: number) => this.dealStore.updateInitialDiscussion(companyId, completed, notes, userId);
-  getStageHistory = (targetCompanyId: number) => this.dealStore.getStageHistory(targetCompanyId);
-  getPipelineOverview = (userCompanyId: number, dateRange?: string) => this.dealStore.getPipelineOverview(userCompanyId, dateRange);
-  getStageAnalysis = (userCompanyId: number, dateRange?: string) => this.dealStore.getStageAnalysis(userCompanyId, dateRange);
-  getDealNotes = (targetCompanyId: number) => this.dealStore.getDealNotes(targetCompanyId);
-  createDealNote = (note: InsertDealNote) => this.dealStore.createDealNote(note);
-  updateDealNote = (noteId: number, note: Partial<InsertDealNote>) => this.dealStore.updateDealNote(noteId, note);
-  deleteDealNote = (noteId: number) => this.dealStore.deleteDealNote(noteId);
-  toggleInitialDiscussion = (companyId: number, completed: boolean, userId: number) => this.dealStore.toggleInitialDiscussion(companyId, completed, userId);
+  // Activity operations - delegated to ActivitiesRepository, NotificationsRepository, ReportsRepository
+  getActivityTypes = () => activitiesRepository.getActivityTypes();
+  createActivity = (activity: InsertActivity) => activitiesRepository.createActivity(activity);
+  getActivitiesForCompany = (targetCompanyId: number, userCompanyId: number) => activitiesRepository.getActivitiesForCompany(targetCompanyId, userCompanyId);
+  getActivityTimeline = (targetCompanyId: number, userCompanyId: number) => activitiesRepository.getActivityTimeline(targetCompanyId, userCompanyId);
+  updateActivity = (activityId: number, activity: Partial<InsertActivity>, userCompanyId: number) => activitiesRepository.updateActivity(activityId, activity, userCompanyId);
+  deleteActivity = (activityId: number, userCompanyId: number) => activitiesRepository.deleteActivity(activityId, userCompanyId);
+  getRecentActivities = (userCompanyId: number, limit?: number) => activitiesRepository.getRecentActivities(userCompanyId, limit);
+  getActivitySummary = (userCompanyId: number, dateRange?: string) => reportsRepository.getActivitySummary(userCompanyId, dateRange);
+  getUserPerformance = (userCompanyId: number, dateRange?: string) => reportsRepository.getUserPerformance(userCompanyId, dateRange);
+  exportReport = async (userCompanyId: number, reportType: string, format?: string): Promise<string> => {
+    return JSON.stringify({ userCompanyId, reportType, format, exported: true });
+  };
+  createNotification = (notification: InsertTeamNotification) => notificationsRepository.createNotification(notification);
+  getUserNotifications = (userId: number) => notificationsRepository.getUserNotifications(userId);
+  markNotificationRead = (notificationId: number, userId: number) => notificationsRepository.markNotificationRead(notificationId, userId);
+  markAllNotificationsRead = (userId: number) => notificationsRepository.markAllNotificationsRead(userId);
 
-  // Activity operations - delegated to ActivityStore
-  getActivityTypes = () => this.activityStore.getActivityTypes();
-  createActivity = (activity: InsertActivity) => this.activityStore.createActivity(activity);
-  getActivitiesForCompany = (targetCompanyId: number, userCompanyId: number) => this.activityStore.getActivitiesForCompany(targetCompanyId, userCompanyId);
-  getActivityTimeline = (targetCompanyId: number, userCompanyId: number) => this.activityStore.getActivityTimeline(targetCompanyId, userCompanyId);
-  updateActivity = (activityId: number, activity: Partial<InsertActivity>, userCompanyId: number) => this.activityStore.updateActivity(activityId, activity, userCompanyId);
-  deleteActivity = (activityId: number, userCompanyId: number) => this.activityStore.deleteActivity(activityId, userCompanyId);
-  getRecentActivities = (userCompanyId: number, limit?: number) => this.activityStore.getRecentActivities(userCompanyId, limit);
-  getActivitySummary = (userCompanyId: number, dateRange?: string) => this.activityStore.getActivitySummary(userCompanyId, dateRange);
-  getUserPerformance = (userCompanyId: number, dateRange?: string) => this.activityStore.getUserPerformance(userCompanyId, dateRange);
-  exportReport = (userCompanyId: number, reportType: string, format?: string) => this.activityStore.exportReport(userCompanyId, reportType, format);
-  createNotification = (notification: InsertTeamNotification) => this.activityStore.createNotification(notification);
-  getUserNotifications = (userId: number) => this.activityStore.getUserNotifications(userId);
-  markNotificationRead = (notificationId: number, userId: number) => this.activityStore.markNotificationRead(notificationId, userId);
-  markAllNotificationsRead = (userId: number) => this.activityStore.markAllNotificationsRead(userId);
+  // Document operations - delegated to DocumentsRepository, DocumentAnalysisRepository, Stage1AnalysisRepository
+  getDocumentCategories = () => documentsRepository.getDocumentCategories();
+  createDocument = (document: InsertDocument) => documentsRepository.createDocument(document);
+  getCompanyDocuments = (targetCompanyId: number, _userCompanyId: number) => documentsRepository.getCompanyDocuments(targetCompanyId);
+  getDocument = (documentId: number, userCompanyId: number) => documentsRepository.getDocument(documentId, userCompanyId);
+  getDocumentByIdPublic = (documentId: number) => documentsRepository.getDocumentByIdPublic(documentId);
+  updateDocument = async (documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined> => {
+    const existingDoc = await documentsRepository.getDocument(documentId, userCompanyId);
+    if (!existingDoc) return undefined;
+    return documentsRepository.updateDocument(documentId, document);
+  };
+  deleteDocument = async (documentId: number, userCompanyId: number): Promise<boolean> => {
+    const existingDoc = await documentsRepository.getDocument(documentId, userCompanyId);
+    if (!existingDoc) return false;
+    return documentsRepository.deleteDocument(documentId);
+  };
+  getExternalSubmission = (submissionId: number, userCompanyId: number) => documentsRepository.getExternalSubmission(submissionId, userCompanyId);
+  deleteExternalSubmission = async (submissionId: number, userCompanyId: number): Promise<boolean> => {
+    const submission = await documentsRepository.getExternalSubmission(submissionId, userCompanyId);
+    if (!submission) return false;
+    return documentsRepository.deleteExternalSubmission(submissionId);
+  };
+  getStage1DocumentFiles = (targetCompanyId: number) => stage1AnalysisRepository.getStage1DocumentFiles(targetCompanyId);
+  clearAllCompanyDocuments = async (_userCompanyId: number): Promise<any> => {
+    return { message: 'Not implemented in repository pattern' };
+  };
+  logDocumentAccess = (documentId: number, userId: number, accessType: string, ipAddress?: string) => documentsRepository.logDocumentAccess(documentId, userId, accessType, ipAddress);
+  createFileUploadEvent = (event: InsertFileUploadEvent) => documentsRepository.createFileUploadEvent(event);
+  getFileUploadEventsWithDetails = async (_userCompanyId: number): Promise<any[]> => {
+    return [];
+  };
+  updateFileUploadEventWebhookStatus = (eventId: number, status: string, response?: string, sentAt?: Date) => documentsRepository.updateFileUploadEventWebhookStatus(eventId, status, response, sentAt);
+  getFileUploadEvent = (eventId: number) => documentsRepository.getFileUploadEvent(eventId);
+  createDocumentAnalysisResult = (result: InsertDocumentAnalysisResult) => documentAnalysisRepository.createAnalysisResult(result);
+  getDocumentAnalysisResults = (documentId: number) => documentAnalysisRepository.getAnalysisResultsByDocumentId(documentId);
+  getDocumentAnalysisResultsByType = (documentType: string, userCompanyId: number) => documentAnalysisRepository.getAnalysisResultsByType(documentType, userCompanyId);
+  getDocumentAnalysisResultsByTypeForCompany = (documentType: string, targetCompanyId: number) => documentAnalysisRepository.getAnalysisResultsByTypeForCompany(documentType, targetCompanyId);
+  getDocumentCountByCategory = (targetCompanyId: number, categoryName: string) => stage1AnalysisRepository.getDocumentCountByCategory(targetCompanyId, categoryName);
+  getLatestStage1AnalysisEvent = (targetCompanyId: number) => stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
+  getLatestDocumentUploadTime = (targetCompanyId: number) => stage1AnalysisRepository.getLatestDocumentUploadTime(targetCompanyId);
+  getPortalAnalysisCompletionStatus = (targetCompanyId: number) => portalSubmissionsRepository.getAnalysisCompletionStatus(targetCompanyId);
+  getAnalysisCompletionStatus = (targetCompanyId: number, _userCompanyId: number) => portalSubmissionsRepository.getAnalysisCompletionStatus(targetCompanyId);
+  createStage1AnalysisEvent = (event: InsertStage1AnalysisEvent) => stage1AnalysisRepository.createStage1AnalysisEvent(event);
+  getStage1AnalysisEvent = (eventId: number) => stage1AnalysisRepository.getStage1AnalysisEvent(eventId);
+  getStage1AnalysisEventsByCompany = (targetCompanyId: number, _userCompanyId: number) => stage1AnalysisRepository.getStage1AnalysisEventsByCompany(targetCompanyId);
+  updateStage1AnalysisEventWebhookStatus = (eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number, usageMetadata?: any) => stage1AnalysisRepository.updateStage1AnalysisEventStatus(eventId, status, response, sentAt, processingTime, usageMetadata);
+  updateStage1AnalysisEventDetailedData = async (eventId: number, detailedData: any): Promise<Stage1AnalysisEvent | undefined> => {
+    return stage1AnalysisRepository.updateDetailedAnalysisStatus(eventId, 'success', JSON.stringify(detailedData));
+  };
+  updateDetailedAnalysisStatus = (eventId: number, status: string, markdown?: string, processingTime?: number, usageMetadata?: any, triggeredBy?: number) => stage1AnalysisRepository.updateDetailedAnalysisStatus(eventId, status, markdown, processingTime, usageMetadata, triggeredBy);
 
-  // Document operations - delegated to DocumentStore
-  getDocumentCategories = () => this.documentStore.getDocumentCategories();
-  createDocument = (document: InsertDocument) => this.documentStore.createDocument(document);
-  getCompanyDocuments = (targetCompanyId: number, userCompanyId: number) => this.documentStore.getCompanyDocuments(targetCompanyId, userCompanyId);
-  getDocument = (documentId: number, userCompanyId: number) => this.documentStore.getDocument(documentId, userCompanyId);
-  getDocumentByIdPublic = (documentId: number) => this.documentStore.getDocumentByIdPublic(documentId);
-  updateDocument = (documentId: number, document: Partial<InsertDocument>, userCompanyId: number) => this.documentStore.updateDocument(documentId, document, userCompanyId);
-  deleteDocument = (documentId: number, userCompanyId: number) => this.documentStore.deleteDocument(documentId, userCompanyId);
-  getExternalSubmission = (submissionId: number, userCompanyId: number) => this.documentStore.getExternalSubmission(submissionId, userCompanyId);
-  deleteExternalSubmission = (submissionId: number, userCompanyId: number) => this.documentStore.deleteExternalSubmission(submissionId, userCompanyId);
-  getStage1DocumentFiles = (targetCompanyId: number) => this.documentStore.getStage1DocumentFiles(targetCompanyId);
-  clearAllCompanyDocuments = (userCompanyId: number) => this.documentStore.clearAllCompanyDocuments(userCompanyId);
-  logDocumentAccess = (documentId: number, userId: number, accessType: string, ipAddress?: string) => this.documentStore.logDocumentAccess(documentId, userId, accessType, ipAddress);
-  createFileUploadEvent = (event: InsertFileUploadEvent) => this.documentStore.createFileUploadEvent(event);
-  getFileUploadEventsWithDetails = (userCompanyId: number) => this.documentStore.getFileUploadEventsWithDetails(userCompanyId);
-  updateFileUploadEventWebhookStatus = (eventId: number, status: string, response?: string, sentAt?: Date) => this.documentStore.updateFileUploadEventWebhookStatus(eventId, status, response, sentAt);
-  getFileUploadEvent = (eventId: number) => this.documentStore.getFileUploadEvent(eventId);
-  createDocumentAnalysisResult = (result: InsertDocumentAnalysisResult) => this.documentStore.createDocumentAnalysisResult(result);
-  getDocumentAnalysisResults = (documentId: number) => this.documentStore.getDocumentAnalysisResults(documentId);
-  getDocumentAnalysisResultsByType = (documentType: string, userCompanyId: number) => this.documentStore.getDocumentAnalysisResultsByType(documentType, userCompanyId);
-  getDocumentAnalysisResultsByTypeForCompany = (documentType: string, targetCompanyId: number) => this.documentStore.getDocumentAnalysisResultsByTypeForCompany(documentType, targetCompanyId);
-  getDocumentCountByCategory = (targetCompanyId: number, categoryName: string) => this.documentStore.getDocumentCountByCategory(targetCompanyId, categoryName);
-  getLatestStage1AnalysisEvent = (targetCompanyId: number) => this.documentStore.getLatestStage1AnalysisEvent(targetCompanyId);
-  getLatestDocumentUploadTime = (targetCompanyId: number) => this.documentStore.getLatestDocumentUploadTime(targetCompanyId);
-  getPortalAnalysisCompletionStatus = (targetCompanyId: number) => this.documentStore.getPortalAnalysisCompletionStatus(targetCompanyId);
-  getAnalysisCompletionStatus = (targetCompanyId: number, userCompanyId: number) => this.documentStore.getAnalysisCompletionStatus(targetCompanyId, userCompanyId);
-  createStage1AnalysisEvent = (event: InsertStage1AnalysisEvent) => this.documentStore.createStage1AnalysisEvent(event);
-  getStage1AnalysisEvent = (eventId: number) => this.documentStore.getStage1AnalysisEvent(eventId);
-  getStage1AnalysisEventsByCompany = (targetCompanyId: number, userCompanyId: number) => this.documentStore.getStage1AnalysisEventsByCompany(targetCompanyId, userCompanyId);
-  updateStage1AnalysisEventWebhookStatus = (eventId: number, status: string, response?: string, sentAt?: Date, processingTime?: number, usageMetadata?: any) => this.documentStore.updateStage1AnalysisEventWebhookStatus(eventId, status, response, sentAt, processingTime, usageMetadata);
-  updateStage1AnalysisEventDetailedData = (eventId: number, detailedData: any) => this.documentStore.updateStage1AnalysisEventDetailedData(eventId, detailedData);
-  updateDetailedAnalysisStatus = (eventId: number, status: string, markdown?: string, processingTime?: number, usageMetadata?: any, triggeredBy?: number) => this.documentStore.updateDetailedAnalysisStatus(eventId, status, markdown, processingTime, usageMetadata, triggeredBy);
+  // Portal operations - delegated to PortalRepository, PortalRequirementsRepository, PortalSubmissionsRepository
+  createPortalAccessToken = (token: InsertPortalAccessToken) => portalRepository.createToken(token);
+  getPortalAccessToken = (accessToken: string) => portalRepository.validateToken(accessToken);
+  validatePortalToken = (accessToken: string) => portalRepository.validateToken(accessToken);
+  updatePortalTokenAccess = (tokenId: number, ipAddress?: string, userAgent?: string) => portalRepository.updateTokenAccess(tokenId, ipAddress, userAgent);
+  deactivatePortalToken = (tokenId: number) => portalRepository.deactivateToken(tokenId);
+  deletePortalToken = (tokenId: number) => portalRepository.deleteToken(tokenId);
+  getActivePortalTokensForTargetCompany = (targetCompanyId: number) => portalRepository.getTokensByTargetCompany(targetCompanyId);
+  getPortalTokensForCompany = (userCompanyId: number) => portalRepository.getTokensForCompany(userCompanyId);
+  getPortalTokenByCompany = (targetCompanyId: number) => portalRepository.getActiveTokenForCompany(targetCompanyId);
+  createExternalDocumentSubmission = (submission: InsertExternalDocumentSubmission) => portalRepository.createSubmission(submission);
+  getPortalSubmissions = (portalTokenId: number) => portalRepository.getSubmissionsByToken(portalTokenId);
+  reviewDocumentSubmission = (submissionId: number, reviewedBy: number, status: string, notes?: string) => portalSubmissionsRepository.reviewSubmission(submissionId, reviewedBy, status, notes);
+  createPortalDocumentRequirement = async (requirement: InsertPortalDocumentRequirement): Promise<PortalDocumentRequirement> => {
+    throw new Error('Portal document requirements are managed through company requirements');
+  };
+  getPortalDocumentRequirements = (portalTokenId: number) => portalRequirementsRepository.getPortalRequirementsByToken(portalTokenId);
+  updatePortalDocumentRequirement = async (requirementId: number, _requirement: Partial<InsertPortalDocumentRequirement>): Promise<PortalDocumentRequirement | undefined> => {
+    throw new Error('Portal document requirements are managed through company requirements');
+  };
+  logPortalActivity = (activity: InsertPortalActivityLog) => portalRepository.logActivity(activity);
+  getPortalActivityLog = async (_portalTokenId: number): Promise<PortalActivityLog[]> => {
+    return [];
+  };
+  getDealTeamEmails = async (targetCompanyId: number): Promise<string[]> => {
+    const assignments = await assignmentsRepository.getByDeal(targetCompanyId);
+    return assignments.map(a => a.userEmail).filter((email): email is string => !!email);
+  };
+  createPortalLinkCampaign = async (_campaign: InsertPortalLinkCampaign): Promise<PortalLinkCampaign> => {
+    throw new Error('Portal link campaigns not implemented in repository pattern');
+  };
+  getPortalLinkCampaigns = async (_userCompanyId: number): Promise<PortalLinkCampaign[]> => {
+    return [];
+  };
+  getPortalLinkCampaign = async (_campaignId: number, _userCompanyId: number): Promise<PortalLinkCampaign | undefined> => {
+    return undefined;
+  };
+  updatePortalLinkCampaign = async (_campaignId: number, _userCompanyId: number, _updates: Partial<InsertPortalLinkCampaign>): Promise<PortalLinkCampaign | undefined> => {
+    return undefined;
+  };
+  deletePortalLinkCampaign = async (_campaignId: number, _userCompanyId: number): Promise<boolean> => {
+    return false;
+  };
+  createPortalEmailTemplate = async (_template: InsertPortalEmailTemplate): Promise<PortalEmailTemplate> => {
+    throw new Error('Portal email templates not implemented in repository pattern');
+  };
+  getPortalEmailTemplates = async (_userCompanyId: number): Promise<PortalEmailTemplate[]> => {
+    return [];
+  };
+  getPortalEmailTemplate = async (_templateId: number, _userCompanyId: number): Promise<PortalEmailTemplate | undefined> => {
+    return undefined;
+  };
+  updatePortalEmailTemplate = async (_templateId: number, _userCompanyId: number, _updates: Partial<InsertPortalEmailTemplate>): Promise<PortalEmailTemplate | undefined> => {
+    return undefined;
+  };
+  deletePortalEmailTemplate = async (_templateId: number, _userCompanyId: number): Promise<boolean> => {
+    return false;
+  };
+  getDefaultPortalEmailTemplate = async (_userCompanyId: number, _templateCategory: string): Promise<PortalEmailTemplate | undefined> => {
+    return undefined;
+  };
+  createPortalCommunicationsLog = async (_log: InsertPortalCommunicationsLog): Promise<PortalCommunicationsLog> => {
+    throw new Error('Portal communications log not implemented in repository pattern');
+  };
+  getPortalCommunicationsLog = async (_portalTokenId: number): Promise<PortalCommunicationsLog[]> => {
+    return [];
+  };
+  createPortalAnalytics = async (_analytics: InsertPortalAnalytics): Promise<PortalAnalytics> => {
+    throw new Error('Portal analytics not implemented in repository pattern');
+  };
+  getPortalAnalytics = async (_portalTokenId: number): Promise<PortalAnalytics[] | PortalAnalytics | undefined> => {
+    return undefined;
+  };
+  incrementPortalAnalytics = async (_portalTokenId: number, _field: string): Promise<void> => {
+    // Not implemented in repository pattern
+  };
+  createPortalLinkShare = async (_share: InsertPortalLinkShare): Promise<PortalLinkShare> => {
+    throw new Error('Portal link shares not implemented in repository pattern');
+  };
+  getPortalLinkShares = async (_portalTokenId: number): Promise<PortalLinkShare[]> => {
+    return [];
+  };
+  updatePortalLinkShareUsage = async (_shareId: number): Promise<void> => {
+    // Not implemented in repository pattern
+  };
+  deactivatePortalLinkShare = async (_shareId: number): Promise<boolean> => {
+    return false;
+  };
+  initializeStandardRequirements = (targetCompanyId: number, _userId: number) => portalRequirementsRepository.initializeStandardRequirements(targetCompanyId);
+  getCompanyDocumentRequirements = async (targetCompanyId: number, _userCompanyId: number, stage?: number | null): Promise<CompanyDocumentRequirement[]> => {
+    const requirements = await portalRequirementsRepository.getCompanyRequirements(targetCompanyId, stage);
+    return requirements as unknown as CompanyDocumentRequirement[];
+  };
+  getDocumentStageProgression = async (targetCompanyId: number, _userCompanyId: number): Promise<DocumentStageProgression | undefined> => {
+    const stage1Stats = await portalRequirementsRepository.getRequirementCountByStage(targetCompanyId, 1);
+    const stage2Stats = await portalRequirementsRepository.getRequirementCountByStage(targetCompanyId, 2);
+    return {
+      id: targetCompanyId,
+      targetCompanyId,
+      currentStage: 1,
+      stage1Status: 'in_progress',
+      stage2Status: 'locked',
+      overallProgress: Math.round(((stage1Stats.completed + stage2Stats.completed) / Math.max(1, stage1Stats.total + stage2Stats.total)) * 100),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as unknown as DocumentStageProgression;
+  };
+  updateCompanyRequirement = async (requirementId: number, updates: any, userId: number): Promise<CompanyDocumentRequirement> => {
+    const result = await portalRequirementsRepository.updateRequirement(requirementId, updates, userId);
+    if (!result) throw new Error('Requirement not found');
+    return result as CompanyDocumentRequirement;
+  };
+  getValidPortalToken = (token: string) => portalRequirementsRepository.getValidPortalToken(token);
+  getSimplePortalData = (portalTokenId: number) => portalSubmissionsRepository.getSimplePortalData(portalTokenId);
+  getSimplePortalProgress = async (portalTokenId: number): Promise<any> => {
+    const progress = await portalRequirementsRepository.getPortalSubmissionProgress(portalTokenId);
+    return { progress, totalSubmissions: progress.reduce((sum, p) => sum + p.count, 0) };
+  };
 
-  // Portal operations - delegated to PortalStore
-  createPortalAccessToken = (token: InsertPortalAccessToken) => this.portalStore.createPortalAccessToken(token);
-  getPortalAccessToken = (accessToken: string) => this.portalStore.getPortalAccessToken(accessToken);
-  validatePortalToken = (accessToken: string) => this.portalStore.validatePortalToken(accessToken);
-  updatePortalTokenAccess = (tokenId: number, ipAddress?: string, userAgent?: string) => this.portalStore.updatePortalTokenAccess(tokenId, ipAddress, userAgent);
-  deactivatePortalToken = (tokenId: number) => this.portalStore.deactivatePortalToken(tokenId);
-  deletePortalToken = (tokenId: number) => this.portalStore.deletePortalToken(tokenId);
-  getActivePortalTokensForTargetCompany = (targetCompanyId: number) => this.portalStore.getActivePortalTokensForTargetCompany(targetCompanyId);
-  getPortalTokensForCompany = (userCompanyId: number) => this.portalStore.getPortalTokensForCompany(userCompanyId);
-  getPortalTokenByCompany = (targetCompanyId: number) => this.portalStore.getPortalTokenByCompany(targetCompanyId);
-  createExternalDocumentSubmission = (submission: InsertExternalDocumentSubmission) => this.portalStore.createExternalDocumentSubmission(submission);
-  getPortalSubmissions = (portalTokenId: number) => this.portalStore.getPortalSubmissions(portalTokenId);
-  reviewDocumentSubmission = (submissionId: number, reviewedBy: number, status: string, notes?: string) => this.portalStore.reviewDocumentSubmission(submissionId, reviewedBy, status, notes);
-  createPortalDocumentRequirement = (requirement: InsertPortalDocumentRequirement) => this.portalStore.createPortalDocumentRequirement(requirement);
-  getPortalDocumentRequirements = (portalTokenId: number) => this.portalStore.getPortalDocumentRequirements(portalTokenId);
-  updatePortalDocumentRequirement = (requirementId: number, requirement: Partial<InsertPortalDocumentRequirement>) => this.portalStore.updatePortalDocumentRequirement(requirementId, requirement);
-  logPortalActivity = (activity: InsertPortalActivityLog) => this.portalStore.logPortalActivity(activity);
-  getPortalActivityLog = (portalTokenId: number) => this.portalStore.getPortalActivityLog(portalTokenId);
-  getDealTeamEmails = (targetCompanyId: number) => this.portalStore.getDealTeamEmails(targetCompanyId);
-  createPortalLinkCampaign = (campaign: InsertPortalLinkCampaign) => this.portalStore.createPortalLinkCampaign(campaign);
-  getPortalLinkCampaigns = (userCompanyId: number) => this.portalStore.getPortalLinkCampaigns(userCompanyId);
-  getPortalLinkCampaign = (campaignId: number, userCompanyId: number) => this.portalStore.getPortalLinkCampaign(campaignId, userCompanyId);
-  updatePortalLinkCampaign = (campaignId: number, userCompanyId: number, updates: Partial<InsertPortalLinkCampaign>) => this.portalStore.updatePortalLinkCampaign(campaignId, userCompanyId, updates);
-  deletePortalLinkCampaign = (campaignId: number, userCompanyId: number) => this.portalStore.deletePortalLinkCampaign(campaignId, userCompanyId);
-  createPortalEmailTemplate = (template: InsertPortalEmailTemplate) => this.portalStore.createPortalEmailTemplate(template);
-  getPortalEmailTemplates = (userCompanyId: number) => this.portalStore.getPortalEmailTemplates(userCompanyId);
-  getPortalEmailTemplate = (templateId: number, userCompanyId: number) => this.portalStore.getPortalEmailTemplate(templateId, userCompanyId);
-  updatePortalEmailTemplate = (templateId: number, userCompanyId: number, updates: Partial<InsertPortalEmailTemplate>) => this.portalStore.updatePortalEmailTemplate(templateId, userCompanyId, updates);
-  deletePortalEmailTemplate = (templateId: number, userCompanyId: number) => this.portalStore.deletePortalEmailTemplate(templateId, userCompanyId);
-  getDefaultPortalEmailTemplate = (userCompanyId: number, templateCategory: string) => this.portalStore.getDefaultPortalEmailTemplate(userCompanyId, templateCategory);
-  createPortalCommunicationsLog = (log: InsertPortalCommunicationsLog) => this.portalStore.createPortalCommunicationsLog(log);
-  getPortalCommunicationsLog = (portalTokenId: number) => this.portalStore.getPortalCommunicationsLog(portalTokenId);
-  createPortalAnalytics = (analytics: InsertPortalAnalytics) => this.portalStore.createPortalAnalytics(analytics);
-  getPortalAnalytics = (portalTokenId: number) => this.portalStore.getPortalAnalytics(portalTokenId);
-  incrementPortalAnalytics = (portalTokenId: number, field: string) => this.portalStore.incrementPortalAnalytics(portalTokenId, field);
-  createPortalLinkShare = (share: InsertPortalLinkShare) => this.portalStore.createPortalLinkShare(share);
-  getPortalLinkShares = (portalTokenId: number) => this.portalStore.getPortalLinkShares(portalTokenId);
-  updatePortalLinkShareUsage = (shareId: number) => this.portalStore.updatePortalLinkShareUsage(shareId);
-  deactivatePortalLinkShare = (shareId: number) => this.portalStore.deactivatePortalLinkShare(shareId);
-  initializeStandardRequirements = (targetCompanyId: number, userId: number) => this.portalStore.initializeStandardRequirements(targetCompanyId, userId);
-  getCompanyDocumentRequirements = (targetCompanyId: number, userCompanyId: number, stage?: number | null) => this.portalStore.getCompanyDocumentRequirements(targetCompanyId, userCompanyId, stage);
-  getDocumentStageProgression = (targetCompanyId: number, userCompanyId: number) => this.portalStore.getDocumentStageProgression(targetCompanyId, userCompanyId);
-  updateCompanyRequirement = (requirementId: number, updates: any, userId: number) => this.portalStore.updateCompanyRequirement(requirementId, updates, userId);
-  getValidPortalToken = (token: string) => this.portalStore.getValidPortalToken(token);
-  getSimplePortalData = (portalTokenId: number) => this.portalStore.getSimplePortalData(portalTokenId);
-  getSimplePortalProgress = (portalTokenId: number) => this.portalStore.getSimplePortalProgress(portalTokenId);
-
-  // Dashboard operations - delegated to DashboardStore
-  getPipelineOverviewWidget = (userCompanyId: number) => this.dashboardStore.getPipelineOverviewWidget(userCompanyId);
-  getRecentActivitiesWidget = (userCompanyId: number) => this.dashboardStore.getRecentActivitiesWidget(userCompanyId);
-  getHotDealsWidget = (userCompanyId: number) => this.dashboardStore.getHotDealsWidget(userCompanyId);
-  getQuickStatsWidget = (userCompanyId: number) => this.dashboardStore.getQuickStatsWidget(userCompanyId);
-  getUpcomingRemindersWidget = (userId: number) => this.dashboardStore.getUpcomingRemindersWidget(userId);
-  getTeamActivityWidget = (userCompanyId: number) => this.dashboardStore.getTeamActivityWidget(userCompanyId);
-  getStageAlertsWidget = (userCompanyId: number) => this.dashboardStore.getStageAlertsWidget(userCompanyId);
-  getDashboardPreferences = (userId: number) => this.dashboardStore.getDashboardPreferences(userId);
-  updateDashboardPreferences = (userId: number, preferences: any) => this.dashboardStore.updateDashboardPreferences(userId, preferences);
-  getDashboardAlerts = (userCompanyId: number) => this.dashboardStore.getDashboardAlerts(userCompanyId);
-  dismissAlert = (alertId: number, userCompanyId: number) => this.dashboardStore.dismissAlert(alertId, userCompanyId);
+  // Dashboard operations - delegated to DashboardRepository
+  getPipelineOverviewWidget = (userCompanyId: number) => dashboardRepository.getPipelineOverviewWidget(userCompanyId);
+  getRecentActivitiesWidget = (userCompanyId: number) => dashboardRepository.getRecentActivitiesWidget(userCompanyId);
+  getHotDealsWidget = (userCompanyId: number) => dashboardRepository.getHotDealsWidget(userCompanyId);
+  getQuickStatsWidget = (userCompanyId: number) => dashboardRepository.getQuickStatsWidget(userCompanyId);
+  getUpcomingRemindersWidget = (userId: number) => dashboardRepository.getUpcomingRemindersWidget(userId);
+  getTeamActivityWidget = (userCompanyId: number) => dashboardRepository.getTeamActivityWidget(userCompanyId);
+  getStageAlertsWidget = (userCompanyId: number) => dashboardRepository.getStageAlertsWidget(userCompanyId);
+  getDashboardPreferences = (userId: number) => dashboardRepository.getPreferences(userId);
+  updateDashboardPreferences = (userId: number, preferences: any) => dashboardRepository.updatePreferences(userId, preferences);
+  getDashboardAlerts = (userCompanyId: number) => dashboardRepository.getAlerts(userCompanyId);
+  dismissAlert = (alertId: number, userCompanyId: number) => dashboardRepository.dismissAlert(alertId, userCompanyId);
 }
 
 export const storage = new DatabaseStorage();
