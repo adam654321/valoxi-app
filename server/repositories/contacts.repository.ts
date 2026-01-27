@@ -1,8 +1,13 @@
-import { eq, and, desc, asc, sql } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import {
   targetContacts,
   targetCompanies,
+  portalAccessTokens,
+  externalDocumentSubmissions,
+  portalDocumentRequirements,
+  portalActivityLog,
+  portalLinkShares,
   type TargetContact,
   type InsertTargetContact,
 } from '@shared/schema';
@@ -103,6 +108,29 @@ export class ContactsRepository {
     if (!existingContact) {
       return false;
     }
+
+    // Get portal token IDs for this contact
+    const tokens = await db
+      .select({ id: portalAccessTokens.id })
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.targetContactId, id));
+    
+    const tokenIds = tokens.map(t => t.id);
+
+    if (tokenIds.length > 0) {
+      // Delete child records that reference portal tokens first
+      await db.delete(portalLinkShares).where(inArray(portalLinkShares.portalTokenId, tokenIds));
+      await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, tokenIds));
+      await db.delete(portalDocumentRequirements).where(inArray(portalDocumentRequirements.portalTokenId, tokenIds));
+      await db.delete(externalDocumentSubmissions).where(inArray(externalDocumentSubmissions.portalTokenId, tokenIds));
+      
+      // Now delete the portal access tokens
+      await db.delete(portalAccessTokens).where(inArray(portalAccessTokens.id, tokenIds));
+    }
+
+    // Delete records that directly reference the contact (not via tokens)
+    await db.delete(portalActivityLog).where(eq(portalActivityLog.targetContactId, id));
+    await db.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.targetContactId, id));
 
     const result = await db
       .delete(targetContacts)
