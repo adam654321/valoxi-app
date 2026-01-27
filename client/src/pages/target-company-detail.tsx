@@ -47,6 +47,10 @@ import { DocumentManagement } from "@/components/document-management";
 import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
 import { Stage1AnalysisDisplay } from "@/components/stage1-analysis-display";
 import { DealSheetVisualDisplay } from "@/components/deal-sheet-visual-display";
+import { OverviewTab } from "@/components/target-company/OverviewTab";
+import { TeamTab } from "@/components/target-company/TeamTab";
+import { DocumentsTab } from "@/components/target-company/DocumentsTab";
+import { useTargetCompany } from "@/hooks/useTargetCompany";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -378,48 +382,19 @@ export default function TargetCompanyDetail() {
     },
   });
 
-  // Get comprehensive company profile with enhanced data
-  const { data: profile, isLoading: profileLoading, isFetching: profileFetching, refetch: refetchProfile } = useQuery<CompanyProfile>({
-    queryKey: ["/api/target-companies", id, "profile"],
-    enabled: !!id,
-    // More aggressive polling for website analysis
-    refetchInterval: (query) => {
-      // Get the actual profile data from the query state
-      const data = query?.state?.data as CompanyProfile | undefined;
-      
-      // Only log when checking for website analysis
-      if (!data?.websiteAnalysis) {
-        console.log('Checking for website analysis...', { 
-          companyId: id,
-          hasWebsite: !!data?.website 
-        });
-      }
-      
-      // Poll every 5 seconds if no website analysis is available yet
-      if (!data?.websiteAnalysis) {
-        return 5000; // 5 seconds for faster updates
-      }
-      return false; // Stop polling once analysis is available
-    },
-    refetchIntervalInBackground: false,
-    // Don't use stale data
-    staleTime: 0,
-    // Force refetch on mount
-    refetchOnMount: 'always',
-  });
-
-  // Get stage 1 analysis events
-  const { data: stage1Events = [], isLoading: analysisLoading } = useQuery<Stage1AnalysisEvent[]>({
-    queryKey: ["/api/target-companies", id, "stage1-analysis"],
-    enabled: !!id,
-    refetchInterval: 30000, // Poll every 30 seconds for new Stage 1 analysis results
-    refetchIntervalInBackground: false, // Only poll when tab is active
-    staleTime: 10000, // Consider data stale after 10 seconds
-  });
-
-  // Extract company and contacts from profile
-  const company = profile;
-  const contacts = profile?.contacts || [];
+  // Use the target company hook for data fetching
+  const {
+    profile,
+    company,
+    contacts,
+    primaryContact,
+    otherContacts,
+    stage1Events,
+    profileLoading,
+    profileFetching,
+    analysisLoading,
+    refetchProfile,
+  } = useTargetCompany({ companyId: id });
 
   // Add contact mutation using v2 endpoint
   const addContactMutation = useMutation({
@@ -644,9 +619,6 @@ export default function TargetCompanyDetail() {
       </div>
     );
   }
-
-  const primaryContact = contacts.find(c => c.isPrimary);
-  const otherContacts = contacts.filter(c => !c.isPrimary);
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50">
@@ -1188,7 +1160,7 @@ export default function TargetCompanyDetail() {
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
-            <DocumentManagement 
+            <DocumentsTab 
               targetCompanyId={parseInt(id!)}
               companyName={company.companyName}
             />
