@@ -27,6 +27,9 @@ export class PortalService {
   }
 
   async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; }, baseUrl?: string): Promise<PortalAccessToken> {
+    // Deactivate any existing active tokens for this company to allow new token creation
+    await portalRepository.deactivateTokensForCompany(data.targetCompanyId);
+    
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + (data.expiresInDays || 30));
     const token = await portalRepository.createToken({

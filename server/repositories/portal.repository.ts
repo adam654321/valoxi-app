@@ -31,27 +31,25 @@ export class PortalRepository {
   }
 
   async deleteToken(tokenId: number): Promise<boolean> {
-    return await db.transaction(async (tx) => {
-      // Get all submissions for this token
-      const submissions = await tx.select({ id: externalDocumentSubmissions.id })
-        .from(externalDocumentSubmissions)
-        .where(eq(externalDocumentSubmissions.portalTokenId, tokenId));
-      
-      // Unlink documents from submissions (set externalSubmissionId to null)
-      for (const sub of submissions) {
-        await tx.update(documents).set({ externalSubmissionId: null }).where(eq(documents.externalSubmissionId, sub.id));
-      }
-      
-      // Delete portal activity logs
-      await tx.delete(portalActivityLog).where(eq(portalActivityLog.portalTokenId, tokenId));
-      
-      // Delete external document submissions
-      await tx.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.portalTokenId, tokenId));
-      
-      // Delete the portal access token
-      const [deleted] = await tx.delete(portalAccessTokens).where(eq(portalAccessTokens.id, tokenId)).returning();
-      return !!deleted;
-    });
+    // Just deactivate the token to preserve history (submissions and documents)
+    const [updated] = await db.update(portalAccessTokens)
+      .set({ isActive: false })
+      .where(eq(portalAccessTokens.id, tokenId))
+      .returning();
+    return !!updated;
+  }
+
+  async deactivateTokensForCompany(targetCompanyId: number): Promise<void> {
+    await db.update(portalAccessTokens)
+      .set({ isActive: false })
+      .where(and(eq(portalAccessTokens.targetCompanyId, targetCompanyId), eq(portalAccessTokens.isActive, true)));
+  }
+
+  async getActiveTokenForCompany(targetCompanyId: number): Promise<PortalAccessToken | undefined> {
+    const [token] = await db.select().from(portalAccessTokens)
+      .where(and(eq(portalAccessTokens.targetCompanyId, targetCompanyId), eq(portalAccessTokens.isActive, true)))
+      .limit(1);
+    return token;
   }
 
   async getTokensForCompany(userCompanyId: number): Promise<any[]> {
