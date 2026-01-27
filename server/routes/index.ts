@@ -39,7 +39,6 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/portal', portalRoutes);
   app.use('/api/v2/files', isAuthenticated, documentsFilesRoutes);
   app.use('/api/v2/public/documents', publicDocumentRoutes);
-  app.use('/api/public/documents', publicDocumentRoutes); // Legacy route for Gemini file access
   app.use('/api/v2/portal-submit', portalSubmissionsRoutes);
   app.use('/api/v2/stage1-analysis', isAuthenticated, stage1AnalysisRoutes);
   app.use('/api/v2/document-analysis', isAuthenticated, documentAnalysisRoutes);
