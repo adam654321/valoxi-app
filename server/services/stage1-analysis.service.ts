@@ -1,6 +1,8 @@
 import { stage1AnalysisRepository, type Stage1DocumentFile } from '../repositories/stage1-analysis.repository';
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from '../gemini-stage1-service';
 import { NotFoundError } from '../utils/errors';
+import { eventBus } from './event-bus.service';
+import { config } from '../config';
 import type { Stage1AnalysisEvent } from '@shared/schema';
 
 interface CategoryCheckResult {
@@ -113,7 +115,7 @@ export class Stage1AnalysisService {
         await stage1AnalysisRepository.updateStage1AnalysisEventStatus(eventId, 'failed', 'No documents found for analysis', new Date());
         return;
       }
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : process.env.REPL_SLUG && process.env.REPL_OWNER ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000';
+      const baseUrl = config.baseUrl;
       const files: FileInfo[] = documentFiles.map(doc => ({ fileUrl: `${baseUrl}/api/public/documents/${doc.documentId}/download`, mimeType: getMimeTypeForFile(doc.mimeType), category: doc.category }));
       console.log(`[GEMINI_STAGE1_ANALYSIS] File URLs:`, files.map(f => f.fileUrl));
       const result = await runStage1GeminiAnalysis({ companyName, sector, files });
@@ -132,13 +134,12 @@ export class Stage1AnalysisService {
   }
 
   private notifyClients(targetCompanyId: number, eventId: number): void {
-    if ((global as any).documentUpdateListeners) {
-      (global as any).documentUpdateListeners.forEach((listener: any) => {
-        if (listener.targetCompanyId === targetCompanyId) {
-          listener.res.write(`data: ${JSON.stringify({ type: 'stage1_analysis_completed', targetCompanyId, eventId, timestamp: new Date().toISOString() })}\n\n`);
-        }
-      });
-    }
+    eventBus.emit('document:update', {
+      type: 'stage1_completed',
+      targetCompanyId,
+      eventId,
+      timestamp: new Date(),
+    });
   }
 
   async getStage1AnalysisEvents(targetCompanyId: number): Promise<Stage1AnalysisEvent[]> {

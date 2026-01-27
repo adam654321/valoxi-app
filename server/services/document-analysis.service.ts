@@ -1,6 +1,6 @@
 import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
-import { storage } from '../storage';
+import { companyStore } from '../storage/company.store';
 import type { DocumentAnalysisResult, InsertDocumentAnalysisResult } from '@shared/schema';
 
 interface AnalysisCompletionStatus {
@@ -16,7 +16,7 @@ export class DocumentAnalysisService {
   async getAnalysisForDocument(documentId: number, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
     const doc = await documentAnalysisRepository.getDocumentById(documentId);
     if (!doc) throw new NotFoundError('Document not found');
-    const company = await storage.getTargetCompany(doc.targetCompanyId, userCompanyId);
+    const company = await companyStore.getTargetCompany(doc.targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Access denied');
     return await documentAnalysisRepository.getAnalysisResultsByDocumentId(documentId);
   }
@@ -26,19 +26,19 @@ export class DocumentAnalysisService {
   }
 
   async getAnalysisByTypeForCompany(documentType: string, targetCompanyId: number, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     return await documentAnalysisRepository.getAnalysisResultsByTypeForCompany(documentType, targetCompanyId);
   }
 
   async getAllAnalysisForCompany(targetCompanyId: number, userCompanyId: number): Promise<DocumentAnalysisResult[]> {
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     return await documentAnalysisRepository.getAllAnalysisResultsForCompany(targetCompanyId);
   }
 
   async getCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<AnalysisCompletionStatus> {
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     return await this.calculateCompletionStatus(targetCompanyId);
   }
@@ -88,7 +88,7 @@ export class DocumentAnalysisService {
   }
 
   async getAnalysisSummaryForCompany(targetCompanyId: number, userCompanyId: number): Promise<Record<string, any>> {
-    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     const allResults = await documentAnalysisRepository.getAllAnalysisResultsForCompany(targetCompanyId);
     const byType: Record<string, DocumentAnalysisResult[]> = {};

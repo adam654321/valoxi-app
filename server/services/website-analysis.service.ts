@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { targetCompanies } from '@shared/schema';
+import { config } from '../config';
 
 interface WebsiteAnalysisResult {
   businessName: string | null;
@@ -42,7 +43,7 @@ export class WebsiteAnalysisService {
     const startTime = Date.now();
 
     try {
-      const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+      const apiKey = config.gemini.apiKey;
       if (!apiKey) {
         return { success: false, error: 'GOOGLE_GEMINI_API_KEY is not configured' };
       }
