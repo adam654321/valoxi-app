@@ -268,7 +268,7 @@ export default function PortalManagement() {
     onSuccess: () => {
       toast({
         title: "Portal link reinstated",
-        description: "The portal link is now active again.",
+        description: "The portal link is active and access email has been sent.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
     },

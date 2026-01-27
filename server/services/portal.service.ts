@@ -66,14 +66,23 @@ export class PortalService {
     return await portalRepository.deleteToken(tokenId);
   }
 
-  async reinstateToken(tokenId: number, userCompanyId: number): Promise<boolean> {
+  async reinstateToken(tokenId: number, userCompanyId: number, baseUrl?: string): Promise<boolean> {
     const token = await portalRepository.getTokenById(tokenId);
     if (!token) throw new NotFoundError('Token not found');
     if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to reinstate this token');
     if (token.isActive) throw new BadRequestError('Token is already active');
     // Deactivate any other active tokens for this company first
     await portalRepository.deactivateTokensForCompany(token.targetCompanyId);
-    return await portalRepository.reinstateToken(tokenId);
+    const reinstated = await portalRepository.reinstateToken(tokenId);
+    
+    // Automatically send portal access email after reinstatement
+    if (reinstated && baseUrl) {
+      emailApiService.sendPortalAccessLink(tokenId, baseUrl).catch(err => {
+        console.error(`[PORTAL] Failed to send reinstated portal email for token ${tokenId}:`, err.message);
+      });
+    }
+    
+    return reinstated;
   }
 
   async resendPortalEmail(tokenId: number, userCompanyId: number, baseUrl: string): Promise<void> {

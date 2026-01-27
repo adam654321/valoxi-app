@@ -66,8 +66,9 @@ router.post('/tokens/:id/reinstate', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
     const tokenId = parseInt(req.params.id);
     if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
-    await portalService.reinstateToken(tokenId, userCompanyId);
-    sendSuccess(res, { message: 'Portal link reinstated successfully.' });
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    await portalService.reinstateToken(tokenId, userCompanyId, baseUrl);
+    sendSuccess(res, { message: 'Portal link reinstated and access email sent.' });
   } catch (error) {
     sendError(res, error);
   }
