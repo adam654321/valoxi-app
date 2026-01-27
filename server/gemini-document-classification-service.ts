@@ -1,8 +1,10 @@
 import { buildDocumentClassificationPrompt } from "./prompts/document-classification-prompt";
 import { fetchWithRetry } from "./gemini-retry-utils";
+import * as fs from 'fs/promises';
 
 export interface DocumentClassificationRequest {
   fileUrl: string;
+  filePath?: string; // Local file path for reading content directly
   mimeType: string;
   fileName: string;
 }
@@ -30,12 +32,21 @@ export async function classifyDocumentWithGemini(
 
   try {
     console.log(`[GEMINI_CLASSIFICATION] Starting classification for ${request.fileName}`);
-    console.log(`[GEMINI_CLASSIFICATION] File URL: ${request.fileUrl.substring(0, 80)}...`);
+    console.log(`[GEMINI_CLASSIFICATION] File path: ${request.filePath || 'N/A'}`);
 
     const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
     }
+
+    // Read file content and encode as base64
+    if (!request.filePath) {
+      throw new Error("File path is required for document classification");
+    }
+    
+    const fileBuffer = await fs.readFile(request.filePath);
+    const base64Content = fileBuffer.toString('base64');
+    console.log(`[GEMINI_CLASSIFICATION] File size: ${fileBuffer.length} bytes, base64 length: ${base64Content.length}`);
 
     const prompt = buildDocumentClassificationPrompt();
 
@@ -48,9 +59,9 @@ export async function classifyDocumentWithGemini(
         {
           parts: [
             {
-              file_data: {
+              inline_data: {
                 mime_type: request.mimeType,
-                file_uri: request.fileUrl,
+                data: base64Content,
               },
             },
             { text: prompt },
