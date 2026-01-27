@@ -66,6 +66,24 @@ export class PortalService {
     return await portalRepository.deleteToken(tokenId);
   }
 
+  async reinstateToken(tokenId: number, userCompanyId: number): Promise<boolean> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to reinstate this token');
+    if (token.isActive) throw new BadRequestError('Token is already active');
+    // Deactivate any other active tokens for this company first
+    await portalRepository.deactivateTokensForCompany(token.targetCompanyId);
+    return await portalRepository.reinstateToken(tokenId);
+  }
+
+  async resendPortalEmail(tokenId: number, userCompanyId: number, baseUrl: string): Promise<void> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to resend email for this token');
+    if (!token.isActive) throw new BadRequestError('Cannot resend email for inactive portal link. Please reinstate it first.');
+    await emailApiService.sendPortalAccessLink(tokenId, baseUrl);
+  }
+
   async getSubmissionsByToken(accessToken: string): Promise<ExternalDocumentSubmission[]> {
     const token = await portalRepository.validateToken(accessToken);
     if (!token) throw new NotFoundError('Invalid or expired access token');

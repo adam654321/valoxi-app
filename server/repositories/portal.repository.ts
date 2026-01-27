@@ -52,6 +52,14 @@ export class PortalRepository {
     return token;
   }
 
+  async reinstateToken(tokenId: number): Promise<boolean> {
+    const [updated] = await db.update(portalAccessTokens)
+      .set({ isActive: true })
+      .where(eq(portalAccessTokens.id, tokenId))
+      .returning();
+    return !!updated;
+  }
+
   async getTokensForCompany(userCompanyId: number): Promise<any[]> {
     return await db.select({
       id: portalAccessTokens.id, accessToken: portalAccessTokens.accessToken,

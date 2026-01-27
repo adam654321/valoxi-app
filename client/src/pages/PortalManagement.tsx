@@ -239,7 +239,7 @@ export default function PortalManagement() {
     onSuccess: () => {
       toast({
         title: "Portal link removed",
-        description: "The portal link has been deactivated and removed.",
+        description: "The portal link has been deactivated. Document history preserved.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
     },
@@ -247,6 +247,63 @@ export default function PortalManagement() {
       toast({
         title: "Error removing portal link",
         description: error.message || "Failed to remove portal link",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reinstate portal token mutation
+  const reinstatePortalToken = useMutation({
+    mutationFn: async (tokenId: number) => {
+      const response = await fetch(`/api/v2/portal/tokens/${tokenId}/reinstate`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to reinstate portal token');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Portal link reinstated",
+        description: "The portal link is now active again.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error reinstating portal link",
+        description: error.message || "Failed to reinstate portal link",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Resend portal email mutation
+  const resendPortalEmail = useMutation({
+    mutationFn: async (tokenId: number) => {
+      const response = await fetch(`/api/v2/portal/tokens/${tokenId}/resend-email`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to resend portal email');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email sent",
+        description: "Portal access email has been resent to the contact.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error sending email",
+        description: error.message || "Failed to resend portal email",
         variant: "destructive",
       });
     },
@@ -632,19 +689,42 @@ export default function PortalManagement() {
                         >
                           Copy
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            if (confirm('Are you sure you want to remove this portal link? This action cannot be undone.')) {
-                              removePortalToken.mutate(token.id);
-                            }
-                          }}
-                          disabled={removePortalToken.isPending}
-                          title="Remove Portal Link"
-                        >
-                          {removePortalToken.isPending ? '...' : 'Remove'}
-                        </Button>
+                        {token.isActive && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => resendPortalEmail.mutate(token.id)}
+                            disabled={resendPortalEmail.isPending}
+                            title="Resend portal access email"
+                          >
+                            {resendPortalEmail.isPending ? '...' : 'Resend Email'}
+                          </Button>
+                        )}
+                        {token.isActive ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to remove this portal link? Document history will be preserved.')) {
+                                removePortalToken.mutate(token.id);
+                              }
+                            }}
+                            disabled={removePortalToken.isPending}
+                            title="Remove Portal Link"
+                          >
+                            {removePortalToken.isPending ? '...' : 'Remove'}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => reinstatePortalToken.mutate(token.id)}
+                            disabled={reinstatePortalToken.isPending}
+                            title="Reinstate Portal Link"
+                          >
+                            {reinstatePortalToken.isPending ? '...' : 'Reinstate'}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

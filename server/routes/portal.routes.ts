@@ -60,6 +60,33 @@ router.delete('/tokens/:id', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/tokens/:id/reinstate', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    const tokenId = parseInt(req.params.id);
+    if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+    await portalService.reinstateToken(tokenId, userCompanyId);
+    sendSuccess(res, { message: 'Portal link reinstated successfully.' });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+router.post('/tokens/:id/resend-email', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    const tokenId = parseInt(req.params.id);
+    if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    await portalService.resendPortalEmail(tokenId, userCompanyId, baseUrl);
+    sendSuccess(res, { message: 'Portal access email sent successfully.' });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 router.get('/:token/submissions', async (req: Request, res: Response) => {
   try {
     const submissions = await portalService.getSubmissionsByToken(req.params.token);
