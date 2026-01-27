@@ -187,7 +187,7 @@ export default function PortalManagement() {
   const createPortalToken = useMutation({
     mutationFn: async (data: {
       targetCompanyId: number;
-      contactIds: number[];
+      targetContactId: number;
       customMessage?: string;
     }) => {
       const response = await fetch('/api/v2/portal/tokens', {
@@ -300,7 +300,7 @@ export default function PortalManagement() {
 
     createPortalToken.mutate({
       targetCompanyId: selectedCompanyId,
-      contactIds: selectedContactIds,
+      targetContactId: selectedContactIds[0],
       customMessage: customMessage.trim() || undefined,
     });
   };
