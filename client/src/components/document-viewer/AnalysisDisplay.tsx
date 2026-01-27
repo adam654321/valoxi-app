@@ -1,0 +1,1024 @@
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  FileText,
+  AlertCircle,
+  Eye,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Users,
+  Clock,
+  Plus,
+  Calendar,
+  List,
+  Code
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { DocumentAnalysisResult } from "./types";
+
+interface AnalysisDisplayProps {
+  results: DocumentAnalysisResult[];
+  isLoading: boolean;
+  isRetryingAnalysis: boolean;
+  onRetryAnalysis: () => void;
+}
+
+export function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function processObservationsText(text: string) {
+  return text
+    .replace(/\\n/g, '\n')
+    .replace(/\n\*/g, '\n• ')
+    .replace(/^\*/g, '• ');
+}
+
+export function formatDocumentType(documentType: string, analysisData?: any) {
+  if (analysisData && analysisData.document === 'company_accounts') {
+    return 'Company Accounts';
+  }
+  
+  const typeMap: Record<string, string> = {
+    'sales_ledger': 'Sales Ledger',
+    'staff_matrix': 'Staff Matrix',
+    'asset_register': 'Asset Register',
+    'profit_and_loss': 'Profit & Loss',
+    'balance_sheet': 'Balance Sheet'
+  };
+  return typeMap[documentType] || documentType;
+}
+
+export function getDocumentTypeColor(documentType: string, analysisData?: any) {
+  if (analysisData && analysisData.document === 'company_accounts') {
+    return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
+  }
+  
+  const colorMap: Record<string, string> = {
+    'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+    'balance_sheet': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+  };
+  return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+}
+
+function getInvoiceStatusColor(status: string) {
+  const statusLower = status.toLowerCase();
+  if (statusLower === 'paid') {
+    return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800';
+  } else if (statusLower === 'part paid') {
+    return 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800';
+  } else if (statusLower === 'unpaid') {
+    return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
+  }
+  return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+}
+
+function renderStaffMatrixAnalysis(analysisData: any) {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Total Employees
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analysisData.total_employee_count}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Annual Payroll
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">£{analysisData.total_annual_payroll?.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+              Average Salary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">£{analysisData.average_salary?.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-green-600" />
+              Active Staff
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {analysisData.status_summary?.Active || 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {analysisData.employment_type_breakdown && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Employment Type Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {Object.entries(analysisData.employment_type_breakdown).map(([type, count]: [string, any]) => (
+                <div key={type} className="text-center p-4 border rounded-lg">
+                  <div className="text-2xl font-semibold">{count}</div>
+                  <div className="text-sm text-muted-foreground">{type}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.status_summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Employee Status Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {Object.entries(analysisData.status_summary).map(([status, count]: [string, any]) => (
+                <div key={status} className="text-center p-4 border rounded-lg">
+                  <div className="text-lg font-semibold">{count}</div>
+                  <div className="text-sm text-muted-foreground">{status}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.longest_tenured_employees && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Longest Tenured Employees
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+              {analysisData.longest_tenured_employees}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.observations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Key Observations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm">{analysisData.observations}</div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function renderSalesLedgerAnalysis(analysisData: any) {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Total Invoices
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analysisData.total_invoice_count}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Total Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">£{analysisData.total_invoice_value?.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-green-600" />
+              Amount Paid
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">£{analysisData.total_amount_paid?.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600" />
+              Outstanding
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">£{analysisData.total_outstanding?.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {analysisData.invoice_status_summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Invoice Status Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {Object.entries(analysisData.invoice_status_summary).map(([status, data]: [string, any]) => (
+                <div key={status} className={`text-center p-4 border rounded-lg ${getInvoiceStatusColor(status)}`}>
+                  <div className="text-lg font-semibold">{data.count}</div>
+                  <div className="text-sm text-muted-foreground">{status}</div>
+                  <div className="text-sm font-medium">£{data.value?.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(analysisData.top_5_customers || analysisData.customer_exposure) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {analysisData.top_5_customers ? 'Top 5 Customers by Invoice Value' : 'Customer Exposure Analysis'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Customer</th>
+                    <th className="text-right py-2">Total Invoiced</th>
+                    <th className="text-right py-2">Total Paid</th>
+                    <th className="text-right py-2">Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(analysisData.top_5_customers || analysisData.customer_exposure).map((customer: any, index: number) => (
+                    <tr key={index} className="border-b">
+                      <td className="py-2 font-medium">{customer.customer_name}</td>
+                      <td className="text-right py-2">£{customer.total_invoiced?.toLocaleString()}</td>
+                      <td className="text-right py-2 text-green-600">£{customer.total_paid?.toLocaleString()}</td>
+                      <td className={`text-right py-2 font-medium ${customer.total_outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        £{customer.total_outstanding?.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.observations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Key Observations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm">{processObservationsText(analysisData.observations)}</div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function renderProfitAndLossAnalysis(analysisData: any) {
+  return (
+    <div className="space-y-6">
+      {analysisData.years_covered && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Years Covered
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+              {analysisData.years_covered}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.years && (
+        <div className="space-y-6">
+          {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
+            <Card key={year}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  {year} Financial Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Revenue</div>
+                    <div className="text-xl font-bold text-blue-600">
+                      £{yearData.profit_and_loss?.revenue?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Gross Profit</div>
+                    <div className="text-xl font-bold text-green-600">
+                      £{yearData.profit_and_loss?.gross_profit?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Operating Profit</div>
+                    <div className="text-xl font-bold text-orange-600">
+                      £{yearData.profit_and_loss?.operating_profit?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Profit Before Tax</div>
+                    <div className="text-xl font-bold text-purple-600">
+                      £{yearData.profit_and_loss?.profit_before_tax?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Net Profit</div>
+                    <div className={`text-xl font-bold ${(yearData.profit_and_loss?.net_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      £{yearData.profit_and_loss?.net_profit?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Tax</div>
+                    <div className="text-xl font-bold text-gray-600">
+                      £{yearData.profit_and_loss?.tax?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Cost of Sales</div>
+                      <div className="font-medium">£{yearData.profit_and_loss?.cost_of_sales?.toLocaleString() || 0}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Admin Expenses</div>
+                      <div className="font-medium">£{yearData.profit_and_loss?.administrative_expenses?.toLocaleString() || 0}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Other Operating Income</div>
+                      <div className="font-medium">£{yearData.profit_and_loss?.other_operating_income?.toLocaleString() || 0}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-muted-foreground">Interest (Net)</div>
+                      <div className="font-medium">
+                        £{((yearData.profit_and_loss?.interest_receivable || 0) - (yearData.profit_and_loss?.interest_payable || 0)).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {analysisData.years && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Key Financial Ratios
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
+                <div key={year} className="space-y-4">
+                  <h4 className="text-lg font-semibold text-muted-foreground">{year}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-sm text-blue-700 dark:text-blue-300 font-medium">Gross Margin %</div>
+                      <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                        {yearData.profit_and_loss?.revenue && yearData.profit_and_loss?.gross_profit
+                          ? ((yearData.profit_and_loss.gross_profit / yearData.profit_and_loss.revenue) * 100).toFixed(1)
+                          : 'N/A'
+                        }%
+                      </div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        (Gross Profit ÷ Revenue) × 100
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="text-sm text-green-700 dark:text-green-300 font-medium">Net Margin %</div>
+                      <div className="text-2xl font-bold text-green-800 dark:text-green-200">
+                        {yearData.profit_and_loss?.revenue && yearData.profit_and_loss?.net_profit
+                          ? ((yearData.profit_and_loss.net_profit / yearData.profit_and_loss.revenue) * 100).toFixed(1)
+                          : 'N/A'
+                        }%
+                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        (Net Profit ÷ Revenue) × 100
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Interest Coverage</div>
+                      <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">
+                        {yearData.profit_and_loss?.operating_profit && yearData.profit_and_loss?.interest_payable
+                          ? (yearData.profit_and_loss.operating_profit / yearData.profit_and_loss.interest_payable).toFixed(1)
+                          : 'N/A'
+                        }x
+                      </div>
+                      <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        Operating Profit ÷ Interest Payable
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Summary Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {analysisData.summary}
+              </ReactMarkdown>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function renderAssetRegisterAnalysis(analysisData: any) {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Total Assets Cost
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              £{analysisData.total_assets_cost?.toLocaleString() || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingDown className="w-4 h-4" />
+              Accumulated Depreciation
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              £{analysisData.total_accumulated_depreciation?.toLocaleString() || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Net Book Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              £{analysisData.total_net_book_value?.toLocaleString() || 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {analysisData.asset_breakdown && analysisData.asset_breakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Asset Category Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {analysisData.asset_breakdown.map((asset: any, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <h4 className="font-semibold text-lg mb-3">{asset.category}</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground">Cost</div>
+                      <div className="text-lg font-semibold text-blue-600">
+                        £{asset.cost?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground">Depreciation</div>
+                      <div className="text-lg font-semibold text-red-600">
+                        £{asset.accumulated_depreciation?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground">Net Book Value</div>
+                      <div className="text-lg font-semibold text-green-600">
+                        £{asset.net_book_value?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {asset.cost > 0 && (
+                    <div className="mt-3 text-center">
+                      <div className="text-sm text-muted-foreground">Depreciation Rate</div>
+                      <div className="text-sm font-medium">
+                        {((asset.accumulated_depreciation / asset.cost) * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.recent_additions_summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Recent Additions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+              {analysisData.recent_additions_summary}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.depreciation_this_year && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Depreciation This Year
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              £{analysisData.depreciation_this_year?.toLocaleString() || 0}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.asset_breakdown_list && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <List className="w-5 h-5" />
+              Asset Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
+              {analysisData.asset_breakdown_list}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.observations && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Key Observations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="whitespace-pre-line text-sm">{analysisData.observations}</div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function renderBalanceSheetAnalysis(analysisData: any) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <div className="bg-orange-100 dark:bg-orange-900 px-4 py-2 rounded-full">
+          <span className="text-orange-800 dark:text-orange-200 font-semibold text-base">Balance Sheet</span>
+        </div>
+        <span className="text-muted-foreground text-sm">Financial Position Analysis</span>
+      </div>
+
+      {analysisData.years_covered && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Years Covered
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              {Array.isArray(analysisData.years_covered) 
+                ? analysisData.years_covered.join(', ')
+                : String(analysisData.years_covered)}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.years && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Balance Sheet Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-12">
+              {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
+                <div key={year} className="space-y-4">
+                  <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 border-b border-orange-200 dark:border-orange-800 pb-2">
+                    {year}
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-green-700 dark:text-green-300">Assets</h4>
+                      
+                      <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                        <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Fixed Assets</div>
+                        <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                          £{yearData.balance_sheet?.fixed_assets?.toLocaleString() || 'N/A'}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-green-800 dark:text-green-200">Current Assets</div>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                            <span className="text-sm">Debtors</span>
+                            <span className="font-medium">£{yearData.balance_sheet?.debtors?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                            <span className="text-sm">Cash at Bank</span>
+                            <span className="font-medium">£{yearData.balance_sheet?.cash_at_bank?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-green-100 dark:bg-green-900 p-2 rounded border-t border-green-200 dark:border-green-800">
+                            <span className="text-sm font-medium">Total Current Assets</span>
+                            <span className="font-bold">£{yearData.balance_sheet?.total_current_assets?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-red-700 dark:text-red-300">Liabilities & Equity</h4>
+                      
+                      <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                        <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (Within One Year)</div>
+                        <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                          £{yearData.balance_sheet?.creditors_within_one_year?.toLocaleString() || 'N/A'}
+                        </div>
+                      </div>
+
+                      <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                        <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (After One Year)</div>
+                        <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                          £{yearData.balance_sheet?.creditors_after_one_year?.toLocaleString() || 'N/A'}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-blue-800 dark:text-blue-200">Shareholders' Equity</div>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
+                            <span className="text-sm">Share Capital</span>
+                            <span className="font-medium">£{yearData.balance_sheet?.called_up_share_capital?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
+                            <span className="text-sm">P&L Reserve</span>
+                            <span className="font-medium">£{yearData.balance_sheet?.profit_and_loss_reserve?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-blue-100 dark:bg-blue-900 p-2 rounded border-t border-blue-200 dark:border-blue-800">
+                            <span className="text-sm font-medium">Net Assets</span>
+                            <span className="font-bold">£{yearData.balance_sheet?.net_assets?.toLocaleString() || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Net Current Assets</div>
+                      <div className="text-xl font-bold text-purple-800 dark:text-purple-200">
+                        £{yearData.balance_sheet?.net_current_assets?.toLocaleString() || 'N/A'}
+                      </div>
+                    </div>
+                    <div className="bg-indigo-50 dark:bg-indigo-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                      <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Total Assets Less Current Liabilities</div>
+                      <div className="text-xl font-bold text-indigo-800 dark:text-indigo-200">
+                        £{yearData.balance_sheet?.total_assets_less_current_liabilities?.toLocaleString() || 'N/A'}
+                      </div>
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="text-sm text-orange-700 dark:text-orange-300 font-medium">Current Ratio</div>
+                      <div className="text-xl font-bold text-orange-800 dark:text-orange-200">
+                        {yearData.balance_sheet?.total_current_assets && yearData.balance_sheet?.creditors_within_one_year
+                          ? (yearData.balance_sheet.total_current_assets / yearData.balance_sheet.creditors_within_one_year).toFixed(2)
+                          : 'N/A'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {analysisData.summary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Summary Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {analysisData.summary}
+              </ReactMarkdown>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function renderCompanyAccountsAnalysis(analysisData: any) {
+  const accountsData = analysisData.data;
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <div className="bg-teal-100 dark:bg-teal-900 px-4 py-2 rounded-full">
+          <span className="text-teal-800 dark:text-teal-200 font-semibold text-base">Company Accounts</span>
+        </div>
+        <span className="text-muted-foreground text-sm">Financial Records Analysis</span>
+      </div>
+
+      {accountsData.document_type === 'sales_ledger' && renderSalesLedgerAnalysis(accountsData.data)}
+      {accountsData.document_type === 'staff_matrix' && renderStaffMatrixAnalysis(accountsData.data)}
+      {accountsData.document_type === 'asset_register' && renderAssetRegisterAnalysis(accountsData.data)}
+      {accountsData.document_type === 'profit_and_loss' && renderProfitAndLossAnalysis(accountsData.data)}
+      {accountsData.document_type === 'balance_sheet' && renderBalanceSheetAnalysis(accountsData.data)}
+      
+      {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(accountsData.document_type) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Company Accounts Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
+              {JSON.stringify(accountsData, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetryAnalysis }: AnalysisDisplayProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
+          <p className="text-muted-foreground">Loading analysis results...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>No analysis results available for this document yet.</p>
+        <p className="text-sm mt-2">Analysis results will appear here after processing.</p>
+        <div className="mt-4">
+          <Button 
+            onClick={onRetryAnalysis}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={isRetryingAnalysis}
+          >
+            {isRetryingAnalysis ? (
+              <>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-4 h-4" />
+                Retry Analysis
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {results.map((result) => (
+        <div key={result.id}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold">Document Analysis</h3>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>Type:</span>
+                  <span className={`px-3 py-1 rounded-md text-sm font-medium ${getDocumentTypeColor(result.documentType, result.analysisData)}`}>
+                    {formatDocumentType(result.documentType, result.analysisData)}
+                  </span>
+                </div>
+                <span>•</span>
+                <span>Processed: {formatDate(result.createdAt)}</span>
+                {result.processingTime && (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {(result.processingTime / 1000).toFixed(1)}s
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {result.analysisData && result.analysisData.document === 'company_accounts' && renderCompanyAccountsAnalysis(result.analysisData)}
+          
+          {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'sales_ledger' && renderSalesLedgerAnalysis(result.analysisData)}
+          {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'staff_matrix' && renderStaffMatrixAnalysis(result.analysisData)}
+          {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'asset_register' && renderAssetRegisterAnalysis(result.analysisData)}
+          {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'profit_and_loss' && renderProfitAndLossAnalysis(result.analysisData)}
+          {(!result.analysisData || result.analysisData.document !== 'company_accounts') && result.documentType === 'balance_sheet' && renderBalanceSheetAnalysis(result.analysisData)}
+          
+          {(!result.analysisData || result.analysisData.document !== 'company_accounts') && !['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(result.documentType) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Analysis Data</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
+                  {JSON.stringify(result.analysisData, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
+          
+          {result.usageMetadata && (
+            <Card className="bg-muted/30 mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Analysis Metadata
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div>
+                    <div className="text-muted-foreground">Prompt Tokens</div>
+                    <div className="font-semibold">{result.usageMetadata.promptTokenCount?.toLocaleString() || 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">Response Tokens</div>
+                    <div className="font-semibold">{result.usageMetadata.candidatesTokenCount?.toLocaleString() || 0}</div>
+                  </div>
+                  {result.usageMetadata.thoughtsTokenCount !== undefined && result.usageMetadata.thoughtsTokenCount > 0 && (
+                    <div>
+                      <div className="text-muted-foreground">Thinking Tokens</div>
+                      <div className="font-semibold">{result.usageMetadata.thoughtsTokenCount?.toLocaleString() || 0}</div>
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-muted-foreground">Total Tokens</div>
+                    <div className="font-semibold">{result.usageMetadata.totalTokenCount?.toLocaleString() || 0}</div>
+                  </div>
+                  {result.processingTime && (
+                    <div>
+                      <div className="text-muted-foreground">Processing Time</div>
+                      <div className="font-semibold">{(result.processingTime / 1000).toFixed(1)}s</div>
+                    </div>
+                  )}
+                </div>
+                {result.usageMetadata.promptTokensDetails && result.usageMetadata.promptTokensDetails.length > 0 && (
+                  <div>
+                    <div className="text-muted-foreground text-sm mb-2">Token Breakdown by Modality</div>
+                    <div className="flex flex-wrap gap-2">
+                      {result.usageMetadata.promptTokensDetails.map((detail, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {detail.modality}: {detail.tokenCount?.toLocaleString()}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
