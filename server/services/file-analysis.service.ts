@@ -1,5 +1,5 @@
 import { documentStore } from "../storage/document.store";
-import { companyStore } from "../storage/company.store";
+import { targetCompaniesRepository } from "../repositories/target-companies.repository";
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "../gemini-stage1-service";
 import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "../gemini-detailed-analysis-service";
 import { classifyDocumentWithGemini } from "../gemini-document-classification-service";
@@ -257,7 +257,7 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
   try {
     console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}${bypassRequirements ? ' (bypassing requirements)' : ''}`);
     
-    const targetCompany = await companyStore.getTargetCompany(targetCompanyId, 0);
+    const targetCompany = await targetCompaniesRepository.getById(targetCompanyId, 0);
     if (!targetCompany) {
       console.error(`[STAGE1_ANALYSIS] Company ${targetCompanyId} not found`);
       return;

@@ -22,8 +22,14 @@ Preferred communication style: Simple, everyday language.
 - **API Design**: RESTful with structured error handling.
 - **Modular Architecture**: A layered architecture comprising `repositories` (data access), `services` (business logic), and `routes` (HTTP concerns) to ensure separation of concerns and maintainability. New endpoints are designed for a v2 API structure (`/api/v2/[domain]/*`).
 - **EventBus Pattern**: Typed EventEmitter singleton (`server/services/event-bus.service.ts`) for decoupled inter-service communication. Supports events: `analysis:completed`, `file:uploaded`, `stage:updated`, `document:update`.
-- **Centralized Configuration**: All environment variables managed through `server/config.ts` module organized by domain (server, gemini, webhooks, smtp, replit, database, session).
-- **Domain Stores**: Data access isolated into domain-specific stores (`server/storage/*.store.ts`): `documentStore`, `companyStore`, `activityStore`, `userStore`, `notificationStore`, `teamStore`, `portalStore`.
+- **Centralized Configuration**: All environment variables managed through `server/config.ts` module organized by domain (server, gemini, smtp, replit, database, session).
+- **Repository Pattern (Primary)**: Data access through domain repositories (`server/repositories/*.repository.ts`):
+    - `usersRepository`: User CRUD, sessions, invitations, roles, team management
+    - `targetCompaniesRepository`: Target company CRUD with search/filter
+    - `contactsRepository`: Contact management with cascade delete handling
+    - `documentAnalysisRepository`: Document analysis results
+    - `portalRequirementsRepository`: Document requirements management
+- **Legacy Domain Stores (Deprecated)**: Some stores remain for specialized operations (`server/storage/*.store.ts`): `documentStore`, `activityStore`, `portalStore`. Services should prefer repositories over stores.
 - **Feature Specifications**:
     - **Target Company Management**: Full CRUD operations with detailed information, industry categorization, and card-based views.
     - **Contact Management**: Full CRUD operations, primary contact designation, integrated with target company details.

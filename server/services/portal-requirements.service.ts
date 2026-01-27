@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { portalRequirementsRepository, type RequirementProgress } from '../repositories/portal-requirements.repository';
-import { companyStore } from '../storage/company.store';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 import { activityStore } from '../storage/activity.store';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import { targetCompanies, type CompanyDocumentRequirement } from '@shared/schema';
@@ -14,13 +14,13 @@ interface DetailedProgress {
 
 export class PortalRequirementsService {
   async getRequirementsForCompany(targetCompanyId: number, userCompanyId: number, stage?: number | null): Promise<RequirementProgress[]> {
-    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     return await portalRequirementsRepository.getCompanyRequirements(targetCompanyId, stage);
   }
 
   async initializeRequirements(targetCompanyId: number, userCompanyId: number, userId: number): Promise<{ stage1Requirements: number; stage2Requirements: number; totalRequirements: number; message: string }> {
-    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     const hasExisting = await portalRequirementsRepository.hasRequirements(targetCompanyId);
     if (hasExisting) {
@@ -40,7 +40,7 @@ export class PortalRequirementsService {
   async updateRequirement(requirementId: number, updates: Partial<CompanyDocumentRequirement>, userCompanyId: number, userId: number): Promise<CompanyDocumentRequirement> {
     const requirement = await portalRequirementsRepository.getRequirementById(requirementId);
     if (!requirement) throw new NotFoundError('Requirement not found');
-    const company = await companyStore.getTargetCompany(requirement.targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(requirement.targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Not authorized to update this requirement');
     const allowedUpdates: Partial<CompanyDocumentRequirement> = {};
     if (updates.requirementStatus !== undefined) allowedUpdates.requirementStatus = updates.requirementStatus;
@@ -57,7 +57,7 @@ export class PortalRequirementsService {
   }
 
   async getDetailedProgress(targetCompanyId: number, userCompanyId: number): Promise<DetailedProgress> {
-    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     const [stage1Stats, stage2Stats] = await Promise.all([
       portalRequirementsRepository.getRequirementCountByStage(targetCompanyId, 1),
@@ -102,7 +102,7 @@ export class PortalRequirementsService {
   }
 
   async getOverdueRequirements(targetCompanyId: number, userCompanyId: number): Promise<RequirementProgress[]> {
-    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     return await portalRequirementsRepository.getOverdueRequirements(targetCompanyId);
   }
@@ -115,7 +115,7 @@ export class PortalRequirementsService {
   }
 
   async getSubmissionCategoryCounts(targetCompanyId: number, userCompanyId: number): Promise<{ category: string; count: number }[]> {
-    const company = await companyStore.getTargetCompany(targetCompanyId, userCompanyId);
+    const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     return await portalRequirementsRepository.getSubmissionProgress(targetCompanyId);
   }
