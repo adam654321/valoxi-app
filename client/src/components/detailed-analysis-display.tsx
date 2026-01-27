@@ -7,7 +7,9 @@ import { ChevronDown, DollarSign, TrendingUp, AlertTriangle, CheckCircle, Zap, U
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AnalysisSummary } from './detailed-analysis/AnalysisSummary';
+import { ScenarioSummaryTable, RepaymentPlansCard } from './detailed-analysis/AnalysisFinancialTable';
 import { DetailedAnalysisData, formatCurrency, formatNumber, formatLabel, getRiskColor } from './detailed-analysis/types';
+import { useDetailedAnalysis } from '@/hooks/useDetailedAnalysis';
 
 const renderRiskScore = (riskKey: string, riskValue: string) => {
   const displayLabel = formatLabel(riskKey);
@@ -23,11 +25,9 @@ const renderRiskScore = (riskKey: string, riskValue: string) => {
 };
 
 export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }) {
-  const dealSnapshot = data.deal_snapshot;
-  const sectorAnalysis = data.sector_analysis;
-  const growthAnalysis = data.growth_analysis;
+  const { dealSnapshot, sectorAnalysis, growthAnalysis, hasData } = useDetailedAnalysis(data);
 
-  if (!dealSnapshot && !sectorAnalysis && !growthAnalysis) {
+  if (!hasData) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -1859,37 +1859,7 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
 
                       {/* Scenario Summary Table */}
                       {data.deal_sheet.page_2.funding_and_dscr.dscr_model.scenario_summary && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">Financing Scenarios</p>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm border-collapse">
-                              <thead>
-                                <tr className="bg-muted">
-                                  <th className="text-left p-2 border">Scenario</th>
-                                  <th className="text-right p-2 border">Term</th>
-                                  <th className="text-right p-2 border">Interest Rate</th>
-                                  <th className="text-right p-2 border">Annual Debt Service</th>
-                                  <th className="text-right p-2 border">DSCR</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {data.deal_sheet.page_2.funding_and_dscr.dscr_model.scenario_summary.map((scenario: any, idx: number) => (
-                                  <tr key={idx} className="border-b">
-                                    <td className="p-2 border font-medium">{formatLabel(scenario.name)}</td>
-                                    <td className="text-right p-2 border">{scenario.term_months} months</td>
-                                    <td className="text-right p-2 border">{scenario.interest_rate_annual_pct}%</td>
-                                    <td className="text-right p-2 border">{formatCurrency(scenario.annual_debt_service_total)}</td>
-                                    <td className="text-right p-2 border">
-                                      <Badge className={scenario.dscr >= 1.5 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-amber-100 text-amber-800'}>
-                                        {scenario.dscr.toFixed(2)}x
-                                      </Badge>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
+                        <ScenarioSummaryTable scenarios={data.deal_sheet.page_2.funding_and_dscr.dscr_model.scenario_summary} />
                       )}
                     </CardContent>
                   </Card>
@@ -1897,41 +1867,7 @@ export function DetailedAnalysisDisplay({ data }: { data: DetailedAnalysisData }
 
                 {/* Repayment Plan Tables */}
                 {data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables && data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables.length > 0 && (
-                  <Card className="border-2 border-slate-200 dark:border-slate-700">
-                    <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950/20 dark:to-gray-950/20">
-                      <CardTitle className="flex items-center gap-2">
-                        <Clock className="w-5 h-5" />
-                        Repayment Plans
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <div className="grid md:grid-cols-2 gap-6">
-                        {data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables.map((plan: any, planIdx: number) => (
-                          <div key={planIdx}>
-                            <p className="text-sm font-medium mb-2">{formatLabel(plan.scenario_name)}</p>
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm border-collapse">
-                                <thead>
-                                  <tr className="bg-muted">
-                                    <th className="text-left p-2 border">Year</th>
-                                    <th className="text-right p-2 border">Annual Payment</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {plan.rows.map((row: any, rowIdx: number) => (
-                                    <tr key={rowIdx} className="border-b">
-                                      <td className="p-2 border">Year {row.year}</td>
-                                      <td className="text-right p-2 border font-medium">{formatCurrency(row.annual_payment)}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <RepaymentPlansCard plans={data.deal_sheet.page_2.funding_and_dscr.repayment_plan_tables} />
                 )}
               </>
             )}
