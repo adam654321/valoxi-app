@@ -23,11 +23,6 @@ export const config = {
     model: 'gemini-2.0-flash',
   },
 
-  webhooks: {
-    stage1JsonAnalyserUrl: process.env.STAGE1_JSON_ANALYSER_WEBHOOK_URL || '',
-    stage1DetailedAnalysisUrl: process.env.STAGE1_Detailed_Analysis_URL || '',
-  },
-
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),

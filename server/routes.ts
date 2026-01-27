@@ -13,8 +13,6 @@ import {
   checkStage1RequirementsByCategory, 
   checkAndTriggerStage1Analysis,
   runGeminiDetailedAnalysis,
-  sendStage1AnalysisWebhook,
-  sendDetailedAnalysisWebhook,
   sendFileUploadWebhook 
 } from "./services/file-analysis.service";
 
@@ -401,54 +399,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to switch company:", error);
       res.status(500).json({ error: "Failed to switch company" });
-    }
-  });
-
-  app.post("/api/test/stage1-webhook/:eventId", async (req: Request, res: Response) => {
-    try {
-      const eventId = parseInt(req.params.eventId);
-      
-      if (isNaN(eventId)) {
-        return res.status(400).json({ message: "Invalid event ID" });
-      }
-
-      console.log(`[TEST] Manually triggering Stage 1 webhook for event ${eventId}`);
-      
-      setTimeout(() => {
-        sendStage1AnalysisWebhook(eventId);
-      }, 100);
-
-      res.json({ 
-        success: true, 
-        message: `Stage 1 webhook triggered for event ${eventId}` 
-      });
-    } catch (error) {
-      console.error("Manual webhook trigger error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.post("/api/test/detailed-analysis-webhook/:eventId", async (req: Request, res: Response) => {
-    try {
-      const eventId = parseInt(req.params.eventId);
-      
-      if (isNaN(eventId)) {
-        return res.status(400).json({ message: "Invalid event ID" });
-      }
-
-      console.log(`[TEST] Manually triggering Detailed Analysis webhook ONLY for event ${eventId}`);
-      
-      setTimeout(() => {
-        sendDetailedAnalysisWebhook(eventId);
-      }, 100);
-
-      res.json({ 
-        success: true, 
-        message: `Detailed Analysis webhook triggered for event ${eventId}`
-      });
-    } catch (error) {
-      console.error("Failed to trigger Detailed Analysis webhook:", error);
-      res.status(500).json({ error: "Failed to trigger webhook" });
     }
   });
 
