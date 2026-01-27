@@ -92,11 +92,12 @@ const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
   try {
     // Get portal tokens for this target company and invalidate their caches too
     console.log(`[CACHE] Fetching portal tokens for target company ${targetCompanyId}`);
-    const response = await fetch(`/api/target-companies/${targetCompanyId}/portal-tokens`, {
+    const response = await fetch(`/api/v2/portal/company/${targetCompanyId}/tokens`, {
       credentials: 'include'
     });
     if (response.ok) {
-      const { tokens } = await response.json();
+      const result = await response.json();
+      const tokens = result.data?.tokens || [];
       console.log(`[CACHE] Found ${tokens.length} portal tokens to invalidate:`, tokens);
       
       // Invalidate portal caches for each active token

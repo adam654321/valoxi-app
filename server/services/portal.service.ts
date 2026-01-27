@@ -61,6 +61,14 @@ export class PortalService {
   async logActivity(portalTokenId: number, targetContactId: number, activityType: string, activityDescription: string, ipAddress?: string, userAgent?: string): Promise<void> {
     await portalRepository.logActivity({ portalTokenId, targetContactId, activityType, activityDescription, ipAddress, userAgent });
   }
+
+  async getActiveTokensForTargetCompany(targetCompanyId: number, userCompanyId: number): Promise<string[]> {
+    const { storage } = await import('../storage');
+    const company = await storage.getTargetCompany(targetCompanyId, userCompanyId);
+    if (!company) throw new ForbiddenError('Target company not found or access denied');
+    const tokens = await portalRepository.getTokensByTargetCompany(targetCompanyId);
+    return tokens.map(t => t.accessToken);
+  }
 }
 
 export const portalService = new PortalService();

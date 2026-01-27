@@ -1159,27 +1159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LEGACY DOCUMENT CATEGORIES REMOVED - Now using /api/v2/documents/categories endpoint
   // See server/routes/documents.routes.ts for new implementation
 
-  // Get active portal tokens for a target company (for cache invalidation) - KEPT for now
-  app.get("/api/target-companies/:id/portal-tokens", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const targetCompanyId = parseInt(req.params.id);
-      const userCompanyId = req.session.userCompanyId!;
-      
-      // Verify user has access to this target company
-      const targetCompany = await storage.getTargetCompany(targetCompanyId, userCompanyId);
-      if (!targetCompany) {
-        return res.status(404).json({ message: "Target company not found" });
-      }
-      
-      // Get active portal tokens for this target company
-      const tokens = await storage.getActivePortalTokensForTargetCompany(targetCompanyId);
-      
-      res.json({ tokens: tokens.map(token => token.accessToken) });
-    } catch (error) {
-      console.error("Error getting portal tokens:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // LEGACY PORTAL TOKENS ENDPOINT REMOVED - Now using /api/v2/portal/company/:companyId/tokens
+  // See server/routes/portal.routes.ts for new implementation
 
   // LEGACY DOCUMENT ENDPOINTS REMOVED - Now using /api/v2/files/* and /api/v2/document-analysis/* endpoints
   // See server/routes/documents-files.routes.ts and server/routes/document-analysis.routes.ts for new implementation

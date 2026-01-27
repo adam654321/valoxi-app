@@ -82,4 +82,17 @@ router.post('/review/:submissionId', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/company/:companyId/tokens', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    const targetCompanyId = parseInt(req.params.companyId);
+    if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
+    const tokens = await portalService.getActiveTokensForTargetCompany(targetCompanyId, userCompanyId);
+    sendSuccess(res, { tokens });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 export default router;
