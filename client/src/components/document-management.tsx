@@ -87,7 +87,7 @@ const invalidateAllDocumentCaches = async (targetCompanyId: number) => {
   
   // Always invalidate document library caches (v2 endpoints)
   queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
-  queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"] });
   
   try {
     // Get portal tokens for this target company and invalidate their caches too
@@ -328,7 +328,8 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     completedCount: number;
     totalCount: number;
   }>({
-    queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+    queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
+    select: (response: any) => response.data,
     refetchInterval: 15000, // Poll every 15 seconds to catch analysis completion
     refetchIntervalInBackground: false, // Only poll when tab is active
     staleTime: 5000, // Consider data stale after 5 seconds
@@ -346,7 +347,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
       });
       // Refresh completion status after triggering
       queryClient.invalidateQueries({
-        queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+        queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
       });
     },
     onError: (error: any) => {
@@ -544,7 +545,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     completedCount: number;
     totalCount: number;
   }>({
-    queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"],
+    queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,
@@ -610,7 +611,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           
           // Invalidate analysis completion query to update progress section
           queryClient.invalidateQueries({ 
-            queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
+            queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"] 
           });
           
           // Also invalidate analysis queries for immediate display (v2 endpoint)
@@ -628,7 +629,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           
           // Invalidate analysis completion query to update progress section
           queryClient.invalidateQueries({ 
-            queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] 
+            queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"] 
           });
           
           // Invalidate specific document analysis queries (v2 endpoint)
@@ -749,7 +750,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         description: `All company documents cleared successfully. ${data?.details?.deletedDocuments || 0} documents and ${data?.details?.deletedExternalSubmissions || 0} portal submissions removed.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "analysis-completion"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"] });
     },
     onError: (error: any) => {
       toast({
