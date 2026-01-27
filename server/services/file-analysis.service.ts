@@ -1,19 +1,14 @@
-import { storage } from "../storage";
+import { documentStore } from "../storage/document.store";
+import { companyStore } from "../storage/company.store";
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "../gemini-stage1-service";
 import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "../gemini-detailed-analysis-service";
 import { classifyDocumentWithGemini } from "../gemini-document-classification-service";
 import { runStep2AnalysisForTypes } from "../gemini-step2-analysis-service";
+import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
+import { config } from "../config";
 
-declare global {
-  var documentUpdateListeners: Array<{ targetCompanyId: number; res: any }> | undefined;
-}
-
-function getBaseUrl(): string {
-  return process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : process.env.REPL_SLUG && process.env.REPL_OWNER
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-      : 'http://localhost:5000';
+function emitDocumentUpdate(event: DocumentUpdateEvent): void {
+  eventBus.emit('document:update', event);
 }
 
 function enhanceProfitLossWithCalculations(analysisData: any): any {
@@ -71,7 +66,7 @@ function enhanceProfitLossWithCalculations(analysisData: any): any {
 
 export async function analyzeUploadedFileWithGemini(eventId: number) {
   try {
-    const event = await storage.getFileUploadEvent(eventId);
+    const event = await documentStore.getFileUploadEvent(eventId);
     if (!event) {
       console.error(`[FILE_ANALYSIS] Event ${eventId} not found`);
       return;
@@ -79,7 +74,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
 
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = config.baseUrl;
     const fileUrl = `${baseUrl}/api/public/documents/${event.documentId}/download`;
     console.log(`[FILE_ANALYSIS] Using HTTPS URL: ${fileUrl}`);
 
@@ -96,7 +91,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     if (!classificationResult.success) {
       console.error(`[FILE_ANALYSIS] Classification failed for event ${eventId}:`, classificationResult.error);
       
-      await storage.updateFileUploadEventWebhookStatus(
+      await documentStore.updateFileUploadEventWebhookStatus(
         eventId, 
         'classification_failed', 
         JSON.stringify({ 
@@ -122,7 +117,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       usageMetadata: classificationResult.usageMetadata,
     };
 
-    await storage.updateFileUploadEventWebhookStatus(
+    await documentStore.updateFileUploadEventWebhookStatus(
       eventId, 
       'classification_complete', 
       JSON.stringify(classificationData, null, 2), 
@@ -149,7 +144,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
         console.log(`[FILE_ANALYSIS] Storing ${result.documentType} analysis result for document ${event.documentId}`);
         
         try {
-          await storage.createDocumentAnalysisResult({
+          await documentStore.createDocumentAnalysisResult({
             documentId: event.documentId,
             fileUploadEventId: eventId,
             documentType: result.documentType,
@@ -181,35 +176,31 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       })),
     };
 
-    await storage.updateFileUploadEventWebhookStatus(
+    await documentStore.updateFileUploadEventWebhookStatus(
       eventId, 
       'complete', 
       JSON.stringify(completeData, null, 2), 
       new Date()
     );
     
-    if (global.documentUpdateListeners) {
-      global.documentUpdateListeners.forEach((listener) => {
-        if (listener.targetCompanyId === event.targetCompanyId) {
-          listener.res.write(`data: ${JSON.stringify({ 
-            type: 'analysis_completed', 
-            targetCompanyId: event.targetCompanyId,
-            documentId: event.documentId,
-            documentTypes: classificationResult.documentTypes,
-            confidence: classificationResult.confidence,
-            step2Results: step2Results.map(r => ({ type: r.documentType, success: r.success })),
-            timestamp: new Date().toISOString()
-          })}\n\n`);
-        }
-      });
-    }
+    emitDocumentUpdate({
+      type: 'analysis_completed',
+      targetCompanyId: event.targetCompanyId,
+      documentId: event.documentId,
+      data: {
+        documentTypes: classificationResult.documentTypes,
+        confidence: classificationResult.confidence,
+        step2Results: step2Results.map(r => ({ type: r.documentType, success: r.success })),
+      },
+      timestamp: new Date(),
+    });
 
     await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
 
   } catch (error) {
     console.error(`[FILE_ANALYSIS] Failed to analyze file for event ${eventId}:`, error);
     
-    await storage.updateFileUploadEventWebhookStatus(
+    await documentStore.updateFileUploadEventWebhookStatus(
       eventId, 
       'failed', 
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
@@ -224,19 +215,19 @@ export async function sendFileUploadWebhook(eventId: number) {
 
 export async function checkStage1RequirementsByCategory(targetCompanyId: number): Promise<{shouldTrigger: boolean, status: string}> {
   try {
-    const companyAccountsCount = await storage.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
+    const companyAccountsCount = await documentStore.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
     
     const requiredCategories = ['Profit & Loss', 'Balance Sheet', 'Staff Matrix', 'Sales Ledger', 'Asset Register'];
     const categoryCounts: {[key: string]: number} = {};
     
     for (const category of requiredCategories) {
-      categoryCounts[category] = await storage.getDocumentCountByCategory(targetCompanyId, category);
+      categoryCounts[category] = await documentStore.getDocumentCountByCategory(targetCompanyId, category);
     }
     
     console.log(`[STAGE1_ANALYSIS] Debug - Initial category counts:`, categoryCounts);
     
     if (categoryCounts['Balance Sheet'] === 0) {
-      const balanceSheetAnalysis = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+      const balanceSheetAnalysis = await documentStore.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
       if (balanceSheetAnalysis.length > 0) {
         categoryCounts['Balance Sheet'] = balanceSheetAnalysis.length;
       }
@@ -266,15 +257,15 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
   try {
     console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}${bypassRequirements ? ' (bypassing requirements)' : ''}`);
     
-    const targetCompany = await storage.getTargetCompany(targetCompanyId, 0);
+    const targetCompany = await companyStore.getTargetCompany(targetCompanyId, 0);
     if (!targetCompany) {
       console.error(`[STAGE1_ANALYSIS] Company ${targetCompanyId} not found`);
       return;
     }
 
-    const existingEvent = await storage.getLatestStage1AnalysisEvent(targetCompanyId);
+    const existingEvent = await documentStore.getLatestStage1AnalysisEvent(targetCompanyId);
     if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
-      const latestDocumentUpload = await storage.getLatestDocumentUploadTime(targetCompanyId);
+      const latestDocumentUpload = await documentStore.getLatestDocumentUploadTime(targetCompanyId);
       
       if (latestDocumentUpload && existingEvent.createdAt) {
         const docUploadTime = new Date(latestDocumentUpload).getTime();
@@ -305,12 +296,12 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
       console.log(`[STAGE1_ANALYSIS] Bypassing requirements check for company ${targetCompanyId}. Triggering stage 1 webhook with available documents.`);
     }
 
-    const companyAccountsData = await storage.getDocumentAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
-    const analysisData = await storage.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
-    const salesLedgerData = await storage.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
-    const staffMatrixData = await storage.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
-    const profitLossData = await storage.getDocumentAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
-    const balanceSheetData = await storage.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
+    const companyAccountsData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
+    const analysisData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
+    const salesLedgerData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
+    const staffMatrixData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
+    const profitLossData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
+    const balanceSheetData = await documentStore.getDocumentAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
 
     console.log(`[STAGE1_ANALYSIS] Debug - Retrieved analysis data counts:`, {
       company_accounts: companyAccountsData.length,
@@ -395,7 +386,7 @@ export async function checkAndTriggerStage1Analysis(targetCompanyId: number, tri
       company_id: targetCompanyId
     };
 
-    const stage1Event = await storage.createStage1AnalysisEvent({
+    const stage1Event = await documentStore.createStage1AnalysisEvent({
       targetCompanyId,
       triggeredBy,
       concatenatedData
@@ -416,11 +407,11 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
   console.log(`[GEMINI_STAGE1_ANALYSIS] Starting Gemini analysis for event ${eventId}, company ${companyName}`);
 
   try {
-    const documentFiles = await storage.getStage1DocumentFiles(targetCompanyId);
+    const documentFiles = await documentStore.getStage1DocumentFiles(targetCompanyId);
     
     if (documentFiles.length === 0) {
       console.error(`[GEMINI_STAGE1_ANALYSIS] No documents found for company ${targetCompanyId}`);
-      await storage.updateStage1AnalysisEventWebhookStatus(
+      await documentStore.updateStage1AnalysisEventWebhookStatus(
         eventId, 
         'failed', 
         'No documents found for analysis', 
@@ -431,7 +422,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
 
     console.log(`[GEMINI_STAGE1_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = config.baseUrl;
     console.log(`[GEMINI_STAGE1_ANALYSIS] Using base URL: ${baseUrl}`);
 
     const files: FileInfo[] = documentFiles.map(doc => ({
@@ -449,7 +440,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
     });
 
     if (result.success && result.markdown) {
-      await storage.updateStage1AnalysisEventWebhookStatus(
+      await documentStore.updateStage1AnalysisEventWebhookStatus(
         eventId, 
         'success', 
         result.markdown, 
@@ -460,23 +451,17 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
 
       console.log(`[GEMINI_STAGE1_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
 
-      const event = await storage.getStage1AnalysisEvent(eventId);
+      const event = await documentStore.getStage1AnalysisEvent(eventId);
       
-      if (global.documentUpdateListeners && event) {
-        global.documentUpdateListeners.forEach((listener) => {
-          if (listener.targetCompanyId === targetCompanyId) {
-            listener.res.write(`data: ${JSON.stringify({ 
-              type: 'stage1_analysis_completed', 
-              targetCompanyId: targetCompanyId,
-              eventId: eventId,
-              timestamp: new Date().toISOString()
-            })}\n\n`);
-          }
-        });
-      }
-      console.log(`[GEMINI_STAGE1_ANALYSIS] SSE notification sent for Stage 1 analysis completion of company ${targetCompanyId}`);
+      emitDocumentUpdate({
+        type: 'stage1_completed',
+        targetCompanyId: targetCompanyId,
+        eventId: eventId,
+        timestamp: new Date(),
+      });
+      console.log(`[GEMINI_STAGE1_ANALYSIS] EventBus notification sent for Stage 1 analysis completion of company ${targetCompanyId}`);
     } else {
-      await storage.updateStage1AnalysisEventWebhookStatus(
+      await documentStore.updateStage1AnalysisEventWebhookStatus(
         eventId, 
         'failed', 
         JSON.stringify({ error: result.error || 'Unknown error' }), 
@@ -489,7 +474,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
   } catch (error) {
     console.error(`[GEMINI_STAGE1_ANALYSIS] Error running analysis for event ${eventId}:`, error);
     
-    await storage.updateStage1AnalysisEventWebhookStatus(
+    await documentStore.updateStage1AnalysisEventWebhookStatus(
       eventId, 
       'failed', 
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
@@ -502,11 +487,11 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
   console.log(`[GEMINI_DETAILED_ANALYSIS] Starting Gemini detailed analysis for event ${eventId}, company ${targetCompanyId}`);
 
   try {
-    const documentFiles = await storage.getStage1DocumentFiles(targetCompanyId);
+    const documentFiles = await documentStore.getStage1DocumentFiles(targetCompanyId);
     
     if (documentFiles.length === 0) {
       console.error(`[GEMINI_DETAILED_ANALYSIS] No documents found for company ${targetCompanyId}`);
-      await storage.updateDetailedAnalysisStatus(
+      await documentStore.updateDetailedAnalysisStatus(
         eventId, 
         'failed', 
         'No documents found for analysis'
@@ -516,7 +501,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
 
     console.log(`[GEMINI_DETAILED_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = config.baseUrl;
     console.log(`[GEMINI_DETAILED_ANALYSIS] Using base URL: ${baseUrl}`);
 
     const files: DetailedFileInfo[] = documentFiles.map(doc => ({
@@ -532,7 +517,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
     });
 
     if (result.success && result.markdown) {
-      await storage.updateDetailedAnalysisStatus(
+      await documentStore.updateDetailedAnalysisStatus(
         eventId, 
         'success', 
         result.markdown, 
@@ -542,22 +527,16 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
 
       console.log(`[GEMINI_DETAILED_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
 
-      const event = await storage.getStage1AnalysisEvent(eventId);
-      if (global.documentUpdateListeners && event) {
-        global.documentUpdateListeners.forEach((listener) => {
-          if (listener.targetCompanyId === targetCompanyId) {
-            listener.res.write(`data: ${JSON.stringify({ 
-              type: 'detailed_analysis_completed', 
-              targetCompanyId: targetCompanyId,
-              eventId: eventId,
-              timestamp: new Date().toISOString()
-            })}\n\n`);
-          }
-        });
-      }
-      console.log(`[GEMINI_DETAILED_ANALYSIS] SSE notification sent for detailed analysis completion of company ${targetCompanyId}`);
+      const event = await documentStore.getStage1AnalysisEvent(eventId);
+      emitDocumentUpdate({
+        type: 'detailed_analysis_completed',
+        targetCompanyId: targetCompanyId,
+        eventId: eventId,
+        timestamp: new Date(),
+      });
+      console.log(`[GEMINI_DETAILED_ANALYSIS] EventBus notification sent for detailed analysis completion of company ${targetCompanyId}`);
     } else {
-      await storage.updateDetailedAnalysisStatus(
+      await documentStore.updateDetailedAnalysisStatus(
         eventId, 
         'failed', 
         result.error || 'Unknown error', 
@@ -569,7 +548,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
   } catch (error) {
     console.error(`[GEMINI_DETAILED_ANALYSIS] Error running analysis for event ${eventId}:`, error);
     
-    await storage.updateDetailedAnalysisStatus(
+    await documentStore.updateDetailedAnalysisStatus(
       eventId, 
       'failed', 
       error instanceof Error ? error.message : 'Unknown error'
@@ -585,7 +564,7 @@ export async function sendStage1AnalysisWebhook(eventId: number) {
   }
 
   try {
-    const event = await storage.getStage1AnalysisEvent(eventId);
+    const event = await documentStore.getStage1AnalysisEvent(eventId);
     if (!event) {
       console.error(`[STAGE1_ANALYSIS_WEBHOOK] Event ${eventId} not found`);
       return;
@@ -616,7 +595,7 @@ export async function sendStage1AnalysisWebhook(eventId: number) {
 
     const webhookStatus = response.ok ? 'success' : 'failed';
 
-    await storage.updateStage1AnalysisEventWebhookStatus(
+    await documentStore.updateStage1AnalysisEventWebhookStatus(
       eventId, 
       webhookStatus, 
       responseText,
@@ -629,25 +608,19 @@ export async function sendStage1AnalysisWebhook(eventId: number) {
     if (response.ok) {
       console.log(`[STAGE1_ANALYSIS_WEBHOOK] Received markdown analysis response for event ${eventId}, length: ${responseText.length} characters`);
       
-      if (global.documentUpdateListeners) {
-        global.documentUpdateListeners.forEach((listener) => {
-          if (listener.targetCompanyId === event.targetCompanyId) {
-            listener.res.write(`data: ${JSON.stringify({ 
-              type: 'stage1_analysis_completed', 
-              targetCompanyId: event.targetCompanyId,
-              eventId: eventId,
-              timestamp: new Date().toISOString()
-            })}\n\n`);
-          }
-        });
-      }
-      console.log(`[STAGE1_ANALYSIS_WEBHOOK] SSE notification sent for Stage 1 analysis completion of company ${event.targetCompanyId}`);
+      emitDocumentUpdate({
+        type: 'stage1_completed',
+        targetCompanyId: event.targetCompanyId,
+        eventId: eventId,
+        timestamp: new Date(),
+      });
+      console.log(`[STAGE1_ANALYSIS_WEBHOOK] EventBus notification sent for Stage 1 analysis completion of company ${event.targetCompanyId}`);
     }
 
   } catch (error) {
     console.error(`[STAGE1_ANALYSIS_WEBHOOK] Failed to send webhook for event ${eventId}:`, error);
     
-    await storage.updateStage1AnalysisEventWebhookStatus(
+    await documentStore.updateStage1AnalysisEventWebhookStatus(
       eventId, 
       'failed', 
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
@@ -664,7 +637,7 @@ export async function sendDetailedAnalysisWebhook(eventId: number) {
   }
 
   try {
-    const event = await storage.getStage1AnalysisEvent(eventId);
+    const event = await documentStore.getStage1AnalysisEvent(eventId);
     if (!event) {
       console.error(`[DETAILED_ANALYSIS_WEBHOOK] Event ${eventId} not found`);
       return;
@@ -705,23 +678,17 @@ export async function sendDetailedAnalysisWebhook(eventId: number) {
       try {
         const detailedData = JSON.parse(responseText);
         
-        await storage.updateStage1AnalysisEventDetailedData(eventId, detailedData);
+        await documentStore.updateStage1AnalysisEventDetailedData(eventId, detailedData);
         
         console.log(`[DETAILED_ANALYSIS_WEBHOOK] Stored detailed analysis data for event ${eventId}, length: ${responseText.length} characters`);
         
-        if (global.documentUpdateListeners) {
-          global.documentUpdateListeners.forEach((listener) => {
-            if (listener.targetCompanyId === event.targetCompanyId) {
-              listener.res.write(`data: ${JSON.stringify({ 
-                type: 'detailed_analysis_completed', 
-                targetCompanyId: event.targetCompanyId,
-                eventId: eventId,
-                timestamp: new Date().toISOString()
-              })}\n\n`);
-            }
-          });
-        }
-        console.log(`[DETAILED_ANALYSIS_WEBHOOK] SSE notification sent for detailed analysis completion of company ${event.targetCompanyId}`);
+        emitDocumentUpdate({
+          type: 'detailed_analysis_completed',
+          targetCompanyId: event.targetCompanyId,
+          eventId: eventId,
+          timestamp: new Date(),
+        });
+        console.log(`[DETAILED_ANALYSIS_WEBHOOK] EventBus notification sent for detailed analysis completion of company ${event.targetCompanyId}`);
       } catch (parseError) {
         console.error(`[DETAILED_ANALYSIS_WEBHOOK] Failed to parse response as JSON for event ${eventId}:`, parseError);
         console.log(`[DETAILED_ANALYSIS_WEBHOOK] Response text:`, responseText);
@@ -739,7 +706,7 @@ export async function processFileUploadWebhookResponse(webhookResponse: any, eve
   try {
     console.log(`[FILE_UPLOAD_WEBHOOK] Processing analysis response for event ${eventId}`);
     
-    const event = await storage.getFileUploadEvent(eventId);
+    const event = await documentStore.getFileUploadEvent(eventId);
     if (!event) {
       console.error(`[FILE_UPLOAD_WEBHOOK] Event ${eventId} not found for processing`);
       return;
@@ -808,22 +775,16 @@ export async function processFileUploadWebhookResponse(webhookResponse: any, eve
         processingTime: webhookResponse.processingTime || null,
       };
 
-      const result = await storage.createDocumentAnalysisResult(analysisResult);
+      const result = await documentStore.createDocumentAnalysisResult(analysisResult);
       results.push(result);
       
-      if (global.documentUpdateListeners) {
-        global.documentUpdateListeners.forEach((listener) => {
-          if (listener.targetCompanyId === event.targetCompanyId) {
-            listener.res.write(`data: ${JSON.stringify({ 
-              type: 'analysis_completed', 
-              targetCompanyId: event.targetCompanyId,
-              documentId: event.documentId,
-              documentType: item.documentType,
-              timestamp: new Date().toISOString()
-            })}\n\n`);
-          }
-        });
-      }
+      emitDocumentUpdate({
+        type: 'analysis_completed',
+        targetCompanyId: event.targetCompanyId,
+        documentId: event.documentId,
+        data: { documentType: item.documentType },
+        timestamp: new Date(),
+      });
       console.log(`[FILE_UPLOAD_WEBHOOK] Analysis results stored for document ${event.documentId}, type: ${item.documentType}, result ID: ${result.id}`);
     }
 
