@@ -786,25 +786,27 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   <SelectContent>
                     {DOCUMENT_TYPES
                       .filter(type => {
-                        if (!analysisCompletion) return true;
+                        if (!analysisCompletion || !analysisCompletion.completedTypes) return true;
+                        
+                        const completedTypes = analysisCompletion.completedTypes || [];
                         
                         // Filter logic for available document types based on analysis completion
                         switch (type.value) {
                           case 'company_accounts':
-                            const companyAccountsCompleted = analysisCompletion.completedTypes.filter(t => 
+                            const companyAccountsCompleted = completedTypes.filter(t => 
                               t.startsWith('company_accounts')
                             ).length;
                             return companyAccountsCompleted < 5;
                           case 'asset_register':
-                            return !analysisCompletion.completedTypes.includes('asset_register');
+                            return !completedTypes.includes('asset_register');
                           case 'balance_sheet':
-                            return !analysisCompletion.completedTypes.includes('balance_sheet');
+                            return !completedTypes.includes('balance_sheet');
                           case 'profit_and_loss':
-                            return !analysisCompletion.completedTypes.includes('profit_and_loss');
+                            return !completedTypes.includes('profit_and_loss');
                           case 'sales_ledger':
-                            return !analysisCompletion.completedTypes.includes('sales_ledger');
+                            return !completedTypes.includes('sales_ledger');
                           case 'staff_matrix':
-                            return !analysisCompletion.completedTypes.includes('staff_matrix');
+                            return !completedTypes.includes('staff_matrix');
                           default:
                             return true;
                         }

@@ -97,18 +97,73 @@ export class PortalSubmissionsRepository {
     return doc || undefined;
   }
 
-  async getAnalysisCompletionStatus(targetCompanyId: number): Promise<{ complete: boolean; analyzed: number; total: number; categories: Record<string, boolean> }> {
-    const docs = await db.select().from(documents).where(eq(documents.targetCompanyId, targetCompanyId));
-    const analysisResults = await db.select().from(documentAnalysisResults)
-      .where(sql`${documentAnalysisResults.documentId} IN (SELECT id FROM documents WHERE target_company_id = ${targetCompanyId})`);
-    const analyzedDocIds = new Set(analysisResults.map(r => r.documentId));
-    const categories = ['Company Accounts', 'Profit & Loss', 'Balance Sheet', 'Sales Ledger', 'Staff Matrix', 'Asset Register'];
-    const categoryStatus: Record<string, boolean> = {};
-    for (const cat of categories) {
-      const catDocs = docs.filter(d => d.documentCategory === cat);
-      categoryStatus[cat] = catDocs.length > 0 && catDocs.every(d => analyzedDocIds.has(d.id));
+  async getAnalysisCompletionStatus(targetCompanyId: number): Promise<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
+  }> {
+    const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
+    
+    const analysisResults = await db
+      .select({
+        documentType: documentAnalysisResults.documentType,
+        documentCategory: documents.documentCategory,
+        analysisData: documentAnalysisResults.analysisData,
+        documentId: documentAnalysisResults.documentId,
+      })
+      .from(documentAnalysisResults)
+      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+
+    // Get completed regular types (excluding Company Accounts category)
+    const completedTypes = Array.from(new Set(
+      analysisResults
+        .filter(a => a.documentCategory !== 'Company Accounts' && requiredTypes.includes(a.documentType))
+        .map(a => a.documentType)
+    ));
+
+    // Count company accounts documents
+    const uniqueCompanyAccountsDocs = new Set(
+      analysisResults
+        .filter(result => {
+          if (result.analysisData && typeof result.analysisData === 'object') {
+            const data = result.analysisData as any;
+            return data.document === 'company_accounts';
+          }
+          return false;
+        })
+        .map(result => result.documentId)
+    );
+    const companyAccountsCount = uniqueCompanyAccountsDocs.size;
+
+    // Total = 5 regular types + 5 company accounts slots = 10
+    const totalRequired = 10;
+    const completedCount = completedTypes.length + Math.min(companyAccountsCount, 5);
+
+    // Build missing types
+    const missingTypes = requiredTypes.filter(type => !completedTypes.includes(type));
+    const missingCompanyAccounts = Math.max(0, 5 - companyAccountsCount);
+    for (let i = 0; i < missingCompanyAccounts; i++) {
+      missingTypes.push(`company_accounts_${i + 1}`);
     }
-    return { complete: Object.values(categoryStatus).every(Boolean), analyzed: analyzedDocIds.size, total: docs.length, categories: categoryStatus };
+
+    // Build all completed types including company accounts
+    const allCompletedTypes = [
+      ...completedTypes,
+      ...Array(Math.min(companyAccountsCount, 5)).fill('company_accounts').map((_, i) => `company_accounts_${i + 1}`)
+    ];
+
+    return {
+      completedTypes: allCompletedTypes,
+      missingTypes,
+      isComplete: completedCount === totalRequired,
+      completionPercentage: Math.round((completedCount / totalRequired) * 100),
+      completedCount,
+      totalCount: totalRequired,
+    };
   }
 }
 
