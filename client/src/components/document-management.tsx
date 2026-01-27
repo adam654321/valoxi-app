@@ -546,6 +546,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     totalCount: number;
   }>({
     queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
+    select: (response: any) => response.data,
     refetchInterval: 10000,
     refetchIntervalInBackground: false,
     staleTime: 30000,
