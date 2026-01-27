@@ -13,7 +13,7 @@ export class EmailApiService {
     const inviter = invitation.invitedBy ? await emailRepository.getUserById(invitation.invitedBy) : null;
     const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || inviter.email : 'Team Admin';
     const companyName = await emailRepository.getUserCompanyName(invitation.userCompanyId) || 'Company';
-    const inviteUrl = `${baseUrl}/accept-invitation/${invitation.invitationToken}`;
+    const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
     const success = await legacyEmailService.sendTeamInvitation(invitation.email, inviterName, companyName, invitation.invitationToken, inviteUrl, invitation.invitedRole || 'Team Member');
     return { success, message: success ? 'Invitation email sent successfully' : 'Failed to send invitation email' };
   }
