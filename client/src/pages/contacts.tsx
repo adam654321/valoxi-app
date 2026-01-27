@@ -85,8 +85,9 @@ export default function Contacts() {
 
   // Get target companies for the contact form dropdown
   const { data: targetCompanies = [] } = useQuery<TargetCompany[]>({
-    queryKey: ["/api/target-companies"],
+    queryKey: ["/api/v2/target-companies"],
     enabled: !!user,
+    select: (response: any) => response.data,
   });
 
   // Contact form
@@ -112,7 +113,7 @@ export default function Contacts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       setShowContactForm(false);
       setEditingContact(null);
       contactForm.reset();
@@ -139,7 +140,7 @@ export default function Contacts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       setShowContactForm(false);
       setEditingContact(null);
       contactForm.reset();
@@ -164,7 +165,7 @@ export default function Contacts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       toast({
         title: "Success",
         description: "Contact deleted successfully!",
