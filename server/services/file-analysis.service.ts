@@ -7,6 +7,7 @@ import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "..
 import { classifyDocumentWithGemini } from "../gemini-document-classification-service";
 import { runStep2AnalysisForTypes } from "../gemini-step2-analysis-service";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
+import { financialDataService } from "./financial-data.service";
 import { config } from "../config";
 
 function emitDocumentUpdate(event: DocumentUpdateEvent): void {
@@ -155,6 +156,23 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
             usageMetadata: result.usageMetadata || null,
           });
           console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
+          
+          // Process extracted data into normalized financial tables
+          try {
+            const normalizationResult = await financialDataService.processExtractedData(
+              result.documentType,
+              result.analysisData,
+              event.targetCompanyId,
+              event.documentId
+            );
+            console.log(`[FILE_ANALYSIS] Financial data normalization for ${result.documentType}: ${normalizationResult.message}`);
+            if (normalizationResult.errors && normalizationResult.errors.length > 0) {
+              console.warn(`[FILE_ANALYSIS] Normalization warnings:`, normalizationResult.errors);
+            }
+          } catch (normalizationError) {
+            // Log but don't fail - JSON storage already succeeded
+            console.error(`[FILE_ANALYSIS] Financial data normalization failed for ${result.documentType}:`, normalizationError);
+          }
         } catch (storeError) {
           console.error(`[FILE_ANALYSIS] Failed to store ${result.documentType} analysis:`, storeError);
         }

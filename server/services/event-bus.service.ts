@@ -38,11 +38,19 @@ export interface DocumentUpdateEvent {
   timestamp: Date;
 }
 
+export interface FinancialDataUpdateEvent {
+  targetCompanyId: number;
+  dataType: string;
+  recordCount: number;
+  timestamp: Date;
+}
+
 type EventMap = {
   'analysis:completed': AnalysisCompletedEvent;
   'file:uploaded': FileUploadedEvent;
   'stage:updated': StageUpdatedEvent;
   'document:update': DocumentUpdateEvent;
+  'financial_data:update': FinancialDataUpdateEvent;
 };
 
 type EventName = keyof EventMap;
