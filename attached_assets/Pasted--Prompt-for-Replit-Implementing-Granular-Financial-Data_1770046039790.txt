@@ -1,0 +1,55 @@
+# Prompt for Replit: Implementing Granular Financial Data Extraction
+
+**Context:**
+We are upgrading our document analysis system to move from storing generic JSON blobs to strictly normalized relational database tables. This allows us to query specific financial metrics (e.g., "Gross Profit in 2023") directly via SQL.
+
+**Objective:**
+Implement the "Financial Data Extraction Strategy" as defined in `docs/PLAN-financial-data-extraction.md`. This involves database schema updates, prompt engineering for Gemini, and a new service layer for structured data ingestion.
+
+**Phase 1: Database Schema (`shared/schema.ts`)**
+Please extend the Drizzle ORM schema to include the following normalized tables. Ensure proper foreign key relationships to `target_companies`.
+
+1.  **`financial_periods`**:
+    *   Tracks fiscal years or management periods (start_date, end_date, type='statutory'|'management').
+2.  **`income_statements`**:
+    *   Linked to `financial_periods`.
+    *   Columns: revenue, cost_of_sales, gross_profit, admin_expenses, operating_profit, interest_*, net_profit.
+    *   JSON columns for detailed breakdowns (e.g., `revenue_breakdown`, `overheads_breakdown`).
+3.  **`balance_sheets`**:
+    *   Linked to `financial_periods`.
+    *   Columns: fixed_assets, current_assets, current_liabilities, long_term_liabilities, equity.
+    *   JSON columns for granular asset lists (e.g., `debtors_list`, `creditors_list`).
+4.  **Operational Tables**:
+    *   `staff_data` (headcount, costs, director remuneration).
+    *   `aged_debtors_creditors` (summary buckets 0-30, 31-60, etc.).
+    *   `fixed_assets_register` (individual asset items).
+    *   `loan_facilities` (lender, rate, term, amount).
+
+**Phase 2: Gemini Prompt Updates (`server/prompts/`)**
+Update or create the following prompt builders to output JSON that *exactly matches* the new database schema.
+
+*   `step2-profit-and-loss-prompt.ts`: Enforce extraction of all P&L line items + breakdowns.
+*   `step2-balance-sheet-prompt.ts`: Enforce extraction of asset classes (Freehold vs Leasehold, etc.).
+*   `step2-staff-matrix-prompt.ts`: Extract census data + summary costs.
+*   **NEW**: `step2-aged-debtors-prompt.ts` & `step2-aged-creditors-prompt.ts`.
+*   **NEW**: `step2-fixed-register-prompt.ts`.
+*   **NEW**: `step2-loan-facilities-prompt.ts`.
+
+**Phase 3: Service Layer (`server/services/financial-data.service.ts`)**
+Create a new `FinancialDataService` class to handle the ingestion logic:
+
+1.  **`processExtraction(documentType, jsonData)`**:
+    *   Validate the incoming JSON.
+    *   Find or create the relevant `financial_periods` record.
+    *   Upsert data into the corresponding table (`income_statements`, `balance_sheets`, etc.).
+    *   This service should be called *after* the existing `file-analysis.service.ts` stores the raw JSON result.
+
+**Verification:**
+After implementation, we must be able to run a query like:
+```sql
+SELECT period_end, revenue, gross_profit 
+FROM income_statements 
+JOIN financial_periods ON income_statements.period_id = financial_periods.id 
+WHERE target_company_id = X;
+```
+And receive structured rows, not a JSON blob.
