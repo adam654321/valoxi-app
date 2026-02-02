@@ -1295,6 +1295,375 @@ export const documentStageProgressionRelations = relations(documentStageProgress
 
 
 
+// ============================================================================
+// NORMALIZED FINANCIAL DATA TABLES
+// These tables store structured financial data extracted from documents
+// allowing direct SQL queries instead of parsing JSON blobs
+// ============================================================================
+
+// Financial periods - tracks fiscal years and management accounting periods
+export const financialPeriods = pgTable("financial_periods", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  periodType: varchar("period_type", { length: 20 }).notNull(), // 'statutory' | 'management'
+  periodStart: date("period_start"),
+  periodEnd: date("period_end").notNull(),
+  fiscalYear: integer("fiscal_year"), // e.g., 2023
+  periodLabel: varchar("period_label", { length: 100 }), // e.g., "FY 2023", "Q1 2024"
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniquePeriod: unique("unique_financial_period").on(table.targetCompanyId, table.periodType, table.periodEnd),
+}));
+
+// Income statements (P&L) - one row per financial period
+export const incomeStatements = pgTable("income_statements", {
+  id: serial("id").primaryKey(),
+  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  // Core P&L line items (all in base currency units, no decimals for pence)
+  revenue: decimal("revenue"),
+  costOfSales: decimal("cost_of_sales"),
+  grossProfit: decimal("gross_profit"),
+  administrativeExpenses: decimal("administrative_expenses"),
+  depreciationAmortisation: decimal("depreciation_amortisation"),
+  otherOperatingIncome: decimal("other_operating_income"),
+  operatingProfit: decimal("operating_profit"),
+  interestReceivable: decimal("interest_receivable"),
+  interestPayable: decimal("interest_payable"),
+  profitBeforeTax: decimal("profit_before_tax"),
+  corporationTax: decimal("corporation_tax"),
+  netProfit: decimal("net_profit"),
+  // JSON columns for detailed breakdowns
+  revenueBreakdown: json("revenue_breakdown"), // {by_product: {...}, by_segment: {...}}
+  costOfSalesBreakdown: json("cost_of_sales_breakdown"), // {direct_materials, direct_labour, subcontractors, other}
+  overheadsBreakdown: json("overheads_breakdown"), // {staff_costs, rent, utilities, insurance, etc.}
+  exceptionalItems: json("exceptional_items"), // non-recurring items
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Balance sheets - one row per financial period
+export const balanceSheets = pgTable("balance_sheets", {
+  id: serial("id").primaryKey(),
+  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  // Fixed Assets (summary values)
+  intangibleAssets: decimal("intangible_assets"), // goodwill, brand, IP
+  tangibleFixedAssets: decimal("tangible_fixed_assets"), // total of property, plant, etc.
+  freeholdProperty: decimal("freehold_property"),
+  leaseholdProperty: decimal("leasehold_property"),
+  plantMachinery: decimal("plant_machinery"),
+  fixturesFittings: decimal("fixtures_fittings"),
+  motorVehicles: decimal("motor_vehicles"),
+  computerEquipment: decimal("computer_equipment"),
+  // Current Assets
+  stockInventory: decimal("stock_inventory"),
+  tradeDebtors: decimal("trade_debtors"),
+  prepayments: decimal("prepayments"),
+  amountsOwedByDirectors: decimal("amounts_owed_by_directors"),
+  otherDebtors: decimal("other_debtors"),
+  cashAtBank: decimal("cash_at_bank"),
+  totalCurrentAssets: decimal("total_current_assets"),
+  // Current Liabilities
+  tradeCreditors: decimal("trade_creditors"),
+  taxationSocialSecurity: decimal("taxation_social_security"), // PAYE, NI, VAT
+  corporationTaxDue: decimal("corporation_tax_due"),
+  bankLoansOverdraftCurrent: decimal("bank_loans_overdraft_current"),
+  accruals: decimal("accruals"),
+  amountsOwedToDirectors: decimal("amounts_owed_to_directors"),
+  otherCreditors: decimal("other_creditors"),
+  totalCurrentLiabilities: decimal("total_current_liabilities"),
+  // Long-term Liabilities
+  bankLoansLongTerm: decimal("bank_loans_long_term"),
+  deferredTaxation: decimal("deferred_taxation"),
+  otherLongTermDebt: decimal("other_long_term_debt"),
+  totalLongTermLiabilities: decimal("total_long_term_liabilities"),
+  // Equity
+  shareCapital: decimal("share_capital"),
+  retainedEarnings: decimal("retained_earnings"),
+  totalEquity: decimal("total_equity"),
+  // JSON columns for granular breakdowns
+  debtorsList: json("debtors_list"), // top debtors with amounts
+  creditorsList: json("creditors_list"), // top creditors with amounts
+  fixedAssetsDetail: json("fixed_assets_detail"), // detailed asset breakdown
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff data - payroll and headcount information
+export const staffData = pgTable("staff_data", {
+  id: serial("id").primaryKey(),
+  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  // Summary figures
+  totalHeadcount: integer("total_headcount"),
+  totalStaffCosts: decimal("total_staff_costs"),
+  totalGrossSalaries: decimal("total_gross_salaries"),
+  totalEmployerNi: decimal("total_employer_ni"),
+  totalEmployerPension: decimal("total_employer_pension"),
+  // Director/owner split
+  directorCount: integer("director_count"),
+  directorRemuneration: decimal("director_remuneration"),
+  workingDirectorCount: integer("working_director_count"),
+  nonWorkingDirectorCount: integer("non_working_director_count"),
+  employeeCount: integer("employee_count"),
+  employeeCosts: decimal("employee_costs"),
+  // JSON for individual staff records
+  staffRecords: json("staff_records"), // [{name, position, salary, ni, pension, isDirector, isOwner}]
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Aged debtors - receivables aging analysis
+export const agedDebtors = pgTable("aged_debtors", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  reportDate: date("report_date").notNull(),
+  // Aging buckets
+  totalTradeDebtors: decimal("total_trade_debtors"),
+  current0To30: decimal("current_0_to_30"),
+  days31To60: decimal("days_31_to_60"),
+  days61To90: decimal("days_61_to_90"),
+  days90Plus: decimal("days_90_plus"),
+  // Provisions
+  badDebtProvision: decimal("bad_debt_provision"),
+  doubtfulDebts: decimal("doubtful_debts"),
+  // For debtor days calculation
+  recentRevenue: decimal("recent_revenue"), // for days calculation
+  debtorDays: decimal("debtor_days"),
+  // JSON for top debtors
+  topDebtors: json("top_debtors"), // [{name, amount, daysBucket}] top 10
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Fixed assets register - detailed asset tracking
+export const fixedAssetsRegister = pgTable("fixed_assets_register", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  reportDate: date("report_date").notNull(),
+  // Summary by category
+  totalGrossBookValue: decimal("total_gross_book_value"),
+  totalAccumulatedDepreciation: decimal("total_accumulated_depreciation"),
+  totalNetBookValue: decimal("total_net_book_value"),
+  // Property summary
+  propertyGrossValue: decimal("property_gross_value"),
+  propertyNetBookValue: decimal("property_net_book_value"),
+  // Plant & machinery summary
+  plantMachineryGrossValue: decimal("plant_machinery_gross_value"),
+  plantMachineryNetBookValue: decimal("plant_machinery_net_book_value"),
+  // Vehicles summary
+  vehiclesGrossValue: decimal("vehicles_gross_value"),
+  vehiclesNetBookValue: decimal("vehicles_net_book_value"),
+  // IT/Computer equipment summary
+  itEquipmentGrossValue: decimal("it_equipment_gross_value"),
+  itEquipmentNetBookValue: decimal("it_equipment_net_book_value"),
+  // Other assets
+  otherAssetsGrossValue: decimal("other_assets_gross_value"),
+  otherAssetsNetBookValue: decimal("other_assets_net_book_value"),
+  // Refinanceable assets
+  refinanceableAssetsValue: decimal("refinanceable_assets_value"),
+  fullyDepreciatedStillInUse: decimal("fully_depreciated_still_in_use"),
+  // JSON for individual asset items
+  assetItems: json("asset_items"), // [{description, category, purchaseDate, cost, accDepn, nbv, rate, method, location, condition}]
+  propertyDetails: json("property_details"), // [{address, tenure, marketValue, purchasePrice, nbv}]
+  vehicleDetails: json("vehicle_details"), // [{make, model, reg, purchaseDate, cost, nbv, marketValue}]
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Loan facilities - debt documentation
+export const loanFacilities = pgTable("loan_facilities", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  lenderName: varchar("lender_name", { length: 255 }),
+  loanType: varchar("loan_type", { length: 100 }), // Term Loan, Asset Finance, Property Mortgage, Overdraft
+  originalAmount: decimal("original_amount"),
+  outstandingBalance: decimal("outstanding_balance"),
+  interestRate: decimal("interest_rate"), // as percentage
+  termMonths: integer("term_months"),
+  startDate: date("start_date"),
+  maturityDate: date("maturity_date"),
+  monthlyRepayment: decimal("monthly_repayment"),
+  annualRepayment: decimal("annual_repayment"),
+  security: text("security"),
+  personalGuarantees: boolean("personal_guarantees"),
+  covenants: text("covenants"),
+  earlyRepaymentTerms: text("early_repayment_terms"),
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relations for financial data tables
+export const financialPeriodsRelations = relations(financialPeriods, ({ one, many }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [financialPeriods.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [financialPeriods.sourceDocumentId],
+    references: [documents.id],
+  }),
+  incomeStatements: many(incomeStatements),
+  balanceSheets: many(balanceSheets),
+  staffData: many(staffData),
+}));
+
+export const incomeStatementsRelations = relations(incomeStatements, ({ one }) => ({
+  financialPeriod: one(financialPeriods, {
+    fields: [incomeStatements.financialPeriodId],
+    references: [financialPeriods.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [incomeStatements.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [incomeStatements.sourceDocumentId],
+    references: [documents.id],
+  }),
+}));
+
+export const balanceSheetsRelations = relations(balanceSheets, ({ one }) => ({
+  financialPeriod: one(financialPeriods, {
+    fields: [balanceSheets.financialPeriodId],
+    references: [financialPeriods.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [balanceSheets.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [balanceSheets.sourceDocumentId],
+    references: [documents.id],
+  }),
+}));
+
+export const staffDataRelations = relations(staffData, ({ one }) => ({
+  financialPeriod: one(financialPeriods, {
+    fields: [staffData.financialPeriodId],
+    references: [financialPeriods.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [staffData.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [staffData.sourceDocumentId],
+    references: [documents.id],
+  }),
+}));
+
+export const agedDebtorsRelations = relations(agedDebtors, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [agedDebtors.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [agedDebtors.sourceDocumentId],
+    references: [documents.id],
+  }),
+}));
+
+export const fixedAssetsRegisterRelations = relations(fixedAssetsRegister, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [fixedAssetsRegister.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [fixedAssetsRegister.sourceDocumentId],
+    references: [documents.id],
+  }),
+}));
+
+export const loanFacilitiesRelations = relations(loanFacilities, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [loanFacilities.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  sourceDocument: one(documents, {
+    fields: [loanFacilities.sourceDocumentId],
+    references: [documents.id],
+  }),
+}));
+
+// Insert schemas for financial data tables
+export const insertFinancialPeriodSchema = createInsertSchema(financialPeriods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIncomeStatementSchema = createInsertSchema(incomeStatements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBalanceSheetSchema = createInsertSchema(balanceSheets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffDataSchema = createInsertSchema(staffData).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAgedDebtorsSchema = createInsertSchema(agedDebtors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFixedAssetsRegisterSchema = createInsertSchema(fixedAssetsRegister).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLoanFacilitySchema = createInsertSchema(loanFacilities).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for financial data tables
+export type FinancialPeriod = typeof financialPeriods.$inferSelect;
+export type InsertFinancialPeriod = z.infer<typeof insertFinancialPeriodSchema>;
+
+export type IncomeStatement = typeof incomeStatements.$inferSelect;
+export type InsertIncomeStatement = z.infer<typeof insertIncomeStatementSchema>;
+
+export type BalanceSheet = typeof balanceSheets.$inferSelect;
+export type InsertBalanceSheet = z.infer<typeof insertBalanceSheetSchema>;
+
+export type StaffData = typeof staffData.$inferSelect;
+export type InsertStaffData = z.infer<typeof insertStaffDataSchema>;
+
+export type AgedDebtors = typeof agedDebtors.$inferSelect;
+export type InsertAgedDebtors = z.infer<typeof insertAgedDebtorsSchema>;
+
+export type FixedAssetsRegister = typeof fixedAssetsRegister.$inferSelect;
+export type InsertFixedAssetsRegister = z.infer<typeof insertFixedAssetsRegisterSchema>;
+
+export type LoanFacility = typeof loanFacilities.$inferSelect;
+export type InsertLoanFacility = z.infer<typeof insertLoanFacilitySchema>;
+
+// ============================================================================
+// END OF NORMALIZED FINANCIAL DATA TABLES
+// ============================================================================
+
 // Document requirement schemas
 export const insertCompanyDocumentRequirementSchema = createInsertSchema(companyDocumentRequirements).omit({
   id: true,
