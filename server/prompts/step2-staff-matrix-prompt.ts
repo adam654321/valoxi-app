@@ -1,60 +1,92 @@
 export function buildStaffMatrixAnalysisPrompt(dateToday: string): string {
   return `You are a financial and HR analysis AI.
 
-You will be provided with staff matrix data. Your task is to analyse the staff data and extract high-level workforce insights in structured JSON format.
+You will be provided with staff matrix data (payroll report). Your task is to extract workforce and payroll insights in structured JSON format for M&A due diligence purposes.
 
 ---
 
 INSTRUCTIONS:
-Using the input data, calculate accurately and return the following:
 
-total_employee_count – Total number of employees listed
-total_annual_payroll – Sum total of all the salaries
-average_salary – Mean salary across all staff
-employment_type_breakdown – Count of Full-Time and Part-Time employees
-status_summary – Count of employees by employment status (e.g., Active, Maternity Leave)
-longest_tenured_employees – A single string containing three bullet points (one per line) of the top 3 longest-serving employees, including:
-name
-role
-start_date
-years_of_service
-Format exactly like:
-* Name – Role (start_date: DD/MM/YY; years_of_service: X)
-observations – Up to 3 summary bullet points, such as:
-"Majority of staff are active full-time employees."
-"One employee has been with the company for over 6 years."
-"Only one employee is currently on maternity leave."
+Using the input data, extract and calculate the following:
+
+SUMMARY DATA:
+• total_headcount – Total number of employees/staff listed
+• total_staff_costs – Sum of all employment costs (salary + NI + pension)
+• total_gross_salaries – Sum of all gross salaries/wages
+• total_employer_ni – Sum of all employer NI contributions
+• total_employer_pension – Sum of all employer pension contributions
+
+DIRECTOR/OWNER SPLIT:
+• director_count – Number of directors listed
+• director_remuneration – Total remuneration for all directors
+• working_director_count – Directors actively working in the business
+• non_working_director_count – Directors not actively working
+• employee_count – Number of non-director employees
+• employee_costs – Total cost of non-director employees
+
+INDIVIDUAL STAFF RECORDS:
+For each person, extract:
+• name – Employee/director name
+• position – Job title/role
+• gross_salary – Annual gross salary
+• employer_ni – Employer NI contribution
+• employer_pension – Employer pension contribution
+• total_cost – Total employment cost
+• is_director – true/false
+• is_owner – true/false (if shareholder/owner)
+• employment_type – Full-Time or Part-Time
+• start_date – Employment start date (if available)
 
 ---
 
 OUTPUT FORMAT (JSON):
 
 {
-  "total_employee_count": null,
-  "total_annual_payroll": null,
-  "average_salary": null,
+  "document": "staff_matrix",
+  "report_date": "${dateToday}",
+  "summary": {
+    "total_headcount": null,
+    "total_staff_costs": null,
+    "total_gross_salaries": null,
+    "total_employer_ni": null,
+    "total_employer_pension": null,
+    "director_count": null,
+    "director_remuneration": null,
+    "working_director_count": null,
+    "non_working_director_count": null,
+    "employee_count": null,
+    "employee_costs": null
+  },
+  "staff": [
+    {
+      "name": "John Smith",
+      "position": "Managing Director",
+      "gross_salary": 85000,
+      "employer_ni": 9500,
+      "employer_pension": 2550,
+      "total_cost": 97050,
+      "is_director": true,
+      "is_owner": true,
+      "employment_type": "Full-Time",
+      "start_date": "2015-01-15"
+    }
+  ],
   "employment_type_breakdown": {
     "Full-Time": null,
     "Part-Time": null
   },
-  "status_summary": {
-    "Active": null,
-    "Maternity Leave": null
-  },
-  "longest_tenured_employees": "* Employee A – Job Title (start_date: DD/MM/YY; years_of_service: X)\\n* Employee B – Job Title (start_date: DD/MM/YY; years_of_service: X)\\n* Employee C – Job Title (start_date: DD/MM/YY; years_of_service: X)",
   "observations": [
-    "Example: All employees are on active payroll.",
-    "Example: Alice Thompson is the longest-serving employee with over 6 years of service.",
-    "Example: The team is predominantly full-time."
+    "The business has X directors with total remuneration of £Y.",
+    "Average employee salary is £Z excluding directors.",
+    "Staff costs represent a significant operational expense."
   ]
 }
-
 
 ---
 
 NOTES:
-Use only numeric values for salary and years (no symbols or text).
-If any value is unavailable or cannot be inferred, return null.
-Use today's date (${dateToday}) to calculate years of service from each start date.
-Return only the valid JSON output beginning with { & ending with } — no commentary or formatting outside the object.`;
+• Use only numeric values for salaries and costs (no £ symbols or commas).
+• If any value is unavailable or cannot be inferred, return null.
+• Use today's date (${dateToday}) if no specific report date is provided.
+• Return only the valid JSON output beginning with { and ending with } — no surrounding text.`;
 }

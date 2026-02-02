@@ -9,6 +9,7 @@ STAGE 1 — DATA EXTRACTION & CALCULATION
 
 1. Identify the financial years covered
 • Extract all consecutive financial years present (e.g. 2022, 2023, 2024).
+• Identify the period end dates if shown (e.g., "31 March 2024").
 
 2. Extract the following Profit & Loss fields for each year
 Only extract or calculate numeric values:
@@ -18,19 +19,45 @@ Only extract or calculate numeric values:
 Use null if a value is missing or cannot be calculated.
 
 Profit & Loss Fields
-• revenue
+• revenue (turnover)
 • cost_of_sales
 • gross_profit
-• administrative_expenses
+• administrative_expenses (total figure)
+• depreciation_amortisation (usually in notes, extract if available)
 • other_operating_income
 • operating_profit
 • interest_receivable
 • interest_payable
 • profit_before_tax
-• tax
+• corporation_tax (tax charge)
 • net_profit
 
-3. Calculate the following financial ratios per year
+3. Extract cost breakdowns if available in the document
+Revenue Breakdown (if available by product/service line or customer segment)
+Cost of Sales Breakdown:
+• direct_materials
+• direct_labour
+• subcontractor_costs
+• other_direct_costs
+
+Overheads/Administrative Expenses Breakdown:
+• staff_costs (wages, salaries, NI, pension)
+• rent_rates
+• utilities
+• insurance
+• professional_fees
+• marketing_advertising
+• it_costs
+• vehicle_costs
+• travel_subsistence
+• office_costs
+• repairs_maintenance
+• bank_charges
+• depreciation
+• amortisation
+• other_overheads
+
+4. Calculate the following financial ratios per year
 (Do NOT assume they are provided — calculate them yourself if possible)
 Use percentages as numbers (e.g. 72.4, not "72.4%").
 
@@ -44,22 +71,16 @@ Use percentages as numbers (e.g. 72.4, not "72.4%").
 (operating_profit / interest_payable)
   ◦ If interest_payable is 0 or missing → null
 
-• current_ratio
-(total_current_assets / creditors)
-  ◦ Only calculate if both values are available
-
 STAGE 2 — EXECUTIVE FINANCIAL SUMMARY
 Using only the extracted and calculated data above:
 
-4. Analyse year-on-year changes, focusing on:
+5. Analyse year-on-year changes, focusing on:
 • Revenue growth or decline
 • Gross profit and gross margin movement
 • Net profit movement
-• Liquidity trends (current ratio, if available)
 • Financial resilience (interest coverage, if available)
-• Operational scale (employee count, only if provided)
 
-5. Write 5–8 concise bullet points:
+6. Write 5–8 concise bullet points:
 • Use professional British English
 • Suitable for a CEO, investor, or buyer
 • Quantify % movements where meaningful
@@ -67,12 +88,6 @@ Using only the extracted and calculated data above:
   ◦ Positive trends (e.g. margin expansion, improved profitability)
   ◦ Red flags (e.g. margin compression, declining revenues)
 • Treat movements over ±3% as significant
-• Slightly optimistic only if justified by the data
-
-6. Conditional rules
-• If employee data is missing → omit staff commentary
-• If creditor or asset data is missing → omit liquidity commentary
-• Do not speculate or infer beyond the numbers provided
 
 STRICT OUTPUT REQUIREMENTS
 • Return ONLY valid JSON
@@ -81,7 +96,14 @@ STRICT OUTPUT REQUIREMENTS
 
 FINAL OUTPUT FORMAT
 {
+  "document": "profit_and_loss",
+  "source": "statutory",
   "years_covered": [2022, 2023, 2024],
+  "period_ends": {
+    "2022": "2022-03-31",
+    "2023": "2023-03-31",
+    "2024": "2024-03-31"
+  },
   "years": {
     "2022": {
       "year": 2022,
@@ -90,41 +112,47 @@ FINAL OUTPUT FORMAT
         "cost_of_sales": null,
         "gross_profit": null,
         "administrative_expenses": null,
+        "depreciation_amortisation": null,
         "other_operating_income": null,
         "operating_profit": null,
         "interest_receivable": null,
         "interest_payable": null,
         "profit_before_tax": null,
-        "tax": null,
+        "corporation_tax": null,
         "net_profit": null
       },
+      "revenue_breakdown": {
+        "by_product": {},
+        "by_segment": {}
+      },
+      "cost_of_sales_breakdown": {
+        "direct_materials": null,
+        "direct_labour": null,
+        "subcontractor_costs": null,
+        "other_direct_costs": null
+      },
+      "overheads_breakdown": {
+        "staff_costs": null,
+        "rent_rates": null,
+        "utilities": null,
+        "insurance": null,
+        "professional_fees": null,
+        "marketing_advertising": null,
+        "it_costs": null,
+        "vehicle_costs": null,
+        "travel_subsistence": null,
+        "office_costs": null,
+        "repairs_maintenance": null,
+        "bank_charges": null,
+        "depreciation": null,
+        "amortisation": null,
+        "other_overheads": null
+      },
+      "exceptional_items": [],
       "financial_ratios": {
         "gross_margin_percent": null,
         "net_margin_percent": null,
-        "interest_coverage_ratio": null,
-        "current_ratio": null
-      }
-    },
-    "2023": {
-      "year": 2023,
-      "profit_and_loss": {
-        "revenue": null,
-        "cost_of_sales": null,
-        "gross_profit": null,
-        "administrative_expenses": null,
-        "other_operating_income": null,
-        "operating_profit": null,
-        "interest_receivable": null,
-        "interest_payable": null,
-        "profit_before_tax": null,
-        "tax": null,
-        "net_profit": null
-      },
-      "financial_ratios": {
-        "gross_margin_percent": null,
-        "net_margin_percent": null,
-        "interest_coverage_ratio": null,
-        "current_ratio": null
+        "interest_coverage_ratio": null
       }
     }
   },
