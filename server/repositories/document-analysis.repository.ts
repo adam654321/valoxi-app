@@ -104,6 +104,11 @@ export class DocumentAnalysisRepository {
 
     return uniqueDocuments.size;
   }
+
+  async deleteByDocumentId(documentId: number): Promise<void> {
+    await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
+    console.log(`[DOCUMENT_ANALYSIS] Deleted analysis results for document ${documentId}`);
+  }
 }
 
 export const documentAnalysisRepository = new DocumentAnalysisRepository();

@@ -390,6 +390,42 @@ export class FinancialDataRepository {
       loans,
     };
   }
+
+  async deleteByDocumentId(documentId: number): Promise<void> {
+    // Delete from all financial tables that reference this document
+    // Order matters due to foreign key constraints - delete child records first
+    
+    // Get financial periods linked to this document
+    const periods = await db
+      .select({ id: financialPeriods.id })
+      .from(financialPeriods)
+      .where(eq(financialPeriods.sourceDocumentId, documentId));
+    
+    const periodIds = periods.map(p => p.id);
+    
+    if (periodIds.length > 0) {
+      // Delete income statements linked to these periods
+      for (const periodId of periodIds) {
+        await db.delete(incomeStatements).where(eq(incomeStatements.financialPeriodId, periodId));
+      }
+      
+      // Delete balance sheets linked to these periods
+      for (const periodId of periodIds) {
+        await db.delete(balanceSheets).where(eq(balanceSheets.financialPeriodId, periodId));
+      }
+    }
+    
+    // Delete records that reference document directly
+    await db.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
+    await db.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
+    await db.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.sourceDocumentId, documentId));
+    await db.delete(loanFacilities).where(eq(loanFacilities.sourceDocumentId, documentId));
+    
+    // Finally delete the financial periods themselves
+    await db.delete(financialPeriods).where(eq(financialPeriods.sourceDocumentId, documentId));
+    
+    console.log(`[FINANCIAL_DATA] Deleted all financial data for document ${documentId}`);
+  }
 }
 
 export const financialDataRepository = new FinancialDataRepository();

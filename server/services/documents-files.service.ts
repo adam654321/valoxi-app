@@ -1,6 +1,8 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { documentsRepository } from '../repositories/documents.repository';
+import { financialDataRepository } from '../repositories/financial-data.repository';
+import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { Document, InsertDocument } from '@shared/schema';
 
@@ -101,6 +103,20 @@ export class DocumentsFilesService {
   async deleteDocument(documentId: number, userCompanyId: number): Promise<void> {
     const document = await documentsRepository.getDocument(documentId, userCompanyId);
     if (document) {
+      // Delete related financial data first to avoid foreign key constraint violations
+      try {
+        await financialDataRepository.deleteByDocumentId(documentId);
+      } catch (error) {
+        console.error(`[DELETE_DOCUMENT] Error deleting financial data for document ${documentId}:`, error);
+      }
+      
+      // Delete document analysis results
+      try {
+        await documentAnalysisRepository.deleteByDocumentId(documentId);
+      } catch (error) {
+        console.error(`[DELETE_DOCUMENT] Error deleting analysis results for document ${documentId}:`, error);
+      }
+      
       const success = await documentsRepository.deleteDocument(documentId);
       if (!success) throw new Error('Failed to delete document');
       if (document.externalSubmissionId) {
