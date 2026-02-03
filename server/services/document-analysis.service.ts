@@ -45,18 +45,51 @@ export class DocumentAnalysisService {
 
   private async calculateCompletionStatus(targetCompanyId: number): Promise<AnalysisCompletionStatus> {
     const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
+    const categoryToType: Record<string, string> = {
+      'Asset Register': 'asset_register',
+      'Sales Ledger': 'sales_ledger', 
+      'Staff Matrix': 'staff_matrix',
+      'Profit & Loss': 'profit_and_loss',
+      'Balance Sheet': 'balance_sheet',
+    };
+    
+    // Get ALL documents for this company (immediate feedback on upload)
+    const allDocuments = await documentAnalysisRepository.getAllDocumentsForCompany(targetCompanyId);
+    
+    // Get analysis results to verify/override categorization
     const analysisTypes = await documentAnalysisRepository.getDistinctAnalysisTypesForCompany(targetCompanyId);
     
-    // Filter out webhook-detected types for documents that were uploaded as "Company Accounts"
-    const completedTypes = Array.from(new Set(
-      analysisTypes
-        .filter(a => a.documentCategory !== 'Company Accounts' && requiredTypes.includes(a.documentType))
-        .map(a => a.documentType)
-    ));
+    // Build a map of document ID to its analyzed type
+    const analyzedDocTypes = new Map<number, string>();
+    for (const result of analysisTypes) {
+      if (result.documentId && result.documentType) {
+        analyzedDocTypes.set(result.documentId, result.documentType);
+      }
+    }
     
-    // Count company accounts documents with company_accounts analysis
-    const companyAccountsResults = await documentAnalysisRepository.getCompanyAccountsAnalysisCount(targetCompanyId);
-    const companyAccountsCount = companyAccountsResults;
+    // Count completed types - use analysis result if available, otherwise use document category
+    const completedTypesSet = new Set<string>();
+    let companyAccountsCount = 0;
+    
+    for (const doc of allDocuments) {
+      const analyzedType = analyzedDocTypes.get(doc.id);
+      
+      if (doc.documentCategory === 'Company Accounts') {
+        // Company Accounts - count towards the 5 company accounts slots
+        companyAccountsCount++;
+      } else if (analyzedType && requiredTypes.includes(analyzedType)) {
+        // Has analysis - use the analyzed type
+        completedTypesSet.add(analyzedType);
+      } else if (doc.documentCategory) {
+        // No analysis yet - use document category for immediate feedback
+        const mappedType = categoryToType[doc.documentCategory];
+        if (mappedType && requiredTypes.includes(mappedType)) {
+          completedTypesSet.add(mappedType);
+        }
+      }
+    }
+    
+    const completedTypes = Array.from(completedTypesSet);
     
     // We need 5 company accounts documents + 5 main document types = 10 total
     const totalRequired = 10;

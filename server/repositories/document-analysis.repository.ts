@@ -61,12 +61,21 @@ export class DocumentAnalysisRepository {
       .orderBy(desc(documentAnalysisResults.createdAt));
   }
 
-  async getDistinctAnalysisTypesForCompany(targetCompanyId: number): Promise<{ documentType: string; documentCategory: string | null }[]> {
+  async getDistinctAnalysisTypesForCompany(targetCompanyId: number): Promise<{ documentType: string; documentCategory: string | null; documentId: number | null }[]> {
     return await db.selectDistinct({
       documentType: documentAnalysisResults.documentType,
       documentCategory: documents.documentCategory,
+      documentId: documentAnalysisResults.documentId,
     }).from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+  }
+
+  async getAllDocumentsForCompany(targetCompanyId: number): Promise<{ id: number; documentCategory: string | null }[]> {
+    return await db.select({
+      id: documents.id,
+      documentCategory: documents.documentCategory,
+    }).from(documents)
       .where(eq(documents.targetCompanyId, targetCompanyId));
   }
 

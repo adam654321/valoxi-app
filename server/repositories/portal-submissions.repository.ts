@@ -106,33 +106,65 @@ export class PortalSubmissionsRepository {
     totalCount: number;
   }> {
     const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
+    const categoryToType: Record<string, string> = {
+      'Asset Register': 'asset_register',
+      'Sales Ledger': 'sales_ledger', 
+      'Staff Matrix': 'staff_matrix',
+      'Profit & Loss': 'profit_and_loss',
+      'Balance Sheet': 'balance_sheet',
+    };
     
+    // Get ALL documents for this company (immediate feedback on upload)
+    const allDocuments = await db
+      .select({
+        id: documents.id,
+        documentCategory: documents.documentCategory,
+      })
+      .from(documents)
+      .where(eq(documents.targetCompanyId, targetCompanyId));
+    
+    // Get analysis results to verify/override categorization
     const analysisResults = await db
       .select({
         documentType: documentAnalysisResults.documentType,
         documentCategory: documents.documentCategory,
-        analysisData: documentAnalysisResults.analysisData,
         documentId: documentAnalysisResults.documentId,
       })
       .from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
 
-    // Get completed regular types (excluding Company Accounts category)
-    const completedTypes = Array.from(new Set(
-      analysisResults
-        .filter(a => a.documentCategory !== 'Company Accounts' && requiredTypes.includes(a.documentType))
-        .map(a => a.documentType)
-    ));
+    // Build a map of document ID to its effective type
+    const analyzedDocTypes = new Map<number, string>();
+    for (const result of analysisResults) {
+      if (result.documentId && result.documentType) {
+        analyzedDocTypes.set(result.documentId, result.documentType);
+      }
+    }
 
-    // Count company accounts documents - check documentCategory field, not analysisData.document
-    // Documents categorized as "Company Accounts" with any analysis results count towards completion
-    const uniqueCompanyAccountsDocs = new Set(
-      analysisResults
-        .filter(result => result.documentCategory === 'Company Accounts' && result.analysisData)
-        .map(result => result.documentId)
-    );
-    const companyAccountsCount = uniqueCompanyAccountsDocs.size;
+    // Count completed types - use analysis result if available, otherwise use document category
+    const completedTypesSet = new Set<string>();
+    let companyAccountsCount = 0;
+    
+    for (const doc of allDocuments) {
+      const analyzedType = analyzedDocTypes.get(doc.id);
+      
+      if (doc.documentCategory === 'Company Accounts') {
+        // Company Accounts - count towards the 5 company accounts slots
+        companyAccountsCount++;
+      } else if (analyzedType && requiredTypes.includes(analyzedType)) {
+        // Has analysis - use the analyzed type
+        completedTypesSet.add(analyzedType);
+      } else if (doc.documentCategory) {
+        // No analysis yet - use document category for immediate feedback
+        const mappedType = categoryToType[doc.documentCategory];
+        if (mappedType && requiredTypes.includes(mappedType)) {
+          completedTypesSet.add(mappedType);
+        }
+      }
+    }
+
+    const completedTypes = Array.from(completedTypesSet);
 
     // Total = 5 regular types + 5 company accounts slots = 10
     const totalRequired = 10;
