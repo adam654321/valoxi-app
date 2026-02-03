@@ -52,9 +52,13 @@ export class PortalRepository {
     return token;
   }
 
-  async reinstateToken(tokenId: number): Promise<boolean> {
+  async reinstateToken(tokenId: number, expiryDays: number = 30): Promise<boolean> {
+    // When reinstating, also extend the expiry date
+    const newExpiryDate = new Date();
+    newExpiryDate.setDate(newExpiryDate.getDate() + expiryDays);
+    
     const [updated] = await db.update(portalAccessTokens)
-      .set({ isActive: true })
+      .set({ isActive: true, expiresAt: newExpiryDate })
       .where(eq(portalAccessTokens.id, tokenId))
       .returning();
     return !!updated;
