@@ -274,6 +274,11 @@ export default function PortalManagement() {
         description: "Portal access email has been sent to the primary contact.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+      // Invalidate pipeline/company queries since creating portal moves company to Documents Requested stage
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
       setShowCreateForm(false);
       setSelectedCompanyId(null);
       setSelectedContactIds([]);

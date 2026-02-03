@@ -47,6 +47,11 @@ export class PortalService {
       console.error(`[PORTAL] Failed to create chase-up schedule for token ${token.id}:`, err.message);
     });
     
+    // Auto-move company to "Documents Requested" stage when portal is sent
+    targetCompaniesRepository.update(data.targetCompanyId, { stage: 'Documents Requested' }, data.userCompanyId).catch(err => {
+      console.error(`[PORTAL] Failed to update company stage for token ${token.id}:`, err.message);
+    });
+    
     // Send portal access email asynchronously (don't block token creation)
     if (baseUrl) {
       emailApiService.sendPortalAccessLink(token.id, baseUrl, data.customMessage).catch(err => {
