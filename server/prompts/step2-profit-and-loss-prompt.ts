@@ -40,22 +40,39 @@ Cost of Sales Breakdown:
 • subcontractor_costs
 • other_direct_costs
 
-Overheads/Administrative Expenses Breakdown:
-• staff_costs (wages, salaries, NI, pension)
-• rent_rates
-• utilities
+Overheads/Administrative Expenses Breakdown (extract ALL that appear):
+• staff_wages_salaries (employee wages/salaries excluding directors)
+• directors_salaries
+• directors_pension
+• employers_national_insurance
+• staff_pension_contributions
+• staff_training_recruitment
+• use_of_home_as_office
+• rent_rates (office rent, business rates)
+• utilities (heat, light, power)
 • insurance
-• professional_fees
-• marketing_advertising
-• it_costs
-• vehicle_costs
-• travel_subsistence
-• office_costs
-• repairs_maintenance
+• accountancy_bookkeeping
+• professional_fees (legal, consultancy)
+• software_subscriptions
+• computer_costs
+• it_support_hosting
+• telecommunications (phone, internet)
+• printing_stationery
+• postage_courier
+• subscriptions_memberships
 • bank_charges
+• advertising_marketing
+• travel_subsistence
+• motor_expenses
+• repairs_maintenance
 • depreciation
 • amortisation
 • other_overheads
+
+Also extract separately for direct SQL access:
+• total_staff_costs (sum of all staff-related costs excluding directors)
+• total_directors_remuneration (directors salaries + pension + NI)
+• dividends_paid (if shown in detailed P&L or notes)
 
 4. Calculate the following financial ratios per year
 (Do NOT assume they are provided — calculate them yourself if possible)
@@ -132,22 +149,37 @@ FINAL OUTPUT FORMAT
         "other_direct_costs": null
       },
       "overheads_breakdown": {
-        "staff_costs": null,
+        "staff_wages_salaries": null,
+        "directors_salaries": null,
+        "directors_pension": null,
+        "employers_national_insurance": null,
+        "staff_pension_contributions": null,
+        "staff_training_recruitment": null,
+        "use_of_home_as_office": null,
         "rent_rates": null,
         "utilities": null,
         "insurance": null,
+        "accountancy_bookkeeping": null,
         "professional_fees": null,
-        "marketing_advertising": null,
-        "it_costs": null,
-        "vehicle_costs": null,
-        "travel_subsistence": null,
-        "office_costs": null,
-        "repairs_maintenance": null,
+        "software_subscriptions": null,
+        "computer_costs": null,
+        "it_support_hosting": null,
+        "telecommunications": null,
+        "printing_stationery": null,
+        "postage_courier": null,
+        "subscriptions_memberships": null,
         "bank_charges": null,
+        "advertising_marketing": null,
+        "travel_subsistence": null,
+        "motor_expenses": null,
+        "repairs_maintenance": null,
         "depreciation": null,
         "amortisation": null,
         "other_overheads": null
       },
+      "total_staff_costs": null,
+      "total_directors_remuneration": null,
+      "dividends_paid": null,
       "exceptional_items": [],
       "financial_ratios": {
         "gross_margin_percent": null,

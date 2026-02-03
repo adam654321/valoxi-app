@@ -1335,10 +1335,14 @@ export const incomeStatements = pgTable("income_statements", {
   profitBeforeTax: decimal("profit_before_tax"),
   corporationTax: decimal("corporation_tax"),
   netProfit: decimal("net_profit"),
+  // Key expense line items for direct SQL queries
+  staffCosts: decimal("staff_costs"), // Total staff wages/salaries (excl. directors)
+  directorsRemuneration: decimal("directors_remuneration"), // Directors' salaries + pension + NI
+  dividendsPaid: decimal("dividends_paid"), // Dividends declared/paid in period
   // JSON columns for detailed breakdowns
   revenueBreakdown: json("revenue_breakdown"), // {by_product: {...}, by_segment: {...}}
   costOfSalesBreakdown: json("cost_of_sales_breakdown"), // {direct_materials, direct_labour, subcontractors, other}
-  overheadsBreakdown: json("overheads_breakdown"), // {staff_costs, rent, utilities, insurance, etc.}
+  overheadsBreakdown: json("overheads_breakdown"), // Comprehensive admin expense breakdown (22+ categories)
   exceptionalItems: json("exceptional_items"), // non-recurring items
   sourceDocumentId: integer("source_document_id").references(() => documents.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1364,20 +1368,25 @@ export const balanceSheets = pgTable("balance_sheets", {
   tradeDebtors: decimal("trade_debtors"),
   prepayments: decimal("prepayments"),
   amountsOwedByDirectors: decimal("amounts_owed_by_directors"),
+  amountsOwedByConnectedCompanies: decimal("amounts_owed_by_connected_companies"),
+  directorsCurrentAccount: decimal("directors_current_account"),
   otherDebtors: decimal("other_debtors"),
   cashAtBank: decimal("cash_at_bank"),
   totalCurrentAssets: decimal("total_current_assets"),
   // Current Liabilities
   tradeCreditors: decimal("trade_creditors"),
-  taxationSocialSecurity: decimal("taxation_social_security"), // PAYE, NI, VAT
+  taxationSocialSecurity: decimal("taxation_social_security"), // PAYE, NI
+  vatPayable: decimal("vat_payable"), // VAT control account
   corporationTaxDue: decimal("corporation_tax_due"),
   bankLoansOverdraftCurrent: decimal("bank_loans_overdraft_current"),
+  hirePurchaseCurrent: decimal("hire_purchase_current"), // HP obligations due within 1 year
   accruals: decimal("accruals"),
   amountsOwedToDirectors: decimal("amounts_owed_to_directors"),
   otherCreditors: decimal("other_creditors"),
   totalCurrentLiabilities: decimal("total_current_liabilities"),
   // Long-term Liabilities
   bankLoansLongTerm: decimal("bank_loans_long_term"),
+  hirePurchaseLongTerm: decimal("hire_purchase_long_term"), // HP obligations due after 1 year
   deferredTaxation: decimal("deferred_taxation"),
   otherLongTermDebt: decimal("other_long_term_debt"),
   totalLongTermLiabilities: decimal("total_long_term_liabilities"),

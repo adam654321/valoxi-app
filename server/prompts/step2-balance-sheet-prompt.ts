@@ -33,15 +33,19 @@ CURRENT ASSETS:
 • trade_debtors (receivables)
 • prepayments
 • amounts_owed_by_directors
+• amounts_owed_by_connected_companies (intercompany receivables)
+• directors_current_account (if in debit/asset position)
 • other_debtors
-• cash_at_bank (cash at bank and in hand)
+• cash_at_bank (cash at bank and in hand, sum all bank accounts)
 • total (total current assets)
 
 CURRENT LIABILITIES (Creditors: amounts falling due within one year):
 • trade_creditors (payables)
-• taxation_social_security (PAYE, NI, VAT)
+• taxation_social_security (PAYE, NI only - exclude VAT)
+• vat_payable (VAT control account if shown separately)
 • corporation_tax (corporation tax due)
 • bank_loans_current (bank loans & overdrafts current portion)
+• hire_purchase_current (HP obligations due within 1 year)
 • accruals
 • amounts_owed_to_directors
 • other_creditors
@@ -49,6 +53,7 @@ CURRENT LIABILITIES (Creditors: amounts falling due within one year):
 
 LONG-TERM LIABILITIES (Creditors: amounts falling due after more than one year):
 • bank_loans (non-current bank loans)
+• hire_purchase_long_term (HP obligations due after 1 year)
 • deferred_taxation
 • other_debt
 • total (total long-term liabilities)
@@ -131,6 +136,8 @@ FINAL OUTPUT FORMAT
           "trade_debtors": null,
           "prepayments": null,
           "amounts_owed_by_directors": null,
+          "amounts_owed_by_connected_companies": null,
+          "directors_current_account": null,
           "other_debtors": null,
           "cash_at_bank": null,
           "total": null
@@ -138,8 +145,10 @@ FINAL OUTPUT FORMAT
         "current_liabilities": {
           "trade_creditors": null,
           "taxation_social_security": null,
+          "vat_payable": null,
           "corporation_tax": null,
           "bank_loans_current": null,
+          "hire_purchase_current": null,
           "accruals": null,
           "amounts_owed_to_directors": null,
           "other_creditors": null,
@@ -147,6 +156,7 @@ FINAL OUTPUT FORMAT
         },
         "long_term_liabilities": {
           "bank_loans": null,
+          "hire_purchase_long_term": null,
           "deferred_taxation": null,
           "other_debt": null,
           "total": null
