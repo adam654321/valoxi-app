@@ -82,28 +82,25 @@ export class DocumentAnalysisRepository {
   }
 
   async getCompanyAccountsAnalysisCount(targetCompanyId: number): Promise<number> {
-    // Get all analysis results for this company and count distinct documents with company_accounts analysis
+    // Count unique documents with document_category='Company Accounts' that have analysis results
+    // The analysis_data.document field may be 'profit_and_loss' or 'balance_sheet' (what was detected inside),
+    // but we want to count documents that were uploaded as Company Accounts and have been analyzed
     const results = await db
       .select({
         documentId: documentAnalysisResults.documentId,
-        analysisData: documentAnalysisResults.analysisData
+        documentCategory: documents.documentCategory
       })
       .from(documentAnalysisResults)
-      .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
-      .where(eq(documents.targetCompanyId, targetCompanyId));
+      .innerJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
+      .where(
+        and(
+          eq(documents.targetCompanyId, targetCompanyId),
+          eq(documents.documentCategory, 'Company Accounts')
+        )
+      );
 
-    // Count unique documents that have company_accounts analysis type
-    const uniqueDocuments = new Set(
-      results
-        .filter(result => {
-          if (result.analysisData && typeof result.analysisData === 'object') {
-            const data = result.analysisData as any;
-            return data.document === 'company_accounts';
-          }
-          return false;
-        })
-        .map(result => result.documentId)
-    );
+    // Count unique documents that have been analyzed
+    const uniqueDocuments = new Set(results.map(result => result.documentId));
 
     return uniqueDocuments.size;
   }
