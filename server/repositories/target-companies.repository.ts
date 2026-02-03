@@ -50,7 +50,7 @@ export interface FilterOptions {
 
 export class TargetCompaniesRepository {
   async getAll(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
-    return await db
+    const result = await db
       .select({
         id: targetCompanies.id,
         userCompanyId: targetCompanies.userCompanyId,
@@ -83,6 +83,9 @@ export class TargetCompaniesRepository {
       .from(targetCompanies)
       .where(eq(targetCompanies.userCompanyId, userCompanyId))
       .orderBy(desc(targetCompanies.createdAt));
+    
+    console.log('[DEBUG repo getAll] First result totalContacts:', result.length > 0 ? result[0].totalContacts : 'empty');
+    return result;
   }
 
   async getById(id: number, userCompanyId: number): Promise<TargetCompany | undefined> {
