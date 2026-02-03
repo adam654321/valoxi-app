@@ -32,7 +32,8 @@ export class ActivitiesService {
     // Auto-move to Initial Contact stage when Initial Discussion activity is logged
     if (activityData.activityType === 'Initial Discussion') {
       const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
-      if (company && company.stage === 'New Target') {
+      // Check for New Target stage (including null/empty which defaults to New Target)
+      if (company && (!company.stage || company.stage === 'New Target')) {
         await targetCompaniesRepository.update(targetCompanyId, { stage: 'Initial Contact' }, userCompanyId);
       }
     }
