@@ -76,15 +76,13 @@ export class TargetCompaniesRepository {
         initialDiscussionDate: targetCompanies.initialDiscussionDate,
         initialDiscussionNotes: targetCompanies.initialDiscussionNotes,
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
-        totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id}), 0)`.as('totalContacts'),
-        contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id}), 0)`.as('contactCount'),
-        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id} AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
+        totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
+        contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
+        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
       })
       .from(targetCompanies)
       .where(eq(targetCompanies.userCompanyId, userCompanyId))
       .orderBy(desc(targetCompanies.createdAt));
-    
-    console.log('[DEBUG repo getAll] First result totalContacts:', result.length > 0 ? result[0].totalContacts : 'empty');
     return result;
   }
 
@@ -218,8 +216,8 @@ export class TargetCompaniesRepository {
         initialDiscussionDate: targetCompanies.initialDiscussionDate,
         initialDiscussionNotes: targetCompanies.initialDiscussionNotes,
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
-        contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id}), 0)`.as('contactCount'),
-        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id} AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
+        contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
+        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
       })
       .from(targetCompanies)
       .where(and(...conditions))
@@ -255,11 +253,11 @@ export class TargetCompaniesRepository {
         createdAt: targetCompanies.createdAt,
         createdByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`.as('createdByName'),
         userCompanyName: userCompanies.companyName,
-        totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id}), 0)`.as('totalContacts'),
-        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id} AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName'),
-        primaryContactEmail: sql<string | null>`(SELECT target_contacts.email FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id} AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactEmail'),
-        primaryContactPhone: sql<string | null>`(SELECT target_contacts.phone FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id} AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactPhone'),
-        primaryContactTitle: sql<string | null>`(SELECT target_contacts.title FROM target_contacts WHERE target_contacts.target_company_id = ${targetCompanies.id} AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactTitle'),
+        totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
+        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName'),
+        primaryContactEmail: sql<string | null>`(SELECT target_contacts.email FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactEmail'),
+        primaryContactPhone: sql<string | null>`(SELECT target_contacts.phone FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactPhone'),
+        primaryContactTitle: sql<string | null>`(SELECT target_contacts.title FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactTitle'),
       })
       .from(targetCompanies)
       .leftJoin(users, eq(targetCompanies.createdBy, users.id))
