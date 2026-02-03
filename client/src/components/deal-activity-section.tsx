@@ -202,11 +202,18 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
       };
       return apiRequest("POST", `/api/v2/activities/company/${targetCompanyId}`, payload);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId, "timeline"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/recent"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId] });
+      
+      // Invalidate company profile and pipeline data (for stage changes like Initial Discussion)
+      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId.toString(), "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/pipeline-overview"] });
+      
       setIsActivityDialogOpen(false);
       activityForm.reset();
       toast({ title: "Success", description: "Activity logged successfully" });
