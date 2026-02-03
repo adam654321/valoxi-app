@@ -87,6 +87,14 @@ function getInvoiceStatusColor(status: string) {
 }
 
 function renderStaffMatrixAnalysis(analysisData: any) {
+  // Support both flat format and nested summary format
+  const summary = analysisData.summary || {};
+  const totalEmployees = analysisData.total_employee_count || summary.total_headcount || 0;
+  const totalPayroll = analysisData.total_annual_payroll || summary.total_staff_costs || summary.total_gross_salaries || 0;
+  const avgSalary = analysisData.average_salary || (totalEmployees > 0 ? Math.round(totalPayroll / totalEmployees) : 0);
+  const directorCount = summary.director_count || analysisData.director_count || 0;
+  const employeeCount = summary.employee_count || analysisData.employee_count || (totalEmployees - directorCount);
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -98,7 +106,7 @@ function renderStaffMatrixAnalysis(analysisData: any) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analysisData.total_employee_count}</div>
+            <div className="text-2xl font-bold">{totalEmployees}</div>
           </CardContent>
         </Card>
         <Card>
@@ -109,7 +117,7 @@ function renderStaffMatrixAnalysis(analysisData: any) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{analysisData.total_annual_payroll?.toLocaleString()}</div>
+            <div className="text-2xl font-bold">£{totalPayroll?.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
@@ -120,19 +128,19 @@ function renderStaffMatrixAnalysis(analysisData: any) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">£{analysisData.average_salary?.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-blue-600">£{avgSalary?.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-green-600" />
-              Active Staff
+              Directors
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {analysisData.status_summary?.Active || 0}
+              {directorCount}
             </div>
           </CardContent>
         </Card>
@@ -518,6 +526,23 @@ function renderProfitAndLossAnalysis(analysisData: any) {
 }
 
 function renderAssetRegisterAnalysis(analysisData: any) {
+  // Support both flat format and nested summary/categories format
+  const summary = analysisData.summary || {};
+  const categories = analysisData.categories || {};
+  
+  const totalAssetsCost = analysisData.total_assets_cost || summary.total_gross_book_value || 0;
+  const totalDepreciation = analysisData.total_accumulated_depreciation || summary.total_accumulated_depreciation || 0;
+  const totalNetBookValue = analysisData.total_net_book_value || summary.total_net_book_value || 0;
+  
+  // Convert categories object to array format for display
+  const assetBreakdown = analysisData.asset_breakdown || (Object.keys(categories).length > 0 ? 
+    Object.entries(categories).map(([key, value]: [string, any]) => ({
+      category: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      cost: value.gross_value || value.cost || 0,
+      accumulated_depreciation: value.accumulated_depreciation || 0,
+      net_book_value: value.net_book_value || 0
+    })).filter(cat => cat.cost > 0 || cat.net_book_value > 0) : []);
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -530,7 +555,7 @@ function renderAssetRegisterAnalysis(analysisData: any) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              £{analysisData.total_assets_cost?.toLocaleString() || 0}
+              £{totalAssetsCost?.toLocaleString() || 0}
             </div>
           </CardContent>
         </Card>
@@ -544,7 +569,7 @@ function renderAssetRegisterAnalysis(analysisData: any) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              £{analysisData.total_accumulated_depreciation?.toLocaleString() || 0}
+              £{totalDepreciation?.toLocaleString() || 0}
             </div>
           </CardContent>
         </Card>
@@ -558,13 +583,13 @@ function renderAssetRegisterAnalysis(analysisData: any) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              £{analysisData.total_net_book_value?.toLocaleString() || 0}
+              £{totalNetBookValue?.toLocaleString() || 0}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {analysisData.asset_breakdown && analysisData.asset_breakdown.length > 0 && (
+      {assetBreakdown && assetBreakdown.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -574,7 +599,7 @@ function renderAssetRegisterAnalysis(analysisData: any) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analysisData.asset_breakdown.map((asset: any, index: number) => (
+              {assetBreakdown.map((asset: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <h4 className="font-semibold text-lg mb-3">{asset.category}</h4>
                   <div className="grid grid-cols-3 gap-4">
