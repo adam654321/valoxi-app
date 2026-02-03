@@ -125,16 +125,11 @@ export class PortalSubmissionsRepository {
         .map(a => a.documentType)
     ));
 
-    // Count company accounts documents
+    // Count company accounts documents - check documentCategory field, not analysisData.document
+    // Documents categorized as "Company Accounts" with any analysis results count towards completion
     const uniqueCompanyAccountsDocs = new Set(
       analysisResults
-        .filter(result => {
-          if (result.analysisData && typeof result.analysisData === 'object') {
-            const data = result.analysisData as any;
-            return data.document === 'company_accounts';
-          }
-          return false;
-        })
+        .filter(result => result.documentCategory === 'Company Accounts' && result.analysisData)
         .map(result => result.documentId)
     );
     const companyAccountsCount = uniqueCompanyAccountsDocs.size;
