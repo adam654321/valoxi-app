@@ -19,6 +19,18 @@ router.get('/', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
 
     const companies = await targetCompaniesService.getAll(userCompanyId);
+    // Debug: log first company's contact counts
+    if (companies.length > 0) {
+      const skinPharma = companies.find((c: any) => c.companyName === 'SkinPharma');
+      if (skinPharma) {
+        console.log('[DEBUG] SkinPharma data:', JSON.stringify({ 
+          id: skinPharma.id, 
+          totalContacts: skinPharma.totalContacts, 
+          contactCount: skinPharma.contactCount,
+          keys: Object.keys(skinPharma)
+        }));
+      }
+    }
     sendSuccess(res, companies);
   } catch (error) {
     sendError(res, error);
