@@ -38,6 +38,7 @@ Preferred communication style: Simple, everyday language.
     - `pipelineRepository`: Pipeline stages and stage history
     - `notificationsRepository`: User notifications
     - `teamRepository`: Team members and roles
+    - `chaseUpRepository`: Chase-up schedules and email tracking for portal submissions
 - **Legacy Storage Facade**: The `server/storage.ts` facade remains for route compatibility but services use repositories directly. Legacy stores (`server/storage/*.store.ts`) are deprecated.
 - **Feature Specifications**:
     - **Target Company Management**: Full CRUD operations with detailed information, industry categorization, and card-based views.
@@ -47,6 +48,14 @@ Preferred communication style: Simple, everyday language.
     - **Activity Management**: Logs various activity types (calls, emails, meetings, notes) linked to contacts and displayed in a timeline.
     - **Document Management**: Advanced viewer supporting various file types (PDF, images, Office documents) with secure handling.
     - **External Document Portal**: Provides a secure portal for collecting documents from target companies, integrating submissions automatically into the main document system, and triggering analysis.
+    - **Chase-Up System**: Automated timeframe-based reminder system for portal document submissions. Features include:
+        - Configurable submission timeframes (7-60 days) when creating portal links
+        - Escalating 4-email sequence (gentle → firm → urgent → final) after deadline passes
+        - Email delays at 0, 2, 5, 8 days post-deadline, then manual intervention at 11+ days
+        - Manual controls: extend deadline, stop chase-up reminders
+        - Internal team alerts for urgent cases and manual intervention required
+        - Daily cron job (9:00 AM UK time) processes overdue schedules
+        - V2 API endpoints: `/api/v2/chase-up/*` for dashboard, alerts, status, extend, stop
     - **Email Integration**: Utilizes Nodemailer with Google Workspace SMTP for invitations and portal access notifications.
     - **Webhook Integration**:
         - **Website Analysis (Gemini)**: Triggers on company creation with a website, using Google Gemini 3.0 Flash API for analysis to extract structured company data.
@@ -57,7 +66,7 @@ Preferred communication style: Simple, everyday language.
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
 - **Schema Management**: Drizzle Kit.
-- **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, and standardized document requirements.
+- **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, standardized document requirements, `chase_up_schedules`, and `chase_up_emails`.
 
 ## Authentication & Security
 - **Session Management**: PostgreSQL-backed sessions.
