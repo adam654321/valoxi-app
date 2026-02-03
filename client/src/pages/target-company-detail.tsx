@@ -39,10 +39,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw } from "lucide-react";
-import type { TargetCompany, TargetContact, Stage1AnalysisEvent, DealNote } from "@shared/schema";
+import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
-import { ActivityManagement } from "@/components/activity-management";
+import { DealActivitySection } from "@/components/deal-activity-section";
 import { DocumentManagement } from "@/components/document-management";
 import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
 import { Stage1AnalysisDisplay } from "@/components/stage1-analysis-display";
@@ -81,287 +81,6 @@ const contactSchema = z.object({
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
-
-// Note type options
-const NOTE_TYPES = [
-  { value: "Initial Discussion", label: "Initial Discussion" },
-  { value: "Broker Discussion", label: "Broker Discussion" },
-  { value: "Follow-up Call", label: "Follow-up Call" },
-  { value: "Meeting Notes", label: "Meeting Notes" },
-  { value: "Due Diligence", label: "Due Diligence" },
-  { value: "Negotiation", label: "Negotiation" },
-  { value: "General", label: "General" },
-];
-
-// Deal Notes Section Component
-function DealNotesSection({ targetCompanyId }: { targetCompanyId: number }) {
-  const { toast } = useToast();
-  const [showNoteDialog, setShowNoteDialog] = useState(false);
-  const [editingNote, setEditingNote] = useState<DealNote | null>(null);
-  const [noteType, setNoteType] = useState("General");
-  const [noteTitle, setNoteTitle] = useState("");
-  const [noteContent, setNoteContent] = useState("");
-  const [reminderDate, setReminderDate] = useState("");
-
-  const { data: notes = [], isLoading } = useQuery<DealNote[]>({
-    queryKey: ["/api/v2/notes/company", targetCompanyId],
-    enabled: !!targetCompanyId,
-    select: (response: any) => response.data,
-  });
-
-  const createNoteMutation = useMutation({
-    mutationFn: (data: { noteType: string; title: string; content: string; reminderDate: string | null }) =>
-      apiRequest("POST", `/api/v2/notes/company/${targetCompanyId}`, data),
-    onSuccess: () => {
-      toast({ title: "Success", description: "Note added" });
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
-      resetForm();
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to add note", variant: "destructive" });
-    },
-  });
-
-  const updateNoteMutation = useMutation({
-    mutationFn: (data: { noteId: number; noteType: string; title: string; content: string; reminderDate: string | null; reminderCompleted?: boolean }) =>
-      apiRequest("PUT", `/api/v2/notes/${data.noteId}`, { noteType: data.noteType, title: data.title, content: data.content, reminderDate: data.reminderDate, reminderCompleted: data.reminderCompleted }),
-    onSuccess: () => {
-      toast({ title: "Success", description: "Note updated" });
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
-      resetForm();
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to update note", variant: "destructive" });
-    },
-  });
-
-  const deleteNoteMutation = useMutation({
-    mutationFn: (noteId: number) => apiRequest("DELETE", `/api/v2/notes/${noteId}`),
-    onSuccess: () => {
-      toast({ title: "Success", description: "Note deleted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to delete note", variant: "destructive" });
-    },
-  });
-
-  const resetForm = () => {
-    setShowNoteDialog(false);
-    setEditingNote(null);
-    setNoteType("General");
-    setNoteTitle("");
-    setNoteContent("");
-    setReminderDate("");
-  };
-
-  const handleSubmit = () => {
-    if (!noteTitle.trim()) {
-      toast({ title: "Error", description: "Title is required", variant: "destructive" });
-      return;
-    }
-    if (editingNote) {
-      updateNoteMutation.mutate({
-        noteId: editingNote.id,
-        noteType,
-        title: noteTitle,
-        content: noteContent,
-        reminderDate: reminderDate || null,
-      });
-    } else {
-      createNoteMutation.mutate({
-        noteType,
-        title: noteTitle,
-        content: noteContent,
-        reminderDate: reminderDate || null,
-      });
-    }
-  };
-
-  const openEditDialog = (note: DealNote) => {
-    setEditingNote(note);
-    setNoteType(note.noteType || "General");
-    setNoteTitle(note.title);
-    setNoteContent(note.content || "");
-    setReminderDate(note.reminderDate ? new Date(note.reminderDate).toISOString().slice(0, 16) : "");
-    setShowNoteDialog(true);
-  };
-
-  const toggleReminderComplete = (note: DealNote) => {
-    updateNoteMutation.mutate({
-      noteId: note.id,
-      noteType: note.noteType || "General",
-      title: note.title,
-      content: note.content || "",
-      reminderDate: note.reminderDate ? new Date(note.reminderDate).toISOString() : null,
-      reminderCompleted: !note.reminderCompleted,
-    });
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <StickyNote className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-lg">Deal Notes</CardTitle>
-          </div>
-          <Button size="sm" onClick={() => setShowNoteDialog(true)} data-testid="button-add-note">
-            <Plus className="w-4 h-4 mr-1" />
-            Add Note
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-          </div>
-        ) : notes.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <StickyNote className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p>No notes yet. Add notes to track conversations, reminders, and important details.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {notes.map((note) => (
-              <div
-                key={note.id}
-                className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
-                data-testid={`note-card-${note.id}`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="text-xs">
-                        {note.noteType || "General"}
-                      </Badge>
-                      <h4 className="font-medium">{note.title}</h4>
-                      {note.reminderDate && (
-                        <Badge
-                          variant={note.reminderCompleted ? "secondary" : "outline"}
-                          className={`text-xs cursor-pointer ${!note.reminderCompleted && new Date(note.reminderDate) < new Date() ? 'border-red-500 text-red-500' : ''}`}
-                          onClick={() => toggleReminderComplete(note)}
-                          data-testid={`badge-reminder-${note.id}`}
-                        >
-                          <Bell className="w-3 h-3 mr-1" />
-                          {note.reminderCompleted ? 'Done' : new Date(note.reminderDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </Badge>
-                      )}
-                    </div>
-                    {note.content && (
-                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{note.content}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      {new Date(note.createdAt!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => openEditDialog(note)}
-                      data-testid={`button-edit-note-${note.id}`}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => {
-                        if (confirm("Delete this note?")) {
-                          deleteNoteMutation.mutate(note.id);
-                        }
-                      }}
-                      data-testid={`button-delete-note-${note.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-
-      <Dialog open={showNoteDialog} onOpenChange={(open) => { if (!open) resetForm(); else setShowNoteDialog(true); }}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{editingNote ? "Edit Note" : "Add New Note"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Note Type</label>
-              <Select value={noteType} onValueChange={setNoteType}>
-                <SelectTrigger data-testid="select-note-type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTE_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Title *</label>
-              <Input
-                placeholder="e.g., Initial Call Notes, Follow-up Reminder..."
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-                data-testid="input-note-title"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Content</label>
-              <Textarea
-                placeholder="Add details, key points, or action items..."
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                rows={4}
-                data-testid="input-note-content"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4" />
-                  Reminder (optional)
-                </div>
-              </label>
-              <Input
-                type="datetime-local"
-                value={reminderDate}
-                onChange={(e) => setReminderDate(e.target.value)}
-                data-testid="input-note-reminder"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={resetForm} data-testid="button-cancel-note">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={createNoteMutation.isPending || updateNoteMutation.isPending}
-              data-testid="button-save-note"
-            >
-              {(createNoteMutation.isPending || updateNoteMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingNote ? "Save Changes" : "Add Note"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
 
 export default function TargetCompanyDetail() {
   const { id } = useParams();
@@ -760,7 +479,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -776,10 +495,6 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="analysis" className="flex items-center gap-2">
               <BarChart className="w-4 h-4" />
               Analysis
-            </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Activities
             </TabsTrigger>
             <TabsTrigger value="pipeline" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -983,8 +698,12 @@ export default function TargetCompanyDetail() {
               </Card>
             </div>
 
-            {/* Deal Notes Section */}
-            <DealNotesSection targetCompanyId={parseInt(id!)} />
+            {/* Deal Activity Section - Combined Notes and Activities */}
+            <DealActivitySection 
+              targetCompanyId={parseInt(id!)} 
+              companyName={company.companyName}
+              contacts={contacts}
+            />
 
             {/* System Information */}
             <Card>
@@ -1409,24 +1128,6 @@ export default function TargetCompanyDetail() {
                 </TabsContent>
               </Tabs>
             )}
-          </TabsContent>
-
-          <TabsContent value="activities" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Activity Timeline</CardTitle>
-                <CardDescription>
-                  Track all interactions and activities with {company.companyName}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ActivityManagement 
-                  targetCompanyId={parseInt(id!)}
-                  companyName={company.companyName}
-                  contacts={contacts}
-                />
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="pipeline" className="space-y-6">
