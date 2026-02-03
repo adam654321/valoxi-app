@@ -37,7 +37,16 @@ export function formatDate(dateString: string) {
   });
 }
 
-function processObservationsText(text: string) {
+function processObservationsText(text: string | string[] | null | undefined): string {
+  if (!text) return '';
+  // Handle array of observations
+  if (Array.isArray(text)) {
+    return text.map(t => typeof t === 'string' ? t : String(t)).join('\n• ');
+  }
+  // Handle non-string values
+  if (typeof text !== 'string') {
+    return String(text);
+  }
   return text
     .replace(/\\n/g, '\n')
     .replace(/\n\*/g, '\n• ')
