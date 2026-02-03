@@ -1,4 +1,5 @@
 import { activitiesRepository, type ActivityWithDetails, type ActivityTimeline } from '../repositories/activities.repository';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import type { Activity, ActivityType, InsertActivity } from '@shared/schema';
 
@@ -22,11 +23,21 @@ export class ActivitiesService {
       throw new NotFoundError('Company not found or access denied');
     }
 
-    return await activitiesRepository.createActivity({
+    const activity = await activitiesRepository.createActivity({
       ...activityData,
       targetCompanyId,
       userId,
     });
+
+    // Auto-move to Initial Contact stage when Initial Discussion activity is logged
+    if (activityData.activityType === 'Initial Discussion') {
+      const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+      if (company && company.stage === 'New Target') {
+        await targetCompaniesRepository.update(targetCompanyId, { stage: 'Initial Contact' }, userCompanyId);
+      }
+    }
+
+    return activity;
   }
 
   async getActivitiesForCompany(
