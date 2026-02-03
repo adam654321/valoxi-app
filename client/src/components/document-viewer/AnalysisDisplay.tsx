@@ -231,6 +231,29 @@ function renderStaffMatrixAnalysis(analysisData: any) {
 }
 
 function renderSalesLedgerAnalysis(analysisData: any) {
+  // Support both flat format and nested summary/aging format
+  const summary = analysisData.summary || {};
+  const aging = analysisData.aging || {};
+  
+  // Calculate totals from available data
+  const totalOutstanding = analysisData.total_outstanding || summary.total_trade_debtors || 0;
+  const totalInvoiceValue = analysisData.total_invoice_value || totalOutstanding;
+  const totalAmountPaid = analysisData.total_amount_paid || 0;
+  
+  // Get invoice count from status summary if available
+  let invoiceCount = analysisData.total_invoice_count || 0;
+  if (!invoiceCount && analysisData.invoice_status_summary) {
+    Object.values(analysisData.invoice_status_summary).forEach((status: any) => {
+      if (status?.count) invoiceCount += status.count;
+    });
+  }
+  if (!invoiceCount && analysisData.top_debtors?.length) {
+    invoiceCount = analysisData.top_debtors.length;
+  }
+  
+  // Get debtor days
+  const debtorDays = summary.debtor_days || analysisData.debtor_days;
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -238,47 +261,83 @@ function renderSalesLedgerAnalysis(analysisData: any) {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Total Invoices
+              {invoiceCount > 0 ? 'Total Invoices' : 'Total Debtors'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analysisData.total_invoice_count}</div>
+            <div className="text-2xl font-bold">{invoiceCount || analysisData.top_debtors?.length || '-'}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              Total Value
+              Total Trade Debtors
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{analysisData.total_invoice_value?.toLocaleString()}</div>
+            <div className="text-2xl font-bold">£{totalOutstanding?.toLocaleString() || 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-green-600" />
-              Amount Paid
+              {debtorDays ? 'Debtor Days' : 'Amount Paid'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">£{analysisData.total_amount_paid?.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {debtorDays ? `${debtorDays} days` : (totalAmountPaid > 0 ? `£${totalAmountPaid.toLocaleString()}` : '-')}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-600" />
-              Outstanding
+              {aging.days_90_plus !== undefined ? '90+ Days Overdue' : 'Outstanding'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">£{analysisData.total_outstanding?.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-600">
+              £{(aging.days_90_plus ?? analysisData.total_outstanding ?? 0)?.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
       </div>
+      
+      {/* Aging Breakdown - for new format */}
+      {(aging.current_0_to_30 !== undefined || aging.days_31_to_60 !== undefined) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Aging Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className={`text-center p-4 border rounded-lg bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800`}>
+                <div className="text-2xl font-semibold text-green-600">£{(aging.current_0_to_30 || 0).toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">Current (0-30 days)</div>
+              </div>
+              <div className={`text-center p-4 border rounded-lg bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800`}>
+                <div className="text-2xl font-semibold text-yellow-600">£{(aging.days_31_to_60 || 0).toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">31-60 days</div>
+              </div>
+              <div className={`text-center p-4 border rounded-lg bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800`}>
+                <div className="text-2xl font-semibold text-orange-600">£{(aging.days_61_to_90 || 0).toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">61-90 days</div>
+              </div>
+              <div className={`text-center p-4 border rounded-lg bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800`}>
+                <div className="text-2xl font-semibold text-red-600">£{(aging.days_90_plus || 0).toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground">90+ days</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {analysisData.invoice_status_summary && (
         <Card>
