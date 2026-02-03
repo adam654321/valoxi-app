@@ -31,7 +31,7 @@ const fileFilter = (req: any, file: any, cb: any) => {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'text/plain', 'image/jpeg', 'image/png'
+    'text/plain', 'text/csv', 'image/jpeg', 'image/png'
   ];
   cb(null, allowedTypes.includes(file.mimetype));
 };
