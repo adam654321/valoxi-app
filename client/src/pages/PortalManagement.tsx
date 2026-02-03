@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Users, FileText, Clock, Mail, Plus, ChevronRight, ArrowLeft, Building2 } from 'lucide-react';
+import { ExternalLink, Users, FileText, Clock, Mail, Plus, ChevronRight, ArrowLeft, Building2, AlertTriangle, TimerOff, CalendarPlus, RefreshCw } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface TargetCompany {
@@ -43,6 +43,25 @@ interface PortalToken {
   contactName: string;
   contactEmail: string;
   documentSubmissions: number;
+  submissionDeadline?: string;
+  chaseUpStatus?: string;
+  escalationLevel?: string;
+  chaseEmailCount?: number;
+}
+
+interface ChaseUpStatus {
+  hasSchedule: boolean;
+  scheduleId?: number;
+  timeframeDays?: number;
+  submissionDeadline?: string;
+  isActive?: boolean;
+  isCompleted?: boolean;
+  completionReason?: string;
+  daysRemaining?: number;
+  daysOverdue?: number;
+  chaseUpStatus?: string;
+  escalationLevel?: string;
+  emailsSent?: number;
 }
 
 interface BusinessOverview {
@@ -142,13 +161,57 @@ function BusinessCompletionDisplay({ tokens }: { tokens: PortalToken[] }) {
   );
 }
 
+function ChaseUpStatusBadge({ status, escalationLevel, daysOverdue }: { status?: string; escalationLevel?: string; daysOverdue?: number }) {
+  if (!status || status === 'not_started') {
+    return <Badge variant="outline">No Chase-up</Badge>;
+  }
+
+  if (status === 'completed') {
+    return <Badge variant="secondary">Completed</Badge>;
+  }
+
+  if (status === 'within_timeframe') {
+    return <Badge className="bg-green-500">On Track</Badge>;
+  }
+
+  if (status === 'manual_intervention' || escalationLevel === 'manual') {
+    return (
+      <Badge variant="destructive" className="flex items-center gap-1">
+        <AlertTriangle size={12} />
+        Needs Attention
+      </Badge>
+    );
+  }
+
+  if (escalationLevel === 'urgent' || escalationLevel === 'final') {
+    return (
+      <Badge variant="destructive" className="flex items-center gap-1">
+        {daysOverdue || 0} days overdue
+      </Badge>
+    );
+  }
+
+  if (escalationLevel === 'firm') {
+    return <Badge className="bg-orange-500">{daysOverdue || 0} days overdue</Badge>;
+  }
+
+  if (escalationLevel === 'gentle') {
+    return <Badge className="bg-yellow-500">{daysOverdue || 0} days overdue</Badge>;
+  }
+
+  return <Badge variant="outline">Pending</Badge>;
+}
+
 export default function PortalManagement() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
   const [customMessage, setCustomMessage] = useState('');
+  const [timeframeDays, setTimeframeDays] = useState<number>(14);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [viewMode, setViewMode] = useState<'overview' | 'company-detail'>('overview');
   const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null);
+  const [showExtendModal, setShowExtendModal] = useState<number | null>(null);
+  const [extensionDays, setExtensionDays] = useState<number>(7);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -189,6 +252,7 @@ export default function PortalManagement() {
       targetCompanyId: number;
       targetContactId: number;
       customMessage?: string;
+      timeframeDays?: number;
     }) => {
       const response = await fetch('/api/v2/portal/tokens', {
         method: 'POST',
@@ -309,6 +373,69 @@ export default function PortalManagement() {
     },
   });
 
+  // Extend deadline mutation
+  const extendDeadline = useMutation({
+    mutationFn: async ({ tokenId, additionalDays }: { tokenId: number; additionalDays: number }) => {
+      const response = await fetch(`/api/v2/chase-up/tokens/${tokenId}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ additionalDays }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to extend deadline');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Deadline extended",
+        description: "The submission deadline has been extended.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+      setShowExtendModal(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error extending deadline",
+        description: error.message || "Failed to extend deadline",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Stop chase-up mutation
+  const stopChaseUp = useMutation({
+    mutationFn: async (tokenId: number) => {
+      const response = await fetch(`/api/v2/chase-up/tokens/${tokenId}/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reason: 'manual_stop' }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to stop chase-up');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Chase-up stopped",
+        description: "Automated reminder emails have been stopped for this portal link.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error stopping chase-up",
+        description: error.message || "Failed to stop chase-up",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Group portal tokens by company for business overview
   const businessOverview: BusinessOverview[] = React.useMemo(() => {
     const groupedByCompany = portalTokens.reduce((acc, token) => {
@@ -359,6 +486,7 @@ export default function PortalManagement() {
       targetCompanyId: selectedCompanyId,
       targetContactId: selectedContactIds[0],
       customMessage: customMessage.trim() || undefined,
+      timeframeDays,
     });
   };
 
@@ -550,6 +678,26 @@ export default function PortalManagement() {
               )}
 
               <div className="space-y-2">
+                <Label htmlFor="timeframe">Submission Timeframe</Label>
+                <Select value={timeframeDays.toString()} onValueChange={(value) => setTimeframeDays(parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timeframe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days (Default)</SelectItem>
+                    <SelectItem value="21">21 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="45">45 days</SelectItem>
+                    <SelectItem value="60">60 days</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Deadline: {new Date(Date.now() + timeframeDays * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="message">Custom Message (Optional)</Label>
                 <Textarea
                   id="message"
@@ -642,54 +790,66 @@ export default function PortalManagement() {
             <CardContent>
               <div className="space-y-4">
                 {selectedBusiness.tokens.map((token) => (
-                  <div key={token.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{token.contactName}</h4>
-                        <Badge variant={token.isActive ? "default" : "secondary"}>
-                          {token.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Mail size={14} />
-                          {token.contactEmail}
+                  <div key={token.id} className="p-4 border rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold">{token.contactName}</h4>
+                          <Badge variant={token.isActive ? "default" : "secondary"}>
+                            {token.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                          <ChaseUpStatusBadge 
+                            status={token.chaseUpStatus} 
+                            escalationLevel={token.escalationLevel}
+                          />
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span>Created: {new Date(token.createdAt).toLocaleDateString()}</span>
-                          <span>Expires: {new Date(token.expiresAt).toLocaleDateString()}</span>
-                          {token.lastAccessed && (
-                            <span>Last accessed: {new Date(token.lastAccessed).toLocaleDateString()}</span>
-                          )}
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Mail size={14} />
+                            {token.contactEmail}
+                          </div>
+                          <div className="flex items-center gap-4 flex-wrap">
+                            <span>Created: {new Date(token.createdAt).toLocaleDateString()}</span>
+                            <span>Expires: {new Date(token.expiresAt).toLocaleDateString()}</span>
+                            {token.submissionDeadline && (
+                              <span className="font-medium">
+                                Deadline: {new Date(token.submissionDeadline).toLocaleDateString()}
+                              </span>
+                            )}
+                            {token.lastAccessed && (
+                              <span>Last accessed: {new Date(token.lastAccessed).toLocaleDateString()}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
                       <TokenCompletionDisplay accessToken={token.accessToken} />
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(`/portal/${token.accessToken}`, '_blank')}
-                          title="View Portal"
-                        >
-                          <ExternalLink size={14} />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/portal/${token.accessToken}`);
-                            toast({
-                              title: "Link copied",
-                              description: "Portal link copied to clipboard",
-                            });
-                          }}
-                          title="Copy Link"
-                        >
-                          Copy
-                        </Button>
-                        {token.isActive && (
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/portal/${token.accessToken}`, '_blank')}
+                        title="View Portal"
+                      >
+                        <ExternalLink size={14} className="mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/portal/${token.accessToken}`);
+                          toast({
+                            title: "Link copied",
+                            description: "Portal link copied to clipboard",
+                          });
+                        }}
+                        title="Copy Link"
+                      >
+                        Copy
+                      </Button>
+                      {token.isActive && (
+                        <>
                           <Button
                             variant="outline"
                             size="sm"
@@ -697,35 +857,61 @@ export default function PortalManagement() {
                             disabled={resendPortalEmail.isPending}
                             title="Resend portal access email"
                           >
-                            {resendPortalEmail.isPending ? '...' : 'Resend Email'}
+                            <Mail size={14} className="mr-1" />
+                            {resendPortalEmail.isPending ? '...' : 'Resend'}
                           </Button>
-                        )}
-                        {token.isActive ? (
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
-                            onClick={() => {
-                              if (confirm('Are you sure you want to remove this portal link? Document history will be preserved.')) {
-                                removePortalToken.mutate(token.id);
-                              }
-                            }}
-                            disabled={removePortalToken.isPending}
-                            title="Remove Portal Link"
+                            onClick={() => setShowExtendModal(token.id)}
+                            title="Extend submission deadline"
                           >
-                            {removePortalToken.isPending ? '...' : 'Remove'}
+                            <CalendarPlus size={14} className="mr-1" />
+                            Extend
                           </Button>
-                        ) : (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => reinstatePortalToken.mutate(token.id)}
-                            disabled={reinstatePortalToken.isPending}
-                            title="Reinstate Portal Link"
-                          >
-                            {reinstatePortalToken.isPending ? '...' : 'Reinstate'}
-                          </Button>
-                        )}
-                      </div>
+                          {token.chaseUpStatus && token.chaseUpStatus !== 'completed' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Stop sending reminder emails for this portal link?')) {
+                                  stopChaseUp.mutate(token.id);
+                                }
+                              }}
+                              disabled={stopChaseUp.isPending}
+                              title="Stop chase-up emails"
+                            >
+                              <TimerOff size={14} className="mr-1" />
+                              Stop Reminders
+                            </Button>
+                          )}
+                        </>
+                      )}
+                      {token.isActive ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to remove this portal link? Document history will be preserved.')) {
+                              removePortalToken.mutate(token.id);
+                            }
+                          }}
+                          disabled={removePortalToken.isPending}
+                          title="Remove Portal Link"
+                        >
+                          {removePortalToken.isPending ? '...' : 'Remove'}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => reinstatePortalToken.mutate(token.id)}
+                          disabled={reinstatePortalToken.isPending}
+                          title="Reinstate Portal Link"
+                        >
+                          {reinstatePortalToken.isPending ? '...' : 'Reinstate'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -733,6 +919,44 @@ export default function PortalManagement() {
             </CardContent>
           </Card>
         )
+      )}
+
+      {showExtendModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-96">
+            <CardHeader>
+              <CardTitle>Extend Deadline</CardTitle>
+              <CardDescription>Add more time for document submission</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Additional Days</Label>
+                <Select value={extensionDays.toString()} onValueChange={(v) => setExtensionDays(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="21">21 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowExtendModal(null)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => extendDeadline.mutate({ tokenId: showExtendModal, additionalDays: extensionDays })}
+                  disabled={extendDeadline.isPending}
+                >
+                  {extendDeadline.isPending ? 'Extending...' : 'Extend'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

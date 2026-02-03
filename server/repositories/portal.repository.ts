@@ -74,6 +74,10 @@ export class PortalRepository {
       contactName: sql<string>`${targetContacts.firstName} || ' ' || ${targetContacts.lastName}`,
       contactEmail: targetContacts.email,
       documentSubmissions: sql<number>`(SELECT COUNT(*)::int FROM ${externalDocumentSubmissions} WHERE ${externalDocumentSubmissions.portalTokenId} = ${portalAccessTokens.id})`,
+      submissionDeadline: portalAccessTokens.submissionDeadline,
+      chaseUpStatus: portalAccessTokens.chaseUpStatus,
+      escalationLevel: portalAccessTokens.escalationLevel,
+      chaseEmailCount: portalAccessTokens.chaseEmailCount,
     }).from(portalAccessTokens)
       .innerJoin(targetCompanies, eq(portalAccessTokens.targetCompanyId, targetCompanies.id))
       .innerJoin(targetContacts, eq(portalAccessTokens.targetContactId, targetContacts.id))
