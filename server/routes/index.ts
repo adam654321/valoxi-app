@@ -22,6 +22,7 @@ import emailRoutes from './email.routes';
 import websiteAnalysisRoutes from './website-analysis.routes';
 import debugRoutes from './debug.routes';
 import financialDataRoutes from './financial-data.routes';
+import chaseUpRoutes from './chase-up.routes';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -49,4 +50,5 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/website-analysis', isAuthenticated, websiteAnalysisRoutes);
   app.use('/api/v2/debug', debugRoutes); // No auth for debugging
   app.use('/api/v2/financial-data', isAuthenticated, financialDataRoutes);
+  app.use('/api/v2/chase-up', isAuthenticated, chaseUpRoutes);
 }
