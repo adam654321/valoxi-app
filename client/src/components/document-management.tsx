@@ -350,6 +350,11 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
       queryClient.invalidateQueries({
         queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
       });
+      // Invalidate pipeline/company queries since triggering analysis moves company to Under Review stage
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
     },
     onError: (error: any) => {
       toast({

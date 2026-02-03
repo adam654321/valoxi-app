@@ -1,4 +1,5 @@
 import { stage1AnalysisRepository, type Stage1DocumentFile } from '../repositories/stage1-analysis.repository';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from '../gemini-stage1-service';
 import { NotFoundError } from '../utils/errors';
 import { eventBus } from './event-bus.service';
@@ -62,6 +63,12 @@ export class Stage1AnalysisService {
     console.log(`[STAGE1_ANALYSIS] Created stage 1 analysis event ${stage1Event.id} for company ${targetCompanyId}`);
     const sector = targetCompany.industry || '';
     setTimeout(() => { this.runGeminiAnalysis(stage1Event.id, targetCompanyId, targetCompany.companyName, sector); }, 100);
+    
+    // Auto-move company to "Under Review" stage when analysis is triggered
+    targetCompaniesRepository.update(targetCompanyId, { stage: 'Under Review' }, targetCompany.userCompanyId).catch(err => {
+      console.error(`[STAGE1_ANALYSIS] Failed to update company stage for analysis event ${stage1Event.id}:`, err.message);
+    });
+    
     return { triggered: true, eventId: stage1Event.id, message: 'Stage 1 analysis triggered successfully' };
   }
 
