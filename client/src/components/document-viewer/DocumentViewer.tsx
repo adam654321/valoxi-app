@@ -90,6 +90,10 @@ function formatFileSize(bytes: number) {
 export function DocumentViewer({ document, isOpen, onClose, onDownload }: DocumentViewerProps) {
   const { toast } = useToast();
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
+  
+  // Check if document was uploaded recently (within 5 minutes)
+  const isRecentUpload = document?.createdAt ? 
+    (Date.now() - new Date(document.createdAt).getTime()) < 5 * 60 * 1000 : false;
 
   const { data: analysisResults = [], isLoading: analysisLoading, error: analysisError } = useQuery<DocumentAnalysisResult[]>({
     queryKey: ["/api/v2/document-analysis/document", document?.id],
@@ -97,6 +101,11 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
     staleTime: 0,
     retry: 3,
     select: (response: any) => response.data,
+    // Auto-refresh every 5 seconds if document is recent and no results yet
+    refetchInterval: (query) => {
+      const hasResults = query.state.data && query.state.data.length > 0;
+      return isRecentUpload && !hasResults ? 5000 : false;
+    },
   });
 
   useEffect(() => {
@@ -260,6 +269,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
                 isLoading={analysisLoading}
                 isRetryingAnalysis={isRetryingAnalysis}
                 onRetryAnalysis={handleRetryWebhook}
+                documentUploadedAt={document.createdAt}
+                isPendingAnalysis={isRecentUpload && analysisResults.length === 0}
               />
             </TabsContent>
             

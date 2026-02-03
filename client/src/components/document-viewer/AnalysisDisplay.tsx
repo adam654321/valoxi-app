@@ -25,6 +25,8 @@ interface AnalysisDisplayProps {
   isLoading: boolean;
   isRetryingAnalysis: boolean;
   onRetryAnalysis: () => void;
+  documentUploadedAt?: string;
+  isPendingAnalysis?: boolean;
 }
 
 export function formatDate(dateString: string) {
@@ -996,7 +998,14 @@ function renderCompanyAccountsAnalysis(analysisData: any) {
   );
 }
 
-export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetryAnalysis }: AnalysisDisplayProps) {
+export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetryAnalysis, documentUploadedAt, isPendingAnalysis }: AnalysisDisplayProps) {
+  // Check if document was uploaded recently (within 5 minutes)
+  const isRecentUpload = documentUploadedAt ? 
+    (Date.now() - new Date(documentUploadedAt).getTime()) < 5 * 60 * 1000 : false;
+  
+  // Show pending analysis state if document was recently uploaded or explicitly marked as pending
+  const showPendingState = (isPendingAnalysis || isRecentUpload) && results.length === 0;
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -1004,6 +1013,26 @@ export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetr
           <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
           <p className="text-muted-foreground">Loading analysis results...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (showPendingState) {
+    return (
+      <div className="text-center py-8">
+        <div className="relative inline-block mb-4">
+          <BarChart3 className="w-12 h-12 text-blue-500" />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full animate-pulse" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Analysis in Progress</h3>
+        <p className="text-muted-foreground">Your document is being analyzed by our AI system.</p>
+        <p className="text-sm text-muted-foreground mt-1">This typically takes 30-90 seconds depending on document complexity.</p>
+        <div className="mt-4 flex items-center justify-center gap-2 text-blue-600">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+        <p className="text-xs text-muted-foreground mt-4">Results will appear automatically when ready</p>
       </div>
     );
   }
