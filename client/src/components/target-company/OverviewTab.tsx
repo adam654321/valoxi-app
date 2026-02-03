@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, Mail, Phone, MapPin, Calendar, User, Building2, FileText, ExternalLink, RefreshCw } from "lucide-react";
+import { Globe, Mail, Phone, MapPin, Calendar, User, Building2, FileText, ExternalLink, RefreshCw, RotateCcw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { CompanyProfile } from "./types";
 
 interface OverviewTabProps {
@@ -29,6 +32,35 @@ export function OverviewTab({
   viewOnMap,
   DealNotesSection,
 }: OverviewTabProps) {
+  const { toast } = useToast();
+  const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
+
+  const handleRetryWebsiteAnalysis = async () => {
+    if (isRetryingAnalysis) return;
+    
+    setIsRetryingAnalysis(true);
+    try {
+      await apiRequest('POST', `/api/v2/website-analysis/company/${companyId}/analyze`);
+      toast({
+        title: "Analysis Started",
+        description: "Website analysis is being processed. Results will appear shortly.",
+      });
+      // Start polling for results
+      setTimeout(() => refetchProfile(), 5000);
+      setTimeout(() => refetchProfile(), 15000);
+      setTimeout(() => refetchProfile(), 30000);
+    } catch (error) {
+      console.error('Failed to trigger website analysis:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to start website analysis. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRetryingAnalysis(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Company Information */}
@@ -166,27 +198,42 @@ export function OverviewTab({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">Website Analysis Pending</span>
+                      <span className="font-medium">Website Analysis</span>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => refetchProfile()}
-                      disabled={profileFetching}
-                      className="h-7 px-2"
-                      data-testid="button-refresh-analysis-business-info"
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-1 ${profileFetching ? 'animate-spin' : ''}`} />
-                      {profileFetching ? 'Checking...' : 'Refresh'}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRetryWebsiteAnalysis}
+                        disabled={isRetryingAnalysis || !company.website}
+                        className="h-7 px-2"
+                        data-testid="button-retry-website-analysis"
+                      >
+                        <RotateCcw className={`w-4 h-4 mr-1 ${isRetryingAnalysis ? 'animate-spin' : ''}`} />
+                        {isRetryingAnalysis ? 'Analyzing...' : 'Retry Analysis'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetchProfile()}
+                        disabled={profileFetching}
+                        className="h-7 px-2"
+                        data-testid="button-refresh-analysis-business-info"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${profileFetching ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Website analysis is currently being processed. This usually takes about 30 seconds.
+                    {company.website 
+                      ? "No website analysis available. Click 'Retry Analysis' to analyze the company website."
+                      : "No website URL configured for this company."
+                    }
                   </div>
-                  {profileFetching && (
+                  {(isRetryingAnalysis || profileFetching) && (
                     <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Checking for updates...</span>
+                      <span>{isRetryingAnalysis ? 'Analyzing website...' : 'Checking for updates...'}</span>
                     </div>
                   )}
                 </div>
