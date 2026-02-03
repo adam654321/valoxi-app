@@ -3,6 +3,7 @@ import { portalRepository } from '../repositories/portal.repository';
 import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { emailApiService } from './email.service';
+import { chaseUpService } from './chase-up.service';
 import type { PortalAccessToken, ExternalDocumentSubmission, InsertPortalAccessToken, InsertExternalDocumentSubmission } from '@shared/schema';
 
 export class PortalService {
@@ -27,7 +28,7 @@ export class PortalService {
     };
   }
 
-  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; }, baseUrl?: string): Promise<PortalAccessToken> {
+  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; timeframeDays?: number; }, baseUrl?: string): Promise<PortalAccessToken> {
     // Deactivate any existing active tokens for this company to allow new token creation
     await portalRepository.deactivateTokensForCompany(data.targetCompanyId);
     
@@ -37,6 +38,13 @@ export class PortalService {
       accessToken: randomUUID(), userCompanyId: data.userCompanyId, targetCompanyId: data.targetCompanyId,
       targetContactId: data.targetContactId, createdBy: data.createdBy, isActive: true, expiresAt,
       allowedActions: JSON.stringify(data.allowedActions || { upload: true, view: true }), customMessage: data.customMessage,
+      agreedSubmissionTimeframe: data.timeframeDays || 14,
+    });
+    
+    // Set up chase-up schedule if timeframe is provided
+    const timeframeDays = data.timeframeDays || 14;
+    chaseUpService.setPortalTimeframe(token.id, timeframeDays, data.createdBy).catch(err => {
+      console.error(`[PORTAL] Failed to create chase-up schedule for token ${token.id}:`, err.message);
     });
     
     // Send portal access email asynchronously (don't block token creation)
