@@ -896,6 +896,16 @@ export const portalAccessTokens = pgTable("portal_access_tokens", {
   allowedActions: text("allowed_actions").default('{"upload": true, "download": true, "message": true}'),
   customMessage: text("custom_message"),
   portalBranding: text("portal_branding"), // JSON as text
+  
+  // Chase-up Timeframe Management
+  agreedSubmissionTimeframe: integer("agreed_submission_timeframe").default(14), // days
+  submissionDeadline: date("submission_deadline"),
+  chaseUpStatus: varchar("chase_up_status", { length: 50 }).default("not_started"), // not_started, within_timeframe, gentle, firm, urgent, final, manual_intervention, completed
+  lastChaseEmailSent: timestamp("last_chase_email_sent"),
+  chaseEmailCount: integer("chase_email_count").default(0),
+  manualDeadlineSet: timestamp("manual_deadline_set"),
+  finalDeadlineDate: date("final_deadline_date"),
+  escalationLevel: varchar("escalation_level", { length: 50 }).default("none"), // none, gentle, firm, urgent, final, manual
 });
 
 // External document submissions table
@@ -997,6 +1007,44 @@ export const portalActivityLog = pgTable("portal_activity_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Chase-up emails tracking table
+export const chaseUpEmails = pgTable("chase_up_emails", {
+  id: serial("id").primaryKey(),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  emailSequenceNumber: integer("email_sequence_number").notNull(), // 1-4
+  emailType: varchar("email_type", { length: 50 }).notNull(), // 'gentle', 'firm', 'urgent', 'final'
+  sentToContacts: text("sent_to_contacts").array(),
+  ccInternalUsers: text("cc_internal_users").array(),
+  emailSubject: varchar("email_subject", { length: 255 }),
+  scheduledSendTime: timestamp("scheduled_send_time"),
+  sentAt: timestamp("sent_at"),
+  deliveryStatus: varchar("delivery_status", { length: 50 }).default("pending"), // pending, sent, delivered, failed
+  internalAlertSent: boolean("internal_alert_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Chase-up schedules table
+export const chaseUpSchedules = pgTable("chase_up_schedules", {
+  id: serial("id").primaryKey(),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  timeframeDays: integer("timeframe_days").notNull(),
+  submissionDeadline: date("submission_deadline").notNull(),
+  // Configuration for delays (defaults: 0, 2, 5, 8 days after deadline)
+  email1DelayDays: integer("email_1_delay_days").default(0),
+  email2DelayDays: integer("email_2_delay_days").default(2),
+  email3DelayDays: integer("email_3_delay_days").default(5),
+  email4DelayDays: integer("email_4_delay_days").default(8),
+  manualDeadlineDelayDays: integer("manual_deadline_delay_days").default(11),
+  isActive: boolean("is_active").default(true),
+  isCompleted: boolean("is_completed").default(false),
+  completionReason: varchar("completion_reason", { length: 100 }), // 'submitted', 'manual_stop', 'expired'
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Portal link campaigns table
 export const portalLinkCampaigns = pgTable("portal_link_campaigns", {
   id: serial("id").primaryKey(),
@@ -1089,6 +1137,19 @@ export const insertPortalAccessTokenSchema = createInsertSchema(portalAccessToke
   createdAt: true,
   lastAccessed: true,
   accessCount: true,
+  lastChaseEmailSent: true,
+  chaseEmailCount: true,
+});
+
+export const insertChaseUpEmailSchema = createInsertSchema(chaseUpEmails).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChaseUpScheduleSchema = createInsertSchema(chaseUpSchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertExternalDocumentSubmissionSchema = createInsertSchema(externalDocumentSubmissions).omit({
@@ -1141,6 +1202,12 @@ export const insertPortalLinkShareSchema = createInsertSchema(portalLinkShares).
 // Portal types
 export type PortalAccessToken = typeof portalAccessTokens.$inferSelect;
 export type InsertPortalAccessToken = z.infer<typeof insertPortalAccessTokenSchema>;
+
+export type ChaseUpEmail = typeof chaseUpEmails.$inferSelect;
+export type InsertChaseUpEmail = z.infer<typeof insertChaseUpEmailSchema>;
+
+export type ChaseUpSchedule = typeof chaseUpSchedules.$inferSelect;
+export type InsertChaseUpSchedule = z.infer<typeof insertChaseUpScheduleSchema>;
 
 export type ExternalDocumentSubmission = typeof externalDocumentSubmissions.$inferSelect;
 export type InsertExternalDocumentSubmission = z.infer<typeof insertExternalDocumentSubmissionSchema>;
