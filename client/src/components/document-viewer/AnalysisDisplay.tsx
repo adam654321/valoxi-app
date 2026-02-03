@@ -722,96 +722,125 @@ function renderBalanceSheetAnalysis(analysisData: any) {
                     {year}
                   </h3>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-green-700 dark:text-green-300">Assets</h4>
-                      
-                      <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
-                        <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Fixed Assets</div>
-                        <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                          £{yearData.balance_sheet?.fixed_assets?.toLocaleString() || 'N/A'}
-                        </div>
-                      </div>
+                  {(() => {
+                    const bs = yearData.balance_sheet;
+                    const fixedAssets = bs?.fixed_assets;
+                    const currentAssets = bs?.current_assets;
+                    const currentLiabilities = bs?.current_liabilities;
+                    const longTermLiabilities = bs?.long_term_liabilities;
+                    const equity = bs?.equity;
+                    const ratios = yearData.financial_ratios;
+                    
+                    const totalFixedAssets = (fixedAssets?.tangible_assets || 0) + (fixedAssets?.intangible_assets || 0);
+                    const totalDebtors = (currentAssets?.trade_debtors || 0) + (currentAssets?.other_debtors || 0);
+                    const netCurrentAssets = (currentAssets?.total || 0) - (currentLiabilities?.total || 0);
+                    const totalAssetsLessCurrentLiabilities = totalFixedAssets + netCurrentAssets;
+                    
+                    return (
+                      <>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-semibold text-green-700 dark:text-green-300">Assets</h4>
+                            
+                            <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                              <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Fixed Assets</div>
+                              <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                                £{totalFixedAssets ? totalFixedAssets.toLocaleString() : 'N/A'}
+                              </div>
+                              {fixedAssets && (
+                                <div className="mt-2 text-xs text-green-700 dark:text-green-300 space-y-1">
+                                  {fixedAssets.tangible_assets != null && <div>Tangible: £{fixedAssets.tangible_assets.toLocaleString()}</div>}
+                                  {fixedAssets.intangible_assets != null && fixedAssets.intangible_assets > 0 && <div>Intangible: £{fixedAssets.intangible_assets.toLocaleString()}</div>}
+                                </div>
+                              )}
+                            </div>
 
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-green-800 dark:text-green-200">Current Assets</div>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="flex justify-between items-center bg-green-25 p-2 rounded">
-                            <span className="text-sm">Debtors</span>
-                            <span className="font-medium">£{yearData.balance_sheet?.debtors?.toLocaleString() || 'N/A'}</span>
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium text-green-800 dark:text-green-200">Current Assets</div>
+                              <div className="grid grid-cols-1 gap-2">
+                                <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                                  <span className="text-sm">Trade Debtors</span>
+                                  <span className="font-medium">£{currentAssets?.trade_debtors?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                                  <span className="text-sm">Stock</span>
+                                  <span className="font-medium">£{currentAssets?.stock?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-green-25 p-2 rounded">
+                                  <span className="text-sm">Cash at Bank</span>
+                                  <span className="font-medium">£{currentAssets?.cash_at_bank?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-green-100 dark:bg-green-900 p-2 rounded border-t border-green-200 dark:border-green-800">
+                                  <span className="text-sm font-medium">Total Current Assets</span>
+                                  <span className="font-bold">£{currentAssets?.total?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center bg-green-25 p-2 rounded">
-                            <span className="text-sm">Cash at Bank</span>
-                            <span className="font-medium">£{yearData.balance_sheet?.cash_at_bank?.toLocaleString() || 'N/A'}</span>
-                          </div>
-                          <div className="flex justify-between items-center bg-green-100 dark:bg-green-900 p-2 rounded border-t border-green-200 dark:border-green-800">
-                            <span className="text-sm font-medium">Total Current Assets</span>
-                            <span className="font-bold">£{yearData.balance_sheet?.total_current_assets?.toLocaleString() || 'N/A'}</span>
+
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-semibold text-red-700 dark:text-red-300">Liabilities & Equity</h4>
+                            
+                            <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                              <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (Within One Year)</div>
+                              <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                                £{currentLiabilities?.total?.toLocaleString() || 'N/A'}
+                              </div>
+                            </div>
+
+                            <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                              <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (After One Year)</div>
+                              <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                                £{longTermLiabilities?.total?.toLocaleString() || 'N/A'}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium text-blue-800 dark:text-blue-200">Shareholders' Equity</div>
+                              <div className="grid grid-cols-1 gap-2">
+                                <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
+                                  <span className="text-sm">Share Capital</span>
+                                  <span className="font-medium">£{equity?.share_capital?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
+                                  <span className="text-sm">Retained Earnings</span>
+                                  <span className="font-medium">£{equity?.retained_earnings?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center bg-blue-100 dark:bg-blue-900 p-2 rounded border-t border-blue-200 dark:border-blue-800">
+                                  <span className="text-sm font-medium">Net Assets</span>
+                                  <span className="font-bold">£{equity?.total?.toLocaleString() || 'N/A'}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold text-red-700 dark:text-red-300">Liabilities & Equity</h4>
-                      
-                      <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
-                        <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (Within One Year)</div>
-                        <div className="text-2xl font-bold text-red-900 dark:text-red-100">
-                          £{yearData.balance_sheet?.creditors_within_one_year?.toLocaleString() || 'N/A'}
-                        </div>
-                      </div>
-
-                      <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
-                        <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (After One Year)</div>
-                        <div className="text-2xl font-bold text-red-900 dark:text-red-100">
-                          £{yearData.balance_sheet?.creditors_after_one_year?.toLocaleString() || 'N/A'}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-blue-800 dark:text-blue-200">Shareholders' Equity</div>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
-                            <span className="text-sm">Share Capital</span>
-                            <span className="font-medium">£{yearData.balance_sheet?.called_up_share_capital?.toLocaleString() || 'N/A'}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                          <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                            <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Net Current Assets</div>
+                            <div className="text-xl font-bold text-purple-800 dark:text-purple-200">
+                              £{netCurrentAssets ? netCurrentAssets.toLocaleString() : 'N/A'}
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center bg-blue-25 p-2 rounded">
-                            <span className="text-sm">P&L Reserve</span>
-                            <span className="font-medium">£{yearData.balance_sheet?.profit_and_loss_reserve?.toLocaleString() || 'N/A'}</span>
+                          <div className="bg-indigo-50 dark:bg-indigo-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                            <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Total Assets Less Current Liabilities</div>
+                            <div className="text-xl font-bold text-indigo-800 dark:text-indigo-200">
+                              £{totalAssetsLessCurrentLiabilities ? totalAssetsLessCurrentLiabilities.toLocaleString() : 'N/A'}
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center bg-blue-100 dark:bg-blue-900 p-2 rounded border-t border-blue-200 dark:border-blue-800">
-                            <span className="text-sm font-medium">Net Assets</span>
-                            <span className="font-bold">£{yearData.balance_sheet?.net_assets?.toLocaleString() || 'N/A'}</span>
+                          <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                            <div className="text-sm text-orange-700 dark:text-orange-300 font-medium">Current Ratio</div>
+                            <div className="text-xl font-bold text-orange-800 dark:text-orange-200">
+                              {ratios?.current_ratio?.toFixed(2) || (currentAssets?.total && currentLiabilities?.total
+                                ? (currentAssets.total / currentLiabilities.total).toFixed(2)
+                                : 'N/A'
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Net Current Assets</div>
-                      <div className="text-xl font-bold text-purple-800 dark:text-purple-200">
-                        £{yearData.balance_sheet?.net_current_assets?.toLocaleString() || 'N/A'}
-                      </div>
-                    </div>
-                    <div className="bg-indigo-50 dark:bg-indigo-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                      <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Total Assets Less Current Liabilities</div>
-                      <div className="text-xl font-bold text-indigo-800 dark:text-indigo-200">
-                        £{yearData.balance_sheet?.total_assets_less_current_liabilities?.toLocaleString() || 'N/A'}
-                      </div>
-                    </div>
-                    <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-                      <div className="text-sm text-orange-700 dark:text-orange-300 font-medium">Current Ratio</div>
-                      <div className="text-xl font-bold text-orange-800 dark:text-orange-200">
-                        {yearData.balance_sheet?.total_current_assets && yearData.balance_sheet?.creditors_within_one_year
-                          ? (yearData.balance_sheet.total_current_assets / yearData.balance_sheet.creditors_within_one_year).toFixed(2)
-                          : 'N/A'
-                        }
-                      </div>
-                    </div>
-                  </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
