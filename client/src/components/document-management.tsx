@@ -341,20 +341,29 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     mutationFn: async () => {
       return apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`);
     },
-    onSuccess: () => {
-      toast({
-        title: "Analysis Triggered",
-        description: "Stage 1 analysis has been initiated. This may take a few minutes to complete.",
-      });
+    onSuccess: (response: any) => {
+      const data = response?.data || response;
+      if (data?.triggered) {
+        toast({
+          title: "Analysis Triggered",
+          description: "Stage 1 analysis has been initiated. This may take a few minutes to complete.",
+        });
+        // Invalidate pipeline/company queries since triggering analysis moves company to Under Review stage
+        queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
+      } else {
+        toast({
+          title: "Analysis Not Triggered",
+          description: data?.message || "Analysis was not triggered. It may already be complete.",
+          variant: "default",
+        });
+      }
       // Refresh completion status after triggering
       queryClient.invalidateQueries({
         queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
       });
-      // Invalidate pipeline/company queries since triggering analysis moves company to Under Review stage
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
     },
     onError: (error: any) => {
       toast({
@@ -475,24 +484,77 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
                 {completedCount < 10 ? 'Partial documentation available - you can proceed with analysis if needed' : 'Ready for analysis'}
               </span>
             </div>
-            <Button 
-              size="sm" 
-              onClick={handleProgressToAnalysis}
-              disabled={triggerAnalysisMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {triggerAnalysisMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                  Triggering...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Progress to Analysis
-                </>
-              )}
-            </Button>
+            {completedCount < 10 ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    disabled={triggerAnalysisMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {triggerAnalysisMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                        Triggering...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Progress to Analysis
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-500" />
+                      Incomplete Documentation
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-left space-y-2">
+                      <p>
+                        The analysis may not be complete due to missing document types. 
+                        Only <strong>{completedCount} of 10</strong> document types have been uploaded.
+                      </p>
+                      <p>
+                        Missing types: {missingTypes.slice(0, 3).join(', ')}{missingTypes.length > 3 ? ` and ${missingTypes.length - 3} more` : ''}
+                      </p>
+                      <p className="text-amber-600 dark:text-amber-400 font-medium">
+                        Do you still want to proceed with the analysis?
+                      </p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleProgressToAnalysis}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Proceed Anyway
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <Button 
+                size="sm" 
+                onClick={handleProgressToAnalysis}
+                disabled={triggerAnalysisMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {triggerAnalysisMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    Triggering...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Progress to Analysis
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       )}
