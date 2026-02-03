@@ -38,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw } from "lucide-react";
 import type { TargetCompany, TargetContact, Stage1AnalysisEvent, DealNote } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -368,6 +368,7 @@ export default function TargetCompanyDetail() {
   const { toast } = useToast();
   const [showContactForm, setShowContactForm] = useState(false);
   const [editingContact, setEditingContact] = useState<TargetContact | null>(null);
+  const [isRetryingWebsiteAnalysis, setIsRetryingWebsiteAnalysis] = useState(false);
 
   const contactForm = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -512,6 +513,32 @@ export default function TargetCompanyDetail() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const handleRetryWebsiteAnalysis = async () => {
+    if (isRetryingWebsiteAnalysis || !company?.website) return;
+    
+    setIsRetryingWebsiteAnalysis(true);
+    try {
+      await apiRequest('POST', `/api/v2/website-analysis/company/${id}/analyze`);
+      toast({
+        title: "Analysis Started",
+        description: "Website analysis is being processed. Results will appear shortly.",
+      });
+      // Start polling for results
+      setTimeout(() => refetchProfile(), 5000);
+      setTimeout(() => refetchProfile(), 15000);
+      setTimeout(() => refetchProfile(), 30000);
+    } catch (error) {
+      console.error('Failed to trigger website analysis:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to start website analysis. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRetryingWebsiteAnalysis(false);
+    }
   };
 
   const handleAddContact = () => {
@@ -900,30 +927,45 @@ export default function TargetCompanyDetail() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Globe className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">Website Analysis Pending</span>
+                            <span className="font-medium">Website Analysis</span>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
-                              refetchProfile();
-                            }}
-                            disabled={profileFetching}
-                            className="h-7 px-2"
-                            data-testid="button-refresh-analysis-business-info"
-                          >
-                            <RefreshCw className={`w-4 h-4 mr-1 ${profileFetching ? 'animate-spin' : ''}`} />
-                            {profileFetching ? 'Checking...' : 'Refresh'}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleRetryWebsiteAnalysis}
+                              disabled={isRetryingWebsiteAnalysis || !company.website}
+                              className="h-7 px-2"
+                              data-testid="button-retry-website-analysis"
+                            >
+                              <RotateCcw className={`w-4 h-4 mr-1 ${isRetryingWebsiteAnalysis ? 'animate-spin' : ''}`} />
+                              {isRetryingWebsiteAnalysis ? 'Analyzing...' : 'Retry Analysis'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+                                refetchProfile();
+                              }}
+                              disabled={profileFetching}
+                              className="h-7 px-2"
+                              data-testid="button-refresh-analysis-business-info"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${profileFetching ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </div>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          Website analysis is currently being processed. This usually takes about 30 seconds.
+                          {company.website 
+                            ? "No website analysis available. Click 'Retry Analysis' to analyze the company website."
+                            : "No website URL configured for this company."
+                          }
                         </div>
-                        {profileFetching && (
+                        {(isRetryingWebsiteAnalysis || profileFetching) && (
                           <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
                             <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>Checking for updates...</span>
+                            <span>{isRetryingWebsiteAnalysis ? 'Analyzing website...' : 'Checking for updates...'}</span>
                           </div>
                         )}
                       </div>
