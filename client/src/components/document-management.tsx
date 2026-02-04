@@ -366,8 +366,9 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
         queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
         queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
-        // Also invalidate stage1 events to update re-run button state
+        // Invalidate stage1 analysis queries to refresh the Analysis tab with new results
         queryClient.invalidateQueries({ queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId, "stage1-analysis"] });
       } else {
         toast({
           title: "Analysis Not Triggered",
