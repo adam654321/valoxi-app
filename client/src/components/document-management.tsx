@@ -78,7 +78,8 @@ import {
   TrendingUp,
   AlertTriangle,
   Play,
-  Code
+  Code,
+  RefreshCw
 } from "lucide-react";
 
 // Helper function to invalidate all caches (document library + portal)
@@ -336,6 +337,15 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     staleTime: 5000, // Consider data stale after 5 seconds
   });
 
+  // Check if Stage 1 analysis has already been completed
+  const { data: stage1Events } = useQuery<any[]>({
+    queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`],
+    select: (response: any) => response.data,
+  });
+  
+  const hasCompletedStage1Analysis = stage1Events && stage1Events.length > 0 && 
+    stage1Events.some((event: any) => event.webhookStatus === 'success');
+
   // Mutation to trigger Stage 1 analysis
   const triggerAnalysisMutation = useMutation({
     mutationFn: async (options?: { bypassRequirements?: boolean }) => {
@@ -473,6 +483,37 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
           <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <TrendingUp className="w-4 h-4" />
             <span className="text-sm font-medium">All financial analysis types completed! Ready for comprehensive due diligence review.</span>
+          </div>
+        </div>
+      )}
+
+      {/* Re-run analysis section when Stage 1 analysis was already completed */}
+      {hasCompletedStage1Analysis && (
+        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+              <RefreshCw className="w-4 h-4" />
+              <span className="text-sm font-medium">Stage 1 analysis was completed. You can re-run if new documents were added.</span>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => handleProgressToAnalysis(true)}
+              disabled={triggerAnalysisMutation.isPending}
+              className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
+            >
+              {triggerAnalysisMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
+                  Re-running...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Re-run Analysis
+                </>
+              )}
+            </Button>
           </div>
         </div>
       )}

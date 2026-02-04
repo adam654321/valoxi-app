@@ -39,17 +39,20 @@ export class Stage1AnalysisService {
     console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}${bypassRequirements ? ' (bypassing requirements)' : ''}`);
     const targetCompany = await stage1AnalysisRepository.getTargetCompany(targetCompanyId);
     if (!targetCompany) throw new NotFoundError(`Company ${targetCompanyId} not found`);
-    const existingEvent = await stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
-    if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
-      const latestDocumentUpload = await stage1AnalysisRepository.getLatestDocumentUploadTime(targetCompanyId);
-      if (latestDocumentUpload && existingEvent.createdAt) {
-        const docUploadTime = new Date(latestDocumentUpload).getTime();
-        const eventCreatedTime = new Date(existingEvent.createdAt).getTime();
-        if (docUploadTime <= eventCreatedTime) {
-          return { triggered: false, message: 'Stage 1 analysis already completed. No new documents since then.' };
+    // When bypassRequirements is true, always allow re-triggering (user explicitly wants to run analysis again)
+    if (!bypassRequirements) {
+      const existingEvent = await stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
+      if (existingEvent && existingEvent.webhookStatus === 'success') {
+        const latestDocumentUpload = await stage1AnalysisRepository.getLatestDocumentUploadTime(targetCompanyId);
+        if (latestDocumentUpload && existingEvent.createdAt) {
+          const docUploadTime = new Date(latestDocumentUpload).getTime();
+          const eventCreatedTime = new Date(existingEvent.createdAt).getTime();
+          if (docUploadTime <= eventCreatedTime) {
+            return { triggered: false, message: 'Stage 1 analysis already completed. No new documents since then.' };
+          }
+        } else {
+          return { triggered: false, message: 'Stage 1 analysis already completed successfully.' };
         }
-      } else {
-        return { triggered: false, message: 'Stage 1 analysis already completed successfully.' };
       }
     }
     if (!bypassRequirements) {
