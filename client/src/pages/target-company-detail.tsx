@@ -960,10 +960,11 @@ export default function TargetCompanyDetail() {
                 
                 <TabsContent value="investment-summary" className="space-y-6">
                   {(() => {
-                    const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
-                    const eventToShow = successfulEvent || stage1Events[0];
+                    // Always show the LATEST event first (events are sorted by createdAt desc)
+                    // This ensures re-runs show the processing state, not old completed results
+                    const latestEvent = stage1Events[0];
                     
-                    if (!eventToShow) {
+                    if (!latestEvent) {
                       return (
                         <div className="text-center py-12 text-muted-foreground">
                           <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -973,15 +974,21 @@ export default function TargetCompanyDetail() {
                       );
                     }
 
-                    if (eventToShow.webhookStatus === 'pending') {
+                    // Show processing state for pending or processing events
+                    if (latestEvent.webhookStatus === 'pending' || latestEvent.webhookStatus === 'processing') {
                       return (
                         <div className="text-center py-12 text-muted-foreground">
                           <RefreshCw className="w-12 h-12 mx-auto mb-4 animate-spin opacity-50" />
                           <p className="text-lg font-medium mb-2">Analysis in progress...</p>
-                          <p className="text-sm">Please wait while we analyze your documents</p>
+                          <p className="text-sm">Please wait while we analyze your documents. This typically takes 30-60 seconds.</p>
                         </div>
                       );
                     }
+                    
+                    // Use the latest event if successful, otherwise find any successful event
+                    const eventToShow = latestEvent.webhookStatus === 'success' 
+                      ? latestEvent 
+                      : stage1Events.find(event => event.webhookStatus === 'success') || latestEvent;
 
                     if (eventToShow.webhookStatus === 'failed') {
                       return (
