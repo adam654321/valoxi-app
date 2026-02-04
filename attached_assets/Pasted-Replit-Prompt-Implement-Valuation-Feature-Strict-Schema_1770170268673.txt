@@ -1,0 +1,102 @@
+Replit Prompt: Implement Valuation Feature (Strict Schema)
+🌍 Context & Objective (What & Why)
+The Product: We are building an M&A (Mergers & Acquisitions) Deal Analysis Platform. This tool helps potential buyers analyze target companies by extracting data from financial documents (PDFs of accounts) and modeling the deal viability.
+
+The Feature: "Valuation & Deal Structure". Why: Once we have extracted the raw financial data (Revenue, P&L, Balance Sheet) from the uploaded PDFs, the user needs a place to:
+
+View & Verify this data (Read-Only Historic view).
+Normalize the earnings (Add-back personal expenses aka "Adjustments").
+Structure the Deal (Decide how much to pay and how to fund it—e.g., how much debt vs equity).
+The Flow: Documents Uploaded -> Data Extracted (JSON) -> Financials Database (THIS TASK) -> Valuation Modeling
+
+I need you to implement the Valuation & Deal Structure feature using a strict financial schema.
+
+Phase 1: Database Schema (
+shared/schema.ts
+)
+Please implement the following exact table structure using drizzle-orm.
+
+1. Financial Periods
+Anchor table for all financial data.
+
+export const financialPeriods = pgTable("financial_periods", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  periodLabel: varchar("period_label", { length: 50 }), // 'FY 2021'
+  periodType: varchar("period_type", { length: 20 }).notNull(), // 'historic' | 'forecast'
+  periodStart: date("period_start"),
+  periodEnd: date("period_end"),
+  fiscalYear: integer("fiscal_year"),
+});
+2. Core Financial Statements (Strict Columns)
+Income Statements:
+
+export const incomeStatements = pgTable("income_statements", {
+  id: serial("id").primaryKey(),
+  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  // Core Metrics
+  revenue: decimal("revenue"),
+  costOfSales: decimal("cost_of_sales"),
+  grossProfit: decimal("gross_profit"),
+  adminExpenses: decimal("administrative_expenses"),
+  ebitda: decimal("ebitda"),
+  operatingProfit: decimal("operating_profit"),
+  netProfit: decimal("net_profit"),
+  // Breakdowns (JSON for flexibility within strict structure)
+  revenueBreakdown: json("revenue_breakdown"),
+  overheadBreakdown: json("overheads_breakdown"),
+});
+Balance Sheets:
+
+export const balanceSheets = pgTable("balance_sheets", {
+  id: serial("id").primaryKey(),
+  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+  // Assets
+  fixedAssets: decimal("tangible_fixed_assets"),
+  currentAssets: decimal("total_current_assets"),
+  cashAtBank: decimal("cash_at_bank"),
+  tradeDebtors: decimal("trade_debtors"),
+  // Liabilities
+  currentLiabilities: decimal("total_current_liabilities"),
+  longTermLiabilities: decimal("total_long_term_liabilities"),
+  // Equity
+  shareCapital: decimal("share_capital"),
+  retainedEarnings: decimal("retained_earnings"),
+  totalEquity: decimal("total_equity"),
+});
+3. Ancillary Tables
+Implement these as well:
+
+aged_debtors: total_trade_debtors, current_0_to_30, days_31_to_60, days_61_to_90, days_90_plus.
+loan_facilities: lender_name, outstanding_balance, interest_rate, monthly_repayment.
+staff_data: total_headcount, total_staff_costs, director_remuneration.
+ebitda_adjustments: financial_period_id, description, amount, category.
+4. Valuation Engine
+export const valuations = pgTable("valuations", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  calculationMethod: varchar("calculation_method").default("average_3yr"),
+  valuationMultiple: decimal("valuation_multiple").default("4.0"),
+  // JSON fields for flexible funding structure logic
+  fundingStructure: json("funding_structure"), 
+});
+Phase 2: Logic & API
+Read-Only Historic Data:
+
+API GET /financials should mark periods as readOnly: true if periodType === 'historic'.
+API POST /financials should REJECT edits to revenue or ebitda for 'historic' periods (unless an admin override flag is passed).
+Adjustments Logic:
+
+"Adjusted EBITDA" = income_statements.ebitda + SUM(ebitda_adjustments.amount).
+Do not modify the source income_statements.ebitda.
+Phase 3: UI Implementation
+Strict Grid:
+
+Use tanstack-table.
+Render "Historic" columns as disabled inputs (gray background).
+Render "Forecast" columns as editable.
+"Adjusted EBITDA" row should be a computed row at the bottom, editable only via a "Manage Adjustments" modal.
+Tabs:
+
+Separate "P&L", "Balance Sheet", "Debt Profile", "Staff". Don't cram everything into one grid.
