@@ -157,20 +157,24 @@ export default function ValuationPage() {
     dealNotes: '',
   });
 
-  const { data: financials, isLoading } = useQuery<FinancialsData>({
+  const { data: financialsResponse, isLoading } = useQuery<{ success: boolean; data: FinancialsData }>({
     queryKey: ['/api/v2/valuation/company', companyId, 'financials'],
     enabled: !!companyId,
   });
 
-  const { data: valuation } = useQuery<Valuation>({
+  const { data: valuationResponse } = useQuery<{ success: boolean; data: Valuation | null }>({
     queryKey: ['/api/v2/valuation/company', companyId, 'valuation'],
     enabled: !!companyId,
   });
 
-  const { data: ebitdaCalc } = useQuery<{ baseEbitda: number; totalAdjustments: number; adjustedEbitda: number; }>({
+  const { data: ebitdaResponse } = useQuery<{ success: boolean; data: { baseEbitda: number; totalAdjustments: number; adjustedEbitda: number; } }>({
     queryKey: ['/api/v2/valuation/company', companyId, 'calculate-ebitda'],
     enabled: !!companyId,
   });
+
+  const financials = financialsResponse?.data;
+  const valuation = valuationResponse?.data;
+  const ebitdaCalc = ebitdaResponse?.data;
 
   const createAdjustmentMutation = useMutation({
     mutationFn: async (data: any) => {
