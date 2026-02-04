@@ -76,6 +76,7 @@ interface StaffDataRow {
   totalStaffCosts: string | null;
   directorCount: number | null;
   directorRemuneration: string | null;
+  staffRecords: any[];
   period: FinancialPeriod;
 }
 
@@ -266,16 +267,7 @@ export default function ValuationPage() {
     );
   }, [sortedPeriods]);
 
-  const staffPeriods = useMemo(() => {
-    // Only show periods that have staff data and aren't staff matrix
-    const periodsWithStaffData = sortedPeriods.filter(p => 
-      p.periodLabel?.toLowerCase() !== 'staff matrix' && 
-      p.periodType !== 'staff_matrix' &&
-      staffData.some(s => s.financialPeriodId === p.id)
-    );
-    return periodsWithStaffData;
-  }, [sortedPeriods, staffData]);
-
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -430,7 +422,7 @@ export default function ValuationPage() {
               <CardDescription>Headcount and payroll information</CardDescription>
             </CardHeader>
             <CardContent>
-              <StaffTable staffData={staffData} periods={staffPeriods} />
+              <StaffTable staffData={staffData} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -724,50 +716,85 @@ function DebtTable({ loans }: { loans: LoanFacility[] }) {
   );
 }
 
-function StaffTable({ staffData, periods }: { staffData: StaffDataRow[], periods: FinancialPeriod[] }) {
-  const rows = [
-    { label: 'Total Headcount', key: 'totalHeadcount', format: 'number' },
-    { label: 'Total Staff Costs', key: 'totalStaffCosts', format: 'currency' },
-    { label: 'Director Count', key: 'directorCount', format: 'number' },
-    { label: 'Director Remuneration', key: 'directorRemuneration', format: 'currency' },
-  ];
+function StaffTable({ staffData }: { staffData: StaffDataRow[] }) {
+  // Get the most recent staff data record
+  const currentStaff = staffData.length > 0 ? staffData[0] : null;
+  
+  if (!currentStaff) {
+    return <p className="text-muted-foreground text-center py-8">No staff data available</p>;
+  }
+
+  // Parse staff records from JSON
+  const staffRecords = currentStaff.staffRecords || [];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className="text-left p-2 border-b font-medium">Metric</th>
-            {periods.map((p) => (
-              <th 
-                key={p.id} 
-                className={`text-right p-2 border-b font-medium ${p.readOnly ? 'bg-gray-50' : 'bg-blue-50'}`}
-              >
-                {formatPeriodLabel(p, false)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} className="hover:bg-gray-50">
-              <td className="p-2 border-b font-medium">{row.label}</td>
-              {periods.map((p) => {
-                const data = staffData.find((s) => s.financialPeriodId === p.id);
-                const value = data ? (data as any)[row.key] : null;
-                return (
-                  <td 
-                    key={p.id} 
-                    className={`text-right p-2 border-b ${p.readOnly ? 'bg-gray-50 text-gray-600' : 'bg-blue-50'}`}
-                  >
-                    {row.format === 'currency' ? formatCurrency(value) : formatNumber(value)}
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{formatNumber(currentStaff.totalHeadcount)}</div>
+            <p className="text-sm text-muted-foreground">Total Headcount</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{formatCurrency(currentStaff.totalStaffCosts)}</div>
+            <p className="text-sm text-muted-foreground">Total Staff Costs</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{formatNumber(currentStaff.directorCount)}</div>
+            <p className="text-sm text-muted-foreground">Directors</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{formatCurrency(currentStaff.directorRemuneration)}</div>
+            <p className="text-sm text-muted-foreground">Director Remuneration</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Staff Breakdown Table */}
+      {staffRecords.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="text-left p-2 border-b font-medium">Role / Department</th>
+                <th className="text-left p-2 border-b font-medium">Type</th>
+                <th className="text-right p-2 border-b font-medium">Salary</th>
+                <th className="text-right p-2 border-b font-medium">Total Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staffRecords.map((record: any, index: number) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="p-2 border-b">
+                    <div className="font-medium">{record.name || record.position}</div>
+                    {record.position && record.name !== record.position && (
+                      <div className="text-sm text-muted-foreground">{record.position}</div>
+                    )}
                   </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <td className="p-2 border-b">
+                    <div className="flex gap-1">
+                      {record.is_director && <Badge variant="secondary">Director</Badge>}
+                      {record.is_owner && <Badge variant="outline">Owner</Badge>}
+                      {!record.is_director && !record.is_owner && (
+                        <Badge variant="outline">{record.employment_type || 'Employee'}</Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="text-right p-2 border-b">{formatCurrency(record.gross_salary)}</td>
+                  <td className="text-right p-2 border-b font-medium">{formatCurrency(record.total_cost)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
