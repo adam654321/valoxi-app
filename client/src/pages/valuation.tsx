@@ -267,11 +267,14 @@ export default function ValuationPage() {
   }, [sortedPeriods]);
 
   const staffPeriods = useMemo(() => {
-    return sortedPeriods.filter(p => 
+    // Only show periods that have staff data and aren't staff matrix
+    const periodsWithStaffData = sortedPeriods.filter(p => 
       p.periodLabel?.toLowerCase() !== 'staff matrix' && 
-      p.periodType !== 'staff_matrix'
+      p.periodType !== 'staff_matrix' &&
+      staffData.some(s => s.financialPeriodId === p.id)
     );
-  }, [sortedPeriods]);
+    return periodsWithStaffData;
+  }, [sortedPeriods, staffData]);
 
   if (isLoading) {
     return (
