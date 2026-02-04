@@ -1,0 +1,13 @@
+Asset ID,Description,Category,Purchase Date,Cost,Accumulated Depreciation,Net Book Value,Depreciation Rate
+"VAN-001","Ford Transit Custom Van - Registration YT68 FGH","Vehicles","15/09/2018",28000,22400,5600,"25%"
+"VAN-002","Ford Transit Custom Van - Registration AB19 KLM","Vehicles","22/03/2019",29500,20650,8850,"25%"
+"VAN-003","Mercedes Sprinter Van - Registration CD20 NOP","Vehicles","18/11/2020",38000,19000,19000,"25%"
+"VAN-004","Ford Transit Custom Van - Registration EF21 QRS","Vehicles","08/06/2021",32000,12800,19200,"25%"
+"VAN-005","Ford Transit Custom Van - Registration GH22 TUV","Vehicles","14/01/2022",34000,11900,22100,"25%"
+"TOOL-001","Workshop Tools & Equipment Set","Plant & Equipment","10/08/2019",15000,10500,4500,"20%"
+"TOOL-002","Cable Testing & Diagnostic Equipment","Plant & Equipment","25/02/2021",8500,4250,4250,"20%"
+"IT-001","Office IT Equipment & Network Infrastructure","IT Equipment","12/05/2020",12000,9600,2400,"33%"
+"IT-002","Laptop Computers (5 units) - Project Management","IT Equipment","19/09/2022",7500,5000,2500,"33%"
+"PROP-001","Warehouse Racking & Storage Systems","Fixtures & Fittings","03/04/2019",18000,10800,7200,"10%"
+"PROP-002","Office Furniture & Fittings","Fixtures & Fittings","15/06/2020",9000,4950,4050,"10%"
+"SPEC-001","Demonstration Smart Home System","Plant & Equipment","28/10/2021",22000,8800,13200,"20%"

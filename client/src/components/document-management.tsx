@@ -338,8 +338,10 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
 
   // Mutation to trigger Stage 1 analysis
   const triggerAnalysisMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`);
+    mutationFn: async (options?: { bypassRequirements?: boolean }) => {
+      return apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`, {
+        bypassRequirements: options?.bypassRequirements || false
+      });
     },
     onSuccess: (response: any) => {
       const data = response?.data || response;
@@ -374,8 +376,8 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     },
   });
 
-  const handleProgressToAnalysis = () => {
-    triggerAnalysisMutation.mutate();
+  const handleProgressToAnalysis = (bypassRequirements = false) => {
+    triggerAnalysisMutation.mutate({ bypassRequirements });
   };
 
   if (isLoading || !completionStatus) {
@@ -527,7 +529,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction 
-                      onClick={handleProgressToAnalysis}
+                      onClick={() => handleProgressToAnalysis(true)}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       Proceed Anyway
@@ -538,7 +540,7 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
             ) : (
               <Button 
                 size="sm" 
-                onClick={handleProgressToAnalysis}
+                onClick={() => handleProgressToAnalysis(false)}
                 disabled={triggerAnalysisMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
