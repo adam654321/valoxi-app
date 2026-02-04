@@ -1,0 +1,59 @@
+Plan: Modern Sidebar Navigation
+Goal: Transform the application layout from a traditional top-navbar to a modern, collapsible sidebar navigation system. This improves scalability (Vertical > Horizontal for many items) and aligns with modern SaaS aesthetics.
+
+🧠 Design Principles (UX Psychology)
+Serial Position Effect: Key items (Dashboard, Pipeline) at top; Admin/Settings at bottom.
+Miller's Law (Chunking): Group navigation items into logical sections (Main, Analytics, Admin) rather than one long list.
+Hick's Law: Simplify choices. Use icons + text. Allow collapsing the sidebar to reduce visual noise.
+Fitts' Law: Sidebar items are easier to hit (infinite left edge) than top nav items.
+🏗️ Proposed Architecture
+1. New Component Structure (client/src/components/layout/)
+Sidebar.tsx: The main left-hand navigation column.
+State: isCollapsed (boolean) - toggled by a button.
+Content: Logo area, grouped nav links, user profile at bottom.
+Header.tsx: Top bar (much thinner than before).
+Content: Breadcrumbs, Global Search, Notifications, "Add Target" Action.
+MainLayout.tsx: The wrapper combining Sidebar + Header + Page Content.
+CSS Grid or Flexbox layout: [Sidebar] [Header + Content].
+2. Navigation Structure (Chunked)
+Group 1: Core
+
+Dashboard (Home)
+Pipeline (Kanban)
+Target Companies (List)
+Group 2: Relationships
+
+Contacts
+Team
+Group 3: Intelligence
+
+Reports
+Portals
+Group 4: Footer (Bottom pinned)
+
+Settings / Profile / Logout
+📋 Task Breakdown
+Phase 1: Component Creation
+ Create client/src/components/layout directory
+ Create NavUser.tsx (User profile snippet for sidebar bottom)
+ Create AppSidebar.tsx (The actual sidebar component using shadcn Sidebar or 
+Sheet
+ primitives if available, or custom flex)
+ Create PageHeader.tsx (Top bar with breadcrumbs/actions)
+Phase 2: Refactoring Layout.tsx
+ Move existing Notifications and AddTargetCompanyButton to PageHeader
+ Replace Layout.tsx return statement with the new Grid structure
+ Implement active state logic (blue highlight + bg accent) for sidebar items
+Phase 3: UX Polish
+ Add Collapsible toggle (Chevrons)
+ Add Tooltip on hover when collapsed (Accessibility)
+ Ensure Mobile Responsiveness (Sidebar becomes drawer/hamburger menu on small screens)
+✅ Verification Plan
+Automated
+ Mobile Test: Verify hamburger menu appears on viewport < 768px.
+ Navigation Test: Check that clicking a link updates the URL and stays "active".
+ Accessibility: Tab key should navigate sidebar items logically.
+Manual Verification
+Collapse/Expand: Click the toggle. Sidebar shrinks to icons-only. Content area expands.
+Responsive: Resize window. Sidebar hides, Hamburger appears. Layout doesn't break.
+Active State: Go to "/target-companies". The sidebar item should be highlighted.
