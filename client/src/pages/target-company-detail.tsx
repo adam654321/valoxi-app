@@ -38,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator } from "lucide-react";
 import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -403,6 +403,12 @@ export default function TargetCompanyDetail() {
             </div>
             
             <div className="flex items-center gap-2">
+              <Link href={`/target-companies/${id}/valuation`}>
+                <Button variant="outline" size="sm" data-testid="button-valuation">
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Valuation
+                </Button>
+              </Link>
               <Button onClick={handleAddContact} size="sm" data-testid="button-add-contact">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Contact
