@@ -349,9 +349,10 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
   // Mutation to trigger Stage 1 analysis
   const triggerAnalysisMutation = useMutation({
     mutationFn: async (options?: { bypassRequirements?: boolean }) => {
-      return apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`, {
+      const response = await apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`, {
         bypassRequirements: options?.bypassRequirements || false
       });
+      return response.json();
     },
     onSuccess: (response: any) => {
       const data = response?.data || response;
@@ -365,6 +366,8 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
         queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
         queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
+        // Also invalidate stage1 events to update re-run button state
+        queryClient.invalidateQueries({ queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`] });
       } else {
         toast({
           title: "Analysis Not Triggered",
