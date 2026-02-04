@@ -90,7 +90,7 @@ function formatPercent(value: number): string {
 }
 
 export default function DealSheetPage() {
-  const { companyId } = useParams<{ companyId: string }>();
+  const { id: companyId } = useParams<{ id: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
