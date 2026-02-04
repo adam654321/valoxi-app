@@ -1736,6 +1736,84 @@ export type InsertFixedAssetsRegister = z.infer<typeof insertFixedAssetsRegister
 export type LoanFacility = typeof loanFacilities.$inferSelect;
 export type InsertLoanFacility = z.infer<typeof insertLoanFacilitySchema>;
 
+// EBITDA Adjustments - for normalizing earnings with add-backs
+export const ebitdaAdjustments = pgTable("ebitda_adjustments", {
+  id: serial("id").primaryKey(),
+  financialPeriodId: integer("financial_period_id").references(() => financialPeriods.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  description: varchar("description", { length: 500 }).notNull(),
+  amount: decimal("amount").notNull(),
+  category: varchar("category", { length: 100 }), // 'personal_expense', 'one_off', 'related_party', 'discretionary', 'other'
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Valuations - deal structure and valuation calculations
+export const valuations = pgTable("valuations", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  calculationMethod: varchar("calculation_method", { length: 50 }).default("average_3yr"), // 'average_3yr', 'latest_year', 'weighted_average', 'custom'
+  valuationMultiple: decimal("valuation_multiple").default("4.0"),
+  adjustedEbitda: decimal("adjusted_ebitda"), // Calculated: EBITDA + sum of adjustments
+  enterpriseValue: decimal("enterprise_value"), // Calculated: adjustedEbitda * multiple
+  netDebt: decimal("net_debt"), // Total debt - cash
+  equityValue: decimal("equity_value"), // enterpriseValue - netDebt
+  fundingStructure: json("funding_structure"), // {seniorDebt: {amount, rate, term}, vendorLoan: {...}, equity: {...}}
+  dealNotes: text("deal_notes"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relations for EBITDA adjustments and valuations
+export const ebitdaAdjustmentsRelations = relations(ebitdaAdjustments, ({ one }) => ({
+  financialPeriod: one(financialPeriods, {
+    fields: [ebitdaAdjustments.financialPeriodId],
+    references: [financialPeriods.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [ebitdaAdjustments.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [ebitdaAdjustments.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const valuationsRelations = relations(valuations, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [valuations.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [valuations.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for EBITDA adjustments and valuations
+export const insertEbitdaAdjustmentSchema = createInsertSchema(ebitdaAdjustments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertValuationSchema = createInsertSchema(valuations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for EBITDA adjustments and valuations
+export type EbitdaAdjustment = typeof ebitdaAdjustments.$inferSelect;
+export type InsertEbitdaAdjustment = z.infer<typeof insertEbitdaAdjustmentSchema>;
+
+export type Valuation = typeof valuations.$inferSelect;
+export type InsertValuation = z.infer<typeof insertValuationSchema>;
+
 // ============================================================================
 // END OF NORMALIZED FINANCIAL DATA TABLES
 // ============================================================================
