@@ -14,6 +14,11 @@ Preferred communication style: Simple, everyday language.
 - **Forms**: Managed using React Hook Form with Zod for validation.
 - **Build**: Vite.
 - **UI/UX Decisions**: Features a professional, modern design with tabbed interfaces, dashboard-style metrics, color-coded financial data, responsive layouts, and consistent iconography.
+- **Layout Architecture**: Modern collapsible sidebar navigation system (`client/src/components/layout/`):
+  - `AppSidebar.tsx`: Main sidebar with grouped navigation (Core, Relationships, Intelligence sections)
+  - `NavUser.tsx`: User profile dropdown in sidebar footer
+  - `PageHeader.tsx`: Thin top bar with breadcrumbs, notifications, and actions
+  - Sidebar collapses to icon-only mode with tooltips, mobile-responsive drawer on small screens, keyboard shortcut Ctrl+B to toggle
 
 ## Backend Architecture
 - **Framework**: Express.js with TypeScript.
