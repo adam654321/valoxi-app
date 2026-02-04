@@ -122,6 +122,16 @@ interface FinancialsData {
   adjustments: EbitdaAdjustment[];
 }
 
+function formatPeriodLabel(period: FinancialPeriod, showFY: boolean = true): string {
+  if (period.periodType === 'management' || period.periodType === 'ytd') {
+    return `YTD ${period.fiscalYear}`;
+  }
+  if (!showFY) {
+    return period.fiscalYear?.toString() || period.periodLabel || '-';
+  }
+  return period.periodLabel || `FY ${period.fiscalYear}`;
+}
+
 function formatCurrency(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '-';
   const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -245,9 +255,23 @@ export default function ValuationPage() {
     return [...periods].sort((a, b) => {
       const yearA = a.fiscalYear || 0;
       const yearB = b.fiscalYear || 0;
-      return yearB - yearA;
+      return yearA - yearB;
     });
   }, [periods]);
+
+  const financialPeriods = useMemo(() => {
+    return sortedPeriods.filter(p => 
+      p.periodLabel?.toLowerCase() !== 'staff matrix' && 
+      p.periodType !== 'staff_matrix'
+    );
+  }, [sortedPeriods]);
+
+  const staffPeriods = useMemo(() => {
+    return sortedPeriods.filter(p => 
+      p.periodLabel?.toLowerCase() !== 'staff matrix' && 
+      p.periodType !== 'staff_matrix'
+    );
+  }, [sortedPeriods]);
 
   if (isLoading) {
     return (
@@ -367,7 +391,7 @@ export default function ValuationPage() {
               <CardDescription>Historic P&L data is read-only. Modify earnings via adjustments.</CardDescription>
             </CardHeader>
             <CardContent>
-              <PLTable incomeStatements={incomeStatements} periods={sortedPeriods} />
+              <PLTable incomeStatements={incomeStatements} periods={financialPeriods} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -379,7 +403,7 @@ export default function ValuationPage() {
               <CardDescription>Assets, liabilities and equity position</CardDescription>
             </CardHeader>
             <CardContent>
-              <BalanceSheetTable balanceSheets={balanceSheets} periods={sortedPeriods} />
+              <BalanceSheetTable balanceSheets={balanceSheets} periods={financialPeriods} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -403,7 +427,7 @@ export default function ValuationPage() {
               <CardDescription>Headcount and payroll information</CardDescription>
             </CardHeader>
             <CardContent>
-              <StaffTable staffData={staffData} periods={sortedPeriods} />
+              <StaffTable staffData={staffData} periods={staffPeriods} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -573,9 +597,9 @@ function PLTable({ incomeStatements, periods }: { incomeStatements: IncomeStatem
                 className={`text-right p-2 border-b font-medium ${p.readOnly ? 'bg-gray-50' : 'bg-blue-50'}`}
               >
                 <div className="flex flex-col items-end">
-                  <span>{p.periodLabel || `FY ${p.fiscalYear}`}</span>
+                  <span>{formatPeriodLabel(p)}</span>
                   <Badge variant={p.readOnly ? 'secondary' : 'default'} className="text-xs mt-1">
-                    {p.readOnly ? 'Historic' : 'Forecast'}
+                    {p.readOnly ? 'Historic' : (p.periodType === 'management' ? 'YTD' : 'Forecast')}
                   </Badge>
                 </div>
               </th>
@@ -630,7 +654,12 @@ function BalanceSheetTable({ balanceSheets, periods }: { balanceSheets: BalanceS
                 key={p.id} 
                 className={`text-right p-2 border-b font-medium ${p.readOnly ? 'bg-gray-50' : 'bg-blue-50'}`}
               >
-                {p.periodLabel || `FY ${p.fiscalYear}`}
+                <div className="flex flex-col items-end">
+                  <span>{formatPeriodLabel(p)}</span>
+                  <Badge variant={p.readOnly ? 'secondary' : 'default'} className="text-xs mt-1">
+                    {p.readOnly ? 'Historic' : (p.periodType === 'management' ? 'YTD' : 'Forecast')}
+                  </Badge>
+                </div>
               </th>
             ))}
           </tr>
@@ -711,7 +740,7 @@ function StaffTable({ staffData, periods }: { staffData: StaffDataRow[], periods
                 key={p.id} 
                 className={`text-right p-2 border-b font-medium ${p.readOnly ? 'bg-gray-50' : 'bg-blue-50'}`}
               >
-                {p.periodLabel || `FY ${p.fiscalYear}`}
+                {formatPeriodLabel(p, false)}
               </th>
             ))}
           </tr>
