@@ -42,9 +42,20 @@ export function useTargetCompany({ companyId }: UseTargetCompanyOptions) {
   const { data: stage1Events = [], isLoading: analysisLoading } = useQuery<Stage1AnalysisEvent[]>({
     queryKey: ["/api/target-companies", companyId, "stage1-analysis"],
     enabled: !!companyId,
-    refetchInterval: 30000,
+    refetchInterval: (query) => {
+      const events = query.state.data as Stage1AnalysisEvent[] | undefined;
+      // Poll every 3 seconds if there's an analysis in progress (processing or pending)
+      if (events && events.length > 0) {
+        const latestEvent = events[0];
+        if (latestEvent.webhookStatus === 'processing' || latestEvent.webhookStatus === 'pending') {
+          return 3000;
+        }
+      }
+      // Otherwise poll every 30 seconds
+      return 30000;
+    },
     refetchIntervalInBackground: false,
-    staleTime: 10000,
+    staleTime: 0,
   });
 
   const company = profile;
