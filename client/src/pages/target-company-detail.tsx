@@ -409,6 +409,12 @@ export default function TargetCompanyDetail() {
                   Valuation
                 </Button>
               </Link>
+              <Link href={`/target-companies/${id}/deal-sheet`}>
+                <Button variant="default" size="sm" data-testid="button-deal-sheet">
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Deal Sheet
+                </Button>
+              </Link>
               <Button onClick={handleAddContact} size="sm" data-testid="button-add-contact">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Contact
