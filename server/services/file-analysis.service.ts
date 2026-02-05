@@ -67,6 +67,9 @@ function enhanceProfitLossWithCalculations(analysisData: any): any {
   }
 }
 
+// Configuration for deduplication
+const ANALYSIS_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes - if processing takes longer, allow retry
+
 export async function analyzeUploadedFileWithGemini(eventId: number) {
   try {
     const event = await documentsRepository.getFileUploadEvent(eventId);
@@ -74,6 +77,37 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       console.error(`[FILE_ANALYSIS] Event ${eventId} not found`);
       return;
     }
+
+    // DEDUPLICATION CHECK 1: Skip if analysis is already complete
+    if (event.webhookStatus === 'analysis_complete') {
+      console.log(`[FILE_ANALYSIS] Skipping event ${eventId} - analysis already complete`);
+      return;
+    }
+
+    // DEDUPLICATION CHECK 2: Skip if currently processing (unless stale)
+    if (event.webhookStatus === 'processing') {
+      const processingStartTime = event.webhookSentAt ? new Date(event.webhookSentAt).getTime() : 0;
+      const now = Date.now();
+      const elapsed = now - processingStartTime;
+      
+      if (elapsed < ANALYSIS_LOCK_TIMEOUT_MS) {
+        console.log(`[FILE_ANALYSIS] Skipping event ${eventId} - already processing (started ${Math.round(elapsed / 1000)}s ago)`);
+        return;
+      }
+      console.log(`[FILE_ANALYSIS] Processing lock expired for event ${eventId} (${Math.round(elapsed / 1000)}s old) - retrying`);
+    }
+
+    // DEDUPLICATION CHECK 3: Skip if analysis results already exist for this document
+    const existingResults = await documentAnalysisRepository.getAnalysisResultsByDocumentId(event.documentId);
+    if (existingResults && existingResults.length > 0) {
+      console.log(`[FILE_ANALYSIS] Skipping event ${eventId} - ${existingResults.length} analysis result(s) already exist for document ${event.documentId}`);
+      // Mark as complete since we already have results
+      await documentsRepository.updateFileUploadEventWebhookStatus(eventId, 'analysis_complete', undefined, new Date());
+      return;
+    }
+
+    // Set status to 'processing' to prevent concurrent analysis
+    await documentsRepository.updateFileUploadEventWebhookStatus(eventId, 'processing', undefined, new Date());
 
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
@@ -198,7 +232,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
 
     await documentsRepository.updateFileUploadEventWebhookStatus(
       eventId, 
-      'complete', 
+      'analysis_complete', 
       JSON.stringify(completeData, null, 2), 
       new Date()
     );
