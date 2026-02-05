@@ -1084,11 +1084,14 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {categories?.map((category) => (
-                                  <SelectItem key={category.categoryName} value={category.categoryName}>
-                                    {category.categoryName}
-                                  </SelectItem>
-                                ))}
+                                {categories
+                                  ?.slice()
+                                  .sort((a, b) => a.categoryName.localeCompare(b.categoryName))
+                                  .map((category) => (
+                                    <SelectItem key={category.categoryName} value={category.categoryName}>
+                                      {category.categoryName}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
