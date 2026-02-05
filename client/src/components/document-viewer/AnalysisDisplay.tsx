@@ -430,7 +430,9 @@ function renderProfitAndLossAnalysis(analysisData: any) {
           </CardHeader>
           <CardContent>
             <div className="whitespace-pre-line text-sm font-mono bg-muted p-4 rounded-md">
-              {analysisData.years_covered}
+              {Array.isArray(analysisData.years_covered) 
+                ? analysisData.years_covered.join(', ')
+                : String(analysisData.years_covered)}
             </div>
           </CardContent>
         </Card>
