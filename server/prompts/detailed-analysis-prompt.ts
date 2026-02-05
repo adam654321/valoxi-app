@@ -25,7 +25,7 @@ Calculate Enterprise Value (EV).
 Calculate Net Debt/Cash Adjustments: Add Cash at Bank, subtract Long-Term Liabilities, and subtract any "Bad Debt" identified in the analysis.
 Result: Estimated Equity Value.
 Forensic Cross-Checking (Risk Detection):
-Assets: Compare the Net Book Value (NBV) in the Asset Register against the Tangible Assets figure in the Balance Sheet. Highlight any major discrepancies.
+Assets: Compare the Net Book Value (NBV) in the Asset Register against the Tangible Assets figure in the Balance Sheet. Highlight any major discrepancies.I
 Debtors: Analyze the Aged Debtors Ledger. Identify the total amount overdue by 90+ days or invoices older than 1 year. Recommend writing these off.
 Staff: Compare the total cost in the Staff Matrix against the "Staff Costs" in the Statutory Accounts. Note if there is a significant variance (indicating missing taxes/pensions or hidden employees).
 Output Format:
@@ -38,7 +38,7 @@ Date: [Current Date] | Sector: [Inferred Sector] | Currency: [Currency]
 Opportunity: [Brief narrative of the buy-side opportunity]
 Key Highlights: [Bullet points on Margins, Asset base, Cash position, and Growth/Decline trend]
 2. FINANCIAL PERFORMANCE
-Create a table showing historical years vs. current forecast.
+Create a table showing historical years vs. current forecast and include all available years from the provided data.
 Include: Revenue, Gross Profit, Gross Margin %, Operating Profit, Depreciation, and EBITDA.
 3. LENDING ANALYSIS & DSCR
 DSCR Target: [1.25x or 1.5x]
