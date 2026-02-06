@@ -5,7 +5,7 @@ import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
-import { sendFileUploadWebhook } from '../routes';
+import { sendFileUploadWebhook } from '../services/file-analysis.service';
 
 const router = Router();
 

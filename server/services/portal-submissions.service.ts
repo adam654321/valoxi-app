@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
-import { sendFileUploadWebhook } from '../routes';
+import { sendFileUploadWebhook } from './file-analysis.service';
 
 const PORTAL_CATEGORY_MAP: Record<string, string> = {
   'company_accounts_1': 'Company Accounts', 'company_accounts_2': 'Company Accounts', 'company_accounts_3': 'Company Accounts',

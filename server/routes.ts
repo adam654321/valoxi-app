@@ -1,18 +1,17 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 
+import { createSessionMiddleware } from "./middleware/session";
+import { isAuthenticated } from "./middleware/auth";
 import { registerModularRoutes } from "./routes/index";
 
 import { 
   checkStage1RequirementsByCategory, 
   checkAndTriggerStage1Analysis,
   runGeminiDetailedAnalysis,
-  sendFileUploadWebhook 
 } from "./services/file-analysis.service";
 
 import { usersRepository } from './repositories/users.repository';
@@ -20,39 +19,8 @@ import { targetCompaniesRepository } from './repositories/target-companies.repos
 import { documentsRepository } from './repositories/documents.repository';
 import { stage1AnalysisRepository } from './repositories/stage1-analysis.repository';
 
-declare module 'express-session' {
-  interface SessionData {
-    userId?: number;
-    userCompanyId?: number;
-  }
-}
-
-const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-const pgStore = connectPg(session);
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  app.use(session({
-    store: new pgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
-      ttl: sessionTtl / 1000,
-    }),
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: sessionTtl,
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-    },
-  }));
-
-  const isAuthenticated = async (req: Request, res: Response, next: any) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    next();
-  };
+  app.use(createSessionMiddleware());
 
   registerModularRoutes(app, isAuthenticated);
 
@@ -462,5 +430,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
-
-export { sendFileUploadWebhook };
