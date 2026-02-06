@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getReportViewForExpert } from "./ExpertReportViews";
 import {
   Brain,
   Loader2,
@@ -24,6 +27,7 @@ import {
   Layers,
   ShieldCheck,
   Gauge,
+  Lock,
 } from "lucide-react";
 
 interface ExpertResult {
@@ -47,17 +51,17 @@ interface ExpertAnalysisDashboardProps {
   companyName: string;
 }
 
-const EXPERT_CONFIG: Record<string, { label: string; icon: typeof Brain; color: string; description: string }> = {
-  data_quality: { label: "Data Quality", icon: Gauge, color: "text-slate-500", description: "Validates extracted data completeness" },
-  screening: { label: "Screening", icon: Target, color: "text-indigo-500", description: "Initial viability assessment" },
-  financial: { label: "Financial", icon: DollarSign, color: "text-emerald-500", description: "Revenue, margins & financial health" },
-  operational: { label: "Operational", icon: BarChart3, color: "text-blue-500", description: "Operations & efficiency analysis" },
-  risk: { label: "Risk", icon: Shield, color: "text-red-500", description: "Risk factors & mitigation" },
-  qoe: { label: "Quality of Earnings", icon: ShieldCheck, color: "text-amber-500", description: "Earnings sustainability review" },
-  sector: { label: "Sector", icon: Layers, color: "text-purple-500", description: "Market positioning & sector dynamics" },
-  valuation: { label: "Valuation", icon: TrendingUp, color: "text-teal-500", description: "Fair value & pricing analysis" },
-  deal_structure: { label: "Deal Structure", icon: Handshake, color: "text-orange-500", description: "Optimal deal terms & structure" },
-  synthesis: { label: "Synthesis", icon: Brain, color: "text-pink-500", description: "Combined recommendation & verdict" },
+const EXPERT_CONFIG: Record<string, { label: string; icon: typeof Brain; color: string; description: string; layer: number; dependsOn: string[] }> = {
+  data_quality: { label: "Data Quality", icon: Gauge, color: "text-slate-500", description: "Validates extracted data completeness", layer: 0, dependsOn: [] },
+  screening: { label: "Screening", icon: Target, color: "text-indigo-500", description: "Initial viability assessment", layer: 0, dependsOn: ["data_quality"] },
+  financial: { label: "Financial", icon: DollarSign, color: "text-emerald-500", description: "Revenue, margins & financial health", layer: 1, dependsOn: [] },
+  operational: { label: "Operational", icon: BarChart3, color: "text-blue-500", description: "Operations & efficiency analysis", layer: 1, dependsOn: [] },
+  risk: { label: "Risk", icon: Shield, color: "text-red-500", description: "Risk factors & mitigation", layer: 1, dependsOn: [] },
+  qoe: { label: "Quality of Earnings", icon: ShieldCheck, color: "text-amber-500", description: "Earnings sustainability review", layer: 2, dependsOn: ["financial", "operational"] },
+  sector: { label: "Sector", icon: Layers, color: "text-purple-500", description: "Market positioning & sector dynamics", layer: 2, dependsOn: ["financial"] },
+  valuation: { label: "Valuation", icon: TrendingUp, color: "text-teal-500", description: "Fair value & pricing analysis", layer: 3, dependsOn: ["financial", "operational", "risk", "qoe", "sector"] },
+  deal_structure: { label: "Deal Structure", icon: Handshake, color: "text-orange-500", description: "Optimal deal terms & structure", layer: 3, dependsOn: ["valuation", "risk", "operational", "qoe"] },
+  synthesis: { label: "Synthesis", icon: Brain, color: "text-pink-500", description: "Combined recommendation & verdict", layer: 4, dependsOn: ["financial", "operational", "risk", "qoe", "sector", "valuation", "deal_structure"] },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: typeof Clock }> = {
@@ -67,11 +71,17 @@ const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secon
   failed: { label: "Failed", variant: "destructive", icon: XCircle },
 };
 
+const LAYER_LABELS: Record<number, { title: string; subtitle: string }> = {
+  1: { title: "Layer 1: Foundation Analysis", subtitle: "Parallel execution — Financial, Operational, Risk" },
+  2: { title: "Layer 2: Derived Analysis", subtitle: "Depends on Layer 1 completion" },
+  3: { title: "Layer 3: Valuation & Deal", subtitle: "Depends on Layers 1-2 completion" },
+  4: { title: "Layer 4: Synthesis", subtitle: "Final combined recommendation" },
+};
+
 function StatusBadge({ status }: { status: string }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = config.icon;
   const isRunning = status === "processing";
-
   return (
     <Badge variant={config.variant} className={`gap-1 ${status === "success" ? "bg-green-600 hover:bg-green-700" : ""}`}>
       <Icon className={`w-3 h-3 ${isRunning ? "animate-spin" : ""}`} />
@@ -81,195 +91,129 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function RagBadge({ rag }: { rag: string }) {
-  const color = rag === "GREEN" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+  const color =
+    rag === "GREEN" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
     : rag === "AMBER" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
     : rag === "RED" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
     : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
   return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{rag}</span>;
 }
 
-function ScoreBar({ score, max = 100 }: { score: number; max?: number }) {
-  const pct = Math.min((score / max) * 100, 100);
+function ScoreBar({ score }: { score: number }) {
+  const pct = Math.min((score / 100) * 100, 100);
   const color = pct >= 70 ? "bg-green-500" : pct >= 40 ? "bg-amber-500" : "bg-red-500";
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+    <div className="flex items-center gap-2 mt-1">
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold w-10 text-right">{score}</span>
     </div>
   );
 }
 
-function formatLabel(key: string): string {
-  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace(/Cagr/g, "CAGR").replace(/Rag/g, "RAG").replace(/Qoe/g, "QoE")
-    .replace(/Ebitda/g, "EBITDA").replace(/Roi/g, "ROI");
+function checkDependencies(expertType: string, results: ExpertResult[]): boolean {
+  const config = EXPERT_CONFIG[expertType];
+  if (!config || config.dependsOn.length === 0) return true;
+  return config.dependsOn.every((dep) => {
+    const depResult = results.find((r) => r.expertType === dep);
+    return depResult?.status === "success";
+  });
 }
 
-const SKIP_KEYS = new Set(["stage", "company_name", "sector", "analysis_date", "assessment_date"]);
+function ExpertCard({
+  expertType,
+  result,
+  isLocked,
+  onClick,
+}: {
+  expertType: string;
+  result: ExpertResult | undefined;
+  isLocked: boolean;
+  onClick: () => void;
+}) {
+  const config = EXPERT_CONFIG[expertType];
+  if (!config) return null;
+  const Icon = config.icon;
+  const status = result?.status || "pending";
+  const isClickable = status === "success" && result?.analysisData && !isLocked;
+  const isRunning = status === "processing";
 
-function isSection(value: unknown): boolean {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isDimensionBlock(value: unknown): value is Record<string, unknown> {
-  if (!isSection(value)) return false;
-  const v = value as Record<string, unknown>;
-  return "rag" in v || "score" in v || "explanation" in v;
-}
-
-function DimensionCard({ label, data }: { label: string; data: Record<string, unknown> }) {
-  const rag = data.rag as string | undefined;
-  const score = data.score as number | undefined;
-  const explanation = data.explanation as string | undefined;
-  const otherEntries = Object.entries(data).filter(([k]) => !["rag", "score", "explanation"].includes(k));
+  const analysisData = result?.analysisData as Record<string, unknown> | null;
+  const rag = analysisData?.overall_rag as string | undefined;
+  const overallScore = result?.score ?? (analysisData?.overall_score as number | undefined);
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="font-semibold text-sm">{formatLabel(label)}</h4>
-        <div className="flex items-center gap-2">
-          {score !== undefined && <span className="text-sm font-bold">{score}/100</span>}
-          {rag && <RagBadge rag={rag} />}
-        </div>
-      </div>
-      {score !== undefined && <ScoreBar score={score} />}
-      {explanation && <p className="text-sm text-muted-foreground leading-relaxed">{explanation}</p>}
-      {otherEntries.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1">
-          {otherEntries.map(([k, v]) => (
-            <div key={k} className="flex justify-between text-xs py-0.5">
-              <span className="text-muted-foreground">{formatLabel(k)}</span>
-              <span className="font-medium text-foreground">
-                {typeof v === "number" ? v.toLocaleString() : typeof v === "boolean" ? (v ? "Yes" : "No") : String(v ?? "—")}
-              </span>
-            </div>
-          ))}
+    <Card
+      className={`transition-all relative ${
+        isLocked
+          ? "opacity-50 cursor-not-allowed"
+          : isClickable
+            ? "cursor-pointer hover:shadow-md hover:border-primary/50"
+            : isRunning
+              ? "border-blue-400 shadow-sm"
+              : ""
+      }`}
+      onClick={() => !isLocked && isClickable && onClick()}
+    >
+      {isLocked && (
+        <div className="absolute top-2 right-2">
+          <Lock className="w-4 h-4 text-muted-foreground" />
         </div>
       )}
-    </div>
-  );
-}
-
-function DataSection({ label, data }: { label: string; data: Record<string, unknown> }) {
-  const dimensionEntries = Object.entries(data).filter(([, v]) => isDimensionBlock(v));
-  const subSections = Object.entries(data).filter(([, v]) => isSection(v) && !isDimensionBlock(v));
-  const primitives = Object.entries(data).filter(([k, v]) => !isSection(v) && !Array.isArray(v) && !SKIP_KEYS.has(k));
-  const arrays = Object.entries(data).filter(([, v]) => Array.isArray(v));
-
-  return (
-    <div className="space-y-3">
-      <h3 className="font-semibold text-base border-b pb-2">{formatLabel(label)}</h3>
-      {primitives.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-          {primitives.map(([k, v]) => (
-            <div key={k} className="flex justify-between text-sm py-1 border-b border-dashed border-muted">
-              <span className="text-muted-foreground">{formatLabel(k)}</span>
-              <span className="font-medium text-right">
-                {k === "rag" || k === "status" ? (
-                  typeof v === "string" && ["GREEN", "AMBER", "RED"].includes(v) ? <RagBadge rag={v} /> : String(v ?? "—")
-                ) : typeof v === "number" ? v.toLocaleString() : typeof v === "boolean" ? (v ? "Yes" : "No") : String(v ?? "—")}
-              </span>
-            </div>
-          ))}
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon className={`w-5 h-5 ${isLocked ? "text-muted-foreground" : config.color}`} />
+            <CardTitle className="text-sm font-medium">{config.label}</CardTitle>
+          </div>
+          {!isLocked && <StatusBadge status={status} />}
         </div>
-      )}
-      {dimensionEntries.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {dimensionEntries.map(([k, v]) => (
-            <DimensionCard key={k} label={k} data={v as Record<string, unknown>} />
-          ))}
-        </div>
-      )}
-      {arrays.map(([k, v]) => (
-        <div key={k} className="space-y-1">
-          <span className="text-sm font-medium text-muted-foreground">{formatLabel(k)}</span>
-          {(v as unknown[]).length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">None</p>
-          ) : typeof (v as unknown[])[0] === "string" || typeof (v as unknown[])[0] === "number" ? (
-            <div className="flex flex-wrap gap-1">
-              {(v as unknown[]).map((item, i) => (
-                <Badge key={i} variant="outline" className="text-xs">{String(item)}</Badge>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {(v as Record<string, unknown>[]).map((item, i) => (
-                <div key={i} className="border rounded p-3 text-sm space-y-1">
-                  {Object.entries(item).map(([ik, iv]) => (
-                    <div key={ik} className="flex gap-2">
-                      <span className="text-muted-foreground min-w-[120px]">{formatLabel(ik)}:</span>
-                      <span className="text-foreground">{typeof iv === "number" ? iv.toLocaleString() : String(iv ?? "—")}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-      {subSections.map(([k, v]) => (
-        <DataSection key={k} label={k} data={v as Record<string, unknown>} />
-      ))}
-    </div>
-  );
-}
-
-function AnalysisDataView({ data }: { data: Record<string, unknown> }) {
-  const topPrimitives = Object.entries(data).filter(([k, v]) => !isSection(v) && !Array.isArray(v) && !SKIP_KEYS.has(k));
-  const sections = Object.entries(data).filter(([k, v]) => isSection(v) && !SKIP_KEYS.has(k));
-  const topArrays = Object.entries(data).filter(([k, v]) => Array.isArray(v) && !SKIP_KEYS.has(k));
-
-  return (
-    <div className="space-y-6">
-      {topPrimitives.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {topPrimitives.map(([k, v]) => (
-            <div key={k} className="border rounded-lg p-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">{formatLabel(k)}</p>
-              <p className="font-semibold text-sm">
-                {k === "rag" && typeof v === "string" && ["GREEN", "AMBER", "RED"].includes(v) ? <RagBadge rag={v} />
-                  : typeof v === "number" ? v.toLocaleString()
-                  : typeof v === "boolean" ? (v ? "Yes" : "No")
-                  : String(v ?? "—")}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-      {sections.map(([k, v]) => (
-        <DataSection key={k} label={k} data={v as Record<string, unknown>} />
-      ))}
-      {topArrays.map(([k, v]) => {
-        const arr = v as unknown[];
-        return (
-          <div key={k} className="space-y-2">
-            <h3 className="font-semibold text-base border-b pb-2">{formatLabel(k)}</h3>
-            {arr.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">None</p>
-            ) : typeof arr[0] === "string" || typeof arr[0] === "number" ? (
-              <div className="flex flex-wrap gap-1">
-                {arr.map((item, i) => <Badge key={i} variant="outline">{String(item)}</Badge>)}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {(arr as Record<string, unknown>[]).map((item, i) => (
-                  <div key={i} className="border rounded p-3 text-sm space-y-1">
-                    {Object.entries(item).map(([ik, iv]) => (
-                      <div key={ik} className="flex gap-2">
-                        <span className="text-muted-foreground min-w-[120px]">{formatLabel(ik)}:</span>
-                        <span>{typeof iv === "number" ? iv.toLocaleString() : String(iv ?? "—")}</span>
-                      </div>
-                    ))}
+        <CardDescription className="text-xs">{config.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {!isLocked && result && (
+          <div className="space-y-1">
+            {overallScore !== null && overallScore !== undefined && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Score</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-bold ${
+                      overallScore >= 70 ? "text-green-600" : overallScore >= 40 ? "text-amber-600" : "text-red-600"
+                    }`}>
+                      {overallScore}/100
+                    </span>
+                    {rag && <RagBadge rag={rag} />}
                   </div>
-                ))}
+                </div>
+                <ScoreBar score={overallScore} />
+              </div>
+            )}
+            {result.confidence && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Confidence</span>
+                <span className="text-xs capitalize font-medium">{result.confidence}</span>
+              </div>
+            )}
+            {result.processingTime && (
+              <p className="text-xs text-muted-foreground">
+                Processed in {(result.processingTime / 1000).toFixed(1)}s
+              </p>
+            )}
+            {isClickable && (
+              <div className="flex items-center text-xs text-primary mt-2 font-medium">
+                View full report <ChevronRight className="w-3 h-3 ml-1" />
               </div>
             )}
           </div>
-        );
-      })}
-    </div>
+        )}
+        {isLocked && (
+          <p className="text-xs text-muted-foreground italic mt-1">
+            Waiting for: {config.dependsOn.map((d) => EXPERT_CONFIG[d]?.label || d).join(", ")}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -293,7 +237,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
     mutationFn: () => apiRequest("POST", `/api/v2/expert-analysis/trigger-pipeline/${targetCompanyId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/expert-analysis/results", targetCompanyId] });
-      toast({ title: "Deep Dive Started", description: "The expert analysis pipeline has been triggered." });
+      toast({ title: "Expert Deep Dive Started", description: "The full expert analysis pipeline has been triggered." });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -304,25 +248,29 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
 
   const dataQuality = getResult("data_quality");
   const screening = getResult("screening");
-
   const qualityScore = (dataQuality?.analysisData as Record<string, unknown>)?.overall_completeness_score as number | undefined;
   const screeningData = screening?.analysisData as Record<string, unknown> | null;
   const screeningOutcome = screeningData?.recommendation as string | undefined;
-  const screeningScore = screening?.score;
+  const screeningScore = screeningData?.overall_score as number | undefined ?? screening?.score;
 
   const hasScreeningPassed = screening?.status === "success";
   const deepDiveExperts = ["financial", "operational", "risk", "qoe", "sector", "valuation", "deal_structure", "synthesis"];
   const hasDeepDiveStarted = deepDiveExperts.some((t) => getResult(t));
-  const hasRunningExperts = results.some((r) => r.status === "processing");
+  const hasRunningExperts = results.some((r) => r.status === "processing" || r.status === "pending");
+
+  const completedDeepDive = deepDiveExperts.filter((t) => getResult(t)?.status === "success").length;
+  const totalDeepDive = deepDiveExperts.length;
+  const progressPercent = hasDeepDiveStarted ? Math.round((completedDeepDive / totalDeepDive) * 100) : 0;
+
+  const isProceed = screeningOutcome === "PROCEED" || screeningOutcome === "STRONG_PROCEED" || screeningOutcome === "proceed" || screeningOutcome === "strong_proceed";
+  const isNoGo = screeningOutcome === "NO_GO" || screeningOutcome === "REJECT" || screeningOutcome === "no_go" || screeningOutcome === "reject";
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-32 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-40 w-full" />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2].map((i) => <Skeleton key={i} className="h-40 w-full" />)}
         </div>
       </div>
     );
@@ -340,207 +288,249 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card
-          className={`transition-all ${dataQuality?.status === "success" && dataQuality?.analysisData ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""}`}
-          onClick={() => dataQuality?.status === "success" && dataQuality?.analysisData && setSelectedExpert(dataQuality)}
-        >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Data Quality Score</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dataQuality ? (
-              <div className="flex items-center gap-4">
-                <div className={`text-4xl font-bold ${
-                  qualityScore && qualityScore > 70 ? "text-green-600" : qualityScore && qualityScore > 40 ? "text-amber-600" : "text-red-600"
-                }`}>
-                  {qualityScore ?? "—"}
-                </div>
-                <div className="flex-1">
-                  <StatusBadge status={dataQuality.status} />
-                  {dataQuality.analysisData && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Confidence: {(dataQuality.analysisData as Record<string, unknown>).confidence_for_analysis as string || "—"}
-                    </p>
-                  )}
-                </div>
-                {dataQuality.status === "success" && dataQuality.analysisData && (
-                  <div className="flex items-center text-xs text-primary">
-                    View details <ChevronRight className="w-3 h-3 ml-1" />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">Not yet assessed</p>
-            )}
-          </CardContent>
-        </Card>
+    <div className="space-y-8">
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-2 h-2 rounded-full bg-indigo-500" />
+          <h2 className="text-lg font-semibold">Phase 1: Screening</h2>
+          <Badge variant="outline" className="text-xs">Pre-requisite</Badge>
+        </div>
 
-        <Card
-          className={`transition-all ${screening?.status === "success" && screening?.analysisData ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""}`}
-          onClick={() => screening?.status === "success" && screening?.analysisData && setSelectedExpert(screening)}
-        >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Screening Outcome</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {screening ? (
-              <div className="flex items-center gap-4">
-                <div className={`text-2xl font-bold capitalize ${
-                  screeningOutcome === "proceed" || screeningOutcome === "strong_proceed" ? "text-green-600"
-                    : screeningOutcome === "review" ? "text-amber-600" : "text-red-600"
-                }`}>
-                  {screeningOutcome?.replace(/_/g, " ") ?? "—"}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card
+            className={`transition-all ${dataQuality?.status === "success" && dataQuality?.analysisData ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""}`}
+            onClick={() => dataQuality?.status === "success" && dataQuality?.analysisData && setSelectedExpert(dataQuality)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gauge className="w-5 h-5 text-slate-500" />
+                  <CardTitle className="text-sm font-medium">Data Quality</CardTitle>
                 </div>
-                <div className="flex-1">
-                  <StatusBadge status={screening.status} />
-                  {screeningScore !== null && screeningScore !== undefined && (
-                    <p className="text-xs text-muted-foreground mt-1">Score: {screeningScore}/100</p>
+                {dataQuality && <StatusBadge status={dataQuality.status} />}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {dataQuality ? (
+                <div className="flex items-center gap-4">
+                  <div className={`text-4xl font-bold ${
+                    qualityScore && qualityScore > 70 ? "text-green-600" : qualityScore && qualityScore > 40 ? "text-amber-600" : "text-red-600"
+                  }`}>
+                    {qualityScore ?? "—"}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Completeness Score</p>
+                    {dataQuality.analysisData && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Confidence: <span className="capitalize font-medium">{(dataQuality.analysisData as Record<string, unknown>).confidence_for_analysis as string || "—"}</span>
+                      </p>
+                    )}
+                  </div>
+                  {dataQuality.status === "success" && dataQuality.analysisData && (
+                    <div className="flex items-center text-xs text-primary font-medium">
+                      View report <ChevronRight className="w-3 h-3 ml-1" />
+                    </div>
                   )}
                 </div>
-                {screening.status === "success" && screening.analysisData && (
-                  <div className="flex items-center text-xs text-primary">
-                    View details <ChevronRight className="w-3 h-3 ml-1" />
-                  </div>
-                )}
+              ) : (
+                <p className="text-muted-foreground text-sm">Not yet assessed</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card
+            className={`transition-all ${screening?.status === "success" && screening?.analysisData ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""}`}
+            onClick={() => screening?.status === "success" && screening?.analysisData && setSelectedExpert(screening)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-indigo-500" />
+                  <CardTitle className="text-sm font-medium">Screening</CardTitle>
+                </div>
+                {screening && <StatusBadge status={screening.status} />}
               </div>
-            ) : qualityScore !== undefined && qualityScore <= 40 ? (
-              <p className="text-sm text-amber-600">Skipped — data quality too low (score: {qualityScore})</p>
-            ) : (
-              <p className="text-muted-foreground text-sm">Awaiting data quality check</p>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {screening ? (
+                <div className="flex items-center gap-4">
+                  <Badge className={`text-base px-3 py-1 ${
+                    isProceed ? "bg-green-600 hover:bg-green-700"
+                    : isNoGo ? "bg-red-600 hover:bg-red-700"
+                    : "bg-amber-600 hover:bg-amber-700"
+                  }`}>
+                    {screeningOutcome?.replace(/_/g, " ") ?? "—"}
+                  </Badge>
+                  <div className="flex-1">
+                    {screeningScore !== null && screeningScore !== undefined && (
+                      <p className="text-sm">
+                        Score: <span className="font-bold">{screeningScore}/100</span>
+                      </p>
+                    )}
+                  </div>
+                  {screening.status === "success" && screening.analysisData && (
+                    <div className="flex items-center text-xs text-primary font-medium">
+                      View report <ChevronRight className="w-3 h-3 ml-1" />
+                    </div>
+                  )}
+                </div>
+              ) : qualityScore !== undefined && qualityScore <= 40 ? (
+                <p className="text-sm text-amber-600">Skipped — data quality too low (score: {qualityScore})</p>
+              ) : (
+                <p className="text-muted-foreground text-sm">Awaiting data quality check</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Expert Analysis Engine</h3>
-          <p className="text-sm text-muted-foreground">
-            {hasDeepDiveStarted
-              ? `${results.filter((r) => deepDiveExperts.includes(r.expertType) && r.status === "success").length}/${deepDiveExperts.length} experts completed`
-              : "Run a deep dive to analyze this target across all dimensions"}
-          </p>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <h2 className="text-lg font-semibold">Phase 2: Expert Deep Dive</h2>
+              {hasDeepDiveStarted && (
+                <Badge variant="outline" className="text-xs">
+                  {completedDeepDive}/{totalDeepDive} complete
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              {hasDeepDiveStarted
+                ? hasRunningExperts
+                  ? "Analysis in progress — experts are running..."
+                  : completedDeepDive === totalDeepDive
+                    ? "All expert analyses complete"
+                    : `${completedDeepDive} of ${totalDeepDive} experts completed`
+                : "Run a comprehensive deep dive across all dimensions"}
+            </p>
+          </div>
+          <Button
+            onClick={() => triggerMutation.mutate()}
+            disabled={!hasScreeningPassed || triggerMutation.isPending || hasRunningExperts || isNoGo}
+          >
+            {triggerMutation.isPending || hasRunningExperts ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                {hasDeepDiveStarted ? "Re-run Deep Dive" : "Start Expert Deep Dive"}
+              </>
+            )}
+          </Button>
         </div>
-        <Button
-          onClick={() => triggerMutation.mutate()}
-          disabled={!hasScreeningPassed || triggerMutation.isPending || hasRunningExperts}
-        >
-          {triggerMutation.isPending || hasRunningExperts ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Running...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4 mr-2" />
-              Start Deep Dive Analysis
-            </>
-          )}
-        </Button>
-      </div>
 
-      {!hasScreeningPassed && !hasDeepDiveStarted && (
-        <Card className="border-dashed">
-          <CardContent className="py-6 text-center text-muted-foreground">
-            <p className="text-sm">Deep Dive is available once Screening passes successfully.</p>
-          </CardContent>
-        </Card>
-      )}
+        {hasDeepDiveStarted && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>Overall Progress</span>
+              <span>{progressPercent}%</span>
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+          </div>
+        )}
 
-      {hasDeepDiveStarted && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {deepDiveExperts.map((expertType) => {
-            const result = getResult(expertType);
-            const config = EXPERT_CONFIG[expertType];
-            if (!config) return null;
-            const Icon = config.icon;
-            const status = result?.status || "pending";
-            const isClickable = status === "success" && result?.analysisData;
+        {!hasScreeningPassed && !hasDeepDiveStarted && (
+          <Card className="border-dashed">
+            <CardContent className="py-8 text-center text-muted-foreground">
+              <Lock className="w-8 h-8 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium mb-1">Deep Dive Locked</p>
+              <p className="text-xs">Phase 1 screening must complete successfully before the deep dive can begin.</p>
+            </CardContent>
+          </Card>
+        )}
 
-            return (
-              <Card
-                key={expertType}
-                className={`transition-all ${isClickable ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""} ${
-                  status === "processing" ? "border-blue-400 shadow-sm" : ""
-                }`}
-                onClick={() => isClickable && result && setSelectedExpert(result)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-5 h-5 ${config.color}`} />
-                      <CardTitle className="text-sm font-medium">{config.label}</CardTitle>
-                    </div>
-                    <StatusBadge status={status} />
+        {isNoGo && !hasDeepDiveStarted && (
+          <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+            <CardContent className="py-6 text-center">
+              <XCircle className="w-8 h-8 mx-auto mb-3 text-red-500" />
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">Screening Recommended NO-GO</p>
+              <p className="text-xs text-red-600 dark:text-red-500 mt-1">Deep dive is not recommended for this target.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {(hasDeepDiveStarted || (hasScreeningPassed && !isNoGo)) && (
+          <div className="space-y-6">
+            {[1, 2, 3, 4].map((layer) => {
+              const layerExperts = deepDiveExperts.filter((t) => EXPERT_CONFIG[t]?.layer === layer);
+              if (layerExperts.length === 0) return null;
+              const layerInfo = LAYER_LABELS[layer];
+
+              const gridCols =
+                layerExperts.length >= 3
+                  ? "grid-cols-1 md:grid-cols-3"
+                  : layerExperts.length === 2
+                    ? "grid-cols-1 md:grid-cols-2"
+                    : "grid-cols-1";
+
+              return (
+                <div key={layer}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={`w-1.5 h-1.5 rounded-full ${
+                      layer === 1 ? "bg-blue-500" : layer === 2 ? "bg-purple-500" : layer === 3 ? "bg-teal-500" : "bg-pink-500"
+                    }`} />
+                    <h3 className="text-sm font-semibold text-muted-foreground">{layerInfo.title}</h3>
+                    <span className="text-xs text-muted-foreground">— {layerInfo.subtitle}</span>
                   </div>
-                  <CardDescription className="text-xs">{config.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {result?.score !== null && result?.score !== undefined && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-muted-foreground">Score:</span>
-                      <span className={`text-sm font-bold ${
-                        result.score >= 70 ? "text-green-600" : result.score >= 40 ? "text-amber-600" : "text-red-600"
-                      }`}>
-                        {result.score}/100
-                      </span>
-                    </div>
-                  )}
-                  {result?.confidence && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-muted-foreground">Confidence:</span>
-                      <span className="text-xs capitalize">{result.confidence}</span>
-                    </div>
-                  )}
-                  {result?.processingTime && (
-                    <p className="text-xs text-muted-foreground">
-                      {(result.processingTime / 1000).toFixed(1)}s
-                    </p>
-                  )}
-                  {isClickable && (
-                    <div className="flex items-center text-xs text-primary mt-2">
-                      View details <ChevronRight className="w-3 h-3 ml-1" />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                  <div className={`grid ${gridCols} gap-4`}>
+                    {layerExperts.map((expertType) => {
+                      const result = getResult(expertType);
+                      const isLocked = !checkDependencies(expertType, results);
+                      return (
+                        <ExpertCard
+                          key={expertType}
+                          expertType={expertType}
+                          result={result}
+                          isLocked={isLocked && !result}
+                          onClick={() => result && setSelectedExpert(result)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2">
               {selectedExpert && EXPERT_CONFIG[selectedExpert.expertType] && (
                 <>
                   {(() => { const Icon = EXPERT_CONFIG[selectedExpert.expertType].icon; return <Icon className={`w-5 h-5 ${EXPERT_CONFIG[selectedExpert.expertType].color}`} />; })()}
-                  {EXPERT_CONFIG[selectedExpert.expertType].label} Analysis
+                  {EXPERT_CONFIG[selectedExpert.expertType].label} Report
                 </>
               )}
             </DialogTitle>
-          </DialogHeader>
-          {selectedExpert && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {selectedExpert.score !== null && (
+            {selectedExpert && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                {selectedExpert.score !== null && selectedExpert.score !== undefined && (
                   <span>Score: <strong className="text-foreground">{selectedExpert.score}/100</strong></span>
                 )}
                 {selectedExpert.confidence && (
                   <span>Confidence: <strong className="text-foreground capitalize">{selectedExpert.confidence}</strong></span>
                 )}
                 {selectedExpert.processingTime && (
-                  <span>Time: <strong className="text-foreground">{(selectedExpert.processingTime / 1000).toFixed(1)}s</strong></span>
+                  <span>Processed in: <strong className="text-foreground">{(selectedExpert.processingTime / 1000).toFixed(1)}s</strong></span>
                 )}
               </div>
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <AnalysisDataView data={selectedExpert.analysisData as Record<string, unknown>} />
-              </div>
+            )}
+          </DialogHeader>
+          <ScrollArea className="max-h-[calc(85vh-120px)]">
+            <div className="px-6 py-4">
+              {selectedExpert && selectedExpert.analysisData && (
+                getReportViewForExpert(selectedExpert.expertType, selectedExpert.analysisData)
+              )}
             </div>
-          )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
