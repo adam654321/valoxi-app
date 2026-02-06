@@ -492,7 +492,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -516,10 +516,6 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="team" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Team
-            </TabsTrigger>
-            <TabsTrigger value="expert-engine" className="flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              Expert Engine
             </TabsTrigger>
           </TabsList>
 
@@ -945,38 +941,48 @@ export default function TargetCompanyDetail() {
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-6">
-            {analysisLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-32 w-full" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-                <Skeleton className="h-64 w-full" />
-              </div>
-            ) : stage1Events.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No analysis available yet</p>
-                <p className="text-sm mb-4">Analysis will be automatically generated when all 5 required documents are uploaded and analyzed</p>
-                <div className="text-xs text-muted-foreground">
-                  Required documents: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
-                </div>
-              </div>
-            ) : (
-              <Tabs defaultValue="investment-summary" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+              <Tabs defaultValue="expert-engine" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="expert-engine" className="flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    Expert Engine
+                  </TabsTrigger>
                   <TabsTrigger value="investment-summary" data-testid="tab-investment-summary">
-                    Investment Summary & Recommendation
+                    Investment Summary
                   </TabsTrigger>
                   <TabsTrigger value="detailed-analysis" data-testid="tab-detailed-analysis">
                     Detailed Analysis
                   </TabsTrigger>
                 </TabsList>
-                
+
+                <TabsContent value="expert-engine" className="space-y-6">
+                  <ExpertAnalysisDashboard
+                    targetCompanyId={parseInt(id!)}
+                    companyName={company.companyName}
+                  />
+                </TabsContent>
+
                 <TabsContent value="investment-summary" className="space-y-6">
-                  {(() => {
+                  {analysisLoading ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                      </div>
+                      <Skeleton className="h-64 w-full" />
+                    </div>
+                  ) : stage1Events.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">No analysis available yet</p>
+                      <p className="text-sm mb-4">Analysis will be automatically generated when all 5 required documents are uploaded and analyzed</p>
+                      <div className="text-xs text-muted-foreground">
+                        Required documents: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
+                      </div>
+                    </div>
+                  ) : (() => {
                     // Always show the LATEST event first (events are sorted by createdAt desc)
                     // This ensures re-runs show the processing state, not old completed results
                     const latestEvent = stage1Events[0];
@@ -1052,9 +1058,19 @@ export default function TargetCompanyDetail() {
                   })()}
                 </TabsContent>
 
-
                 <TabsContent value="detailed-analysis" className="space-y-6">
-                  {(() => {
+                  {analysisLoading ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-64 w-full" />
+                    </div>
+                  ) : stage1Events.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">No analysis available yet</p>
+                      <p className="text-sm">Upload required documents to generate analysis</p>
+                    </div>
+                  ) : (() => {
                     const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
                     
                     if (!successfulEvent) {
@@ -1151,7 +1167,6 @@ export default function TargetCompanyDetail() {
                   })()}
                 </TabsContent>
               </Tabs>
-            )}
           </TabsContent>
 
           <TabsContent value="pipeline" className="space-y-6">
@@ -1177,12 +1192,6 @@ export default function TargetCompanyDetail() {
             />
           </TabsContent>
 
-          <TabsContent value="expert-engine" className="space-y-6">
-            <ExpertAnalysisDashboard
-              targetCompanyId={parseInt(id!)}
-              companyName={company.companyName}
-            />
-          </TabsContent>
         </Tabs>
       </div>
 
