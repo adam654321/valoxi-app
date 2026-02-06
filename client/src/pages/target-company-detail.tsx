@@ -38,7 +38,8 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator, Brain } from "lucide-react";
+import ExpertAnalysisDashboard from "@/components/analysis/ExpertAnalysisDashboard";
 import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
@@ -491,7 +492,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Overview
@@ -515,6 +516,10 @@ export default function TargetCompanyDetail() {
             <TabsTrigger value="team" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Team
+            </TabsTrigger>
+            <TabsTrigger value="expert-engine" className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              Expert Engine
             </TabsTrigger>
           </TabsList>
 
@@ -1169,6 +1174,13 @@ export default function TargetCompanyDetail() {
             <DealTeamManagement 
               targetCompanyId={parseInt(id!)} 
               targetCompanyName={company.companyName} 
+            />
+          </TabsContent>
+
+          <TabsContent value="expert-engine" className="space-y-6">
+            <ExpertAnalysisDashboard
+              targetCompanyId={parseInt(id!)}
+              companyName={company.companyName}
             />
           </TabsContent>
         </Tabs>
