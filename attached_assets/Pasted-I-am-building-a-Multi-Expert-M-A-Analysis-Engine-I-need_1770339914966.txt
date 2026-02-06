@@ -1,0 +1,35 @@
+I am building a Multi-Expert M&A Analysis Engine.
+I need to add the storage layer (database table) to store the results from each expert.
+
+Please update [shared/schema.ts](cci:7://file:///c:/Users/AdamAuty/Documents/Auty%20Consultancy%20Automation/AntiGravity/MandA-Internal-Google-Brain/shared/schema.ts:0:0-0:0).
+
+Add the following table definition after the existing tables (specifically after `stage1_analysis_events` if it exists, or near `target_companies`):
+
+export const expertAnalysisResults = pgTable("expert_analysis_results", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  stage1EventId: integer("stage1_event_id"), // Optional link to stage 1 event
+  expertType: varchar("expert_type", { length: 50 }).notNull(),
+  // Expected values: 'data_quality', 'screening', 'financial', 'operational', 
+  // 'risk', 'quality_of_earnings', 'sector', 'valuation', 
+  // 'deal_structure', 'synthesis'
+  status: varchar("status", { length: 20 }).notNull().default('pending'),
+  // Values: 'pending', 'running', 'success', 'failed'
+  analysisData: json("analysis_data"), // The structured JSON output from Gemini
+  analysisMarkdown: text("analysis_markdown"), // Optional generic markdown storage
+  score: integer("score"),
+  confidence: varchar("confidence", { length: 10 }),
+  processingTime: integer("processing_time"),
+  usageMetadata: json("usage_metadata"),
+  triggeredBy: integer("triggered_by").references(() => users.id),
+  dependsOn: text("depends_on").array(), // For orchestration DAG tracking
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+Also, ensure you add the necessary relations to `targetCompaniesRelations` and `usersRelations` so I can query `targetCompany.expertAnalysis`.
+
+After updating the schema file, run the database migration command (e.g., `npm run db:push` or `npm run db:migrate`) to apply the changes.
+
+VERIFICATION REQUEST:
+Once finished, please run a query to list the columns of the new `expert_analysis_results` table to confirm it was created successfully.
