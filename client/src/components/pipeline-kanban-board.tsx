@@ -83,7 +83,6 @@ export function PipelineKanbanBoard() {
 
   const { data: companies, isLoading: companiesLoading } = useQuery<TargetCompany[]>({
     queryKey: ['/api/v2/target-companies'],
-    select: (response: any) => response.data,
   });
 
   const updateStageMutation = useMutation({

@@ -218,7 +218,6 @@ export default function PortalManagement() {
   // Fetch target companies
   const { data: companies = [], isLoading: companiesLoading } = useQuery<TargetCompany[]>({
     queryKey: ['/api/v2/target-companies'],
-    select: (response: any) => response.data,
   });
 
   // Fetch contacts for selected company (using v2 contacts endpoint)

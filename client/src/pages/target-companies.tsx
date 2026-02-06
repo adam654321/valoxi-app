@@ -76,7 +76,6 @@ export default function TargetCompanies() {
 
   const { data: targetCompanies = [], isLoading } = useQuery<TargetCompany[]>({
     queryKey: ["/api/v2/target-companies"],
-    select: (response: any) => response.data,
   });
 
   const createMutation = useMutation({

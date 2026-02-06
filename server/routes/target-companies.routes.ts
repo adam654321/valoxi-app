@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
 
     const companies = await targetCompaniesService.getAll(userCompanyId);
-    sendSuccess(res, companies);
+    res.json(companies);
   } catch (error) {
     sendError(res, error);
   }
@@ -44,7 +44,7 @@ router.get('/search', async (req: Request, res: Response) => {
     };
 
     const companies = await targetCompaniesService.search(userCompanyId, searchParams);
-    sendSuccess(res, companies);
+    res.json(companies);
   } catch (error) {
     sendError(res, error);
   }
@@ -56,7 +56,7 @@ router.get('/filters', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
 
     const filters = await targetCompaniesService.getFilterOptions(userCompanyId);
-    sendSuccess(res, filters);
+    res.json(filters);
   } catch (error) {
     sendError(res, error);
   }
@@ -87,7 +87,7 @@ router.get('/:id/profile', async (req: Request, res: Response) => {
       'Expires': '0'
     });
 
-    sendSuccess(res, profile);
+    res.json(profile);
   } catch (error) {
     sendError(res, error);
   }
@@ -100,7 +100,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
 
     const company = await targetCompaniesService.getById(id, userCompanyId);
-    sendSuccess(res, company);
+    res.json(company);
   } catch (error) {
     sendError(res, error);
   }
@@ -114,7 +114,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const validatedData = frontendTargetCompanySchema.parse(req.body);
     const company = await targetCompaniesService.create(validatedData, userId, userCompanyId);
-    sendCreated(res, company);
+    res.status(201).json(company);
   } catch (error) {
     sendError(res, error);
   }
@@ -128,7 +128,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     const validatedData = insertTargetCompanySchema.partial().parse(req.body);
     const company = await targetCompaniesService.update(id, validatedData, userCompanyId);
-    sendSuccess(res, company);
+    res.json(company);
   } catch (error) {
     sendError(res, error);
   }
@@ -141,7 +141,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     if (!userCompanyId) throw new UnauthorizedError();
 
     await targetCompaniesService.delete(id, userCompanyId);
-    sendSuccess(res, { message: 'Target company deleted successfully' });
+    res.json({ message: 'Target company deleted successfully' });
   } catch (error) {
     sendError(res, error);
   }

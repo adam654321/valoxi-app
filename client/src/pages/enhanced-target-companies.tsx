@@ -263,7 +263,6 @@ export default function EnhancedTargetCompanies() {
   // Get filter options
   const { data: filterOptions } = useQuery<FilterOptions>({
     queryKey: ["/api/v2/target-companies/filters"],
-    select: (response: any) => response.data,
   });
 
   // Build search params
@@ -294,7 +293,7 @@ export default function EnhancedTargetCompanies() {
         throw new Error('Failed to fetch search results');
       }
       const data = await response.json();
-      return data.data;
+      return data;
     },
     staleTime: 0, // Always refetch
     gcTime: 0,    // Don't cache
