@@ -119,6 +119,7 @@ export default function DealSheetPage() {
   const { data: company } = useQuery({
     queryKey: ['/api/v2/target-companies', companyId],
     enabled: !!companyId,
+    select: (response: any) => response.data,
   });
 
   // Filter to statutory periods with data, sorted by year

@@ -39,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
       })
     );
 
-    sendSuccess(res, companiesWithDetails);
+    res.json(companiesWithDetails);
   } catch (error) {
     sendError(res, error);
   }
@@ -76,7 +76,7 @@ router.post('/', async (req: Request, res: Response) => {
       await usersRepository.switchUserActiveCompany(userId, newCompany.id);
     }
 
-    sendCreated(res, {
+    res.status(201).json({
       id: membership.id,
       companyId: newCompany.id,
       companyName: newCompany.companyName,
@@ -113,7 +113,7 @@ router.post('/:companyId/switch', async (req: Request, res: Response) => {
 
     req.session.userCompanyId = companyId;
 
-    sendSuccess(res, { success: true, currentCompanyId: companyId });
+    res.json({ success: true, currentCompanyId: companyId });
   } catch (error) {
     sendError(res, error);
   }

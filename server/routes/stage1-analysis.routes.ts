@@ -29,7 +29,7 @@ router.get('/:companyId/events', async (req: Request, res: Response) => {
     const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
     const events = await stage1AnalysisService.getStage1AnalysisEvents(targetCompanyId);
-    sendSuccess(res, events);
+    res.json(events);
   } catch (error) { sendError(res, error); }
 });
 
