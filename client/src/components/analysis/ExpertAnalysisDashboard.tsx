@@ -193,7 +193,10 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
+        <Card
+          className={`transition-all ${dataQuality?.status === "success" && dataQuality?.analysisData ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""}`}
+          onClick={() => dataQuality?.status === "success" && dataQuality?.analysisData && setSelectedExpert(dataQuality)}
+        >
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Data Quality Score</CardTitle>
           </CardHeader>
@@ -213,6 +216,11 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
                     </p>
                   )}
                 </div>
+                {dataQuality.status === "success" && dataQuality.analysisData && (
+                  <div className="flex items-center text-xs text-primary">
+                    View details <ChevronRight className="w-3 h-3 ml-1" />
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">Not yet assessed</p>
@@ -220,7 +228,10 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className={`transition-all ${screening?.status === "success" && screening?.analysisData ? "cursor-pointer hover:shadow-md hover:border-primary/50" : ""}`}
+          onClick={() => screening?.status === "success" && screening?.analysisData && setSelectedExpert(screening)}
+        >
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Screening Outcome</CardTitle>
           </CardHeader>
@@ -239,6 +250,11 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
                     <p className="text-xs text-muted-foreground mt-1">Score: {screeningScore}/100</p>
                   )}
                 </div>
+                {screening.status === "success" && screening.analysisData && (
+                  <div className="flex items-center text-xs text-primary">
+                    View details <ChevronRight className="w-3 h-3 ml-1" />
+                  </div>
+                )}
               </div>
             ) : qualityScore !== undefined && qualityScore <= 40 ? (
               <p className="text-sm text-amber-600">Skipped — data quality too low (score: {qualityScore})</p>
