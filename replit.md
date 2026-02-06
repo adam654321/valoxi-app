@@ -26,6 +26,9 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Session-based using `express-session` and PostgreSQL store, with bcrypt for password hashing.
 - **API Design**: RESTful with structured error handling.
 - **Modular Architecture**: A layered architecture comprising `repositories` (data access), `services` (business logic), and `routes` (HTTP concerns) to ensure separation of concerns and maintainability. New endpoints are designed for a v2 API structure (`/api/v2/[domain]/*`).
+- **Middleware Layer** (`server/middleware/`):
+    - `session.ts`: Exports `createSessionMiddleware()` for PostgreSQL-backed session configuration. Requires `SESSION_SECRET` env var (throws on missing).
+    - `auth.ts`: Exports `isAuthenticated` middleware for route protection (checks `req.session.userId`).
 - **EventBus Pattern**: Typed EventEmitter singleton (`server/services/event-bus.service.ts`) for decoupled inter-service communication. Supports events: `analysis:completed`, `file:uploaded`, `stage:updated`, `document:update`.
 - **Centralized Configuration**: All environment variables managed through `server/config.ts` module organized by domain (server, gemini, smtp, replit, database, session).
 - **Repository Pattern (Primary)**: Data access through domain repositories (`server/repositories/*.repository.ts`):
