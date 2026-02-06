@@ -132,9 +132,10 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
     queryKey: ["/api/v2/expert-analysis/results", targetCompanyId],
     select: (response: any) => response.data || response,
     refetchInterval: (query) => {
-      const data = query.state.data as ExpertResult[] | undefined;
+      const raw = query.state.data;
+      const data = Array.isArray(raw) ? raw : Array.isArray((raw as any)?.data) ? (raw as any).data : null;
       if (!data || data.length === 0) return false;
-      const hasRunning = data.some((r) => r.status === "processing" || r.status === "pending");
+      const hasRunning = data.some((r: ExpertResult) => r.status === "processing" || r.status === "pending");
       return hasRunning ? 3000 : false;
     },
   });
