@@ -40,7 +40,7 @@ const LAYER1_EXPERTS: ExpertType[] = ['financial', 'operational', 'risk'];
 const EXPERT_DEPENDENCIES: Record<string, ExpertType[]> = {
   screening: ['data_quality'],
   qoe: ['financial', 'operational'],
-  sector: [],
+  sector: ['financial'],
   valuation: ['financial', 'qoe', 'sector', 'risk', 'operational'],
   deal_structure: ['valuation', 'risk', 'operational', 'qoe'],
   synthesis: ['financial', 'operational', 'risk', 'qoe', 'sector', 'valuation', 'deal_structure'],
@@ -323,11 +323,7 @@ export class ExpertAnalysisService {
       await this.runExpert(record, prompt, expertType);
     });
 
-    const sectorRecord = records.find((r) => r.expertType === 'sector')!;
-    const sectorPrompt = this.buildSectorPrompt(company, extractedData);
-    const sectorPromise = this.runExpert(sectorRecord, sectorPrompt, 'sector');
-
-    await Promise.all([...layer1Promises, sectorPromise]);
+    await Promise.all(layer1Promises);
 
     await this.processNextSteps(companyId);
 
@@ -369,6 +365,18 @@ export class ExpertAnalysisService {
         `risk=${riskStatus} qoe=${qoeStatus} sector=${sectorStatus} ` +
         `valuation=${valuationStatus} deal_structure=${dealStructureStatus}`
     );
+
+    if (financialStatus === 'success' && sectorStatus === 'pending') {
+      console.log(`[EXPERT_ORCHESTRATOR] Starting Sector expert (Financial complete)`);
+      const financialResult = await this.getExpertResult(companyId, 'financial');
+      const sectorRecord = await this.getExpertResult(companyId, 'sector');
+
+      if (sectorRecord && financialResult) {
+        const sectorPrompt = this.buildSectorPrompt(company, extractedData);
+        await this.runExpert(sectorRecord, sectorPrompt, 'sector');
+        return this.processNextSteps(companyId);
+      }
+    }
 
     if (
       financialStatus === 'success' &&
