@@ -255,6 +255,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   notificationsReceived: many(teamNotifications, { relationName: "targetUser" }),
   notificationsSent: many(teamNotifications, { relationName: "fromUser" }),
   activities: many(activities),
+  expertAnalysisResults: many(expertAnalysisResults),
 }));
 
 export const targetCompaniesRelations = relations(targetCompanies, ({ one, many }) => ({
@@ -278,6 +279,7 @@ export const targetCompaniesRelations = relations(targetCompanies, ({ one, many 
   activities: many(activities),
   documents: many(documents),
   stage1AnalysisEvents: many(stage1AnalysisEvents),
+  expertAnalysisResults: many(expertAnalysisResults),
 }));
 
 export const targetContactsRelations = relations(targetContacts, ({ one, many }) => ({
@@ -500,6 +502,40 @@ export const stage1AnalysisEvents = pgTable("stage1_analysis_events", {
   detailedAnalysisTriggeredAt: timestamp("detailed_analysis_triggered_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Expert analysis results for Multi-Expert M&A Analysis Engine
+export const expertAnalysisResults = pgTable("expert_analysis_results", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  stage1EventId: integer("stage1_event_id"),
+  expertType: varchar("expert_type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default('pending'),
+  analysisData: json("analysis_data"),
+  analysisMarkdown: text("analysis_markdown"),
+  score: integer("score"),
+  confidence: varchar("confidence", { length: 10 }),
+  processingTime: integer("processing_time"),
+  usageMetadata: json("usage_metadata"),
+  triggeredBy: integer("triggered_by").references(() => users.id),
+  dependsOn: text("depends_on").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const expertAnalysisResultsRelations = relations(expertAnalysisResults, ({ one }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [expertAnalysisResults.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  triggeredByUser: one(users, {
+    fields: [expertAnalysisResults.triggeredBy],
+    references: [users.id],
+  }),
+  stage1Event: one(stage1AnalysisEvents, {
+    fields: [expertAnalysisResults.stage1EventId],
+    references: [stage1AnalysisEvents.id],
+  }),
+}));
 
 export const fileUploadEventsRelations = relations(fileUploadEvents, ({ one, many }) => ({
   document: one(documents, {
