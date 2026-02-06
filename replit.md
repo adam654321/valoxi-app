@@ -25,7 +25,8 @@ Preferred communication style: Simple, everyday language.
 - **Database ORM**: Drizzle ORM.
 - **Authentication**: Session-based using `express-session` and PostgreSQL store, with bcrypt for password hashing.
 - **API Design**: RESTful with structured error handling.
-- **Modular Architecture**: A layered architecture comprising `repositories` (data access), `services` (business logic), and `routes` (HTTP concerns) to ensure separation of concerns and maintainability. New endpoints are designed for a v2 API structure (`/api/v2/[domain]/*`).
+- **Modular Architecture**: A layered architecture comprising `repositories` (data access), `services` (business logic), and `routes` (HTTP concerns) to ensure separation of concerns and maintainability. All endpoints use the v2 API structure (`/api/v2/[domain]/*`).
+- **Route Infrastructure**: `server/routes.ts` is a minimal infrastructure-only file (session middleware + modular route registration + HTTP server creation). All domain logic lives in `server/routes/*.routes.ts` files.
 - **Middleware Layer** (`server/middleware/`):
     - `session.ts`: Exports `createSessionMiddleware()` for PostgreSQL-backed session configuration. Requires `SESSION_SECRET` env var (throws on missing).
     - `auth.ts`: Exports `isAuthenticated` middleware for route protection (checks `req.session.userId`).
