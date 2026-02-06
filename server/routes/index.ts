@@ -24,6 +24,7 @@ import debugRoutes from './debug.routes';
 import financialDataRoutes from './financial-data.routes';
 import chaseUpRoutes from './chase-up.routes';
 import valuationRoutes from './valuation.routes';
+import expertAnalysisRoutes from './expert-analysis.routes';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -53,4 +54,5 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/financial-data', isAuthenticated, financialDataRoutes);
   app.use('/api/v2/chase-up', isAuthenticated, chaseUpRoutes);
   app.use('/api/v2/valuation', isAuthenticated, valuationRoutes);
+  app.use('/api/v2/expert-analysis', isAuthenticated, expertAnalysisRoutes);
 }
