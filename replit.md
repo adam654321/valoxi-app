@@ -75,6 +75,16 @@ Preferred communication style: Simple, everyday language.
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
 - **Schema Management**: Drizzle Kit.
+- **Schema Architecture**: Modular domain-driven structure under `shared/schema/`:
+  - `core.ts` — Users, companies, sessions, roles, invitations, memberships (6 tables)
+  - `deals.ts` — Target companies, contacts, pipeline stages, activities, deal notes (9 tables)
+  - `documents.ts` — Document storage, categories, access log, upload events, AI analysis (7 tables)
+  - `portal.ts` — External portal tokens, submissions, chase-ups, campaigns, analytics (13 tables)
+  - `financials.ts` — P&L, balance sheets, staff data, assets, loans, EBITDA adjustments, valuations (9 tables)
+  - `dashboard.ts` — Dashboard preferences, alerts, composite types (2 tables)
+  - `relations.ts` — All 33 Drizzle relation definitions (centralized to avoid circular deps)
+  - `index.ts` — Barrel re-export of all modules
+  - `shared/schema.ts` — Top-level re-export (`export * from './schema/index'`) so all existing imports continue to work unchanged
 - **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, standardized document requirements, `chase_up_schedules`, and `chase_up_emails`.
 
 ## Authentication & Security
