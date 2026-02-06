@@ -141,6 +141,10 @@ export class DocumentsFilesService {
   async getDocumentCategories() {
     return await documentsRepository.getDocumentCategories();
   }
+
+  async clearAllCompanyDocuments(userCompanyId: number) {
+    return await documentsRepository.clearAllCompanyDocuments(userCompanyId);
+  }
 }
 
 export const documentsFilesService = new DocumentsFilesService();

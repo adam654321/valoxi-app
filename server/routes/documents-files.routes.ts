@@ -38,6 +38,28 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 const upload = multer({ storage: uploadStorage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
+router.delete('/clear-all', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    const userId = req.session?.userId;
+    if (!userCompanyId || !userId) throw new UnauthorizedError();
+
+    console.log(`[API] Clearing all documents for user company ${userCompanyId}, requested by user ${userId}`);
+
+    const result = await documentsFilesService.clearAllCompanyDocuments(userCompanyId);
+
+    console.log(`[API] Document clearing completed:`, result);
+
+    sendSuccess(res, {
+      success: true,
+      message: 'All company documents have been cleared successfully',
+      details: result
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 router.get('/categories', async (req: Request, res: Response) => {
   try {
     const categories = await documentsFilesService.getDocumentCategories();

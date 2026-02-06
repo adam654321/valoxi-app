@@ -5,6 +5,7 @@ import { stage1AnalysisEvents } from '@shared/schema';
 import { sendSuccess, sendError } from '../utils/response';
 import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
 import { stage1AnalysisService } from '../services/stage1-analysis.service';
+import { stage1AnalysisRepository } from '../repositories/stage1-analysis.repository';
 
 const router = Router();
 
@@ -78,5 +79,59 @@ router.post('/trigger-stage1/:id', async (req: Request, res: Response) => {
     sendError(res, error);
   }
 });
+
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/test/fresh-stage1-analysis/:companyId', async (req: Request, res: Response) => {
+    try {
+      const companyId = parseInt(req.params.companyId);
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: 'Invalid company ID' });
+      }
+
+      console.log(`[TEST] Manually triggering fresh Stage 1 analysis for company ${companyId}`);
+
+      setTimeout(() => {
+        stage1AnalysisService.checkAndTriggerStage1Analysis(companyId, 1);
+      }, 100);
+
+      sendSuccess(res, {
+        success: true,
+        message: `Fresh Stage 1 analysis triggered for company ${companyId}`
+      });
+    } catch (error) {
+      console.error('Manual fresh analysis trigger error:', error);
+      sendError(res, error);
+    }
+  });
+
+  router.post('/test/inject-detailed-analysis/:eventId', async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const detailedData = req.body;
+
+      if (isNaN(eventId)) {
+        return res.status(400).json({ message: 'Invalid event ID' });
+      }
+
+      if (!detailedData) {
+        return res.status(400).json({ message: 'No data provided' });
+      }
+
+      console.log(`[TEST] Injecting detailed analysis data for event ${eventId}`);
+
+      await stage1AnalysisRepository.updateDetailedData(eventId, detailedData);
+
+      console.log(`[TEST] Successfully stored detailed analysis data for event ${eventId}`);
+
+      sendSuccess(res, {
+        success: true,
+        message: `Detailed analysis data injected for event ${eventId}`
+      });
+    } catch (error) {
+      console.error('Failed to inject detailed analysis data:', error);
+      sendError(res, error);
+    }
+  });
+}
 
 export default router;

@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { targetCompaniesService } from '../services/target-companies.service';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
-import { UnauthorizedError } from '../utils/errors';
+import { UnauthorizedError, BadRequestError, NotFoundError } from '../utils/errors';
 import { insertTargetCompanySchema } from '@shared/schema';
 
 const router = Router();
@@ -56,6 +57,37 @@ router.get('/filters', async (req: Request, res: Response) => {
 
     const filters = await targetCompaniesService.getFilterOptions(userCompanyId);
     sendSuccess(res, filters);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+router.get('/:id/profile', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    const userId = req.session?.userId;
+    if (!userCompanyId || !userId) throw new UnauthorizedError();
+
+    const targetCompanyId = parseInt(req.params.id);
+    if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid target company ID');
+
+    const profile = await targetCompaniesRepository.getCompanyProfile(targetCompanyId, userCompanyId, userId);
+    if (!profile) throw new NotFoundError('Target company not found');
+
+    if (profile.websiteAnalysis) {
+      console.log(`Website analysis found for company ${targetCompanyId}:`, {
+        analysisLength: profile.websiteAnalysis?.length,
+        processedAt: profile.websiteAnalysisProcessedAt
+      });
+    }
+
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    sendSuccess(res, profile);
   } catch (error) {
     sendError(res, error);
   }
