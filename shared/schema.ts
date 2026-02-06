@@ -1890,4 +1890,14 @@ export const insertUserCompanyMembershipSchema = createInsertSchema(userCompanyM
 export type UserCompanyMembership = typeof userCompanyMemberships.$inferSelect;
 export type InsertUserCompanyMembership = z.infer<typeof insertUserCompanyMembershipSchema>;
 
+// Expert analysis results schemas and types
+export const insertExpertAnalysisResultSchema = createInsertSchema(expertAnalysisResults).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ExpertAnalysisResult = typeof expertAnalysisResults.$inferSelect;
+export type InsertExpertAnalysisResult = z.infer<typeof insertExpertAnalysisResultSchema>;
+
 // File upload events schemas and types - moved to earlier section
