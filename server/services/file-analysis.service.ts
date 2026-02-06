@@ -112,7 +112,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
     const baseUrl = config.baseUrl;
-    const fileUrl = `${baseUrl}/api/public/documents/${event.documentId}/download`;
+    const fileUrl = `${baseUrl}/api/v2/public/documents/${event.documentId}/download`;
     console.log(`[FILE_ANALYSIS] Using HTTPS URL: ${fileUrl}`);
 
     const fileExtension = event.fileName.split('.').pop()?.toLowerCase() || 'pdf';
@@ -480,7 +480,7 @@ export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: 
     console.log(`[GEMINI_STAGE1_ANALYSIS] Using base URL: ${baseUrl}`);
 
     const files: FileInfo[] = documentFiles.map(doc => ({
-      fileUrl: `${baseUrl}/api/public/documents/${doc.documentId}/download`,
+      fileUrl: `${baseUrl}/api/v2/public/documents/${doc.documentId}/download`,
       mimeType: getMimeTypeForFile(doc.mimeType),
       category: doc.category,
     }));
@@ -559,7 +559,7 @@ export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId
     console.log(`[GEMINI_DETAILED_ANALYSIS] Using base URL: ${baseUrl}`);
 
     const files: DetailedFileInfo[] = documentFiles.map(doc => ({
-      fileUrl: `${baseUrl}/api/public/documents/${doc.documentId}/download`,
+      fileUrl: `${baseUrl}/api/v2/public/documents/${doc.documentId}/download`,
       mimeType: getMimeTypeForFile(doc.mimeType),
       category: doc.category,
     }));

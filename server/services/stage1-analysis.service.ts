@@ -135,7 +135,7 @@ export class Stage1AnalysisService {
         return;
       }
       const baseUrl = config.baseUrl;
-      const files: FileInfo[] = documentFiles.map(doc => ({ fileUrl: `${baseUrl}/api/public/documents/${doc.documentId}/download`, mimeType: getMimeTypeForFile(doc.mimeType), category: doc.category }));
+      const files: FileInfo[] = documentFiles.map(doc => ({ fileUrl: `${baseUrl}/api/v2/public/documents/${doc.documentId}/download`, mimeType: getMimeTypeForFile(doc.mimeType), category: doc.category }));
       console.log(`[GEMINI_STAGE1_ANALYSIS] File URLs:`, files.map(f => f.fileUrl));
       const result = await runStage1GeminiAnalysis({ companyName, sector, files });
       if (result.success && result.markdown) {

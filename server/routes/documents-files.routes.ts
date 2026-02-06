@@ -102,7 +102,7 @@ router.post('/company/:id/upload', (req: Request, res: Response) => {
         targetCompanyId,
         uploadedBy: userId,
         fileName: prefixedFilename,
-        fileUrl: `${baseUrl}/api/public/documents/${document.id}/download`,
+        fileUrl: `${baseUrl}/api/v2/public/documents/${document.id}/download`,
       });
       
       // Trigger Gemini file analysis webhook (runs in background)

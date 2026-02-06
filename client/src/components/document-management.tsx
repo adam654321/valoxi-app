@@ -369,8 +369,8 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         // Force immediate refetch of stage1 analysis queries to show the new processing event
         queryClient.refetchQueries({ queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`] });
         // The Analysis tab uses string companyId from URL params, so try both formats
-        queryClient.refetchQueries({ queryKey: ["/api/target-companies", targetCompanyId, "stage1-analysis"] });
-        queryClient.refetchQueries({ queryKey: ["/api/target-companies", String(targetCompanyId), "stage1-analysis"] });
+        queryClient.refetchQueries({ queryKey: ["/api/v2/stage1-analysis", targetCompanyId, "events"] });
+        queryClient.refetchQueries({ queryKey: ["/api/v2/stage1-analysis", String(targetCompanyId), "events"] });
       } else {
         toast({
           title: "Analysis Not Triggered",
@@ -759,7 +759,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           
           // Invalidate Stage 1 analysis results to display in Analysis tab
           queryClient.invalidateQueries({ 
-            queryKey: ["/api/target-companies", targetCompanyId, "stage1-analysis"] 
+            queryKey: ["/api/v2/stage1-analysis", targetCompanyId, "events"] 
           });
           
           // Show a toast notification
@@ -861,7 +861,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   // Clear all documents mutation (keeping legacy for now - no v2 equivalent)
   const clearAllDocumentsMutation = useMutation({
     mutationFn: () =>
-      apiRequest("DELETE", "/api/documents/clear-all"),
+      apiRequest("DELETE", "/api/v2/files/clear-all"),
     onSuccess: (data: any) => {
       toast({
         title: "Success",

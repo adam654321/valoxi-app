@@ -25,7 +25,7 @@ export function useTargetCompany({ companyId }: UseTargetCompanyOptions) {
     isFetching: profileFetching,
     refetch: refetchProfile,
   } = useQuery<CompanyProfile>({
-    queryKey: ["/api/target-companies", companyId, "profile"],
+    queryKey: ["/api/v2/target-companies", companyId, "profile"],
     enabled: !!companyId,
     refetchInterval: (query) => {
       const data = query.state.data as CompanyProfile | undefined;
@@ -40,7 +40,7 @@ export function useTargetCompany({ companyId }: UseTargetCompanyOptions) {
   });
 
   const { data: stage1Events = [], isLoading: analysisLoading } = useQuery<Stage1AnalysisEvent[]>({
-    queryKey: ["/api/target-companies", companyId, "stage1-analysis"],
+    queryKey: ["/api/v2/stage1-analysis", companyId, "events"],
     enabled: !!companyId,
     refetchInterval: (query) => {
       const events = query.state.data as Stage1AnalysisEvent[] | undefined;

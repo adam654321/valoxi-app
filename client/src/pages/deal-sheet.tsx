@@ -117,7 +117,7 @@ export default function DealSheetPage() {
 
   // Fetch company name
   const { data: company } = useQuery({
-    queryKey: ['/api/target-companies', companyId],
+    queryKey: ['/api/v2/target-companies', companyId],
     enabled: !!companyId,
   });
 

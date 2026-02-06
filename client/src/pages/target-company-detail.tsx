@@ -129,7 +129,7 @@ export default function TargetCompanyDetail() {
         title: "Success",
         description: "Contact added successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", id, "profile"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/company", parseInt(id!)] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
       setShowContactForm(false);
@@ -153,7 +153,7 @@ export default function TargetCompanyDetail() {
         title: "Success",
         description: "Contact updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", id, "profile"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/company", parseInt(id!)] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
       setShowContactForm(false);
@@ -178,7 +178,7 @@ export default function TargetCompanyDetail() {
         title: "Success",
         description: "Contact deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", id, "profile"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/company", parseInt(id!)] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/contacts/all"] });
     },
@@ -194,13 +194,13 @@ export default function TargetCompanyDetail() {
   // Trigger detailed analysis mutation
   const triggerDetailedAnalysisMutation = useMutation({
     mutationFn: () =>
-      apiRequest("POST", `/api/target-companies/${id}/trigger-detailed-analysis`),
+      apiRequest("POST", `/api/v2/stage1-analysis/${id}/trigger-detailed`),
     onSuccess: () => {
       toast({
         title: "Detailed Analysis Started",
         description: "The detailed analysis is now being generated. This may take a few minutes.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "stage1-analysis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/stage1-analysis", id, "events"] });
     },
     onError: (error: any) => {
       toast({
@@ -673,7 +673,7 @@ export default function TargetCompanyDetail() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                queryClient.invalidateQueries({ queryKey: ["/api/target-companies", id, "profile"] });
+                                queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", id, "profile"] });
                                 refetchProfile();
                               }}
                               disabled={profileFetching}

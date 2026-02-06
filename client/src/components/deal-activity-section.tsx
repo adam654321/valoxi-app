@@ -208,7 +208,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/recent"] });
       
       // Invalidate company profile and pipeline data (for stage changes like Initial Discussion)
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId.toString(), "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", targetCompanyId.toString(), "profile"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/pipeline"] });
@@ -229,7 +229,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
     onSuccess: () => {
       toast({ title: "Success", description: "Note added" });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/notes/company", targetCompanyId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies", targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", targetCompanyId] });
       resetNoteForm();
     },
     onError: (error: any) => {

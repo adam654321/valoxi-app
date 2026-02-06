@@ -52,16 +52,16 @@ export default function CompanyAccounts() {
 
   // Get user's companies
   const { data: companies = [], isLoading } = useQuery<UserCompany[]>({
-    queryKey: ["/api/user/companies"],
+    queryKey: ["/api/v2/user/companies"],
   });
 
   // Create company mutation
   const createMutation = useMutation({
     mutationFn: async (data: CompanyForm) => {
-      return await apiRequest("POST", "/api/user/companies", data);
+      return await apiRequest("POST", "/api/v2/user/companies", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/user/companies"] });
       setShowCreateForm(false);
       form.reset();
       toast({
@@ -81,12 +81,12 @@ export default function CompanyAccounts() {
   // Switch company mutation
   const switchMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      return await apiRequest("POST", `/api/user/companies/${companyId}/switch`, {});
+      return await apiRequest("POST", `/api/v2/user/companies/${companyId}/switch`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/user/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
       toast({
         title: "Success", 
