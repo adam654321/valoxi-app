@@ -80,48 +80,197 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function JsonDisplay({ data, depth = 0 }: { data: unknown; depth?: number }) {
-  if (data === null || data === undefined) return <span className="text-muted-foreground italic">null</span>;
-  if (typeof data === "boolean") return <span className="text-blue-600 dark:text-blue-400">{data.toString()}</span>;
-  if (typeof data === "number") return <span className="text-emerald-600 dark:text-emerald-400">{data}</span>;
-  if (typeof data === "string") {
-    if (data.length > 200) return <p className="text-sm text-foreground whitespace-pre-wrap">{data}</p>;
-    return <span className="text-foreground">{data}</span>;
-  }
+function RagBadge({ rag }: { rag: string }) {
+  const color = rag === "GREEN" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+    : rag === "AMBER" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+    : rag === "RED" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+    : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
+  return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{rag}</span>;
+}
 
-  if (Array.isArray(data)) {
-    if (data.length === 0) return <span className="text-muted-foreground italic">[]</span>;
-    return (
-      <div className={`space-y-1 ${depth > 0 ? "ml-4 border-l-2 border-muted pl-3" : ""}`}>
-        {data.map((item, i) => (
-          <div key={i} className="text-sm">
-            <JsonDisplay data={item} depth={depth + 1} />
-          </div>
-        ))}
+function ScoreBar({ score, max = 100 }: { score: number; max?: number }) {
+  const pct = Math.min((score / max) * 100, 100);
+  const color = pct >= 70 ? "bg-green-500" : pct >= 40 ? "bg-amber-500" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-    );
-  }
+      <span className="text-sm font-semibold w-10 text-right">{score}</span>
+    </div>
+  );
+}
 
-  if (typeof data === "object") {
-    const entries = Object.entries(data as Record<string, unknown>);
-    if (entries.length === 0) return <span className="text-muted-foreground italic">{"{}"}</span>;
-    return (
-      <div className={`space-y-2 ${depth > 0 ? "ml-4 border-l-2 border-muted pl-3" : ""}`}>
-        {entries.map(([key, value]) => (
-          <div key={key} className="text-sm">
-            <span className="font-medium text-muted-foreground capitalize">{key.replace(/_/g, " ")}:</span>{" "}
-            {typeof value === "object" && value !== null ? (
-              <JsonDisplay data={value} depth={depth + 1} />
+function formatLabel(key: string): string {
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/Cagr/g, "CAGR").replace(/Rag/g, "RAG").replace(/Qoe/g, "QoE")
+    .replace(/Ebitda/g, "EBITDA").replace(/Roi/g, "ROI");
+}
+
+const SKIP_KEYS = new Set(["stage", "company_name", "sector", "analysis_date", "assessment_date"]);
+
+function isSection(value: unknown): boolean {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isDimensionBlock(value: unknown): value is Record<string, unknown> {
+  if (!isSection(value)) return false;
+  const v = value as Record<string, unknown>;
+  return "rag" in v || "score" in v || "explanation" in v;
+}
+
+function DimensionCard({ label, data }: { label: string; data: Record<string, unknown> }) {
+  const rag = data.rag as string | undefined;
+  const score = data.score as number | undefined;
+  const explanation = data.explanation as string | undefined;
+  const otherEntries = Object.entries(data).filter(([k]) => !["rag", "score", "explanation"].includes(k));
+
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="font-semibold text-sm">{formatLabel(label)}</h4>
+        <div className="flex items-center gap-2">
+          {score !== undefined && <span className="text-sm font-bold">{score}/100</span>}
+          {rag && <RagBadge rag={rag} />}
+        </div>
+      </div>
+      {score !== undefined && <ScoreBar score={score} />}
+      {explanation && <p className="text-sm text-muted-foreground leading-relaxed">{explanation}</p>}
+      {otherEntries.length > 0 && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1">
+          {otherEntries.map(([k, v]) => (
+            <div key={k} className="flex justify-between text-xs py-0.5">
+              <span className="text-muted-foreground">{formatLabel(k)}</span>
+              <span className="font-medium text-foreground">
+                {typeof v === "number" ? v.toLocaleString() : typeof v === "boolean" ? (v ? "Yes" : "No") : String(v ?? "—")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DataSection({ label, data }: { label: string; data: Record<string, unknown> }) {
+  const dimensionEntries = Object.entries(data).filter(([, v]) => isDimensionBlock(v));
+  const subSections = Object.entries(data).filter(([, v]) => isSection(v) && !isDimensionBlock(v));
+  const primitives = Object.entries(data).filter(([k, v]) => !isSection(v) && !Array.isArray(v) && !SKIP_KEYS.has(k));
+  const arrays = Object.entries(data).filter(([, v]) => Array.isArray(v));
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold text-base border-b pb-2">{formatLabel(label)}</h3>
+      {primitives.length > 0 && (
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+          {primitives.map(([k, v]) => (
+            <div key={k} className="flex justify-between text-sm py-1 border-b border-dashed border-muted">
+              <span className="text-muted-foreground">{formatLabel(k)}</span>
+              <span className="font-medium text-right">
+                {k === "rag" || k === "status" ? (
+                  typeof v === "string" && ["GREEN", "AMBER", "RED"].includes(v) ? <RagBadge rag={v} /> : String(v ?? "—")
+                ) : typeof v === "number" ? v.toLocaleString() : typeof v === "boolean" ? (v ? "Yes" : "No") : String(v ?? "—")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {dimensionEntries.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {dimensionEntries.map(([k, v]) => (
+            <DimensionCard key={k} label={k} data={v as Record<string, unknown>} />
+          ))}
+        </div>
+      )}
+      {arrays.map(([k, v]) => (
+        <div key={k} className="space-y-1">
+          <span className="text-sm font-medium text-muted-foreground">{formatLabel(k)}</span>
+          {(v as unknown[]).length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">None</p>
+          ) : typeof (v as unknown[])[0] === "string" || typeof (v as unknown[])[0] === "number" ? (
+            <div className="flex flex-wrap gap-1">
+              {(v as unknown[]).map((item, i) => (
+                <Badge key={i} variant="outline" className="text-xs">{String(item)}</Badge>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {(v as Record<string, unknown>[]).map((item, i) => (
+                <div key={i} className="border rounded p-3 text-sm space-y-1">
+                  {Object.entries(item).map(([ik, iv]) => (
+                    <div key={ik} className="flex gap-2">
+                      <span className="text-muted-foreground min-w-[120px]">{formatLabel(ik)}:</span>
+                      <span className="text-foreground">{typeof iv === "number" ? iv.toLocaleString() : String(iv ?? "—")}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      {subSections.map(([k, v]) => (
+        <DataSection key={k} label={k} data={v as Record<string, unknown>} />
+      ))}
+    </div>
+  );
+}
+
+function AnalysisDataView({ data }: { data: Record<string, unknown> }) {
+  const topPrimitives = Object.entries(data).filter(([k, v]) => !isSection(v) && !Array.isArray(v) && !SKIP_KEYS.has(k));
+  const sections = Object.entries(data).filter(([k, v]) => isSection(v) && !SKIP_KEYS.has(k));
+  const topArrays = Object.entries(data).filter(([k, v]) => Array.isArray(v) && !SKIP_KEYS.has(k));
+
+  return (
+    <div className="space-y-6">
+      {topPrimitives.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {topPrimitives.map(([k, v]) => (
+            <div key={k} className="border rounded-lg p-3 text-center">
+              <p className="text-xs text-muted-foreground mb-1">{formatLabel(k)}</p>
+              <p className="font-semibold text-sm">
+                {k === "rag" && typeof v === "string" && ["GREEN", "AMBER", "RED"].includes(v) ? <RagBadge rag={v} />
+                  : typeof v === "number" ? v.toLocaleString()
+                  : typeof v === "boolean" ? (v ? "Yes" : "No")
+                  : String(v ?? "—")}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+      {sections.map(([k, v]) => (
+        <DataSection key={k} label={k} data={v as Record<string, unknown>} />
+      ))}
+      {topArrays.map(([k, v]) => {
+        const arr = v as unknown[];
+        return (
+          <div key={k} className="space-y-2">
+            <h3 className="font-semibold text-base border-b pb-2">{formatLabel(k)}</h3>
+            {arr.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">None</p>
+            ) : typeof arr[0] === "string" || typeof arr[0] === "number" ? (
+              <div className="flex flex-wrap gap-1">
+                {arr.map((item, i) => <Badge key={i} variant="outline">{String(item)}</Badge>)}
+              </div>
             ) : (
-              <JsonDisplay data={value} depth={depth + 1} />
+              <div className="space-y-2">
+                {(arr as Record<string, unknown>[]).map((item, i) => (
+                  <div key={i} className="border rounded p-3 text-sm space-y-1">
+                    {Object.entries(item).map(([ik, iv]) => (
+                      <div key={ik} className="flex gap-2">
+                        <span className="text-muted-foreground min-w-[120px]">{formatLabel(ik)}:</span>
+                        <span>{typeof iv === "number" ? iv.toLocaleString() : String(iv ?? "—")}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        ))}
-      </div>
-    );
-  }
-
-  return <span>{String(data)}</span>;
+        );
+      })}
+    </div>
+  );
 }
 
 export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }: ExpertAnalysisDashboardProps) {
@@ -388,7 +537,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
                 )}
               </div>
               <div className="border rounded-lg p-4 bg-muted/30">
-                <JsonDisplay data={selectedExpert.analysisData} />
+                <AnalysisDataView data={selectedExpert.analysisData as Record<string, unknown>} />
               </div>
             </div>
           )}
