@@ -1,0 +1,50 @@
+I need to refactor the server infrastructure in server/routes.ts by extracting session config and auth middleware into their own files, and fixing a circular dependency. This is preparation for migrating legacy routes into the modular structure. Nothing should break — all existing endpoints must continue working exactly as before.
+Here's exactly what to do:
+1. Create server/middleware/session.ts
+Extract the session configuration from server/routes.ts into this new file:
+
+Move the express-session SessionData type declaration (declare module 'express-session') into this file
+Move the sessionTtl constant, the pgStore setup, and the full session({...}) config into an exported function called createSessionMiddleware()
+IMPORTANT: Remove the hardcoded fallback secret. Instead of process.env.SESSION_SECRET || 'your-session-secret', throw an error if SESSION_SECRET is not set. The function should check if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET environment variable is required');
+The function should return the configured session middleware
+
+2. Create server/middleware/auth.ts
+Extract the isAuthenticated middleware function from inside registerRoutes() in server/routes.ts:
+
+Export it as a named async function: export async function isAuthenticated(req: Request, res: Response, next: NextFunction)
+It should check req.session.userId and return 401 if not present, otherwise call next()
+
+3. Update server/routes.ts to use the new middleware files
+
+Import createSessionMiddleware from ./middleware/session and use it instead of the inline session config
+Import isAuthenticated from ./middleware/auth and use it instead of the locally defined version
+Remove the inline declare module, sessionTtl, pgStore, and isAuthenticated definitions
+Keep ALL existing endpoint handlers in routes.ts for now — we're only extracting infrastructure, not moving endpoints yet
+The registerModularRoutes(app, isAuthenticated) call should still work — pass the imported isAuthenticated to it
+
+4. Fix circular dependency in server/routes/documents-files.routes.ts
+
+This file currently has import { sendFileUploadWebhook } from '../routes'; which creates a circular dependency
+Change it to import directly from the service: import { sendFileUploadWebhook } from '../services/file-analysis.service';
+Verify that sendFileUploadWebhook is actually exported from server/services/file-analysis.service.ts. If it's not, add the export there.
+
+5. Verify the sendFileUploadWebhook export in server/routes.ts
+
+routes.ts currently has export { sendFileUploadWebhook }; at the bottom (re-exporting from file-analysis.service)
+Once the circular dependency is fixed in step 4, this re-export in routes.ts is no longer needed by documents-files.routes.ts
+BUT check if anything else imports sendFileUploadWebhook from '../routes' or './routes'. If nothing else does, remove the re-export line. If something else does, update that import too.
+
+Testing checklist after these changes:
+
+The app should start without errors
+Login/logout should still work (session middleware is functioning)
+All authenticated API endpoints should still require authentication (isAuthenticated middleware works)
+File uploads should still work (circular dependency fix didn't break the webhook trigger)
+No TypeScript compilation errors
+
+Do NOT:
+
+Move any endpoint handlers out of routes.ts yet
+Change any API URLs
+Touch any frontend code
+Delete any endpoints
