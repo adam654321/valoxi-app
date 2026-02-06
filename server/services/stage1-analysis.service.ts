@@ -5,6 +5,7 @@ import { NotFoundError } from '../utils/errors';
 import { eventBus } from './event-bus.service';
 import { config } from '../config';
 import type { Stage1AnalysisEvent } from '@shared/schema';
+import { expertAnalysisService } from './expert-analysis.service';
 
 interface CategoryCheckResult {
   shouldTrigger: boolean;
@@ -71,7 +72,15 @@ export class Stage1AnalysisService {
     targetCompaniesRepository.update(targetCompanyId, { stage: 'Under Review' }, targetCompany.userCompanyId).catch(err => {
       console.error(`[STAGE1_ANALYSIS] Failed to update company stage for analysis event ${stage1Event.id}:`, err.message);
     });
-    
+
+    expertAnalysisService.triggerNewStage1Pipeline(targetCompanyId, triggeredBy).then(result => {
+      console.log(`[STAGE1_ANALYSIS] New expert pipeline completed for company ${targetCompanyId}:`,
+        `data_quality=${result.dataQualityRecord.status}`,
+        result.screeningRecord ? `screening=${result.screeningRecord.status}` : 'screening=skipped');
+    }).catch(err => {
+      console.error(`[STAGE1_ANALYSIS] New expert pipeline failed for company ${targetCompanyId}:`, err.message);
+    });
+
     return { triggered: true, eventId: stage1Event.id, message: 'Stage 1 analysis triggered successfully' };
   }
 
