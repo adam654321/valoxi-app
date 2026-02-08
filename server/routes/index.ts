@@ -52,7 +52,9 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/public/portal', portalLimiter, portalRequirementsPublicRoutes);
   app.use('/api/v2/email', isAuthenticated, emailRoutes);
   app.use('/api/v2/website-analysis', isAuthenticated, analysisTriggerLimiter, websiteAnalysisRoutes);
-  app.use('/api/v2/debug', debugRoutes);
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/v2/debug', isAuthenticated, debugRoutes);
+  }
   app.use('/api/v2/financial-data', isAuthenticated, financialDataRoutes);
   app.use('/api/v2/chase-up', isAuthenticated, chaseUpRoutes);
   app.use('/api/v2/valuation', isAuthenticated, valuationRoutes);
