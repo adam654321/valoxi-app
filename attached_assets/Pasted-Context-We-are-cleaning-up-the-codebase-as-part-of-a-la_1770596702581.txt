@@ -1,0 +1,31 @@
+Context
+We are cleaning up the codebase as part of a larger project to build a Deal Modeller feature. The application is an M&A CRM platform that helps buyers evaluate and structure acquisitions of target companies.
+The platform originally had a three-stage AI analysis pipeline:
+
+Stage 1 Analysis — An initial screening/summary using Gemini AI against uploaded company documents
+Detailed Analysis — A deeper dive analysis
+Expert Analysis — A multi-expert engine (QoE, Valuation, Deal Structure, Financial, Operational, Risk, Sector) that produces structured JSON outputs
+
+The Expert Analysis engine has now fully replaced both Stage 1 and Detailed Analysis. Those features are being removed. We are also removing the standalone Valuation page as that functionality will be absorbed into the new Deal Modeller.
+This is the first step of the cleanup. Before we remove anything, we need to understand all the dependencies.
+
+Pre-Step 1 — Dependency Audit for Stage 1 Analysis Removal
+Before we remove anything, I need you to check all dependencies for the Stage 1 Analysis feature. Do NOT delete or modify any files yet — just report back what you find.
+Search the entire codebase for references to the following and list every file and line where they appear:
+
+Any import or reference to stage1-analysis (routes, service, repository)
+Any import or reference to gemini-stage1-service or runStage1GeminiAnalysis
+Any import or reference to stage1-analysis-display or Stage1AnalysisDisplay
+Any import or reference to stage1AnalysisRoutes
+Any API calls to /api/v2/stage1-analysis or endpoints containing stage1
+Any reference to buildStage1Prompt or stage1-analysis-prompt or stage1-screening-prompt
+Any database queries or repository methods that specifically reference stage 1 analysis (not general analysis that happens to include stage 1 as a type)
+Any shared types, interfaces, or schema fields that are ONLY used by stage 1 analysis
+
+For each reference found, tell me:
+
+The file path and line number
+Whether it's a direct dependency (will break if removed) or just a mention (comment, test, etc.)
+Whether removing it would affect any other feature
+
+Do NOT make any changes. Just report the findings.
