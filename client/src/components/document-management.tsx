@@ -77,9 +77,6 @@ import {
   BarChart3,
   TrendingUp,
   AlertTriangle,
-  Play,
-  Code,
-  RefreshCw
 } from "lucide-react";
 
 // Helper function to invalidate all caches (document library + portal)

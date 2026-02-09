@@ -38,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator, Brain } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator } from "lucide-react";
 import ExpertAnalysisDashboard from "@/components/analysis/ExpertAnalysisDashboard";
 import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
@@ -46,7 +46,6 @@ import { PipelineStageManagement } from "@/components/pipeline-stage-management"
 import { DealActivitySection } from "@/components/deal-activity-section";
 import { DocumentManagement } from "@/components/document-management";
 import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
-import { DealSheetVisualDisplay } from "@/components/deal-sheet-visual-display";
 import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
 import { DocumentsTab } from "@/components/target-company/DocumentsTab";
