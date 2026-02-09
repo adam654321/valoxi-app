@@ -1,9 +1,7 @@
-import { stage1AnalysisRepository } from "../repositories/stage1-analysis.repository";
 import { documentAnalysisRepository } from "../repositories/document-analysis.repository";
 import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
-import { runStage1GeminiAnalysis, getMimeTypeForFile, type FileInfo } from "../gemini-stage1-service";
-import { runDetailedGeminiAnalysis, type FileInfo as DetailedFileInfo } from "../gemini-detailed-analysis-service";
+import { runDetailedGeminiAnalysis, getMimeTypeForFile, type FileInfo as DetailedFileInfo } from "../gemini-detailed-analysis-service";
 import { classifyDocumentWithGemini } from "../gemini-document-classification-service";
 import { runStep2AnalysisForTypes } from "../gemini-step2-analysis-service";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
@@ -67,8 +65,7 @@ function enhanceProfitLossWithCalculations(analysisData: any): any {
   }
 }
 
-// Configuration for deduplication
-const ANALYSIS_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes - if processing takes longer, allow retry
+const ANALYSIS_LOCK_TIMEOUT_MS = 10 * 60 * 1000;
 
 export async function analyzeUploadedFileWithGemini(eventId: number) {
   try {
@@ -78,13 +75,11 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       return;
     }
 
-    // DEDUPLICATION CHECK 1: Skip if analysis is already complete
     if (event.webhookStatus === 'analysis_complete') {
       console.log(`[FILE_ANALYSIS] Skipping event ${eventId} - analysis already complete`);
       return;
     }
 
-    // DEDUPLICATION CHECK 2: Skip if currently processing (unless stale)
     if (event.webhookStatus === 'processing') {
       const processingStartTime = event.webhookSentAt ? new Date(event.webhookSentAt).getTime() : 0;
       const now = Date.now();
@@ -97,16 +92,13 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       console.log(`[FILE_ANALYSIS] Processing lock expired for event ${eventId} (${Math.round(elapsed / 1000)}s old) - retrying`);
     }
 
-    // DEDUPLICATION CHECK 3: Skip if analysis results already exist for this document
     const existingResults = await documentAnalysisRepository.getAnalysisResultsByDocumentId(event.documentId);
     if (existingResults && existingResults.length > 0) {
       console.log(`[FILE_ANALYSIS] Skipping event ${eventId} - ${existingResults.length} analysis result(s) already exist for document ${event.documentId}`);
-      // Mark as complete since we already have results
       await documentsRepository.updateFileUploadEventWebhookStatus(eventId, 'analysis_complete', undefined, new Date());
       return;
     }
 
-    // Set status to 'processing' to prevent concurrent analysis
     await documentsRepository.updateFileUploadEventWebhookStatus(eventId, 'processing', undefined, new Date());
 
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
@@ -191,7 +183,6 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
           });
           console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
           
-          // Process extracted data into normalized financial tables
           try {
             const normalizationResult = await financialDataService.processExtractedData(
               result.documentType,
@@ -204,7 +195,6 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
               console.warn(`[FILE_ANALYSIS] Normalization warnings:`, normalizationResult.errors);
             }
           } catch (normalizationError) {
-            // Log but don't fail - JSON storage already succeeded
             console.error(`[FILE_ANALYSIS] Financial data normalization failed for ${result.documentType}:`, normalizationError);
           }
         } catch (storeError) {
@@ -249,8 +239,6 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       timestamp: new Date(),
     });
 
-    await checkAndTriggerStage1Analysis(event.targetCompanyId, event.uploadedBy);
-
   } catch (error) {
     console.error(`[FILE_ANALYSIS] Failed to analyze file for event ${eventId}:`, error);
     
@@ -267,354 +255,7 @@ export async function sendFileUploadWebhook(eventId: number) {
   return analyzeUploadedFileWithGemini(eventId);
 }
 
-export async function checkStage1RequirementsByCategory(targetCompanyId: number): Promise<{shouldTrigger: boolean, status: string}> {
-  try {
-    const companyAccountsCount = await stage1AnalysisRepository.getDocumentCountByCategory(targetCompanyId, 'Company Accounts');
-    
-    const requiredCategories = ['Profit & Loss', 'Balance Sheet', 'Staff Matrix', 'Sales Ledger', 'Asset Register'];
-    const categoryCounts: {[key: string]: number} = {};
-    
-    for (const category of requiredCategories) {
-      categoryCounts[category] = await stage1AnalysisRepository.getDocumentCountByCategory(targetCompanyId, category);
-    }
-    
-    console.log(`[STAGE1_ANALYSIS] Debug - Initial category counts:`, categoryCounts);
-    
-    if (categoryCounts['Balance Sheet'] === 0) {
-      const balanceSheetAnalysis = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
-      if (balanceSheetAnalysis.length > 0) {
-        categoryCounts['Balance Sheet'] = balanceSheetAnalysis.length;
-      }
-    }
-    
-    const hasCompanyAccounts = companyAccountsCount >= 5;
-    
-    const hasAllCategories = requiredCategories.every(category => categoryCounts[category] > 0);
-    
-    const status = `Company Accounts: ${companyAccountsCount}/5, ` + 
-      requiredCategories.map(cat => `${cat}: ${categoryCounts[cat]}`).join(', ');
-    
-    console.log(`[STAGE1_ANALYSIS] Document category status for company ${targetCompanyId}: ${status}`);
-    
-    return {
-      shouldTrigger: hasCompanyAccounts && hasAllCategories,
-      status
-    };
-    
-  } catch (error) {
-    console.error(`[STAGE1_ANALYSIS] Error checking category requirements:`, error);
-    return { shouldTrigger: false, status: 'Error checking requirements' };
-  }
-}
-
-export async function checkAndTriggerStage1Analysis(targetCompanyId: number, triggeredBy: number, bypassRequirements = false) {
-  try {
-    console.log(`[STAGE1_ANALYSIS] Checking completion status for company ${targetCompanyId}${bypassRequirements ? ' (bypassing requirements)' : ''}`);
-    
-    const targetCompany = await targetCompaniesRepository.getById(targetCompanyId, 0);
-    if (!targetCompany) {
-      console.error(`[STAGE1_ANALYSIS] Company ${targetCompanyId} not found`);
-      return;
-    }
-
-    const existingEvent = await stage1AnalysisRepository.getLatestStage1AnalysisEvent(targetCompanyId);
-    if (existingEvent && existingEvent.webhookStatus === 'success' && !bypassRequirements) {
-      const latestDocumentUpload = await stage1AnalysisRepository.getLatestDocumentUploadTime(targetCompanyId);
-      
-      if (latestDocumentUpload && existingEvent.createdAt) {
-        const docUploadTime = new Date(latestDocumentUpload).getTime();
-        const eventCreatedTime = new Date(existingEvent.createdAt).getTime();
-        
-        if (docUploadTime > eventCreatedTime) {
-          console.log(`[STAGE1_ANALYSIS] Documents modified after last successful analysis for company ${targetCompanyId}. Latest doc: ${latestDocumentUpload}, Last analysis: ${existingEvent.createdAt}. Re-triggering webhooks.`);
-        } else {
-          console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id}). No new documents since then.`);
-          return;
-        }
-      } else {
-        console.log(`[STAGE1_ANALYSIS] Stage 1 analysis already completed successfully for company ${targetCompanyId} (Event ID: ${existingEvent.id})`);
-        return;
-      }
-    }
-
-    if (!bypassRequirements) {
-      const categoryCheck = await checkStage1RequirementsByCategory(targetCompanyId);
-      
-      if (!categoryCheck.shouldTrigger) {
-        console.log(`[STAGE1_ANALYSIS] Stage 1 requirements not met for company ${targetCompanyId}. Status: ${categoryCheck.status}`);
-        return;
-      }
-
-      console.log(`[STAGE1_ANALYSIS] All Stage 1 requirements met for company ${targetCompanyId}. Triggering stage 1 webhook.`);
-    } else {
-      console.log(`[STAGE1_ANALYSIS] Bypassing requirements check for company ${targetCompanyId}. Triggering stage 1 webhook with available documents.`);
-    }
-
-    const companyAccountsData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('company_accounts', targetCompanyId);
-    const analysisData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('asset_register', targetCompanyId);
-    const salesLedgerData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('sales_ledger', targetCompanyId);
-    const staffMatrixData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('staff_matrix', targetCompanyId);
-    const profitLossData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('profit_and_loss', targetCompanyId);
-    const balanceSheetData = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('balance_sheet', targetCompanyId);
-
-    console.log(`[STAGE1_ANALYSIS] Debug - Retrieved analysis data counts:`, {
-      company_accounts: companyAccountsData.length,
-      asset_register: analysisData.length,
-      sales_ledger: salesLedgerData.length, 
-      staff_matrix: staffMatrixData.length,
-      profit_and_loss: profitLossData.length,
-      balance_sheet: balanceSheetData.length
-    });
-
-    if (companyAccountsData.length > 0) {
-      console.log(`[STAGE1_ANALYSIS] Debug - Sample company_accounts data:`, JSON.stringify(companyAccountsData[0].analysisData, null, 2));
-    }
-
-    const enhanceProfitLossData = (analysisData: any) => {
-      if (!analysisData) return analysisData;
-
-      try {
-        const enhanced = JSON.parse(JSON.stringify(analysisData));
-        
-        if (enhanced.years && typeof enhanced.years === 'object') {
-          Object.keys(enhanced.years).forEach(year => {
-            const yearData = enhanced.years[year];
-            
-            if (yearData.profit_and_loss) {
-              const pl = yearData.profit_and_loss;
-              
-              if (pl.revenue && pl.gross_profit && pl.revenue > 0) {
-                pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
-              }
-              
-              if (pl.revenue && pl.net_profit && pl.revenue > 0) {
-                pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
-              }
-              
-              if (pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
-                pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
-              }
-            }
-          });
-        }
-        
-        if (enhanced.profit_and_loss) {
-          const pl = enhanced.profit_and_loss;
-          
-          if (pl.revenue && pl.gross_profit && pl.revenue > 0) {
-            pl.gross_margin_percentage = Number(((pl.gross_profit / pl.revenue) * 100).toFixed(2));
-          }
-          
-          if (pl.revenue && pl.net_profit && pl.revenue > 0) {
-            pl.net_margin_percentage = Number(((pl.net_profit / pl.revenue) * 100).toFixed(2));
-          }
-          
-          if (pl.operating_profit && pl.interest_payable && pl.interest_payable > 0) {
-            pl.interest_coverage_ratio = Number((pl.operating_profit / pl.interest_payable).toFixed(2));
-          }
-        }
-        
-        return enhanced;
-      } catch (error) {
-        console.error('Error enhancing profit & loss data for aggregated JSON:', error);
-        return analysisData;
-      }
-    };
-
-    const sector = targetCompany.industry || '';
-    const subSector = targetCompany.subSector || '';
-    const industry = subSector ? `${sector}- ${subSector}` : sector;
-    
-    const concatenatedData = {
-      company_name: targetCompany.companyName,
-      sector: sector,
-      sub_sector: subSector || null,
-      industry: industry || null,
-      company_accounts: companyAccountsData.map(d => d.analysisData).filter(data => data),
-      asset_register: analysisData.map(d => d.analysisData).filter(data => data),
-      sales_ledger: salesLedgerData.map(d => d.analysisData).filter(data => data),
-      staff_matrix: staffMatrixData.map(d => d.analysisData).filter(data => data),
-      profit_and_loss: profitLossData.map(d => enhanceProfitLossData(d.analysisData)).filter(data => data),
-      balance_sheet: balanceSheetData.map(d => d.analysisData).filter(data => data),
-      timestamp: new Date().toISOString(),
-      company_id: targetCompanyId
-    };
-
-    const stage1Event = await stage1AnalysisRepository.createStage1AnalysisEvent({
-      targetCompanyId,
-      triggeredBy,
-      concatenatedData
-    });
-
-    console.log(`[STAGE1_ANALYSIS] Created stage 1 analysis event ${stage1Event.id} for company ${targetCompanyId}`);
-
-    setTimeout(() => {
-      runGeminiStage1Analysis(stage1Event.id, targetCompanyId, targetCompany.companyName, sector);
-    }, 100);
-
-  } catch (error) {
-    console.error(`[STAGE1_ANALYSIS] Failed to check and trigger stage 1 analysis for company ${targetCompanyId}:`, error);
-  }
-}
-
-export async function runGeminiStage1Analysis(eventId: number, targetCompanyId: number, companyName: string, sector: string) {
-  console.log(`[GEMINI_STAGE1_ANALYSIS] Starting Gemini analysis for event ${eventId}, company ${companyName}`);
-
-  try {
-    const documentFiles = await stage1AnalysisRepository.getStage1DocumentFiles(targetCompanyId);
-    
-    if (documentFiles.length === 0) {
-      console.error(`[GEMINI_STAGE1_ANALYSIS] No documents found for company ${targetCompanyId}`);
-      await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
-        eventId, 
-        'failed', 
-        'No documents found for analysis', 
-        new Date()
-      );
-      return;
-    }
-
-    console.log(`[GEMINI_STAGE1_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
-
-    const baseUrl = config.baseUrl;
-    console.log(`[GEMINI_STAGE1_ANALYSIS] Using base URL: ${baseUrl}`);
-
-    const files: FileInfo[] = documentFiles.map(doc => ({
-      fileUrl: `${baseUrl}/api/v2/public/documents/${doc.documentId}/download`,
-      mimeType: getMimeTypeForFile(doc.mimeType),
-      category: doc.category,
-    }));
-
-    console.log(`[GEMINI_STAGE1_ANALYSIS] File URLs:`, files.map(f => f.fileUrl));
-
-    const result = await runStage1GeminiAnalysis({
-      companyName,
-      sector,
-      files,
-    });
-
-    if (result.success && result.markdown) {
-      await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
-        eventId, 
-        'success', 
-        result.markdown, 
-        new Date(),
-        result.processingTime,
-        result.usageMetadata
-      );
-
-      console.log(`[GEMINI_STAGE1_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
-
-      const event = await stage1AnalysisRepository.getStage1AnalysisEvent(eventId);
-      
-      emitDocumentUpdate({
-        type: 'stage1_completed',
-        targetCompanyId: targetCompanyId,
-        eventId: eventId,
-        timestamp: new Date(),
-      });
-      console.log(`[GEMINI_STAGE1_ANALYSIS] EventBus notification sent for Stage 1 analysis completion of company ${targetCompanyId}`);
-    } else {
-      await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
-        eventId, 
-        'failed', 
-        JSON.stringify({ error: result.error || 'Unknown error' }), 
-        new Date(),
-        result.processingTime
-      );
-
-      console.error(`[GEMINI_STAGE1_ANALYSIS] Analysis failed for event ${eventId}: ${result.error}`);
-    }
-  } catch (error) {
-    console.error(`[GEMINI_STAGE1_ANALYSIS] Error running analysis for event ${eventId}:`, error);
-    
-    await stage1AnalysisRepository.updateStage1AnalysisEventStatus(
-      eventId, 
-      'failed', 
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
-      new Date()
-    );
-  }
-}
-
-export async function runGeminiDetailedAnalysis(eventId: number, targetCompanyId: number) {
-  console.log(`[GEMINI_DETAILED_ANALYSIS] Starting Gemini detailed analysis for event ${eventId}, company ${targetCompanyId}`);
-
-  try {
-    const documentFiles = await stage1AnalysisRepository.getStage1DocumentFiles(targetCompanyId);
-    
-    if (documentFiles.length === 0) {
-      console.error(`[GEMINI_DETAILED_ANALYSIS] No documents found for company ${targetCompanyId}`);
-      await stage1AnalysisRepository.updateDetailedAnalysisStatus(
-        eventId, 
-        'failed', 
-        'No documents found for analysis'
-      );
-      return;
-    }
-
-    console.log(`[GEMINI_DETAILED_ANALYSIS] Found ${documentFiles.length} documents for analysis`);
-
-    const baseUrl = config.baseUrl;
-    console.log(`[GEMINI_DETAILED_ANALYSIS] Using base URL: ${baseUrl}`);
-
-    const files: DetailedFileInfo[] = documentFiles.map(doc => ({
-      fileUrl: `${baseUrl}/api/v2/public/documents/${doc.documentId}/download`,
-      mimeType: getMimeTypeForFile(doc.mimeType),
-      category: doc.category,
-    }));
-
-    console.log(`[GEMINI_DETAILED_ANALYSIS] File URLs:`, files.map(f => f.fileUrl));
-
-    const result = await runDetailedGeminiAnalysis({
-      files,
-    });
-
-    if (result.success && result.markdown) {
-      await stage1AnalysisRepository.updateDetailedAnalysisStatus(
-        eventId, 
-        'success', 
-        result.markdown, 
-        result.processingTime,
-        result.usageMetadata
-      );
-
-      console.log(`[GEMINI_DETAILED_ANALYSIS] Analysis completed successfully for event ${eventId}, length: ${result.markdown.length} characters`);
-
-      const event = await stage1AnalysisRepository.getStage1AnalysisEvent(eventId);
-      emitDocumentUpdate({
-        type: 'detailed_analysis_completed',
-        targetCompanyId: targetCompanyId,
-        eventId: eventId,
-        timestamp: new Date(),
-      });
-      console.log(`[GEMINI_DETAILED_ANALYSIS] EventBus notification sent for detailed analysis completion of company ${targetCompanyId}`);
-    } else {
-      await stage1AnalysisRepository.updateDetailedAnalysisStatus(
-        eventId, 
-        'failed', 
-        result.error || 'Unknown error', 
-        result.processingTime
-      );
-
-      console.error(`[GEMINI_DETAILED_ANALYSIS] Analysis failed for event ${eventId}: ${result.error}`);
-    }
-  } catch (error) {
-    console.error(`[GEMINI_DETAILED_ANALYSIS] Error running analysis for event ${eventId}:`, error);
-    
-    await stage1AnalysisRepository.updateDetailedAnalysisStatus(
-      eventId, 
-      'failed', 
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-  }
-}
-
 export const fileAnalysisService = {
   analyzeUploadedFileWithGemini,
   sendFileUploadWebhook,
-  checkStage1RequirementsByCategory,
-  checkAndTriggerStage1Analysis,
-  runGeminiStage1Analysis,
-  runGeminiDetailedAnalysis,
 };

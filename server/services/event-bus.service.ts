@@ -29,7 +29,7 @@ export interface StageUpdatedEvent {
 }
 
 export interface DocumentUpdateEvent {
-  type: 'analysis_started' | 'analysis_completed' | 'document_uploaded' | 'stage1_completed' | 'detailed_analysis_completed';
+  type: 'analysis_started' | 'analysis_completed' | 'document_uploaded' | 'detailed_analysis_completed';
   targetCompanyId: number;
   documentId?: number;
   eventId?: number;

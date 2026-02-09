@@ -15,7 +15,6 @@ import reportsRoutes from './reports.routes';
 import portalRoutes from './portal.routes';
 import documentsFilesRoutes, { publicDocumentRoutes } from './documents-files.routes';
 import portalSubmissionsRoutes from './portal-submissions.routes';
-import stage1AnalysisRoutes from './stage1-analysis.routes';
 import documentAnalysisRoutes from './document-analysis.routes';
 import portalRequirementsRoutes, { portalRequirementsPublicRoutes } from './portal-requirements.routes';
 import emailRoutes from './email.routes';
@@ -46,7 +45,6 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/files', isAuthenticated, uploadLimiter, documentsFilesRoutes);
   app.use('/api/v2/public/documents', portalLimiter, publicDocumentRoutes);
   app.use('/api/v2/portal-submit', portalLimiter, portalSubmissionsRoutes);
-  app.use('/api/v2/stage1-analysis', isAuthenticated, analysisTriggerLimiter, stage1AnalysisRoutes);
   app.use('/api/v2/document-analysis', isAuthenticated, analysisTriggerLimiter, documentAnalysisRoutes);
   app.use('/api/v2/requirements', isAuthenticated, portalRequirementsRoutes);
   app.use('/api/v2/public/portal', portalLimiter, portalRequirementsPublicRoutes);

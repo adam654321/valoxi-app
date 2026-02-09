@@ -14,7 +14,6 @@ import {
   externalDocumentSubmissions,
   fileUploadEvents,
   documentAnalysisResults,
-  stage1AnalysisEvents,
   userDealAssignments,
   teamNotifications,
   dashboardAlerts,
@@ -146,9 +145,6 @@ export class TargetCompaniesService {
     
     // Delete portal access tokens
     await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
-    
-    // Delete stage1 analysis events
-    await db.delete(stage1AnalysisEvents).where(eq(stage1AnalysisEvents.targetCompanyId, id));
     
     // Delete stage history
     await db.delete(stageHistory).where(eq(stageHistory.targetCompanyId, id));

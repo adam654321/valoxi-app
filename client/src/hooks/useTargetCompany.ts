@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
+import type { TargetCompany, TargetContact } from "@shared/schema";
 
 export interface CompanyProfile extends TargetCompany {
   createdByName: string;
@@ -39,25 +39,6 @@ export function useTargetCompany({ companyId }: UseTargetCompanyOptions) {
     refetchOnMount: 'always',
   });
 
-  const { data: stage1Events = [], isLoading: analysisLoading } = useQuery<Stage1AnalysisEvent[]>({
-    queryKey: ["/api/v2/stage1-analysis", companyId, "events"],
-    enabled: !!companyId,
-    refetchInterval: (query) => {
-      const events = query.state.data as Stage1AnalysisEvent[] | undefined;
-      // Poll every 3 seconds if there's an analysis in progress (processing or pending)
-      if (events && events.length > 0) {
-        const latestEvent = events[0];
-        if (latestEvent.webhookStatus === 'processing' || latestEvent.webhookStatus === 'pending') {
-          return 3000;
-        }
-      }
-      // Otherwise poll every 30 seconds
-      return 30000;
-    },
-    refetchIntervalInBackground: false,
-    staleTime: 0,
-  });
-
   const company = profile;
   const contacts = profile?.contacts || [];
   const primaryContact = contacts.find(c => c.isPrimary);
@@ -69,10 +50,8 @@ export function useTargetCompany({ companyId }: UseTargetCompanyOptions) {
     contacts,
     primaryContact,
     otherContacts,
-    stage1Events,
     profileLoading,
     profileFetching,
-    analysisLoading,
     refetchProfile,
   };
 }
