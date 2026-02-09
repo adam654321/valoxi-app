@@ -1,0 +1,310 @@
+CONTEXT: We are building the Deal Documents feature. Step 4 is creating the API routes. We need two routers: authenticated routes for the buyer (creating, sending, managing documents) and public routes for the seller (viewing and responding via portal token).
+
+TASK: Create server/routes/deal-document.routes.ts and register it.
+```typescript
+import { Router } from 'express';
+import { dealDocumentService } from '../services/deal-document.service';
+import { z } from 'zod';
+
+const router = Router();
+const publicRouter = Router();
+
+// ==========================================
+// AUTHENTICATED ROUTES (buyer-side)
+// ==========================================
+
+// GET /api/v2/deal-documents/company/:targetCompanyId
+// Get all deal documents for a target company
+router.get('/company/:targetCompanyId', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const docs = await dealDocumentService.getDocumentsForCompany(targetCompanyId);
+    res.json(docs);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET /api/v2/deal-documents/company/:targetCompanyId/:documentType
+// Get documents by type with version history
+router.get('/company/:targetCompanyId/:documentType', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const documentType = req.params.documentType;
+    const history = await dealDocumentService.getVersionHistory(targetCompanyId, documentType);
+    res.json(history);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET /api/v2/deal-documents/:id
+// Get a single document with responses
+router.get('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const doc = await dealDocumentService.getDocumentById(id);
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+    const responses = await dealDocumentService.getDocumentResponses(id);
+    res.json({ ...doc, responses });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/v2/deal-documents
+// Create a new deal document (draft)
+const createDocumentSchema = z.object({
+  targetCompanyId: z.number(),
+  documentType: z.enum(['nda', 'offer_letter', 'heads_of_terms']),
+  dealModelId: z.number().optional(),
+  portalTokenId: z.number().optional(),
+  templateId: z.number().optional(),
+  sectionConfig: z.any().optional(),
+  documentData: z.any().optional(),
+});
+
+router.post('/', async (req, res) => {
+  try {
+    const validated = createDocumentSchema.parse(req.body);
+    const userId = req.session.userId;
+    const userCompanyId = req.session.userCompanyId;
+    if (!userId || !userCompanyId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const doc = await dealDocumentService.createDocument({
+      ...validated,
+      userCompanyId,
+      createdBy: userId,
+    });
+    
+    res.status(201).json(doc);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation error', errors: error.errors });
+    }
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/v2/deal-documents/:id/generate
+// Generate the document file from template
+router.post('/:id/generate', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const dataOverrides = req.body.dataOverrides || {};
+    const result = await dealDocumentService.generateDocumentFile(id, dataOverrides);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/v2/deal-documents/:id/send
+// Send document to seller via portal
+router.post('/:id/send', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const doc = await dealDocumentService.sendDocument(id);
+    res.json(doc);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// POST /api/v2/deal-documents/:id/withdraw
+// Withdraw a document
+router.post('/:id/withdraw', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const doc = await dealDocumentService.withdrawDocument(id);
+    res.json(doc);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// POST /api/v2/deal-documents/:id/new-version
+// Create a new version of a document
+router.post('/:id/new-version', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const doc = await dealDocumentService.createNewVersion(id, userId, req.body);
+    res.status(201).json(doc);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// GET /api/v2/deal-documents/download/:id
+// Download the generated document file
+router.get('/download/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const doc = await dealDocumentService.getDocumentById(id);
+    if (!doc || !doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not found' });
+    }
+    
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const buffer = await fs.readFile(doc.generatedFileUrl);
+    const filename = path.basename(doc.generatedFileUrl);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ==========================================
+// PUBLIC ROUTES (seller-side, via portal token)
+// ==========================================
+
+// GET /api/v2/public/deal-documents/:token
+// Get all visible documents for a portal token
+publicRouter.get('/:token', async (req, res) => {
+  try {
+    const token = req.params.token;
+    
+    // Validate the portal token
+    const { default: portalService } = await import('../services/portal.service');
+    // Look up the portal token to get the portalTokenId
+    const portalData = await portalService.getTokenData(token);
+    if (!portalData) {
+      return res.status(404).json({ message: 'Invalid or expired portal link' });
+    }
+    
+    const docs = await dealDocumentService.getDocumentsForPortal(portalData.tokenId);
+    
+    // Check NDA status
+    const ndaAccepted = await dealDocumentService.isNdaAccepted(portalData.tokenId);
+    
+    res.json({ documents: docs, ndaAccepted });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/v2/public/deal-documents/:token/:documentId/respond
+// Seller responds to a document
+const respondSchema = z.object({
+  responseType: z.enum(['accepted', 'rejected', 'countered']),
+  comments: z.string().optional(),
+  respondentName: z.string().min(1, 'Name is required'),
+  respondentEmail: z.string().email().optional(),
+});
+
+publicRouter.post('/:token/:documentId/respond', async (req, res) => {
+  try {
+    const token = req.params.token;
+    const documentId = parseInt(req.params.documentId);
+    
+    // Validate portal token
+    const { default: portalService } = await import('../services/portal.service');
+    const portalData = await portalService.getTokenData(token);
+    if (!portalData) {
+      return res.status(404).json({ message: 'Invalid or expired portal link' });
+    }
+    
+    // Validate the document belongs to this portal
+    const doc = await dealDocumentService.getDocumentById(documentId);
+    if (!doc || doc.portalTokenId !== portalData.tokenId) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+    
+    const validated = respondSchema.parse(req.body);
+    
+    const response = await dealDocumentService.recordResponse({
+      documentId,
+      responseType: validated.responseType,
+      comments: validated.comments,
+      respondentName: validated.respondentName,
+      respondentEmail: validated.respondentEmail,
+      respondentIp: req.ip || req.socket.remoteAddress,
+      respondentUserAgent: req.headers['user-agent'],
+    });
+    
+    // Mark as viewed if not already
+    await dealDocumentService.markViewed(documentId);
+    
+    res.json(response);
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation error', errors: error.errors });
+    }
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// GET /api/v2/public/deal-documents/:token/:documentId/download
+// Seller downloads a document
+publicRouter.get('/:token/:documentId/download', async (req, res) => {
+  try {
+    const token = req.params.token;
+    const documentId = parseInt(req.params.documentId);
+    
+    // Validate portal token
+    const { default: portalService } = await import('../services/portal.service');
+    const portalData = await portalService.getTokenData(token);
+    if (!portalData) {
+      return res.status(404).json({ message: 'Invalid or expired portal link' });
+    }
+    
+    // Validate the document belongs to this portal
+    const doc = await dealDocumentService.getDocumentById(documentId);
+    if (!doc || doc.portalTokenId !== portalData.tokenId) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+    if (!doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not found' });
+    }
+    
+    // Mark as viewed
+    await dealDocumentService.markViewed(documentId);
+    
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const buffer = await fs.readFile(doc.generatedFileUrl);
+    const filename = path.basename(doc.generatedFileUrl);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+export { publicRouter as publicDealDocumentRoutes };
+export default router;
+```
+
+THEN register the routes in server/routes/index.ts:
+
+1. Add the import at the top with the other imports:
+   import dealDocumentRoutes, { publicDealDocumentRoutes } from './deal-document.routes';
+
+2. Add the authenticated route registration (near the other deal-model routes):
+   app.use('/api/v2/deal-documents', isAuthenticated, dealDocumentRoutes);
+
+3. Add the public route registration (near the other public routes):
+   app.use('/api/v2/public/deal-documents', portalLimiter, publicDealDocumentRoutes);
+
+NOTE: The public routes use dynamic import for portalService — check how portalService is exported. If it's a named export like `export const portalService = ...` then change `const { default: portalService }` to `const { portalService }`. Look at the actual export in server/services/portal.service.ts to get this right.
+
+IMPORTANT:
+- Follow the exact same route patterns used in the codebase
+- The public routes validate the portal token before any action — the seller can't access documents from other portals
+- Zod validation on POST bodies
+- After making the changes, show me:
+  (a) The complete list of routes (method, path, purpose)
+  (b) How portalService was imported (named vs default)
+  (c) The route registrations in index.ts
+  (d) Any LSP errors
