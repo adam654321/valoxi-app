@@ -9,7 +9,8 @@ const router = Router();
 
 const registerSchema = insertUserSchema.extend({
   companyName: z.string().min(1, 'Company name is required'),
-  confirmPassword: z.string(),
+  passwordHash: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8),
 }).refine((data) => data.passwordHash === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
