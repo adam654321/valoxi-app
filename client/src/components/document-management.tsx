@@ -158,94 +158,6 @@ const documentSchema = z.object({
 type DocumentFormData = z.infer<typeof documentSchema>;
 
 
-// Stage 1 JSON Modal Component for Main CRM
-function Stage1JsonModal({ targetCompanyId, isOpen, onClose }: { targetCompanyId: number; isOpen: boolean; onClose: () => void }) {
-  const { data: stage1Analysis, isLoading } = useQuery<any[]>({
-    queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`],
-    select: (response: any) => response.data,
-    enabled: isOpen && !!targetCompanyId,
-  });
-
-  // Get the most recent Stage 1 analysis event
-  const latestAnalysis = stage1Analysis && stage1Analysis.length > 0 ? stage1Analysis[0] : null;
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Code className="w-5 h-5" />
-            Stage 1 Aggregated JSON
-          </DialogTitle>
-          <DialogDescription>
-            Complete aggregated JSON data sent to Stage 1 analysis webhook
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="overflow-auto">
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2">Loading Stage 1 analysis data...</span>
-            </div>
-          )}
-          
-          {!isLoading && !latestAnalysis && (
-            <div className="text-center py-8 text-gray-500">
-              No Stage 1 analysis data found for this company.
-            </div>
-          )}
-          
-          {!isLoading && latestAnalysis && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                <span>Analysis ID: {latestAnalysis.id}</span>
-                <span>•</span>
-                <span>Status: {latestAnalysis.webhookStatus}</span>
-                <span>•</span>
-                <span>Created: {formatDate(latestAnalysis.createdAt)}</span>
-                {latestAnalysis.webhookSentAt && (
-                  <>
-                    <span>•</span>
-                    <span>Webhook Sent: {formatDate(latestAnalysis.webhookSentAt)}</span>
-                  </>
-                )}
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
-                <pre className="text-sm whitespace-pre-wrap break-words">
-                  <code>
-                    {JSON.stringify(latestAnalysis.concatenatedData, null, 2)}
-                  </code>
-                </pre>
-              </div>
-              
-              {latestAnalysis.webhookError && (
-                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Webhook Error</h4>
-                  <pre className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
-                    {latestAnalysis.webhookError}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // Document analysis badges component
 function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
   const { data: analysisResults = [], isLoading: analysisLoading } = useQuery<Array<{
@@ -320,7 +232,6 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
 // Analysis completion indicator component
 function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: number }) {
   const { toast } = useToast();
-  const [showStage1JsonModal, setShowStage1JsonModal] = useState(false);
   
   const { data: completionStatus, isLoading } = useQuery<{
     completedTypes: string[];
@@ -337,65 +248,6 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
     staleTime: 5000, // Consider data stale after 5 seconds
   });
 
-  // Check if Stage 1 analysis has already been completed
-  const { data: stage1Events } = useQuery<any[]>({
-    queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`],
-    select: (response: any) => response.data,
-  });
-  
-  const hasCompletedStage1Analysis = stage1Events && stage1Events.length > 0 && 
-    stage1Events.some((event: any) => event.webhookStatus === 'success');
-
-  // Mutation to trigger Stage 1 analysis
-  const triggerAnalysisMutation = useMutation({
-    mutationFn: async (options?: { bypassRequirements?: boolean }) => {
-      const response = await apiRequest('POST', `/api/v2/stage1-analysis/${targetCompanyId}/trigger`, {
-        bypassRequirements: options?.bypassRequirements || false
-      });
-      return response.json();
-    },
-    onSuccess: (response: any) => {
-      const data = response?.data || response;
-      if (data?.triggered) {
-        toast({
-          title: "Analysis Triggered",
-          description: "Stage 1 analysis has been initiated. This may take a few minutes to complete.",
-        });
-        // Invalidate pipeline/company queries since triggering analysis moves company to Under Review stage
-        queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies/search'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/v2/pipeline'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/v2/dashboard/data/pipeline-overview'] });
-        // Force immediate refetch of stage1 analysis queries to show the new processing event
-        queryClient.refetchQueries({ queryKey: [`/api/v2/stage1-analysis/${targetCompanyId}/events`] });
-        // The Analysis tab uses string companyId from URL params, so try both formats
-        queryClient.refetchQueries({ queryKey: ["/api/v2/stage1-analysis", targetCompanyId, "events"] });
-        queryClient.refetchQueries({ queryKey: ["/api/v2/stage1-analysis", String(targetCompanyId), "events"] });
-      } else {
-        toast({
-          title: "Analysis Not Triggered",
-          description: data?.message || "Analysis was not triggered. It may already be complete.",
-          variant: "default",
-        });
-      }
-      // Refresh completion status after triggering
-      queryClient.invalidateQueries({
-        queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"],
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to trigger analysis. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleProgressToAnalysis = (bypassRequirements = false) => {
-    triggerAnalysisMutation.mutate({ bypassRequirements });
-  };
-
   if (isLoading || !completionStatus) {
     return null;
   }
@@ -409,22 +261,10 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
           <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h3 className="font-semibold text-blue-900 dark:text-blue-100">Document Analysis Progress</h3>
           {isComplete && (
-            <>
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Complete
-              </Badge>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowStage1JsonModal(true)}
-                className="ml-2 h-7 text-xs"
-                data-testid="button-view-stage1-json"
-              >
-                <Code className="w-3 h-3 mr-1" />
-                See json sent to webhook
-              </Button>
-            </>
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Complete
+            </Badge>
           )}
         </div>
         <div className="text-right">
@@ -493,127 +333,6 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
         </div>
       )}
 
-      {/* Re-run analysis section when Stage 1 analysis was already completed */}
-      {hasCompletedStage1Analysis && (
-        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-              <RefreshCw className="w-4 h-4" />
-              <span className="text-sm font-medium">Stage 1 analysis was completed. You can re-run if new documents were added.</span>
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => handleProgressToAnalysis(true)}
-              disabled={triggerAnalysisMutation.isPending}
-              className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
-            >
-              {triggerAnalysisMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
-                  Re-running...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Re-run Analysis
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {!isComplete && completedCount > 0 && (
-        <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {completedCount < 10 ? 'Partial documentation available - you can proceed with analysis if needed' : 'Ready for analysis'}
-              </span>
-            </div>
-            {completedCount < 10 ? (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    size="sm" 
-                    disabled={triggerAnalysisMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {triggerAnalysisMutation.isPending ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                        Triggering...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Progress to Analysis
-                      </>
-                    )}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-500" />
-                      Incomplete Documentation
-                    </AlertDialogTitle>
-                    <AlertDialogDescription className="text-left space-y-2">
-                      <p>
-                        The analysis may not be complete due to missing document types. 
-                        Only <strong>{completedCount} of 10</strong> document types have been uploaded.
-                      </p>
-                      <p>
-                        Missing types: {missingTypes.slice(0, 3).join(', ')}{missingTypes.length > 3 ? ` and ${missingTypes.length - 3} more` : ''}
-                      </p>
-                      <p className="text-amber-600 dark:text-amber-400 font-medium">
-                        Do you still want to proceed with the analysis?
-                      </p>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => handleProgressToAnalysis(true)}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Proceed Anyway
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            ) : (
-              <Button 
-                size="sm" 
-                onClick={() => handleProgressToAnalysis(false)}
-                disabled={triggerAnalysisMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {triggerAnalysisMutation.isPending ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    Triggering...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Progress to Analysis
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Stage 1 JSON Modal */}
-      <Stage1JsonModal 
-        targetCompanyId={targetCompanyId}
-        isOpen={showStage1JsonModal}
-        onClose={() => setShowStage1JsonModal(false)}
-      />
     </div>
   );
 }
@@ -753,19 +472,6 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           // Invalidate specific document analysis queries (v2 endpoint)
           queryClient.invalidateQueries({ 
             queryKey: ["/api/v2/document-analysis/document", data.documentId] 
-          });
-        } else if (data.type === 'stage1_analysis_completed' && data.targetCompanyId === targetCompanyId) {
-          console.log('[SSE] Stage 1 analysis completed, refreshing analysis tab:', data);
-          
-          // Invalidate Stage 1 analysis results to display in Analysis tab
-          queryClient.invalidateQueries({ 
-            queryKey: ["/api/v2/stage1-analysis", targetCompanyId, "events"] 
-          });
-          
-          // Show a toast notification
-          toast({
-            title: "Stage 1 Analysis Complete",
-            description: "Strategic analysis results are now available in the Analysis tab.",
           });
         } else if (data.type === 'connected') {
           console.log('[SSE] Connected to document update stream for company:', data.targetCompanyId);

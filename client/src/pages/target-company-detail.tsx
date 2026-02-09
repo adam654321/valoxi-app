@@ -40,13 +40,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator, Brain } from "lucide-react";
 import ExpertAnalysisDashboard from "@/components/analysis/ExpertAnalysisDashboard";
-import type { TargetCompany, TargetContact, Stage1AnalysisEvent } from "@shared/schema";
+import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { DealActivitySection } from "@/components/deal-activity-section";
 import { DocumentManagement } from "@/components/document-management";
 import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
-import { Stage1AnalysisDisplay } from "@/components/stage1-analysis-display";
 import { DealSheetVisualDisplay } from "@/components/deal-sheet-visual-display";
 import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
@@ -110,10 +109,8 @@ export default function TargetCompanyDetail() {
     contacts,
     primaryContact,
     otherContacts,
-    stage1Events,
     profileLoading,
     profileFetching,
-    analysisLoading,
     refetchProfile,
   } = useTargetCompany({ companyId: id });
 
@@ -186,26 +183,6 @@ export default function TargetCompanyDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete contact",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Trigger detailed analysis mutation
-  const triggerDetailedAnalysisMutation = useMutation({
-    mutationFn: () =>
-      apiRequest("POST", `/api/v2/stage1-analysis/${id}/trigger-detailed`),
-    onSuccess: () => {
-      toast({
-        title: "Detailed Analysis Started",
-        description: "The detailed analysis is now being generated. This may take a few minutes.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/stage1-analysis", id, "events"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to start detailed analysis",
         variant: "destructive",
       });
     },
@@ -941,232 +918,10 @@ export default function TargetCompanyDetail() {
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-6">
-              <Tabs defaultValue="expert-engine" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="expert-engine" className="flex items-center gap-2">
-                    <Brain className="w-4 h-4" />
-                    Expert Engine
-                  </TabsTrigger>
-                  <TabsTrigger value="investment-summary" data-testid="tab-investment-summary">
-                    Investment Summary
-                  </TabsTrigger>
-                  <TabsTrigger value="detailed-analysis" data-testid="tab-detailed-analysis">
-                    Detailed Analysis
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="expert-engine" className="space-y-6">
-                  <ExpertAnalysisDashboard
-                    targetCompanyId={parseInt(id!)}
-                    companyName={company.companyName}
-                  />
-                </TabsContent>
-
-                <TabsContent value="investment-summary" className="space-y-6">
-                  {analysisLoading ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-32 w-full" />
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                      </div>
-                      <Skeleton className="h-64 w-full" />
-                    </div>
-                  ) : stage1Events.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">No analysis available yet</p>
-                      <p className="text-sm mb-4">Analysis will be automatically generated when all 5 required documents are uploaded and analyzed</p>
-                      <div className="text-xs text-muted-foreground">
-                        Required documents: Asset Register, Balance Sheet, Profit & Loss, Sales Ledger, Staff Matrix
-                      </div>
-                    </div>
-                  ) : (() => {
-                    // Always show the LATEST event first (events are sorted by createdAt desc)
-                    // This ensures re-runs show the processing state, not old completed results
-                    const latestEvent = stage1Events[0];
-                    
-                    if (!latestEvent) {
-                      return (
-                        <div className="text-center py-12 text-muted-foreground">
-                          <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">No analysis available</p>
-                          <p className="text-sm">Analysis will appear here when ready</p>
-                        </div>
-                      );
-                    }
-
-                    // Show processing state for pending or processing events
-                    if (latestEvent.webhookStatus === 'pending' || latestEvent.webhookStatus === 'processing') {
-                      return (
-                        <div className="text-center py-12 text-muted-foreground">
-                          <RefreshCw className="w-12 h-12 mx-auto mb-4 animate-spin opacity-50" />
-                          <p className="text-lg font-medium mb-2">Analysis in progress...</p>
-                          <p className="text-sm">Please wait while we analyze your documents. This typically takes 30-60 seconds.</p>
-                        </div>
-                      );
-                    }
-                    
-                    // Use the latest event if successful, otherwise find any successful event
-                    const eventToShow = latestEvent.webhookStatus === 'success' 
-                      ? latestEvent 
-                      : stage1Events.find(event => event.webhookStatus === 'success') || latestEvent;
-
-                    if (eventToShow.webhookStatus === 'failed') {
-                      return (
-                        <div className="text-center py-12 text-red-600 dark:text-red-400">
-                          <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">Analysis failed</p>
-                          <p className="text-sm">{eventToShow.webhookResponse || 'An error occurred during analysis'}</p>
-                        </div>
-                      );
-                    }
-
-                    if (!eventToShow.webhookResponse) {
-                      return (
-                        <div className="text-center py-12 text-muted-foreground">
-                          <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">No analysis data</p>
-                          <p className="text-sm">Analysis response is empty</p>
-                        </div>
-                      );
-                    }
-
-                    // Parse usage metadata if available
-                    let usageMetadata = null;
-                    if (eventToShow.usageMetadata) {
-                      try {
-                        usageMetadata = typeof eventToShow.usageMetadata === 'string' 
-                          ? JSON.parse(eventToShow.usageMetadata) 
-                          : eventToShow.usageMetadata;
-                      } catch (e) {
-                        console.error('Failed to parse usage metadata:', e);
-                      }
-                    }
-
-                    // Get the markdown content - the response is stored as the analysis directly
-                    const markdownContent = eventToShow.webhookResponse;
-
-                    return (
-                      <Stage1AnalysisDisplay 
-                        markdown={markdownContent}
-                        usageMetadata={usageMetadata}
-                        processingTime={eventToShow.processingTime || undefined}
-                      />
-                    );
-                  })()}
-                </TabsContent>
-
-                <TabsContent value="detailed-analysis" className="space-y-6">
-                  {analysisLoading ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-32 w-full" />
-                      <Skeleton className="h-64 w-full" />
-                    </div>
-                  ) : stage1Events.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">No analysis available yet</p>
-                      <p className="text-sm">Upload required documents to generate analysis</p>
-                    </div>
-                  ) : (() => {
-                    const successfulEvent = stage1Events.find(event => event.webhookStatus === 'success');
-                    
-                    if (!successfulEvent) {
-                      return (
-                        <div className="text-center py-12 text-muted-foreground">
-                          <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">Basic analysis required first</p>
-                          <p className="text-sm">Please complete the basic analysis before running detailed analysis</p>
-                        </div>
-                      );
-                    }
-
-                    if (successfulEvent.detailedAnalysisStatus === 'processing') {
-                      return (
-                        <div className="text-center py-12 text-muted-foreground">
-                          <RefreshCw className="w-12 h-12 mx-auto mb-4 animate-spin opacity-50" />
-                          <p className="text-lg font-medium mb-2">Detailed analysis in progress...</p>
-                          <p className="text-sm">This may take a few minutes. The page will update automatically when complete.</p>
-                        </div>
-                      );
-                    }
-
-                    if (successfulEvent.detailedAnalysisStatus === 'failed') {
-                      return (
-                        <div className="text-center py-12">
-                          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500 opacity-70" />
-                          <p className="text-lg font-medium mb-2 text-red-600">Detailed analysis failed</p>
-                          <p className="text-sm text-muted-foreground mb-4">{successfulEvent.detailedAnalysisMarkdown || 'An error occurred during analysis'}</p>
-                          <Button 
-                            onClick={() => triggerDetailedAnalysisMutation.mutate()}
-                            disabled={triggerDetailedAnalysisMutation.isPending}
-                          >
-                            {triggerDetailedAnalysisMutation.isPending ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Starting...
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                Retry Detailed Analysis
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      );
-                    }
-
-                    if (successfulEvent.detailedAnalysisStatus === 'success' && successfulEvent.detailedAnalysisMarkdown) {
-                      let detailedUsageMetadata = null;
-                      if (successfulEvent.detailedAnalysisUsageMetadata) {
-                        try {
-                          detailedUsageMetadata = typeof successfulEvent.detailedAnalysisUsageMetadata === 'string' 
-                            ? JSON.parse(successfulEvent.detailedAnalysisUsageMetadata) 
-                            : successfulEvent.detailedAnalysisUsageMetadata;
-                        } catch (e) {
-                          console.error('Failed to parse detailed analysis usage metadata:', e);
-                        }
-                      }
-
-                      return (
-                        <DealSheetVisualDisplay 
-                          markdown={successfulEvent.detailedAnalysisMarkdown}
-                          usageMetadata={detailedUsageMetadata}
-                          processingTime={successfulEvent.detailedAnalysisProcessingTime || undefined}
-                        />
-                      );
-                    }
-
-                    return (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium mb-2">Detailed Analysis Available</p>
-                        <p className="text-sm mb-6">Generate a comprehensive Deal Sheet with detailed due diligence insights</p>
-                        <Button 
-                          onClick={() => triggerDetailedAnalysisMutation.mutate()}
-                          disabled={triggerDetailedAnalysisMutation.isPending}
-                          size="lg"
-                        >
-                          {triggerDetailedAnalysisMutation.isPending ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Starting Analysis...
-                            </>
-                          ) : (
-                            <>
-                              <BarChart3 className="w-4 h-4 mr-2" />
-                              Generate Detailed Analysis
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })()}
-                </TabsContent>
-              </Tabs>
+              <ExpertAnalysisDashboard
+                targetCompanyId={parseInt(id!)}
+                companyName={company.companyName}
+              />
           </TabsContent>
 
           <TabsContent value="pipeline" className="space-y-6">
