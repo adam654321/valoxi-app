@@ -35,6 +35,11 @@ export interface DealModelInput {
   feeBrokerPercent: string | number;
   feeLoanArrangementPercent: string | number;
   feeDealMakerPercent: string | number;
+  feeLegalDdType?: 'percent' | 'fixed';
+  feeAccountingDdType?: 'percent' | 'fixed';
+  feeBrokerType?: 'percent' | 'fixed';
+  feeLoanArrangementType?: 'percent' | 'fixed';
+  feeDealMakerType?: 'percent' | 'fixed';
   customFees?: Array<{ label: string; percent?: number; amount?: number }> | null;
 }
 
@@ -155,11 +160,16 @@ export function calculateFees(
   totalFees: number;
   totalFundingRequired: number;
 } {
-  const feeLegalDd = offerPrice * toNum(model.feeLegalDdPercent) / 100;
-  const feeAccountingDd = offerPrice * toNum(model.feeAccountingDdPercent) / 100;
-  const feeBroker = offerPrice * toNum(model.feeBrokerPercent) / 100;
-  const feeLoanArrangement = offerPrice * toNum(model.feeLoanArrangementPercent) / 100;
-  const feeDealMaker = offerPrice * toNum(model.feeDealMakerPercent) / 100;
+  function calcFee(value: string | number, type: 'percent' | 'fixed' | undefined, base: number): number {
+    const numValue = toNum(value);
+    return type === 'fixed' ? numValue : base * numValue / 100;
+  }
+
+  const feeLegalDd = calcFee(model.feeLegalDdPercent, model.feeLegalDdType, offerPrice);
+  const feeAccountingDd = calcFee(model.feeAccountingDdPercent, model.feeAccountingDdType, offerPrice);
+  const feeBroker = calcFee(model.feeBrokerPercent, model.feeBrokerType, offerPrice);
+  const feeLoanArrangement = calcFee(model.feeLoanArrangementPercent, model.feeLoanArrangementType, offerPrice);
+  const feeDealMaker = calcFee(model.feeDealMakerPercent, model.feeDealMakerType, offerPrice);
 
   const customFeeAmounts: Array<{ label: string; amount: number }> = [];
   if (model.customFees && Array.isArray(model.customFees)) {

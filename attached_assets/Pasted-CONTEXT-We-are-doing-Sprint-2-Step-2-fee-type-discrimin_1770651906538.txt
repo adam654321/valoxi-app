@@ -1,0 +1,44 @@
+CONTEXT: We are doing Sprint 2, Step 2 — fee type discriminators. This is part (b): updating the calculator.
+
+CURRENT STATE: In shared/calculators/deal-model.calc.ts, the DealModelInput interface has 5 fee percent fields and the calculateFees function always calculates offerPrice * percent / 100. We've just added fee type columns to the DB schema.
+
+TASK: Two changes in shared/calculators/deal-model.calc.ts:
+
+CHANGE 1 — Update the DealModelInput interface. Add 5 fee type fields after the existing fee percent fields:
+
+  feeLegalDdType?: 'percent' | 'fixed';
+  feeAccountingDdType?: 'percent' | 'fixed';
+  feeBrokerType?: 'percent' | 'fixed';
+  feeLoanArrangementType?: 'percent' | 'fixed';
+  feeDealMakerType?: 'percent' | 'fixed';
+
+These are optional with no default in the interface — the calculator function will default to 'percent' if not provided, maintaining backward compatibility.
+
+CHANGE 2 — Update the calculateFees function. For each of the 5 standard fees, check the type:
+- If type is 'fixed', use the value directly as the fee amount (it's a pound amount, not a percentage)
+- If type is 'percent' or undefined, calculate as offerPrice * value / 100 (current behaviour)
+
+Create a small helper inside the function to avoid repetition:
+
+  function calcFee(value: string | number, type: 'percent' | 'fixed' | undefined, base: number): number {
+    const numValue = toNum(value);
+    return type === 'fixed' ? numValue : base * numValue / 100;
+  }
+
+Then replace the 5 individual calculations:
+
+  const feeLegalDd = calcFee(model.feeLegalDdPercent, model.feeLegalDdType, offerPrice);
+  const feeAccountingDd = calcFee(model.feeAccountingDdPercent, model.feeAccountingDdType, offerPrice);
+  const feeBroker = calcFee(model.feeBrokerPercent, model.feeBrokerType, offerPrice);
+  const feeLoanArrangement = calcFee(model.feeLoanArrangementPercent, model.feeLoanArrangementType, offerPrice);
+  const feeDealMaker = calcFee(model.feeDealMakerPercent, model.feeDealMakerType, offerPrice);
+
+IMPORTANT:
+- Do not change the CalculationResult interface — the output fields stay the same
+- Do not change calculateFundingStack, calculateOfferPrice, or any other function
+- The calcFee helper should be a local function inside calculateFees, not exported
+- toNum() already exists in the file — use it, don't recreate it
+- After making the changes, show me:
+  (a) The updated DealModelInput interface (just the fee-related fields)
+  (b) The full updated calculateFees function
+  (c) Confirm no other functions were modified
