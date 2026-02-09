@@ -1,0 +1,106 @@
+CONTEXT: All three templates are converted with {{placeholder}} syntax. Now we need to wire the NDA into the portal creation flow. When a portal access token is created (portal.service.ts createToken), an NDA should be automatically generated and attached to that portal.
+
+Currently in portal.service.ts createToken():
+1. Deactivates existing tokens
+2. Generates UUID access token
+3. Creates token record
+4. Sets up chase-up schedule
+5. Auto-moves stage to "Documents Requested"
+6. Sends portal access email
+
+We need to add step 3.5: Create and generate the NDA document, linked to the portal token.
+
+TASK: 
+
+STEP 1 — Add an NDA auto-creation method to deal-document.service.ts:
+
+Add this method to the DealDocumentService class:
+```typescript
+  /**
+   * Auto-create and generate an NDA for a newly created portal
+   */
+  async createNdaForPortal(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    portalTokenId: number;
+    createdBy: number;
+  }) {
+    // Check if there's already an active NDA for this portal
+    const existing = await this.getLatestActiveDocument(params.targetCompanyId, 'nda');
+    if (existing && existing.portalTokenId === params.portalTokenId) {
+      return existing; // Don't create duplicate
+    }
+    
+    // Get the system NDA template
+    const template = await dealDocumentTemplateService.getSystemTemplate('nda');
+    
+    // Create the document record
+    const doc = await this.createDocument({
+      targetCompanyId: params.targetCompanyId,
+      userCompanyId: params.userCompanyId,
+      documentType: 'nda',
+      createdBy: params.createdBy,
+      portalTokenId: params.portalTokenId,
+      templateId: template?.id,
+    });
+    
+    // Build data context and generate the file
+    try {
+      const context = await dealDocumentTemplateService.buildDataContext(
+        params.targetCompanyId,
+        params.userCompanyId,
+        params.createdBy
+      );
+      
+      await this.generateDocumentFile(doc.id, context);
+      
+      // Auto-send (NDA is sent immediately with the portal)
+      await this.sendDocument(doc.id);
+      
+      console.log(`[DEAL_DOCS] NDA created and sent for portal ${params.portalTokenId} (doc id: ${doc.id})`);
+      return doc;
+    } catch (err) {
+      console.error(`[DEAL_DOCS] Failed to generate NDA for portal ${params.portalTokenId}:`, err);
+      // Don't fail the portal creation — the NDA can be regenerated
+      return doc;
+    }
+  }
+```
+
+STEP 2 — Hook into portal.service.ts createToken():
+
+In portal.service.ts, after the token record is created (after the insert/returning), add the NDA auto-creation call. Do this BEFORE the email is sent so the NDA exists when the seller clicks the link.
+
+Add at the top of portal.service.ts:
+```typescript
+import { dealDocumentService } from './deal-document.service';
+```
+
+Then in the createToken method, after the token is created and before the email send, add:
+```typescript
+    // Auto-create NDA for the portal
+    try {
+      await dealDocumentService.createNdaForPortal({
+        targetCompanyId: params.targetCompanyId,
+        userCompanyId: params.userCompanyId,
+        portalTokenId: token.id,
+        createdBy: params.createdBy,
+      });
+    } catch (err) {
+      console.error('[PORTAL] Failed to auto-create NDA:', err);
+      // Don't fail portal creation
+    }
+```
+
+IMPORTANT:
+- Find the exact location in createToken() where the token has just been created (after the db.insert().returning())
+- The NDA creation is wrapped in try/catch — portal creation should NEVER fail because the NDA failed
+- The NDA is created → generated → sent all in one go (it's ready for the seller immediately)
+- Look at the actual portal.service.ts code to find the right insertion point. Show me the before/after of the relevant section.
+
+Show me:
+(a) The new createNdaForPortal method added to deal-document.service.ts
+(b) The exact location in portal.service.ts where the NDA hook was added (show 10 lines before and after)
+(c) The import added to portal.service.ts
+(d) Any LSP errors
+(e) Confirm the app still runs

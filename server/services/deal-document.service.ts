@@ -259,6 +259,47 @@ export class DealDocumentService {
     return history;
   }
 
+  async createNdaForPortal(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    portalTokenId: number;
+    createdBy: number;
+  }) {
+    const existing = await this.getLatestActiveDocument(params.targetCompanyId, 'nda');
+    if (existing && existing.portalTokenId === params.portalTokenId) {
+      return existing;
+    }
+
+    const template = await dealDocumentTemplateService.getSystemTemplate('nda');
+
+    const doc = await this.createDocument({
+      targetCompanyId: params.targetCompanyId,
+      userCompanyId: params.userCompanyId,
+      documentType: 'nda',
+      createdBy: params.createdBy,
+      portalTokenId: params.portalTokenId,
+      templateId: template?.id,
+    });
+
+    try {
+      const context = await dealDocumentTemplateService.buildDataContext(
+        params.targetCompanyId,
+        params.userCompanyId,
+        params.createdBy
+      );
+
+      await this.generateDocumentFile(doc.id, context);
+
+      await this.sendDocument(doc.id);
+
+      console.log(`[DEAL_DOCS] NDA created and sent for portal ${params.portalTokenId} (doc id: ${doc.id})`);
+      return doc;
+    } catch (err) {
+      console.error(`[DEAL_DOCS] Failed to generate NDA for portal ${params.portalTokenId}:`, err);
+      return doc;
+    }
+  }
+
   async getDocumentsForPortal(portalTokenId: number) {
     return db.select().from(dealDocuments)
       .where(

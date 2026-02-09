@@ -4,6 +4,7 @@ import { targetCompaniesRepository } from '../repositories/target-companies.repo
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { emailApiService } from './email.service';
 import { chaseUpService } from './chase-up.service';
+import { dealDocumentService } from './deal-document.service';
 import type { PortalAccessToken, ExternalDocumentSubmission, InsertPortalAccessToken, InsertExternalDocumentSubmission } from '@shared/schema';
 
 export class PortalService {
@@ -51,6 +52,18 @@ export class PortalService {
     targetCompaniesRepository.update(data.targetCompanyId, { stage: 'Documents Requested' }, data.userCompanyId).catch(err => {
       console.error(`[PORTAL] Failed to update company stage for token ${token.id}:`, err.message);
     });
+    
+    // Auto-create NDA for the portal (before email so it's ready when seller clicks)
+    try {
+      await dealDocumentService.createNdaForPortal({
+        targetCompanyId: data.targetCompanyId,
+        userCompanyId: data.userCompanyId,
+        portalTokenId: token.id,
+        createdBy: data.createdBy,
+      });
+    } catch (err: any) {
+      console.error('[PORTAL] Failed to auto-create NDA:', err.message);
+    }
     
     // Send portal access email asynchronously (don't block token creation)
     if (baseUrl) {
