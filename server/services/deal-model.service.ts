@@ -1,4 +1,4 @@
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { db } from '../db';
 import {
   targetCompanies,
@@ -22,7 +22,12 @@ async function verifyOwnership(targetCompanyId: number, userCompanyId: number): 
   const [company] = await db
     .select({ id: targetCompanies.id })
     .from(targetCompanies)
-    .where(eq(targetCompanies.id, targetCompanyId));
+    .where(
+      and(
+        eq(targetCompanies.id, targetCompanyId),
+        eq(targetCompanies.userCompanyId, userCompanyId)
+      )
+    );
 
   if (!company) {
     throw new NotFoundError('Target company not found');

@@ -1,0 +1,50 @@
+Good. Now the big one for this sprint — the data isolation fix.
+
+Sprint 1, Step 3: Fix verifyOwnership to check userCompanyId
+Paste this into Replit:
+
+CONTEXT: We are doing Sprint 1 of a security hardening plan. This is Step 3 — fixing a critical data isolation vulnerability.
+
+CURRENT STATE: In server/services/deal-model.service.ts, the verifyOwnership function (lines 21-30) accepts both targetCompanyId and userCompanyId as parameters, but only checks that the target company exists. It never verifies that the target company belongs to the requesting user's company. This means any authenticated user can access any deal model by guessing or iterating IDs.
+
+The current implementation is:
+
+async function verifyOwnership(targetCompanyId: number, userCompanyId: number): Promise<void> {
+  const [company] = await db
+    .select({ id: targetCompanies.id })
+    .from(targetCompanies)
+    .where(eq(targetCompanies.id, targetCompanyId));
+  if (!company) {
+    throw new NotFoundError('Target company not found');
+  }
+}
+
+TASK: Fix verifyOwnership so it checks BOTH that the target company exists AND that it belongs to the requesting user's company.
+
+The fix should:
+1. Add userCompanyId to the WHERE clause using and() from drizzle-orm
+2. The query should filter on both targetCompanies.id === targetCompanyId AND targetCompanies.userCompanyId === userCompanyId
+3. If no result is found, throw NotFoundError (this is correct — we don't want to reveal whether the company exists to an unauthorised user, just say not found)
+
+The fixed implementation should look like:
+
+async function verifyOwnership(targetCompanyId: number, userCompanyId: number): Promise<void> {
+  const [company] = await db
+    .select({ id: targetCompanies.id })
+    .from(targetCompanies)
+    .where(
+      and(
+        eq(targetCompanies.id, targetCompanyId),
+        eq(targetCompanies.userCompanyId, userCompanyId)
+      )
+    );
+  if (!company) {
+    throw new NotFoundError('Target company not found');
+  }
+}
+
+IMPORTANT:
+- Check that 'and' is already imported from 'drizzle-orm' at the top of the file. If it isn't, add it to the existing drizzle-orm import.
+- Check that targetCompanies has a userCompanyId column by looking at the schema import or the shared/schema files. Report what the actual column name is — it might be userCompanyId or companyId or something else. Use the correct column name.
+- Only modify the verifyOwnership function and the import if needed
+- After making the change, show me: (a) the full updated verifyOwnership function, (b) confirmation of what column name you used and why, (c) whether the import was modified
