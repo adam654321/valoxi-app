@@ -19,10 +19,6 @@ import {
 import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
 import {
   Scale,
-  TrendingUp,
-  ArrowDown,
-  ArrowUp,
-  Minus,
   Check,
   Loader2,
   Info,
@@ -107,10 +103,32 @@ export default function ValuationSection({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<Partial<Record<string, any>> | null>(null);
+  const isEditingRef = useRef(false);
+  const prevModelIdRef = useRef(model.id);
 
   useEffect(() => {
-    setLocal(initLocal(model));
+    if (model.id !== prevModelIdRef.current) {
+      prevModelIdRef.current = model.id;
+      setLocal(initLocal(model));
+      return;
+    }
+    if (!isEditingRef.current) {
+      setLocal(initLocal(model));
+    }
   }, [model.id, model.updatedAt]);
+
+  const handleFocus = useCallback(() => {
+    isEditingRef.current = true;
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    isEditingRef.current = false;
+    setTimeout(() => {
+      if (!isEditingRef.current) {
+        setLocal(initLocal(model));
+      }
+    }, 100);
+  }, [model]);
 
   const adjustmentInputs: AdjustmentInput[] = useMemo(() =>
     (model.adjustments || []).map(a => ({
@@ -151,7 +169,9 @@ export default function ValuationSection({
     onSuccess: () => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 1500);
-      onDataChange();
+      if (!isEditingRef.current) {
+        onDataChange();
+      }
     },
     onError: (error: Error) => {
       setSaveStatus('idle');
@@ -231,11 +251,11 @@ export default function ValuationSection({
             What's It Worth?
           </CardTitle>
           {saveStatus !== 'idle' && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-sm text-muted-foreground">
               {saveStatus === 'saving' ? (
-                <><Loader2 className="h-3 w-3 animate-spin" /> Saving...</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</>
               ) : (
-                <><Check className="h-3 w-3 text-green-600" /> Saved</>
+                <><Check className="h-3.5 w-3.5 text-green-600" /> Saved</>
               )}
             </span>
           )}
@@ -249,15 +269,15 @@ export default function ValuationSection({
               <p className="text-sm text-muted-foreground">Average Adjusted EBITDA</p>
               <p className="text-2xl font-bold">{formatCurrency(avgEbitda)}</p>
             </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">Averaging period</p>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm text-muted-foreground">Averaging period</p>
               <div className="flex border rounded-md overflow-hidden">
                 {[2, 3, 4, 5].map(n => (
                   <button
                     key={n}
                     onClick={() => updateLocal('averagingYears', n, 'averagingYears')}
                     disabled={isLocked}
-                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    className={`px-3.5 py-2 text-sm font-medium transition-colors ${
                       local.averagingYears === n
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-background hover:bg-muted text-foreground'
@@ -269,7 +289,7 @@ export default function ValuationSection({
               </div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Based on {acceptedCount} accepted adjustment{acceptedCount !== 1 ? 's' : ''}
           </p>
         </div>
@@ -281,7 +301,7 @@ export default function ValuationSection({
 
           {hasRange && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Sector range (from expert analysis)</p>
+              <p className="text-sm text-muted-foreground">Sector range (from expert analysis)</p>
               <div className="relative h-8">
                 <div className="absolute top-3 left-0 right-0 h-2 bg-muted rounded-full" />
                 <div
@@ -292,13 +312,13 @@ export default function ValuationSection({
                   }}
                 />
                 <div
-                  className="absolute top-1.5 text-xs font-medium text-muted-foreground"
+                  className="absolute top-1.5 text-sm font-medium text-muted-foreground"
                   style={{ left: `${Math.max(0, ((multipleLow! - 1) / 9) * 100)}%`, transform: 'translateX(-50%)' }}
                 >
                   {multipleLow!.toFixed(1)}x
                 </div>
                 <div
-                  className="absolute top-1.5 text-xs font-medium text-muted-foreground"
+                  className="absolute top-1.5 text-sm font-medium text-muted-foreground"
                   style={{ left: `${Math.min(100, ((multipleHigh! - 1) / 9) * 100)}%`, transform: 'translateX(-50%)' }}
                 >
                   {multipleHigh!.toFixed(1)}x
@@ -317,10 +337,10 @@ export default function ValuationSection({
                 })()}
               </div>
               {local.ebitdaMultiple < multipleLow! && (
-                <p className="text-xs text-amber-600">Below expert's suggested range</p>
+                <p className="text-sm text-amber-600">Below expert's suggested range</p>
               )}
               {local.ebitdaMultiple > multipleHigh! && (
-                <p className="text-xs text-amber-600">Above expert's suggested range</p>
+                <p className="text-sm text-amber-600">Above expert's suggested range</p>
               )}
             </div>
           )}
@@ -336,18 +356,20 @@ export default function ValuationSection({
                 disabled={isLocked}
                 className="py-2"
               />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <div className="flex justify-between text-sm text-muted-foreground mt-1">
                 <span>1.0x</span>
                 <span>10.0x</span>
               </div>
             </div>
-            <div className="w-20">
+            <div className="w-24">
               <Input
                 type="number"
                 step="0.1"
                 min="1"
                 max="10"
                 value={local.ebitdaMultiple}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 onChange={e => {
                   const v = parseFloat(e.target.value);
                   if (!isNaN(v) && v >= 0.1 && v <= 20) {
@@ -355,14 +377,14 @@ export default function ValuationSection({
                   }
                 }}
                 disabled={isLocked}
-                className="text-center font-semibold"
+                className="text-center text-base font-semibold"
               />
             </div>
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-3">
+          <div className="bg-muted/50 rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Enterprise Value</p>
-            <p className="text-lg font-bold">
+            <p className="text-xl font-bold">
               EV = {formatCurrency(avgEbitda)} × {local.ebitdaMultiple.toFixed(1)}x = {formatCurrency(ev)}
             </p>
           </div>
@@ -375,8 +397,8 @@ export default function ValuationSection({
 
           <div className="border rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b">
-              <span className="font-semibold">Enterprise Value</span>
-              <span className="font-bold text-lg">{formatCurrency(ev)}</span>
+              <span className="text-base font-semibold">Enterprise Value</span>
+              <span className="font-bold text-xl">{formatCurrency(ev)}</span>
             </div>
 
             {bridgeItems.map((item) => {
@@ -389,38 +411,40 @@ export default function ValuationSection({
               return (
                 <div
                   key={item.field}
-                  className={`flex items-center gap-3 px-4 py-2.5 border-b ${
+                  className={`flex items-center gap-3 px-4 py-3 border-b ${
                     isPlus ? 'border-l-4 border-l-green-400' : 'border-l-4 border-l-red-400'
                   }`}
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className={`text-xs font-bold ${isPlus ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`text-sm font-bold ${isPlus ? 'text-green-600' : 'text-red-600'}`}>
                       {isPlus ? '+' : '−'}
                     </span>
-                    <span className="text-sm truncate">{item.label}</span>
+                    <span className="text-sm font-medium truncate">{item.label}</span>
                     {hasExpert && !diffFromExpert && (
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
                         From expert
                       </Badge>
                     )}
                     {hasExpert && diffFromExpert && (
-                      <span className="text-[10px] text-muted-foreground shrink-0" title={`Expert: ${formatCurrency(expertVal)}`}>
+                      <span className="text-xs text-muted-foreground shrink-0" title={`Expert: ${formatCurrency(expertVal)}`}>
                         (expert: {formatCurrency(expertVal)})
                       </span>
                     )}
                   </div>
-                  <div className="w-32 shrink-0">
+                  <div className="w-36 shrink-0">
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
                       <Input
                         type="number"
                         value={val || ''}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
                         onChange={e => {
                           const v = parseFloat(e.target.value);
                           updateLocal(item.field, isNaN(v) ? 0 : v, item.dbField);
                         }}
                         disabled={isLocked}
-                        className="pl-6 text-right text-sm h-8"
+                        className="pl-7 text-right text-base h-9"
                         placeholder="0"
                       />
                     </div>
@@ -430,8 +454,8 @@ export default function ValuationSection({
             })}
 
             <div className="flex items-center justify-between px-4 py-3 bg-primary/5">
-              <span className="font-semibold">Offer Price</span>
-              <span className="font-bold text-lg">{formatCurrency(offerPrice)}</span>
+              <span className="text-base font-semibold">Offer Price</span>
+              <span className="font-bold text-xl">{formatCurrency(offerPrice)}</span>
             </div>
           </div>
         </div>
@@ -444,41 +468,41 @@ export default function ValuationSection({
                 <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                   Indicative Consideration Structure
                 </h4>
-                <Badge variant="outline" className="text-[10px] h-4">From Deal Structure Expert</Badge>
+                <Badge variant="outline" className="text-xs h-5">From Deal Structure Expert</Badge>
               </div>
 
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
+              <div className="bg-muted/30 rounded-lg p-4 space-y-2.5">
                 {upfrontCash > 0 && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Upfront Cash</span>
                     <span className="font-medium">{formatCurrency(upfrontCash)}</span>
                   </div>
                 )}
                 {deferredAmount > 0 && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Deferred Consideration</span>
                     <span className="font-medium">{formatCurrency(deferredAmount)}</span>
                   </div>
                 )}
                 {earnoutMaximum > 0 && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Earnout (maximum)</span>
                     <span className="font-medium">{formatCurrency(earnoutMaximum)}</span>
                   </div>
                 )}
                 <Separator />
-                <div className="flex justify-between font-semibold">
+                <div className="flex justify-between text-base font-semibold">
                   <span>Total</span>
                   <span>{formatCurrency(considerationTotal)}</span>
                 </div>
                 {Math.abs(considerationTotal - offerPrice) > 1 && offerPrice > 0 && (
-                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
-                    <Info className="h-3 w-3" />
+                  <p className="text-sm text-amber-600 flex items-center gap-1 mt-1">
+                    <Info className="h-3.5 w-3.5" />
                     Total differs from offer price by {formatCurrency(Math.abs(considerationTotal - offerPrice))}
                   </p>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-sm text-muted-foreground italic">
                 This can be refined in the deal structure section.
               </p>
             </div>
