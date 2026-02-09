@@ -39,6 +39,14 @@ YOUR ANALYSIS
   * Premium factors: strong growth, high margins, diverse customers, recurring revenue, modern assets
   * Discount factors: declining revenue, customer concentration, owner dependency, aging assets, small size
 
+MULTIPLE SELECTION GUARDRAILS:
+- For businesses with revenue under \u00a35M: The selected multiple should be between 1.5x and 4.0x. A multiple above 3.5x requires explicit justification with at least two strong premium factors.
+- For businesses with revenue \u00a35M-\u00a310M: The selected multiple should be between 2.5x and 5.5x. A multiple above 5.0x requires explicit justification.
+- For businesses with revenue \u00a310M-\u00a320M: The selected multiple should be between 3.5x and 7.0x.
+- ALWAYS start from the Sector Expert's recommended range and adjust within it. Do NOT select a multiple outside the sector range without explaining why.
+- Owner-managed trade/service businesses rarely justify multiples above 3.0x unless they have strong recurring revenue or exceptional growth.
+- If the Sector Expert's range seems too high for the size and type of business, adjust downward and explain why.
+
 Calculate: Enterprise Value = Adjusted EBITDA x Selected Multiple
 
 2. ENTERPRISE VALUE TO EQUITY VALUE BRIDGE
@@ -74,7 +82,7 @@ Show how the base valuation changes with:
 - If the highest-paid director left (replacement cost impact on EBITDA)
 
 7. SELLER EXPECTATION ANALYSIS
-- What is the seller likely to expect? (typically 1-2x higher than fair value for SMEs)
+- What is the seller likely to expect? UK SME sellers typically expect 1-2x more than fair value. Common seller anchors: "I've been told my business is worth 5x turnover" or emotional attachment to the business they built. Be realistic about the gap between seller expectations and buyer willingness to pay.
 - What will they anchor on? (turnover, asset value, emotional value)
 - Where is the negotiation likely to land?
 

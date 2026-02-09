@@ -33,11 +33,47 @@ Based on the company's revenue and headcount:
 - How does this company compare? (use Financial Expert data if available in context)
 
 3. COMPARABLE TRANSACTION MULTIPLES
-Provide typical M&A multiples for this sector:
-- Revenue multiple range (EV/Revenue)
-- EBITDA multiple range (EV/EBITDA)
-- Note: UK SME transactions typically trade at lower multiples than public companies
-- Typical ranges for UK SMEs in this sector with revenue ${latestRevenue ? 'around \u00a3' + latestRevenue.toLocaleString() : 'in this range'}
+Provide typical M&A multiples for this sector.
+
+CRITICAL: You MUST calibrate multiples to UK SME private transactions, NOT public company or US data. UK SME deal multiples are substantially lower than public markets. Use this calibration framework:
+
+UK SME EBITDA MULTIPLE BENCHMARKS (private transactions):
+- Revenue under \u00a32M, trade/service businesses: 1.5x - 3.0x EBITDA
+- Revenue \u00a32M-\u00a35M, trade/service businesses: 2.0x - 3.5x EBITDA
+- Revenue \u00a35M-\u00a310M, established businesses: 2.5x - 4.5x EBITDA
+- Revenue \u00a310M-\u00a320M, strong businesses: 3.5x - 6.0x EBITDA
+- Revenue \u00a320M+, scalable platforms: 5.0x - 8.0x+ EBITDA
+
+FACTORS THAT JUSTIFY THE HIGHER END OF A RANGE (must have 2+ to justify upper quartile):
+- Proven recurring/contracted revenue (>60% of total)
+- EBITDA margins above 20%
+- Low owner dependency (business runs without founder)
+- Diversified customer base (no customer >15% of revenue)
+- Proprietary technology, IP, or unique market position
+- Multi-year consistent growth trend (>10% CAGR)
+
+FACTORS THAT PUSH TOWARD THE LOWER END:
+- Labour-dependent / trade business model
+- Owner-managed with high personal goodwill
+- Customer concentration (any customer >20% of revenue)
+- Flat or declining revenue
+- Low barriers to entry in the sector
+- Project-based (not recurring) revenue
+- EBITDA margins below 10%
+- Small team (<20 employees)
+
+A typical UK SME trade business (plumbing, electrical, construction, installations, etc.) with \u00a31M-\u00a35M revenue, owner-managed, project-based work, should be valued at 2.0x-3.0x EBITDA. Multiples above 4.0x for businesses under \u00a35M revenue require exceptional characteristics that MUST be explicitly justified.
+
+Revenue multiples for UK SMEs:
+- Most UK SMEs: 0.3x - 1.0x revenue
+- High-growth SaaS/tech: 1.0x - 3.0x revenue
+- Revenue multiples are a cross-check only, not a primary method for SMEs
+
+Provide:
+- EV/EBITDA range: { low, mid, high } \u2014 anchored to the benchmarks above
+- EV/Revenue range: { low, high }
+- List the specific premium and discount factors you identified for THIS company
+- State your data confidence: this is based on training data, not verified transaction databases
 
 4. GROWTH OPPORTUNITIES
 - What could a buyer do to grow this business?
