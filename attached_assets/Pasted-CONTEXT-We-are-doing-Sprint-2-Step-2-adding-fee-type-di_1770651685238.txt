@@ -1,0 +1,30 @@
+CONTEXT: We are doing Sprint 2, Step 2 — adding fee type discriminators. This is part (a): the schema change.
+
+APPROACH: Add 5 new type columns to the dealModels table, all defaulting to 'percent' for backward compatibility. New model creation in the mapping service will set legal DD and accounting DD to 'fixed' with sensible provisional amounts (editable by the user later).
+
+TASK: In shared/schema/deal-models.ts, make these two additions:
+
+ADDITION 1 — Add 5 fee type columns to the dealModels table, immediately after the existing fee percent columns (after feeDealMakerPercent):
+
+  feeLegalDdType: varchar("fee_legal_dd_type", { length: 20 }).default('percent'),
+  feeAccountingDdType: varchar("fee_accounting_dd_type", { length: 20 }).default('percent'),
+  feeBrokerType: varchar("fee_broker_type", { length: 20 }).default('percent'),
+  feeLoanArrangementType: varchar("fee_loan_arrangement_type", { length: 20 }).default('percent'),
+  feeDealMakerType: varchar("fee_deal_maker_type", { length: 20 }).default('percent'),
+
+These are varchar not enum. Valid values are 'percent' or 'fixed', enforced at the application layer. All default to 'percent' so existing deal models continue to work identically.
+
+ADDITION 2 — Add arrangementFeePercent to the dealModelFundingLines table, after the interestRate column:
+
+  arrangementFeePercent: decimal("arrangement_fee_percent"),
+
+This was missing — the calculator expects it but the DB column didn't exist.
+
+IMPORTANT:
+- Only add new columns — do not modify or remove any existing columns
+- Place the fee type columns immediately after the existing fee percent columns for readability
+- Place arrangementFeePercent after interestRate in the funding lines table
+- After making the changes, show me:
+  (a) The full fee-related section of the dealModels table (all fee columns, both percent and type)
+  (b) The updated dealModelFundingLines columns from interestRate through arrangementFeePercent
+  (c) Confirm no other changes were made
