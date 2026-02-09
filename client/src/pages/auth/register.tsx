@@ -15,9 +15,9 @@ const registerSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   companyName: z.string().min(1, "Company name is required"),
   email: z.string().email("Invalid email format"),
-  passwordHash: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.passwordHash === data.confirmPassword, {
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8),
+}).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
@@ -35,7 +35,7 @@ export default function Register() {
       lastName: "",
       companyName: "",
       email: "",
-      passwordHash: "",
+      password: "",
       confirmPassword: "",
     },
   });
@@ -153,7 +153,7 @@ export default function Register() {
 
                   <FormField
                     control={form.control}
-                    name="passwordHash"
+                    name="password"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-textPrimary">Password</FormLabel>

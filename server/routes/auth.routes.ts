@@ -9,9 +9,9 @@ const router = Router();
 
 const registerSchema = insertUserSchema.extend({
   companyName: z.string().min(1, 'Company name is required'),
-  passwordHash: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(8),
-}).refine((data) => data.passwordHash === data.confirmPassword, {
+}).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
 });
@@ -27,7 +27,7 @@ router.post('/register', async (req: Request, res: Response) => {
     
     const result = await authService.register({
       email: validatedData.email,
-      password: validatedData.passwordHash,
+      password: validatedData.password,
       firstName: validatedData.firstName,
       lastName: validatedData.lastName,
       companyName: validatedData.companyName,
