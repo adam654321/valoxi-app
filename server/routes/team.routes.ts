@@ -6,6 +6,27 @@ import { UnauthorizedError } from '../utils/errors';
 import { usersRepository } from '../repositories/users.repository';
 
 const router = Router();
+const publicRouter = Router();
+
+publicRouter.get('/invitation/:token', async (req: Request, res: Response) => {
+  try {
+    const invitation = await teamService.getInvitationByToken(req.params.token);
+    sendSuccess(res, { email: invitation.email, invitedRole: invitation.invitedRole, companyName: invitation.companyName, inviterName: invitation.inviterName, invitationMessage: invitation.invitationMessage, invitationStatus: invitation.invitationStatus });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+publicRouter.post('/invitation/:token/accept', async (req: Request, res: Response) => {
+  try {
+    const schema = z.object({ firstName: z.string().min(1), lastName: z.string().min(1), password: z.string().min(8) });
+    const { firstName, lastName, password } = schema.parse(req.body);
+    const user = await teamService.acceptInvitation(req.params.token, firstName, lastName, password);
+    sendSuccess(res, { message: 'Invitation accepted successfully', user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
 
 router.post('/invite', async (req: Request, res: Response) => {
   try {
@@ -18,26 +39,6 @@ router.post('/invite', async (req: Request, res: Response) => {
     const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, usersRepository.getUserWithPermissions.bind(usersRepository), baseUrl);
     const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
     sendCreated(res, { message: 'Invitation sent successfully', invitation: { id: invitation.id, email: invitation.email, role: invitation.invitedRole, status: invitation.invitationStatus, sentAt: invitation.sentAt, inviteUrl } });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-router.get('/invitation/:token', async (req: Request, res: Response) => {
-  try {
-    const invitation = await teamService.getInvitationByToken(req.params.token);
-    sendSuccess(res, { email: invitation.email, invitedRole: invitation.invitedRole, companyName: invitation.companyName, inviterName: invitation.inviterName, invitationMessage: invitation.invitationMessage, invitationStatus: invitation.invitationStatus });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-router.post('/invitation/:token/accept', async (req: Request, res: Response) => {
-  try {
-    const schema = z.object({ firstName: z.string().min(1), lastName: z.string().min(1), password: z.string().min(8) });
-    const { firstName, lastName, password } = schema.parse(req.body);
-    const user = await teamService.acceptInvitation(req.params.token, firstName, lastName, password);
-    sendSuccess(res, { message: 'Invitation accepted successfully', user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
   } catch (error) {
     sendError(res, error);
   }
@@ -113,4 +114,5 @@ router.get('/roles', async (req: Request, res: Response) => {
   }
 });
 
+export { publicRouter as publicTeamRoutes };
 export default router;

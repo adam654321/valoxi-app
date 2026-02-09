@@ -9,7 +9,7 @@ import targetCompaniesRoutes from './target-companies.routes';
 import authRoutes from './auth.routes';
 import notesRoutes from './notes.routes';
 import dashboardRoutes from './dashboard.routes';
-import teamRoutes from './team.routes';
+import teamRoutes, { publicTeamRoutes } from './team.routes';
 import assignmentsRoutes from './assignments.routes';
 import reportsRoutes from './reports.routes';
 import portalRoutes from './portal.routes';
@@ -38,7 +38,8 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/auth', authLimiter, authRoutes);
   app.use('/api/v2/notes', isAuthenticated, notesRoutes);
   app.use('/api/v2/dashboard', isAuthenticated, dashboardRoutes);
-  app.use('/api/v2/team', teamRoutes);
+  app.use('/api/v2/team', publicTeamRoutes);
+  app.use('/api/v2/team', isAuthenticated, teamRoutes);
   app.use('/api/v2/deals', isAuthenticated, assignmentsRoutes);
   app.use('/api/v2/reports', isAuthenticated, reportsRoutes);
   app.use('/api/v2/portal', portalLimiter, portalRoutes);
