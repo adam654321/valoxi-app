@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { geminiClient } from "./gemini-client";
 
 export interface ExpertAnalysisUsage {
   promptTokenCount?: number;
@@ -12,160 +12,49 @@ export interface ExpertAnalysisResult {
   usage: ExpertAnalysisUsage;
 }
 
-function cleanJsonResponse(text: string): string {
-  let cleaned = text.trim();
-
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "");
-    cleaned = cleaned.replace(/\n?\s*```\s*$/, "");
-  }
-
-  const firstBrace = cleaned.indexOf("{");
-  const lastBrace = cleaned.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-  }
-
-  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
-
-  let sanitized = '';
-  let inStr = false;
-  let esc = false;
-  for (let i = 0; i < cleaned.length; i++) {
-    const ch = cleaned[i];
-    if (esc) { sanitized += ch; esc = false; continue; }
-    if (ch === '\\' && inStr) { sanitized += ch; esc = true; continue; }
-    if (ch === '"') { inStr = !inStr; sanitized += ch; continue; }
-    if (inStr) {
-      if (ch === '\n') { sanitized += '\\n'; continue; }
-      if (ch === '\r') { sanitized += '\\r'; continue; }
-      if (ch === '\t') { sanitized += '\\t'; continue; }
-    }
-    sanitized += ch;
-  }
-  cleaned = sanitized;
-
-  cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-
-  cleaned = cleaned.replace(/(["\d\]}\w])\s*\n\s*"/g, '$1,\n"');
-
-  return cleaned.trim();
-}
-
-function repairTruncatedJson(text: string): string {
-  let repaired = text.trim();
-
-  let openBraces = 0;
-  let openBrackets = 0;
-  let inString = false;
-  let escaped = false;
-
-  for (let i = 0; i < repaired.length; i++) {
-    const ch = repaired[i];
-    if (escaped) { escaped = false; continue; }
-    if (ch === '\\') { escaped = true; continue; }
-    if (ch === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (ch === '{') openBraces++;
-    if (ch === '}') openBraces--;
-    if (ch === '[') openBrackets++;
-    if (ch === ']') openBrackets--;
-  }
-
-  if (inString) repaired += '"';
-
-  const lastValid = repaired.search(/[,:\s{[\]}"0-9a-zA-Z]\s*$/);
-  if (lastValid !== -1) {
-    const trailing = repaired.substring(lastValid + 1).trim();
-    if (trailing === '' || trailing === ',') {
-      repaired = repaired.substring(0, lastValid + 1);
-    }
-  }
-
-  repaired = repaired.replace(/,\s*$/, '');
-
-  while (openBrackets > 0) { repaired += ']'; openBrackets--; }
-  while (openBraces > 0) { repaired += '}'; openBraces--; }
-
-  return repaired;
-}
-
 export class GeminiExpertService {
-  private ai: GoogleGenAI;
-
-  constructor() {
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
-    }
-    this.ai = new GoogleGenAI({ apiKey });
-  }
-
   async generateExpertAnalysis(
     expertType: string,
     prompt: string,
-    model: string = "gemini-2.5-flash"
+    model?: string
   ): Promise<ExpertAnalysisResult> {
     const startTime = Date.now();
-    console.log(`[EXPERT:${expertType}] Starting analysis using model ${model}`);
+    console.log(`[GEMINI_EXPERT] Starting ${expertType} analysis`);
 
     try {
-      const response = await this.ai.models.generateContent({
+      const response = await geminiClient.generateContent({
+        prompt,
         model,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: {
-          temperature: 0,
-        },
+        temperature: 0,
+        responseMimeType: "application/json",
       });
 
       const processingTime = Date.now() - startTime;
-      const rawText = response.text || "";
-
-      const usage: ExpertAnalysisUsage = {
-        promptTokenCount: response.usageMetadata?.promptTokenCount ?? undefined,
-        candidatesTokenCount: response.usageMetadata?.candidatesTokenCount ?? undefined,
-        totalTokenCount: response.usageMetadata?.totalTokenCount ?? undefined,
-        thoughtsTokenCount: response.usageMetadata?.thoughtsTokenCount ?? undefined,
-      };
 
       console.log(
-        `[EXPERT:${expertType}] Response received in ${processingTime}ms, ` +
-        `length: ${rawText.length} chars, ` +
-        `tokens: prompt=${usage.promptTokenCount ?? "?"}, candidates=${usage.candidatesTokenCount ?? "?"}, total=${usage.totalTokenCount ?? "?"}`
+        `[GEMINI_EXPERT] ${expertType} response received in ${processingTime}ms, ` +
+          `length: ${response.text.length} chars` +
+          (response.usage
+            ? `, tokens: prompt=${response.usage.promptTokens}, candidates=${response.usage.candidateTokens}, total=${response.usage.totalTokens}`
+            : "")
       );
 
-      let parsedJson: Record<string, unknown>;
-
-      try {
-        parsedJson = JSON.parse(rawText);
-      } catch {
-        console.log(`[EXPERT:${expertType}] Raw JSON parse failed, attempting cleanup`);
-        const cleaned = cleanJsonResponse(rawText);
-        try {
-          parsedJson = JSON.parse(cleaned);
-          console.log(`[EXPERT:${expertType}] JSON parsed successfully after cleanup`);
-        } catch {
-          console.log(`[EXPERT:${expertType}] Cleanup parse failed, attempting truncation repair`);
-          const repaired = repairTruncatedJson(cleaned);
-          try {
-            parsedJson = JSON.parse(repaired);
-            console.log(`[EXPERT:${expertType}] JSON parsed successfully after truncation repair`);
-          } catch (repairError) {
-            console.error(
-              `[EXPERT:${expertType}] JSON parse failed even after repair. ` +
-              `First 500 chars: ${repaired.substring(0, 500)}`
-            );
-            throw new Error(
-              `Failed to parse ${expertType} expert response as JSON: ${repairError instanceof Error ? repairError.message : "Unknown parse error"}`
-            );
-          }
-        }
+      if (!response.json) {
+        throw new Error(`Failed to parse ${expertType} expert response as JSON`);
       }
 
-      return { params: parsedJson, usage };
+      const usage: ExpertAnalysisUsage = response.usage
+        ? {
+            promptTokenCount: response.usage.promptTokens,
+            candidatesTokenCount: response.usage.candidateTokens,
+            totalTokenCount: response.usage.totalTokens,
+          }
+        : {};
+
+      return { params: response.json as Record<string, unknown>, usage };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error(`[EXPERT:${expertType}] Analysis failed after ${processingTime}ms:`, error);
+      console.error(`[GEMINI_EXPERT] ${expertType} analysis failed after ${processingTime}ms:`, error);
       throw error;
     }
   }
