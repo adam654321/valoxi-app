@@ -191,7 +191,8 @@ export class DealModelMappingService {
 
     const qoeResultId = expertsByType['qoe'].id;
 
-    await this.createAdjustmentsFromQoE(dealModel.id, qoeData, qoeResultId);
+    const availableYears = await this.getAvailableFiscalYears(targetCompanyId);
+    await this.createAdjustmentsFromQoE(dealModel.id, qoeData, qoeResultId, availableYears);
 
     await this.createFundingLineSeeds(dealModel.id, targetCompanyId, latestBalance, latestAssets);
 
@@ -203,7 +204,8 @@ export class DealModelMappingService {
   private async createAdjustmentsFromQoE(
     dealModelId: number,
     qoeData: Record<string, any>,
-    qoeResultId: number
+    qoeResultId: number,
+    availableYears: string[]
   ): Promise<void> {
     let sortOrder = 0;
 
@@ -215,6 +217,14 @@ export class DealModelMappingService {
           const amount = Number(item.amount);
           if (isNaN(amount) || amount === 0) continue;
 
+          let amountsByYear: Record<string, number> | undefined = undefined;
+          if ((item.recurrence === 'one_off' || item.category === 'one_off_cost') && item.year && availableYears.length > 0) {
+            amountsByYear = {};
+            for (const y of availableYears) {
+              amountsByYear[y] = y === String(item.year) ? amount : 0;
+            }
+          }
+
           await db.insert(dealModelAdjustments).values({
             dealModelId,
             sourceExpertResultId: qoeResultId,
@@ -222,6 +232,7 @@ export class DealModelMappingService {
             category: mapCategory(item.category, 'one_off_cost'),
             description: item.item || item.description || 'Add-back',
             amount: String(amount),
+            amountsByYear: amountsByYear ?? undefined,
             sourceExpert: 'qoe',
             reasoning: item.justification || item.reasoning || undefined,
             confidence: item.confidence || undefined,
@@ -245,6 +256,14 @@ export class DealModelMappingService {
           const amount = Number(item.amount);
           if (isNaN(amount) || amount === 0) continue;
 
+          let amountsByYear: Record<string, number> | undefined = undefined;
+          if ((item.recurrence === 'one_off' || item.category === 'one_off_cost') && item.year && availableYears.length > 0) {
+            amountsByYear = {};
+            for (const y of availableYears) {
+              amountsByYear[y] = y === String(item.year) ? amount : 0;
+            }
+          }
+
           await db.insert(dealModelAdjustments).values({
             dealModelId,
             sourceExpertResultId: qoeResultId,
@@ -252,6 +271,7 @@ export class DealModelMappingService {
             category: mapCategory(item.category, 'replacement_salary'),
             description: item.item || item.description || 'Deduction',
             amount: String(amount),
+            amountsByYear: amountsByYear ?? undefined,
             sourceExpert: 'qoe',
             reasoning: item.justification || item.reasoning || undefined,
             confidence: item.confidence || undefined,
@@ -422,6 +442,23 @@ export class DealModelMappingService {
       console.log(`[DEAL_MODEL_MAPPING] Created cash_equity line`);
     } catch (err) {
       console.log(`[DEAL_MODEL_MAPPING] Warning: Error creating cash equity line`, err);
+    }
+  }
+
+  private async getAvailableFiscalYears(targetCompanyId: number): Promise<string[]> {
+    try {
+      const rows = await db
+        .select({ fiscalYear: financialPeriods.fiscalYear })
+        .from(financialPeriods)
+        .where(eq(financialPeriods.targetCompanyId, targetCompanyId))
+        .orderBy(financialPeriods.fiscalYear);
+
+      return rows
+        .map(r => r.fiscalYear?.toString())
+        .filter((y): y is string => !!y);
+    } catch (err) {
+      console.log(`[DEAL_MODEL_MAPPING] Warning: Could not fetch fiscal years`, err);
+      return [];
     }
   }
 
