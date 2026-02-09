@@ -1,4 +1,5 @@
 import { createReport } from 'docx-templates';
+import mammoth from 'mammoth';
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from '../db';
@@ -188,6 +189,23 @@ export class DealDocumentTemplateService {
         )
       );
     return template || null;
+  }
+
+  async convertToHtml(docxPath: string): Promise<string> {
+    const result = await mammoth.convertToHtml(
+      { path: docxPath },
+      {
+        styleMap: [
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "b => strong",
+          "i => em",
+          "u => u",
+        ],
+      }
+    );
+    return result.value;
   }
 
   formatCurrency(amount: number): string {

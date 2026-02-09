@@ -202,6 +202,36 @@ publicRouter.post('/:token/:documentId/respond', async (req, res) => {
   }
 });
 
+publicRouter.get('/:token/:documentId/html', async (req, res) => {
+  try {
+    const token = req.params.token;
+    const documentId = parseInt(req.params.documentId);
+
+    const { portalService } = await import('../services/portal.service');
+    const portalData = await portalService.getTokenData(token);
+    if (!portalData) {
+      return res.status(404).json({ message: 'Invalid or expired portal link' });
+    }
+
+    const doc = await dealDocumentService.getDocumentById(documentId);
+    if (!doc || doc.portalTokenId !== portalData.tokenId) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+    if (!doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not generated' });
+    }
+
+    await dealDocumentService.markViewed(documentId);
+
+    const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
+    const html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+
+    res.json({ html, documentData: doc.documentData });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 publicRouter.get('/:token/:documentId/download', async (req, res) => {
   try {
     const token = req.params.token;

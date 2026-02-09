@@ -142,7 +142,127 @@ export class DealDocumentService {
       })
       .where(eq(dealDocuments.id, params.documentId));
 
+    if (doc.documentType === 'nda' && params.responseType === 'accepted') {
+      try {
+        await this.generateSignedPdf({
+          documentId: params.documentId,
+          respondentName: params.respondentName,
+          respondentEmail: params.respondentEmail,
+          acceptedAt: new Date(),
+          ipAddress: params.respondentIp,
+        });
+      } catch (pdfErr) {
+        console.error('[DEAL_DOCS] Failed to generate signed PDF:', pdfErr);
+      }
+    }
+
     return response;
+  }
+
+  async generateSignedPdf(params: {
+    documentId: number;
+    respondentName: string;
+    respondentEmail?: string;
+    acceptedAt: Date;
+    ipAddress?: string;
+  }): Promise<string> {
+    const doc = await this.getDocumentById(params.documentId);
+    if (!doc) throw new Error('Document not found');
+    if (!doc.generatedFileUrl) throw new Error('Document not generated');
+
+    const { dealDocumentTemplateService } = await import('./deal-document-template.service');
+    const originalDocxPath = doc.generatedFileUrl;
+    const html = await dealDocumentTemplateService.convertToHtml(originalDocxPath);
+
+    const buyerName = (doc.documentData as any)?.buyerSignatoryName || 'Buyer';
+    const buyerCompany = (doc.documentData as any)?.buyerCompanyName || '';
+    const signedDate = params.acceptedAt.toLocaleDateString('en-GB', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+
+    const signedHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Times New Roman', Times, serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #333; }
+          h1 { font-size: 18px; text-align: center; margin-bottom: 20px; }
+          h2 { font-size: 16px; margin-top: 24px; }
+          h3 { font-size: 14px; margin-top: 20px; }
+          p { margin: 8px 0; font-size: 12px; }
+          .signature-block { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+          .signature-row { display: flex; justify-content: space-between; margin-top: 30px; }
+          .signature-party { width: 45%; }
+          .signature-party .sig-name { font-weight: bold; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+          .signature-party .sig-detail { font-size: 11px; color: #555; margin: 2px 0; }
+          .acceptance-stamp { margin-top: 20px; padding: 12px; background: #f0f9f0; border: 1px solid #c0e0c0; border-radius: 4px; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        ${html}
+        <div class="signature-block">
+          <h3>SIGNATURES</h3>
+          <div class="signature-row">
+            <div class="signature-party">
+              <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Disclosing Party / Buyer:</p>
+              <div class="sig-name">${buyerName}</div>
+              <div class="sig-detail">${buyerCompany}</div>
+              <div class="sig-detail">Date: ${(doc.documentData as any)?.currentDate || ''}</div>
+            </div>
+            <div class="signature-party">
+              <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Receiving Party / Seller:</p>
+              <div class="sig-name">${params.respondentName}</div>
+              <div class="sig-detail">${params.respondentEmail || ''}</div>
+              <div class="sig-detail">Date: ${signedDate}</div>
+            </div>
+          </div>
+          <div class="acceptance-stamp">
+            <strong>Electronic Acceptance Record</strong><br>
+            Accepted by: ${params.respondentName}<br>
+            Date &amp; Time: ${params.acceptedAt.toISOString()}<br>
+            IP Address: ${params.ipAddress || 'Not recorded'}<br>
+            This document was electronically accepted via the secure document portal.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const fsModule = await import('fs/promises');
+    const pathModule = await import('path');
+
+    let pdfBuffer: Buffer;
+    try {
+      const puppeteer = await import('puppeteer');
+      const browser = await puppeteer.default.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      const page = await browser.newPage();
+      await page.setContent(signedHtml, { waitUntil: 'networkidle0' });
+      pdfBuffer = Buffer.from(await page.pdf({
+        format: 'A4',
+        margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+      }));
+      await browser.close();
+    } catch (puppeteerErr) {
+      console.error('[DEAL_DOCS] Puppeteer PDF generation failed:', puppeteerErr);
+      throw new Error('PDF generation not available on this platform');
+    }
+
+    const GENERATED_DIR = pathModule.join(process.cwd(), 'data', 'generated-documents');
+    await fsModule.mkdir(GENERATED_DIR, { recursive: true });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const pdfFilename = `signed_nda_${doc.targetCompanyId}_${timestamp}.pdf`;
+    const pdfPath = pathModule.join(GENERATED_DIR, pdfFilename);
+    await fsModule.writeFile(pdfPath, pdfBuffer);
+
+    await db.update(dealDocuments)
+      .set({ generatedFileUrl: pdfPath })
+      .where(eq(dealDocuments.id, params.documentId));
+
+    console.log(`[DEAL_DOCS] Signed NDA PDF generated: ${pdfPath}`);
+    return pdfPath;
   }
 
   async createNewVersion(
