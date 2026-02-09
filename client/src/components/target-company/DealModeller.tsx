@@ -1,16 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Check, X, Lightbulb, TrendingUp, Building2, Banknote, PiggyBank } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { Check, Lightbulb, TrendingUp, Building2, Banknote } from 'lucide-react';
+
+interface DealModellerProps {
+  companyId: number;
+}
 
 interface FinancialPeriod {
   id: number;
@@ -89,22 +89,14 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-export default function DealSheetPage() {
-  const { id: companyId } = useParams<{ id: string }>();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Valuation inputs (blue - user adjustable)
+export default function DealModeller({ companyId }: DealModellerProps) {
   const [multiple, setMultiple] = useState(3.0);
   const [propertyValue, setPropertyValue] = useState(0);
   const [cashValue, setCashValue] = useState(0);
   const [otherAssets, setOtherAssets] = useState(0);
   const [yearsForAverage, setYearsForAverage] = useState(3);
-
-  // Suggested addbacks (AI-generated, user confirms)
   const [suggestedAddbacks, setSuggestedAddbacks] = useState<SuggestedAddback[]>([]);
 
-  // Fetch financial data
   const { data: financialsData, isLoading } = useQuery<FinancialsData>({
     queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
     queryFn: async () => {
@@ -115,13 +107,6 @@ export default function DealSheetPage() {
     enabled: !!companyId,
   });
 
-  // Fetch company name
-  const { data: company } = useQuery({
-    queryKey: ['/api/v2/target-companies', companyId],
-    enabled: !!companyId,
-  });
-
-  // Filter to statutory periods with data, sorted by year
   const validPeriods = useMemo(() => {
     if (!financialsData) return [];
     return financialsData.periods
@@ -129,7 +114,6 @@ export default function DealSheetPage() {
       .sort((a, b) => (a.fiscalYear || 0) - (b.fiscalYear || 0));
   }, [financialsData]);
 
-  // Build P&L data by year
   const plData = useMemo(() => {
     if (!financialsData || !validPeriods.length) return [];
     
@@ -146,7 +130,6 @@ export default function DealSheetPage() {
       const interestPayable = parseNum(income?.interestPayable);
       const profitBeforeTax = parseNum(income?.profitBeforeTax);
       
-      // Calculate EBIT and EBITDA
       const ebit = operatingProfit || (grossProfit - adminExpenses);
       const ebitda = ebit + depreciation;
 
@@ -170,16 +153,12 @@ export default function DealSheetPage() {
     }).filter(p => p.hasData);
   }, [financialsData, validPeriods]);
 
-  // Initialize suggested addbacks based on data (simulate AI suggestions)
   useEffect(() => {
     if (plData.length > 0 && suggestedAddbacks.length === 0) {
-      // Simulate AI-suggested addbacks based on the data
       const suggestions: SuggestedAddback[] = [];
       
-      // Director Remuneration suggestion (common addback)
       const directorAmounts: { [year: number]: number } = {};
       plData.forEach(p => {
-        // Assume director remuneration is ~5% of revenue as a typical addback
         directorAmounts[p.year] = Math.round(p.revenue * 0.05);
       });
       suggestions.push({
@@ -191,7 +170,6 @@ export default function DealSheetPage() {
         accepted: false,
       });
 
-      // Director Pension suggestion
       const pensionAmounts: { [year: number]: number } = {};
       plData.forEach(p => {
         pensionAmounts[p.year] = Math.round(p.revenue * 0.02);
@@ -205,10 +183,8 @@ export default function DealSheetPage() {
         accepted: false,
       });
 
-      // One-off / Non-recurring (e.g., Covid impact, legal fees)
       const oneOffAmounts: { [year: number]: number } = {};
       plData.forEach(p => {
-        // Only suggest for certain years (e.g., 2021 had Covid impact)
         if (p.year === 2021) {
           oneOffAmounts[p.year] = 25000;
         } else {
@@ -230,7 +206,6 @@ export default function DealSheetPage() {
     }
   }, [plData, suggestedAddbacks.length]);
 
-  // Set initial cash/property values from latest balance sheet
   useEffect(() => {
     if (plData.length > 0 && cashValue === 0 && propertyValue === 0) {
       const latest = plData[plData.length - 1];
@@ -239,7 +214,6 @@ export default function DealSheetPage() {
     }
   }, [plData, cashValue, propertyValue]);
 
-  // Calculate accepted addbacks total per year
   const acceptedAddbacksByYear = useMemo(() => {
     const totals: { [year: number]: number } = {};
     plData.forEach(p => {
@@ -250,7 +224,6 @@ export default function DealSheetPage() {
     return totals;
   }, [suggestedAddbacks, plData]);
 
-  // Calculate Adjusted EBITDA per year
   const adjustedEbitdaByYear = useMemo(() => {
     const result: { [year: number]: number } = {};
     plData.forEach(p => {
@@ -259,7 +232,6 @@ export default function DealSheetPage() {
     return result;
   }, [plData, acceptedAddbacksByYear]);
 
-  // Calculate averages
   const calculations = useMemo(() => {
     if (plData.length === 0) return null;
 
@@ -295,39 +267,16 @@ export default function DealSheetPage() {
 
   if (!plData.length) {
     return (
-      <div className="p-6">
-        <Link href={`/target-companies/${companyId}`}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Company
-          </Button>
-        </Link>
-        <Card className="mt-6">
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No financial data available for this company.
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          No financial data available for this company.
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href={`/target-companies/${companyId}`}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">Deal Sheet</h1>
-          <p className="text-muted-foreground">{(company as any)?.name || 'Loading...'}</p>
-        </div>
-      </div>
-
-      {/* P&L Grid */}
+    <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
@@ -349,56 +298,48 @@ export default function DealSheetPage() {
                 </tr>
               </thead>
               <tbody>
-                {/* Revenue - static data */}
                 <tr className="border-b hover:bg-slate-50/50">
                   <td className="py-2 px-3 font-medium">Turnover</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3">{formatCurrency(p.revenue)}</td>
                   ))}
                 </tr>
-                {/* Cost of Sales - static data (shown as negative) */}
                 <tr className="border-b hover:bg-slate-50/50">
                   <td className="py-2 px-3 font-medium">Cost of Sales</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3 text-red-600">{formatCurrency(-p.costOfSales)}</td>
                   ))}
                 </tr>
-                {/* Gross Profit - calculated */}
                 <tr className="border-b bg-slate-50">
                   <td className="py-2 px-3 font-semibold">Gross Profit</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3 font-semibold">{formatCurrency(p.grossProfit)}</td>
                   ))}
                 </tr>
-                {/* GP Margin - calculated */}
                 <tr className="border-b hover:bg-slate-50/50">
                   <td className="py-2 px-3 text-muted-foreground">Gross Profit Margin</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3 text-muted-foreground">{formatPercent(p.grossProfitMargin)}</td>
                   ))}
                 </tr>
-                {/* Operating Costs */}
                 <tr className="border-b hover:bg-slate-50/50">
                   <td className="py-2 px-3 font-medium">Operating Costs</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3 text-red-600">{formatCurrency(-p.operatingCosts)}</td>
                   ))}
                 </tr>
-                {/* EBIT - calculated */}
                 <tr className="border-b bg-slate-50">
                   <td className="py-2 px-3 font-semibold">EBIT</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3 font-semibold">{formatCurrency(p.ebit)}</td>
                   ))}
                 </tr>
-                {/* D&A */}
                 <tr className="border-b hover:bg-slate-50/50">
                   <td className="py-2 px-3 font-medium">D&A</td>
                   {plData.map(p => (
                     <td key={p.year} className="text-right py-2 px-3">{formatCurrency(p.depreciation)}</td>
                   ))}
                 </tr>
-                {/* EBITDA - calculated */}
                 <tr className="border-b-2 border-slate-300 bg-slate-100">
                   <td className="py-2 px-3 font-bold">EBITDA</td>
                   {plData.map(p => (
@@ -406,7 +347,6 @@ export default function DealSheetPage() {
                   ))}
                 </tr>
 
-                {/* Adjustments Section */}
                 <tr>
                   <td colSpan={plData.length + 1} className="py-3">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Adjustments</span>
@@ -431,7 +371,6 @@ export default function DealSheetPage() {
                   </tr>
                 ))}
 
-                {/* Adjusted EBITDA - calculated */}
                 <tr className="border-t-2 border-slate-300 bg-emerald-50">
                   <td className="py-2 px-3 font-bold text-emerald-800">Adjusted EBITDA</td>
                   {plData.map(p => (
@@ -446,7 +385,6 @@ export default function DealSheetPage() {
         </CardContent>
       </Card>
 
-      {/* AI Suggested Addbacks */}
       {suggestedAddbacks.filter(a => !a.accepted).length > 0 && (
         <Card className="border-amber-200 bg-amber-50/30">
           <CardHeader className="pb-3">
@@ -492,9 +430,7 @@ export default function DealSheetPage() {
         </Card>
       )}
 
-      {/* Valuation Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Valuation Controls */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
@@ -503,7 +439,6 @@ export default function DealSheetPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Average EBITDA */}
             <div className="p-4 bg-slate-50 rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Avg EBITDA ({yearsForAverage} Yrs)</span>
@@ -524,7 +459,6 @@ export default function DealSheetPage() {
               <div className="text-2xl font-bold">{formatCurrency(calculations?.avgEbitda || 0)}</div>
             </div>
 
-            {/* Multiple */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <Label>Multiple</Label>
@@ -551,7 +485,6 @@ export default function DealSheetPage() {
               />
             </div>
 
-            {/* Enterprise Value */}
             <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
               <span className="text-sm text-emerald-700">Enterprise Value</span>
               <div className="text-3xl font-bold text-emerald-800">{formatCurrency(calculations?.enterpriseValue || 0)}</div>
@@ -559,7 +492,6 @@ export default function DealSheetPage() {
           </CardContent>
         </Card>
 
-        {/* Purchase Price Adjustments */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
@@ -568,7 +500,6 @@ export default function DealSheetPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Asset Adjustments */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <Label className="flex items-center gap-2">
@@ -608,13 +539,11 @@ export default function DealSheetPage() {
               </div>
             </div>
 
-            {/* Total Purchase Price */}
             <div className="p-4 bg-slate-800 rounded-lg text-white mt-4">
               <span className="text-sm text-slate-300">Total Purchase Price</span>
               <div className="text-3xl font-bold">{formatCurrency(calculations?.totalPurchasePrice || 0)}</div>
             </div>
 
-            {/* EBIT Summary */}
             <div className="grid grid-cols-2 gap-3 pt-4 border-t">
               <div className="p-3 bg-slate-50 rounded-lg">
                 <span className="text-xs text-muted-foreground">EBIT p/y (Avg {yearsForAverage} yrs)</span>

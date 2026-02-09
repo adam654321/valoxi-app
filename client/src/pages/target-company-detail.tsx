@@ -48,6 +48,7 @@ import { DocumentManagement } from "@/components/document-management";
 import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
 import { DocumentsTab } from "@/components/target-company/DocumentsTab";
+import DealModeller from "@/components/target-company/DealModeller";
 import { useTargetCompany } from "@/hooks/useTargetCompany";
 
 import ReactMarkdown from "react-markdown";
@@ -379,12 +380,6 @@ export default function TargetCompanyDetail() {
             </div>
             
             <div className="flex items-center gap-2">
-              <Link href={`/target-companies/${id}/deal-sheet`}>
-                <Button variant="default" size="sm" data-testid="button-deal-sheet">
-                  <Calculator className="w-4 h-4 mr-2" />
-                  Deal Sheet
-                </Button>
-              </Link>
               <Button onClick={handleAddContact} size="sm" data-testid="button-add-contact">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Contact
@@ -461,28 +456,32 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsList className="flex w-full">
+            <TabsTrigger value="overview" className="flex items-center gap-2 flex-1">
               <Building2 className="w-4 h-4" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="contacts" className="flex items-center gap-2">
+            <TabsTrigger value="contacts" className="flex items-center gap-2 flex-1">
               <User className="w-4 h-4" />
               Contacts
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2">
+            <TabsTrigger value="documents" className="flex items-center gap-2 flex-1">
               <FileText className="w-4 h-4" />
               Documents
             </TabsTrigger>
-            <TabsTrigger value="analysis" className="flex items-center gap-2">
+            <TabsTrigger value="analysis" className="flex items-center gap-2 flex-1">
               <BarChart className="w-4 h-4" />
               Analysis
             </TabsTrigger>
-            <TabsTrigger value="pipeline" className="flex items-center gap-2">
+            <TabsTrigger value="deal-modeller" className="flex items-center gap-2 flex-1">
+              <Calculator className="w-4 h-4" />
+              Deal Modeller
+            </TabsTrigger>
+            <TabsTrigger value="pipeline" className="flex items-center gap-2 flex-1">
               <TrendingUp className="w-4 h-4" />
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="team" className="flex items-center gap-2">
+            <TabsTrigger value="team" className="flex items-center gap-2 flex-1">
               <Users className="w-4 h-4" />
               Team
             </TabsTrigger>
@@ -914,6 +913,10 @@ export default function TargetCompanyDetail() {
                 targetCompanyId={parseInt(id!)}
                 companyName={company.companyName}
               />
+          </TabsContent>
+
+          <TabsContent value="deal-modeller" className="space-y-6">
+            <DealModeller companyId={company.id} />
           </TabsContent>
 
           <TabsContent value="pipeline" className="space-y-6">
