@@ -95,6 +95,119 @@ export class ExpertAnalysisService {
     return results;
   }
 
+  async retryExpert(companyId: number, expertType: string, triggeredBy?: number): Promise<ExpertAnalysisResult> {
+    console.log(`[EXPERT_ORCHESTRATOR] Retrying ${expertType} for company ${companyId}`);
+
+    const existing = await this.getExpertResult(companyId, expertType);
+    if (!existing) {
+      throw new Error(`No existing ${expertType} record found for company ${companyId}`);
+    }
+    if (existing.status === 'processing') {
+      throw new Error(`${expertType} is already running for company ${companyId}`);
+    }
+
+    await this.updateExpertRecord(existing.id, {
+      status: 'pending',
+      analysisData: null as any,
+      score: undefined,
+      confidence: undefined,
+      processingTime: undefined,
+    });
+
+    const company = await this.getTargetCompany(companyId);
+    const extractedData = await this.getExtractedData(companyId);
+    const sector = company.industry || 'Unknown';
+
+    const resetRecord = await this.getExpertResult(companyId, expertType);
+    if (!resetRecord) throw new Error('Failed to retrieve reset record');
+
+    if (['financial', 'operational', 'risk'].includes(expertType)) {
+      const prompt = this.buildLayer1Prompt(expertType as ExpertType, company.companyName, sector, extractedData);
+      await this.runExpert(resetRecord, prompt, expertType);
+    } else if (expertType === 'sector') {
+      const prompt = this.buildSectorPrompt(company, extractedData);
+      await this.runExpert(resetRecord, prompt, expertType);
+    } else if (expertType === 'qoe') {
+      const financialResult = await this.getExpertResult(companyId, 'financial');
+      const operationalResult = await this.getExpertResult(companyId, 'operational');
+      const prompt = buildQualityOfEarningsPrompt(
+        company.companyName, sector,
+        financialResult?.analysisData ? JSON.stringify(financialResult.analysisData) : '{"error": "Financial analysis not available"}',
+        operationalResult?.analysisData ? JSON.stringify(operationalResult.analysisData) : '{"error": "Operational analysis not available"}'
+      ) + '\n\nDATA:\n' + JSON.stringify(extractedData, null, 2);
+      await this.runExpert(resetRecord, prompt, expertType);
+    } else if (expertType === 'valuation') {
+      const [fin, qoe, sec, risk, ops] = await Promise.all([
+        this.getExpertResult(companyId, 'financial'),
+        this.getExpertResult(companyId, 'qoe'),
+        this.getExpertResult(companyId, 'sector'),
+        this.getExpertResult(companyId, 'risk'),
+        this.getExpertResult(companyId, 'operational'),
+      ]);
+      const prompt = buildValuationExpertPrompt(
+        company.companyName, sector,
+        fin?.analysisData ? JSON.stringify(fin.analysisData) : '{"error": "Not available"}',
+        qoe?.analysisData ? JSON.stringify(qoe.analysisData) : '{"error": "Not available"}',
+        sec?.analysisData ? JSON.stringify(sec.analysisData) : '{"error": "Not available"}',
+        risk?.analysisData ? JSON.stringify(risk.analysisData) : '{"error": "Not available"}',
+        ops?.analysisData ? JSON.stringify(ops.analysisData) : '{"error": "Not available"}'
+      );
+      await this.runExpert(resetRecord, prompt, expertType);
+    } else if (expertType === 'deal_structure') {
+      const [val, risk, ops, qoe] = await Promise.all([
+        this.getExpertResult(companyId, 'valuation'),
+        this.getExpertResult(companyId, 'risk'),
+        this.getExpertResult(companyId, 'operational'),
+        this.getExpertResult(companyId, 'qoe'),
+      ]);
+      const prompt = buildDealStructurePrompt(
+        company.companyName, sector,
+        val?.analysisData ? JSON.stringify(val.analysisData) : '{"error": "Not available"}',
+        risk?.analysisData ? JSON.stringify(risk.analysisData) : '{"error": "Not available"}',
+        ops?.analysisData ? JSON.stringify(ops.analysisData) : '{"error": "Not available"}',
+        qoe?.analysisData ? JSON.stringify(qoe.analysisData) : '{"error": "Not available"}'
+      );
+      await this.runExpert(resetRecord, prompt, expertType);
+    } else if (expertType === 'synthesis') {
+      const expertTypes: ExpertType[] = ['financial', 'operational', 'risk', 'qoe', 'sector', 'valuation', 'deal_structure'];
+      const allResults = await Promise.all(
+        expertTypes.map((t) => this.getExpertResult(companyId, t))
+      );
+      const getDataOrFallback = (r: any, name: string) =>
+        r?.analysisData && r.status === 'success' ? JSON.stringify(r.analysisData) : `{"error": "${name} not available"}`;
+      const prompt = buildSynthesisPrompt(company.companyName, sector, {
+        financial: getDataOrFallback(allResults[0], 'Financial'),
+        operational: getDataOrFallback(allResults[1], 'Operational'),
+        risk: getDataOrFallback(allResults[2], 'Risk'),
+        qoe: getDataOrFallback(allResults[3], 'QoE'),
+        sector: getDataOrFallback(allResults[4], 'Sector'),
+        valuation: getDataOrFallback(allResults[5], 'Valuation'),
+        dealStructure: getDataOrFallback(allResults[6], 'Deal Structure'),
+      });
+      await this.runExpert(resetRecord, prompt, expertType);
+    } else if (expertType === 'data_quality') {
+      const dqPrompt = buildStage0DataQualityPrompt(company.companyName) +
+        '\n\nDATA:\n' + JSON.stringify(extractedData, null, 2);
+      await this.runExpert(resetRecord, dqPrompt, expertType);
+    } else if (expertType === 'screening') {
+      const dqResult = await this.getExpertResult(companyId, 'data_quality');
+      const dqData = dqResult?.analysisData as Record<string, unknown> | null;
+      const qualityScore = (dqData?.overall_completeness_score as number) ?? 0;
+      const qualityConfidence = (dqData?.confidence_for_analysis as string) ?? 'unknown';
+      const { systemPrompt, userPrompt } = buildStage1ScreeningPrompt(
+        company.companyName, sector, qualityScore, qualityConfidence
+      );
+      const prompt = systemPrompt + '\n\n' + userPrompt +
+        '\n\nDATA:\n' + JSON.stringify(extractedData, null, 2);
+      await this.runExpert(resetRecord, prompt, expertType);
+    }
+
+    await this.processNextSteps(companyId);
+
+    const finalResult = await this.getExpertResult(companyId, expertType);
+    return finalResult || resetRecord;
+  }
+
   async cancelAnalysis(companyId: number): Promise<number> {
     const result = await db
       .update(expertAnalysisResults)

@@ -119,7 +119,7 @@ function checkDependencies(expertType: string, results: ExpertResult[]): boolean
   if (!config || config.dependsOn.length === 0) return true;
   return config.dependsOn.every((dep) => {
     const depResult = results.find((r) => r.expertType === dep);
-    return depResult?.status === "success";
+    return depResult?.status === "success" || depResult?.status === "failed";
   });
 }
 
@@ -128,11 +128,15 @@ function ExpertCard({
   result,
   isLocked,
   onClick,
+  onRetry,
+  isRetrying,
 }: {
   expertType: string;
   result: ExpertResult | undefined;
   isLocked: boolean;
   onClick: () => void;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }) {
   const config = EXPERT_CONFIG[expertType];
   if (!config) return null;
@@ -208,6 +212,28 @@ function ExpertCard({
                 View full report <ChevronRight className="w-3 h-3 ml-1" />
               </div>
             )}
+            {status === "failed" && onRetry && (
+              <div className="mt-2">
+                {analysisData?.error ? (
+                  <p className="text-xs text-red-500 mb-2 line-clamp-2">
+                    {String(analysisData.error as string)}
+                  </p>
+                ) : null}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs h-7"
+                  onClick={(e) => { e.stopPropagation(); onRetry(); }}
+                  disabled={isRetrying}
+                >
+                  {isRetrying ? (
+                    <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Retrying...</>
+                  ) : (
+                    <><RefreshCw className="w-3 h-3 mr-1" />Retry</>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         )}
         {isLocked && (
@@ -255,6 +281,25 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const [retryingExpert, setRetryingExpert] = useState<string | null>(null);
+
+  const retryMutation = useMutation({
+    mutationFn: (expertType: string) => apiRequest("POST", `/api/v2/expert-analysis/retry/${targetCompanyId}/${expertType}`),
+    onMutate: (expertType: string) => {
+      setRetryingExpert(expertType);
+    },
+    onSuccess: (_data: unknown, expertType: string) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/expert-analysis/results", targetCompanyId] });
+      const label = EXPERT_CONFIG[expertType]?.label || expertType;
+      toast({ title: `${label} Retry Started`, description: `Re-running the ${label} analysis. Downstream experts will continue automatically.` });
+      setRetryingExpert(null);
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      setRetryingExpert(null);
     },
   });
 
@@ -597,6 +642,8 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
                           result={result}
                           isLocked={isLocked && !result}
                           onClick={() => result && setSelectedExpert(result)}
+                          onRetry={() => retryMutation.mutate(expertType)}
+                          isRetrying={retryingExpert === expertType}
                         />
                       );
                     })}

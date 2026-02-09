@@ -26,10 +26,24 @@ function cleanJsonResponse(text: string): string {
     cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   }
 
-  cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, (ch) => {
-    if (ch === '\n' || ch === '\r' || ch === '\t') return ch;
-    return '';
-  });
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+
+  let sanitized = '';
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (esc) { sanitized += ch; esc = false; continue; }
+    if (ch === '\\' && inStr) { sanitized += ch; esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; sanitized += ch; continue; }
+    if (inStr) {
+      if (ch === '\n') { sanitized += '\\n'; continue; }
+      if (ch === '\r') { sanitized += '\\r'; continue; }
+      if (ch === '\t') { sanitized += '\\t'; continue; }
+    }
+    sanitized += ch;
+  }
+  cleaned = sanitized;
 
   cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
 
