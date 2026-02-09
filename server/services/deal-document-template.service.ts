@@ -128,12 +128,17 @@ export class DealDocumentTemplateService {
 
       sellerCompanyName: targetCompany?.companyName || '',
       sellerAddress: targetCompany?.address || '',
+      sellerContactName: '',
 
       currentDate: new Date().toLocaleDateString('en-GB', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
       }),
+
+      productOrService: targetCompany?.companyName
+        ? `the business operations of ${targetCompany.companyName}`
+        : 'the business operations of the Company',
     };
 
     if (dealModelId) {
