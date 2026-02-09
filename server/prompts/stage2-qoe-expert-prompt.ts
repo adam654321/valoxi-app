@@ -40,6 +40,10 @@ These are costs that would not continue under new ownership:
 - Related party transactions at non-market rates
 - Redundant costs that a buyer would eliminate
 
+For each adjustment, specify:
+- recurrence: "one_off" if this is a non-recurring cost/event that happened in a specific year, "recurring" if it would apply every year
+- year: For one_off items, the fiscal year it occurred (e.g. "2022"). For recurring items, set to null.
+
 STEP 3: Normalisation Deductions (decrease EBITDA)
 These are costs that WOULD exist under new ownership but currently don't:
 - Owner/director salary BELOW market rate
@@ -48,6 +52,10 @@ These are costs that WOULD exist under new ownership but currently don't:
 - Deferred maintenance (if the Operational Expert flagged underinvestment in assets)
 - Unsustainable revenue (one-off contracts visible in sales ledger that won't repeat)
 - Under-provisioned bad debts (if Risk Expert identified this)
+
+For each adjustment, specify:
+- recurrence: "one_off" if this is a non-recurring cost/event that happened in a specific year, "recurring" if it would apply every year
+- year: For one_off items, the fiscal year it occurred (e.g. "2022"). For recurring items, set to null.
 
 STEP 4: Calculate Adjusted EBITDA Range
 Provide three scenarios:
@@ -82,6 +90,8 @@ OUTPUT FORMAT:
       "item": "",
       "category": "owner_salary|one_off_cost|personal_expense|related_party|redundant_cost",
       "amount": null,
+      "recurrence": "recurring|one_off",
+      "year": null,
       "justification": "",
       "confidence": "high|medium|low"
     }
@@ -91,6 +101,8 @@ OUTPUT FORMAT:
       "item": "",
       "category": "replacement_salary|missing_management|deferred_maintenance|unsustainable_revenue|bad_debt_provision",
       "amount": null,
+      "recurrence": "recurring|one_off",
+      "year": null,
       "justification": "",
       "confidence": "high|medium|low"
     }
