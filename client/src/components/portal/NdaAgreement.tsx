@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, CheckCircle, Loader2 } from 'lucide-react';
+import { Shield, CheckCircle, Loader2, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface NdaAgreementProps {
@@ -19,6 +19,73 @@ interface NdaAgreementProps {
   buyerCompanyName?: string;
   onAgreed: () => void;
 }
+
+const ndaStyles = `
+  .nda-content {
+    font-family: 'Georgia', 'Times New Roman', Times, serif;
+    color: #1a1a1a;
+    line-height: 1.8;
+    font-size: 14px;
+  }
+  .nda-content h1 {
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    margin: 24px 0 16px;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .nda-content h2 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 20px 0 10px;
+    color: #111;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 6px;
+  }
+  .nda-content h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 16px 0 8px;
+    color: #222;
+  }
+  .nda-content p {
+    margin: 8px 0;
+    text-align: justify;
+  }
+  .nda-content strong {
+    font-weight: 700;
+    color: #111;
+  }
+  .nda-content em {
+    font-style: italic;
+  }
+  .nda-content u {
+    text-decoration: underline;
+  }
+  .nda-content ul, .nda-content ol {
+    margin: 8px 0 8px 24px;
+    padding: 0;
+  }
+  .nda-content li {
+    margin: 4px 0;
+  }
+  .nda-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+  }
+  .nda-content table td, .nda-content table th {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .nda-content table th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+`;
 
 export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onAgreed }: NdaAgreementProps) {
   const [fullName, setFullName] = useState('');
@@ -37,6 +104,15 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
     },
   });
 
+  useEffect(() => {
+    if (!isLoading && ndaContent && scrollRef.current) {
+      const el = scrollRef.current;
+      if (el.scrollHeight <= el.clientHeight + 50) {
+        setHasScrolledToBottom(true);
+      }
+    }
+  }, [isLoading, ndaContent]);
+
   const canSubmit = fullName.trim().length >= 2 && agreed && !submitting && hasScrolledToBottom;
 
   function handleScroll() {
@@ -44,6 +120,12 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
     if (scrollTop + clientHeight >= scrollHeight - 50) {
       setHasScrolledToBottom(true);
+    }
+  }
+
+  function scrollToBottom() {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   }
 
@@ -78,6 +160,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <style>{ndaStyles}</style>
       <div className="max-w-3xl mx-auto space-y-6">
         <Card>
           <CardHeader className="text-center">
@@ -94,7 +177,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
           </CardHeader>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
@@ -105,19 +188,31 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
               <div
                 ref={scrollRef}
                 onScroll={handleScroll}
-                className="max-h-[500px] overflow-y-auto p-8 border-b"
+                className="max-h-[60vh] overflow-y-auto px-10 py-8"
                 style={{ scrollBehavior: 'smooth' }}
               >
                 <div
-                  className="prose prose-sm max-w-none"
+                  className="nda-content"
                   dangerouslySetInnerHTML={{ __html: ndaContent?.html || '<p>Unable to load NDA content.</p>' }}
                 />
               </div>
             )}
 
             {!hasScrolledToBottom && !isLoading && (
-              <div className="text-center py-2 bg-amber-50 text-amber-700 text-sm">
+              <div
+                className="flex items-center justify-center gap-2 py-3 bg-amber-50 border-t border-amber-200 text-amber-700 text-sm cursor-pointer hover:bg-amber-100 transition-colors"
+                onClick={scrollToBottom}
+              >
+                <ChevronDown className="h-4 w-4 animate-bounce" />
                 Please scroll to the bottom to review the full agreement
+                <ChevronDown className="h-4 w-4 animate-bounce" />
+              </div>
+            )}
+
+            {hasScrolledToBottom && !isLoading && (
+              <div className="flex items-center justify-center gap-2 py-2 bg-green-50 border-t border-green-200 text-green-700 text-sm">
+                <CheckCircle className="h-4 w-4" />
+                Full agreement reviewed
               </div>
             )}
           </CardContent>

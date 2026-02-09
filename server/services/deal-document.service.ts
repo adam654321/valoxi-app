@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { dealDocuments, dealDocumentResponses, dealDocumentTemplates } from '@shared/schema/deal-documents';
+import { documents } from '@shared/schema/documents';
 import { eq, and, desc, not, inArray } from 'drizzle-orm';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 
@@ -260,6 +261,32 @@ export class DealDocumentService {
     await db.update(dealDocuments)
       .set({ generatedFileUrl: pdfPath })
       .where(eq(dealDocuments.id, params.documentId));
+
+    try {
+      const stat = await fsModule.stat(pdfPath);
+      const sellerName = params.respondentName || 'Seller';
+      const companyData = (doc.documentData as any);
+      const sellerCompanyName = companyData?.sellerCompanyName || '';
+      const docName = sellerCompanyName
+        ? `Signed NDA - ${sellerCompanyName}`
+        : `Signed NDA - ${sellerName}`;
+
+      await db.insert(documents).values({
+        targetCompanyId: doc.targetCompanyId,
+        uploadedBy: doc.createdBy,
+        documentName: docName,
+        originalFilename: pdfFilename,
+        filePath: pdfPath,
+        fileSize: stat.size,
+        fileType: 'application/pdf',
+        documentCategory: 'Deal Documents',
+        description: `Signed NDA accepted by ${sellerName} on ${signedDate}. Electronic acceptance with IP address and timestamp recorded.`,
+        isConfidential: true,
+      });
+      console.log(`[DEAL_DOCS] Signed NDA saved to Document Library for target company ${doc.targetCompanyId}`);
+    } catch (libErr) {
+      console.error('[DEAL_DOCS] Failed to save signed PDF to Document Library:', libErr);
+    }
 
     console.log(`[DEAL_DOCS] Signed NDA PDF generated: ${pdfPath}`);
     return pdfPath;
