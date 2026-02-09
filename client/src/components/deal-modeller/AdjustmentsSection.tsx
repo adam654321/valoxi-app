@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ import {
   CheckCircle2,
   Loader2,
   Info,
+  Calendar,
 } from 'lucide-react';
 
 interface AdjustmentsSectionProps {
@@ -37,6 +38,7 @@ interface AdjustmentsSectionProps {
   adjustments: DealModelAdjustment[];
   calculations: CalculationResult | null;
   isLocked: boolean;
+  financialYears: string[];
   onDataChange: () => void;
 }
 
@@ -75,17 +77,62 @@ function categoryLabel(cat: string): string {
   return CATEGORY_LABELS[cat] || cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-export default function AdjustmentsSection({ modelId, adjustments, calculations, isLocked, onDataChange }: AdjustmentsSectionProps) {
+function formatCompactCurrency(val: number): string {
+  if (Math.abs(val) >= 1000) {
+    return `£${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
+  }
+  return formatCurrency(val);
+}
+
+function PerYearGrid({ years, amounts, onChange }: {
+  years: string[];
+  amounts: Record<string, string>;
+  onChange: (year: string, value: string) => void;
+}) {
+  const total = useMemo(() => {
+    return years.reduce((sum, y) => sum + toNum(amounts[y] || '0'), 0);
+  }, [years, amounts]);
+
+  return (
+    <div className="space-y-2">
+      <div className="max-h-[200px] overflow-y-auto space-y-1.5">
+        {years.map(year => (
+          <div key={year} className="flex items-center gap-3">
+            <Label className="text-sm w-16 shrink-0 text-muted-foreground">{year}</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={amounts[year] || ''}
+              onChange={(e) => onChange(year, e.target.value)}
+              placeholder="0"
+              className="h-8 text-sm"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3 pt-1 border-t">
+        <Label className="text-sm w-16 shrink-0 font-semibold">Total</Label>
+        <p className="text-sm font-semibold">{formatCurrency(total)}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function AdjustmentsSection({ modelId, adjustments, calculations, isLocked, financialYears, onDataChange }: AdjustmentsSectionProps) {
   const { toast } = useToast();
   const [modifyTarget, setModifyTarget] = useState<DealModelAdjustment | null>(null);
   const [modifyAmount, setModifyAmount] = useState('');
   const [modifyReason, setModifyReason] = useState('');
+  const [modifyPerYear, setModifyPerYear] = useState(false);
+  const [modifyYearAmounts, setModifyYearAmounts] = useState<Record<string, string>>({});
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addType, setAddType] = useState<'add_back' | 'deduction'>('add_back');
   const [addCategory, setAddCategory] = useState('other');
   const [addDescription, setAddDescription] = useState('');
   const [addAmount, setAddAmount] = useState('');
   const [addNotes, setAddNotes] = useState('');
+  const [addPerYear, setAddPerYear] = useState(false);
+  const [addYearAmounts, setAddYearAmounts] = useState<Record<string, string>>({});
   const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set());
 
   const updateMutation = useMutation({
@@ -141,6 +188,8 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
     setAddDescription('');
     setAddAmount('');
     setAddNotes('');
+    setAddPerYear(false);
+    setAddYearAmounts({});
   }
 
   const expertAdjustments = adjustments.filter(a => !a.isManual);
@@ -158,7 +207,7 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
 
   const acceptedAddBacks = adjustments.filter(a => (a.status === 'accepted' || a.status === 'modified') && a.adjustmentType === 'add_back');
   const acceptedDeductions = adjustments.filter(a => (a.status === 'accepted' || a.status === 'modified') && a.adjustmentType === 'deduction');
-  const totalAddBacks = acceptedAddBacks.reduce((sum, a) => sum + toNum(a.status === 'modified' ? null : a.amount), 0);
+  const totalAddBacks = acceptedAddBacks.reduce((sum, a) => sum + toNum(a.amount), 0);
   const totalDeductions = acceptedDeductions.reduce((sum, a) => sum + toNum(a.amount), 0);
   const netImpact = totalAddBacks - totalDeductions;
 
@@ -181,28 +230,96 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
 
   function openModifyDialog(adj: DealModelAdjustment) {
     setModifyTarget(adj);
+    const existingByYear = adj.amountsByYear as Record<string, number> | null;
+    const hasPerYear = existingByYear && Object.keys(existingByYear).length > 0;
+
+    setModifyPerYear(!!hasPerYear);
     setModifyAmount(String(toNum(adj.amount)));
     setModifyReason('');
+
+    if (hasPerYear) {
+      const yearStrings: Record<string, string> = {};
+      for (const [y, v] of Object.entries(existingByYear!)) {
+        yearStrings[y] = String(v);
+      }
+      setModifyYearAmounts(yearStrings);
+    } else {
+      const flatAmount = toNum(adj.amount);
+      const divided = financialYears.length > 0 ? flatAmount / financialYears.length : 0;
+      const yearStrings: Record<string, string> = {};
+      for (const y of financialYears) {
+        yearStrings[y] = String(Math.round(divided * 100) / 100);
+      }
+      setModifyYearAmounts(yearStrings);
+    }
   }
 
   function handleModifySave() {
     if (!modifyTarget) return;
-    updateMutation.mutate({
-      adjId: modifyTarget.id,
-      body: { status: 'modified', isAccepted: true, amount: modifyAmount },
-    });
+
+    if (modifyPerYear && financialYears.length > 0) {
+      const amountsByYear: Record<string, number> = {};
+      let total = 0;
+      for (const y of financialYears) {
+        const val = toNum(modifyYearAmounts[y] || '0');
+        amountsByYear[y] = val;
+        total += val;
+      }
+      updateMutation.mutate({
+        adjId: modifyTarget.id,
+        body: {
+          status: 'modified',
+          isAccepted: true,
+          amount: String(total),
+          amountsByYear,
+          userOverrideAmount: null,
+        },
+      });
+    } else {
+      updateMutation.mutate({
+        adjId: modifyTarget.id,
+        body: {
+          status: 'modified',
+          isAccepted: true,
+          amount: modifyAmount,
+          userOverrideAmount: modifyAmount,
+          amountsByYear: null,
+        },
+      });
+    }
     setModifyTarget(null);
   }
 
   function handleAddSave() {
-    if (!addDescription.trim() || !addAmount.trim()) return;
-    addMutation.mutate({
-      adjustmentType: addType,
-      category: addCategory,
-      description: addDescription.trim(),
-      amount: addAmount,
-      reasoning: addNotes.trim() || undefined,
-    });
+    if (!addDescription.trim()) return;
+
+    if (addPerYear && financialYears.length > 0) {
+      const amountsByYear: Record<string, number> = {};
+      let total = 0;
+      for (const y of financialYears) {
+        const val = toNum(addYearAmounts[y] || '0');
+        amountsByYear[y] = val;
+        total += val;
+      }
+      if (total === 0) return;
+      addMutation.mutate({
+        adjustmentType: addType,
+        category: addCategory,
+        description: addDescription.trim(),
+        amount: String(total),
+        amountsByYear,
+        reasoning: addNotes.trim() || undefined,
+      });
+    } else {
+      if (!addAmount.trim()) return;
+      addMutation.mutate({
+        adjustmentType: addType,
+        category: addCategory,
+        description: addDescription.trim(),
+        amount: addAmount,
+        reasoning: addNotes.trim() || undefined,
+      });
+    }
   }
 
   function toggleReasoning(id: number) {
@@ -215,10 +332,15 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
 
   const isBusy = updateMutation.isPending || bulkMutation.isPending || addMutation.isPending || deleteMutation.isPending;
 
+  const addTotalPerYear = useMemo(() => {
+    return financialYears.reduce((sum, y) => sum + toNum(addYearAmounts[y] || '0'), 0);
+  }, [financialYears, addYearAmounts]);
+
   function renderAdjustmentRow(adj: DealModelAdjustment, allowDelete: boolean) {
     const borderClass = STATUS_BORDER[adj.status || 'suggested'] || '';
     const amount = toNum(adj.amount);
     const amountsByYear = adj.amountsByYear as Record<string, number> | null;
+    const hasPerYear = amountsByYear && Object.keys(amountsByYear).length > 0;
 
     return (
       <div key={adj.id} className={`flex items-start gap-3 py-3 px-3 ${borderClass}`}>
@@ -258,12 +380,20 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
             </Collapsible>
           )}
 
-          {amountsByYear && Object.keys(amountsByYear).length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-1">
-              {Object.entries(amountsByYear).sort().map(([year, val]) => (
-                <span key={year} className="text-xs text-muted-foreground">{year}: {formatCurrency(val)}</span>
+          {hasPerYear ? (
+            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+              <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+              {Object.entries(amountsByYear!).sort().map(([year, val], idx) => (
+                <span key={year} className="text-xs text-muted-foreground">
+                  {idx > 0 && <span className="mr-1.5">·</span>}
+                  {year}: {formatCompactCurrency(val)}
+                </span>
               ))}
             </div>
+          ) : (
+            amount > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">(all years)</p>
+            )
           )}
         </div>
 
@@ -271,7 +401,7 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
           <div className="text-right">
             {adj.status === 'modified' ? (
               <>
-                <span className="text-xs line-through text-muted-foreground">{formatCurrency(amount)}</span>
+                <span className="text-xs line-through text-muted-foreground">{formatCurrency(toNum((adj as any).userOverrideAmount ?? adj.amount))}</span>
                 <p className="text-sm font-semibold">{formatCurrency(amount)}</p>
               </>
             ) : (
@@ -423,16 +553,54 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
                 <Label className="text-sm text-muted-foreground">Original Amount</Label>
                 <p className="text-sm font-semibold">{formatCurrency(toNum(modifyTarget.amount))}</p>
               </div>
-              <div>
-                <Label htmlFor="modify-amount">Override Amount (£)</Label>
-                <Input
-                  id="modify-amount"
-                  type="number"
-                  step="0.01"
-                  value={modifyAmount}
-                  onChange={(e) => setModifyAmount(e.target.value)}
-                />
-              </div>
+
+              {financialYears.length > 0 && (
+                <div>
+                  <Label className="text-sm mb-1.5 block">Apply to</Label>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant={!modifyPerYear ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setModifyPerYear(false)}
+                    >
+                      All years
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={modifyPerYear ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setModifyPerYear(true)}
+                    >
+                      <Calendar className="h-3.5 w-3.5 mr-1" />
+                      Specific years
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {modifyPerYear && financialYears.length > 0 ? (
+                <div>
+                  <Label className="text-sm mb-1.5 block">Amount per year (£)</Label>
+                  <PerYearGrid
+                    years={financialYears}
+                    amounts={modifyYearAmounts}
+                    onChange={(year, value) => setModifyYearAmounts(prev => ({ ...prev, [year]: value }))}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="modify-amount">Override Amount (£)</Label>
+                  <Input
+                    id="modify-amount"
+                    type="number"
+                    step="0.01"
+                    value={modifyAmount}
+                    onChange={(e) => setModifyAmount(e.target.value)}
+                  />
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="modify-reason">Reason for Modification</Label>
                 <Textarea
@@ -489,10 +657,48 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
               <Label htmlFor="add-desc">Description</Label>
               <Input id="add-desc" value={addDescription} onChange={(e) => setAddDescription(e.target.value)} placeholder="What is this adjustment?" />
             </div>
-            <div>
-              <Label htmlFor="add-amount">Amount (£)</Label>
-              <Input id="add-amount" type="number" step="0.01" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} placeholder="0" />
-            </div>
+
+            {financialYears.length > 0 && (
+              <div>
+                <Label className="text-sm mb-1.5 block">Apply to</Label>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant={!addPerYear ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAddPerYear(false)}
+                  >
+                    All years
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={addPerYear ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAddPerYear(true)}
+                  >
+                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                    Specific years
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {addPerYear && financialYears.length > 0 ? (
+              <div>
+                <Label className="text-sm mb-1.5 block">Amount per year (£)</Label>
+                <PerYearGrid
+                  years={financialYears}
+                  amounts={addYearAmounts}
+                  onChange={(year, value) => setAddYearAmounts(prev => ({ ...prev, [year]: value }))}
+                />
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="add-amount">Amount (£)</Label>
+                <Input id="add-amount" type="number" step="0.01" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} placeholder="0" />
+              </div>
+            )}
+
             <div>
               <Label htmlFor="add-notes">Notes (optional)</Label>
               <Textarea id="add-notes" value={addNotes} onChange={(e) => setAddNotes(e.target.value)} rows={2} placeholder="Additional context" />
@@ -500,7 +706,14 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setAddDialogOpen(false); resetAddForm(); }}>Cancel</Button>
-            <Button onClick={handleAddSave} disabled={addMutation.isPending || !addDescription.trim() || !addAmount.trim()}>
+            <Button
+              onClick={handleAddSave}
+              disabled={
+                addMutation.isPending ||
+                !addDescription.trim() ||
+                (addPerYear ? addTotalPerYear === 0 : !addAmount.trim())
+              }
+            >
               {addMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
               Add Adjustment
             </Button>
