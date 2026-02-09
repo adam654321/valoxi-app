@@ -53,8 +53,12 @@ const FUNDING_TYPE_CONFIG: Record<string, { label: string; icon: typeof CreditCa
 };
 
 const ASSET_BACKED_TYPES = ['receivables_finance', 'asset_finance', 'property_finance'];
-const EQUITY_TYPES = ['cash_equity', 'investor_equity'];
-const DEBT_TYPES = ['new_senior_debt', 'mezzanine'];
+
+const DEBT_DEFAULT_TYPES = ['receivables_finance', 'asset_finance', 'property_finance', 'new_senior_debt', 'mezzanine', 'deferred_consideration'];
+
+function getDefaultIsDebt(fundingType: string): boolean {
+  return DEBT_DEFAULT_TYPES.includes(fundingType);
+}
 
 function getFundingLabel(type: string, customLabel?: string | null): string {
   if (customLabel) return customLabel;
@@ -74,6 +78,7 @@ function pmt(principal: number, monthlyRate: number, numPayments: number): numbe
 
 function calcLineLocally(line: {
   isActive: boolean;
+  isDebt: boolean;
   assetBaseValue: number;
   ltvPercent: number;
   amountUsed: number;
@@ -84,6 +89,7 @@ function calcLineLocally(line: {
   const availableAmount = line.assetBaseValue > 0 && line.ltvPercent > 0
     ? line.assetBaseValue * line.ltvPercent / 100
     : 0;
+  if (!line.isDebt) return { availableAmount, monthlyRepayment: 0, annualRepayment: 0 };
   const used = line.amountUsed;
   const rate = line.interestRate;
   const term = line.termMonths;
@@ -98,6 +104,7 @@ function calcLineLocally(line: {
 
 interface LocalLineValues {
   isActive: boolean;
+  isDebt: boolean;
   assetBaseValue: number;
   ltvPercent: number;
   amountUsed: number;
@@ -108,6 +115,7 @@ interface LocalLineValues {
 function initLineLocal(line: DealModelFundingLine): LocalLineValues {
   return {
     isActive: line.isActive ?? false,
+    isDebt: line.isDebt ?? getDefaultIsDebt(line.fundingType),
     assetBaseValue: toNum(line.assetBaseValue),
     ltvPercent: toNum(line.ltvPercent),
     amountUsed: toNum(line.amountUsed),
@@ -216,12 +224,15 @@ function FundingLineCard({
     if (!isLocked) updateMutation.mutate({ isActive: checked });
   }, [isLocked, updateMutation]);
 
+  const toggleIsDebt = useCallback((checked: boolean) => {
+    setLocalVals(prev => ({ ...prev, isDebt: checked }));
+    if (!isLocked) updateMutation.mutate({ isDebt: checked });
+  }, [isLocked, updateMutation]);
+
   const localCalc = useMemo(() => calcLineLocally(localVals), [localVals]);
   const Icon = getFundingIcon(line.fundingType);
   const label = getFundingLabel(line.fundingType, line.label);
   const isAssetBacked = ASSET_BACKED_TYPES.includes(line.fundingType);
-  const isEquity = EQUITY_TYPES.includes(line.fundingType);
-  const isDeferred = line.fundingType === 'deferred_consideration';
   const overDrawn = isAssetBacked && localCalc.availableAmount > 0 && localVals.amountUsed > localCalc.availableAmount;
 
   return (
@@ -240,10 +251,20 @@ function FundingLineCard({
               <Badge variant="outline" className="text-xs shrink-0">
                 {FUNDING_TYPE_CONFIG[line.fundingType]?.label || line.fundingType}
               </Badge>
+              <Badge
+                variant="outline"
+                className={`text-[10px] px-1.5 py-0 shrink-0 ${
+                  localVals.isDebt
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                {localVals.isDebt ? 'Debt' : 'Equity'}
+              </Badge>
             </div>
             <div className="text-right shrink-0">
               <p className="text-base font-semibold">{formatCurrency(localVals.amountUsed)}</p>
-              {localVals.isActive && localCalc.monthlyRepayment > 0 && (
+              {localVals.isActive && localVals.isDebt && localCalc.monthlyRepayment > 0 && (
                 <p className="text-xs text-muted-foreground">{formatCurrency(localCalc.monthlyRepayment)}/mo</p>
               )}
             </div>
@@ -261,7 +282,25 @@ function FundingLineCard({
 
           <CollapsibleContent>
             <div className="px-4 pb-4 pt-1 border-t">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+              <div className="flex items-center gap-4 mt-3 mb-4 py-2 px-3 bg-muted/50 rounded-md">
+                <div className="flex items-center gap-2 flex-1">
+                  <Label className="text-sm font-medium">Classification</Label>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs ${!localVals.isDebt ? 'font-semibold text-blue-700' : 'text-muted-foreground'}`}>Equity</span>
+                    <Switch
+                      checked={localVals.isDebt}
+                      onCheckedChange={toggleIsDebt}
+                      disabled={isLocked}
+                    />
+                    <span className={`text-xs ${localVals.isDebt ? 'font-semibold text-red-700' : 'text-muted-foreground'}`}>Debt</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {localVals.isDebt ? 'This source has repayment obligations' : 'No repayment required'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {isAssetBacked && (
                   <>
                     <div className="space-y-1.5">
@@ -305,7 +344,7 @@ function FundingLineCard({
 
                 <div className="space-y-1.5">
                   <Label className="text-sm">
-                    {isEquity ? 'Amount to Introduce' : isDeferred ? 'Deferred Amount' : isAssetBacked ? 'Amount to Draw' : 'Loan Amount'}
+                    {!localVals.isDebt ? 'Amount to Introduce' : isAssetBacked ? 'Amount to Draw' : 'Loan Amount'}
                   </Label>
                   <div className="relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
@@ -328,9 +367,9 @@ function FundingLineCard({
                   )}
                 </div>
 
-                {!isEquity && (
+                {localVals.isDebt && (
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Interest Rate %{isDeferred ? ' (if any)' : ''}</Label>
+                    <Label className="text-sm">Interest Rate %</Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -347,9 +386,9 @@ function FundingLineCard({
                   </div>
                 )}
 
-                {!isEquity && (
+                {localVals.isDebt && (
                   <div className="space-y-1.5">
-                    <Label className="text-sm">{isDeferred ? 'Payment Period (months)' : 'Term (months)'}</Label>
+                    <Label className="text-sm">Term (months)</Label>
                     <Input
                       type="number"
                       min="0"
@@ -364,7 +403,7 @@ function FundingLineCard({
                   </div>
                 )}
 
-                {!isEquity && localCalc.monthlyRepayment > 0 && (
+                {localVals.isDebt && localCalc.monthlyRepayment > 0 && (
                   <>
                     <div className="space-y-1.5">
                       <Label className="text-sm text-muted-foreground">Monthly Repayment</Label>
@@ -429,6 +468,23 @@ export default function FundingSection({
   const [newType, setNewType] = useState('cash_equity');
   const [newLabel, setNewLabel] = useState('');
   const [newAmount, setNewAmount] = useState('');
+  const [newIsDebt, setNewIsDebt] = useState(false);
+  const [newInterestRate, setNewInterestRate] = useState('');
+  const [newTermMonths, setNewTermMonths] = useState('');
+
+  useEffect(() => {
+    setNewIsDebt(getDefaultIsDebt(newType));
+  }, [newType]);
+
+  const resetAddDialog = useCallback(() => {
+    setAddOpen(false);
+    setNewType('cash_equity');
+    setNewLabel('');
+    setNewAmount('');
+    setNewIsDebt(false);
+    setNewInterestRate('');
+    setNewTermMonths('');
+  }, []);
 
   const addMutation = useMutation({
     mutationFn: async (body: Record<string, any>) => {
@@ -436,10 +492,7 @@ export default function FundingSection({
       return res.json();
     },
     onSuccess: () => {
-      setAddOpen(false);
-      setNewType('cash_equity');
-      setNewLabel('');
-      setNewAmount('');
+      resetAddDialog();
       onDataChange();
       toast({ title: 'Funding source added' });
     },
@@ -562,7 +615,7 @@ export default function FundingSection({
         </div>
       </CardContent>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={v => { if (!v) resetAddDialog(); else setAddOpen(true); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Funding Source</DialogTitle>
@@ -591,9 +644,26 @@ export default function FundingSection({
               />
             </div>
 
+            <div className="flex items-center gap-4 py-2 px-3 bg-muted/50 rounded-md">
+              <div className="flex items-center gap-2 flex-1">
+                <Label className="text-sm font-medium">Classification</Label>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs ${!newIsDebt ? 'font-semibold text-blue-700' : 'text-muted-foreground'}`}>Equity</span>
+                  <Switch
+                    checked={newIsDebt}
+                    onCheckedChange={setNewIsDebt}
+                  />
+                  <span className={`text-xs ${newIsDebt ? 'font-semibold text-red-700' : 'text-muted-foreground'}`}>Debt</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {newIsDebt ? 'Has repayment obligations' : 'No repayment required'}
+              </p>
+            </div>
+
             <div className="space-y-1.5">
               <Label className="text-sm">
-                {EQUITY_TYPES.includes(newType) ? 'Amount to Introduce' : 'Initial Amount'}
+                {!newIsDebt ? 'Amount to Introduce' : 'Initial Amount'}
               </Label>
               <div className="relative">
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
@@ -606,18 +676,53 @@ export default function FundingSection({
                 />
               </div>
             </div>
+
+            {newIsDebt && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Interest Rate %</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="30"
+                    value={newInterestRate}
+                    onChange={e => setNewInterestRate(e.target.value)}
+                    className="text-right"
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Term (months)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={newTermMonths}
+                    onChange={e => setNewTermMonths(e.target.value)}
+                    className="text-right"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={resetAddDialog}>Cancel</Button>
             <Button
               onClick={() => {
-                addMutation.mutate({
+                const body: Record<string, any> = {
                   fundingType: newType,
                   label: newLabel || null,
                   amountUsed: newAmount || '0',
+                  isDebt: newIsDebt,
                   isActive: true,
                   sortOrder: sortedLines.length,
-                });
+                };
+                if (newIsDebt) {
+                  if (newInterestRate) body.interestRate = newInterestRate;
+                  if (newTermMonths) body.termMonths = parseInt(newTermMonths) || 0;
+                }
+                addMutation.mutate(body);
               }}
               disabled={addMutation.isPending}
             >

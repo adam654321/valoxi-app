@@ -34,8 +34,6 @@ const FUNDING_TYPE_LABELS: Record<string, string> = {
   mezzanine: 'Mezzanine',
 };
 
-const EQUITY_TYPES = ['cash_equity', 'investor_equity'];
-
 const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: typeof CheckCircle; description: string }> = {
   strong: {
     label: 'Strong',
@@ -116,7 +114,7 @@ export default function ViabilitySection({ calculations, fundingLines, isLocked 
     fundingLines.forEach((fl, idx) => {
       const calcLine = calculations.fundingLines[idx];
       if (!calcLine || !fl.isActive || calcLine.annualRepayment <= 0) return;
-      if (EQUITY_TYPES.includes(fl.fundingType)) return;
+      if (!fl.isDebt) return;
       const label = fl.label || FUNDING_TYPE_LABELS[fl.fundingType] || fl.fundingType;
       items.push({ label, annualRepayment: calcLine.annualRepayment });
     });
