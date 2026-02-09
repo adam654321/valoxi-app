@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { targetCompanies } from '@shared/schema';
-import { config } from '../config';
+import { geminiClient } from './gemini-client';
 
 interface WebsiteAnalysisResult {
   businessName: string | null;
@@ -43,50 +43,28 @@ export class WebsiteAnalysisService {
     const startTime = Date.now();
 
     try {
-      const apiKey = config.gemini.apiKey;
-      if (!apiKey) {
-        return { success: false, error: 'GOOGLE_GEMINI_API_KEY is not configured' };
-      }
-
       const normalizedUrl = this.normalizeUrl(websiteUrl);
       console.log(`[WEBSITE_ANALYSIS] Analyzing website: ${normalizedUrl}`);
 
-      const requestBody = {
-        generationConfig: { temperature: 0.2 },
-        contents: [{
-          parts: [
-            { text: `${WEBSITE_ANALYSIS_PROMPT}\n\nWebsite URL to analyse: ${normalizedUrl}` }
-          ]
-        }]
-      };
+      const prompt = `${WEBSITE_ANALYSIS_PROMPT}\n\nWebsite URL to analyse: ${normalizedUrl}`;
 
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          body: JSON.stringify(requestBody)
-        }
-      );
+      const response = await geminiClient.generateContent({
+        prompt,
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      });
 
       const processingTime = Date.now() - startTime;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[WEBSITE_ANALYSIS] API error:`, errorText);
-        return { success: false, error: `Gemini API error: ${response.status}`, processingTime };
-      }
-
-      const data = await response.json();
-      const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!textContent) {
+      if (!response.text) {
         return { success: false, error: 'No content in Gemini response', processingTime };
       }
 
-      console.log(`[WEBSITE_ANALYSIS] Raw response:`, textContent.substring(0, 500));
+      console.log(`[WEBSITE_ANALYSIS] Raw response:`, response.text.substring(0, 500));
 
-      const analysis = this.parseAnalysisResponse(textContent);
+      const analysis = response.json
+        ? this.extractAnalysisFields(response.json)
+        : this.parseAnalysisResponse(response.text);
       const markdown = this.formatAsMarkdown(analysis);
 
       return { success: true, analysis, rawMarkdown: markdown, processingTime };
@@ -103,20 +81,23 @@ export class WebsiteAnalysisService {
     return url;
   }
 
+  private extractAnalysisFields(parsed: any): WebsiteAnalysisResult {
+    return {
+      businessName: parsed.businessName || null,
+      industryType: parsed.industryType || null,
+      industryCategory: parsed.industryCategory || null,
+      companyDescription: parsed.companyDescription || null,
+      yearEstablished: parsed.yearEstablished || null,
+      registeredAddress: parsed.registeredAddress || null,
+      legalStructure: parsed.legalStructure || null
+    };
+  }
+
   private parseAnalysisResponse(text: string): WebsiteAnalysisResult {
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          businessName: parsed.businessName || null,
-          industryType: parsed.industryType || null,
-          industryCategory: parsed.industryCategory || null,
-          companyDescription: parsed.companyDescription || null,
-          yearEstablished: parsed.yearEstablished || null,
-          registeredAddress: parsed.registeredAddress || null,
-          legalStructure: parsed.legalStructure || null
-        };
+        return this.extractAnalysisFields(JSON.parse(jsonMatch[0]));
       }
     } catch (e) {
       console.error(`[WEBSITE_ANALYSIS] Failed to parse JSON:`, e);
