@@ -167,6 +167,10 @@ export class DealModelMappingService {
     const latestBalance = await this.getLatestBalanceSheet(targetCompanyId);
     const latestAssets = await this.getLatestFixedAssets(targetCompanyId);
 
+    if (latestBalance?.corporationTaxDue) {
+      modelValues.minusCorpTaxDue = String(latestBalance.corporationTaxDue);
+    }
+
     modelValues.expertDataSnapshot = {
       qoe: qoeData,
       valuation: valuationData,

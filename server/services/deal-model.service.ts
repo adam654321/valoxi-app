@@ -89,10 +89,25 @@ function buildCalcInputs(model: DealModelWithDetails): {
     plusExcessCash: model.plusExcessCash ?? '0',
     minusPrimaryDebt: model.minusPrimaryDebt ?? '0',
     minusOtherDebt: model.minusOtherDebt ?? '0',
-    minusCorpTaxDue: '0',
+    minusCorpTaxDue: model.minusCorpTaxDue ?? '0',
     minusWorkingCapitalAdj: model.minusWorkingCapitalAdj ?? '0',
     plusPropertyValue: model.propertyValue ?? '0',
-    otherAdjustments: null,
+    otherAdjustments: (() => {
+      try {
+        const bridgeAdj = (model.expertDataSnapshot as any)?.valuation?.ev_to_equity_bridge?.other_adjustments;
+        if (Array.isArray(bridgeAdj) && bridgeAdj.length > 0) {
+          return bridgeAdj
+            .filter((a: any) => a && (a.label || a.description) && a.amount != null)
+            .map((a: any) => ({
+              label: a.label || a.description || 'Other adjustment',
+              amount: Number(a.amount) || 0,
+            }));
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    })(),
     feeLegalDdPercent: model.feeLegalDdPercent ?? '2.5',
     feeAccountingDdPercent: model.feeAccountingDdPercent ?? '1.5',
     feeBrokerPercent: model.feeBrokerPercent ?? '2.0',

@@ -154,7 +154,22 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       minusCorpTaxDue: (modelDetails as any).minusCorpTaxDue ?? '0',
       minusWorkingCapitalAdj: modelDetails.minusWorkingCapitalAdj ?? '0',
       plusPropertyValue: modelDetails.propertyValue ?? '0',
-      otherAdjustments: null,
+      otherAdjustments: (() => {
+        try {
+          const bridgeAdj = (modelDetails as any)?.expertDataSnapshot?.valuation?.ev_to_equity_bridge?.other_adjustments;
+          if (Array.isArray(bridgeAdj) && bridgeAdj.length > 0) {
+            return bridgeAdj
+              .filter((a: any) => a && (a.label || a.description) && a.amount != null)
+              .map((a: any) => ({
+                label: a.label || a.description || 'Other adjustment',
+                amount: Number(a.amount) || 0,
+              }));
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      })(),
       feeLegalDdPercent: modelDetails.feeLegalDdPercent ?? '2.5',
       feeAccountingDdPercent: modelDetails.feeAccountingDdPercent ?? '1.5',
       feeBrokerPercent: modelDetails.feeBrokerPercent ?? '2.0',

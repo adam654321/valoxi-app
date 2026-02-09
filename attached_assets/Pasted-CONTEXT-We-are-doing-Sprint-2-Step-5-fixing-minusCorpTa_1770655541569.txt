@@ -1,0 +1,72 @@
+CONTEXT: We are doing Sprint 2, Step 5 — fixing minusCorpTaxDue and otherAdjustments in the offer price bridge. Three targeted changes.
+
+CHANGE 1 — In server/services/deal-model.service.ts, fix buildCalcInputs.
+
+Change minusCorpTaxDue from:
+  minusCorpTaxDue: '0',
+To:
+  minusCorpTaxDue: model.minusCorpTaxDue ?? '0',
+
+Change otherAdjustments from:
+  otherAdjustments: null,
+To — read from the valuation expert snapshot, mapping to the format the calculator expects ({ label: string; amount: number }[]):
+
+  otherAdjustments: (() => {
+    try {
+      const bridgeAdj = (model.expertDataSnapshot as any)?.valuation?.ev_to_equity_bridge?.other_adjustments;
+      if (Array.isArray(bridgeAdj) && bridgeAdj.length > 0) {
+        return bridgeAdj
+          .filter((a: any) => a && (a.label || a.description) && a.amount != null)
+          .map((a: any) => ({
+            label: a.label || a.description || 'Other adjustment',
+            amount: Number(a.amount) || 0,
+          }));
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  })(),
+
+The IIFE with try/catch is defensive because expertDataSnapshot is untyped JSON from the AI — we can't guarantee its structure. We accept both label and description since AI output can vary.
+
+CHANGE 2 — In server/services/deal-model-mapping.service.ts, auto-seed minusCorpTaxDue from the balance sheet when creating a new deal model.
+
+Find where the balance sheet data is fetched (around where latestBalance is used). After the fee defaults section, add:
+
+  if (latestBalance?.corporationTaxDue) {
+    modelValues.minusCorpTaxDue = String(latestBalance.corporationTaxDue);
+  }
+
+CHANGE 3 — In client/src/components/deal-modeller/DealModeller.tsx, update the client-side modelInput to also read otherAdjustments from the snapshot (matching the server logic).
+
+Change otherAdjustments from:
+  otherAdjustments: null,
+To:
+  otherAdjustments: (() => {
+    try {
+      const bridgeAdj = (modelDetails as any)?.expertDataSnapshot?.valuation?.ev_to_equity_bridge?.other_adjustments;
+      if (Array.isArray(bridgeAdj) && bridgeAdj.length > 0) {
+        return bridgeAdj
+          .filter((a: any) => a && (a.label || a.description) && a.amount != null)
+          .map((a: any) => ({
+            label: a.label || a.description || 'Other adjustment',
+            amount: Number(a.amount) || 0,
+          }));
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  })(),
+
+Also remove the (modelDetails as any) cast on minusCorpTaxDue if it's no longer needed — check if the TypeScript type now includes it. If it still needs the cast, leave it.
+
+IMPORTANT:
+- Do not change the calculator itself
+- Do not change any other fields in buildCalcInputs or modelInput
+- After making the changes, show me:
+  (a) The updated minusCorpTaxDue and otherAdjustments lines from buildCalcInputs
+  (b) The auto-seed code from the mapping service
+  (c) The updated otherAdjustments from DealModeller.tsx
+  (d) Confirm no other changes were made
