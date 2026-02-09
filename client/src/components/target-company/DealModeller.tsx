@@ -20,13 +20,13 @@ import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shar
 import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
+import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import {
   Plus,
   Lock,
   Calculator,
   PoundSterling,
   Banknote,
-  Scale,
   CreditCard,
   CheckCircle,
   Loader2,
@@ -71,7 +71,6 @@ const STATUS_COLOURS: Record<string, string> = {
 };
 
 const SECTIONS = [
-  { num: 3, title: "What's It Worth?", desc: 'Set the EBITDA multiple and EV-to-equity bridge to calculate the offer price.', icon: Scale },
   { num: 4, title: 'How Do We Pay For It?', desc: 'Build the funding structure with debt facilities and equity.', icon: CreditCard },
   { num: 5, title: 'Does The Deal Work?', desc: 'Payment cover ratio, fees breakdown, and deal viability summary.', icon: CheckCircle },
 ];
@@ -154,7 +153,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       plusExcessCash: modelDetails.plusExcessCash ?? '0',
       minusPrimaryDebt: modelDetails.minusPrimaryDebt ?? '0',
       minusOtherDebt: modelDetails.minusOtherDebt ?? '0',
-      minusCorpTaxDue: '0',
+      minusCorpTaxDue: (modelDetails as any).minusCorpTaxDue ?? '0',
       minusWorkingCapitalAdj: modelDetails.minusWorkingCapitalAdj ?? '0',
       plusPropertyValue: modelDetails.propertyValue ?? '0',
       otherAdjustments: null,
@@ -364,6 +363,19 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     calculations={calculations}
                     isLocked={isLocked}
                     financialYears={financialYears}
+                    onDataChange={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
+                    }}
+                  />
+                )}
+
+                {selectedModelId && modelDetails && (
+                  <ValuationSection
+                    modelId={selectedModelId}
+                    model={modelDetails}
+                    calculations={calculations}
+                    isLocked={isLocked}
+                    reportedEbitdaByYear={reportedEbitdaByYear}
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                     }}
