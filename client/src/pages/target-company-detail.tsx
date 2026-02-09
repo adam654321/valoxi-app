@@ -45,7 +45,6 @@ import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { DealActivitySection } from "@/components/deal-activity-section";
 import { DocumentManagement } from "@/components/document-management";
-import { DetailedAnalysisDisplay } from "@/components/detailed-analysis-display";
 import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
 import { DocumentsTab } from "@/components/target-company/DocumentsTab";

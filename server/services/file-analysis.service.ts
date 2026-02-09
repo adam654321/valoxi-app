@@ -1,7 +1,27 @@
 import { documentAnalysisRepository } from "../repositories/document-analysis.repository";
 import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
-import { runDetailedGeminiAnalysis, getMimeTypeForFile, type FileInfo as DetailedFileInfo } from "../gemini-detailed-analysis-service";
+function getMimeTypeForFile(fileType: string): string {
+  const mimeMap: Record<string, string> = {
+    "application/pdf": "application/pdf",
+    "pdf": "application/pdf",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel": "application/vnd.ms-excel",
+    "xls": "application/vnd.ms-excel",
+    "text/csv": "text/csv",
+    "csv": "text/csv",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/png": "image/png",
+    "png": "image/png",
+    "image/jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+  };
+  const normalized = fileType.toLowerCase();
+  return mimeMap[normalized] || fileType;
+}
 import { classifyDocumentWithGemini } from "../gemini-document-classification-service";
 import { runStep2AnalysisForTypes } from "../gemini-step2-analysis-service";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";

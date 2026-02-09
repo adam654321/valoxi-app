@@ -1,0 +1,30 @@
+Context
+Continuing the codebase cleanup. Stage 1 Analysis was removed in Step 1. We're now removing the Detailed Analysis feature — the second layer of the old AI pipeline, also replaced by the Expert Analysis engine. A dependency audit has been completed and we know exactly what to touch.
+Step 2 — Remove Detailed Analysis
+Please make the following changes in this order.
+DELETE these files/directories:
+
+server/gemini-detailed-analysis-service.ts (root-level — was reported deleted in Step 1 but still exists)
+server/prompts/detailed-analysis-prompt.ts
+client/src/components/deal-sheet-visual-display.tsx (was reported deleted in Step 1 but still exists)
+client/src/components/detailed-analysis-display.tsx
+client/src/components/detailed-analysis/ (entire directory — contains types.ts, AnalysisSummary.tsx, AnalysisFinancialTable.tsx)
+client/src/hooks/useDetailedAnalysis.ts
+tests/detailed-analysis.spec.ts
+
+Update these files:
+
+server/services/file-analysis.service.ts — Line 4 imports runDetailedGeminiAnalysis, getMimeTypeForFile, and DetailedFileInfo from ../gemini-detailed-analysis-service. Remove that entire import line. IMPORTANT: getMimeTypeForFile is used elsewhere in this file — it should already have a local copy from the Step 1 refactor. Verify it exists locally in this file. If not, copy the function into this file before removing the import. Also remove any calls to runDetailedGeminiAnalysis and any references to DetailedFileInfo within the file.
+client/src/pages/target-company-detail.tsx — Line 48 still imports DetailedAnalysisDisplay. Remove that unused import line.
+server/services/event-bus.service.ts — Remove the AnalysisCompletedEvent interface (lines 3-10). Remove 'analysis:completed' from the EventMap type. Remove 'detailed_analysis_completed' from the DocumentUpdateEvent.type union. Keep all other event types and interfaces intact.
+replit.md — Remove the analysis:completed reference from the EventBus documentation.
+
+DO NOT touch any of the following — these are the per-document analysis system, NOT the Detailed Analysis feature:
+
+server/routes/document-analysis.routes.ts
+server/repositories/document-analysis.repository.ts
+server/services/document-analysis.service.ts
+shared/schema/documents.ts (the documentAnalysisResults table)
+Any frontend queries to /api/v2/document-analysis/*
+
+After making all changes, confirm the app compiles and runs without errors.

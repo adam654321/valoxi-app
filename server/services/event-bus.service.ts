@@ -1,14 +1,5 @@
 import { EventEmitter } from 'events';
 
-export interface AnalysisCompletedEvent {
-  targetCompanyId: number;
-  eventId: number;
-  status: 'completed' | 'failed';
-  analysisType: 'stage1' | 'detailed' | 'document';
-  timestamp: Date;
-  data?: any;
-}
-
 export interface FileUploadedEvent {
   documentId: number;
   targetCompanyId: number;
@@ -29,7 +20,7 @@ export interface StageUpdatedEvent {
 }
 
 export interface DocumentUpdateEvent {
-  type: 'analysis_started' | 'analysis_completed' | 'document_uploaded' | 'detailed_analysis_completed';
+  type: 'analysis_started' | 'analysis_completed' | 'document_uploaded';
   targetCompanyId: number;
   documentId?: number;
   eventId?: number;
@@ -46,7 +37,6 @@ export interface FinancialDataUpdateEvent {
 }
 
 type EventMap = {
-  'analysis:completed': AnalysisCompletedEvent;
   'file:uploaded': FileUploadedEvent;
   'stage:updated': StageUpdatedEvent;
   'document:update': DocumentUpdateEvent;

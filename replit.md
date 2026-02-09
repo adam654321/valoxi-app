@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 - **Middleware Layer** (`server/middleware/`):
     - `session.ts`: Exports `createSessionMiddleware()` for PostgreSQL-backed session configuration. Requires `SESSION_SECRET` env var (throws on missing).
     - `auth.ts`: Exports `isAuthenticated` middleware for route protection (checks `req.session.userId`).
-- **EventBus Pattern**: Typed EventEmitter singleton (`server/services/event-bus.service.ts`) for decoupled inter-service communication. Supports events: `analysis:completed`, `file:uploaded`, `stage:updated`, `document:update`.
+- **EventBus Pattern**: Typed EventEmitter singleton (`server/services/event-bus.service.ts`) for decoupled inter-service communication. Supports events: `file:uploaded`, `stage:updated`, `document:update`, `financial_data:update`.
 - **Centralized Configuration**: All environment variables managed through `server/config.ts` module organized by domain (server, gemini, smtp, replit, database, session).
 - **Repository Pattern (Primary)**: Data access through domain repositories (`server/repositories/*.repository.ts`):
     - `usersRepository`: User CRUD, sessions, invitations, roles, team management
