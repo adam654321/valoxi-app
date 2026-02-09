@@ -30,6 +30,7 @@ import {
   Lock,
   RefreshCw,
   AlertTriangle,
+  StopCircle,
 } from "lucide-react";
 
 interface ExpertResult {
@@ -257,6 +258,17 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/v2/expert-analysis/cancel/${targetCompanyId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/expert-analysis/results", targetCompanyId] });
+      toast({ title: "Analysis Cancelled", description: "All pending and running analyses have been stopped." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const getResult = (type: string) => results.find((r) => r.expertType === type);
 
   const dataQuality = getResult("data_quality");
@@ -322,18 +334,34 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
             <h2 className="text-lg font-semibold">Phase 1: Screening</h2>
             <Badge variant="outline" className="text-xs">Pre-requisite</Badge>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => triggerStage1Mutation.mutate()}
-            disabled={triggerStage1Mutation.isPending || (dataQuality?.status === 'processing') || (screening?.status === 'processing')}
-          >
-            {triggerStage1Mutation.isPending ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Running...</>
-            ) : (
-              <><RefreshCw className="w-4 h-4 mr-2" />Re-run Screening</>
+          <div className="flex items-center gap-2">
+            {(dataQuality?.status === 'processing' || screening?.status === 'processing') && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Cancelling...</>
+                ) : (
+                  <><StopCircle className="w-4 h-4 mr-2" />Cancel</>
+                )}
+              </Button>
             )}
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => triggerStage1Mutation.mutate()}
+              disabled={triggerStage1Mutation.isPending || (dataQuality?.status === 'processing') || (screening?.status === 'processing')}
+            >
+              {triggerStage1Mutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Running...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" />Re-run Screening</>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -446,22 +474,38 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
                 : "Run a comprehensive deep dive across all dimensions"}
             </p>
           </div>
-          <Button
-            onClick={() => triggerMutation.mutate()}
-            disabled={triggerMutation.isPending || hasRunningExperts}
-          >
-            {triggerMutation.isPending || hasRunningExperts ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Running...
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 mr-2" />
-                {hasDeepDiveStarted ? "Re-run Deep Dive" : "Start Expert Deep Dive"}
-              </>
+          <div className="flex items-center gap-2">
+            {hasRunningExperts && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Cancelling...</>
+                ) : (
+                  <><StopCircle className="w-4 h-4 mr-2" />Cancel</>
+                )}
+              </Button>
             )}
-          </Button>
+            <Button
+              onClick={() => triggerMutation.mutate()}
+              disabled={triggerMutation.isPending || hasRunningExperts}
+            >
+              {triggerMutation.isPending || hasRunningExperts ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  {hasDeepDiveStarted ? "Re-run Deep Dive" : "Start Expert Deep Dive"}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {hasDeepDiveStarted && (

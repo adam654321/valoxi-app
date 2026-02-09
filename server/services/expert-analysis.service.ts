@@ -95,6 +95,39 @@ export class ExpertAnalysisService {
     return results;
   }
 
+  async cancelAnalysis(companyId: number): Promise<number> {
+    const result = await db
+      .update(expertAnalysisResults)
+      .set({
+        status: 'failed',
+        analysisData: { error: 'Cancelled by user' },
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(expertAnalysisResults.targetCompanyId, companyId),
+          eq(expertAnalysisResults.status, 'pending')
+        )
+      );
+
+    const result2 = await db
+      .update(expertAnalysisResults)
+      .set({
+        status: 'failed',
+        analysisData: { error: 'Cancelled by user' },
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(expertAnalysisResults.targetCompanyId, companyId),
+          eq(expertAnalysisResults.status, 'processing')
+        )
+      );
+
+    console.log(`[EXPERT_ORCHESTRATOR] Cancelled all pending/processing analyses for company ${companyId}`);
+    return 0;
+  }
+
   private async getExpertResult(
     companyId: number,
     expertType: string
