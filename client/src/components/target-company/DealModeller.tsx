@@ -19,13 +19,13 @@ import {
 import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
 import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
+import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import {
   Plus,
   Lock,
   Calculator,
   PoundSterling,
   Banknote,
-  ClipboardList,
   Scale,
   CreditCard,
   CheckCircle,
@@ -71,7 +71,6 @@ const STATUS_COLOURS: Record<string, string> = {
 };
 
 const SECTIONS = [
-  { num: 2, title: 'What Should We Adjust?', desc: 'Review and accept/reject suggested EBITDA adjustments from expert analysis.', icon: ClipboardList },
   { num: 3, title: "What's It Worth?", desc: 'Set the EBITDA multiple and EV-to-equity bridge to calculate the offer price.', icon: Scale },
   { num: 4, title: 'How Do We Pay For It?', desc: 'Build the funding structure with debt facilities and equity.', icon: CreditCard },
   { num: 5, title: 'Does The Deal Work?', desc: 'Payment cover ratio, fees breakdown, and deal viability summary.', icon: CheckCircle },
@@ -349,6 +348,18 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   calculations={calculations}
                   averagingYears={modelDetails?.averagingYears ?? 3}
                 />
+
+                {selectedModelId && modelDetails && (
+                  <AdjustmentsSection
+                    modelId={selectedModelId}
+                    adjustments={modelDetails.adjustments || []}
+                    calculations={calculations}
+                    isLocked={isLocked}
+                    onDataChange={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
+                    }}
+                  />
+                )}
 
                 {SECTIONS.map(section => {
                   const Icon = section.icon;
