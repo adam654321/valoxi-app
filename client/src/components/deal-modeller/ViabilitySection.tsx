@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { formatCurrency, formatPercent } from '@/lib/format-utils';
+import { formatCurrency } from '@/lib/format-utils';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
+import type { DealModelFundingLine } from '@shared/schema';
 import {
   CheckCircle,
   AlertTriangle,
@@ -18,8 +19,22 @@ import {
 
 interface ViabilitySectionProps {
   calculations: CalculationResult | null;
+  fundingLines: DealModelFundingLine[];
   isLocked: boolean;
 }
+
+const FUNDING_TYPE_LABELS: Record<string, string> = {
+  receivables_finance: 'Receivables Finance',
+  asset_finance: 'Asset Finance',
+  property_finance: 'Property Finance',
+  new_senior_debt: 'Senior Debt',
+  deferred_consideration: 'Deferred Consideration',
+  cash_equity: 'Cash Equity',
+  investor_equity: 'Investor Equity',
+  mezzanine: 'Mezzanine',
+};
+
+const EQUITY_TYPES = ['cash_equity', 'investor_equity'];
 
 const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: typeof CheckCircle; description: string }> = {
   strong: {
@@ -55,12 +70,12 @@ const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: str
     description: 'Insufficient cash flow to cover debt repayments. The deal structure needs to be revised.',
   },
   no_debt: {
-    label: 'No Debt',
+    label: 'No Debt Service',
     color: 'text-slate-700',
     bgColor: 'bg-slate-50',
     borderColor: 'border-slate-200',
     icon: Info,
-    description: 'No debt facilities are active. Add funding sources with repayment terms to calculate the payment cover ratio.',
+    description: 'No debt facilities with repayment terms are active. Add funding sources with interest rates and terms to calculate the DSCR.',
   },
 };
 
@@ -71,15 +86,7 @@ function getRatioBarWidth(ratio: number | null): number {
   return (ratio / 4) * 100;
 }
 
-function getRatioBarColor(rating: string): string {
-  if (rating === 'strong') return 'bg-green-500';
-  if (rating === 'adequate') return 'bg-blue-500';
-  if (rating === 'tight') return 'bg-amber-500';
-  if (rating === 'unfundable') return 'bg-red-500';
-  return 'bg-slate-300';
-}
-
-export default function ViabilitySection({ calculations, isLocked }: ViabilitySectionProps) {
+export default function ViabilitySection({ calculations, fundingLines, isLocked }: ViabilitySectionProps) {
   const feeLines = useMemo(() => {
     if (!calculations) return [];
     const lines: Array<{ label: string; amount: number }> = [
@@ -101,6 +108,21 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
     if (!calculations) return 0;
     return calculations.fundingLines.reduce((sum, fl) => sum + fl.arrangementFee, 0);
   }, [calculations]);
+
+  const debtServiceBreakdown = useMemo(() => {
+    if (!calculations || !fundingLines.length) return [];
+    const items: Array<{ label: string; annualRepayment: number }> = [];
+
+    fundingLines.forEach((fl, idx) => {
+      const calcLine = calculations.fundingLines[idx];
+      if (!calcLine || !fl.isActive || calcLine.annualRepayment <= 0) return;
+      if (EQUITY_TYPES.includes(fl.fundingType)) return;
+      const label = fl.label || FUNDING_TYPE_LABELS[fl.fundingType] || fl.fundingType;
+      items.push({ label, annualRepayment: calcLine.annualRepayment });
+    });
+
+    return items;
+  }, [calculations, fundingLines]);
 
   const rating = calculations ? RATING_CONFIG[calculations.paymentCoverRating] || RATING_CONFIG.no_debt : RATING_CONFIG.no_debt;
   const RatingIcon = rating.icon;
@@ -135,6 +157,8 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
     return { viable, issues, positives };
   }, [calculations]);
 
+  const hasDebtService = calculations != null && calculations.totalAnnualDebtService > 0;
+
   return (
     <Card>
       <CardHeader>
@@ -143,7 +167,7 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
           <CheckCircle className="h-4 w-4 text-muted-foreground" />
           Does The Deal Work?
         </CardTitle>
-        <CardDescription>Payment cover ratio, fees breakdown, and deal viability summary.</CardDescription>
+        <CardDescription>Debt service coverage ratio, fees breakdown, and deal viability summary.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className={`rounded-lg border p-5 ${rating.borderColor} ${rating.bgColor}`}>
@@ -152,15 +176,16 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
               <RatingIcon className="h-6 w-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Gauge className="h-4 w-4 text-muted-foreground" />
-                  Payment Cover Ratio
+                  Debt Service Coverage Ratio (DSCR)
                 </h3>
                 <Badge variant="outline" className={`${rating.color} ${rating.borderColor}`}>
                   {rating.label}
                 </Badge>
               </div>
+              <p className="text-xs text-muted-foreground mb-2">Also known as Payment Cover Ratio</p>
 
               <div className="flex items-baseline gap-2 mb-3">
                 <span className={`text-3xl font-bold ${rating.color}`}>
@@ -168,12 +193,19 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
                     ? `${calculations.paymentCoverRatio.toFixed(2)}x`
                     : '—'}
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  {calculations?.averageAdjustedEbitda != null && calculations?.totalAnnualDebtService > 0
-                    ? `(${formatCurrency(calculations.averageAdjustedEbitda)} EBITDA / ${formatCurrency(calculations.totalAnnualDebtService)} annual debt service)`
-                    : ''}
-                </span>
               </div>
+
+              {hasDebtService && calculations && (
+                <div className="bg-white/60 rounded border p-3 mb-3">
+                  <p className="text-sm font-mono text-muted-foreground">
+                    DSCR = {formatCurrency(calculations.averageAdjustedEbitda)}{' '}
+                    <span className="text-xs">(Adjusted EBITDA)</span>{' '}
+                    &divide; {formatCurrency(calculations.totalAnnualDebtService)}{' '}
+                    <span className="text-xs">(Annual Debt Service)</span>{' '}
+                    = <span className={`font-bold ${rating.color}`}>{calculations.paymentCoverRatio?.toFixed(2)}x</span>
+                  </p>
+                </div>
+              )}
 
               <div className="mb-3">
                 <div className="flex justify-between text-xs text-muted-foreground mb-1">
@@ -184,7 +216,7 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
                   <span>4x+</span>
                 </div>
                 <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
-                  <div className="absolute inset-y-0 left-0 flex">
+                  <div className="absolute inset-y-0 left-0 flex w-full">
                     <div className="bg-red-400 h-full" style={{ width: '25%' }} />
                     <div className="bg-amber-400 h-full" style={{ width: '12.5%' }} />
                     <div className="bg-blue-400 h-full" style={{ width: '12.5%' }} />
@@ -209,6 +241,59 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
             </div>
           </div>
         </div>
+
+        {debtServiceBreakdown.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-muted-foreground" />
+              Annual Debt Service Breakdown
+            </h3>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 text-xs text-muted-foreground uppercase">
+                    <th className="px-3 py-2 text-left font-medium">Funding Source</th>
+                    <th className="px-3 py-2 text-right font-medium">Annual Repayment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {debtServiceBreakdown.map((item, idx) => (
+                    <tr key={idx} className={idx % 2 === 0 ? 'bg-muted/30' : ''}>
+                      <td className="px-3 py-2">{item.label}</td>
+                      <td className="px-3 py-2 text-right font-medium tabular-nums">
+                        {formatCurrency(item.annualRepayment)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 font-semibold bg-muted/50">
+                    <td className="px-3 py-2">Total Annual Debt Service</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {calculations ? formatCurrency(calculations.totalAnnualDebtService) : '—'}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {hasDebtService && (
+          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+            <div className="flex items-start gap-2 mb-2">
+              <Info className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
+              <h4 className="text-sm font-medium text-slate-700">Lender Context</h4>
+            </div>
+            <ul className="space-y-1.5 text-xs text-slate-600 ml-6">
+              <li>Most lenders require a minimum DSCR of 1.25x–1.50x for senior debt.</li>
+              <li>A DSCR above 2.0x provides comfortable headroom for covenant compliance.</li>
+              <li>DSCR below 1.0x means the business cannot service its debt from operating cash flow.</li>
+            </ul>
+          </div>
+        )}
+
+        <Separator />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
@@ -296,7 +381,7 @@ export default function ViabilitySection({ calculations, isLocked }: ViabilitySe
               </table>
             </div>
 
-            {calculations && calculations.totalAnnualDebtService > 0 && (
+            {hasDebtService && calculations && (
               <div className="mt-3 border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
                   <tbody>

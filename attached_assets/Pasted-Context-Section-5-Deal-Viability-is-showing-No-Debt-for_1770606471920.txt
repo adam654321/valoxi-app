@@ -1,0 +1,58 @@
+Context
+Section 5 (Deal Viability) is showing "No Debt" for the Payment Cover Ratio even when funding lines with debt terms are active. This is a bug — the active funding lines' annual repayments should be feeding into the payment cover calculation. The DSCR (Debt Service Coverage Ratio) also needs to be prominently displayed — this is the metric lenders look at first when assessing whether a deal is fundable.
+Step 16a — Fix Payment Cover Ratio + Add DSCR
+First, diagnose the bug. Read these files and trace the data flow:
+
+client/src/components/deal-modeller/ViabilitySection.tsx — How is it receiving and using the calculations? What condition triggers the "No Debt" state? Is it checking calculations.totalAnnualDebtService, calculations.paymentCoverRatio, or something else?
+client/src/components/target-company/DealModeller.tsx — How is calculations being computed? Check the useMemo that calls calculateFullDealModel. Are the funding lines being passed correctly? Are they the right shape (FundingLineInput[])?
+shared/calculators/deal-model.calc.ts — Check calculateFundingStack and calculatePaymentCover. Does calculateFundingStack correctly sum annualRepayment across active lines into totalAnnualDebtService? Does calculateFullDealModel pass the right value through?
+
+Likely causes (check each):
+
+The calculations object passed to ViabilitySection might be stale or computed before funding lines are loaded
+The funding lines might not be in the right format when passed to calculateFullDealModel — the calculator expects FundingLineInput[] but the component might be passing raw DealModelFundingLine[] from the schema without mapping the fields
+The isActive field might not be converting properly (Drizzle booleans can be tricky)
+calculateFundingStack might be filtering to only active lines but the isActive check might be failing due to type coercion
+The totalAnnualDebtService might be calculated correctly in the funding stack result but not passed through to calculatePaymentCover in the orchestrator
+The viability component might be checking paymentCoverRating === 'no_debt' and showing the empty state, but the rating might be 'no_debt' because totalAnnualDebtService is 0 due to one of the above issues
+
+Fix the bug, then also make these enhancements to Section 5:
+Enhancement: DSCR Display
+Lenders think in terms of DSCR (Debt Service Coverage Ratio). It's the same calculation as payment cover ratio (Adjusted EBITDA / Total Annual Debt Service) but needs to be presented with lending context. Update the viability section to include:
+
+Rename "Payment Cover Ratio" to "Debt Service Coverage Ratio (DSCR)" — this is the industry-standard term. You can show "Also known as Payment Cover Ratio" as a subtitle if you want, but DSCR should be the primary label.
+Show the DSCR formula explicitly:
+
+   DSCR = Adjusted EBITDA (£X) ÷ Annual Debt Service (£X) = X.Xx
+This helps the user (and their lender) see exactly what's going into the ratio.
+
+Show the annual debt service breakdown:
+A small table listing each active funding line's annual repayment contribution:
+Funding SourceAnnual RepaymentReceivables Finance£XAsset Finance£XSenior Debt£XTotal Annual Debt Service£X
+This makes it clear what's driving the debt service number. If a user sees the DSCR is tight, they can immediately see which facility is the biggest burden and go back to Section 4 to adjust it.
+Lender context notes — Below the DSCR display, add practical guidance:
+
+"Most lenders require a minimum DSCR of 1.25x-1.50x for senior debt"
+"A DSCR above 2.0x provides comfortable headroom for covenant compliance"
+"DSCR below 1.0x means the business cannot service its debt from operating cash flow"
+
+These should be subtle info notes, not prominent warnings — the gauge bar already communicates the status visually.
+Keep the existing gauge bar — it's a good visual. Just make sure the thresholds align:
+
+Below 1.0x: Red / "Unfundable"
+1.0x - 1.5x: Amber / "Tight"
+1.5x - 2.0x: Blue or Light Green / "Adequate"
+Above 2.0x: Green / "Strong"
+
+
+
+After fixing, confirm:
+
+Create or load a deal model that has active funding lines with interest rates and terms
+The DSCR shows a real number (not "No Debt")
+The annual debt service breakdown lists each active line's contribution
+Toggling a funding line in Section 4 updates the DSCR in Section 5 in real time
+Adding a new debt line in Section 4 appears in the debt service breakdown
+The gauge bar needle moves to the correct position
+The formula display matches: EBITDA ÷ debt service = ratio
+With no active debt lines, it correctly shows "No Debt Service" (this is a valid state, not an error)

@@ -394,6 +394,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
                 <ViabilitySection
                   calculations={calculations}
+                  fundingLines={modelDetails?.fundingLines || []}
                   isLocked={isLocked}
                 />
               </div>

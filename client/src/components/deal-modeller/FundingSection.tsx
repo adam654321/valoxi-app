@@ -152,9 +152,12 @@ function FundingLineCard({
   const handleBlur = useCallback(() => {
     isEditingRef.current = false;
     setTimeout(() => {
-      if (!isEditingRef.current) setLocalVals(initLineLocal(line));
+      if (!isEditingRef.current) {
+        setLocalVals(initLineLocal(line));
+        onDataChange();
+      }
     }, 100);
-  }, [line]);
+  }, [line, onDataChange]);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
