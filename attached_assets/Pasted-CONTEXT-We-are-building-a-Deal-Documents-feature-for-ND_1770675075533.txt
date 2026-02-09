@@ -1,0 +1,105 @@
+CONTEXT: We are building a Deal Documents feature for NDA, Offer Letter, and Heads of Terms workflows. This is Sprint A, Step 1 — creating the database schema. The schema follows the existing codebase pattern (targetCompanyId FK, userCompanyId FK, createdBy FK, serial PKs, timestamps).
+
+TASK: Create a new schema file shared/schema/deal-documents.ts with three tables. Then register it in the schema index.
+
+FILE 1 — Create shared/schema/deal-documents.ts:
+```typescript
+import { sql } from 'drizzle-orm';
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, json, date, inet } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
+import { targetCompanies } from './deals';
+import { userCompanies, users } from './core';
+import { dealModels } from './deal-models';
+import { portalAccessTokens } from './portal';
+
+// Templates for NDA, Offer Letter, Heads of Terms
+export const dealDocumentTemplates = pgTable("deal_document_templates", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id),
+  templateName: varchar("template_name", { length: 255 }).notNull(),
+  documentType: varchar("document_type", { length: 50 }).notNull(), // 'nda' | 'offer_letter' | 'heads_of_terms'
+  templateFileUrl: text("template_file_url").notNull(),
+  placeholderMap: json("placeholder_map"), // maps template placeholders to system field paths
+  sections: json("sections"), // for HoTs — list of toggleable sections with labels
+  isSystem: boolean("is_system").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Individual document instances sent through the workflow
+export const dealDocuments = pgTable("deal_documents", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  dealModelId: integer("deal_model_id").references(() => dealModels.id),
+  portalTokenId: integer("portal_token_id").references(() => portalAccessTokens.id),
+  templateId: integer("template_id").references(() => dealDocumentTemplates.id),
+  documentType: varchar("document_type", { length: 50 }).notNull(), // 'nda' | 'offer_letter' | 'heads_of_terms'
+  status: varchar("status", { length: 50 }).default("draft").notNull(), // draft | sent | viewed | accepted | rejected | countered | withdrawn | superseded
+  version: integer("version").default(1).notNull(),
+  parentDocumentId: integer("parent_document_id"), // self-referential, points to previous version
+  documentData: json("document_data"), // snapshot of all populated values at time of generation
+  sectionConfig: json("section_config"), // for HoTs — which sections were included in this version
+  generatedFileUrl: text("generated_file_url"), // path to the generated .docx
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  sentAt: timestamp("sent_at"),
+  viewedAt: timestamp("viewed_at"),
+  respondedAt: timestamp("responded_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Seller responses — full audit trail
+export const dealDocumentResponses = pgTable("deal_document_responses", {
+  id: serial("id").primaryKey(),
+  dealDocumentId: integer("deal_document_id").references(() => dealDocuments.id).notNull(),
+  responseType: varchar("response_type", { length: 50 }).notNull(), // 'accepted' | 'rejected' | 'countered'
+  comments: text("comments"),
+  respondentName: text("respondent_name").notNull(),
+  respondentEmail: text("respondent_email"),
+  respondentIp: inet("respondent_ip"),
+  respondentUserAgent: text("respondent_user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas
+export const insertDealDocumentTemplateSchema = createInsertSchema(dealDocumentTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealDocumentSchema = createInsertSchema(dealDocuments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDealDocumentResponseSchema = createInsertSchema(dealDocumentResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type DealDocumentTemplate = typeof dealDocumentTemplates.$inferSelect;
+export type InsertDealDocumentTemplate = z.infer<typeof insertDealDocumentTemplateSchema>;
+
+export type DealDocument = typeof dealDocuments.$inferSelect;
+export type InsertDealDocument = z.infer<typeof insertDealDocumentSchema>;
+
+export type DealDocumentResponse = typeof dealDocumentResponses.$inferSelect;
+export type InsertDealDocumentResponse = z.infer<typeof insertDealDocumentResponseSchema>;
+```
+
+FILE 2 — Update shared/schema/index.ts to add the new export:
+
+Add this line after the existing exports:
+  export * from './deal-documents';
+
+IMPORTANT:
+- Follow the exact same patterns used in the existing schema files (portal.ts, deal-models.ts, core.ts)
+- Use the same import style, column naming convention (snake_case in DB, camelCase in JS)
+- The parentDocumentId on dealDocuments is intentionally NOT a formal FK reference to avoid circular reference issues — it's just an integer column
+- After making the changes, show me:
+  (a) Confirmation the file was created with all three tables
+  (b) The updated index.ts exports
+  (c) Any LSP errors
