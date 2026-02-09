@@ -366,21 +366,34 @@ export class ExpertAnalysisService {
         `valuation=${valuationStatus} deal_structure=${dealStructureStatus}`
     );
 
-    if (financialStatus === 'success' && sectorStatus === 'pending') {
-      console.log(`[EXPERT_ORCHESTRATOR] Starting Sector expert (Financial complete)`);
-      const financialResult = await this.getExpertResult(companyId, 'financial');
-      const sectorRecord = await this.getExpertResult(companyId, 'sector');
+    const isDone = (s: string) => s === 'success' || s === 'failed';
+    const hasData = (s: string) => s === 'success';
 
-      if (sectorRecord && financialResult) {
-        const sectorPrompt = this.buildSectorPrompt(company, extractedData);
-        await this.runExpert(sectorRecord, sectorPrompt, 'sector');
-        return this.processNextSteps(companyId);
+    if ((hasData(financialStatus) || isDone(financialStatus)) && sectorStatus === 'pending') {
+      if (hasData(financialStatus)) {
+        console.log(`[EXPERT_ORCHESTRATOR] Starting Sector expert (Financial complete)`);
+        const financialResult = await this.getExpertResult(companyId, 'financial');
+        const sectorRecord = await this.getExpertResult(companyId, 'sector');
+
+        if (sectorRecord && financialResult) {
+          const sectorPrompt = this.buildSectorPrompt(company, extractedData);
+          await this.runExpert(sectorRecord, sectorPrompt, 'sector');
+          return this.processNextSteps(companyId);
+        }
+      } else {
+        console.log(`[EXPERT_ORCHESTRATOR] Starting Sector expert without financial data (financial failed)`);
+        const sectorRecord = await this.getExpertResult(companyId, 'sector');
+        if (sectorRecord) {
+          const sectorPrompt = this.buildSectorPrompt(company, extractedData);
+          await this.runExpert(sectorRecord, sectorPrompt, 'sector');
+          return this.processNextSteps(companyId);
+        }
       }
     }
 
     if (
-      financialStatus === 'success' &&
-      operationalStatus === 'success' &&
+      isDone(financialStatus) &&
+      isDone(operationalStatus) &&
       qoeStatus === 'pending'
     ) {
       console.log(`[EXPERT_ORCHESTRATOR] Starting QoE expert`);
@@ -388,12 +401,12 @@ export class ExpertAnalysisService {
       const operationalResult = await this.getExpertResult(companyId, 'operational');
       const qoeRecord = await this.getExpertResult(companyId, 'qoe');
 
-      if (qoeRecord && financialResult && operationalResult) {
+      if (qoeRecord) {
         const prompt = buildQualityOfEarningsPrompt(
           company.companyName,
           sector,
-          JSON.stringify(financialResult.analysisData),
-          JSON.stringify(operationalResult.analysisData)
+          financialResult?.analysisData ? JSON.stringify(financialResult.analysisData) : '{"error": "Financial analysis not available"}',
+          operationalResult?.analysisData ? JSON.stringify(operationalResult.analysisData) : '{"error": "Operational analysis not available"}'
         ) +
           '\n\nDATA:\n' +
           JSON.stringify(extractedData, null, 2);
@@ -404,11 +417,11 @@ export class ExpertAnalysisService {
     }
 
     if (
-      qoeStatus === 'success' &&
-      financialStatus === 'success' &&
-      sectorStatus === 'success' &&
-      riskStatus === 'success' &&
-      operationalStatus === 'success' &&
+      isDone(qoeStatus) &&
+      isDone(financialStatus) &&
+      isDone(sectorStatus) &&
+      isDone(riskStatus) &&
+      isDone(operationalStatus) &&
       valuationStatus === 'pending'
     ) {
       console.log(`[EXPERT_ORCHESTRATOR] Starting Valuation expert`);
@@ -423,22 +436,15 @@ export class ExpertAnalysisService {
 
       const valuationRecord = await this.getExpertResult(companyId, 'valuation');
 
-      if (
-        valuationRecord &&
-        financialResult &&
-        qoeResult &&
-        sectorResult &&
-        riskResult &&
-        operationalResult
-      ) {
+      if (valuationRecord) {
         const prompt = buildValuationExpertPrompt(
           company.companyName,
           sector,
-          JSON.stringify(financialResult.analysisData),
-          JSON.stringify(qoeResult.analysisData),
-          JSON.stringify(sectorResult.analysisData),
-          JSON.stringify(riskResult.analysisData),
-          JSON.stringify(operationalResult.analysisData)
+          financialResult?.analysisData ? JSON.stringify(financialResult.analysisData) : '{"error": "Financial analysis not available"}',
+          qoeResult?.analysisData ? JSON.stringify(qoeResult.analysisData) : '{"error": "QoE analysis not available"}',
+          sectorResult?.analysisData ? JSON.stringify(sectorResult.analysisData) : '{"error": "Sector analysis not available"}',
+          riskResult?.analysisData ? JSON.stringify(riskResult.analysisData) : '{"error": "Risk analysis not available"}',
+          operationalResult?.analysisData ? JSON.stringify(operationalResult.analysisData) : '{"error": "Operational analysis not available"}'
         );
 
         await this.runExpert(valuationRecord, prompt, 'valuation');
@@ -447,10 +453,10 @@ export class ExpertAnalysisService {
     }
 
     if (
-      valuationStatus === 'success' &&
-      riskStatus === 'success' &&
-      operationalStatus === 'success' &&
-      qoeStatus === 'success' &&
+      isDone(valuationStatus) &&
+      isDone(riskStatus) &&
+      isDone(operationalStatus) &&
+      isDone(qoeStatus) &&
       dealStructureStatus === 'pending'
     ) {
       console.log(`[EXPERT_ORCHESTRATOR] Starting Deal Structure expert`);
@@ -464,14 +470,14 @@ export class ExpertAnalysisService {
 
       const dealRecord = await this.getExpertResult(companyId, 'deal_structure');
 
-      if (dealRecord && valuationResult && riskResult && operationalResult && qoeResult) {
+      if (dealRecord) {
         const prompt = buildDealStructurePrompt(
           company.companyName,
           sector,
-          JSON.stringify(valuationResult.analysisData),
-          JSON.stringify(riskResult.analysisData),
-          JSON.stringify(operationalResult.analysisData),
-          JSON.stringify(qoeResult.analysisData)
+          valuationResult?.analysisData ? JSON.stringify(valuationResult.analysisData) : '{"error": "Valuation analysis not available"}',
+          riskResult?.analysisData ? JSON.stringify(riskResult.analysisData) : '{"error": "Risk analysis not available"}',
+          operationalResult?.analysisData ? JSON.stringify(operationalResult.analysisData) : '{"error": "Operational analysis not available"}',
+          qoeResult?.analysisData ? JSON.stringify(qoeResult.analysisData) : '{"error": "QoE analysis not available"}'
         );
 
         await this.runExpert(dealRecord, prompt, 'deal_structure');
@@ -491,11 +497,16 @@ export class ExpertAnalysisService {
     const allStatuses = await Promise.all(
       allExpertTypes.map((t) => getStatus(t))
     );
+    const allDone = allStatuses.every((s) => s === 'success' || s === 'failed');
     const allSuccess = allStatuses.every((s) => s === 'success');
     const synthesisStatus = await getStatus('synthesis');
 
-    if (allSuccess && synthesisStatus === 'pending') {
-      console.log(`[EXPERT_ORCHESTRATOR] All experts complete, starting Synthesis`);
+    if (allDone && synthesisStatus === 'pending') {
+      const failedExperts = allExpertTypes.filter((t, i) => allStatuses[i] === 'failed');
+      if (failedExperts.length > 0) {
+        console.log(`[EXPERT_ORCHESTRATOR] Some experts failed (${failedExperts.join(', ')}), proceeding with synthesis using available data`);
+      }
+      console.log(`[EXPERT_ORCHESTRATOR] All experts done, starting Synthesis`);
       const [
         financialResult,
         operationalResult,
@@ -510,24 +521,20 @@ export class ExpertAnalysisService {
 
       const synthesisRecord = await this.getExpertResult(companyId, 'synthesis');
 
-      if (
-        synthesisRecord &&
-        financialResult &&
-        operationalResult &&
-        riskResult &&
-        qoeResult &&
-        sectorResult &&
-        valuationResult &&
-        dealStructureResult
-      ) {
+      const getDataOrFallback = (result: any, name: string) =>
+        result?.analysisData && result.status === 'success'
+          ? JSON.stringify(result.analysisData)
+          : `{"error": "${name} analysis failed or not available"}`;
+
+      if (synthesisRecord) {
         const prompt = buildSynthesisPrompt(company.companyName, sector, {
-          financial: JSON.stringify(financialResult.analysisData),
-          operational: JSON.stringify(operationalResult.analysisData),
-          risk: JSON.stringify(riskResult.analysisData),
-          qoe: JSON.stringify(qoeResult.analysisData),
-          sector: JSON.stringify(sectorResult.analysisData),
-          valuation: JSON.stringify(valuationResult.analysisData),
-          dealStructure: JSON.stringify(dealStructureResult.analysisData),
+          financial: getDataOrFallback(financialResult, 'Financial'),
+          operational: getDataOrFallback(operationalResult, 'Operational'),
+          risk: getDataOrFallback(riskResult, 'Risk'),
+          qoe: getDataOrFallback(qoeResult, 'QoE'),
+          sector: getDataOrFallback(sectorResult, 'Sector'),
+          valuation: getDataOrFallback(valuationResult, 'Valuation'),
+          dealStructure: getDataOrFallback(dealStructureResult, 'Deal Structure'),
         });
 
         await this.runExpert(synthesisRecord, prompt, 'synthesis');

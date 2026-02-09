@@ -29,10 +29,11 @@ export const portalLimiter = rateLimit({
 
 export const analysisTriggerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 50,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  skip: (req) => req.method === 'GET',
   message: { message: 'Too many analysis requests, please try again later.' },
 });
 
