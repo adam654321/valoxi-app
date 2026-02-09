@@ -1,0 +1,72 @@
+CONTEXT: We are doing Sprint 3 — Gemini service consolidation. This is Step 1: creating a unified GeminiClient class that all services will use. It needs to combine the best of all current patterns:
+- The @google/genai SDK (cleaner than raw fetch)
+- The retry logic from gemini-retry-utils.ts (exponential backoff on 429/503)
+- The 3-stage JSON recovery from gemini-expert-service.ts (cleanJsonResponse, repairTruncatedJson)
+- Configurable model defaulting to gemini-3-flash-preview
+
+TASK: Create a new file server/services/gemini-client.ts with a GeminiClient class.
+
+The class should:
+
+1. CONSTRUCTOR:
+   - Accept optional config: { apiKey?, model?, maxRetries?, baseDelayMs?, maxDelayMs?, timeoutMs? }
+   - Default apiKey from process.env.GOOGLE_GEMINI_API_KEY
+   - Default model to 'gemini-3-flash-preview'
+   - Default retry settings matching gemini-retry-utils.ts: maxRetries: 3, baseDelayMs: 45000, maxDelayMs: 120000, timeoutMs: 180000
+   - Initialise the @google/genai SDK: this.ai = new GoogleGenAI({ apiKey })
+
+2. MAIN METHOD — generateContent:
+   async generateContent(options: {
+     prompt: string;
+     model?: string;           // override per-call if needed
+     temperature?: number;     // default 0
+     responseMimeType?: string; // optional, e.g. 'application/json'
+     fileData?: { fileUri: string; mimeType: string }; // for document analysis
+   }): Promise<GeminiResponse>
+
+   Where GeminiResponse is:
+   {
+     text: string;
+     json: any | null;         // parsed JSON if response is JSON, null otherwise
+     usage: { promptTokens: number; candidateTokens: number; totalTokens: number } | null;
+   }
+
+   Implementation:
+   - Build the request contents array: if fileData provided, include it as a file_data part alongside the text prompt. Otherwise just the text prompt.
+   - Call this.ai.models.generateContent with retry wrapper
+   - Extract the text from the response
+   - If responseMimeType is 'application/json' or the caller expects JSON, attempt 3-stage JSON parsing:
+     Stage 1: JSON.parse(text)
+     Stage 2: cleanJsonResponse(text) then JSON.parse — strip markdown fences, trim whitespace
+     Stage 3: repairTruncatedJson(text) then JSON.parse — attempt to close unclosed braces/brackets
+   - Extract usage metadata
+   - Return { text, json, usage }
+
+3. RETRY WRAPPER — private method:
+   private async withRetry<T>(fn: () => Promise<T>): Promise<T>
+   
+   - Implement the same logic as fetchWithRetry from gemini-retry-utils.ts but adapted for SDK calls
+   - Retry on rate limit errors and model overloaded errors
+   - The SDK throws errors rather than returning Response objects, so catch errors and check for status codes in the error
+   - Exponential backoff: baseDelayMs * 2^attempt, capped at maxDelayMs
+   - Per-attempt timeout using AbortController or setTimeout
+   - Log retry attempts with [GEMINI_CLIENT] prefix
+
+4. JSON RECOVERY HELPERS — private methods:
+   Copy the cleanJsonResponse and repairTruncatedJson functions from gemini-expert-service.ts. Look at that file to find their implementations and bring them into the client as private methods.
+
+5. EXPORTS:
+   - Export the GeminiClient class
+   - Export a singleton instance: export const geminiClient = new GeminiClient()
+   - Export the GeminiResponse type
+
+IMPORTANT:
+- Import GoogleGenAI from '@google/genai'
+- This is a NEW file — do not modify any existing files yet
+- Include JSDoc comments on the class and generateContent method
+- After creating the file, show me:
+  (a) The full class structure (constructor, method signatures, private helpers)
+  (b) The retry logic approach
+  (c) The JSON recovery stages
+  (d) The exports
+  (e) The full file length (approx lines)
