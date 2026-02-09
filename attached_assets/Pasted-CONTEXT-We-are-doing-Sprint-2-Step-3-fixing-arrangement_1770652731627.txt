@@ -1,0 +1,68 @@
+CONTEXT: We are doing Sprint 2, Step 3 — fixing arrangement fee aggregation. Based on the discovery, we need changes in the calculator and one frontend fix to remove a workaround.
+
+The circular dependency concern is not an issue because arrangement fees are based on amountUsed (user input), not totalFundingRequired. So we can safely compute them after calculateFundingStack and add them to the totals.
+
+TASK: Three changes across two files.
+
+CHANGE 1 — In shared/calculators/deal-model.calc.ts, update calculateFundingStack to return totalArrangementFees.
+
+Add a running total inside the function:
+  let totalArrangementFees = 0;
+
+Inside the loop, after computing arrangementFee for each active line, add:
+  totalArrangementFees += arrangementFee;
+
+Update the return type and return statement to include totalArrangementFees:
+  return { fundingLines: results, totalFunded, fundingGap, totalAnnualDebtService, totalArrangementFees };
+
+CHANGE 2 — In the same file, update calculateFullDealModel to aggregate arrangement fees into the totals.
+
+After the line:
+  const funding = calculateFundingStack(fundingLines, fees.totalFundingRequired);
+
+Add:
+  const adjustedTotalFees = fees.totalFees + funding.totalArrangementFees;
+  const adjustedTotalFundingRequired = fees.totalFundingRequired + funding.totalArrangementFees;
+  const adjustedFundingGap = adjustedTotalFundingRequired - funding.totalFunded;
+
+Then in the return statement, override these three values:
+  - Replace ...fees spread with individual fee fields to avoid totalFees/totalFundingRequired being overridden back
+  - OR keep the spread but override after it:
+
+  return {
+    adjustedEbitdaByYear,
+    averageAdjustedEbitda,
+    enterpriseValue,
+    offerPrice,
+    ...fees,
+    totalFees: adjustedTotalFees,
+    totalFundingRequired: adjustedTotalFundingRequired,
+    fundingLines: funding.fundingLines,
+    totalFunded: funding.totalFunded,
+    fundingGap: adjustedFundingGap,
+    totalAnnualDebtService: funding.totalAnnualDebtService,
+    paymentCoverRatio,
+    paymentCoverRating,
+  };
+
+The spread puts the base fee values in, then totalFees, totalFundingRequired, and fundingGap are overridden with the adjusted values. This is clean because JS object spread takes the last value for duplicate keys.
+
+CHANGE 3 — In client/src/components/deal-modeller/ViabilitySection.tsx, remove the client-side arrangement fee workaround to avoid double-counting.
+
+Find where it sums per-line arrangement fees (around lines 105-108) and where it adds them to totalFees in the display (around line 326). Since the calculator will now include arrangement fees in totalFees, the frontend should just use calculations.totalFees directly.
+
+Specifically:
+- Remove the arrangementFees summation variable
+- On the "Total Fees" display row (around line 326), change from calculations.totalFees + arrangementFees to just calculations.totalFees
+- KEEP the "Funding Arrangement Fees" display row (around lines 313-319) — but change it to display the sum from the calculator's per-line results rather than from a separate variable, OR remove it as a separate line item since it's now included in totalFees
+
+Actually — the cleanest approach: keep the arrangement fees as a visible line item but calculate it from the funding line results (which are available as calculations.fundingLines). Remove the separate variable and the addition to totalFees.
+
+IMPORTANT:
+- Do not change calculateFees itself — feeLoanArrangement stays as it is (the deal-level arrangement fee)
+- Do not change calculateOfferPrice or calculateAdjustedEbitda
+- After making the changes, show me:
+  (a) The updated return type and return statement of calculateFundingStack
+  (b) The aggregation code and updated return statement in calculateFullDealModel
+  (c) The changes made in ViabilitySection.tsx to remove the double-counting
+  (d) Confirm no other files were modified

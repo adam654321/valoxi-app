@@ -102,11 +102,6 @@ export default function ViabilitySection({ calculations, fundingLines, isLocked 
     return lines;
   }, [calculations]);
 
-  const arrangementFees = useMemo(() => {
-    if (!calculations) return 0;
-    return calculations.fundingLines.reduce((sum, fl) => sum + fl.arrangementFee, 0);
-  }, [calculations]);
-
   const debtServiceBreakdown = useMemo(() => {
     if (!calculations || !fundingLines.length) return [];
     const items: Array<{ label: string; annualRepayment: number }> = [];
@@ -310,11 +305,11 @@ export default function ViabilitySection({ calculations, fundingLines, isLocked 
                       </td>
                     </tr>
                   ))}
-                  {arrangementFees > 0 && (
+                  {calculations && calculations.fundingLines.reduce((s, fl) => s + fl.arrangementFee, 0) > 0 && (
                     <tr className={feeLines.length % 2 === 0 ? 'bg-muted/30' : ''}>
                       <td className="px-3 py-2 text-muted-foreground">Funding Arrangement Fees</td>
                       <td className="px-3 py-2 text-right font-medium tabular-nums">
-                        {formatCurrency(arrangementFees)}
+                        {formatCurrency(calculations.fundingLines.reduce((s, fl) => s + fl.arrangementFee, 0))}
                       </td>
                     </tr>
                   )}
@@ -323,7 +318,7 @@ export default function ViabilitySection({ calculations, fundingLines, isLocked 
                   <tr className="border-t-2 font-semibold bg-muted/50">
                     <td className="px-3 py-2">Total Fees</td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {calculations ? formatCurrency(calculations.totalFees + arrangementFees) : '—'}
+                      {calculations ? formatCurrency(calculations.totalFees) : '—'}
                     </td>
                   </tr>
                 </tfoot>

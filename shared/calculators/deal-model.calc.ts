@@ -212,10 +212,12 @@ export function calculateFundingStack(
   totalFunded: number;
   fundingGap: number;
   totalAnnualDebtService: number;
+  totalArrangementFees: number;
 } {
   const results: FundingLineResult[] = [];
   let totalFunded = 0;
   let totalAnnualDebtService = 0;
+  let totalArrangementFees = 0;
 
   for (const line of fundingLines) {
     if (!line.isActive) {
@@ -245,6 +247,7 @@ export function calculateFundingStack(
     results.push({ availableAmount, monthlyRepayment, annualRepayment, arrangementFee });
 
     totalFunded += used;
+    totalArrangementFees += arrangementFee;
     if (line.isDebt) {
       totalAnnualDebtService += annualRepayment;
     }
@@ -252,7 +255,7 @@ export function calculateFundingStack(
 
   const fundingGap = totalFundingRequired - totalFunded;
 
-  return { fundingLines: results, totalFunded, fundingGap, totalAnnualDebtService };
+  return { fundingLines: results, totalFunded, fundingGap, totalAnnualDebtService, totalArrangementFees };
 }
 
 export function calculatePaymentCover(
@@ -300,6 +303,10 @@ export function calculateFullDealModel(
 
   const funding = calculateFundingStack(fundingLines, fees.totalFundingRequired);
 
+  const adjustedTotalFees = fees.totalFees + funding.totalArrangementFees;
+  const adjustedTotalFundingRequired = fees.totalFundingRequired + funding.totalArrangementFees;
+  const adjustedFundingGap = adjustedTotalFundingRequired - funding.totalFunded;
+
   const { paymentCoverRatio, paymentCoverRating } = calculatePaymentCover(
     averageAdjustedEbitda,
     funding.totalAnnualDebtService
@@ -311,9 +318,11 @@ export function calculateFullDealModel(
     enterpriseValue,
     offerPrice,
     ...fees,
+    totalFees: adjustedTotalFees,
+    totalFundingRequired: adjustedTotalFundingRequired,
     fundingLines: funding.fundingLines,
     totalFunded: funding.totalFunded,
-    fundingGap: funding.fundingGap,
+    fundingGap: adjustedFundingGap,
     totalAnnualDebtService: funding.totalAnnualDebtService,
     paymentCoverRatio,
     paymentCoverRating,
