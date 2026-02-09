@@ -79,6 +79,7 @@ function buildCalcInputs(model: DealModelWithDetails): {
     interestRate: f.interestRate,
     termMonths: f.termMonths,
     arrangementFeePercent: null,
+    isDebt: f.isDebt ?? false,
     isActive: f.isActive ?? false,
   }));
 
