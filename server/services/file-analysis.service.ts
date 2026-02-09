@@ -22,8 +22,8 @@ function getMimeTypeForFile(fileType: string): string {
   const normalized = fileType.toLowerCase();
   return mimeMap[normalized] || fileType;
 }
-import { classifyDocumentWithGemini } from "../gemini-document-classification-service";
-import { runStep2AnalysisForTypes } from "../gemini-step2-analysis-service";
+import { classifyDocumentWithGemini } from "./gemini-document-classification-service";
+import { runStep2AnalysisForTypes } from "./gemini-step2-analysis-service";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
 import { financialDataService } from "./financial-data.service";
 import { config } from "../config";

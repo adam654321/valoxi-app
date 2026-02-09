@@ -8,7 +8,7 @@ import {
   type ExpertAnalysisResult,
   type TargetCompany,
 } from '@shared/schema';
-import { GeminiExpertService } from '../gemini-expert-service';
+import { GeminiExpertService } from './gemini-expert-service';
 import { buildStage0DataQualityPrompt } from '../prompts/stage0-data-quality-prompt';
 import { buildStage1ScreeningPrompt } from '../prompts/stage1-screening-prompt';
 import { buildFinancialExpertPrompt } from '../prompts/stage2-financial-expert-prompt';

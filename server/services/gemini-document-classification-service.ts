@@ -1,4 +1,4 @@
-import { buildDocumentClassificationPrompt } from "./prompts/document-classification-prompt";
+import { buildDocumentClassificationPrompt } from "../prompts/document-classification-prompt";
 import { fetchWithRetry } from "./gemini-retry-utils";
 
 export interface DocumentClassificationRequest {

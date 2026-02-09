@@ -1,8 +1,8 @@
-import { buildAssetRegisterAnalysisPrompt } from "./prompts/step2-asset-register-prompt";
-import { buildBalanceSheetAnalysisPrompt } from "./prompts/step2-balance-sheet-prompt";
-import { buildProfitAndLossAnalysisPrompt } from "./prompts/step2-profit-and-loss-prompt";
-import { buildSalesLedgerAnalysisPrompt } from "./prompts/step2-sales-ledger-prompt";
-import { buildStaffMatrixAnalysisPrompt } from "./prompts/step2-staff-matrix-prompt";
+import { buildAssetRegisterAnalysisPrompt } from "../prompts/step2-asset-register-prompt";
+import { buildBalanceSheetAnalysisPrompt } from "../prompts/step2-balance-sheet-prompt";
+import { buildProfitAndLossAnalysisPrompt } from "../prompts/step2-profit-and-loss-prompt";
+import { buildSalesLedgerAnalysisPrompt } from "../prompts/step2-sales-ledger-prompt";
+import { buildStaffMatrixAnalysisPrompt } from "../prompts/step2-staff-matrix-prompt";
 import { fetchWithRetry } from "./gemini-retry-utils";
 
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
