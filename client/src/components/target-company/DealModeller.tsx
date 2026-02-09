@@ -104,6 +104,14 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     enabled: !!companyId,
   });
 
+  const financialYears = useMemo<string[]>(() => {
+    if (!financialsRaw?.periods) return [];
+    return financialsRaw.periods
+      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
+      .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime())
+      .map((p: any) => String(p.fiscalYear));
+  }, [financialsRaw]);
+
   const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
     const result: Record<string, number> = {};
@@ -355,6 +363,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     adjustments={modelDetails.adjustments || []}
                     calculations={calculations}
                     isLocked={isLocked}
+                    financialYears={financialYears}
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                     }}
