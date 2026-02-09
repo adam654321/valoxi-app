@@ -208,6 +208,7 @@ export class DealModelMappingService {
     availableYears: string[]
   ): Promise<void> {
     let sortOrder = 0;
+    const processedDirectorNames = new Set<string>();
 
     try {
       const addBacks = qoeData?.add_backs;
@@ -241,6 +242,11 @@ export class DealModelMappingService {
             isManual: false,
             sortOrder: sortOrder++,
           });
+
+          if (mapCategory(item.category, 'one_off_cost') === 'owner_salary_excess') {
+            const name = (item.item || item.description || '').toLowerCase().trim();
+            if (name) processedDirectorNames.add(name);
+          }
         }
         console.log(`[DEAL_MODEL_MAPPING] Created ${addBacks.length} add-back adjustments`);
       }
@@ -280,6 +286,11 @@ export class DealModelMappingService {
             isManual: false,
             sortOrder: sortOrder++,
           });
+
+          if (mapCategory(item.category, 'replacement_salary') === 'replacement_salary') {
+            const name = (item.item || item.description || '').toLowerCase().trim();
+            if (name) processedDirectorNames.add(name);
+          }
         }
         console.log(`[DEAL_MODEL_MAPPING] Created ${deductions.length} deduction adjustments`);
       }
@@ -292,6 +303,13 @@ export class DealModelMappingService {
       if (Array.isArray(directorAnalysis)) {
         for (const director of directorAnalysis) {
           if (!director) continue;
+
+          const directorName = (director.name || '').toLowerCase().trim();
+          if (directorName && processedDirectorNames.has(directorName)) {
+            console.log(`[DEAL_MODEL_MAPPING] Skipping duplicate director salary adjustment for: ${director.name}`);
+            continue;
+          }
+
           const currentSalary = Number(director.current_salary);
           const marketRate = Number(director.estimated_market_rate);
           if (isNaN(currentSalary) || isNaN(marketRate) || currentSalary === marketRate) continue;
