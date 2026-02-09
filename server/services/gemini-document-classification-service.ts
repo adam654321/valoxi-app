@@ -1,5 +1,5 @@
 import { buildDocumentClassificationPrompt } from "../prompts/document-classification-prompt";
-import { fetchWithRetry } from "./gemini-retry-utils";
+import { geminiClient } from "./gemini-client";
 
 export interface DocumentClassificationRequest {
   fileUrl: string;
@@ -32,80 +32,39 @@ export async function classifyDocumentWithGemini(
     console.log(`[GEMINI_CLASSIFICATION] Starting classification for ${request.fileName}`);
     console.log(`[GEMINI_CLASSIFICATION] File URL: ${request.fileUrl.substring(0, 80)}...`);
 
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
-    }
-
     const prompt = buildDocumentClassificationPrompt();
-
-    const requestBody = {
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: "application/json",
-      },
-      contents: [
-        {
-          parts: [
-            {
-              file_data: {
-                mime_type: request.mimeType,
-                file_uri: request.fileUrl,
-              },
-            },
-            { text: prompt },
-          ],
-        },
-      ],
-    };
 
     console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API`);
 
-    const response = await fetchWithRetry(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify(requestBody),
-      }
-    );
+    const response = await geminiClient.generateContent({
+      prompt,
+      temperature: 0,
+      responseMimeType: "application/json",
+      fileData: {
+        fileUri: request.fileUrl,
+        mimeType: request.mimeType,
+      },
+    });
 
     const processingTime = Date.now() - startTime;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[GEMINI_CLASSIFICATION] API error response:`, errorText);
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
+    console.log(`[GEMINI_CLASSIFICATION] Raw response: ${response.text}`);
+
+    if (!response.json) {
+      throw new Error(`Failed to parse Gemini response as JSON`);
     }
 
-    const responseData = await response.json();
-    
-    const responseText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
-    const usageMetadata = responseData?.usageMetadata ? {
-      promptTokenCount: responseData.usageMetadata.promptTokenCount,
-      candidatesTokenCount: responseData.usageMetadata.candidatesTokenCount,
-      totalTokenCount: responseData.usageMetadata.totalTokenCount,
-      thoughtsTokenCount: responseData.usageMetadata.thoughtsTokenCount,
-      promptTokensDetails: responseData.usageMetadata.promptTokensDetails,
-    } : undefined;
-
-    console.log(`[GEMINI_CLASSIFICATION] Raw response: ${responseText}`);
-
-    let parsedResponse: { document_types: string[]; confidence?: string; reasoning?: string };
-    try {
-      parsedResponse = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error(`[GEMINI_CLASSIFICATION] Failed to parse JSON response:`, responseText);
-      throw new Error(`Failed to parse Gemini response as JSON: ${responseText}`);
-    }
+    const parsedResponse = response.json as { document_types: string[]; confidence?: string; reasoning?: string };
 
     if (!parsedResponse.document_types || !Array.isArray(parsedResponse.document_types)) {
       throw new Error(`Invalid response structure: missing document_types array`);
     }
+
+    const usageMetadata = response.usage ? {
+      promptTokenCount: response.usage.promptTokens,
+      candidatesTokenCount: response.usage.candidateTokens,
+      totalTokenCount: response.usage.totalTokens,
+    } : undefined;
 
     console.log(`[GEMINI_CLASSIFICATION] Classification completed in ${processingTime}ms`);
     console.log(`[GEMINI_CLASSIFICATION] Document types: ${parsedResponse.document_types.join(", ")}`);

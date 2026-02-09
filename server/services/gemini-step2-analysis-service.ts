@@ -3,7 +3,7 @@ import { buildBalanceSheetAnalysisPrompt } from "../prompts/step2-balance-sheet-
 import { buildProfitAndLossAnalysisPrompt } from "../prompts/step2-profit-and-loss-prompt";
 import { buildSalesLedgerAnalysisPrompt } from "../prompts/step2-sales-ledger-prompt";
 import { buildStaffMatrixAnalysisPrompt } from "../prompts/step2-staff-matrix-prompt";
-import { fetchWithRetry } from "./gemini-retry-utils";
+import { geminiClient } from "./gemini-client";
 
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
 
@@ -56,76 +56,33 @@ export async function analyzeDocumentWithGemini(
     console.log(`[GEMINI_STEP2] Starting ${request.documentType} analysis for ${request.fileName}`);
     console.log(`[GEMINI_STEP2] File URL: ${request.fileUrl.substring(0, 80)}...`);
 
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
-    }
-
     const prompt = getPromptForDocumentType(request.documentType);
-
-    const requestBody = {
-      generationConfig: {
-        temperature: 0,
-        responseMimeType: "application/json",
-      },
-      contents: [
-        {
-          parts: [
-            {
-              file_data: {
-                mime_type: request.mimeType,
-                file_uri: request.fileUrl,
-              },
-            },
-            { text: prompt },
-          ],
-        },
-      ],
-    };
 
     console.log(`[GEMINI_STEP2] Sending request to Gemini API for ${request.documentType}`);
 
-    const response = await fetchWithRetry(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify(requestBody),
-      }
-    );
+    const response = await geminiClient.generateContent({
+      prompt,
+      temperature: 0,
+      responseMimeType: "application/json",
+      fileData: {
+        fileUri: request.fileUrl,
+        mimeType: request.mimeType,
+      },
+    });
 
     const processingTime = Date.now() - startTime;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[GEMINI_STEP2] API error response:`, errorText);
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
+    console.log(`[GEMINI_STEP2] Raw response length: ${response.text.length} chars`);
 
-    const responseData = await response.json();
-    
-    const responseText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
-    const usageMetadata = responseData?.usageMetadata ? {
-      promptTokenCount: responseData.usageMetadata.promptTokenCount,
-      candidatesTokenCount: responseData.usageMetadata.candidatesTokenCount,
-      totalTokenCount: responseData.usageMetadata.totalTokenCount,
-      thoughtsTokenCount: responseData.usageMetadata.thoughtsTokenCount,
-      promptTokensDetails: responseData.usageMetadata.promptTokensDetails,
-    } : undefined;
-
-    console.log(`[GEMINI_STEP2] Raw response length: ${responseText.length} chars`);
-
-    let parsedResponse: any;
-    try {
-      parsedResponse = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error(`[GEMINI_STEP2] Failed to parse JSON response:`, responseText.substring(0, 500));
+    if (!response.json) {
       throw new Error(`Failed to parse Gemini response as JSON`);
     }
+
+    const usageMetadata = response.usage ? {
+      promptTokenCount: response.usage.promptTokens,
+      candidatesTokenCount: response.usage.candidateTokens,
+      totalTokenCount: response.usage.totalTokens,
+    } : undefined;
 
     console.log(`[GEMINI_STEP2] ${request.documentType} analysis completed in ${processingTime}ms`);
     if (usageMetadata) {
@@ -135,7 +92,7 @@ export async function analyzeDocumentWithGemini(
     return {
       success: true,
       documentType: request.documentType,
-      analysisData: parsedResponse,
+      analysisData: response.json,
       processingTime,
       usageMetadata,
     };

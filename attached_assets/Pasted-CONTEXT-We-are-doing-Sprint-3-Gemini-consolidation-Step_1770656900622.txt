@@ -1,0 +1,63 @@
+CONTEXT: We are doing Sprint 3 — Gemini consolidation. Step 3: migrating the two document analysis services from raw fetch() to the unified GeminiClient. Both currently use raw fetch with fetchWithRetry from gemini-retry-utils.ts.
+
+TASK: Two files to change.
+
+CHANGE 1 — In server/services/gemini-document-classification-service.ts:
+
+Current: Uses raw fetch() via fetchWithRetry() to call the Gemini REST API directly. Hardcodes gemini-3-flash-preview in the URL. Simple JSON.parse on response.
+
+Refactor:
+- Remove the fetchWithRetry import from gemini-retry-utils
+- Remove the raw fetch URL construction and API key header setup
+- Import geminiClient from './gemini-client'
+- Update classifyDocumentWithGemini to use geminiClient.generateContent()
+
+The function signature should stay the same:
+  export async function classifyDocumentWithGemini(
+    request: DocumentClassificationRequest
+  ): Promise<DocumentClassificationResult>
+
+The key change in the implementation:
+- Instead of building the fetch URL and calling fetchWithRetry, call:
+
+  const response = await geminiClient.generateContent({
+    prompt: <the classification prompt text>,
+    temperature: 0,
+    responseMimeType: 'application/json',
+    fileData: {
+      fileUri: request.fileUri,
+      mimeType: request.mimeType,
+    },
+  });
+
+- Replace the manual response parsing with response.json
+- Keep the same return type and error handling pattern (return { success: false, error } on failure)
+- Keep the same logging
+
+CHANGE 2 — In server/services/gemini-step2-analysis-service.ts:
+
+Same refactoring pattern. Current: Uses raw fetch() via fetchWithRetry(). 
+
+Refactor:
+- Remove fetchWithRetry import
+- Import geminiClient from './gemini-client'
+- Update analyzeDocumentWithGemini to use geminiClient.generateContent() with fileData
+- Keep the same function signature, return type, and error handling
+- Keep runStep2AnalysisForTypes unchanged (it just calls analyzeDocumentWithGemini)
+
+For both files:
+- Remove any direct references to the Gemini REST API URL
+- Remove any direct API key reads (process.env.GOOGLE_GEMINI_API_KEY)
+- The retry logic is now handled by geminiClient internally, so fetchWithRetry is no longer needed
+- The JSON parsing is now handled by geminiClient (3-stage recovery), so remove manual JSON.parse
+
+IMPORTANT:
+- Do NOT change function signatures or return types
+- Do NOT change the prompt construction logic — keep the exact same prompts
+- Do NOT modify runStep2AnalysisForTypes or getPromptForDocumentType
+- After making the changes, show me:
+  (a) The imports for both files (what was removed, what was added)
+  (b) The core geminiClient.generateContent() call from each file
+  (c) How errors are handled in each file
+  (d) Approximate new line counts vs old for both files
+  (e) Confirm runStep2AnalysisForTypes and getPromptForDocumentType are unchanged
