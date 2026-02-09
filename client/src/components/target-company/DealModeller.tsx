@@ -160,6 +160,11 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       feeBrokerPercent: modelDetails.feeBrokerPercent ?? '2.0',
       feeLoanArrangementPercent: modelDetails.feeLoanArrangementPercent ?? '1.0',
       feeDealMakerPercent: modelDetails.feeDealMakerPercent ?? '5.0',
+      feeLegalDdType: (modelDetails.feeLegalDdType as 'percent' | 'fixed') ?? 'percent',
+      feeAccountingDdType: (modelDetails.feeAccountingDdType as 'percent' | 'fixed') ?? 'percent',
+      feeBrokerType: (modelDetails.feeBrokerType as 'percent' | 'fixed') ?? 'percent',
+      feeLoanArrangementType: (modelDetails.feeLoanArrangementType as 'percent' | 'fixed') ?? 'percent',
+      feeDealMakerType: (modelDetails.feeDealMakerType as 'percent' | 'fixed') ?? 'percent',
       customFees: null,
     };
 
