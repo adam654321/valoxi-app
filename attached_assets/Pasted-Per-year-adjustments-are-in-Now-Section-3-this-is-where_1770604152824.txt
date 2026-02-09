@@ -1,0 +1,96 @@
+Per-year adjustments are in. Now Section 3 — this is where the user controls the valuation and sees how the EV bridges down to an offer price.
+
+Context
+The Deal Modeller now has the P&L table (Section 1), adjustments UI with per-year support (Section 2), and the shell with live calculations. Section 3 is "What's It Worth?" — it shows the valuation parameters the user can control (EBITDA multiple, averaging years) and the EV-to-equity bridge that converts enterprise value into an offer price.
+This is the section where the user sees the direct impact of their choices — changing the multiple or a bridge value immediately recalculates the offer price in the sticky banner.
+Step 14 — Section 3: Valuation & EV-to-Equity Bridge
+Read these files first:
+
+client/src/components/target-company/DealModeller.tsx — The shell with mutations and calculation engine.
+client/src/components/deal-modeller/PLSummarySection.tsx and AdjustmentsSection.tsx — Patterns for extracted section components.
+shared/schema/deal-models.ts — The DealModel type fields relevant to this section.
+shared/calculators/deal-model.calc.ts — calculateOfferPrice function and DealModelInput interface.
+client/src/lib/format-utils.ts — The shared formatting helpers.
+
+Create client/src/components/deal-modeller/ValuationSection.tsx
+Props:
+typescriptinterface ValuationSectionProps {
+  modelId: number;
+  model: DealModel;  // The full model object — has averagingYears, ebitdaMultiple, bridge values, etc.
+  calculations: CalculationResult | null;
+  isLocked: boolean;
+  onDataChange: () => void;
+}
+Mutation:
+One mutation that updates the deal model: PUT /api/v2/deal-models/${modelId} with partial model fields. This is used for all editable values in this section. On success, call onDataChange().
+Important UX decision — debounced saves:
+The user will be dragging sliders and typing into inputs. We don't want to fire an API call on every keystroke or slider tick. Use a debounce pattern:
+
+Keep local state for all editable values (initialised from model props)
+On change, update local state immediately (for instant visual feedback)
+Run the calculation engine client-side with the local values (for instant number updates)
+Debounce the API save — fire the PUT mutation 500-800ms after the last change
+Show a subtle "Saving..." indicator when the debounce is pending, and "Saved" briefly when it completes
+When new model data arrives from the server (after save), sync local state if it differs
+
+This gives the user a responsive, slider-driven experience while keeping the server in sync.
+Layout — Three subsections stacked vertically:
+Subsection A: "EBITDA Basis"
+A compact row showing:
+
+Average Adjusted EBITDA: Large, bold formatted number from calculations.averageAdjustedEbitda. This is read-only — it comes from Sections 1+2.
+Averaging period selector: A small group of buttons or ToggleGroup for 2, 3, 4, 5 years. The selected value maps to model.averagingYears. When changed, it affects the average EBITDA and cascades through all downstream calculations.
+A note: "Based on {N} accepted adjustments" (count of accepted/modified adjustments from the model).
+
+Subsection B: "Valuation Multiple"
+
+Sector range indicator: If multipleLow and multipleHigh are available from the valuation expert, show a visual range bar. This is a horizontal bar representing the range, with the selected multiple shown as a marker/dot on the bar. The low and high values are labelled at each end. If the selected multiple is outside the range, the marker should still show but perhaps in amber/red to warn the user.
+Multiple slider: A Slider component. Range from 1.0 to 10.0, step 0.1. The current value is model.ebitdaMultiple. Show the numeric value prominently next to or above the slider.
+Multiple input: A small numeric Input next to the slider so the user can type an exact value. Keep it in sync with the slider.
+Enterprise Value result: Displayed prominently below: "EV = £X average EBITDA × Y.Z multiple = £X,XXX,XXX"
+
+Subsection C: "EV-to-Equity Bridge"
+This is a visual waterfall showing how Enterprise Value transforms into the Offer Price. Render it as a vertical list of line items, each editable:
+Line ItemSourceDirectionInputEnterprise ValueCalculated—Read-only, boldPlus: Excess CashplusExcessCash+Editable number inputPlus: Property ValueplusPropertyValue+Editable number inputLess: Primary DebtminusPrimaryDebt−Editable number inputLess: Other Debt / Director LoansminusOtherDebt−Editable number inputLess: Corporation Tax DueminusCorpTaxDue−Editable number inputLess: Working Capital AdjustmentminusWorkingCapitalAdj−Editable number inputOffer PriceCalculated=Read-only, bold, larger text
+Each row should show:
+
+A label on the left
+The direction indicator (+ or −)
+A currency input on the right (editable, disabled when locked)
+Where the initial value came from — if it was populated by the valuation expert, show a small "From expert" badge or tooltip. If the user has changed it from the expert's suggestion, show the expert's original value as a small grey reference.
+
+Visual treatment:
+
+Use a card or bordered container for the bridge
+The Enterprise Value row at the top and Offer Price row at the bottom should be visually emphasised (bolder, slight background tint)
+"Plus" rows could have a subtle green left accent
+"Less" rows could have a subtle red left accent
+Add subtle horizontal lines between rows
+The overall effect should look like a financial waterfall — money flowing from EV down to Offer Price
+
+Consideration split preview (below the bridge, read-only for now):
+If the model has consideration fields populated (from the deal structure expert), show a small summary:
+
+Upfront Cash: £X
+Deferred Consideration: £X
+Earnout (maximum): £X
+Total: £X (should equal offer price, or note if there's a discrepancy)
+
+Label this as "Indicative Consideration Structure (from Deal Structure Expert)" with a note that it can be refined later.
+Update DealModeller.tsx:
+
+Import ValuationSection
+Replace the Section 3 placeholder with the real component
+Pass the required props: modelId, model (the full model object), calculations, isLocked, onDataChange
+Remove Section 3 from the SECTIONS placeholder array
+
+After making changes, confirm:
+
+The app compiles with zero TypeScript errors
+The averaging year toggle changes the EBITDA basis and cascades to EV and offer price
+The multiple slider and input are synced and update EV in real time
+The sector range indicator shows the expert's suggested range
+All bridge inputs are editable and recalculate the offer price client-side immediately
+Changes are debounce-saved to the API
+The sticky banner's Offer Price updates in real time as values change
+All inputs are disabled when the model is locked
