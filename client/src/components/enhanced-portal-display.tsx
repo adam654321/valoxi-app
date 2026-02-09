@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import NdaAgreement from '@/components/portal/NdaAgreement';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -407,6 +408,17 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     select: (response: any) => response.data,
   });
 
+  // Fetch deal documents (NDA status)
+  const { data: dealDocsData, refetch: refetchDealDocs } = useQuery<{ documents: any[]; ndaAccepted: boolean }>({
+    queryKey: ['/api/v2/public/deal-documents', token],
+    queryFn: async () => {
+      const res = await fetch(`/api/v2/public/deal-documents/${token}`);
+      if (!res.ok) return { documents: [], ndaAccepted: true };
+      return res.json();
+    },
+    enabled: !!token,
+  });
+
   // Get all documents for the company
   const { data: documents = [], isLoading: isDocumentsLoading, error: documentsError } = useQuery<Document[]>({
     queryKey: [`/api/v2/portal-submit/${token}/documents`],
@@ -597,6 +609,21 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // NDA gate — if there's an unsigned NDA, show it before allowing portal access
+  const ndaDocument = dealDocsData?.documents?.find((d: any) => d.documentType === 'nda');
+  const ndaAccepted = dealDocsData?.ndaAccepted ?? true;
+
+  if (ndaDocument && !ndaAccepted) {
+    return (
+      <NdaAgreement
+        token={token}
+        ndaDocument={ndaDocument}
+        buyerCompanyName={portalData.company_name}
+        onAgreed={() => refetchDealDocs()}
+      />
     );
   }
 
