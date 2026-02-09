@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/format-utils';
+import { apiRequest } from '@/lib/queryClient';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelFundingLine } from '@shared/schema';
 import {
@@ -88,22 +90,82 @@ function getRatioBarWidth(ratio: number | null): number {
 }
 
 export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange }: ViabilitySectionProps) {
-  const feeLines = useMemo(() => {
-    if (!calculations) return [];
-    const lines: Array<{ label: string; amount: number }> = [
-      { label: 'Legal Due Diligence', amount: calculations.feeLegalDd },
-      { label: 'Accounting Due Diligence', amount: calculations.feeAccountingDd },
-      { label: 'Broker Fee', amount: calculations.feeBroker },
-      { label: 'Loan Arrangement Fee', amount: calculations.feeLoanArrangement },
-      { label: 'Deal Maker Fee', amount: calculations.feeDealMaker },
-    ];
-    if (calculations.customFeeAmounts?.length) {
-      for (const cf of calculations.customFeeAmounts) {
-        lines.push({ label: cf.label, amount: cf.amount });
-      }
+  const FEE_FIELDS = [
+    { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdPercent', typeField: 'feeLegalDdType' },
+    { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdPercent', typeField: 'feeAccountingDdType' },
+    { key: 'feeBroker', label: 'Broker Fee', valueField: 'feeBrokerPercent', typeField: 'feeBrokerType' },
+    { key: 'feeLoanArrangement', label: 'Loan Arrangement Fee', valueField: 'feeLoanArrangementPercent', typeField: 'feeLoanArrangementType' },
+    { key: 'feeDealMaker', label: 'Deal Maker Fee', valueField: 'feeDealMakerPercent', typeField: 'feeDealMakerType' },
+  ] as const;
+
+  type FeeLocalValues = Record<string, string>;
+
+  const initFeeValues = (m: any): FeeLocalValues => {
+    if (!m) return {};
+    const vals: FeeLocalValues = {};
+    for (const f of FEE_FIELDS) {
+      vals[f.valueField] = m[f.valueField] ?? '';
+      vals[f.typeField] = m[f.typeField] ?? 'percent';
     }
-    return lines;
-  }, [calculations]);
+    return vals;
+  };
+
+  const [feeValues, setFeeValues] = useState<FeeLocalValues>(() => initFeeValues(model));
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const isEditingRef = useRef(false);
+  const pendingRef = useRef<Record<string, any>>({});
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isEditingRef.current && model) {
+      setFeeValues(initFeeValues(model));
+    }
+  }, [model]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Record<string, any>) => {
+      return apiRequest('PUT', `/api/v2/deal-models/${modelId}`, updates);
+    },
+    onSuccess: () => {
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 1500);
+      onDataChange();
+    },
+  });
+
+  const debounceSave = useCallback((field: string, value: any) => {
+    pendingRef.current[field] = value;
+    setSaveStatus('saving');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const updates = { ...pendingRef.current };
+      pendingRef.current = {};
+      updateMutation.mutate(updates);
+    }, 600);
+  }, [modelId, updateMutation]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleFeeValueChange = (field: string, value: string) => {
+    setFeeValues(prev => ({ ...prev, [field]: value }));
+    debounceSave(field, value);
+  };
+
+  const handleFeeTypeToggle = (valueField: string, typeField: string) => {
+    const currentType = feeValues[typeField] || 'percent';
+    const newType = currentType === 'percent' ? 'fixed' : 'percent';
+    setFeeValues(prev => ({ ...prev, [typeField]: newType }));
+    debounceSave(typeField, newType);
+  };
+
+  const handleFocus = useCallback(() => { isEditingRef.current = true; }, []);
+  const handleBlur = useCallback(() => {
+    setTimeout(() => { isEditingRef.current = false; }, 300);
+  }, []);
 
   const debtServiceBreakdown = useMemo(() => {
     if (!calculations || !fundingLines.length) return [];
@@ -296,21 +358,62 @@ export default function ViabilitySection({ modelId, model, calculations, funding
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Receipt className="h-4 w-4 text-muted-foreground" />
               Fees Breakdown
+              {saveStatus === 'saving' && <span className="text-xs text-muted-foreground font-normal">Saving...</span>}
+              {saveStatus === 'saved' && <span className="text-xs text-green-600 font-normal">Saved</span>}
             </h3>
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground">
+                    <th className="px-3 py-1.5 text-left font-medium">Fee</th>
+                    <th className="px-3 py-1.5 text-right font-medium">Rate / Amount</th>
+                    <th className="px-3 py-1.5 text-right font-medium">Calculated</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {feeLines.map((fee, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-muted/30' : ''}>
-                      <td className="px-3 py-2 text-muted-foreground">{fee.label}</td>
+                  {FEE_FIELDS.map((f, idx) => (
+                    <tr key={f.key} className={idx % 2 === 0 ? 'bg-muted/30' : ''}>
+                      <td className="px-3 py-2 text-muted-foreground">{f.label}</td>
+                      <td className="px-3 py-2">
+                        {!isLocked && modelId ? (
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleFeeTypeToggle(f.valueField, f.typeField)}
+                              className="text-xs px-1.5 py-0.5 rounded border bg-background hover:bg-muted transition-colors min-w-[28px] text-center font-medium"
+                              title={feeValues[f.typeField] === 'fixed' ? 'Fixed amount — click to switch to percentage' : 'Percentage — click to switch to fixed amount'}
+                            >
+                              {feeValues[f.typeField] === 'fixed' ? '£' : '%'}
+                            </button>
+                            <input
+                              type="number"
+                              value={feeValues[f.valueField] ?? ''}
+                              onChange={(e) => handleFeeValueChange(f.valueField, e.target.value)}
+                              onFocus={handleFocus}
+                              onBlur={handleBlur}
+                              className="w-24 text-right text-sm px-2 py-1 border rounded bg-background tabular-nums"
+                              step={feeValues[f.typeField] === 'fixed' ? '1000' : '0.1'}
+                              min="0"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-right font-medium tabular-nums block">
+                            {feeValues[f.typeField] === 'fixed'
+                              ? formatCurrency(Number(feeValues[f.valueField]) || 0)
+                              : `${feeValues[f.valueField] || 0}%`
+                            }
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-right font-medium tabular-nums">
-                        {formatCurrency(fee.amount)}
+                        {calculations ? formatCurrency((calculations as any)[f.key] || 0) : '—'}
                       </td>
                     </tr>
                   ))}
                   {calculations && calculations.fundingLines.reduce((s, fl) => s + fl.arrangementFee, 0) > 0 && (
-                    <tr className={feeLines.length % 2 === 0 ? 'bg-muted/30' : ''}>
+                    <tr className={FEE_FIELDS.length % 2 === 0 ? 'bg-muted/30' : ''}>
                       <td className="px-3 py-2 text-muted-foreground">Funding Arrangement Fees</td>
+                      <td className="px-3 py-2"></td>
                       <td className="px-3 py-2 text-right font-medium tabular-nums">
                         {formatCurrency(calculations.fundingLines.reduce((s, fl) => s + fl.arrangementFee, 0))}
                       </td>
@@ -319,7 +422,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 font-semibold bg-muted/50">
-                    <td className="px-3 py-2">Total Fees</td>
+                    <td className="px-3 py-2" colSpan={2}>Total Fees</td>
                     <td className="px-3 py-2 text-right tabular-nums">
                       {calculations ? formatCurrency(calculations.totalFees) : '—'}
                     </td>

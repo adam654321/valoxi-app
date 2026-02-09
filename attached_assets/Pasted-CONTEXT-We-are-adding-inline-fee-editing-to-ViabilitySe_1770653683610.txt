@@ -1,0 +1,174 @@
+CONTEXT: We are adding inline fee editing to ViabilitySection.tsx in the Deal Modeller. The component now has modelId, model, and onDataChange props wired up. We need to follow the same editing pattern used by ValuationSection: local state, debounced save, instant preview.
+
+CURRENT STATE: The fees breakdown is a read-only table showing 5 fee rows (from a feeLines memo) plus a Funding Arrangement Fees row and a Total Fees footer. Each row shows a label and a calculated amount.
+
+TARGET STATE: Each of the 5 standard fee rows should show:
+- The fee label (e.g. "Legal Due Diligence")
+- A toggle or selector to switch between "%" and "£" (reflecting the fee type: 'percent' or 'fixed')
+- An editable input field for the value (the percentage or fixed amount)
+- The calculated fee amount (read-only, updates instantly as the user types)
+
+The Funding Arrangement Fees row and Total Fees footer remain read-only.
+
+IMPLEMENTATION: Follow the ValuationSection pattern exactly. Here's what to add:
+
+1. FEE FIELD DEFINITIONS — Define the 5 fee fields as a constant array at the top of the component (inside the function, before any hooks):
+
+const FEE_FIELDS = [
+  { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdPercent', typeField: 'feeLegalDdType' },
+  { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdPercent', typeField: 'feeAccountingDdType' },
+  { key: 'feeBroker', label: 'Broker Fee', valueField: 'feeBrokerPercent', typeField: 'feeBrokerType' },
+  { key: 'feeLoanArrangement', label: 'Loan Arrangement Fee', valueField: 'feeLoanArrangementPercent', typeField: 'feeLoanArrangementType' },
+  { key: 'feeDealMaker', label: 'Deal Maker Fee', valueField: 'feeDealMakerPercent', typeField: 'feeDealMakerType' },
+] as const;
+
+2. LOCAL STATE — Add a useState for the fee values, initialised from the model:
+
+type FeeLocalValues = Record<string, string | 'percent' | 'fixed'>;
+
+const initFeeValues = (m: any): FeeLocalValues => {
+  if (!m) return {};
+  const vals: FeeLocalValues = {};
+  for (const f of FEE_FIELDS) {
+    vals[f.valueField] = m[f.valueField] ?? '';
+    vals[f.typeField] = m[f.typeField] ?? 'percent';
+  }
+  return vals;
+};
+
+const [feeValues, setFeeValues] = useState<FeeLocalValues>(() => initFeeValues(model));
+
+3. SYNC FROM SERVER — Add a useEffect that updates local state from the model when it changes, but only if the user isn't currently editing (same pattern as ValuationSection):
+
+const isEditingRef = useRef(false);
+
+useEffect(() => {
+  if (!isEditingRef.current && model) {
+    setFeeValues(initFeeValues(model));
+  }
+}, [model]);
+
+4. DEBOUNCED SAVE — Copy the same pattern from ValuationSection:
+
+const pendingRef = useRef<Record<string, any>>({});
+const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+const updateMutation = useMutation({
+  mutationFn: async (updates: Record<string, any>) => {
+    return apiRequest('PUT', `/api/v2/deal-models/${modelId}`, updates);
+  },
+  onSuccess: () => {
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 1500);
+    onDataChange();
+  },
+});
+
+const debounceSave = useMemo(() => {
+  let timer: NodeJS.Timeout;
+  return (field: string, value: any) => {
+    pendingRef.current[field] = value;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const updates = { ...pendingRef.current };
+      pendingRef.current = {};
+      setSaveStatus('saving');
+      updateMutation.mutate(updates);
+    }, 600);
+  };
+}, [modelId]);
+
+Make sure to import useMutation, useMemo, useState, useEffect, useRef from the appropriate libraries (check what ValuationSection imports).
+
+5. CHANGE HANDLERS:
+
+const handleFeeValueChange = (field: string, value: string) => {
+  setFeeValues(prev => ({ ...prev, [field]: value }));
+  debounceSave(field, value);
+};
+
+const handleFeeTypeToggle = (valueField: string, typeField: string) => {
+  const currentType = feeValues[typeField] || 'percent';
+  const newType = currentType === 'percent' ? 'fixed' : 'percent';
+  setFeeValues(prev => ({ ...prev, [typeField]: newType }));
+  debounceSave(typeField, newType);
+};
+
+const handleFocus = () => { isEditingRef.current = true; };
+const handleBlur = () => {
+  setTimeout(() => { isEditingRef.current = false; }, 300);
+};
+
+6. UPDATED JSX — Replace the current feeLines.map table body with the editable version. Each row should have:
+
+<tr key={f.key} className={idx % 2 === 0 ? 'bg-muted/30' : ''}>
+  {/* Label */}
+  <td className="px-3 py-2 text-muted-foreground">{f.label}</td>
+  
+  {/* Type toggle + value input */}
+  <td className="px-3 py-2">
+    {!isLocked && modelId ? (
+      <div className="flex items-center gap-1.5 justify-end">
+        <button
+          type="button"
+          onClick={() => handleFeeTypeToggle(f.valueField, f.typeField)}
+          className="text-xs px-1.5 py-0.5 rounded border bg-background hover:bg-muted transition-colors min-w-[28px] text-center font-medium"
+          title={feeValues[f.typeField] === 'fixed' ? 'Fixed amount — click to switch to percentage' : 'Percentage — click to switch to fixed amount'}
+        >
+          {feeValues[f.typeField] === 'fixed' ? '£' : '%'}
+        </button>
+        <input
+          type="number"
+          value={feeValues[f.valueField] ?? ''}
+          onChange={(e) => handleFeeValueChange(f.valueField, e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          className="w-24 text-right text-sm px-2 py-1 border rounded bg-background tabular-nums"
+          step={feeValues[f.typeField] === 'fixed' ? '1000' : '0.1'}
+          min="0"
+        />
+      </div>
+    ) : (
+      <span className="text-right font-medium tabular-nums block">
+        {feeValues[f.typeField] === 'fixed' 
+          ? formatCurrency(Number(feeValues[f.valueField]) || 0)
+          : `${feeValues[f.valueField] || 0}%`
+        }
+      </span>
+    )}
+  </td>
+
+  {/* Calculated amount */}
+  <td className="px-3 py-2 text-right font-medium tabular-nums">
+    {calculations ? formatCurrency((calculations as any)[f.key] || 0) : '—'}
+  </td>
+</tr>
+
+7. UPDATE THE TABLE HEADER — The table currently has no header row. Add one:
+
+<thead>
+  <tr className="border-b text-xs text-muted-foreground">
+    <th className="px-3 py-1.5 text-left font-medium">Fee</th>
+    <th className="px-3 py-1.5 text-right font-medium">Rate / Amount</th>
+    <th className="px-3 py-1.5 text-right font-medium">Calculated</th>
+  </tr>
+</thead>
+
+8. SAVE STATUS INDICATOR — Add a small status indicator next to the "Fees Breakdown" heading, matching the pattern from ValuationSection:
+
+After the heading text, add:
+{saveStatus === 'saving' && <span className="text-xs text-muted-foreground">Saving...</span>}
+{saveStatus === 'saved' && <span className="text-xs text-green-600">Saved</span>}
+
+9. REMOVE THE OLD feeLines MEMO — The old feeLines useMemo that built the array from calculations can be removed since we're now iterating over FEE_FIELDS directly. But check if feeLines is used anywhere else in the component first — if it is, keep it.
+
+IMPORTANT:
+- Keep the Funding Arrangement Fees row and Total Fees footer exactly as they are (read-only)
+- When isLocked is true or modelId is null, show the values as read-only text (not inputs)
+- Match the existing component's styling — use the same className patterns, spacing, and border styles
+- Check what imports are needed (useMutation from @tanstack/react-query, apiRequest from wherever other sections import it) and add them
+- After making the changes, show me:
+  (a) The complete updated Fees Breakdown JSX section
+  (b) The imports you added
+  (c) Whether feeLines memo was removed or kept (and why)
+  (d) Confirm the save pattern matches ValuationSection
