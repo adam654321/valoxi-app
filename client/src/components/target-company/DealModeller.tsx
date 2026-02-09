@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +22,7 @@ import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import FundingSection from '@/components/deal-modeller/FundingSection';
+import ViabilitySection from '@/components/deal-modeller/ViabilitySection';
 import {
   Plus,
   Lock,
@@ -29,7 +30,6 @@ import {
   PoundSterling,
   Banknote,
   CreditCard,
-  CheckCircle,
   Loader2,
 } from 'lucide-react';
 
@@ -71,9 +71,6 @@ const STATUS_COLOURS: Record<string, string> = {
   archived: 'bg-gray-100 text-gray-500',
 };
 
-const SECTIONS = [
-  { num: 5, title: 'Does The Deal Work?', desc: 'Payment cover ratio, fees breakdown, and deal viability summary.', icon: CheckCircle },
-];
 
 export default function DealModeller({ companyId }: DealModellerProps) {
   const { toast } = useToast();
@@ -395,28 +392,10 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   />
                 )}
 
-                {SECTIONS.map(section => {
-                  const Icon = section.icon;
-                  return (
-                    <Card key={section.num} className="opacity-70">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">
-                            {section.num}
-                          </span>
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          {section.title}
-                        </CardTitle>
-                        <CardDescription>{section.desc}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-center h-20 text-sm text-muted-foreground">
-                          Section content coming soon
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                <ViabilitySection
+                  calculations={calculations}
+                  isLocked={isLocked}
+                />
               </div>
             </>
           )}
