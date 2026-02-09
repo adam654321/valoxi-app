@@ -17,10 +17,11 @@ import {
   type CalculationResult,
 } from '@shared/calculators/deal-model.calc';
 import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
+import { formatCurrency } from '@/lib/format-utils';
+import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import {
   Plus,
   Lock,
-  TrendingUp,
   Calculator,
   PoundSterling,
   Banknote,
@@ -61,18 +62,6 @@ interface FinancialsData {
   incomeStatements: IncomeStatement[];
 }
 
-function formatCurrency(value: number): string {
-  if (value === 0) return '£0';
-  const abs = Math.abs(value);
-  const formatted = new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(abs);
-  return value < 0 ? `(${formatted})` : formatted;
-}
-
 const STATUS_COLOURS: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-700',
   active: 'bg-blue-100 text-blue-700',
@@ -82,7 +71,6 @@ const STATUS_COLOURS: Record<string, string> = {
 };
 
 const SECTIONS = [
-  { num: 1, title: 'What Does This Business Earn?', desc: 'P&L summary with reported EBITDA across financial periods.', icon: TrendingUp },
   { num: 2, title: 'What Should We Adjust?', desc: 'Review and accept/reject suggested EBITDA adjustments from expert analysis.', icon: ClipboardList },
   { num: 3, title: "What's It Worth?", desc: 'Set the EBITDA multiple and EV-to-equity bridge to calculate the offer price.', icon: Scale },
   { num: 4, title: 'How Do We Pay For It?', desc: 'Build the funding structure with debt facilities and equity.', icon: CreditCard },
@@ -355,6 +343,13 @@ export default function DealModeller({ companyId }: DealModellerProps) {
               <Separator />
 
               <div className="space-y-6">
+                <PLSummarySection
+                  financialData={financialsRaw}
+                  adjustments={modelDetails?.adjustments || []}
+                  calculations={calculations}
+                  averagingYears={modelDetails?.averagingYears ?? 3}
+                />
+
                 {SECTIONS.map(section => {
                   const Icon = section.icon;
                   return (
