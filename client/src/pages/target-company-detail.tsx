@@ -379,12 +379,6 @@ export default function TargetCompanyDetail() {
             </div>
             
             <div className="flex items-center gap-2">
-              <Link href={`/target-companies/${id}/valuation`}>
-                <Button variant="outline" size="sm" data-testid="button-valuation">
-                  <Calculator className="w-4 h-4 mr-2" />
-                  Valuation
-                </Button>
-              </Link>
               <Link href={`/target-companies/${id}/deal-sheet`}>
                 <Button variant="default" size="sm" data-testid="button-deal-sheet">
                   <Calculator className="w-4 h-4 mr-2" />

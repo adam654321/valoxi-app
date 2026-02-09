@@ -23,7 +23,6 @@ import EmailTest from "@/pages/EmailTest";
 import WebhookTest from "@/pages/webhook-test";
 import FileUploadTest from "@/pages/file-upload-test";
 import CompanyAccounts from "@/pages/company-accounts";
-import ValuationPage from "@/pages/valuation";
 import DealSheetPage from "@/pages/deal-sheet";
 
 
@@ -83,7 +82,6 @@ function Router() {
             <Route path="/webhook-test" component={WebhookTest} />
             <Route path="/file-upload-test" component={FileUploadTest} />
             <Route path="/company-accounts" component={CompanyAccounts} />
-            <Route path="/target-companies/:id/valuation" component={ValuationPage} />
             <Route path="/target-companies/:id/deal-sheet" component={DealSheetPage} />
             <Route component={NotFound} />
           </Switch>

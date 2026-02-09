@@ -106,9 +106,9 @@ export default function DealSheetPage() {
 
   // Fetch financial data
   const { data: financialsData, isLoading } = useQuery<FinancialsData>({
-    queryKey: ['/api/v2/valuation/company', companyId, 'financials'],
+    queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
     queryFn: async () => {
-      const response = await fetch(`/api/v2/valuation/company/${companyId}/financials`);
+      const response = await fetch(`/api/v2/financial-data/company/${companyId}/financials`);
       const result = await response.json();
       return result.data;
     },

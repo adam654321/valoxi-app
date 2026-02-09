@@ -122,6 +122,40 @@ router.get('/company/:companyId/summary', async (req: Request, res: Response) =>
   }
 });
 
+router.get('/company/:companyId/financials', async (req: Request, res: Response) => {
+  try {
+    const targetCompanyId = parseInt(req.params.companyId);
+    if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
+    
+    const periods = await financialDataRepository.getFinancialPeriodsByCompany(targetCompanyId);
+    const incomeStatements = await financialDataRepository.getIncomeStatementsByCompany(targetCompanyId);
+    const balanceSheets = await financialDataRepository.getBalanceSheetsByCompany(targetCompanyId);
+    const staffData = await financialDataRepository.getStaffDataByCompany(targetCompanyId);
+    const loans = await financialDataRepository.getLoanFacilitiesByCompany(targetCompanyId);
+    const agedDebtors = await financialDataRepository.getAgedDebtorsByCompany(targetCompanyId);
+    
+    const adjustments = await financialDataRepository.getAdjustmentsByCompany(targetCompanyId);
+    
+    const periodsWithMeta = periods.map(p => ({
+      ...p,
+      readOnly: p.periodType === 'statutory' || p.periodType === 'historic',
+      isHistoric: p.periodType === 'statutory' || p.periodType === 'historic',
+    }));
+    
+    sendSuccess(res, {
+      periods: periodsWithMeta,
+      incomeStatements,
+      balanceSheets,
+      staffData,
+      loans,
+      agedDebtors,
+      adjustments,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 router.get('/company/:companyId/deal-sheet', async (req: Request, res: Response) => {
   try {
     const targetCompanyId = parseInt(req.params.companyId);
