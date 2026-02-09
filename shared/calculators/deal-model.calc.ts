@@ -14,6 +14,7 @@ export interface FundingLineInput {
   interestRate?: string | number | null;
   termMonths?: number | null;
   arrangementFeePercent?: string | number | null;
+  isDebt?: boolean;
   isActive: boolean;
 }
 
@@ -234,7 +235,9 @@ export function calculateFundingStack(
     results.push({ availableAmount, monthlyRepayment, annualRepayment, arrangementFee });
 
     totalFunded += used;
-    totalAnnualDebtService += annualRepayment;
+    if (line.isDebt) {
+      totalAnnualDebtService += annualRepayment;
+    }
   }
 
   const fundingGap = totalFundingRequired - totalFunded;

@@ -334,6 +334,7 @@ export class DealModelMappingService {
             amountUsed: '0',
             interestRate: '4.5',
             termMonths: 1,
+            isDebt: true,
             isActive: false,
             sortOrder: sortOrder++,
           });
@@ -362,6 +363,7 @@ export class DealModelMappingService {
             amountUsed: '0',
             interestRate: '6.0',
             termMonths: 60,
+            isDebt: true,
             isActive: false,
             sortOrder: sortOrder++,
           });
@@ -387,6 +389,7 @@ export class DealModelMappingService {
             amountUsed: '0',
             interestRate: '5.0',
             termMonths: 240,
+            isDebt: true,
             isActive: false,
             sortOrder: sortOrder++,
           });
@@ -403,6 +406,7 @@ export class DealModelMappingService {
         fundingType: 'cash_equity',
         label: 'Cash Equity (Cash to Introduce)',
         amountUsed: '0',
+        isDebt: false,
         isActive: true,
         sortOrder: sortOrder++,
       });
