@@ -15,6 +15,9 @@ import { portalAccessTokens, externalDocumentSubmissions, portalDocumentRequirem
 // Financials
 import { financialPeriods, incomeStatements, balanceSheets, staffData, agedDebtors, fixedAssetsRegister, loanFacilities, ebitdaAdjustments, valuations } from './financials';
 
+// Deal Models
+import { dealModels, dealModelAdjustments, dealModelFundingLines } from './deal-models';
+
 // Dashboard
 import { dashboardPreferences, dashboardAlerts } from './dashboard';
 
@@ -63,6 +66,7 @@ export const targetCompaniesRelations = relations(targetCompanies, ({ one, many 
   documents: many(documents),
   stage1AnalysisEvents: many(stage1AnalysisEvents),
   expertAnalysisResults: many(expertAnalysisResults),
+  dealModels: many(dealModels),
 }));
 
 export const targetContactsRelations = relations(targetContacts, ({ one, many }) => ({
@@ -424,6 +428,42 @@ export const ebitdaAdjustmentsRelations = relations(ebitdaAdjustments, ({ one })
   createdByUser: one(users, {
     fields: [ebitdaAdjustments.createdBy],
     references: [users.id],
+  }),
+}));
+
+export const dealModelsRelations = relations(dealModels, ({ one, many }) => ({
+  targetCompany: one(targetCompanies, {
+    fields: [dealModels.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  createdByUser: one(users, {
+    fields: [dealModels.createdBy],
+    references: [users.id],
+  }),
+  parentModel: one(dealModels, {
+    fields: [dealModels.parentModelId],
+    references: [dealModels.id],
+    relationName: "parentChild",
+  }),
+  adjustments: many(dealModelAdjustments),
+  fundingLines: many(dealModelFundingLines),
+}));
+
+export const dealModelAdjustmentsRelations = relations(dealModelAdjustments, ({ one }) => ({
+  dealModel: one(dealModels, {
+    fields: [dealModelAdjustments.dealModelId],
+    references: [dealModels.id],
+  }),
+  sourceExpertResult: one(expertAnalysisResults, {
+    fields: [dealModelAdjustments.sourceExpertResultId],
+    references: [expertAnalysisResults.id],
+  }),
+}));
+
+export const dealModelFundingLinesRelations = relations(dealModelFundingLines, ({ one }) => ({
+  dealModel: one(dealModels, {
+    fields: [dealModelFundingLines.dealModelId],
+    references: [dealModels.id],
   }),
 }));
 
