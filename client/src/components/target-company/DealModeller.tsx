@@ -21,6 +21,7 @@ import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import ValuationSection from '@/components/deal-modeller/ValuationSection';
+import FundingSection from '@/components/deal-modeller/FundingSection';
 import {
   Plus,
   Lock,
@@ -71,7 +72,6 @@ const STATUS_COLOURS: Record<string, string> = {
 };
 
 const SECTIONS = [
-  { num: 4, title: 'How Do We Pay For It?', desc: 'Build the funding structure with debt facilities and equity.', icon: CreditCard },
   { num: 5, title: 'Does The Deal Work?', desc: 'Payment cover ratio, fees breakdown, and deal viability summary.', icon: CheckCircle },
 ];
 
@@ -376,6 +376,19 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     calculations={calculations}
                     isLocked={isLocked}
                     reportedEbitdaByYear={reportedEbitdaByYear}
+                    onDataChange={() => {
+                      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
+                    }}
+                  />
+                )}
+
+                {selectedModelId && modelDetails && (
+                  <FundingSection
+                    modelId={selectedModelId}
+                    fundingLines={modelDetails.fundingLines || []}
+                    calculations={calculations}
+                    totalFundingRequired={calculations?.totalFundingRequired ?? 0}
+                    isLocked={isLocked}
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                     }}
