@@ -1,0 +1,123 @@
+Good, P&L table is live. Section 2 is the most interactive piece — this is where the user reviews expert-suggested adjustments and decides what to accept.
+
+Context
+The Deal Modeller now has the shell (Step 11) and P&L summary table (Step 12). Section 2 is "What Should We Adjust?" — it shows EBITDA adjustments suggested by the QoE expert, lets the user accept/reject/modify each one, and allows adding custom manual adjustments. Every change triggers a recalculation via the API.
+Step 13 — Section 2: Adjustments UI
+Read these files first:
+
+client/src/components/target-company/DealModeller.tsx — The current shell with data fetching and mutations.
+client/src/components/deal-modeller/PLSummarySection.tsx — Pattern for how Section 1 was extracted.
+shared/schema/deal-models.ts — The DealModelAdjustment type with all its fields.
+shared/calculators/deal-model.calc.ts — AdjustmentInput interface and calculateAdjustedEbitda.
+client/src/lib/format-utils.ts — The shared formatCurrency helper.
+
+Create client/src/components/deal-modeller/AdjustmentsSection.tsx
+Props:
+typescriptinterface AdjustmentsSectionProps {
+  modelId: number;
+  adjustments: DealModelAdjustment[];
+  calculations: CalculationResult | null;
+  isLocked: boolean;
+  onDataChange: () => void;  // Callback to invalidate/refetch the model after mutations
+}
+Mutations needed (define these in the component using useMutation + apiRequest):
+
+Accept/reject adjustment: PUT /api/v2/deal-models/${modelId}/adjustments/${adjId} with body { status: 'accepted' | 'rejected' }
+Modify adjustment: Same endpoint with body { status: 'modified', userOverrideAmount: number, userOverrideReason: string }
+Bulk accept all: PUT /api/v2/deal-models/${modelId}/adjustments/bulk with body { updates: [{ id, status: 'accepted' }...] }
+Add custom adjustment: POST /api/v2/deal-models/${modelId}/adjustments with body containing the adjustment fields
+Delete adjustment: DELETE /api/v2/deal-models/${modelId}/adjustments/${adjId} (only for manual/custom adjustments)
+
+All mutations should call onDataChange() on success to trigger a refetch of the model data.
+Layout — Two subsections:
+Subsection A: "Expert-Suggested Adjustments"
+Group adjustments by adjustmentType — show add-backs first, then deductions. Within each group, sort by sortOrder then id.
+For each adjustment, render a row/card with:
+
+Left side:
+
+Category badge — use Badge with a human-readable label. Map category enums to readable names (e.g. owner_salary_excess → "Owner Salary Excess", one_off_cost → "One-Off Cost")
+Description text
+Source info in small grey text: "Suggested by QoE Expert" (or whichever sourceExpert), with confidence badge if available (high=green, medium=amber, low=red)
+If the adjustment has expertReasoning, show it in a collapsible/expandable section (use shadcn Collapsible or a simple toggle) — don't show the full reasoning by default, it's usually long
+
+
+Right side:
+
+Amount displayed prominently: formatCurrency(amount). If the adjustment has amountsByYear, show a small tooltip or expandable with the per-year breakdown
+If status is modified, show the override amount with a strikethrough on the original
+
+
+Action buttons (disabled when isLocked):
+
+If status is suggested: Three buttons — ✓ Accept (green), ✗ Reject (red/outline), ✎ Modify (opens a dialog)
+If status is accepted: Show a green checkmark badge. Provide an "Undo" button that sets status back to suggested
+If status is rejected: Show a red X badge, row should be visually dimmed (lower opacity). Provide an "Undo" button
+If status is modified: Show an amber edit badge with the override amount. Provide "Undo" button
+
+
+
+Modify dialog: When the user clicks Modify, open a Dialog with:
+
+The original amount (read-only, for reference)
+An input for the override amount
+A textarea for the reason
+Save and Cancel buttons
+
+Bulk actions bar (shown above the adjustments list):
+
+"Accept All Suggested" button — accepts all adjustments with status suggested in one API call
+Count of suggested/accepted/rejected/modified adjustments as small badges
+
+Subsection B: "Manual Adjustments"
+Below the expert adjustments, a section for user-added custom adjustments. These are adjustments where sourceExpert is null or isManual is true.
+
+List any existing manual adjustments with the same row format as above (but no expert reasoning, no confidence badge)
+"Add Adjustment" button that opens a Dialog with:
+
+Type: Radio group — "Add-back" or "Deduction"
+Category: Select dropdown with the category options (use the same human-readable labels)
+Description: Text input
+Amount: Number input
+Notes: Optional textarea
+Save and Cancel buttons
+
+
+Manual adjustments should have a delete button (trash icon) since they were user-created
+
+Summary footer:
+At the bottom of the section, show a summary row:
+
+Total accepted add-backs: £X
+Total accepted deductions: £X
+Net adjustment impact: £X (positive = adds to EBITDA, negative = reduces)
+Adjusted average EBITDA: £X (from calculations.averageAdjustedEbitda)
+
+This gives the user an immediate sense of how their adjustment decisions affect the EBITDA before they scroll to the valuation section.
+Visual design notes:
+
+Use Card for the overall section wrapper, matching the pattern from Section 1
+Each adjustment row should have a subtle border-bottom separator
+The accept/reject/modify buttons should be compact — icon buttons or small variants
+Accepted adjustments should have a subtle green-tinted left border
+Rejected adjustments should be dimmed and have a red-tinted left border
+Modified adjustments should have an amber-tinted left border
+The section should feel like a checklist the user works through — clear visual progress from "suggested" to "decided"
+
+Update DealModeller.tsx:
+
+Import AdjustmentsSection
+Replace the Section 2 placeholder with the real component
+Pass the required props including an onDataChange callback that invalidates the deal model query
+Remove Section 2 from the SECTIONS placeholder array
+
+After making changes, confirm:
+
+The app compiles with zero TypeScript errors
+Section 2 renders adjustments from the selected deal model
+Clicking Accept/Reject updates the adjustment status and triggers recalculation
+The Modify dialog works and saves override amounts
+Bulk Accept All works for all suggested adjustments
+Adding a custom manual adjustment works
+The summary footer updates correctly
+All buttons are disabled when the model is locked
