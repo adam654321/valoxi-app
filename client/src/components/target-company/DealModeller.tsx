@@ -394,9 +394,14 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                 )}
 
                 <ViabilitySection
+                  modelId={selectedModelId}
+                  model={modelDetails}
                   calculations={calculations}
                   fundingLines={modelDetails?.fundingLines || []}
                   isLocked={isLocked}
+                  onDataChange={() => {
+                    queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
+                  }}
                 />
               </div>
             </>

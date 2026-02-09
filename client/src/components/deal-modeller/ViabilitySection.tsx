@@ -18,9 +18,12 @@ import {
 } from 'lucide-react';
 
 interface ViabilitySectionProps {
+  modelId: number | null;
+  model: any | null;
   calculations: CalculationResult | null;
   fundingLines: DealModelFundingLine[];
   isLocked: boolean;
+  onDataChange: () => void;
 }
 
 const FUNDING_TYPE_LABELS: Record<string, string> = {
@@ -84,7 +87,7 @@ function getRatioBarWidth(ratio: number | null): number {
   return (ratio / 4) * 100;
 }
 
-export default function ViabilitySection({ calculations, fundingLines, isLocked }: ViabilitySectionProps) {
+export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange }: ViabilitySectionProps) {
   const feeLines = useMemo(() => {
     if (!calculations) return [];
     const lines: Array<{ label: string; amount: number }> = [
