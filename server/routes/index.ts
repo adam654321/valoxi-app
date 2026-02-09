@@ -24,6 +24,7 @@ import financialDataRoutes from './financial-data.routes';
 import chaseUpRoutes from './chase-up.routes';
 import expertAnalysisRoutes from './expert-analysis.routes';
 import userCompaniesRoutes from './user-companies.routes';
+import dealModelRoutes from './deal-model.routes';
 import { authLimiter, portalLimiter, analysisTriggerLimiter, uploadLimiter } from '../middleware/rate-limit';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
@@ -56,4 +57,5 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/chase-up', isAuthenticated, chaseUpRoutes);
   app.use('/api/v2/expert-analysis', isAuthenticated, analysisTriggerLimiter, expertAnalysisRoutes);
   app.use('/api/v2/user/companies', isAuthenticated, userCompaniesRoutes);
+  app.use('/api/v2/deal-models', isAuthenticated, dealModelRoutes);
 }
