@@ -15,7 +15,7 @@ import {
   type FundingLineInput,
   type DealModelInput,
   type CalculationResult,
-} from '../../../shared/calculators/deal-model.calc';
+} from '@shared/calculators/deal-model.calc';
 import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
 import {
   Plus,
