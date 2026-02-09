@@ -1,0 +1,89 @@
+CONTEXT: We've inspected the NDA template and found it uses parenthetical placeholders like (YOUR BUSINESS), (SELLER'S BUSINESS NAME), etc. We now need to convert all three templates. First inspect the Offer Letter and HoT to see their patterns too, then do all conversions.
+
+TASK — Three parts:
+
+PART 1: Inspect Offer Letter and HoT templates the same way — extract plain text and show me the placeholder patterns.
+
+PART 2: Create server/scripts/convert-all-templates.ts that converts all three:
+```typescript
+import { convertPlaceholders, PlaceholderMapping } from '../utils/docx-placeholder-converter';
+import path from 'path';
+import fs from 'fs/promises';
+import JSZip from 'jszip';
+
+const TEMPLATES_DIR = path.join(process.cwd(), 'data', 'templates');
+
+async function inspectTemplate(filename: string): Promise<string> {
+  const filePath = path.join(TEMPLATES_DIR, filename);
+  const data = await fs.readFile(filePath);
+  const zip = await JSZip.loadAsync(data);
+  const xml = await zip.file('word/document.xml')!.async('string');
+  return xml.replace(/<[^>]+>/g, '');
+}
+
+// NDA mappings — based on actual inspection
+const NDA_MAPPINGS: PlaceholderMapping[] = [
+  { find: '(YOUR BUSINESS)', replace: '{{buyerCompanyName}}' },
+  { find: '(SELLER\'S BUSINESS NAME)', replace: '{{sellerCompanyName}}' },
+  { find: '(COMPANY)', replace: '{{sellerCompanyName}}' },
+  { find: '(DATE)', replace: '{{currentDate}}' },
+  { find: '(PRODUCT/SERVICE)', replace: '{{productOrService}}' },
+  // The composite one needs special handling — we'll deal with it after seeing the XML
+];
+
+// Offer Letter and HoT mappings will be filled in after inspection
+
+async function convertAll() {
+  console.log('=== STEP 1: Inspect Offer Letter ===\n');
+  const offerText = await inspectTemplate('system_offer_letter.docx');
+  console.log(offerText.substring(0, 4000));
+  console.log('\n=== END OFFER LETTER ===\n');
+  
+  console.log('=== STEP 2: Inspect Heads of Terms ===\n');
+  const hotText = await inspectTemplate('system_heads_of_terms.docx');
+  console.log(hotText.substring(0, 5000));
+  console.log('\n=== END HOT ===\n');
+  
+  // After seeing the patterns, we'll do the conversions
+  // For now, just do the NDA since we know its patterns
+  console.log('=== STEP 3: Convert NDA ===\n');
+  
+  const ndaInput = path.join(TEMPLATES_DIR, 'system_nda.docx');
+  const ndaOutput = path.join(TEMPLATES_DIR, 'system_nda.docx');
+  
+  const ndaResult = await convertPlaceholders(ndaInput, ndaOutput, NDA_MAPPINGS);
+  console.log(`NDA: ${ndaResult.replacementsMade} replacements`);
+  ndaResult.warnings.forEach(w => console.log(`  ⚠ ${w}`));
+  
+  // Verify the NDA conversion worked
+  const verifyText = await inspectTemplate('system_nda.docx');
+  const tags = verifyText.match(/\{\{[^}]+\}\}/g) || [];
+  console.log(`\nVerification — {{tags}} found in converted NDA: ${tags.length}`);
+  tags.forEach(t => console.log(`  ${t}`));
+  
+  // Show any remaining parenthetical placeholders
+  const remaining = verifyText.match(/\([A-Z][A-Z\s/']+\)/g) || [];
+  if (remaining.length > 0) {
+    console.log(`\nRemaining unconverted patterns:`);
+    remaining.forEach(r => console.log(`  ${r}`));
+  }
+}
+
+convertAll()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error('Failed:', err);
+    process.exit(1);
+  });
+```
+
+PART 3: Run it: npx tsx server/scripts/convert-all-templates.ts
+
+Show me:
+(a) The plain text of the Offer Letter template — all placeholder patterns found
+(b) The plain text of the HoT template — all placeholder patterns found (at least first 5000 chars)
+(c) The NDA conversion results — how many replacements, which {{tags}} are now in the document
+(d) Any remaining unconverted patterns in the NDA
+(e) Any errors
+
+We need the Offer Letter and HoT text to create their mappings in the next step.
