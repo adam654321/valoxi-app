@@ -44,7 +44,7 @@ export const config = {
   },
 
   session: {
-    secret: process.env.SESSION_SECRET || 'development-secret-key',
+    secret: process.env.SESSION_SECRET || '',
   },
 } as const;
 
