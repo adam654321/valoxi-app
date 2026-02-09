@@ -345,7 +345,7 @@ export class DealModelService {
   async addCustomAdjustment(
     modelId: number,
     userCompanyId: number,
-    data: { adjustmentType: string; category: string; description: string; amount: string; reasoning?: string }
+    data: { adjustmentType: string; category: string; description: string; amount: string; reasoning?: string; amountsByYear?: Record<string, number> | null }
   ): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
     const model = await dealModelRepository.getById(modelId);
     if (!model) throw new NotFoundError('Deal model not found');
@@ -361,6 +361,7 @@ export class DealModelService {
       category: data.category,
       description: data.description,
       amount: data.amount,
+      amountsByYear: data.amountsByYear || undefined,
       reasoning: data.reasoning || undefined,
       sourceExpert: undefined,
       sourceExpertResultId: undefined,
