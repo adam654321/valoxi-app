@@ -29,6 +29,7 @@ export function createSessionMiddleware() {
       maxAge: sessionTtl,
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
+      sameSite: 'lax',
     },
   });
 }
