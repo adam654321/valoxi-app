@@ -39,7 +39,10 @@ router.get('/download/:id', async (req, res) => {
     const buffer = await fs.readFile(doc.generatedFileUrl);
     const filename = path.basename(doc.generatedFileUrl);
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    const isPdf = filename.endsWith('.pdf');
+    res.setHeader('Content-Type', isPdf
+      ? 'application/pdf'
+      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
   } catch (error: any) {
@@ -258,7 +261,10 @@ publicRouter.get('/:token/:documentId/download', async (req, res) => {
     const buffer = await fs.readFile(doc.generatedFileUrl);
     const filename = path.basename(doc.generatedFileUrl);
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    const isPdf = filename.endsWith('.pdf');
+    res.setHeader('Content-Type', isPdf
+      ? 'application/pdf'
+      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
   } catch (error: any) {
