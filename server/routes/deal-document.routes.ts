@@ -158,9 +158,9 @@ publicRouter.get('/:token', async (req, res) => {
 
 const respondSchema = z.object({
   responseType: z.enum(['accepted', 'rejected', 'countered']),
-  comments: z.string().optional(),
+  comments: z.string().nullable().optional(),
   respondentName: z.string().min(1, 'Name is required'),
-  respondentEmail: z.string().email().optional(),
+  respondentEmail: z.string().email().nullable().optional(),
 });
 
 publicRouter.post('/:token/:documentId/respond', async (req, res) => {
@@ -184,9 +184,9 @@ publicRouter.post('/:token/:documentId/respond', async (req, res) => {
     const response = await dealDocumentService.recordResponse({
       documentId,
       responseType: validated.responseType,
-      comments: validated.comments,
+      comments: validated.comments || undefined,
       respondentName: validated.respondentName,
-      respondentEmail: validated.respondentEmail,
+      respondentEmail: validated.respondentEmail || undefined,
       respondentIp: req.ip || req.socket.remoteAddress,
       respondentUserAgent: req.headers['user-agent'],
     });
