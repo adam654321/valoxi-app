@@ -1,0 +1,462 @@
+That's a much better experience — and you're right, both parties getting a signed copy is important. Here's how I'd approach it:
+Display: Convert the populated NDA from .docx to HTML server-side (using mammoth.js), serve it inline. Seller scrolls through it like T&Cs.
+Pre-signed: Buyer's signature block is already populated at the bottom when the NDA is generated. Seller adds theirs.
+Signed PDF: On acceptance, generate a PDF with both signature blocks, save it to the documents system so both buyer (main app documents tab) and seller (portal downloads) can access it.
+Tech stack: mammoth.js for docx→HTML, puppeteer or html-pdf-node for HTML→PDF. Given Replit, html-pdf-node with puppeteer under the hood might be heavy — alternatively we can use pdf-lib to build a cleaner PDF, or just use the built-in puppeteer-core with chromium if it's available.
+Let me get it built.
+
+Sprint B (revised), Step 7: Inline NDA display + signed PDF
+Paste this into Replit:
+
+CONTEXT: We're revising the NDA flow. Instead of downloading a .docx, the seller should see the NDA content rendered inline on screen, scroll through it, then accept. On acceptance, a signed PDF is generated with both buyer and seller signatures, saved to the documents system for both parties.
+
+This requires:
+1. Server: Convert populated .docx to HTML (mammoth.js) and serve it
+2. Server: On acceptance, generate a signed PDF
+3. Server: Save the signed PDF to the documents system (linked to target company)
+4. Frontend: Rewrite NdaAgreement to show inline content instead of download button
+
+TASK — Multiple steps:
+
+STEP 1: Install dependencies
+  npm install mammoth html-pdf-node
+
+If html-pdf-node fails (it needs chromium), try:
+  npm install puppeteer
+  
+If puppeteer also has issues on the platform, we'll fall back to pdf-lib. Try mammoth and html-pdf-node first.
+
+STEP 2: Add HTML conversion to the template service.
+
+In server/services/deal-document-template.service.ts, add:
+```typescript
+import mammoth from 'mammoth';
+
+// Add to the class:
+
+  /**
+   * Convert a populated .docx to HTML for inline display
+   */
+  async convertToHtml(docxPath: string): Promise<string> {
+    const result = await mammoth.convertToHtml(
+      { path: docxPath },
+      {
+        styleMap: [
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "b => strong",
+          "i => em",
+          "u => u",
+        ],
+      }
+    );
+    return result.value;
+  }
+```
+
+STEP 3: Add NDA-specific endpoints to deal-document.routes.ts.
+
+Add to the PUBLIC router (these are seller-facing):
+```typescript
+// GET /api/v2/public/deal-documents/:token/:documentId/html
+// Get document content as HTML for inline display
+publicRouter.get('/:token/:documentId/html', async (req, res) => {
+  try {
+    const token = req.params.token;
+    const documentId = parseInt(req.params.documentId);
+    
+    const { portalService } = await import('../services/portal.service');
+    const portalData = await portalService.getTokenData(token);
+    if (!portalData) {
+      return res.status(404).json({ message: 'Invalid or expired portal link' });
+    }
+    
+    const doc = await dealDocumentService.getDocumentById(documentId);
+    if (!doc || doc.portalTokenId !== portalData.tokenId) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+    if (!doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not generated' });
+    }
+    
+    // Mark as viewed
+    await dealDocumentService.markViewed(documentId);
+    
+    // Convert to HTML
+    const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
+    const html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+    
+    res.json({ html, documentData: doc.documentData });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+```
+
+STEP 4: Add signed PDF generation to deal-document.service.ts.
+
+Add this method to the DealDocumentService class:
+```typescript
+  /**
+   * Generate a signed PDF after NDA acceptance.
+   * Takes the original NDA HTML, appends both signature blocks, converts to PDF.
+   * Saves to documents system for both parties.
+   */
+  async generateSignedPdf(params: {
+    documentId: number;
+    respondentName: string;
+    respondentEmail?: string;
+    acceptedAt: Date;
+    ipAddress?: string;
+  }): Promise<string> {
+    const doc = await this.getDocumentById(params.documentId);
+    if (!doc) throw new Error('Document not found');
+    if (!doc.generatedFileUrl) throw new Error('Document not generated');
+    
+    const { dealDocumentTemplateService } = await import('./deal-document-template.service');
+    const html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+    
+    // Build the full signed document HTML
+    const buyerName = (doc.documentData as any)?.buyerSignatoryName || 'Buyer';
+    const buyerCompany = (doc.documentData as any)?.buyerCompanyName || '';
+    const signedDate = params.acceptedAt.toLocaleDateString('en-GB', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+    
+    const signedHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Times New Roman', Times, serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #333; }
+          h1 { font-size: 18px; text-align: center; margin-bottom: 20px; }
+          h2 { font-size: 16px; margin-top: 24px; }
+          h3 { font-size: 14px; margin-top: 20px; }
+          p { margin: 8px 0; font-size: 12px; }
+          .signature-block { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+          .signature-row { display: flex; justify-content: space-between; margin-top: 30px; }
+          .signature-party { width: 45%; }
+          .signature-party .sig-name { font-weight: bold; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+          .signature-party .sig-detail { font-size: 11px; color: #555; margin: 2px 0; }
+          .acceptance-stamp { margin-top: 20px; padding: 12px; background: #f0f9f0; border: 1px solid #c0e0c0; border-radius: 4px; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        ${html}
+        
+        <div class="signature-block">
+          <h3>SIGNATURES</h3>
+          <div class="signature-row">
+            <div class="signature-party">
+              <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Disclosing Party / Buyer:</p>
+              <div class="sig-name">${buyerName}</div>
+              <div class="sig-detail">${buyerCompany}</div>
+              <div class="sig-detail">Date: ${(doc.documentData as any)?.currentDate || ''}</div>
+            </div>
+            <div class="signature-party">
+              <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Receiving Party / Seller:</p>
+              <div class="sig-name">${params.respondentName}</div>
+              <div class="sig-detail">${params.respondentEmail || ''}</div>
+              <div class="sig-detail">Date: ${signedDate}</div>
+            </div>
+          </div>
+          <div class="acceptance-stamp">
+            <strong>Electronic Acceptance Record</strong><br>
+            Accepted by: ${params.respondentName}<br>
+            Date &amp; Time: ${params.acceptedAt.toISOString()}<br>
+            IP Address: ${params.ipAddress || 'Not recorded'}<br>
+            This document was electronically accepted via the secure document portal.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Generate PDF
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    let pdfBuffer: Buffer;
+    try {
+      const htmlPdf = await import('html-pdf-node');
+      const file = { content: signedHtml };
+      pdfBuffer = await htmlPdf.default.generatePdf(file, { 
+        format: 'A4',
+        margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+      });
+    } catch (pdfErr) {
+      console.error('[DEAL_DOCS] html-pdf-node failed, trying puppeteer:', pdfErr);
+      try {
+        const puppeteer = await import('puppeteer');
+        const browser = await puppeteer.default.launch({ 
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+        });
+        const page = await browser.newPage();
+        await page.setContent(signedHtml, { waitUntil: 'networkidle0' });
+        pdfBuffer = Buffer.from(await page.pdf({ 
+          format: 'A4',
+          margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+        }));
+        await browser.close();
+      } catch (puppeteerErr) {
+        console.error('[DEAL_DOCS] Puppeteer also failed:', puppeteerErr);
+        throw new Error('PDF generation not available on this platform');
+      }
+    }
+    
+    // Save PDF
+    const GENERATED_DIR = path.join(process.cwd(), 'data', 'generated-documents');
+    await fs.mkdir(GENERATED_DIR, { recursive: true });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const pdfFilename = `signed_nda_${doc.targetCompanyId}_${timestamp}.pdf`;
+    const pdfPath = path.join(GENERATED_DIR, pdfFilename);
+    await fs.writeFile(pdfPath, pdfBuffer);
+    
+    // Update the document record with the signed PDF path
+    await db.update(dealDocuments)
+      .set({ generatedFileUrl: pdfPath })
+      .where(eq(dealDocuments.id, params.documentId));
+    
+    console.log(`[DEAL_DOCS] Signed NDA PDF generated: ${pdfPath}`);
+    return pdfPath;
+  }
+```
+
+STEP 5: Update the recordResponse method to trigger PDF generation for NDA acceptance.
+
+In the existing recordResponse method, after updating the document status, add:
+```typescript
+    // If this is an NDA acceptance, generate the signed PDF
+    if (doc.documentType === 'nda' && params.responseType === 'accepted') {
+      try {
+        await this.generateSignedPdf({
+          documentId: params.documentId,
+          respondentName: params.respondentName,
+          respondentEmail: params.respondentEmail,
+          acceptedAt: new Date(),
+          ipAddress: params.respondentIp,
+        });
+      } catch (pdfErr) {
+        console.error('[DEAL_DOCS] Failed to generate signed PDF:', pdfErr);
+        // Don't fail the acceptance — PDF can be regenerated
+      }
+    }
+```
+
+Add the import at the top of deal-document.service.ts if not already there:
+```typescript
+import { db } from '../db';
+import { dealDocuments } from '@shared/schema/deal-documents';
+import { eq } from 'drizzle-orm';
+```
+
+STEP 6: Rewrite the NdaAgreement.tsx frontend component.
+
+Replace the content of client/src/components/portal/NdaAgreement.tsx with:
+```tsx
+import { useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Shield, CheckCircle, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface NdaAgreementProps {
+  token: string;
+  ndaDocument: {
+    id: number;
+    documentType: string;
+    status: string;
+    createdAt: string;
+    generatedFileUrl?: string;
+  };
+  buyerCompanyName?: string;
+  onAgreed: () => void;
+}
+
+export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onAgreed }: NdaAgreementProps) {
+  const [fullName, setFullName] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  // Fetch the NDA content as HTML
+  const { data: ndaContent, isLoading } = useQuery({
+    queryKey: ['nda-html', token, ndaDocument.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/v2/public/deal-documents/${token}/${ndaDocument.id}/html`);
+      if (!res.ok) throw new Error('Failed to load NDA content');
+      return res.json();
+    },
+  });
+
+  const canSubmit = fullName.trim().length >= 2 && agreed && !submitting && hasScrolledToBottom;
+
+  function handleScroll() {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    // Consider "scrolled to bottom" when within 50px of the end
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      setHasScrolledToBottom(true);
+    }
+  }
+
+  async function handleAgree() {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    
+    try {
+      const response = await fetch(`/api/v2/public/deal-documents/${token}/${ndaDocument.id}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          responseType: 'accepted',
+          respondentName: fullName.trim(),
+          comments: null,
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to submit agreement');
+      }
+      
+      toast({ title: 'NDA Accepted', description: 'A signed copy has been saved. You now have access to the document portal.' });
+      onAgreed();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+              <Shield className="h-6 w-6 text-blue-600" />
+            </div>
+            <CardTitle className="text-2xl">Non-Disclosure Agreement</CardTitle>
+            <CardDescription className="text-base mt-2">
+              {buyerCompanyName 
+                ? `${buyerCompanyName} requires you to review and accept this NDA before accessing the document portal.`
+                : 'Please review and accept the NDA before accessing the document portal.'
+              }
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* NDA Content - Scrollable */}
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                <span className="ml-3 text-gray-500">Loading agreement...</span>
+              </div>
+            ) : (
+              <div 
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="max-h-[500px] overflow-y-auto p-8 border-b"
+                style={{ scrollBehavior: 'smooth' }}
+              >
+                <div 
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: ndaContent?.html || '<p>Unable to load NDA content.</p>' }}
+                />
+              </div>
+            )}
+            
+            {!hasScrolledToBottom && !isLoading && (
+              <div className="text-center py-2 bg-amber-50 text-amber-700 text-sm">
+                Please scroll to the bottom to review the full agreement
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Acceptance Section */}
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox 
+                id="nda-agree" 
+                checked={agreed} 
+                onCheckedChange={(checked) => setAgreed(checked === true)}
+                disabled={!hasScrolledToBottom}
+              />
+              <label htmlFor="nda-agree" className={`text-sm leading-relaxed cursor-pointer ${!hasScrolledToBottom ? 'text-gray-400' : ''}`}>
+                I have read and understood the Non-Disclosure Agreement. I agree to be bound by its terms 
+                and confirm that I will treat all information shared through this portal as confidential.
+              </label>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="full-name" className="text-sm font-medium">
+                Full Name (as electronic signature)
+              </label>
+              <Input
+                id="full-name"
+                placeholder="Type your full name to sign"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="text-base"
+                disabled={!hasScrolledToBottom}
+              />
+              <p className="text-xs text-gray-500">
+                By typing your name and clicking Accept, you are electronically signing this agreement. 
+                Your name, IP address, and timestamp will be recorded. A signed PDF copy will be available for download.
+              </p>
+            </div>
+
+            <Button 
+              onClick={handleAgree} 
+              disabled={!canSubmit}
+              className="w-full"
+              size="lg"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accept &amp; Sign NDA
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+```
+
+IMPORTANT:
+- mammoth converts .docx to HTML — it handles most formatting well but not everything (tables etc. may be simplified)
+- The scroll-to-bottom check ensures the seller actually reads the document
+- The checkbox and name field are disabled until they've scrolled to the bottom
+- The signed PDF includes an "Electronic Acceptance Record" block with timestamp, name, IP
+- html-pdf-node may need chromium — if it fails at runtime, the fallback tries puppeteer, and if that fails too the acceptance still succeeds (PDF generation failure doesn't block acceptance)
+- The PDF path replaces the .docx path on the document record — now downloads serve the signed PDF
+
+Show me:
+(a) Whether mammoth and html-pdf-node (or puppeteer) installed successfully
+(b) The new /html endpoint added to public routes
+(c) The generateSignedPdf method added to deal-document.service.ts
+(d) The updated NdaAgreement.tsx component
+(e) Any LSP errors
+(f) Confirm the app still runs
