@@ -78,7 +78,7 @@ function buildCalcInputs(model: DealModelWithDetails): {
     amountUsed: f.amountUsed,
     interestRate: f.interestRate,
     termMonths: f.termMonths,
-    arrangementFeePercent: null,
+    arrangementFeePercent: f.arrangementFeePercent ?? null,
     isDebt: f.isDebt ?? false,
     isActive: f.isActive ?? false,
   }));
@@ -98,6 +98,11 @@ function buildCalcInputs(model: DealModelWithDetails): {
     feeBrokerPercent: model.feeBrokerPercent ?? '2.0',
     feeLoanArrangementPercent: model.feeLoanArrangementPercent ?? '1.0',
     feeDealMakerPercent: model.feeDealMakerPercent ?? '5.0',
+    feeLegalDdType: (model.feeLegalDdType as 'percent' | 'fixed') ?? 'percent',
+    feeAccountingDdType: (model.feeAccountingDdType as 'percent' | 'fixed') ?? 'percent',
+    feeBrokerType: (model.feeBrokerType as 'percent' | 'fixed') ?? 'percent',
+    feeLoanArrangementType: (model.feeLoanArrangementType as 'percent' | 'fixed') ?? 'percent',
+    feeDealMakerType: (model.feeDealMakerType as 'percent' | 'fixed') ?? 'percent',
     customFees: null,
   };
 

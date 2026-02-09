@@ -1,0 +1,48 @@
+CONTEXT: We are doing Sprint 2, Step 2 — fee type discriminators. This is part (c): updating the service layer to map the new type fields from DB to calculator, and setting sensible defaults for new deal models.
+
+TASK: Two changes across two files.
+
+CHANGE 1 — In server/services/deal-model.service.ts, update buildCalcInputs to map the 5 new fee type fields from the DB model to the calculator input.
+
+Find the fee field mapping section (around lines 95-100) and add the 5 type fields after the existing percent fields:
+
+  feeLegalDdType: model.feeLegalDdType ?? 'percent',
+  feeAccountingDdType: model.feeAccountingDdType ?? 'percent',
+  feeBrokerType: model.feeBrokerType ?? 'percent',
+  feeLoanArrangementType: model.feeLoanArrangementType ?? 'percent',
+  feeDealMakerType: model.feeDealMakerType ?? 'percent',
+
+The ?? 'percent' fallback ensures existing models without these fields still work as before.
+
+Also while we're in buildCalcInputs, update the arrangementFeePercent mapping to read from the DB now that the column exists:
+
+Change:
+  arrangementFeePercent: null,
+To:
+  arrangementFeePercent: f.arrangementFeePercent ?? null,
+
+CHANGE 2 — In server/services/deal-model-mapping.service.ts, update the default fee values set when creating a new deal model.
+
+Find the hardcoded fee defaults (around lines 156-160). Update to:
+
+  feeLegalDdPercent: '25000',
+  feeLegalDdType: 'fixed',
+  feeAccountingDdPercent: '15000',
+  feeAccountingDdType: 'fixed',
+  feeBrokerPercent: '2.0',
+  feeBrokerType: 'percent',
+  feeLoanArrangementPercent: '1.0',
+  feeLoanArrangementType: 'percent',
+  feeDealMakerPercent: '5.0',
+  feeDealMakerType: 'percent',
+
+This means new deal models default to £25k fixed for legal DD and £15k fixed for accounting DD (sensible UK SME defaults), while broker, loan arrangement, and deal maker stay as percentages. All values are provisional and editable.
+
+IMPORTANT:
+- In deal-model.service.ts, only modify buildCalcInputs
+- In deal-model-mapping.service.ts, only modify the fee defaults section in createDealModelFromExperts
+- After making the changes, show me:
+  (a) The full fee mapping section from buildCalcInputs (both percent and type fields)
+  (b) The full fee defaults section from createDealModelFromExperts
+  (c) The updated arrangementFeePercent line in the funding line mapping
+  (d) Confirm no other changes were made
