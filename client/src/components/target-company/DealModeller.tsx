@@ -1,15 +1,44 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Check, Lightbulb, TrendingUp, Building2, Banknote } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import {
+  calculateFullDealModel,
+  toNum,
+  type AdjustmentInput,
+  type FundingLineInput,
+  type DealModelInput,
+  type CalculationResult,
+} from '../../../shared/calculators/deal-model.calc';
+import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
+import {
+  Plus,
+  Lock,
+  TrendingUp,
+  Calculator,
+  PoundSterling,
+  Banknote,
+  ClipboardList,
+  Scale,
+  CreditCard,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react';
 
 interface DealModellerProps {
   companyId: number;
+}
+
+interface DealModelWithDetails extends DealModel {
+  adjustments: DealModelAdjustment[];
+  fundingLines: DealModelFundingLine[];
+  calculations?: CalculationResult;
 }
 
 interface FinancialPeriod {
@@ -18,545 +47,341 @@ interface FinancialPeriod {
   periodType: string;
   periodEnd: string;
   fiscalYear: number | null;
-  periodLabel: string | null;
-  readOnly?: boolean;
 }
 
 interface IncomeStatement {
   id: number;
   financialPeriodId: number;
-  revenue: string | null;
-  costOfSales: string | null;
-  grossProfit: string | null;
-  administrativeExpenses: string | null;
-  depreciationAmortisation: string | null;
   operatingProfit: string | null;
-  interestPayable: string | null;
-  profitBeforeTax: string | null;
-  netProfit: string | null;
-  staffCosts: string | null;
-  directorsRemuneration: string | null;
-  period: FinancialPeriod;
-}
-
-interface BalanceSheet {
-  id: number;
-  financialPeriodId: number;
-  cashAtBank: string | null;
-  tangibleFixedAssets: string | null;
-  period: FinancialPeriod;
-}
-
-interface SuggestedAddback {
-  id: string;
-  category: string;
-  description: string;
-  reasoning: string;
-  amounts: { [year: number]: number };
-  accepted: boolean;
+  depreciationAmortisation: string | null;
 }
 
 interface FinancialsData {
   periods: FinancialPeriod[];
   incomeStatements: IncomeStatement[];
-  balanceSheets: BalanceSheet[];
-  staffData: any[];
-  loans: any[];
-  agedDebtors: any[];
-  adjustments: any[];
-}
-
-function parseNum(value: string | number | null | undefined): number {
-  if (value === null || value === undefined || value === '') return 0;
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  return isNaN(num) ? 0 : num;
 }
 
 function formatCurrency(value: number): string {
-  if (value === 0) return '-';
-  const isNegative = value < 0;
-  const formatted = new Intl.NumberFormat('en-GB', { 
-    style: 'currency', 
-    currency: 'GBP', 
-    minimumFractionDigits: 0, 
-    maximumFractionDigits: 0 
-  }).format(Math.abs(value));
-  return isNegative ? `(${formatted})` : formatted;
+  if (value === 0) return '£0';
+  const abs = Math.abs(value);
+  const formatted = new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(abs);
+  return value < 0 ? `(${formatted})` : formatted;
 }
 
-function formatPercent(value: number): string {
-  if (isNaN(value) || !isFinite(value)) return '-';
-  return `${(value * 100).toFixed(1)}%`;
-}
+const STATUS_COLOURS: Record<string, string> = {
+  draft: 'bg-slate-100 text-slate-700',
+  active: 'bg-blue-100 text-blue-700',
+  sent: 'bg-amber-100 text-amber-700',
+  accepted: 'bg-green-100 text-green-700',
+  archived: 'bg-gray-100 text-gray-500',
+};
+
+const SECTIONS = [
+  { num: 1, title: 'What Does This Business Earn?', desc: 'P&L summary with reported EBITDA across financial periods.', icon: TrendingUp },
+  { num: 2, title: 'What Should We Adjust?', desc: 'Review and accept/reject suggested EBITDA adjustments from expert analysis.', icon: ClipboardList },
+  { num: 3, title: "What's It Worth?", desc: 'Set the EBITDA multiple and EV-to-equity bridge to calculate the offer price.', icon: Scale },
+  { num: 4, title: 'How Do We Pay For It?', desc: 'Build the funding structure with debt facilities and equity.', icon: CreditCard },
+  { num: 5, title: 'Does The Deal Work?', desc: 'Payment cover ratio, fees breakdown, and deal viability summary.', icon: CheckCircle },
+];
 
 export default function DealModeller({ companyId }: DealModellerProps) {
-  const [multiple, setMultiple] = useState(3.0);
-  const [propertyValue, setPropertyValue] = useState(0);
-  const [cashValue, setCashValue] = useState(0);
-  const [otherAssets, setOtherAssets] = useState(0);
-  const [yearsForAverage, setYearsForAverage] = useState(3);
-  const [suggestedAddbacks, setSuggestedAddbacks] = useState<SuggestedAddback[]>([]);
+  const { toast } = useToast();
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
 
-  const { data: financialsData, isLoading } = useQuery<FinancialsData>({
-    queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
-    queryFn: async () => {
-      const response = await fetch(`/api/v2/financial-data/company/${companyId}/financials`);
-      const result = await response.json();
-      return result.data;
-    },
+  const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
+    queryKey: ['/api/v2/deal-models/company', companyId],
+    select: (response: any) => response?.data || response || [],
     enabled: !!companyId,
   });
 
-  const validPeriods = useMemo(() => {
-    if (!financialsData) return [];
-    return financialsData.periods
-      .filter(p => p.periodType === 'statutory' && p.fiscalYear)
-      .sort((a, b) => (a.fiscalYear || 0) - (b.fiscalYear || 0));
-  }, [financialsData]);
-
-  const plData = useMemo(() => {
-    if (!financialsData || !validPeriods.length) return [];
-    
-    return validPeriods.map(period => {
-      const income = financialsData.incomeStatements.find(i => i.financialPeriodId === period.id);
-      const balance = financialsData.balanceSheets.find(b => b.financialPeriodId === period.id);
-      
-      const revenue = parseNum(income?.revenue);
-      const cos = parseNum(income?.costOfSales);
-      const grossProfit = parseNum(income?.grossProfit) || (revenue - cos);
-      const adminExpenses = parseNum(income?.administrativeExpenses);
-      const depreciation = parseNum(income?.depreciationAmortisation);
-      const operatingProfit = parseNum(income?.operatingProfit);
-      const interestPayable = parseNum(income?.interestPayable);
-      const profitBeforeTax = parseNum(income?.profitBeforeTax);
-      
-      const ebit = operatingProfit || (grossProfit - adminExpenses);
-      const ebitda = ebit + depreciation;
-
-      return {
-        year: period.fiscalYear!,
-        periodId: period.id,
-        hasData: revenue > 0,
-        revenue,
-        costOfSales: cos,
-        grossProfit,
-        grossProfitMargin: revenue > 0 ? grossProfit / revenue : 0,
-        operatingCosts: adminExpenses,
-        ebit,
-        depreciation,
-        ebitda,
-        interestPayable,
-        profitBeforeTax,
-        cash: parseNum(balance?.cashAtBank),
-        property: parseNum(balance?.tangibleFixedAssets),
-      };
-    }).filter(p => p.hasData);
-  }, [financialsData, validPeriods]);
-
   useEffect(() => {
-    if (plData.length > 0 && suggestedAddbacks.length === 0) {
-      const suggestions: SuggestedAddback[] = [];
-      
-      const directorAmounts: { [year: number]: number } = {};
-      plData.forEach(p => {
-        directorAmounts[p.year] = Math.round(p.revenue * 0.05);
-      });
-      suggestions.push({
-        id: 'director_remuneration',
-        category: 'Director Remuneration',
-        description: 'Directors Remuneration',
-        reasoning: 'Owner-managed business typically has above-market director compensation that can be added back for valuation purposes.',
-        amounts: directorAmounts,
-        accepted: false,
-      });
-
-      const pensionAmounts: { [year: number]: number } = {};
-      plData.forEach(p => {
-        pensionAmounts[p.year] = Math.round(p.revenue * 0.02);
-      });
-      suggestions.push({
-        id: 'director_pension',
-        category: 'Director Pension',
-        description: 'Directors Pension Contributions',
-        reasoning: 'Personal pension contributions for owner-directors are typically added back.',
-        amounts: pensionAmounts,
-        accepted: false,
-      });
-
-      const oneOffAmounts: { [year: number]: number } = {};
-      plData.forEach(p => {
-        if (p.year === 2021) {
-          oneOffAmounts[p.year] = 25000;
-        } else {
-          oneOffAmounts[p.year] = 0;
-        }
-      });
-      if (Object.values(oneOffAmounts).some(v => v > 0)) {
-        suggestions.push({
-          id: 'covid_one_off',
-          category: 'One-Off Items',
-          description: 'Covid-Related Costs',
-          reasoning: 'Non-recurring costs related to Covid-19 that will not repeat in future trading.',
-          amounts: oneOffAmounts,
-          accepted: false,
-        });
-      }
-
-      setSuggestedAddbacks(suggestions);
+    if (models.length > 0 && selectedModelId === null) {
+      setSelectedModelId(models[0].id);
     }
-  }, [plData, suggestedAddbacks.length]);
+  }, [models, selectedModelId]);
 
-  useEffect(() => {
-    if (plData.length > 0 && cashValue === 0 && propertyValue === 0) {
-      const latest = plData[plData.length - 1];
-      setCashValue(latest.cash);
-      setPropertyValue(latest.property);
+  const { data: modelDetails, isLoading: detailsLoading } = useQuery<DealModelWithDetails>({
+    queryKey: ['/api/v2/deal-models', selectedModelId],
+    select: (response: any) => response?.data || response,
+    enabled: !!selectedModelId,
+  });
+
+  const { data: financialsRaw } = useQuery<FinancialsData>({
+    queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
+    select: (response: any) => response?.data || response,
+    enabled: !!companyId,
+  });
+
+  const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
+    if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
+    const result: Record<string, number> = {};
+    for (const period of financialsRaw.periods) {
+      if (period.periodType !== 'statutory' || !period.fiscalYear) continue;
+      const income = financialsRaw.incomeStatements.find(i => i.financialPeriodId === period.id);
+      if (!income) continue;
+      const op = toNum(income.operatingProfit);
+      const da = toNum(income.depreciationAmortisation);
+      result[String(period.fiscalYear)] = op + da;
     }
-  }, [plData, cashValue, propertyValue]);
-
-  const acceptedAddbacksByYear = useMemo(() => {
-    const totals: { [year: number]: number } = {};
-    plData.forEach(p => {
-      totals[p.year] = suggestedAddbacks
-        .filter(a => a.accepted)
-        .reduce((sum, a) => sum + (a.amounts[p.year] || 0), 0);
-    });
-    return totals;
-  }, [suggestedAddbacks, plData]);
-
-  const adjustedEbitdaByYear = useMemo(() => {
-    const result: { [year: number]: number } = {};
-    plData.forEach(p => {
-      result[p.year] = p.ebitda + (acceptedAddbacksByYear[p.year] || 0);
-    });
     return result;
-  }, [plData, acceptedAddbacksByYear]);
+  }, [financialsRaw]);
 
-  const calculations = useMemo(() => {
-    if (plData.length === 0) return null;
+  const calculations = useMemo<CalculationResult | null>(() => {
+    if (!modelDetails) return null;
 
-    const recentYears = plData.slice(-yearsForAverage);
-    const avgEbitda = recentYears.reduce((sum, p) => sum + (adjustedEbitdaByYear[p.year] || p.ebitda), 0) / recentYears.length;
-    const avgEbit = recentYears.reduce((sum, p) => sum + p.ebit, 0) / recentYears.length;
-    
-    const enterpriseValue = avgEbitda * multiple;
-    const totalPurchasePrice = enterpriseValue + propertyValue + cashValue + otherAssets;
+    const adjustments: AdjustmentInput[] = (modelDetails.adjustments || []).map(a => ({
+      adjustmentType: a.adjustmentType as 'add_back' | 'deduction',
+      amount: a.amount,
+      amountsByYear: a.amountsByYear as Record<string, number> | null,
+      status: a.status || 'suggested',
+      userOverrideAmount: null,
+    }));
 
-    return {
-      avgEbitda,
-      avgEbit,
-      ebitPerMonth: avgEbit / 12,
-      enterpriseValue,
-      totalPurchasePrice,
+    const fundingLines: FundingLineInput[] = (modelDetails.fundingLines || []).map(f => ({
+      fundingType: f.fundingType,
+      assetBaseValue: f.assetBaseValue,
+      ltvPercent: f.ltvPercent,
+      amountUsed: f.amountUsed,
+      interestRate: f.interestRate,
+      termMonths: f.termMonths,
+      arrangementFeePercent: null,
+      isActive: f.isActive ?? false,
+    }));
+
+    const modelInput: DealModelInput = {
+      averagingYears: modelDetails.averagingYears ?? 3,
+      ebitdaMultiple: modelDetails.ebitdaMultiple ?? '3.0',
+      plusExcessCash: modelDetails.plusExcessCash ?? '0',
+      minusPrimaryDebt: modelDetails.minusPrimaryDebt ?? '0',
+      minusOtherDebt: modelDetails.minusOtherDebt ?? '0',
+      minusCorpTaxDue: '0',
+      minusWorkingCapitalAdj: modelDetails.minusWorkingCapitalAdj ?? '0',
+      plusPropertyValue: modelDetails.propertyValue ?? '0',
+      otherAdjustments: null,
+      feeLegalDdPercent: modelDetails.feeLegalDdPercent ?? '2.5',
+      feeAccountingDdPercent: modelDetails.feeAccountingDdPercent ?? '1.5',
+      feeBrokerPercent: modelDetails.feeBrokerPercent ?? '2.0',
+      feeLoanArrangementPercent: modelDetails.feeLoanArrangementPercent ?? '1.0',
+      feeDealMakerPercent: modelDetails.feeDealMakerPercent ?? '5.0',
+      customFees: null,
     };
-  }, [plData, yearsForAverage, multiple, propertyValue, cashValue, otherAssets, adjustedEbitdaByYear]);
 
-  const toggleAddback = (id: string) => {
-    setSuggestedAddbacks(prev => 
-      prev.map(a => a.id === id ? { ...a, accepted: !a.accepted } : a)
-    );
-  };
+    return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput);
+  }, [modelDetails, reportedEbitdaByYear]);
 
-  if (isLoading) {
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/v2/deal-models/create/${companyId}`);
+      return res.json();
+    },
+    onSuccess: (response: any) => {
+      const newModel = response?.data || response;
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
+      if (newModel?.id) {
+        setSelectedModelId(newModel.id);
+      }
+      toast({ title: 'Deal model created', description: 'Your deal model has been generated from expert analysis data.' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Could not create deal model',
+        description: error.message.includes('Expert analysis')
+          ? 'Expert analysis must be completed before creating a deal model. Run the analysis first.'
+          : error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  if (modelsLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-3 gap-4">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
 
-  if (!plData.length) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          No financial data available for this company.
-        </CardContent>
-      </Card>
-    );
-  }
+  const hasModels = models.length > 0;
+  const selectedModel = models.find(m => m.id === selectedModelId);
+  const isLocked = selectedModel?.isLocked ?? false;
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Profit & Loss Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-semibold bg-slate-50">P&L</th>
-                  {plData.map(p => (
-                    <th key={p.year} className="text-right py-2 px-3 font-semibold bg-slate-50 min-w-[100px]">
-                      {p.year}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b hover:bg-slate-50/50">
-                  <td className="py-2 px-3 font-medium">Turnover</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3">{formatCurrency(p.revenue)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b hover:bg-slate-50/50">
-                  <td className="py-2 px-3 font-medium">Cost of Sales</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 text-red-600">{formatCurrency(-p.costOfSales)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b bg-slate-50">
-                  <td className="py-2 px-3 font-semibold">Gross Profit</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 font-semibold">{formatCurrency(p.grossProfit)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b hover:bg-slate-50/50">
-                  <td className="py-2 px-3 text-muted-foreground">Gross Profit Margin</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 text-muted-foreground">{formatPercent(p.grossProfitMargin)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b hover:bg-slate-50/50">
-                  <td className="py-2 px-3 font-medium">Operating Costs</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 text-red-600">{formatCurrency(-p.operatingCosts)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b bg-slate-50">
-                  <td className="py-2 px-3 font-semibold">EBIT</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 font-semibold">{formatCurrency(p.ebit)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b hover:bg-slate-50/50">
-                  <td className="py-2 px-3 font-medium">D&A</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3">{formatCurrency(p.depreciation)}</td>
-                  ))}
-                </tr>
-                <tr className="border-b-2 border-slate-300 bg-slate-100">
-                  <td className="py-2 px-3 font-bold">EBITDA</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 font-bold">{formatCurrency(p.ebitda)}</td>
-                  ))}
-                </tr>
-
-                <tr>
-                  <td colSpan={plData.length + 1} className="py-3">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Adjustments</span>
-                  </td>
-                </tr>
-                {suggestedAddbacks.filter(a => a.accepted).map(addback => (
-                  <tr key={addback.id} className="border-b hover:bg-amber-50/50 bg-amber-50/30">
-                    <td className="py-2 px-3 font-medium flex items-center gap-2">
-                      <button 
-                        onClick={() => toggleAddback(addback.id)}
-                        className="text-amber-600 hover:text-amber-800"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                      {addback.description}
-                    </td>
-                    {plData.map(p => (
-                      <td key={p.year} className="text-right py-2 px-3 text-amber-700">
-                        {formatCurrency(addback.amounts[p.year] || 0)}
-                      </td>
-                    ))}
-                  </tr>
+      {!hasModels ? (
+        <Card>
+          <CardContent className="py-10 flex flex-col items-center text-center gap-4">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Calculator className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">No Deal Models Yet</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                Create a deal model to calculate the offer price, build a funding structure, and assess deal viability. Data is automatically pulled from your expert analysis.
+              </p>
+            </div>
+            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+              {createMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Create Deal Model
+            </Button>
+            <p className="text-xs text-muted-foreground">Requires completed expert analysis.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Select
+              value={selectedModelId ? String(selectedModelId) : undefined}
+              onValueChange={(val) => setSelectedModelId(Number(val))}
+            >
+              <SelectTrigger className="w-[280px]">
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {models.map(m => (
+                  <SelectItem key={m.id} value={String(m.id)}>
+                    {m.name} (v{m.version})
+                  </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
 
-                <tr className="border-t-2 border-slate-300 bg-emerald-50">
-                  <td className="py-2 px-3 font-bold text-emerald-800">Adjusted EBITDA</td>
-                  {plData.map(p => (
-                    <td key={p.year} className="text-right py-2 px-3 font-bold text-emerald-800">
-                      {formatCurrency(adjustedEbitdaByYear[p.year] || p.ebitda)}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+            {selectedModel && (
+              <Badge className={STATUS_COLOURS[selectedModel.status || 'draft'] || STATUS_COLOURS.draft}>
+                {selectedModel.status || 'draft'}
+              </Badge>
+            )}
+
+            {isLocked && (
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4" />
+                Locked
+              </span>
+            )}
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending}
+              className="ml-auto"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              New Model
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {suggestedAddbacks.filter(a => !a.accepted).length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-amber-800">
-              <Lightbulb className="h-5 w-5" />
-              Suggested Addbacks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {suggestedAddbacks.filter(a => !a.accepted).map(addback => (
-                <div key={addback.id} className="flex items-start gap-4 p-3 bg-white rounded-lg border">
-                  <Checkbox
-                    id={addback.id}
-                    checked={addback.accepted}
-                    onCheckedChange={() => toggleAddback(addback.id)}
-                  />
-                  <div className="flex-1">
-                    <label htmlFor={addback.id} className="font-medium cursor-pointer">
-                      {addback.description}
-                    </label>
-                    <p className="text-sm text-muted-foreground mt-1">{addback.reasoning}</p>
-                    <div className="flex gap-4 mt-2 text-sm">
-                      {plData.map(p => (
-                        <span key={p.year} className="text-amber-700">
-                          {p.year}: {formatCurrency(addback.amounts[p.year] || 0)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                    onClick={() => toggleAddback(addback.id)}
-                  >
-                    <Check className="h-4 w-4 mr-1" /> Accept
-                  </Button>
-                </div>
+          {detailsLoading ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+              </div>
+              {[1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} className="h-32" />
               ))}
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <>
+              <div className="sticky top-0 z-10 bg-background pt-2 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-l-4 border-l-primary">
+                    <CardContent className="py-4">
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <PoundSterling className="h-3.5 w-3.5" />
+                        Offer Price
+                      </p>
+                      <p className="text-2xl font-bold mt-1">
+                        {calculations ? formatCurrency(calculations.offerPrice) : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-l-4 border-l-amber-500">
+                    <CardContent className="py-4">
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Banknote className="h-3.5 w-3.5" />
+                        Total Funding Required
+                      </p>
+                      <p className="text-2xl font-bold mt-1">
+                        {calculations ? formatCurrency(calculations.totalFundingRequired) : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={`border-l-4 ${
+                    !calculations ? 'border-l-muted'
+                    : calculations.fundingGap <= 0 ? 'border-l-green-500'
+                    : calculations.fundingGap < calculations.offerPrice * 0.5 ? 'border-l-amber-500'
+                    : 'border-l-red-500'
+                  }`}>
+                    <CardContent className="py-4">
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Cash to Introduce
+                      </p>
+                      <p className={`text-2xl font-bold mt-1 ${
+                        !calculations ? ''
+                        : calculations.fundingGap <= 0 ? 'text-green-700'
+                        : calculations.fundingGap < calculations.offerPrice * 0.5 ? 'text-amber-700'
+                        : 'text-red-700'
+                      }`}>
+                        {calculations ? formatCurrency(calculations.fundingGap) : '—'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-6">
+                {SECTIONS.map(section => {
+                  const Icon = section.icon;
+                  return (
+                    <Card key={section.num} className="opacity-70">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">
+                            {section.num}
+                          </span>
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          {section.title}
+                        </CardTitle>
+                        <CardDescription>{section.desc}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-center h-20 text-sm text-muted-foreground">
+                          Section content coming soon
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Valuation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">Avg EBITDA ({yearsForAverage} Yrs)</span>
-                <div className="flex gap-1">
-                  {[2, 3, 4, 5].map(y => (
-                    <Button
-                      key={y}
-                      size="sm"
-                      variant={yearsForAverage === y ? "default" : "outline"}
-                      className="h-7 w-7 p-0"
-                      onClick={() => setYearsForAverage(y)}
-                    >
-                      {y}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="text-2xl font-bold">{formatCurrency(calculations?.avgEbitda || 0)}</div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Multiple</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="10"
-                    value={multiple}
-                    onChange={(e) => setMultiple(parseFloat(e.target.value) || 0)}
-                    className="w-20 text-right font-semibold bg-blue-50 border-blue-200"
-                  />
-                  <span className="text-muted-foreground">x</span>
-                </div>
-              </div>
-              <Slider
-                value={[multiple]}
-                onValueChange={([v]) => setMultiple(v)}
-                min={1}
-                max={8}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
-
-            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-              <span className="text-sm text-emerald-700">Enterprise Value</span>
-              <div className="text-3xl font-bold text-emerald-800">{formatCurrency(calculations?.enterpriseValue || 0)}</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <Banknote className="h-5 w-5" />
-              Purchase Price
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label className="flex items-center gap-2">
-                  <span className="text-muted-foreground">(+)</span> Property
-                </Label>
-                <Input
-                  type="number"
-                  value={propertyValue || ''}
-                  onChange={(e) => setPropertyValue(parseFloat(e.target.value) || 0)}
-                  className="w-32 text-right bg-blue-50 border-blue-200"
-                  placeholder="0"
-                />
-              </div>
-              <div className="flex justify-between items-center">
-                <Label className="flex items-center gap-2">
-                  <span className="text-muted-foreground">(+)</span> Cash
-                </Label>
-                <Input
-                  type="number"
-                  value={cashValue || ''}
-                  onChange={(e) => setCashValue(parseFloat(e.target.value) || 0)}
-                  className="w-32 text-right bg-blue-50 border-blue-200"
-                  placeholder="0"
-                />
-              </div>
-              <div className="flex justify-between items-center">
-                <Label className="flex items-center gap-2">
-                  <span className="text-muted-foreground">(+)</span> Other
-                </Label>
-                <Input
-                  type="number"
-                  value={otherAssets || ''}
-                  onChange={(e) => setOtherAssets(parseFloat(e.target.value) || 0)}
-                  className="w-32 text-right bg-blue-50 border-blue-200"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-800 rounded-lg text-white mt-4">
-              <span className="text-sm text-slate-300">Total Purchase Price</span>
-              <div className="text-3xl font-bold">{formatCurrency(calculations?.totalPurchasePrice || 0)}</div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-4 border-t">
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <span className="text-xs text-muted-foreground">EBIT p/y (Avg {yearsForAverage} yrs)</span>
-                <div className="text-lg font-semibold">{formatCurrency(calculations?.avgEbit || 0)}</div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <span className="text-xs text-muted-foreground">EBIT p/m</span>
-                <div className="text-lg font-semibold">{formatCurrency(calculations?.ebitPerMonth || 0)}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
