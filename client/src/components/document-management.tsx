@@ -77,6 +77,8 @@ import {
   BarChart3,
   TrendingUp,
   AlertTriangle,
+  Play,
+  RefreshCw,
 } from "lucide-react";
 
 // Helper function to invalidate all caches (document library + portal)
@@ -227,9 +229,50 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
 }
 
 // Analysis completion indicator component
-function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: number }) {
+function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime }: { targetCompanyId: number; latestDocumentUploadTime?: string }) {
   const { toast } = useToast();
-  
+
+  const triggerExpertAnalysisMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/v2/expert-analysis/trigger-stage1/${targetCompanyId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis Triggered",
+        description: "Expert screening analysis has been initiated. This may take a few minutes.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/expert-analysis/results", targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/document-analysis/company", targetCompanyId, "completion"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to trigger analysis.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const { data: expertResults = [] } = useQuery<any[]>({
+    queryKey: ["/api/v2/expert-analysis/results", targetCompanyId],
+    select: (response: any) => response.data || response,
+  });
+
+  const hasCompletedScreening = expertResults.some(
+    (r: any) => r.expertType === 'screening' && r.status === 'success'
+  );
+  const hasRunningExperts = expertResults.some(
+    (r: any) => r.status === 'processing' || r.status === 'pending'
+  );
+
+  const latestExpertTimestamp = expertResults.length > 0
+    ? Math.max(...expertResults.map((r: any) => new Date(r.createdAt).getTime()))
+    : 0;
+
+  const latestDocUploadTimestamp = latestDocumentUploadTime ? new Date(latestDocumentUploadTime).getTime() : 0;
+  const hasNewDocuments = latestDocUploadTimestamp > latestExpertTimestamp && latestExpertTimestamp > 0;
+
   const { data: completionStatus, isLoading } = useQuery<{
     completedTypes: string[];
     missingTypes: string[];
@@ -326,6 +369,127 @@ function AnalysisCompletionIndicator({ targetCompanyId }: { targetCompanyId: num
           <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <TrendingUp className="w-4 h-4" />
             <span className="text-sm font-medium">All financial analysis types completed! Ready for comprehensive due diligence review.</span>
+          </div>
+        </div>
+      )}
+
+      {!hasCompletedScreening && completedCount > 0 && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+            Ready to run expert screening analysis
+          </span>
+          {completedCount < 10 ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  size="sm" 
+                  disabled={triggerExpertAnalysisMutation.isPending || hasRunningExperts}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {triggerExpertAnalysisMutation.isPending || hasRunningExperts ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      {hasRunningExperts ? 'Analysis Running...' : 'Triggering...'}
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Progress to Analysis
+                    </>
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    Incomplete Documentation
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="text-left space-y-3">
+                      <p>
+                        Proceeding with incomplete documentation will reduce the quality and depth of the analysis. 
+                        The expert engine relies on comprehensive financial data to provide accurate valuations, 
+                        risk assessments, and deal recommendations.
+                      </p>
+                      <p>
+                        Currently <strong>{completedCount} of 10</strong> document types have been uploaded.
+                      </p>
+                      <p>
+                        Missing: {missingTypes.map(t => formatDocumentType(t)).join(', ')}
+                      </p>
+                      <p className="text-amber-600 dark:text-amber-400 font-medium">
+                        Without complete documentation, the analysis may produce less reliable results 
+                        and key areas may not be assessed.
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => triggerExpertAnalysisMutation.mutate()}
+                    className="bg-amber-600 hover:bg-amber-700"
+                  >
+                    Proceed with Limited Analysis
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <Button 
+              size="sm" 
+              onClick={() => triggerExpertAnalysisMutation.mutate()}
+              disabled={triggerExpertAnalysisMutation.isPending || hasRunningExperts}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {triggerExpertAnalysisMutation.isPending || hasRunningExperts ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  {hasRunningExperts ? 'Analysis Running...' : 'Triggering...'}
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Progress to Analysis
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {hasCompletedScreening && (
+        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+              <RefreshCw className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {hasNewDocuments 
+                  ? 'New documents available since last analysis. Re-run to include them.'
+                  : 'Analysis complete. Upload new documents to re-run.'}
+              </span>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => triggerExpertAnalysisMutation.mutate()}
+              disabled={!hasNewDocuments || triggerExpertAnalysisMutation.isPending || hasRunningExperts}
+              className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
+              title={!hasNewDocuments ? 'No new documents uploaded since last analysis' : ''}
+            >
+              {triggerExpertAnalysisMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
+                  Re-running...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Re-run Analysis
+                </>
+              )}
+            </Button>
           </div>
         </div>
       )}
@@ -867,7 +1031,18 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           </div>
         </CardHeader>
         <CardContent>
-          <AnalysisCompletionIndicator targetCompanyId={targetCompanyId} />
+          <AnalysisCompletionIndicator 
+            targetCompanyId={targetCompanyId} 
+            latestDocumentUploadTime={
+              documentsData?.documents && documentsData.documents.length > 0
+                ? documentsData.documents.reduce((latest, doc) => {
+                    const docTime = new Date(doc.uploadDate || doc.createdAt).getTime();
+                    const latestTime = new Date(latest).getTime();
+                    return docTime > latestTime ? (doc.uploadDate || doc.createdAt) : latest;
+                  }, documentsData.documents[0].uploadDate || documentsData.documents[0].createdAt)
+                : undefined
+            }
+          />
           {totalDocuments === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />

@@ -26,6 +26,7 @@ import { classifyDocumentWithGemini } from "./gemini-document-classification-ser
 import { runStep2AnalysisForTypes } from "./gemini-step2-analysis-service";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
 import { financialDataService } from "./financial-data.service";
+import { expertAnalysisService } from "./expert-analysis.service";
 import { config } from "../config";
 
 function emitDocumentUpdate(event: DocumentUpdateEvent): void {
@@ -258,6 +259,34 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       },
       timestamp: new Date(),
     });
+
+    try {
+      const existingExpertResults = await expertAnalysisService.getExpertResults(event.targetCompanyId);
+      const hasRunningExperts = existingExpertResults.some(
+        (r: any) => r.status === 'processing' || r.status === 'pending'
+      );
+      const hasCompletedScreening = existingExpertResults.some(
+        (r: any) => r.expertType === 'screening' && r.status === 'success'
+      );
+
+      if (!hasRunningExperts && !hasCompletedScreening) {
+        const companyAccountsResults = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('company_accounts', event.targetCompanyId);
+        const plResults = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('profit_and_loss', event.targetCompanyId);
+
+        if (companyAccountsResults.length > 0 || plResults.length > 0) {
+          console.log(`[FILE_ANALYSIS] Auto-triggering Expert Phase 1 (Data Quality + Screening) for company ${event.targetCompanyId}`);
+          expertAnalysisService.triggerNewStage1Pipeline(event.targetCompanyId, event.uploadedBy).catch(err => {
+            console.error(`[FILE_ANALYSIS] Expert Phase 1 auto-trigger failed for company ${event.targetCompanyId}:`, err.message);
+          });
+        } else {
+          console.log(`[FILE_ANALYSIS] Skipping Expert Phase 1 auto-trigger for company ${event.targetCompanyId} — no financial documents analysed yet`);
+        }
+      } else {
+        console.log(`[FILE_ANALYSIS] Skipping Expert Phase 1 auto-trigger for company ${event.targetCompanyId} — ${hasRunningExperts ? 'experts already running' : 'screening already completed'}`);
+      }
+    } catch (expertError) {
+      console.error(`[FILE_ANALYSIS] Error in Expert Phase 1 auto-trigger check:`, expertError);
+    }
 
   } catch (error) {
     console.error(`[FILE_ANALYSIS] Failed to analyze file for event ${eventId}:`, error);

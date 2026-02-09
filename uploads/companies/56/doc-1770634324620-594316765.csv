@@ -1,0 +1,18 @@
+Customer ID,Customer Name,Current,1-30 Days,31-60 Days,61-90 Days,Over 90 Days,Total Outstanding
+"CUST-001","Redrow Homes South East Ltd",385000,125000,0,0,0,510000
+"CUST-002","Taylor Wimpey East London",428000,95000,0,0,0,523000
+"CUST-003","Basildon Borough Council",215000,185000,52000,0,0,452000
+"CUST-004","Countryside Properties",365000,78000,0,0,0,443000
+"CUST-005","Essex County Council",195000,145000,88000,25000,0,453000
+"CUST-006","Bellway Homes Essex",312000,115000,0,0,0,427000
+"CUST-007","Morgan Sindall Construction",285000,92000,35000,0,0,412000
+"CUST-008","Galliford Try Partnerships",268000,85000,0,0,0,353000
+"CUST-009","Chelmsford City Council",165000,122000,48000,0,0,335000
+"CUST-010","Barratt David Wilson Homes",245000,68000,0,0,0,313000
+"CUST-011","Hill Group Ltd",218000,52000,0,0,0,270000
+"CUST-012","Various Commercial Clients",495000,285000,125000,42000,18000,965000
+"CUST-013","Various Residential Clients",385000,145000,55000,0,0,585000
+"CUST-014","Various Housing Associations",225000,95000,38000,0,0,358000
+"CUST-015","Emergency & Maintenance Contracts",165000,48000,20000,0,0,233000
+
+,Total Outstanding:,,,,,5632000

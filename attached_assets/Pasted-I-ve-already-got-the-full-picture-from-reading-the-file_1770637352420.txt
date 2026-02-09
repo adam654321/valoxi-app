@@ -1,0 +1,96 @@
+I've already got the full picture from reading the files. The chain was:
+doc upload → file-analysis.service → checkAndTriggerStage1Analysis() (old Stage 1) → which then chained to expertAnalysisService.triggerNewStage1Pipeline()
+So removing old Stage 1 broke the entire chain — both auto and manual triggers for the Expert Pipeline are gone.
+Here's the scoping prompt:
+
+Replit Prompt — Scoping / Pre-build:
+
+We recently removed the old Stage 1 Analysis (the markdown-based Investment Summary) but this accidentally broke the trigger chain for the Expert Analysis Pipeline. The Expert Pipeline (Data Quality → Screening → Deep Dive) is now the ONLY analysis system, but it currently has no way to be triggered — neither automatically nor manually.
+Before making changes, please review the current codebase and confirm what needs to be done. Here's what I believe is the current state and what's needed:
+Current State (please verify)
+
+server/services/expert-analysis.service.ts — The service exists and works. It has:
+
+triggerNewStage1Pipeline(companyId, triggeredBy) — runs Data Quality + Screening
+triggerExpertPipeline(companyId, triggeredBy) — runs the full Deep Dive (8 experts)
+getExpertResults(companyId) — returns all results
+
+
+server/routes/expert-analysis.routes.ts — Has routes for:
+
+POST /trigger-pipeline/:id — triggers Deep Dive
+GET /results/:id — gets results
+Missing: No route to trigger Phase 1 (Screening)
+
+
+server/services/file-analysis.service.ts — After each document is analysed, calls checkAndTriggerStage1Analysis() which was the old Stage 1. This no longer chains to the Expert Pipeline.
+
+Missing: Auto-trigger for Expert Phase 1 after document analysis
+
+
+client/src/components/document-management.tsx — The AnalysisCompletionIndicator component has a "Progress to Analysis" button that calls the old Stage 1 route (/api/v2/stage1-analysis/${targetCompanyId}/trigger).
+
+Missing: This needs to call the Expert Pipeline instead
+
+
+client/src/components/analysis/ExpertAnalysisDashboard.tsx — The Deep Dive button is hard-locked behind hasScreeningPassed. No way to override.
+
+What needs to be added back (3 things)
+1. Automatic trigger — Expert Phase 1 after document upload
+When a document finishes analysis in file-analysis.service.ts, automatically trigger expertAnalysisService.triggerNewStage1Pipeline() IF:
+
+At least one financial document has been analysed (company_accounts OR profit_and_loss)
+No expert analysis is currently running (status = 'processing' or 'pending')
+Screening hasn't already completed successfully
+
+This should be fire-and-forget (don't block the document analysis response). Replace or supplement the old checkAndTriggerStage1Analysis() call.
+2. Manual trigger — "Progress to Analysis" with warning for incomplete docs
+The "Progress to Analysis" button on the Documents tab needs to:
+
+Call a new route that triggers expertAnalysisService.triggerNewStage1Pipeline()
+Add a new route: POST /api/v2/expert-analysis/trigger-stage1/:id
+When documents are incomplete (not all 10 types uploaded), show a warning dialog BEFORE proceeding:
+
+Title: "Incomplete Documentation"
+Body: "Proceeding with incomplete documentation will reduce the quality and depth of the analysis. The expert engine relies on comprehensive financial data to provide accurate valuations, risk assessments, and deal recommendations. Currently {completedCount} of 10 document types have been uploaded. Missing: {list}. Without complete documentation, the analysis may produce less reliable results and key areas may not be assessed."
+Buttons: "Cancel" and "Proceed with Limited Analysis"
+
+
+When all docs are complete, trigger directly without warning
+
+3. Re-run analysis — only if new documents exist
+Add a "Re-run Analysis" option that:
+
+Only appears when Expert Phase 1 has already completed (screening status = 'success')
+Is disabled/blocked if no new documents have been uploaded since the last analysis run (to avoid wasting tokens)
+When new documents ARE available, allows re-triggering which will update the analysis with the additional data
+The check should compare the latest document upload timestamp against the latest expert analysis timestamp
+
+4. Deep Dive override (in ExpertAnalysisDashboard)
+
+Remove the hard gate that requires screening to pass before Deep Dive can start
+When screening hasn't passed, show an amber warning: "Screening is recommended before deep dive but you can proceed manually if needed" — with a button to start anyway
+When screening returned NO-GO, show a red warning: "Screening recommended NO-GO. You can override if needed." — with an "Override & Start Deep Dive" button
+
+What NOT to do
+
+Do NOT restore the old Stage 1 Analysis (markdown-based Investment Summary) — that's been deliberately removed
+Do NOT change the stage1-analysis.routes.ts or stage1-analysis.service.ts — those are legacy
+Do NOT change the Expert Analysis service logic itself — just the triggers that call it
+
+Please confirm
+Before making any changes, please:
+
+Verify my understanding of the current state is correct
+Identify any other files that need changing that I've missed
+Confirm you understand the trigger flow should be:
+
+Document uploaded → file-analysis.service → auto-trigger Expert Phase 1
+                                              ↓
+Documents tab → "Progress to Analysis" → manual trigger Expert Phase 1
+                                              ↓
+Expert Phase 1: Data Quality → Screening
+                                              ↓
+Analysis tab → "Start Expert Deep Dive" → trigger Expert Pipeline (8 experts)
+
+Flag any concerns about the approach

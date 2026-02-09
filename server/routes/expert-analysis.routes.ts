@@ -5,6 +5,26 @@ import { UnauthorizedError } from '../utils/errors';
 
 const router = Router();
 
+router.post('/trigger-stage1/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = req.session?.userId;
+    if (!userId) throw new UnauthorizedError();
+
+    const companyId = parseInt(req.params.id, 10);
+    if (isNaN(companyId)) {
+      return res.status(400).json({ success: false, message: 'Invalid company ID' });
+    }
+
+    expertAnalysisService.triggerNewStage1Pipeline(companyId, userId).catch(err => {
+      console.error(`[EXPERT_ANALYSIS_ROUTE] Stage 1 pipeline failed for company ${companyId}:`, err.message);
+    });
+
+    sendSuccess(res, { message: 'Screening pipeline started' });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 router.post('/trigger-pipeline/:id', async (req: Request, res: Response) => {
   try {
     const userId = req.session?.userId;

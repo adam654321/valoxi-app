@@ -28,6 +28,8 @@ import {
   ShieldCheck,
   Gauge,
   Lock,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 
 interface ExpertResult {
@@ -244,6 +246,17 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
     },
   });
 
+  const triggerStage1Mutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/v2/expert-analysis/trigger-stage1/${targetCompanyId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/expert-analysis/results", targetCompanyId] });
+      toast({ title: "Screening Started", description: "Data quality check and screening analysis have been triggered." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const getResult = (type: string) => results.find((r) => r.expertType === type);
 
   const dataQuality = getResult("data_quality");
@@ -281,8 +294,21 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
       <div className="text-center py-16 text-muted-foreground">
         <Brain className="w-16 h-16 mx-auto mb-4 opacity-40" />
         <p className="text-lg font-medium mb-2">No Expert Analysis Yet</p>
-        <p className="text-sm mb-1">Expert analysis will appear here once triggered by the Stage 1 pipeline.</p>
-        <p className="text-xs">Upload documents and run Stage 1 Analysis to begin.</p>
+        <p className="text-sm mb-6">
+          Run screening analysis to assess data quality and initial viability.
+          <br />
+          <span className="text-xs">This triggers automatically when financial documents are uploaded, or you can start it manually.</span>
+        </p>
+        <Button
+          onClick={() => triggerStage1Mutation.mutate()}
+          disabled={triggerStage1Mutation.isPending}
+        >
+          {triggerStage1Mutation.isPending ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Starting...</>
+          ) : (
+            <><Play className="w-4 h-4 mr-2" />Run Screening Analysis</>
+          )}
+        </Button>
       </div>
     );
   }
@@ -290,10 +316,24 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-2 h-2 rounded-full bg-indigo-500" />
-          <h2 className="text-lg font-semibold">Phase 1: Screening</h2>
-          <Badge variant="outline" className="text-xs">Pre-requisite</Badge>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+            <h2 className="text-lg font-semibold">Phase 1: Screening</h2>
+            <Badge variant="outline" className="text-xs">Pre-requisite</Badge>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => triggerStage1Mutation.mutate()}
+            disabled={triggerStage1Mutation.isPending || (dataQuality?.status === 'processing') || (screening?.status === 'processing')}
+          >
+            {triggerStage1Mutation.isPending ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Running...</>
+            ) : (
+              <><RefreshCw className="w-4 h-4 mr-2" />Re-run Screening</>
+            )}
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -408,7 +448,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
           </div>
           <Button
             onClick={() => triggerMutation.mutate()}
-            disabled={!hasScreeningPassed || triggerMutation.isPending || hasRunningExperts || isNoGo}
+            disabled={triggerMutation.isPending || hasRunningExperts}
           >
             {triggerMutation.isPending || hasRunningExperts ? (
               <>
@@ -435,11 +475,23 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
         )}
 
         {!hasScreeningPassed && !hasDeepDiveStarted && (
-          <Card className="border-dashed">
+          <Card className="border-dashed border-amber-200 dark:border-amber-800">
             <CardContent className="py-8 text-center text-muted-foreground">
-              <Lock className="w-8 h-8 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium mb-1">Deep Dive Locked</p>
-              <p className="text-xs">Phase 1 screening must complete successfully before the deep dive can begin.</p>
+              <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-amber-500 opacity-70" />
+              <p className="text-sm font-medium mb-1">Screening Not Complete</p>
+              <p className="text-xs mb-4">Screening is recommended before deep dive to ensure data quality, but you can proceed manually if needed.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => triggerMutation.mutate()}
+                disabled={triggerMutation.isPending}
+              >
+                {triggerMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Starting...</>
+                ) : (
+                  <><Play className="w-4 h-4 mr-2" />Start Deep Dive Anyway</>
+                )}
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -449,12 +501,25 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
             <CardContent className="py-6 text-center">
               <XCircle className="w-8 h-8 mx-auto mb-3 text-red-500" />
               <p className="text-sm font-medium text-red-700 dark:text-red-400">Screening Recommended NO-GO</p>
-              <p className="text-xs text-red-600 dark:text-red-500 mt-1">Deep dive is not recommended for this target.</p>
+              <p className="text-xs text-red-600 dark:text-red-500 mt-1 mb-4">Deep dive is not recommended for this target, but you can override if needed.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => triggerMutation.mutate()}
+                disabled={triggerMutation.isPending}
+                className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                {triggerMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Starting...</>
+                ) : (
+                  <><Play className="w-4 h-4 mr-2" />Override & Start Deep Dive</>
+                )}
+              </Button>
             </CardContent>
           </Card>
         )}
 
-        {(hasDeepDiveStarted || (hasScreeningPassed && !isNoGo)) && (
+        {(hasDeepDiveStarted || hasScreeningPassed) && (
           <div className="space-y-6">
             {[1, 2, 3, 4].map((layer) => {
               const layerExperts = deepDiveExperts.filter((t) => EXPERT_CONFIG[t]?.layer === layer);
