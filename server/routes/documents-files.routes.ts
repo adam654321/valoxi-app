@@ -6,6 +6,7 @@ import { documentsFilesService } from '../services/documents-files.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { sendFileUploadWebhook } from '../services/file-analysis.service';
+import { uploadLimiter } from '../middleware/rate-limit';
 
 const router = Router();
 
@@ -67,7 +68,7 @@ router.get('/categories', async (req: Request, res: Response) => {
   } catch (error) { sendError(res, error); }
 });
 
-router.post('/company/:id/upload', (req: Request, res: Response) => {
+router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) => {
   upload.single('document')(req, res, async (err) => {
     try {
       const userId = req.session?.userId;

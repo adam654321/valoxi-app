@@ -25,7 +25,7 @@ import chaseUpRoutes from './chase-up.routes';
 import expertAnalysisRoutes from './expert-analysis.routes';
 import userCompaniesRoutes from './user-companies.routes';
 import dealModelRoutes from './deal-model.routes';
-import { authLimiter, portalLimiter, analysisTriggerLimiter, uploadLimiter } from '../middleware/rate-limit';
+import { authLimiter, portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/pipeline', isAuthenticated, pipelineRoutes);
@@ -42,10 +42,10 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/deals', isAuthenticated, assignmentsRoutes);
   app.use('/api/v2/reports', isAuthenticated, reportsRoutes);
   app.use('/api/v2/portal', portalLimiter, portalRoutes);
-  app.use('/api/v2/files', isAuthenticated, uploadLimiter, documentsFilesRoutes);
-  app.use('/api/v2/public/documents', portalLimiter, publicDocumentRoutes);
+  app.use('/api/v2/files', isAuthenticated, documentsFilesRoutes);
+  app.use('/api/v2/public/documents', publicDocumentRoutes);
   app.use('/api/v2/portal-submit', portalLimiter, portalSubmissionsRoutes);
-  app.use('/api/v2/document-analysis', isAuthenticated, analysisTriggerLimiter, documentAnalysisRoutes);
+  app.use('/api/v2/document-analysis', isAuthenticated, documentAnalysisRoutes);
   app.use('/api/v2/requirements', isAuthenticated, portalRequirementsRoutes);
   app.use('/api/v2/public/portal', portalLimiter, portalRequirementsPublicRoutes);
   app.use('/api/v2/email', isAuthenticated, emailRoutes);

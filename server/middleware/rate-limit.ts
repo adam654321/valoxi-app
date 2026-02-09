@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -11,7 +11,7 @@ export const generalLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 20,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -20,7 +20,7 @@ export const authLimiter = rateLimit({
 
 export const portalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 50,
+  max: 200,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -29,7 +29,7 @@ export const portalLimiter = rateLimit({
 
 export const analysisTriggerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -38,7 +38,7 @@ export const analysisTriggerLimiter = rateLimit({
 
 export const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 50,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
