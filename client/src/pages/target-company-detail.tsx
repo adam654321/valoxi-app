@@ -44,12 +44,10 @@ import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
 import { PipelineStageManagement } from "@/components/pipeline-stage-management";
 import { DealActivitySection } from "@/components/deal-activity-section";
-import { DocumentManagement } from "@/components/document-management";
 import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
 import { DocumentsTab } from "@/components/target-company/DocumentsTab";
 import DealModeller from "@/components/target-company/DealModeller";
-import DealDocumentsSummary from "@/components/deal-documents/DealDocumentsSummary";
 import { useTargetCompany } from "@/hooks/useTargetCompany";
 
 import ReactMarkdown from "react-markdown";
@@ -81,6 +79,61 @@ const contactSchema = z.object({
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
+
+function DealStatusStrip({ targetCompanyId }: { targetCompanyId: number }) {
+  const { data: docs } = useQuery<any[]>({
+    queryKey: ["/api/v2/deal-documents/company", targetCompanyId],
+  });
+
+  const docTypes = [
+    { key: "nda", label: "NDA" },
+    { key: "offer_letter", label: "Offer" },
+    { key: "heads_of_terms", label: "HoT" },
+  ];
+
+  const getLatestStatus = (type: string) => {
+    if (!docs || docs.length === 0) return null;
+    const matching = docs
+      .filter((d: any) => d.documentType === type && d.status !== "superseded" && d.status !== "withdrawn")
+      .sort((a: any, b: any) => b.version - a.version);
+    return matching[0]?.status || null;
+  };
+
+  const statusDisplay: Record<string, { label: string; className: string }> = {
+    draft: { label: "Draft", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
+    sent: { label: "Sent", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    viewed: { label: "Viewed", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    accepted: { label: "Accepted", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+    rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+    countered: { label: "Countered", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+  };
+
+  return (
+    <Card>
+      <CardContent className="py-3 px-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-muted-foreground">Deal Documents:</span>
+          <div className="flex items-center gap-3">
+            {docTypes.map(({ key, label }) => {
+              const status = getLatestStatus(key);
+              const display = status ? statusDisplay[status] : null;
+              return (
+                <div key={key} className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">{label}:</span>
+                  {display ? (
+                    <Badge className={`text-[10px] px-1.5 py-0 h-5 ${display.className}`}>{display.label}</Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function TargetCompanyDetail() {
   const { id } = useParams();
@@ -687,8 +740,8 @@ export default function TargetCompanyDetail() {
               contacts={contacts}
             />
 
-            {/* Deal Documents Summary */}
-            <DealDocumentsSummary targetCompanyId={parseInt(id!)} />
+            {/* Compact Deal Status Strip */}
+            <DealStatusStrip targetCompanyId={parseInt(id!)} />
 
             {/* System Information */}
             <Card>
@@ -907,6 +960,7 @@ export default function TargetCompanyDetail() {
 
           <TabsContent value="documents" className="space-y-6">
             <DocumentsTab 
+              companyId={id!}
               targetCompanyId={parseInt(id!)}
               companyName={company.companyName}
             />

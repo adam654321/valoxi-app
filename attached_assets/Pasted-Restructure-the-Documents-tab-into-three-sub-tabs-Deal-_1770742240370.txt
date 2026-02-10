@@ -1,0 +1,86 @@
+Restructure the Documents tab into three sub-tabs: Deal Documents, Stage 1 Financial Documents, and Stage 2 Due Diligence. This is a UI restructure only — no backend changes.
+
+CONTEXT:
+- The target company detail page (client/src/pages/target-company-detail.tsx) has 7 main tabs
+- The "Documents" tab currently renders DocumentsTab which just wraps DocumentManagement
+- DealDocumentsSummary currently lives on the Overview tab inside target-company-detail.tsx (it is rendered inline, NOT using the OverviewTab.tsx component)
+- The new DD API endpoints are at /api/v2/due-diligence/...
+- The existing DocumentManagement component must NOT be modified
+
+STEP 1: Rewrite client/src/components/target-company/DocumentsTab.tsx
+
+Replace the current simple wrapper with a tabbed layout using shadcn Tabs component (already available in the project as @/components/ui/tabs — Tabs, TabsList, TabsTrigger, TabsContent).
+
+Three sub-tabs:
+
+Tab 1: "Deal Documents"
+- Render the existing DealDocumentsSummary component
+- Pass the same props it currently receives in target-company-detail.tsx (targetCompanyId as number)
+- Import DealDocumentsSummary from "@/components/deal-documents/DealDocumentsSummary"
+
+Tab 2: "Stage 1: Financial"
+- Render the existing DocumentManagement component exactly as it is now
+- Same props it currently receives (companyId as string)
+
+Tab 3: "Stage 2: Due Diligence"
+- Create a new component DueDiligenceTab (can be inline in DocumentsTab.tsx or a separate file at client/src/components/target-company/DueDiligenceTab.tsx — your choice)
+- This component takes targetCompanyId: number as a prop
+- Fetches from GET /api/v2/due-diligence/company/{targetCompanyId}/status using @tanstack/react-query (useQuery) following the same pattern used elsewhere in the app (check how DealDocumentsSummary or DocumentManagement fetches data)
+- Fetches from GET /api/v2/due-diligence/company/{targetCompanyId}/summary for the top-level progress bar
+
+DueDiligenceTab layout:
+- Top: Overall completion summary card showing:
+  - Overall progress bar (X of 121 completed)
+  - Three smaller stats: Mandatory (X/68), Advisory (X/35), Adds Value (X/18)
+- Below: Accordion/collapsible list of 15 categories (use shadcn Accordion if available, otherwise Collapsible, otherwise simple disclosure with ChevronDown/ChevronUp icons)
+- Each category shows:
+  - Category name with completion badge (e.g. "3 of 13 completed")
+  - Small progress bar for the category
+  - When expanded: list of requirements as rows, each showing:
+    - Ref number (e.g. "1.1") in muted text
+    - Document name
+    - Priority badge: Mandatory = red/destructive variant, Advisory = amber/warning, Adds Value = blue/outline
+    - Status badge: not_started = grey "Not Started", in_progress = yellow "In Progress", ready = green "Ready", na = grey "N/A"
+    - A small dropdown or select to change the status (values: Not Started, In Progress, Ready, N/A)
+  - When status is changed via the dropdown, call PUT /api/v2/due-diligence/company/{targetCompanyId}/requirement/{requirementId}/status with { status: "not_started"|"in_progress"|"ready"|"na" } using a mutation (useMutation from @tanstack/react-query), then invalidate both the status and summary queries
+  - Show the guidance text in a muted/italic line below the document name
+
+STEP 2: Update target-company-detail.tsx
+
+- Remove the DealDocumentsSummary rendering from the Overview tab section (it is moving into the Documents tab)
+- Update the DocumentsTab rendering to pass both companyId (string) and targetCompanyId (number) as props — look at how the page currently passes props to understand the available data
+- Do NOT remove the DealDocumentsSummary import if other parts still use it, but it should only render inside DocumentsTab now
+- Keep a compact one-line deal status strip on the Overview tab showing just the status of each deal document type (NDA: Accepted ✓, Offer: Sent, HoT: —) as simple inline badges. This should be a small new component or just a few lines of JSX that queries the deal documents endpoint to get statuses. Keep it minimal — just document type name + status badge in a horizontal row.
+
+STEP 3: Props interface
+
+The DocumentsTab component needs these props:
+- companyId: string (for DocumentManagement)
+- targetCompanyId: number (for DealDocumentsSummary and DueDiligenceTab)
+
+Check target-company-detail.tsx to see what data is available (companyId comes from URL params, the numeric ID comes from the company object). Wire them through correctly.
+
+STYLING NOTES:
+- Use the same card/spacing patterns as the rest of the app
+- The sub-tabs should use a clean horizontal tab bar, not chunky buttons
+- Priority badges should be small and compact (use shadcn Badge component with appropriate variants)
+- Progress bars can use the HTML progress element styled with Tailwind, or a simple div-based bar
+- Keep it professional and clean — this is a data room, not a dashboard
+
+Do NOT modify:
+- DocumentManagement component (client/src/components/document-management.tsx)
+- DealDocumentsSummary component (client/src/components/deal-documents/DealDocumentsSummary.tsx)
+- Any backend files
+- Any other tabs
+
+When complete, confirm:
+- Files created (list them)
+- Files modified (list them)
+- That all three sub-tabs render correctly
+- That the DD categories load and display with the 15 categories and 121 requirements
+- That status changes via the dropdown work and persist
+- That the progress bars update when statuses change
+- That DealDocumentsSummary no longer appears on the Overview tab
+- That the compact deal status strip appears on Overview instead
+- No compilation errors
+- Screenshot or description of what each sub-tab looks like
