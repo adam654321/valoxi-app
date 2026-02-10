@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -339,7 +339,16 @@ function CategoryAccordion({
   linkedDocMap: Map<number, string>;
 }) {
   const [open, setOpen] = useState(false);
-  const pct = item.totalCount > 0 ? Math.round((item.completedCount / item.totalCount) * 100) : 0;
+
+  const activeReqs = item.requirements.filter(r => (r.status?.status || "not_started") !== "na");
+  const activeTotal = activeReqs.length;
+  const submittedCount = activeReqs.filter(r => {
+    const s = r.status?.status || "not_started";
+    return s === "in_progress" || s === "ready";
+  }).length;
+  const toReviewCount = activeReqs.filter(r => (r.status?.status || "not_started") === "in_progress").length;
+  const mandatoryOutstanding = activeReqs.filter(r => r.priority === "Mandatory" && (r.status?.status || "not_started") === "not_started").length;
+  const pct = activeTotal > 0 ? Math.round((submittedCount / activeTotal) * 100) : 0;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -350,15 +359,21 @@ function CategoryAccordion({
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">{item.category.categoryName}</span>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
-                {item.completedCount} of {item.totalCount}
+                {submittedCount} of {activeTotal}
               </Badge>
-              {item.mandatoryTotalCount > 0 && item.mandatoryCompletedCount < item.mandatoryTotalCount && (
+              {toReviewCount > 0 && (
+                <Badge className="text-[10px] px-1.5 py-0 h-5 font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100">
+                  <Eye className="h-3 w-3 mr-0.5" />
+                  {toReviewCount} to review
+                </Badge>
+              )}
+              {mandatoryOutstanding > 0 && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700">
-                  {item.mandatoryTotalCount - item.mandatoryCompletedCount} mandatory outstanding
+                  {mandatoryOutstanding} mandatory outstanding
                 </Badge>
               )}
             </div>
-            <ProgressBar value={item.completedCount} max={item.totalCount} className="mt-1.5" />
+            <ProgressBar value={submittedCount} max={activeTotal} className="mt-1.5" />
           </div>
           <span className="text-xs text-muted-foreground shrink-0">{pct}%</span>
         </div>
@@ -431,38 +446,99 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     );
   }
 
-  const summary = summaryQuery.data;
+  const clientStats = useMemo(() => {
+    const allReqs = categories.flatMap(c => c.requirements);
+    const active = allReqs.filter(r => (r.status?.status || "not_started") !== "na");
+    const total = active.length;
+    const submitted = active.filter(r => {
+      const s = r.status?.status || "not_started";
+      return s === "in_progress" || s === "ready";
+    }).length;
+    const toReview = active.filter(r => (r.status?.status || "not_started") === "in_progress").length;
+    const verified = active.filter(r => (r.status?.status || "not_started") === "ready").length;
+
+    const mandatoryReqs = active.filter(r => r.priority === "Mandatory");
+    const mandatorySubmitted = mandatoryReqs.filter(r => {
+      const s = r.status?.status || "not_started";
+      return s === "in_progress" || s === "ready";
+    }).length;
+    const mandatoryOutstanding = mandatoryReqs.filter(r => (r.status?.status || "not_started") === "not_started").length;
+
+    const advisoryReqs = active.filter(r => r.priority === "Advisory");
+    const advisorySubmitted = advisoryReqs.filter(r => {
+      const s = r.status?.status || "not_started";
+      return s === "in_progress" || s === "ready";
+    }).length;
+
+    const addsValueReqs = active.filter(r => r.priority === "Adds Value");
+    const addsValueSubmitted = addsValueReqs.filter(r => {
+      const s = r.status?.status || "not_started";
+      return s === "in_progress" || s === "ready";
+    }).length;
+
+    return {
+      total,
+      submitted,
+      toReview,
+      verified,
+      mandatorySubmitted,
+      mandatoryTotal: mandatoryReqs.length,
+      mandatoryOutstanding,
+      advisorySubmitted,
+      advisoryTotal: advisoryReqs.length,
+      addsValueSubmitted,
+      addsValueTotal: addsValueReqs.length,
+    };
+  }, [categories]);
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Due Diligence Progress</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Due Diligence Progress</CardTitle>
+            {clientStats.toReview > 0 && (
+              <Badge className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100">
+                <Eye className="h-3.5 w-3.5 mr-1" />
+                {clientStats.toReview} awaiting review
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium">Overall Completion</span>
-              <span className="text-sm text-muted-foreground">{summary?.completed || 0} of {summary?.total || 121}</span>
+              <span className="text-sm font-medium">Documents Submitted</span>
+              <span className="text-sm text-muted-foreground">
+                {clientStats.submitted} of {clientStats.total}
+                {clientStats.verified > 0 && (
+                  <span className="text-green-600 dark:text-green-400 ml-1">({clientStats.verified} verified)</span>
+                )}
+              </span>
             </div>
-            <ProgressBar value={summary?.completed || 0} max={summary?.total || 121} />
+            <ProgressBar value={clientStats.submitted} max={clientStats.total} />
           </div>
+          {clientStats.mandatoryOutstanding > 0 && (
+            <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+              {clientStats.mandatoryOutstanding} mandatory requirement{clientStats.mandatoryOutstanding !== 1 ? 's' : ''} still outstanding
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30">
               <div className="text-lg font-bold text-red-700 dark:text-red-400">
-                {summary?.mandatory.completed || 0}/{summary?.mandatory.total || 0}
+                {clientStats.mandatorySubmitted}/{clientStats.mandatoryTotal}
               </div>
               <div className="text-xs text-red-600 dark:text-red-500">Mandatory</div>
             </div>
             <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-100 dark:border-amber-900/30">
               <div className="text-lg font-bold text-amber-700 dark:text-amber-400">
-                {summary?.advisory.completed || 0}/{summary?.advisory.total || 0}
+                {clientStats.advisorySubmitted}/{clientStats.advisoryTotal}
               </div>
               <div className="text-xs text-amber-600 dark:text-amber-500">Advisory</div>
             </div>
             <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900/30">
               <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                {summary?.addsValue.completed || 0}/{summary?.addsValue.total || 0}
+                {clientStats.addsValueSubmitted}/{clientStats.addsValueTotal}
               </div>
               <div className="text-xs text-blue-600 dark:text-blue-500">Adds Value</div>
             </div>
