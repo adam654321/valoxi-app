@@ -128,7 +128,7 @@ class DueDiligenceService {
     targetCompanyId: number;
     status: string;
     notes?: string;
-    documentId?: number;
+    documentId?: number | null;
     externalSubmissionId?: number;
     updatedBy: number;
   }) {
@@ -150,11 +150,12 @@ class DueDiligenceService {
       ));
 
     if (existing) {
+      const resolvedDocumentId = data.documentId === null ? null : (data.documentId ?? existing.documentId);
       const [updated] = await db.update(ddRequirementStatus)
         .set({
           status: data.status,
           notes: data.notes ?? existing.notes,
-          documentId: data.documentId ?? existing.documentId,
+          documentId: resolvedDocumentId,
           externalSubmissionId: data.externalSubmissionId ?? existing.externalSubmissionId,
           updatedBy: data.updatedBy,
           updatedAt: new Date(),
