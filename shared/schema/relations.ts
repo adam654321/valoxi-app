@@ -21,6 +21,9 @@ import { dealModels, dealModelAdjustments, dealModelFundingLines } from './deal-
 // Dashboard
 import { dashboardPreferences, dashboardAlerts } from './dashboard';
 
+// Due Diligence
+import { ddCategories, ddRequirements, ddRequirementStatus } from './due-diligence';
+
 export const userCompaniesRelations = relations(userCompanies, ({ many }) => ({
   users: many(users),
   targetCompanies: many(targetCompanies),
@@ -475,5 +478,41 @@ export const valuationsRelations = relations(valuations, ({ one }) => ({
   createdByUser: one(users, {
     fields: [valuations.createdBy],
     references: [users.id],
+  }),
+}));
+
+export const ddCategoriesRelations = relations(ddCategories, ({ many }) => ({
+  requirements: many(ddRequirements),
+}));
+
+export const ddRequirementsRelations = relations(ddRequirements, ({ one, many }) => ({
+  category: one(ddCategories, {
+    fields: [ddRequirements.categoryId],
+    references: [ddCategories.id],
+  }),
+  statuses: many(ddRequirementStatus),
+}));
+
+export const ddRequirementStatusRelations = relations(ddRequirementStatus, ({ one }) => ({
+  requirement: one(ddRequirements, {
+    fields: [ddRequirementStatus.requirementId],
+    references: [ddRequirements.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [ddRequirementStatus.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  document: one(documents, {
+    fields: [ddRequirementStatus.documentId],
+    references: [documents.id],
+  }),
+  externalSubmission: one(externalDocumentSubmissions, {
+    fields: [ddRequirementStatus.externalSubmissionId],
+    references: [externalDocumentSubmissions.id],
+  }),
+  reviewedByUser: one(users, {
+    fields: [ddRequirementStatus.reviewedBy],
+    references: [users.id],
+    relationName: "ddReviewedBy",
   }),
 }));
