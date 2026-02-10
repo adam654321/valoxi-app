@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import NdaAgreement from '@/components/portal/NdaAgreement';
 import OfferReview from '@/components/portal/OfferReview';
+import HoTReview from '@/components/portal/HoTReview';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -631,6 +632,9 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const offerDocuments = (dealDocsData?.documents || [])
     .filter((d: any) => d.documentType === 'offer_letter');
 
+  const hotDocuments = (dealDocsData?.documents || [])
+    .filter((d: any) => d.documentType === 'heads_of_terms');
+
   // Group documents by category
   const documentsByCategory = documents.reduce((acc, doc) => {
     const category = doc.documentCategory;
@@ -664,6 +668,16 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
             <OfferReview
               token={token}
               offers={offerDocuments}
+              onResponseSubmitted={() => refetchDealDocs()}
+            />
+          </div>
+        )}
+
+        {hotDocuments.length > 0 && (
+          <div className="mb-6">
+            <HoTReview
+              documents={hotDocuments}
+              token={token}
               onResponseSubmitted={() => refetchDealDocs()}
             />
           </div>
