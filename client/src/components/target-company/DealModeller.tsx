@@ -24,6 +24,17 @@ import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import FundingSection from '@/components/deal-modeller/FundingSection';
 import ViabilitySection from '@/components/deal-modeller/ViabilitySection';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Plus,
   Lock,
   Calculator,
@@ -31,6 +42,7 @@ import {
   Banknote,
   CreditCard,
   Loader2,
+  Send,
 } from 'lucide-react';
 
 interface DealModellerProps {
@@ -210,6 +222,22 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     },
   });
 
+  const sendOfferMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
+        targetCompanyId: companyId,
+        dealModelId: selectedModelId,
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({ title: 'Offer Sent', description: `Offer letter v${data.version} has been sent to the seller's portal.` });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
   if (modelsLoading) {
     return (
       <div className="space-y-6">
@@ -285,20 +313,57 @@ export default function DealModeller({ companyId }: DealModellerProps) {
               </span>
             )}
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
-              className="ml-auto"
-            >
-              {createMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4 mr-2" />
+            <div className="ml-auto flex items-center gap-2">
+              {selectedModelId && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      disabled={sendOfferMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {sendOfferMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      {sendOfferMutation.isPending ? 'Sending...' : 'Send Offer'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Send Offer Letter</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will generate an offer letter using the current deal model values and send it to the seller's portal.
+                        The seller will be able to Accept, Reject, or Counter the offer.
+                        {'\n\n'}Are you sure you want to proceed?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => sendOfferMutation.mutate()}>
+                        Send Offer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
-              New Model
-            </Button>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+                )}
+                New Model
+              </Button>
+            </div>
           </div>
 
           {detailsLoading ? (
