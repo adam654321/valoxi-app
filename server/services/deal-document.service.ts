@@ -96,32 +96,60 @@ export class DealDocumentService {
       })
       .where(eq(dealDocuments.id, documentId));
 
+    const docTypeLabels: Record<string, string> = {
+      'nda': 'NDA',
+      'offer_letter': 'Offer Letter',
+      'heads_of_terms': 'Heads of Terms',
+    };
+    const docLabel = docTypeLabels[doc.documentType] || doc.documentType;
+
     try {
       const { users } = await import('@shared/schema/core');
+      const { targetCompanies, targetContacts } = await import('@shared/schema/deals');
+      const { portalAccessTokens } = await import('@shared/schema/portal');
+      const { emailApiService } = await import('./email.service');
+
       const [creator] = await db.select().from(users)
         .where(eq(users.id, doc.createdBy));
-
-      const { targetCompanies } = await import('@shared/schema/deals');
       const [targetCompany] = await db.select().from(targetCompanies)
         .where(eq(targetCompanies.id, doc.targetCompanyId));
+      const companyName = targetCompany?.companyName || 'Unknown Company';
+      const buyerCompanyName = (doc.documentData as any)?.buyerCompanyName || 'the buyer';
+
+      if (doc.portalTokenId) {
+        const [token] = await db.select().from(portalAccessTokens)
+          .where(eq(portalAccessTokens.id, doc.portalTokenId));
+
+        if (token) {
+          const [contact] = await db.select().from(targetContacts)
+            .where(eq(targetContacts.id, token.targetContactId));
+
+          if (contact?.email) {
+            const portalUrl = `${process.env.REPLIT_DEV_DOMAIN ? 'https://' + process.env.REPLIT_DEV_DOMAIN : 'https://localhost:5000'}/portal/${token.accessToken}`;
+
+            const sellerHtml = `
+              <h2>You Have Received ${doc.documentType === 'offer_letter' ? 'an Offer' : `a ${docLabel}`}</h2>
+              <p>Dear ${contact.firstName || 'Seller'},</p>
+              <p>${buyerCompanyName} has sent you ${doc.documentType === 'offer_letter' ? 'an Offer Letter' : `a ${docLabel}`} regarding <strong>${companyName}</strong>.</p>
+              <p>Please log in to your secure portal to review the document and provide your response.</p>
+              <p style="margin: 24px 0;">
+                <a href="${portalUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">View in Portal</a>
+              </p>
+              <p style="color: #666; font-size: 12px;">If the button above doesn't work, copy and paste this link into your browser: ${portalUrl}</p>
+            `;
+
+            const sellerSubject = `${doc.documentType === 'offer_letter' ? 'Offer Letter' : docLabel} Received — ${companyName}`;
+            await emailApiService.sendCustomEmail(contact.email, sellerSubject, sellerHtml);
+            console.log(`[DEAL_DOCS] Seller notification sent to ${contact.email} for ${docLabel}`);
+          }
+        }
+      }
 
       if (creator?.email) {
-        const { emailApiService } = await import('./email.service');
-
-        const docTypeLabels: Record<string, string> = {
-          'nda': 'NDA',
-          'offer_letter': 'Offer Letter',
-          'heads_of_terms': 'Heads of Terms',
-        };
-
-        const docLabel = docTypeLabels[doc.documentType] || doc.documentType;
-        const companyName = targetCompany?.companyName || 'Unknown Company';
-        const subject = `${docLabel} Sent Successfully — ${companyName}`;
-
         const offerDetails = doc.documentType === 'offer_letter' && doc.documentData
           ? `<p><strong>Offer Price:</strong> ${(doc.documentData as any).offerPrice || 'N/A'}</p>` : '';
 
-        const html = `
+        const buyerHtml = `
           <h2>${docLabel} Sent</h2>
           <p>Your ${docLabel} for <strong>${companyName}</strong> has been sent to the portal successfully.</p>
           ${offerDetails}
@@ -131,11 +159,12 @@ export class DealDocumentService {
           <p style="color: #666; font-size: 12px;">Log in to your dashboard to view the document and track its status.</p>
         `;
 
-        await emailApiService.sendCustomEmail(creator.email, subject, html);
+        const buyerSubject = `${docLabel} Sent Successfully — ${companyName}`;
+        await emailApiService.sendCustomEmail(creator.email, buyerSubject, buyerHtml);
         console.log(`[DEAL_DOCS] Send confirmation email sent to ${creator.email} for ${docLabel} to ${companyName}`);
       }
     } catch (emailErr) {
-      console.error('[DEAL_DOCS] Failed to send confirmation email:', emailErr);
+      console.error('[DEAL_DOCS] Failed to send document emails:', emailErr);
     }
 
     return this.getDocumentById(documentId);
