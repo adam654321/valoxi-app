@@ -314,6 +314,15 @@ function buildOfferLetterHtml(data: any): string {
       paymentHtml += `<p>Deferred terms: ${raw.deferredTerms}</p>`;
     }
   }
+  if (raw.earnoutMaximum > 0) {
+    paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
+    if (raw.earnoutMetric) {
+      paymentHtml += `<p>Earnout metric: ${raw.earnoutMetric}</p>`;
+    }
+    if (raw.earnoutPeriodMonths > 0) {
+      paymentHtml += `<p>Earnout period: ${raw.earnoutPeriodMonths} months</p>`;
+    }
+  }
 
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">

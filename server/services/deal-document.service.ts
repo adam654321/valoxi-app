@@ -703,9 +703,21 @@ export class DealDocumentService {
     const otherDebt = Number(model.minusOtherDebt) || 0;
     const corpTaxDue = Number(model.minusCorpTaxDue) || 0;
     const workingCapitalAdj = Number(model.minusWorkingCapitalAdj) || 0;
-    const dayOnePayment = Number(model.upfrontCash) || 0;
-    const deferredAmount = Number(model.deferredAmount) || 0;
-    const deferredTerms = model.deferredTerms || '';
+
+    const deferredLines = fundingLines.filter(
+      fl => fl.fundingType === 'deferred_consideration' && fl.isActive
+    );
+    const deferredAmount = deferredLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
+    const deferredTermMonths = deferredLines.length > 0 ? (deferredLines[0].termMonths || 0) : 0;
+    const deferredNotes = deferredLines.length > 0 ? (deferredLines[0].notes || '') : '';
+    const deferredTerms = deferredNotes
+      || (deferredTermMonths > 0 ? `Payable over ${deferredTermMonths} months post-completion` : '');
+
+    const dayOnePayment = offerPrice - deferredAmount;
+
+    const earnoutMaximum = Number(model.earnoutMaximum) || 0;
+    const earnoutMetric = model.earnoutMetric || '';
+    const earnoutPeriodMonths = model.earnoutPeriodMonths || 0;
 
     const breakdownLines: string[] = [];
     breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
@@ -722,13 +734,22 @@ export class DealDocumentService {
     if (dayOnePayment > 0) {
       paymentLines.push(`Payment due to the seller at closing: ${fmt(dayOnePayment)}`);
     }
-    if (deferredAmount > 0 && deferredTerms) {
+    if (deferredAmount > 0) {
       paymentLines.push('');
       paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
-      paymentLines.push(`Deferred terms: ${deferredTerms}`);
-    } else if (deferredAmount > 0) {
+      if (deferredTerms) {
+        paymentLines.push(`Deferred terms: ${deferredTerms}`);
+      }
+    }
+    if (earnoutMaximum > 0) {
       paymentLines.push('');
-      paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
+      paymentLines.push(`Earnout (maximum): ${fmt(earnoutMaximum)}`);
+      if (earnoutMetric) {
+        paymentLines.push(`Earnout metric: ${earnoutMetric}`);
+      }
+      if (earnoutPeriodMonths > 0) {
+        paymentLines.push(`Earnout period: ${earnoutPeriodMonths} months`);
+      }
     }
 
     return {
@@ -753,6 +774,9 @@ export class DealDocumentService {
         dayOnePayment,
         deferredAmount,
         deferredTerms,
+        earnoutMaximum,
+        earnoutMetric,
+        earnoutPeriodMonths,
         averageEbitda: calculations.averageAdjustedEbitda || 0,
         ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
       },
