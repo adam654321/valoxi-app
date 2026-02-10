@@ -49,6 +49,7 @@ import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
 import { DocumentsTab } from "@/components/target-company/DocumentsTab";
 import DealModeller from "@/components/target-company/DealModeller";
+import DealDocumentsSummary from "@/components/deal-documents/DealDocumentsSummary";
 import { useTargetCompany } from "@/hooks/useTargetCompany";
 
 import ReactMarkdown from "react-markdown";
@@ -685,6 +686,9 @@ export default function TargetCompanyDetail() {
               companyName={company.companyName}
               contacts={contacts}
             />
+
+            {/* Deal Documents Summary */}
+            <DealDocumentsSummary targetCompanyId={parseInt(id!)} />
 
             {/* System Information */}
             <Card>

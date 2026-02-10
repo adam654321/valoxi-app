@@ -157,6 +157,50 @@ export class DealDocumentService {
       } catch (pdfErr) {
         console.error('[DEAL_DOCS] Failed to generate signed PDF:', pdfErr);
       }
+    } else {
+      try {
+        const { users } = await import('@shared/schema/core');
+        const [creator] = await db.select().from(users)
+          .where(eq(users.id, doc.createdBy));
+
+        const { targetCompanies } = await import('@shared/schema/deals');
+        const [targetCompany] = await db.select().from(targetCompanies)
+          .where(eq(targetCompanies.id, doc.targetCompanyId));
+
+        if (creator?.email) {
+          const { emailApiService } = await import('./email.service');
+
+          const responseLabels: Record<string, string> = {
+            'accepted': 'Accepted',
+            'rejected': 'Rejected',
+            'countered': 'Counter-Proposal Submitted',
+          };
+
+          const docTypeLabels: Record<string, string> = {
+            'nda': 'NDA',
+            'offer_letter': 'Offer Letter',
+            'heads_of_terms': 'Heads of Terms',
+          };
+
+          const subject = `${docTypeLabels[doc.documentType] || doc.documentType}: ${responseLabels[params.responseType] || params.responseType} — ${targetCompany?.companyName || 'Unknown Company'}`;
+
+          const html = `
+            <h2>${docTypeLabels[doc.documentType]} Response</h2>
+            <p><strong>Company:</strong> ${targetCompany?.companyName || 'Unknown'}</p>
+            <p><strong>Response:</strong> ${responseLabels[params.responseType]}</p>
+            <p><strong>From:</strong> ${params.respondentName}</p>
+            ${params.comments ? `<p><strong>Comments:</strong></p><p>${params.comments}</p>` : ''}
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">Log in to your dashboard to view the full details and take action.</p>
+          `;
+
+          await emailApiService.sendCustomEmail(creator.email, subject, html);
+          console.log(`[DEAL_DOCS] Notification sent to ${creator.email} for ${doc.documentType} ${params.responseType}`);
+        }
+      } catch (emailErr) {
+        console.error('[DEAL_DOCS] Failed to send response notification:', emailErr);
+      }
     }
 
     return response;
