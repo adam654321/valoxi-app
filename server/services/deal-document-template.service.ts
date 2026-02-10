@@ -205,7 +205,10 @@ export class DealDocumentTemplateService {
         ],
       }
     );
-    return this.stripWitnessBlock(result.value);
+    let html = result.value;
+    html = this.stripWitnessBlock(html);
+    html = this.cleanNdaPreamble(html);
+    return html;
   }
 
   private stripWitnessBlock(html: string): string {
@@ -214,6 +217,40 @@ export class DealDocumentTemplateService {
     const beforeWitness = html.lastIndexOf('<p', witnessIndex);
     if (beforeWitness === -1) return html;
     return html.substring(0, beforeWitness);
+  }
+
+  private cleanNdaPreamble(html: string): string {
+    if (!html.includes('CONFIDENTIALITY AGREEMENT')) return html;
+
+    const spacedPhrases: Record<string, string> = {
+      'T H I S   A G R E E M E N T': 'THIS AGREEMENT',
+      'T H I S  A G R E E M E N T': 'THIS AGREEMENT',
+      'W H E R E A S': 'WHEREAS',
+      'N O W   I T    I S   H E R E B Y   A G R E E D': 'NOW IT IS HEREBY AGREED',
+      'N O W  I T   I S  H E R E B Y  A G R E E D': 'NOW IT IS HEREBY AGREED',
+      'N O W   I T   I S   H E R E B Y   A G R E E D': 'NOW IT IS HEREBY AGREED',
+    };
+    for (const [spaced, normal] of Object.entries(spacedPhrases)) {
+      html = html.replace(spaced, normal);
+    }
+
+    html = html.replace(
+      /<p><strong>Between<\/strong><\/p>\s*<p><strong>([^<]+)<\/strong><\/p>\s*<p><strong>And<\/strong><\/p>/,
+      (match, buyerName) => {
+        const betweenIdx = html.indexOf('BETWEEN');
+        let sellerName = '';
+        if (betweenIdx !== -1) {
+          const afterBetween = html.substring(betweenIdx);
+          const ampMatch = afterBetween.match(/&amp;\s*([^<]+)/);
+          if (ampMatch) {
+            sellerName = ampMatch[1].trim();
+          }
+        }
+        return `<p><strong>Between</strong></p><p><strong>${buyerName.trim()}</strong></p><p><strong>And</strong></p><p><strong>${sellerName || '{{sellerCompanyName}}'}</strong></p>`;
+      }
+    );
+
+    return html;
   }
 
   formatCurrency(amount: number): string {
