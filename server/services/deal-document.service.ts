@@ -704,20 +704,24 @@ export class DealDocumentService {
     const corpTaxDue = Number(model.minusCorpTaxDue) || 0;
     const workingCapitalAdj = Number(model.minusWorkingCapitalAdj) || 0;
 
-    const deferredLines = fundingLines.filter(
-      fl => fl.fundingType === 'deferred_consideration' && fl.isActive
+    const sellerFinanceLines = fundingLines.filter(
+      fl => (fl.fundingType === 'seller_financing' || fl.fundingType === 'deferred_consideration') && fl.isActive
     );
-    const deferredAmount = deferredLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
-    const deferredTermMonths = deferredLines.length > 0 ? (deferredLines[0].termMonths || 0) : 0;
-    const deferredNotes = deferredLines.length > 0 ? (deferredLines[0].notes || '') : '';
+    const deferredAmount = sellerFinanceLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
+    const deferredTermMonths = sellerFinanceLines.length > 0 ? (sellerFinanceLines[0].termMonths || 0) : 0;
+    const deferredNotes = sellerFinanceLines.length > 0 ? (sellerFinanceLines[0].notes || '') : '';
     const deferredTerms = deferredNotes
       || (deferredTermMonths > 0 ? `Payable over ${deferredTermMonths} months post-completion` : '');
 
-    const dayOnePayment = offerPrice - deferredAmount;
+    const earnoutLines = fundingLines.filter(
+      fl => fl.fundingType === 'earnout' && fl.isActive
+    );
+    const earnoutMaximum = earnoutLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
+    const earnoutTermMonths = earnoutLines.length > 0 ? (earnoutLines[0].termMonths || 0) : 0;
+    const earnoutNotes = earnoutLines.length > 0 ? (earnoutLines[0].notes || '') : '';
+    const earnoutMetric = earnoutNotes || (earnoutLines.length > 0 ? (earnoutLines[0].label || '') : '');
 
-    const earnoutMaximum = Number(model.earnoutMaximum) || 0;
-    const earnoutMetric = model.earnoutMetric || '';
-    const earnoutPeriodMonths = model.earnoutPeriodMonths || 0;
+    const dayOnePayment = offerPrice - deferredAmount;
 
     const breakdownLines: string[] = [];
     breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
@@ -745,10 +749,10 @@ export class DealDocumentService {
       paymentLines.push('');
       paymentLines.push(`Earnout (maximum): ${fmt(earnoutMaximum)}`);
       if (earnoutMetric) {
-        paymentLines.push(`Earnout metric: ${earnoutMetric}`);
+        paymentLines.push(`Earnout details: ${earnoutMetric}`);
       }
-      if (earnoutPeriodMonths > 0) {
-        paymentLines.push(`Earnout period: ${earnoutPeriodMonths} months`);
+      if (earnoutTermMonths > 0) {
+        paymentLines.push(`Earnout period: ${earnoutTermMonths} months`);
       }
     }
 
@@ -776,7 +780,7 @@ export class DealDocumentService {
         deferredTerms,
         earnoutMaximum,
         earnoutMetric,
-        earnoutPeriodMonths,
+        earnoutTermMonths,
         averageEbitda: calculations.averageAdjustedEbitda || 0,
         ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
       },

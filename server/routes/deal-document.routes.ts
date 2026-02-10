@@ -317,10 +317,10 @@ function buildOfferLetterHtml(data: any): string {
   if (raw.earnoutMaximum > 0) {
     paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
     if (raw.earnoutMetric) {
-      paymentHtml += `<p>Earnout metric: ${raw.earnoutMetric}</p>`;
+      paymentHtml += `<p>Earnout details: ${raw.earnoutMetric}</p>`;
     }
-    if (raw.earnoutPeriodMonths > 0) {
-      paymentHtml += `<p>Earnout period: ${raw.earnoutPeriodMonths} months</p>`;
+    if (raw.earnoutTermMonths > 0) {
+      paymentHtml += `<p>Earnout period: ${raw.earnoutTermMonths} months</p>`;
     }
   }
 
