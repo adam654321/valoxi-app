@@ -435,17 +435,6 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     return map;
   }, [categories]);
 
-  if (statusQuery.isLoading || summaryQuery.isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </div>
-    );
-  }
-
   const clientStats = useMemo(() => {
     const allReqs = categories.flatMap(c => c.requirements);
     const active = allReqs.filter(r => (r.status?.status || "not_started") !== "na");
@@ -490,6 +479,17 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
       addsValueTotal: addsValueReqs.length,
     };
   }, [categories]);
+
+  if (statusQuery.isLoading || summaryQuery.isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
