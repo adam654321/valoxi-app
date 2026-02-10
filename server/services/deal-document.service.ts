@@ -698,12 +698,38 @@ export class DealDocumentService {
     const offerPrice = calculations.offerPrice || 0;
     const enterpriseValue = calculations.enterpriseValue || 0;
     const excessCash = Number(model.plusExcessCash) || 0;
+    const propertyValue = Number(model.propertyValue) || 0;
+    const primaryDebt = Number(model.minusPrimaryDebt) || 0;
+    const otherDebt = Number(model.minusOtherDebt) || 0;
+    const corpTaxDue = Number(model.minusCorpTaxDue) || 0;
+    const workingCapitalAdj = Number(model.minusWorkingCapitalAdj) || 0;
     const dayOnePayment = Number(model.upfrontCash) || 0;
+    const deferredAmount = Number(model.deferredAmount) || 0;
+    const deferredTerms = model.deferredTerms || '';
 
-    const deferredTotal = Math.max(0, offerPrice - dayOnePayment - excessCash);
+    const breakdownLines: string[] = [];
+    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
+    if (excessCash > 0) breakdownLines.push(`Plus Excess Cash: ${fmt(excessCash)}`);
+    if (propertyValue > 0) breakdownLines.push(`Plus Property Value: ${fmt(propertyValue)}`);
+    if (primaryDebt > 0) breakdownLines.push(`Less Primary Debt: (${fmt(primaryDebt)})`);
+    if (otherDebt > 0) breakdownLines.push(`Less Other Debt: (${fmt(otherDebt)})`);
+    if (corpTaxDue > 0) breakdownLines.push(`Less Corporation Tax Due: (${fmt(corpTaxDue)})`);
+    if (workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: (${fmt(workingCapitalAdj)})`);
+    breakdownLines.push('');
+    breakdownLines.push(`Total Offer Price: ${fmt(offerPrice)}`);
 
-    const deferredYears = 5;
-    const deferredInstalment = deferredTotal > 0 ? Math.round(deferredTotal / deferredYears) : 0;
+    const paymentLines: string[] = [];
+    if (dayOnePayment > 0) {
+      paymentLines.push(`Payment due to the seller at closing: ${fmt(dayOnePayment)}`);
+    }
+    if (deferredAmount > 0 && deferredTerms) {
+      paymentLines.push('');
+      paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
+      paymentLines.push(`Deferred terms: ${deferredTerms}`);
+    } else if (deferredAmount > 0) {
+      paymentLines.push('');
+      paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
+    }
 
     return {
       ...baseContext,
@@ -711,16 +737,22 @@ export class DealDocumentService {
       enterpriseValue: fmt(enterpriseValue),
       excessCash: fmt(excessCash),
       dayOnePayment: fmt(dayOnePayment),
-      deferredTotal: fmt(deferredTotal),
-      deferredInstalment: fmt(deferredInstalment),
+      breakdownText: breakdownLines.join('\n'),
+      paymentText: paymentLines.join('\n'),
+      deferredTotal: fmt(deferredAmount),
+      deferredInstalment: '',
       _raw: {
         offerPrice,
         enterpriseValue,
         excessCash,
+        propertyValue,
+        primaryDebt,
+        otherDebt,
+        corpTaxDue,
+        workingCapitalAdj,
         dayOnePayment,
-        deferredTotal,
-        deferredInstalment,
-        deferredYears,
+        deferredAmount,
+        deferredTerms,
         averageEbitda: calculations.averageAdjustedEbitda || 0,
         ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
       },
