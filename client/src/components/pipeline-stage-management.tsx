@@ -123,7 +123,7 @@ export function PipelineStageManagement({
         return 'secondary';
       case 'Under Review':
       case 'Offer Stage':
-      case 'Negotiation':
+      case 'Heads of Terms':
         return 'default';
       case 'Due Diligence':
       case 'Legal & Accounting':

@@ -274,7 +274,7 @@ const HotDealsWidget: React.FC = () => {
                             No recent activity
                           </Badge>
                         )}
-                        {(deal.stage === 'Offer Stage' || deal.stage === 'Negotiation') && (
+                        {(deal.stage === 'Offer Stage' || deal.stage === 'Heads of Terms') && (
                           <Badge variant="default" className="text-xs">
                             Critical stage
                           </Badge>

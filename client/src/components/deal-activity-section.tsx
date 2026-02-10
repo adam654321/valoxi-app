@@ -74,7 +74,7 @@ const NOTE_TYPES = [
   { value: "Follow-up Call", label: "Follow-up Call" },
   { value: "Meeting Notes", label: "Meeting Notes" },
   { value: "Due Diligence", label: "Due Diligence" },
-  { value: "Negotiation", label: "Negotiation" },
+  { value: "Heads of Terms", label: "Heads of Terms" },
   { value: "General", label: "General" },
 ];
 
@@ -124,7 +124,7 @@ const getNoteTypeColor = (type: string) => {
     case "Follow-up Call": return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300";
     case "Meeting Notes": return "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-300";
     case "Due Diligence": return "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-300";
-    case "Negotiation": return "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300";
+    case "Heads of Terms": return "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300";
     default: return "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300";
   }
 };

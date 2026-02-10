@@ -93,6 +93,31 @@ router.post('/send-offer', async (req, res) => {
   }
 });
 
+router.get('/:id/html', async (req, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    if (isNaN(documentId)) {
+      return res.status(400).json({ message: 'Invalid document ID' });
+    }
+
+    const doc = await dealDocumentService.getDocumentById(documentId);
+    if (!doc) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+    if (!doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not generated' });
+    }
+
+    const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
+    const html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+
+    res.json({ html });
+  } catch (error: any) {
+    console.error('[DEAL_DOCS] HTML preview error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
