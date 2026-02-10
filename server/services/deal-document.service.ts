@@ -177,6 +177,7 @@ export class DealDocumentService {
 
     const buyerName = (doc.documentData as any)?.buyerSignatoryName || 'Buyer';
     const buyerCompany = (doc.documentData as any)?.buyerCompanyName || '';
+    const sellerCompany = (doc.documentData as any)?.sellerCompanyName || '';
     const signedDate = params.acceptedAt.toLocaleDateString('en-GB', {
       day: '2-digit', month: 'long', year: 'numeric'
     });
@@ -213,7 +214,7 @@ export class DealDocumentService {
             <div class="signature-party">
               <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Receiving Party / Seller:</p>
               <div class="sig-name">${params.respondentName}</div>
-              <div class="sig-detail">${params.respondentEmail || ''}</div>
+              <div class="sig-detail">${sellerCompany}</div>
               <div class="sig-detail">Date: ${signedDate}</div>
             </div>
           </div>
@@ -258,9 +259,7 @@ export class DealDocumentService {
     const pdfPath = pathModule.join(GENERATED_DIR, pdfFilename);
     await fsModule.writeFile(pdfPath, pdfBuffer);
 
-    await db.update(dealDocuments)
-      .set({ generatedFileUrl: pdfPath })
-      .where(eq(dealDocuments.id, params.documentId));
+    
 
     try {
       const stat = await fsModule.stat(pdfPath);
