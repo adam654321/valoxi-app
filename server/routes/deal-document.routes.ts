@@ -50,6 +50,49 @@ router.get('/download/:id', async (req, res) => {
   }
 });
 
+router.post('/send-offer', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const userCompanyId = req.session.userCompanyId;
+    if (!userId || !userCompanyId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { targetCompanyId, dealModelId, portalTokenId } = req.body;
+
+    if (!targetCompanyId || !dealModelId) {
+      return res.status(400).json({ message: 'targetCompanyId and dealModelId are required' });
+    }
+
+    let resolvedPortalTokenId = portalTokenId;
+    if (!resolvedPortalTokenId) {
+      const { portalRepository } = await import('../repositories/portal.repository');
+      const activeToken = await portalRepository.getActiveTokenForCompany(targetCompanyId);
+      if (!activeToken) {
+        return res.status(400).json({
+          message: 'No active portal found for this company. Please create a portal first.'
+        });
+      }
+      resolvedPortalTokenId = activeToken.id;
+    }
+
+    const doc = await dealDocumentService.createOfferFromDealModel({
+      targetCompanyId,
+      userCompanyId,
+      dealModelId,
+      portalTokenId: resolvedPortalTokenId,
+      createdBy: userId,
+    });
+
+    const sent = await dealDocumentService.sendDocument(doc.id);
+
+    res.status(201).json(sent);
+  } catch (error: any) {
+    console.error('[DEAL_DOCS] Send offer error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
