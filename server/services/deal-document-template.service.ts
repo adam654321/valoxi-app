@@ -126,6 +126,7 @@ export class DealDocumentTemplateService {
       buyerEmail: buyerCompany?.email || '',
       buyerPhone: buyerCompany?.phone || '',
       buyerSignatoryName: buyerUser ? `${buyerUser.firstName} ${buyerUser.lastName}` : '',
+      buyerSignatoryTitle: 'Director',
 
       sellerCompanyName: targetCompany?.companyName || '',
       sellerAddress: targetCompany?.address || '',
