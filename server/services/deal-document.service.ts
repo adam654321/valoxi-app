@@ -1,6 +1,8 @@
 import { db } from '../db';
 import { dealDocuments, dealDocumentResponses, dealDocumentTemplates } from '@shared/schema/deal-documents';
 import { documents } from '@shared/schema/documents';
+import { dealModels, dealModelAdjustments, dealModelFundingLines } from '@shared/schema/deal-models';
+import { financialPeriods, incomeStatements } from '@shared/schema/financials';
 import { eq, and, desc, not, inArray } from 'drizzle-orm';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 
@@ -444,6 +446,170 @@ export class DealDocumentService {
       console.error(`[DEAL_DOCS] Failed to generate NDA for portal ${params.portalTokenId}:`, err);
       return doc;
     }
+  }
+
+  async createOfferFromDealModel(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    dealModelId: number;
+    portalTokenId: number;
+    createdBy: number;
+  }) {
+    const existingOffer = await this.getLatestActiveDocument(params.targetCompanyId, 'offer_letter');
+
+    let doc;
+    if (existingOffer && ['sent', 'viewed', 'countered', 'rejected'].includes(existingOffer.status)) {
+      doc = await this.createNewVersion(existingOffer.id, params.createdBy, {
+        dealModelId: params.dealModelId,
+      });
+    } else {
+      const template = await dealDocumentTemplateService.getSystemTemplate('offer_letter');
+
+      doc = await this.createDocument({
+        targetCompanyId: params.targetCompanyId,
+        userCompanyId: params.userCompanyId,
+        documentType: 'offer_letter',
+        createdBy: params.createdBy,
+        dealModelId: params.dealModelId,
+        portalTokenId: params.portalTokenId,
+        templateId: template?.id,
+      });
+    }
+
+    const offerData = await this.buildOfferDataContext(params.dealModelId, params.targetCompanyId, params.userCompanyId, params.createdBy);
+
+    await this.generateDocumentFile(doc.id, offerData);
+
+    return doc;
+  }
+
+  private async buildOfferDataContext(
+    dealModelId: number,
+    targetCompanyId: number,
+    userCompanyId: number,
+    createdBy: number
+  ): Promise<Record<string, any>> {
+    const baseContext = await dealDocumentTemplateService.buildDataContext(
+      targetCompanyId, userCompanyId, createdBy, dealModelId
+    );
+
+    const [model] = await db.select().from(dealModels)
+      .where(eq(dealModels.id, dealModelId));
+
+    if (!model) throw new Error('Deal model not found');
+
+    const fundingLines = await db.select().from(dealModelFundingLines)
+      .where(eq(dealModelFundingLines.dealModelId, dealModelId));
+
+    const adjustments = await db.select().from(dealModelAdjustments)
+      .where(eq(dealModelAdjustments.dealModelId, dealModelId));
+
+    const periods = await db.select().from(financialPeriods)
+      .where(and(
+        eq(financialPeriods.targetCompanyId, targetCompanyId),
+        inArray(financialPeriods.periodType, ['statutory', 'historic'])
+      ));
+
+    const reportedEbitdaByYear: Record<string, number> = {};
+    for (const period of periods) {
+      if (!period.fiscalYear) continue;
+      const [income] = await db.select().from(incomeStatements)
+        .where(eq(incomeStatements.financialPeriodId, period.id));
+      if (income) {
+        const opProfit = Number(income.operatingProfit) || 0;
+        const depAmort = Number(income.depreciationAmortisation) || 0;
+        reportedEbitdaByYear[String(period.fiscalYear)] = opProfit + depAmort;
+      }
+    }
+
+    const { calculateFullDealModel } = await import('@shared/calculators/deal-model.calc');
+
+    const modelInput = {
+      averagingYears: model.averagingYears || 3,
+      ebitdaMultiple: model.ebitdaMultiple || '3.0',
+      plusExcessCash: model.plusExcessCash || '0',
+      minusPrimaryDebt: model.minusPrimaryDebt || '0',
+      minusOtherDebt: model.minusOtherDebt || '0',
+      minusCorpTaxDue: model.minusCorpTaxDue || '0',
+      minusWorkingCapitalAdj: model.minusWorkingCapitalAdj || '0',
+      plusPropertyValue: model.propertyValue || '0',
+      feeLegalDdPercent: model.feeLegalDdPercent || '2.5',
+      feeAccountingDdPercent: model.feeAccountingDdPercent || '1.5',
+      feeBrokerPercent: model.feeBrokerPercent || '2.0',
+      feeLoanArrangementPercent: model.feeLoanArrangementPercent || '1.0',
+      feeDealMakerPercent: model.feeDealMakerPercent || '5.0',
+      feeLegalDdType: (model.feeLegalDdType as any) || 'percent',
+      feeAccountingDdType: (model.feeAccountingDdType as any) || 'percent',
+      feeBrokerType: (model.feeBrokerType as any) || 'percent',
+      feeLoanArrangementType: (model.feeLoanArrangementType as any) || 'percent',
+      feeDealMakerType: (model.feeDealMakerType as any) || 'percent',
+    };
+
+    const adjustmentInputs = adjustments.map(a => ({
+      adjustmentType: a.adjustmentType as 'add_back' | 'deduction',
+      amount: a.amount,
+      amountsByYear: a.amountsByYear as Record<string, number> | null,
+      status: a.status || 'suggested',
+      userOverrideAmount: null,
+    }));
+
+    const fundingLineInputs = fundingLines.map(fl => ({
+      fundingType: fl.fundingType,
+      assetBaseValue: fl.assetBaseValue,
+      ltvPercent: fl.ltvPercent,
+      amountUsed: fl.amountUsed,
+      interestRate: fl.interestRate,
+      termMonths: fl.termMonths,
+      arrangementFeePercent: fl.arrangementFeePercent,
+      isDebt: fl.isDebt ?? false,
+      isActive: fl.isActive ?? false,
+    }));
+
+    let calculations: any = {};
+    try {
+      calculations = calculateFullDealModel(reportedEbitdaByYear, adjustmentInputs, fundingLineInputs, modelInput);
+    } catch (err) {
+      console.error('[DEAL_DOCS] Calculator error:', err);
+    }
+
+    const fmt = (val: any) => {
+      const num = Number(val) || 0;
+      return new Intl.NumberFormat('en-GB', {
+        style: 'currency', currency: 'GBP',
+        minimumFractionDigits: 0, maximumFractionDigits: 0,
+      }).format(num);
+    };
+
+    const offerPrice = calculations.offerPrice || 0;
+    const enterpriseValue = calculations.enterpriseValue || 0;
+    const excessCash = Number(model.plusExcessCash) || 0;
+    const dayOnePayment = Number(model.upfrontCash) || 0;
+
+    const deferredTotal = Math.max(0, offerPrice - dayOnePayment - excessCash);
+
+    const deferredYears = 5;
+    const deferredInstalment = deferredTotal > 0 ? Math.round(deferredTotal / deferredYears) : 0;
+
+    return {
+      ...baseContext,
+      offerPrice: fmt(offerPrice),
+      enterpriseValue: fmt(enterpriseValue),
+      excessCash: fmt(excessCash),
+      dayOnePayment: fmt(dayOnePayment),
+      deferredTotal: fmt(deferredTotal),
+      deferredInstalment: fmt(deferredInstalment),
+      _raw: {
+        offerPrice,
+        enterpriseValue,
+        excessCash,
+        dayOnePayment,
+        deferredTotal,
+        deferredInstalment,
+        deferredYears,
+        averageEbitda: calculations.averageAdjustedEbitda || 0,
+        ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
+      },
+    };
   }
 
   async getDocumentsForPortal(portalTokenId: number) {
