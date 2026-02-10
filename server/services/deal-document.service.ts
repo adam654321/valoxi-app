@@ -96,6 +96,48 @@ export class DealDocumentService {
       })
       .where(eq(dealDocuments.id, documentId));
 
+    try {
+      const { users } = await import('@shared/schema/core');
+      const [creator] = await db.select().from(users)
+        .where(eq(users.id, doc.createdBy));
+
+      const { targetCompanies } = await import('@shared/schema/deals');
+      const [targetCompany] = await db.select().from(targetCompanies)
+        .where(eq(targetCompanies.id, doc.targetCompanyId));
+
+      if (creator?.email) {
+        const { emailApiService } = await import('./email.service');
+
+        const docTypeLabels: Record<string, string> = {
+          'nda': 'NDA',
+          'offer_letter': 'Offer Letter',
+          'heads_of_terms': 'Heads of Terms',
+        };
+
+        const docLabel = docTypeLabels[doc.documentType] || doc.documentType;
+        const companyName = targetCompany?.companyName || 'Unknown Company';
+        const subject = `${docLabel} Sent Successfully — ${companyName}`;
+
+        const offerDetails = doc.documentType === 'offer_letter' && doc.documentData
+          ? `<p><strong>Offer Price:</strong> ${(doc.documentData as any).offerPrice || 'N/A'}</p>` : '';
+
+        const html = `
+          <h2>${docLabel} Sent</h2>
+          <p>Your ${docLabel} for <strong>${companyName}</strong> has been sent to the portal successfully.</p>
+          ${offerDetails}
+          <p><strong>Sent:</strong> ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+          <p>You will receive a notification when the recipient responds.</p>
+          <hr>
+          <p style="color: #666; font-size: 12px;">Log in to your dashboard to view the document and track its status.</p>
+        `;
+
+        await emailApiService.sendCustomEmail(creator.email, subject, html);
+        console.log(`[DEAL_DOCS] Send confirmation email sent to ${creator.email} for ${docLabel} to ${companyName}`);
+      }
+    } catch (emailErr) {
+      console.error('[DEAL_DOCS] Failed to send confirmation email:', emailErr);
+    }
+
     return this.getDocumentById(documentId);
   }
 
