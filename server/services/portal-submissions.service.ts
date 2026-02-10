@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
+import { dueDiligenceService } from './due-diligence.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
 import { sendFileUploadWebhook } from './file-analysis.service';
@@ -64,6 +65,21 @@ export class PortalSubmissionsService {
     sendFileUploadWebhook(uploadEvent.id).catch(err => {
       console.error(`[PORTAL_UPLOAD] Gemini analysis failed for event ${uploadEvent.id}:`, err);
     });
+    if (submission.documentRequirementId) {
+      try {
+        await dueDiligenceService.updateRequirementStatus({
+          requirementId: submission.documentRequirementId,
+          targetCompanyId: token.targetCompanyId,
+          status: 'in_progress',
+          externalSubmissionId: submission.id,
+          documentId: mainDocument.id,
+          updatedBy: token.createdBy,
+        });
+        console.log(`[PORTAL_UPLOAD] Linked submission ${submission.id} to DD requirement ${submission.documentRequirementId}`);
+      } catch (ddError) {
+        console.error('[PORTAL_UPLOAD] Failed to link DD requirement:', ddError);
+      }
+    }
     await portalSubmissionsRepository.logActivity({
       portalTokenId: token.id, targetContactId: token.targetContactId, activityType: 'document_submitted',
       activityDescription: `Document submitted: ${prefixedFilename}`, ipAddress, userAgent, relatedDocumentId: submission.id,
