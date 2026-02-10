@@ -1,0 +1,64 @@
+Two bugs to fix in the DD collection flow.
+
+BUG 1: Documents uploaded via DD collection don't appear in the buyer's Documents tab
+
+READ FIRST:
+- server/services/portal-submissions.service.ts — look at the submitDocument method. When a regular portal upload happens (company accounts, P&L, etc.), what makes the document visible in the buyer's document library? Check:
+  - Is the document being created in the documents table with the correct targetCompanyId?
+  - Is the documentCategory being set correctly?
+  - Is there a specific status or flag that controls visibility?
+
+- Check what documentType value is being sent from the DD upload form in DdCollection.tsx. Look at the FormData being built — what is the documentType field set to?
+
+- Check the PORTAL_CATEGORY_MAP in the backend. If the documentType sent from DD uploads doesn't match any key in this map, the document might be created with a null or empty category, which could cause it to not appear in the buyer's filtered document list.
+
+THE FIX: The issue is almost certainly that the documentType being sent from the DD upload doesn't map to a valid category. Check:
+1. What documentType does DdCollection.tsx send in the FormData?
+2. What does PORTAL_CATEGORY_MAP do with that value?
+3. What category ends up on the documents record?
+
+If the documentType is something like 'due_diligence' that isn't in the PORTAL_CATEGORY_MAP, either:
+- Option A: Add 'due_diligence' to the PORTAL_CATEGORY_MAP mapping it to a "Due Diligence" category
+- Option B: Change DdCollection.tsx to send a valid documentType like 'company_accounts'
+
+Option A is better — we want DD uploads to have their own category. Add a mapping so DD uploads get categorised as "Due Diligence" in the documents table.
+
+Also check: does the buyer's document library filter by specific categories? If it only shows certain categories, "Due Diligence" might need adding to that filter too. Check how getCompanyDocuments works and whether it filters by category.
+
+
+BUG 2: DD collection section appears on portals before HoT is accepted
+
+READ: client/src/components/enhanced-portal-display.tsx — find where DdCollection is rendered. 
+
+The previous prompt specified this conditional:
+```typescript
+const hasAcceptedHot = (dealDocsData?.documents || []).some(
+  (d: any) => d.documentType === 'heads_of_terms' && d.status === 'accepted'
+);
+```
+
+And then:
+```typescript
+{hasAcceptedHot && (
+  <DdCollection token={token} onDocumentUploaded={() => refetchDealDocs()} />
+)}
+```
+
+Check if this conditional was implemented. If not, add it. If it was but isn't working, debug why — maybe dealDocsData has a different structure, or the status field is named differently, or the condition is checking the wrong thing.
+
+Make sure the DD collection section ONLY renders when there is at least one heads_of_terms document with status 'accepted' in the deal documents data.
+
+
+IMPORTANT:
+- Fix both bugs
+- Do NOT modify DdCollection.tsx unless needed for the documentType fix (Option B)
+- Do NOT modify any other portal components
+- Test that regular portal uploads (company accounts, P&L etc.) still work after the PORTAL_CATEGORY_MAP change
+
+When complete, confirm:
+- What caused each bug
+- What was changed to fix each
+- Files modified
+- That DD uploads now appear in the buyer's document library
+- That DD collection section is hidden on pre-HoT portals
+- No compilation errors

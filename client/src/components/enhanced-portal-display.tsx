@@ -684,14 +684,18 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           </div>
         )}
 
-        <DdCollection
-          token={token}
-          onDocumentUploaded={() => {
-            queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-            queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
-            queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
-          }}
-        />
+        {(dealDocsData?.documents || []).some(
+          (d: any) => d.documentType === 'heads_of_terms' && d.status === 'accepted'
+        ) && (
+          <DdCollection
+            token={token}
+            onDocumentUploaded={() => {
+              queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+              queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+              queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+            }}
+          />
+        )}
 
         {/* Document Management Section - similar to document library */}
         <Card>

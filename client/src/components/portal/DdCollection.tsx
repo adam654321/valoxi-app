@@ -118,7 +118,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
     try {
       const formData = new FormData();
       formData.append('document', selectedFile);
-      formData.append('documentType', 'general');
+      formData.append('documentType', 'due_diligence');
       formData.append('requirement_id', uploadingRequirementId.toString());
       if (submissionNotes.trim()) {
         formData.append('submissionNotes', submissionNotes.trim());

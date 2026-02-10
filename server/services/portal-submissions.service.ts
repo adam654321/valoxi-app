@@ -13,6 +13,7 @@ const PORTAL_CATEGORY_MAP: Record<string, string> = {
   'staff_matrix': 'Staff Matrix', 'asset_register': 'Asset Register',
   'legal_documents': 'Company Accounts', 'correspondence': 'Company Accounts', 'marketing': 'Company Accounts',
   'technical': 'Company Accounts', 'other': 'Company Accounts', 'general': 'Company Accounts',
+  'due_diligence': 'Due Diligence',
 };
 
 export class PortalSubmissionsService {
