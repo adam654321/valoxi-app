@@ -33,7 +33,6 @@ const FUNDING_TYPE_LABELS: Record<string, string> = {
   asset_finance: 'Asset Finance',
   property_finance: 'Property Finance',
   seller_financing: 'Seller Financing',
-  deferred_consideration: 'Deferred Consideration',
   earnout: 'Earnout',
   new_senior_debt: 'Senior Debt',
   cash_equity: 'Cash Equity',

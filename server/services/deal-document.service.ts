@@ -705,7 +705,7 @@ export class DealDocumentService {
     const workingCapitalAdj = Number(model.minusWorkingCapitalAdj) || 0;
 
     const sellerFinanceLines = fundingLines.filter(
-      fl => (fl.fundingType === 'seller_financing' || fl.fundingType === 'deferred_consideration') && fl.isActive
+      fl => fl.fundingType === 'seller_financing' && fl.isActive
     );
     const deferredAmount = sellerFinanceLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
     const deferredTermMonths = sellerFinanceLines.length > 0 ? (sellerFinanceLines[0].termMonths || 0) : 0;
