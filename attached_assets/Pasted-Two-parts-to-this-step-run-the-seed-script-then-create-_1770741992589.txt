@@ -1,0 +1,74 @@
+Two parts to this step: run the seed script, then create the backend API for the DD data room.
+
+PART A: Run the seed script
+
+Run `npx tsx server/scripts/seed-dd-requirements.ts` to populate the dd_categories and dd_requirements tables. Verify by querying:
+- SELECT count(*) FROM dd_categories — should be 15
+- SELECT count(*) FROM dd_requirements — should be 121
+- SELECT dc.category_name, count(dr.id) FROM dd_categories dc JOIN dd_requirements dr ON dr.category_id = dc.id GROUP BY dc.category_name ORDER BY dc.sort_order — should show the correct distribution across all 15 categories
+
+PART B: Create Backend API
+
+Follow the exact patterns used in server/routes/deal-document.routes.ts, server/services/deal-document.service.ts, and server/repositories/documents.repository.ts for structure, error handling (BadRequestError, NotFoundError from server/utils/errors), and authentication patterns.
+
+1. Create server/services/due-diligence.service.ts with these methods:
+
+getAllCategories() — Get all categories with their requirements
+
+getRequirementsByCategory(categoryId: number) — Get all requirements for a specific category
+
+getDdStatusForCompany(targetCompanyId: number) — Returns all 121 requirements grouped by category, with their status (from dd_requirement_status if a record exists, otherwise "not_started"). Use a LEFT JOIN from dd_requirements to dd_requirement_status filtered by targetCompanyId so every requirement appears even if no status row exists. A requirement counts as "completed" when status is "ready" or "na".
+
+Return type DdCategoryWithStatus:
+{
+  category: DdCategory;
+  requirements: Array<DdRequirement & { status: DdRequirementStatus | null }>;
+  completedCount: number;
+  totalCount: number;
+  mandatoryCompletedCount: number;
+  mandatoryTotalCount: number;
+}
+
+updateRequirementStatus(data) — Upsert: creates dd_requirement_status row if it doesn't exist, updates if it does. Parameters: requirementId, targetCompanyId, status, notes?, documentId?, externalSubmissionId?, updatedBy
+
+getCompletionSummary(targetCompanyId: number) — Returns:
+{
+  total: number;
+  completed: number;
+  mandatory: { total: number; completed: number };
+  advisory: { total: number; completed: number };
+  addsValue: { total: number; completed: number };
+  byCategory: Array<{
+    categoryId: number;
+    categoryName: string;
+    total: number;
+    completed: number;
+    mandatoryTotal: number;
+    mandatoryCompleted: number;
+  }>;
+}
+
+Export all types (DdCategoryWithStatus, DdCompletionSummary) and export the service as a singleton instance.
+
+2. Create server/routes/due-diligence.routes.ts with authenticated routes:
+
+GET /api/v2/due-diligence/categories — returns all categories with requirements
+GET /api/v2/due-diligence/company/:targetCompanyId/status — returns full DD status for a company
+GET /api/v2/due-diligence/company/:targetCompanyId/summary — returns completion summary
+PUT /api/v2/due-diligence/company/:targetCompanyId/requirement/:requirementId/status — updates a requirement status. Body: { status, notes?, documentId?, externalSubmissionId? }. Gets updatedBy from req.user.id.
+
+All routes require authentication (same middleware pattern as deal-document routes). Validate targetCompanyId and requirementId are valid integers. Return appropriate HTTP status codes.
+
+3. Register routes in server/routes/index.ts:
+
+Import dueDiligenceRoutes from ./due-diligence.routes and add to the registerModularRoutes function following the same pattern as the other route registrations.
+
+Do NOT modify any existing files other than server/routes/index.ts.
+
+When complete, confirm:
+- Seed results: category count, requirement count, and distribution by category
+- Files created (service + routes)
+- Files modified (routes/index.ts)
+- All 4 endpoint paths listed
+- No compilation errors
+- Test one endpoint manually: GET /api/v2/due-diligence/categories should return 15 categories
