@@ -12,9 +12,10 @@ import type { Document } from "./types";
 interface DocumentPreviewProps {
   document: Document;
   onDownload: (documentId: number, filename: string) => void;
+  publicFileBaseUrl?: string;
 }
 
-export function DocumentPreview({ document, onDownload }: DocumentPreviewProps) {
+export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: DocumentPreviewProps) {
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
 
@@ -23,7 +24,9 @@ export function DocumentPreview({ document, onDownload }: DocumentPreviewProps) 
   const isText = document.fileType === 'text/plain';
   const isViewable = isPDF || isImage || isText;
 
-  const viewerUrl = `/api/v2/files/${document.id}/view`;
+  const viewerUrl = publicFileBaseUrl
+    ? `${publicFileBaseUrl}/${document.id}/view`
+    : `/api/v2/files/${document.id}/view`;
 
   const handleViewerLoad = () => {
     setViewerError(false);

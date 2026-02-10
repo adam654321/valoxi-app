@@ -211,3 +211,15 @@ publicDocumentRoutes.get('/:id/download', async (req: Request, res: Response) =>
     res.sendFile(path.resolve(document.filePath));
   } catch (error) { sendError(res, error); }
 });
+
+publicDocumentRoutes.get('/:id/view', async (req: Request, res: Response) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
+    const document = await documentsFilesService.getDocumentPublic(documentId);
+    res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.sendFile(path.resolve(document.filePath));
+  } catch (error) { sendError(res, error); }
+});

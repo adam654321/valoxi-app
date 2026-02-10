@@ -205,7 +205,15 @@ export class DealDocumentTemplateService {
         ],
       }
     );
-    return result.value;
+    return this.stripWitnessBlock(result.value);
+  }
+
+  private stripWitnessBlock(html: string): string {
+    const witnessIndex = html.indexOf('AS WITNESS');
+    if (witnessIndex === -1) return html;
+    const beforeWitness = html.lastIndexOf('<p', witnessIndex);
+    if (beforeWitness === -1) return html;
+    return html.substring(0, beforeWitness);
   }
 
   formatCurrency(amount: number): string {

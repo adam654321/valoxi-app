@@ -947,7 +947,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
         document={viewingDocument}
         isOpen={showViewer}
         onClose={handleCloseViewer}
-        onDownload={() => {}}
+        onDownload={(docId, filename) => {
+          window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
+        }}
+        publicFileBaseUrl="/api/v2/public/documents"
       />
     </div>
   );

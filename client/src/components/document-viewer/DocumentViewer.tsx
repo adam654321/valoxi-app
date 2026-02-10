@@ -87,7 +87,7 @@ function formatFileSize(bytes: number) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export function DocumentViewer({ document, isOpen, onClose, onDownload }: DocumentViewerProps) {
+export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFileBaseUrl }: DocumentViewerProps) {
   const { toast } = useToast();
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
   
@@ -260,7 +260,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload }: Docume
             </TabsList>
             
             <TabsContent value="document" className="flex-1 overflow-hidden">
-              <DocumentPreview document={document} onDownload={onDownload} />
+              <DocumentPreview document={document} onDownload={onDownload} publicFileBaseUrl={publicFileBaseUrl} />
             </TabsContent>
             
             <TabsContent value="analysis" className="flex-1 overflow-auto p-4">
