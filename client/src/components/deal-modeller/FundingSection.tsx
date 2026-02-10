@@ -508,16 +508,18 @@ export default function FundingSection({
   );
 
   const totalFunded = calculations?.totalFunded ?? 0;
-  const fundingGap = calculations?.fundingGap ?? 0;
+  const rawFundingGap = calculations?.fundingGap ?? 0;
+  const fundingGap = Math.abs(rawFundingGap) < 1 ? 0 : rawFundingGap;
+  const isFullyFunded = fundingGap <= 0;
   const progressPct = totalFundingRequired > 0 ? Math.min(100, (totalFunded / totalFundingRequired) * 100) : 0;
 
-  const gapColour = fundingGap <= 0
+  const gapColour = isFullyFunded
     ? 'text-green-700'
     : fundingGap < totalFundingRequired * 0.3
       ? 'text-amber-700'
       : 'text-red-700';
 
-  const gapBorderColour = fundingGap <= 0
+  const gapBorderColour = isFullyFunded
     ? 'border-l-green-500'
     : fundingGap < totalFundingRequired * 0.3
       ? 'border-l-amber-500'
@@ -561,7 +563,7 @@ export default function FundingSection({
             <div className={`border-l-4 pl-3 ${gapBorderColour}`}>
               <p className="text-sm text-muted-foreground">Funding Gap</p>
               <p className={`text-xl font-bold ${gapColour}`}>
-                {fundingGap <= 0 ? 'Fully Funded' : formatCurrency(fundingGap)}
+                {isFullyFunded ? 'Fully Funded' : formatCurrency(fundingGap)}
               </p>
             </div>
           </div>

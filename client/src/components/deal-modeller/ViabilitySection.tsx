@@ -192,7 +192,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     const issues: string[] = [];
     const positives: string[] = [];
 
-    if (calculations.fundingGap > 0) {
+    if (calculations.fundingGap > 0 && Math.abs(calculations.fundingGap) >= 1) {
       issues.push(`Funding shortfall of ${formatCurrency(calculations.fundingGap)} needs to be addressed`);
     } else {
       positives.push('Fully funded — no additional cash required');
@@ -467,14 +467,14 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                   </tr>
                   <tr className={`border-t font-semibold ${
                     !calculations ? ''
-                    : calculations.fundingGap <= 0 ? 'bg-green-50 text-green-800'
+                    : Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0 ? 'bg-green-50 text-green-800'
                     : 'bg-red-50 text-red-800'
                   }`}>
                     <td className="px-3 py-2">
-                      {calculations && calculations.fundingGap <= 0 ? 'Surplus / Fully Funded' : 'Cash to Introduce'}
+                      {calculations && (Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0) ? 'Surplus / Fully Funded' : 'Cash to Introduce'}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {calculations ? formatCurrency(Math.abs(calculations.fundingGap)) : '—'}
+                      {calculations ? (Math.abs(calculations.fundingGap) < 1 ? '£0' : formatCurrency(Math.abs(calculations.fundingGap))) : '—'}
                     </td>
                   </tr>
                 </tbody>
