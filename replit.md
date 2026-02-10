@@ -71,6 +71,7 @@ Preferred communication style: Simple, everyday language.
         - **File Upload Analysis**: Triggers on document upload, sending to an external analysis service for financial and other data extraction.
         - **Stage 1 Analysis (Gemini)**: Triggers when specific documents are uploaded, using Google Gemini LLM API to analyze documents and generate a Commercial Due Diligence Report.
     - **Document Requirements System**: A standardized 29-requirement system is applied to all deals for a two-stage collection process.
+    - **DD Document Collection via Portal**: Public endpoint `GET /api/v2/portal-submit/:token/dd-requirements` serves DD categories, requirements, and their status (including linked document names) to the seller portal. Portal uploads with a `requirement_id` auto-link to DD requirements by updating `dd_requirement_status` with `externalSubmissionId`, `documentId`, and status `in_progress`. The `getDdStatusForCompany` method joins with the documents table to include `linkedDocumentName` and `linkedDocumentFilename` in status responses.
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
