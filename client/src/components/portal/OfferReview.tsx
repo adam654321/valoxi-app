@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, CheckCircle, XCircle, MessageSquare, Loader2,
+  FileText, CheckCircle, XCircle, Loader2,
   Download, ChevronDown, ChevronUp, Clock
 } from 'lucide-react';
 import {
@@ -81,7 +81,6 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
   onResponseSubmitted: () => void;
 }) {
   const [showContent, setShowContent] = useState(isLatest);
-  const [responseMode, setResponseMode] = useState<'accept' | 'reject' | 'counter' | null>(null);
   const [comments, setComments] = useState('');
   const [respondentName, setRespondentName] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<'accept' | 'reject' | null>(null);
@@ -117,9 +116,8 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
       return res.json();
     },
     onSuccess: (_, responseType) => {
-      const labels: Record<string, string> = { accepted: 'Offer Accepted', rejected: 'Offer Rejected', countered: 'Counter Submitted' };
+      const labels: Record<string, string> = { accepted: 'Offer Accepted', rejected: 'Offer Rejected' };
       toast({ title: labels[responseType] || 'Response Submitted', description: 'The buyer has been notified.' });
-      setResponseMode(null);
       setComments('');
       setRespondentName('');
       onResponseSubmitted();
@@ -152,7 +150,6 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
     viewed: { label: 'Awaiting Response', variant: 'outline' as const, icon: Clock },
     accepted: { label: 'Accepted', variant: 'default' as const, icon: CheckCircle },
     rejected: { label: 'Rejected', variant: 'destructive' as const, icon: XCircle },
-    countered: { label: 'Counter Submitted', variant: 'secondary' as const, icon: MessageSquare },
     superseded: { label: 'Superseded', variant: 'secondary' as const, icon: Clock },
   }[offer.status] || { label: offer.status, variant: 'outline' as const, icon: Clock };
 
@@ -228,7 +225,7 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
             </div>
           )}
 
-          {canRespond && !responseMode && (
+          {canRespond && (
             <div className="flex gap-3 pt-4 border-t">
               <Button
                 onClick={() => setConfirmDialog('accept')}
@@ -239,55 +236,12 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setResponseMode('counter')}
-                className="flex-1"
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Counter
-              </Button>
-              <Button
-                variant="outline"
                 onClick={() => setConfirmDialog('reject')}
                 className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
               >
                 <XCircle className="h-4 w-4 mr-2" />
-                Reject
+                Reject Offer
               </Button>
-            </div>
-          )}
-
-          {responseMode === 'counter' && (
-            <div className="space-y-3 pt-4 border-t">
-              <h4 className="font-medium">Submit Counter-Proposal</h4>
-              <p className="text-sm text-gray-500">
-                Please provide your comments explaining what terms you'd like to discuss or adjust.
-              </p>
-              <Textarea
-                placeholder="Describe your counter-proposal, requested changes, or concerns..."
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                rows={4}
-              />
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Your Full Name</label>
-                <Input
-                  placeholder="Type your full name"
-                  value={respondentName}
-                  onChange={(e) => setRespondentName(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => respondMutation.mutate('countered')}
-                  disabled={!comments.trim() || !respondentName.trim() || respondMutation.isPending}
-                >
-                  {respondMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <MessageSquare className="h-4 w-4 mr-2" />}
-                  Submit Counter
-                </Button>
-                <Button variant="ghost" onClick={() => { setResponseMode(null); setComments(''); }}>
-                  Cancel
-                </Button>
-              </div>
             </div>
           )}
 
@@ -339,9 +293,9 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Reason (optional)</label>
+                  <label className="text-sm font-medium">Reason for rejection</label>
                   <Textarea
-                    placeholder="Optionally explain why you're rejecting the offer..."
+                    placeholder="Please explain why you're rejecting this offer so we can address your concerns..."
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
                     rows={3}
@@ -352,7 +306,7 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => respondMutation.mutate('rejected')}
-                  disabled={!respondentName.trim() || respondMutation.isPending}
+                  disabled={!respondentName.trim() || !comments.trim() || respondMutation.isPending}
                   className="bg-red-600 hover:bg-red-700"
                 >
                   Confirm Rejection
