@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import NdaAgreement from '@/components/portal/NdaAgreement';
 import OfferReview from '@/components/portal/OfferReview';
 import HoTReview from '@/components/portal/HoTReview';
+import DdCollection from '@/components/portal/DdCollection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -682,6 +683,15 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
             />
           </div>
         )}
+
+        <DdCollection
+          token={token}
+          onDocumentUploaded={() => {
+            queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+            queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+            queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+          }}
+        />
 
         {/* Document Management Section - similar to document library */}
         <Card>

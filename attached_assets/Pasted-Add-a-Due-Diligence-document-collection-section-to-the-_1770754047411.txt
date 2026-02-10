@@ -1,0 +1,55 @@
+Add a Due Diligence document collection section to the seller portal. The seller sees DD requirements grouped by category and can upload documents against specific requirements.
+
+READ FIRST:
+- client/src/components/enhanced-portal-display.tsx — understand the full portal layout, where sections are rendered, and how the existing upload section works (the upload form, state management, file submission)
+- client/src/components/portal/OfferReview.tsx — for the expandable card pattern
+- client/src/components/portal/HoTReview.tsx — for the component structure pattern
+
+STEP 1: Create client/src/components/portal/DdCollection.tsx
+
+Create a new component for the DD requirements checklist with upload capability.
+
+Props:
+```typescript
+interface DdCollectionProps {
+  token: string;
+  onDocumentUploaded: () => void;  // callback to refetch portal data
+}
+```
+
+The component should:
+
+a) FETCH DD REQUIREMENTS
+
+Use useQuery to fetch from the new endpoint:
+```typescript
+const { data: ddData, refetch: refetchDd } = useQuery({
+  queryKey: ['portal-dd-requirements', token],
+  queryFn: async () => {
+    const res = await fetch(`/api/v2/portal-submit/${token}/dd-requirements`);
+    if (!res.ok) throw new Error('Failed to fetch requirements');
+    return res.json();
+  },
+});
+```
+
+b) RENDER A COMPLETION SUMMARY AT THE TOP
+
+Show a progress bar and summary:
+- "Due Diligence Documents" as the section title
+- Subtitle: "Please upload the requested documents against each requirement below."
+- Progress bar showing: X of Y requirements have documents (use summary.total and count of non-not_started statuses)
+- Completion percentage
+
+c) RENDER CATEGORIES AS COLLAPSIBLE SECTIONS
+
+For each category in ddData.categories:
+- Collapsible header (click to expand/collapse) showing:
+  - Category name (e.g. "Corporate Documents", "Financial Records")
+  - Badge showing "X / Y" requirements with documents in this category
+  - Chevron icon for expand/collapse state
+- Default state: first category expanded, rest collapsed
+
+d) RENDER EACH REQUIREMENT ROW
+
+For each requirement in the category:
