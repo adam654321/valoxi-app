@@ -45,7 +45,9 @@ const FUNDING_TYPE_CONFIG: Record<string, { label: string; icon: typeof CreditCa
   receivables_finance: { label: 'Receivables Finance', icon: FileText },
   asset_finance: { label: 'Asset Finance', icon: Building2 },
   property_finance: { label: 'Property Finance', icon: Landmark },
+  seller_financing: { label: 'Seller Financing', icon: TrendingUp },
   deferred_consideration: { label: 'Deferred Consideration', icon: TrendingUp },
+  earnout: { label: 'Earnout', icon: TrendingUp },
   new_senior_debt: { label: 'Senior Debt', icon: Landmark },
   cash_equity: { label: 'Cash Equity', icon: Wallet },
   investor_equity: { label: 'Investor Equity', icon: Users },
@@ -54,7 +56,7 @@ const FUNDING_TYPE_CONFIG: Record<string, { label: string; icon: typeof CreditCa
 
 const ASSET_BACKED_TYPES = ['receivables_finance', 'asset_finance', 'property_finance'];
 
-const DEBT_DEFAULT_TYPES = ['receivables_finance', 'asset_finance', 'property_finance', 'new_senior_debt', 'mezzanine', 'deferred_consideration'];
+const DEBT_DEFAULT_TYPES = ['receivables_finance', 'asset_finance', 'property_finance', 'new_senior_debt', 'mezzanine', 'deferred_consideration', 'seller_financing'];
 
 function getDefaultIsDebt(fundingType: string): boolean {
   return DEBT_DEFAULT_TYPES.includes(fundingType);
