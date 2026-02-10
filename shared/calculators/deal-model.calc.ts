@@ -253,7 +253,7 @@ export function calculateFundingStack(
     }
   }
 
-  const fundingGap = totalFundingRequired - totalFunded;
+  const fundingGap = Math.round((totalFundingRequired - totalFunded) * 100) / 100;
 
   return { fundingLines: results, totalFunded, fundingGap, totalAnnualDebtService, totalArrangementFees };
 }
@@ -305,7 +305,7 @@ export function calculateFullDealModel(
 
   const adjustedTotalFees = fees.totalFees + funding.totalArrangementFees;
   const adjustedTotalFundingRequired = fees.totalFundingRequired + funding.totalArrangementFees;
-  const adjustedFundingGap = adjustedTotalFundingRequired - funding.totalFunded;
+  const adjustedFundingGap = Math.round((adjustedTotalFundingRequired - funding.totalFunded) * 100) / 100;
 
   const { paymentCoverRatio, paymentCoverRating } = calculatePaymentCover(
     averageAdjustedEbitda,
