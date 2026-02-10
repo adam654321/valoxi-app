@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import multer from 'multer';
 import { portalSubmissionsService } from '../services/portal-submissions.service';
+import { dueDiligenceService } from '../services/due-diligence.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { BadRequestError } from '../utils/errors';
 
@@ -83,6 +84,39 @@ router.delete('/:token/documents/:id', async (req: Request, res: Response) => {
     if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
     await portalSubmissionsService.deleteDocument(req.params.token, documentId);
     sendSuccess(res, { success: true });
+  } catch (error) { sendError(res, error); }
+});
+
+router.get('/:token/dd-requirements', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+
+    const categoriesWithStatus = await dueDiligenceService.getDdStatusForCompany(token.targetCompanyId);
+    const summary = await dueDiligenceService.getCompletionSummary(token.targetCompanyId);
+
+    const categories = categoriesWithStatus.map(cat => ({
+      ...cat.category,
+      requirements: cat.requirements.map(req => {
+        const statusData = req.status as any;
+        return {
+          id: req.id,
+          refNumber: req.refNumber,
+          documentName: req.documentName,
+          description: req.guidance,
+          priority: req.priority,
+          category: cat.category.categoryName,
+          status: statusData?.status || 'not_started',
+          documentId: statusData?.documentId || null,
+          linkedDocumentName: statusData?.linkedDocumentName || null,
+          linkedDocumentFilename: statusData?.linkedDocumentFilename || null,
+          externalSubmissionId: statusData?.externalSubmissionId || null,
+        };
+      }),
+      completedCount: cat.completedCount,
+      totalCount: cat.totalCount,
+    }));
+
+    sendSuccess(res, { categories, summary });
   } catch (error) { sendError(res, error); }
 });
 

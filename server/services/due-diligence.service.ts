@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { ddCategories, ddRequirements, ddRequirementStatus } from '@shared/schema/due-diligence';
 import type { DdCategory, DdRequirement, DdRequirementStatus } from '@shared/schema/due-diligence';
+import { documents } from '@shared/schema/documents';
 import { eq, and, sql, asc } from 'drizzle-orm';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 
@@ -72,6 +73,8 @@ class DueDiligenceService {
       .select({
         requirement: ddRequirements,
         status: ddRequirementStatus,
+        linkedDocumentName: documents.documentName,
+        linkedDocumentFilename: documents.originalFilename,
       })
       .from(ddRequirements)
       .leftJoin(
@@ -81,6 +84,10 @@ class DueDiligenceService {
           eq(ddRequirementStatus.targetCompanyId, targetCompanyId),
         )
       )
+      .leftJoin(
+        documents,
+        eq(documents.id, ddRequirementStatus.documentId),
+      )
       .where(eq(ddRequirements.isActive, true))
       .orderBy(asc(ddRequirements.sortOrder));
 
@@ -89,7 +96,11 @@ class DueDiligenceService {
         .filter(r => r.requirement.categoryId === cat.id)
         .map(r => ({
           ...r.requirement,
-          status: r.status,
+          status: r.status ? {
+            ...r.status,
+            linkedDocumentName: r.linkedDocumentName,
+            linkedDocumentFilename: r.linkedDocumentFilename,
+          } : null,
         }));
 
       const isCompleted = (statusRow: DdRequirementStatus | null) => {

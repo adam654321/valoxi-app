@@ -1,0 +1,133 @@
+Add backend support for DD document collection via the seller portal. Two changes: a new public endpoint to fetch DD requirements, and wiring the existing upload to auto-link documents to DD requirements.
+
+READ FIRST:
+- server/routes/portal-submissions.routes.ts — understand the full upload flow in the POST /:token/submit handler and the pattern for other public endpoints (GET /:token, GET /:token/analysis-completion)
+- server/services/due-diligence.service.ts — getDdStatusForCompany and updateRequirementStatus methods
+- server/services/portal-submissions.service.ts — the processSubmission method
+
+STEP 1: Add GET /:token/dd-requirements endpoint to server/routes/portal-submissions.routes.ts
+
+Add a new public endpoint following the exact same pattern as GET /:token and GET /:token/analysis-completion:
+```typescript
+router.get('/:token/dd-requirements', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    // Validate portal token (same pattern as other portal endpoints)
+    // Get the targetCompanyId and userCompanyId from the validated token
+    // Use whatever method the other GET endpoints use to validate and extract these
+
+    // Get DD categories with requirements
+    const categories = await dueDiligenceService.getAllCategories();
+    
+    // Get DD status for this company
+    const status = await dueDiligenceService.getDdStatusForCompany(targetCompanyId, userCompanyId);
+    
+    // Get completion summary
+    const summary = await dueDiligenceService.getCompletionSummary(targetCompanyId, userCompanyId);
+
+    // Merge requirements with their status
+    // For each category, for each requirement, find the matching status entry
+    const categoriesWithStatus = categories.map((cat: any) => ({
+      ...cat,
+      requirements: (cat.requirements || []).map((req: any) => {
+        const reqStatus = status.find((s: any) => s.requirementId === req.id);
+        return {
+          id: req.id,
+          refNumber: req.refNumber,
+          documentName: req.documentName,
+          description: req.description,
+          priority: req.priority,
+          category: cat.categoryName,
+          status: reqStatus?.status || 'not_started',
+          documentId: reqStatus?.documentId || null,
+          externalSubmissionId: reqStatus?.externalSubmissionId || null,
+        };
+      }),
+    }));
+
+    res.json({
+      categories: categoriesWithStatus,
+      summary,
+    });
+  } catch (error: any) {
+    console.error('[PORTAL] DD requirements error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+```
+
+IMPORTANT: Check how the other portal GET endpoints validate the token and extract targetCompanyId. Use the EXACT same approach. It might be through a service call, a repository method, or direct DB query. Match the pattern precisely.
+
+Also check: does getDdStatusForCompany need userCompanyId as the second parameter? If so, get it from the portal token data (it should be the buyer's company ID). If the method signature is different, adapt accordingly.
+
+Also check: does getAllCategories return requirements nested inside categories, or flat? If flat, you'll need to fetch requirements separately. Look at how the authenticated DD routes build their response and replicate that structure.
+
+
+STEP 2: Auto-link uploaded documents to DD requirements
+
+In the portal upload flow (POST /:token/submit handler in portal-submissions.routes.ts, or in portal-submissions.service.ts — wherever the submission is processed):
+
+Find where the externalDocumentSubmissions record is created and the documents record is created. AFTER both are created successfully, add:
+```typescript
+// If a DD requirement ID was provided, link the submission to the DD requirement
+if (submission.documentRequirementId) {
+  try {
+    await dueDiligenceService.updateRequirementStatus({
+      requirementId: submission.documentRequirementId,
+      targetCompanyId: targetCompanyId,
+      userCompanyId: userCompanyId,  // buyer's company ID from portal token
+      status: 'in_progress',  // auto-set to in_progress when a document is uploaded
+      externalSubmissionId: submission.id,
+      documentId: document.id,  // the documents table record that was just created
+    });
+    console.log(`[PORTAL] Linked submission ${submission.id} to DD requirement ${submission.documentRequirementId}`);
+  } catch (ddError) {
+    // Don't fail the upload if DD linking fails
+    console.error('[PORTAL] Failed to link DD requirement:', ddError);
+  }
+}
+```
+
+Check the exact signature of updateRequirementStatus — it might expect different parameter names or a different structure. Match it exactly.
+
+Also check: the upload endpoint currently reads requirement_id from the request body (body.requirement_id). Verify this is being parsed and stored in the submission. If the frontend sends it as requirement_id in the FormData, make sure the multer/body parsing picks it up and it gets set on documentRequirementId. Trace this through the code.
+
+
+STEP 3: Make sure the DD status response includes document details
+
+Check the getDdStatusForCompany method. When it returns status data, does it include:
+- documentId
+- externalSubmissionId
+
+If not, add these to the select clause. Also check if it joins with the documents table to get the document name — if not, add a LEFT JOIN so the response includes the linked document's name and filename. The portal and buyer UI both need to show what file is linked.
+
+The returned shape per requirement status should include at minimum:
+```typescript
+{
+  requirementId: number,
+  status: string,
+  documentId: number | null,
+  documentName: string | null,  // from joined documents table
+  externalSubmissionId: number | null,
+}
+```
+
+
+IMPORTANT RULES:
+- Do NOT modify the existing upload flow's core logic — only ADD the DD linking step after successful upload
+- Do NOT modify any frontend files
+- Do NOT modify the DD schema
+- Do NOT modify the existing authenticated DD endpoints
+- The new endpoint must be public (no auth check) but token-validated (same as all portal endpoints)
+- Import dueDiligenceService at the top of portal-submissions.routes.ts if not already imported
+- Wrap DD linking in try/catch so upload doesn't fail if DD linking fails
+- Use the same error handling patterns as the existing portal endpoints
+
+When complete, confirm:
+- Files modified (list them)
+- That GET /:token/dd-requirements returns categories, requirements, and their status
+- That uploading with a requirement_id auto-links to the DD requirement
+- That DD status response now includes documentId and document name
+- No compilation errors
+- Test the endpoint manually if possible: what does the response look like?
