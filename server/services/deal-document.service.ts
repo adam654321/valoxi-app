@@ -274,6 +274,46 @@ export class DealDocumentService {
       }
     }
 
+    if (params.responseType === 'accepted') {
+      try {
+        const { pipelineRepository } = await import('../repositories/pipeline.repository');
+        const { targetCompanies } = await import('@shared/schema/deals');
+
+        const [company] = await db.select({ stage: targetCompanies.stage })
+          .from(targetCompanies)
+          .where(eq(targetCompanies.id, doc.targetCompanyId));
+
+        const stageOrder = ['New Target', 'Initial Contact', 'Documents Requested', 'Under Review', 'Offer Stage', 'Heads of Terms', 'Due Diligence', 'Legal & Accounting', 'Completion', 'Not Qualified'];
+        const currentIdx = stageOrder.indexOf(company?.stage || '');
+
+        if (doc.documentType === 'offer_letter') {
+          const targetIdx = stageOrder.indexOf('Heads of Terms');
+          if (currentIdx < targetIdx) {
+            await pipelineRepository.updateCompanyStage(
+              doc.targetCompanyId,
+              'Heads of Terms',
+              doc.createdBy,
+              'Auto-progressed: Offer Letter accepted by seller'
+            );
+            console.log(`[DEAL_DOCS] Auto-progressed company ${doc.targetCompanyId} to Heads of Terms`);
+          }
+        } else if (doc.documentType === 'heads_of_terms') {
+          const targetIdx = stageOrder.indexOf('Due Diligence');
+          if (currentIdx < targetIdx) {
+            await pipelineRepository.updateCompanyStage(
+              doc.targetCompanyId,
+              'Due Diligence',
+              doc.createdBy,
+              'Auto-progressed: Heads of Terms accepted by seller'
+            );
+            console.log(`[DEAL_DOCS] Auto-progressed company ${doc.targetCompanyId} to Due Diligence`);
+          }
+        }
+      } catch (stageErr) {
+        console.error('[DEAL_DOCS] Auto-stage-progression failed (non-critical):', stageErr);
+      }
+    }
+
     return response;
   }
 

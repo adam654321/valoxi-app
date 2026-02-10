@@ -1,0 +1,41 @@
+2. Check whether updateCompanyStage also needs a userCompanyId parameter. If so, use document.userCompanyId.
+
+3. The stage progression should ONLY happen on 'accepted' responses, NOT on 'rejected' or 'countered'.
+
+4. Wrap in try/catch so a stage update failure doesn't break the document response flow. The response recording is the critical operation — stage progression is secondary.
+
+5. Check if pipelineRepository is already imported at the top of the service file. If not, use a dynamic import (same pattern used elsewhere in the codebase for lazy imports) or add it to the top-level imports.
+
+6. Only progress the stage forward — don't move it backward. Add a check: only update if the current stage is at an earlier position in the pipeline. For example, don't move to "Heads of Terms" if the company is already at "Due Diligence" or later. To do this simply:
+```typescript
+   // Get current company to check stage
+   const [company] = await db.select({ stage: targetCompanies.stage })
+     .from(targetCompanies)
+     .where(eq(targetCompanies.id, document.targetCompanyId));
+   
+   const stageOrder = ['New Target', 'Initial Contact', 'Documents Requested', 'Under Review', 'Offer Stage', 'Heads of Terms', 'Due Diligence', 'Legal & Accounting', 'Completion', 'Not Qualified'];
+   const currentIdx = stageOrder.indexOf(company?.stage || '');
+   const targetIdx = stageOrder.indexOf('Heads of Terms'); // or 'Due Diligence'
+   
+   if (currentIdx < targetIdx) {
+     await pipelineRepository.updateCompanyStage(...);
+   }
+```
+
+   This prevents accidentally moving a company backward if events arrive out of order.
+
+DO NOT:
+- Modify any other service files
+- Modify any route files
+- Modify any frontend files
+- Change the existing recordResponse logic — only ADD to it
+- Change how responses are stored or returned
+
+When complete, confirm:
+- Files modified (should only be deal-document.service.ts)
+- That offer acceptance triggers stage move to "Heads of Terms"
+- That HoT acceptance triggers stage move to "Due Diligence"
+- That stage only moves forward (not backward)
+- That stage history is recorded properly
+- That failures are caught and don't break the response flow
+- No compilation errors
