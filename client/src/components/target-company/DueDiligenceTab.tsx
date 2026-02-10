@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -396,6 +396,18 @@ function CategoryAccordion({
 }
 
 export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
+  const { data: dealDocs, isLoading: dealDocsLoading } = useQuery<any[]>({
+    queryKey: ["/api/v2/deal-documents/company", targetCompanyId],
+    queryFn: () => fetch(`/api/v2/deal-documents/company/${targetCompanyId}`, { credentials: "include" }).then(r => {
+      if (!r.ok) return [];
+      return r.json();
+    }),
+  });
+
+  const hotAccepted = Array.isArray(dealDocs) && dealDocs.some(
+    (d: any) => d.documentType === "heads_of_terms" && d.status === "accepted"
+  );
+
   const statusQuery = useQuery<DdCategoryWithStatus[]>({
     queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "status"],
     queryFn: () => fetch(`/api/v2/due-diligence/company/${targetCompanyId}/status`, { credentials: "include" }).then(r => {
@@ -480,13 +492,31 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     };
   }, [categories]);
 
-  if (statusQuery.isLoading || summaryQuery.isLoading) {
+  if (dealDocsLoading || statusQuery.isLoading || summaryQuery.isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+
+  if (!hotAccepted) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-full p-6 mb-6">
+          <Lock className="h-12 w-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Due Diligence Locked</h3>
+        <p className="text-gray-500 text-center max-w-md mb-4">
+          The Due Diligence stage will unlock once the Heads of Terms document has been accepted by the seller.
+        </p>
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <FileCheck className="h-4 w-4" />
+          <span>Awaiting Heads of Terms acceptance</span>
+        </div>
       </div>
     );
   }
