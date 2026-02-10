@@ -787,6 +787,120 @@ export class DealDocumentService {
     };
   }
 
+  async createHoTFromAcceptedOffer(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    createdBy: number;
+    portalTokenId?: number;
+    hotTerms: {
+      exclusivityPeriodDays?: number;
+      nonCompetePeriodYears?: number;
+      nonSolicitPeriodYears?: number;
+      warrantyClaimPeriodMonths?: number;
+      warrantyMinClaim?: number;
+      additionalConditions?: string;
+      targetCompletionWeeks?: number;
+    };
+  }) {
+    const [acceptedOffer] = await db.select().from(dealDocuments)
+      .where(
+        and(
+          eq(dealDocuments.targetCompanyId, params.targetCompanyId),
+          eq(dealDocuments.documentType, 'offer_letter'),
+          eq(dealDocuments.status, 'accepted')
+        )
+      )
+      .orderBy(desc(dealDocuments.version))
+      .limit(1);
+
+    if (!acceptedOffer) {
+      throw new Error('Cannot generate Heads of Terms without an accepted offer letter');
+    }
+
+    const existingHot = await this.getLatestActiveDocument(params.targetCompanyId, 'heads_of_terms');
+
+    let doc;
+    if (existingHot && ['sent', 'viewed', 'countered', 'rejected'].includes(existingHot.status)) {
+      doc = await this.createNewVersion(existingHot.id, params.createdBy, {
+        dealModelId: acceptedOffer.dealModelId || undefined,
+      });
+    } else {
+      const hotTemplate = await dealDocumentTemplateService.getSystemTemplate('heads_of_terms');
+      if (!hotTemplate) {
+        throw new Error('No active Heads of Terms template found');
+      }
+
+      let resolvedPortalTokenId = params.portalTokenId;
+      if (!resolvedPortalTokenId) {
+        const { portalRepository } = await import('../repositories/portal.repository');
+        const activeToken = await portalRepository.getActiveTokenForCompany(params.targetCompanyId);
+        if (activeToken) {
+          resolvedPortalTokenId = activeToken.id;
+        }
+      }
+
+      doc = await this.createDocument({
+        targetCompanyId: params.targetCompanyId,
+        userCompanyId: params.userCompanyId,
+        documentType: 'heads_of_terms',
+        createdBy: params.createdBy,
+        dealModelId: acceptedOffer.dealModelId || undefined,
+        portalTokenId: resolvedPortalTokenId,
+        templateId: hotTemplate.id,
+        sectionConfig: hotTemplate.sections as any,
+      });
+    }
+
+    const acceptedOfferData = acceptedOffer.documentData as any;
+    const raw = acceptedOfferData?._raw || {};
+
+    const terms = {
+      exclusivityPeriodDays: params.hotTerms.exclusivityPeriodDays ?? 90,
+      nonCompetePeriodYears: params.hotTerms.nonCompetePeriodYears ?? 2,
+      nonSolicitPeriodYears: params.hotTerms.nonSolicitPeriodYears ?? 2,
+      warrantyClaimPeriodMonths: params.hotTerms.warrantyClaimPeriodMonths ?? 18,
+      warrantyMinClaim: params.hotTerms.warrantyMinClaim ?? 5000,
+      additionalConditions: params.hotTerms.additionalConditions || '',
+      targetCompletionWeeks: params.hotTerms.targetCompletionWeeks ?? 12,
+    };
+
+    const fmt = (val: any) => {
+      const num = Number(val) || 0;
+      return new Intl.NumberFormat('en-GB', {
+        style: 'currency', currency: 'GBP',
+        minimumFractionDigits: 0, maximumFractionDigits: 0,
+      }).format(num);
+    };
+
+    const documentData: Record<string, any> = {
+      buyerCompanyName: acceptedOfferData.buyerCompanyName,
+      sellerCompanyName: acceptedOfferData.sellerCompanyName,
+      sellerContactName: acceptedOfferData.sellerContactName,
+      sellerAddress: acceptedOfferData.sellerAddress,
+      buyerSignatoryName: acceptedOfferData.buyerSignatoryName,
+      buyerSignatoryTitle: acceptedOfferData.buyerSignatoryTitle,
+      offerPrice: acceptedOfferData.offerPrice,
+      dayOnePayment: acceptedOfferData.dayOnePayment,
+      deferredTotal: acceptedOfferData.deferredTotal,
+      exclusivityPeriodDays: terms.exclusivityPeriodDays,
+      nonCompetePeriodYears: terms.nonCompetePeriodYears,
+      nonSolicitPeriodYears: terms.nonSolicitPeriodYears,
+      warrantyClaimPeriodMonths: terms.warrantyClaimPeriodMonths,
+      warrantyMinClaim: fmt(terms.warrantyMinClaim),
+      targetCompletionWeeks: terms.targetCompletionWeeks,
+      additionalConditions: terms.additionalConditions,
+      currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+      _raw: {
+        ...raw,
+        ...terms,
+      },
+    };
+
+    await this.generateDocumentFile(doc.id, documentData as Partial<DocumentDataContext>);
+
+    return doc;
+  }
+
   async getDocumentsForPortal(portalTokenId: number) {
     return db.select().from(dealDocuments)
       .where(

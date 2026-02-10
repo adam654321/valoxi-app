@@ -50,6 +50,43 @@ router.get('/download/:id', async (req, res) => {
   }
 });
 
+router.post('/generate-hot', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const userCompanyId = req.session.userCompanyId;
+    if (!userId || !userCompanyId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const schema = z.object({
+      targetCompanyId: z.number(),
+      hotTerms: z.object({
+        exclusivityPeriodDays: z.number().optional().default(90),
+        nonCompetePeriodYears: z.number().optional().default(2),
+        nonSolicitPeriodYears: z.number().optional().default(2),
+        warrantyClaimPeriodMonths: z.number().optional().default(18),
+        warrantyMinClaim: z.number().optional().default(5000),
+        additionalConditions: z.string().optional(),
+        targetCompletionWeeks: z.number().optional().default(12),
+      }).optional().default({}),
+    });
+
+    const validated = schema.parse(req.body);
+
+    const doc = await dealDocumentService.createHoTFromAcceptedOffer({
+      targetCompanyId: validated.targetCompanyId,
+      userCompanyId,
+      createdBy: userId,
+      hotTerms: validated.hotTerms,
+    });
+
+    res.status(201).json(doc);
+  } catch (error: any) {
+    console.error('[DEAL_DOCS] Generate HoT error:', error);
+    res.status(error.message?.includes('Cannot generate') ? 400 : 500).json({ message: error.message });
+  }
+});
+
 router.post('/send-offer', async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -108,10 +145,18 @@ router.get('/:id/html', async (req, res) => {
       return res.status(404).json({ message: 'Document file not generated' });
     }
 
-    const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
-    const html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+    let html: string;
 
-    res.json({ html });
+    if (doc.documentType === 'offer_letter' && doc.documentData) {
+      html = buildOfferLetterHtml(doc.documentData as any);
+    } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
+      html = buildHoTHtml(doc.documentData as any);
+    } else {
+      const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
+      html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+    }
+
+    res.json({ html, documentData: doc.documentData });
   } catch (error: any) {
     console.error('[DEAL_DOCS] HTML preview error:', error);
     res.status(500).json({ message: error.message });
@@ -298,6 +343,8 @@ publicRouter.get('/:token/:documentId/html', async (req, res) => {
 
     if (doc.documentType === 'offer_letter' && doc.documentData) {
       html = buildOfferLetterHtml(doc.documentData as any);
+    } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
+      html = buildHoTHtml(doc.documentData as any);
     } else {
       const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
       html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
@@ -375,6 +422,136 @@ function buildOfferLetterHtml(data: any): string {
       <p><strong>${data.buyerSignatoryName || ''}</strong></p>
       <p>${data.buyerSignatoryTitle || ''}</p>
       <p>${data.buyerCompanyName || ''}</p>
+    </div>
+  `;
+}
+
+function buildHoTHtml(data: any): string {
+  const raw = data._raw || {};
+
+  const fmt = (val: any) => {
+    const num = Number(val) || 0;
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency', currency: 'GBP',
+      minimumFractionDigits: 0, maximumFractionDigits: 0,
+    }).format(num);
+  };
+
+  const breakdownLines: string[] = [];
+  breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): <strong>${fmt(raw.enterpriseValue)}</strong>`);
+  if (raw.excessCash > 0) breakdownLines.push(`Plus Excess Cash: <strong>${fmt(raw.excessCash)}</strong>`);
+  if (raw.propertyValue > 0) breakdownLines.push(`Plus Property Value: <strong>${fmt(raw.propertyValue)}</strong>`);
+  if (raw.primaryDebt > 0) breakdownLines.push(`Less Primary Debt: <strong>(${fmt(raw.primaryDebt)})</strong>`);
+  if (raw.otherDebt > 0) breakdownLines.push(`Less Other Debt: <strong>(${fmt(raw.otherDebt)})</strong>`);
+  if (raw.corpTaxDue > 0) breakdownLines.push(`Less Corporation Tax Due: <strong>(${fmt(raw.corpTaxDue)})</strong>`);
+  if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: <strong>(${fmt(raw.workingCapitalAdj)})</strong>`);
+
+  let paymentHtml = '';
+  if (raw.dayOnePayment > 0) {
+    paymentHtml += `<p>Completion payment: <strong>${fmt(raw.dayOnePayment)}</strong></p>`;
+  }
+  if (raw.deferredAmount > 0) {
+    paymentHtml += `<p>Deferred consideration: <strong>${fmt(raw.deferredAmount)}</strong></p>`;
+    if (raw.deferredTerms) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Terms: ${raw.deferredTerms}</p>`;
+  }
+  if (raw.earnoutMaximum > 0) {
+    paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
+    if (raw.earnoutMetric) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Metric: ${raw.earnoutMetric}</p>`;
+    if (raw.earnoutTermMonths > 0) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Period: ${raw.earnoutTermMonths} months</p>`;
+  }
+
+  const keyTermsRows = [
+    ['Exclusivity Period', `${raw.exclusivityPeriodDays || 90} days from the date of these Heads of Terms`],
+    ['Non-Compete Restriction', `${raw.nonCompetePeriodYears || 2} years post-completion`],
+    ['Non-Solicitation Restriction', `${raw.nonSolicitPeriodYears || 2} years post-completion`],
+    ['Warranty Claim Period', `${raw.warrantyClaimPeriodMonths || 18} months post-completion`],
+    ['Minimum Warranty Claim', fmt(raw.warrantyMinClaim || 5000)],
+    ['Target Completion', `${raw.targetCompletionWeeks || 12} weeks from signing`],
+  ];
+
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.7; max-width: 700px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #333;">
+        <h1 style="margin: 0; font-size: 24px;">Heads of Terms</h1>
+        <p style="margin: 5px 0 0; color: #555;">Subject to Contract &amp; Without Prejudice</p>
+      </div>
+
+      <table style="width: 100%; margin-bottom: 20px;">
+        <tr>
+          <td style="width: 50%; vertical-align: top; padding: 10px;">
+            <p style="margin: 0; font-size: 0.85em; color: #777; text-transform: uppercase;">Buyer</p>
+            <p style="margin: 4px 0; font-weight: bold;">${data.buyerCompanyName || ''}</p>
+          </td>
+          <td style="width: 50%; vertical-align: top; padding: 10px;">
+            <p style="margin: 0; font-size: 0.85em; color: #777; text-transform: uppercase;">Seller</p>
+            <p style="margin: 4px 0; font-weight: bold;">${data.sellerCompanyName || ''}</p>
+            <p style="margin: 2px 0; font-size: 0.9em;">${data.sellerAddress || ''}</p>
+          </td>
+        </tr>
+      </table>
+
+      <p style="color: #555;">Date: ${data.currentDate || ''}</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">1. The Proposed Acquisition</h2>
+      <p>The Buyer proposes to acquire 100% of the issued share capital of <strong>${data.sellerCompanyName || ''}</strong> ("the Company") on the terms set out below.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">2. Price</h2>
+      <p>The total consideration for the Shares shall be <strong>${data.offerPrice || fmt(raw.offerPrice)}</strong> ("the Price"), subject to adjustment as described below.</p>
+      
+      <table style="border-collapse: collapse; width: 100%; max-width: 550px; margin: 16px 0;">
+        ${breakdownLines.map(line => `<tr><td style="padding: 5px 0;">${line}</td></tr>`).join('\n')}
+        <tr><td style="padding: 10px 0 5px; border-top: 2px solid #333;"><strong>Total Consideration: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>
+      </table>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">3. Payment Structure</h2>
+      ${paymentHtml || '<p>Full payment on completion.</p>'}
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">4. Key Terms</h2>
+      <table style="border-collapse: collapse; width: 100%; margin: 12px 0;">
+        ${keyTermsRows.map(([label, value]) => `
+          <tr>
+            <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: 600; width: 40%; background: #f9f9f9;">${label}</td>
+            <td style="padding: 8px 12px; border: 1px solid #ddd;">${value}</td>
+          </tr>
+        `).join('\n')}
+      </table>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">5. Conditions</h2>
+      <p>This acquisition is conditional upon:</p>
+      <ul style="margin: 8px 0; padding-left: 24px;">
+        <li>Satisfactory completion of due diligence by the Buyer</li>
+        <li>Agreement and execution of a Share Purchase Agreement</li>
+        <li>No material adverse change in the business prior to completion</li>
+        <li>Receipt of all necessary regulatory approvals and third-party consents</li>
+      </ul>
+      ${data.additionalConditions ? `<p><strong>Additional conditions:</strong> ${data.additionalConditions}</p>` : ''}
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">6. Due Diligence</h2>
+      <p>The Buyer shall be entitled to conduct full financial, legal, commercial, and operational due diligence on the Company during the Exclusivity Period. The Seller agrees to provide reasonable access to all requested information and documentation.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">7. Exclusivity</h2>
+      <p>The Seller agrees that for a period of <strong>${raw.exclusivityPeriodDays || 90} days</strong> from the date of these Heads of Terms, they shall not directly or indirectly solicit, encourage, or negotiate with any third party regarding the sale of the Company or any material part of its business or assets.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">8. Timetable</h2>
+      <p>The parties shall use reasonable endeavours to complete the transaction within <strong>${raw.targetCompletionWeeks || 12} weeks</strong> from the date of these Heads of Terms, subject to satisfactory completion of due diligence and agreement of the Share Purchase Agreement.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">9. Costs</h2>
+      <p>Each party shall bear their own costs in relation to the negotiation and completion of the proposed acquisition, including legal, accounting, and advisory fees.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">10. Governing Law</h2>
+      <p>These Heads of Terms and any dispute arising from them shall be governed by and construed in accordance with English law. The courts of England and Wales shall have exclusive jurisdiction.</p>
+
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd;">
+        <p style="margin-bottom: 4px;"><strong>Status:</strong> These Heads of Terms are not legally binding save for the provisions relating to exclusivity, confidentiality, and costs, which are intended to be legally binding.</p>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <p>Signed on behalf of the Buyer:</p>
+        <br/>
+        <p><strong>${data.buyerSignatoryName || ''}</strong></p>
+        <p>${data.buyerSignatoryTitle || ''}</p>
+        <p>${data.buyerCompanyName || ''}</p>
+      </div>
     </div>
   `;
 }

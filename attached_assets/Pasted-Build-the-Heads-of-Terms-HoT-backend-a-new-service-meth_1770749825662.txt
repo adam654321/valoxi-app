@@ -1,0 +1,328 @@
+Build the Heads of Terms (HoT) backend: a new service method, a new route, and a portal HTML renderer. This follows the exact same patterns as the existing offer letter flow.
+
+STEP 1: Add createHoTFromAcceptedOffer method to server/services/deal-document.service.ts
+
+Add a new method to the DealDocumentService class:
+
+async createHoTFromAcceptedOffer(params: {
+  targetCompanyId: number;
+  userCompanyId: number;
+  createdBy: number;
+  portalTokenId?: number;
+  hotTerms: {
+    exclusivityPeriodDays?: number;
+    nonCompetePeriodYears?: number;
+    nonSolicitPeriodYears?: number;
+    warrantyClaimPeriodMonths?: number;
+    warrantyMinClaim?: number;
+    additionalConditions?: string;
+    targetCompletionWeeks?: number;
+  };
+})
+
+This method should:
+
+a) Find the latest ACCEPTED offer for this target company:
+   SELECT from dealDocuments WHERE targetCompanyId = params.targetCompanyId AND documentType = 'offer_letter' AND status = 'accepted' ORDER BY version DESC LIMIT 1
+   If none found, throw new Error('Cannot generate Heads of Terms without an accepted offer letter')
+
+b) Check for existing active HoT (same pattern as createOfferFromDealModel checks for existing offers):
+   Look for any existing heads_of_terms document for this targetCompanyId that is NOT superseded/withdrawn.
+   If one exists with status sent/viewed/countered/rejected, create a new version by:
+   - Setting the existing doc's status to 'superseded'
+   - Using parentDocumentId = existing doc's id
+   - Incrementing the version number
+   If one exists with status 'draft', just update it in place (delete and recreate, or update — follow whichever pattern createOfferFromDealModel uses)
+
+c) Get the HoT template:
+   SELECT from dealDocumentTemplates WHERE documentType = 'heads_of_terms' AND isActive = true AND isSystem = true LIMIT 1
+   If not found, throw new Error('No active Heads of Terms template found')
+
+d) Resolve portal token (same as send-offer route):
+   If params.portalTokenId not provided, look up the active portal token for targetCompanyId using portalRepository.getActiveTokenForCompany()
+
+e) Build documentData by merging data from the accepted offer with HoT terms:
+
+   const acceptedOfferData = acceptedOffer.documentData as any;
+   const raw = acceptedOfferData?._raw || {};
+   
+   // Apply defaults for HoT terms
+   const terms = {
+     exclusivityPeriodDays: params.hotTerms.exclusivityPeriodDays ?? 90,
+     nonCompetePeriodYears: params.hotTerms.nonCompetePeriodYears ?? 2,
+     nonSolicitPeriodYears: params.hotTerms.nonSolicitPeriodYears ?? 2,
+     warrantyClaimPeriodMonths: params.hotTerms.warrantyClaimPeriodMonths ?? 18,
+     warrantyMinClaim: params.hotTerms.warrantyMinClaim ?? 5000,
+     additionalConditions: params.hotTerms.additionalConditions || '',
+     targetCompletionWeeks: params.hotTerms.targetCompletionWeeks ?? 12,
+   };
+
+   const documentData = {
+     // Carry forward from accepted offer
+     buyerCompanyName: acceptedOfferData.buyerCompanyName,
+     sellerCompanyName: acceptedOfferData.sellerCompanyName,
+     sellerContactName: acceptedOfferData.sellerContactName,
+     sellerAddress: acceptedOfferData.sellerAddress,
+     buyerSignatoryName: acceptedOfferData.buyerSignatoryName,
+     buyerSignatoryTitle: acceptedOfferData.buyerSignatoryTitle,
+     
+     // Financial values (formatted)
+     offerPrice: acceptedOfferData.offerPrice,
+     dayOnePayment: acceptedOfferData.dayOnePayment,
+     deferredTotal: acceptedOfferData.deferredTotal,
+     
+     // HoT-specific terms (as strings for template placeholders)
+     exclusivityPeriodDays: String(terms.exclusivityPeriodDays),
+     nonCompetePeriodYears: String(terms.nonCompetePeriodYears),
+     nonSolicitPeriodYears: String(terms.nonSolicitPeriodYears),
+     warrantyClaimPeriodMonths: String(terms.warrantyClaimPeriodMonths),
+     warrantyMinClaim: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(terms.warrantyMinClaim),
+     targetCompletionWeeks: String(terms.targetCompletionWeeks),
+     additionalConditions: terms.additionalConditions,
+     
+     // Date
+     currentDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+     
+     // Raw numeric values for HTML renderer
+     _raw: {
+       ...raw,
+       ...terms,
+     },
+   };
+
+f) Insert the dealDocuments record:
+   - targetCompanyId, userCompanyId, createdBy from params
+   - documentType: 'heads_of_terms'
+   - status: 'draft'
+   - templateId: hotTemplate.id
+   - dealModelId: acceptedOffer.dealModelId
+   - portalTokenId: resolved portal token id
+   - parentDocumentId: acceptedOffer.id (links HoT back to the accepted offer)
+   - sectionConfig: hotTemplate.sections
+   - documentData: the built documentData object
+   - version: calculated based on existing versions (1 if new, incremented if replacing)
+
+g) Call this.generateDocumentFile(newDoc.id, documentData) to create the .docx from template
+
+h) Return the created document
+
+
+STEP 2: Add POST /generate-hot route to server/routes/deal-document.routes.ts
+
+Add this BEFORE the generic /:id routes (to avoid path conflicts):
+
+router.post('/generate-hot', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const userCompanyId = req.session.userCompanyId;
+    if (!userId || !userCompanyId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const schema = z.object({
+      targetCompanyId: z.number(),
+      hotTerms: z.object({
+        exclusivityPeriodDays: z.number().optional().default(90),
+        nonCompetePeriodYears: z.number().optional().default(2),
+        nonSolicitPeriodYears: z.number().optional().default(2),
+        warrantyClaimPeriodMonths: z.number().optional().default(18),
+        warrantyMinClaim: z.number().optional().default(5000),
+        additionalConditions: z.string().optional(),
+        targetCompletionWeeks: z.number().optional().default(12),
+      }).optional().default({}),
+    });
+
+    const validated = schema.parse(req.body);
+
+    const doc = await dealDocumentService.createHoTFromAcceptedOffer({
+      targetCompanyId: validated.targetCompanyId,
+      userCompanyId,
+      createdBy: userId,
+      hotTerms: validated.hotTerms,
+    });
+
+    res.status(201).json(doc);
+  } catch (error: any) {
+    console.error('[DEAL_DOCS] Generate HoT error:', error);
+    res.status(error.message?.includes('Cannot generate') ? 400 : 500).json({ message: error.message });
+  }
+});
+
+
+STEP 3: Add buildHoTHtml function to server/routes/deal-document.routes.ts
+
+Add a new function alongside the existing buildOfferLetterHtml:
+
+function buildHoTHtml(data: any): string {
+  const raw = data._raw || {};
+
+  const fmt = (val: any) => {
+    const num = Number(val) || 0;
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency', currency: 'GBP',
+      minimumFractionDigits: 0, maximumFractionDigits: 0,
+    }).format(num);
+  };
+
+  // Build price breakdown (same as offer letter)
+  const breakdownLines: string[] = [];
+  breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): <strong>${fmt(raw.enterpriseValue)}</strong>`);
+  if (raw.excessCash > 0) breakdownLines.push(`Plus Excess Cash: <strong>${fmt(raw.excessCash)}</strong>`);
+  if (raw.propertyValue > 0) breakdownLines.push(`Plus Property Value: <strong>${fmt(raw.propertyValue)}</strong>`);
+  if (raw.primaryDebt > 0) breakdownLines.push(`Less Primary Debt: <strong>(${fmt(raw.primaryDebt)})</strong>`);
+  if (raw.otherDebt > 0) breakdownLines.push(`Less Other Debt: <strong>(${fmt(raw.otherDebt)})</strong>`);
+  if (raw.corpTaxDue > 0) breakdownLines.push(`Less Corporation Tax Due: <strong>(${fmt(raw.corpTaxDue)})</strong>`);
+  if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: <strong>(${fmt(raw.workingCapitalAdj)})</strong>`);
+
+  // Payment structure
+  let paymentHtml = '';
+  if (raw.dayOnePayment > 0) {
+    paymentHtml += `<p>Completion payment: <strong>${fmt(raw.dayOnePayment)}</strong></p>`;
+  }
+  if (raw.deferredAmount > 0) {
+    paymentHtml += `<p>Deferred consideration: <strong>${fmt(raw.deferredAmount)}</strong></p>`;
+    if (raw.deferredTerms) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Terms: ${raw.deferredTerms}</p>`;
+  }
+  if (raw.earnoutMaximum > 0) {
+    paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
+    if (raw.earnoutMetric) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Metric: ${raw.earnoutMetric}</p>`;
+    if (raw.earnoutTermMonths > 0) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Period: ${raw.earnoutTermMonths} months</p>`;
+  }
+
+  // Key terms table
+  const keyTermsRows = [
+    ['Exclusivity Period', `${raw.exclusivityPeriodDays || 90} days from the date of these Heads of Terms`],
+    ['Non-Compete Restriction', `${raw.nonCompetePeriodYears || 2} years post-completion`],
+    ['Non-Solicitation Restriction', `${raw.nonSolicitPeriodYears || 2} years post-completion`],
+    ['Warranty Claim Period', `${raw.warrantyClaimPeriodMonths || 18} months post-completion`],
+    ['Minimum Warranty Claim', fmt(raw.warrantyMinClaim || 5000)],
+    ['Target Completion', `${raw.targetCompletionWeeks || 12} weeks from signing`],
+  ];
+
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.7; max-width: 700px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #333;">
+        <h1 style="margin: 0; font-size: 24px;">Heads of Terms</h1>
+        <p style="margin: 5px 0 0; color: #555;">Subject to Contract &amp; Without Prejudice</p>
+      </div>
+
+      <table style="width: 100%; margin-bottom: 20px;">
+        <tr>
+          <td style="width: 50%; vertical-align: top; padding: 10px;">
+            <p style="margin: 0; font-size: 0.85em; color: #777; text-transform: uppercase;">Buyer</p>
+            <p style="margin: 4px 0; font-weight: bold;">${data.buyerCompanyName || ''}</p>
+          </td>
+          <td style="width: 50%; vertical-align: top; padding: 10px;">
+            <p style="margin: 0; font-size: 0.85em; color: #777; text-transform: uppercase;">Seller</p>
+            <p style="margin: 4px 0; font-weight: bold;">${data.sellerCompanyName || ''}</p>
+            <p style="margin: 2px 0; font-size: 0.9em;">${data.sellerAddress || ''}</p>
+          </td>
+        </tr>
+      </table>
+
+      <p style="color: #555;">Date: ${data.currentDate || ''}</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">1. The Proposed Acquisition</h2>
+      <p>The Buyer proposes to acquire 100% of the issued share capital of <strong>${data.sellerCompanyName || ''}</strong> ("the Company") on the terms set out below.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">2. Price</h2>
+      <p>The total consideration for the Shares shall be <strong>${data.offerPrice || fmt(raw.offerPrice)}</strong> ("the Price"), subject to adjustment as described below.</p>
+      
+      <table style="border-collapse: collapse; width: 100%; max-width: 550px; margin: 16px 0;">
+        ${breakdownLines.map(line => `<tr><td style="padding: 5px 0;">${line}</td></tr>`).join('\n')}
+        <tr><td style="padding: 10px 0 5px; border-top: 2px solid #333;"><strong>Total Consideration: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>
+      </table>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">3. Payment Structure</h2>
+      ${paymentHtml || '<p>Full payment on completion.</p>'}
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">4. Key Terms</h2>
+      <table style="border-collapse: collapse; width: 100%; margin: 12px 0;">
+        ${keyTermsRows.map(([label, value]) => `
+          <tr>
+            <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: 600; width: 40%; background: #f9f9f9;">${label}</td>
+            <td style="padding: 8px 12px; border: 1px solid #ddd;">${value}</td>
+          </tr>
+        `).join('\n')}
+      </table>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">5. Conditions</h2>
+      <p>This acquisition is conditional upon:</p>
+      <ul style="margin: 8px 0; padding-left: 24px;">
+        <li>Satisfactory completion of due diligence by the Buyer</li>
+        <li>Agreement and execution of a Share Purchase Agreement</li>
+        <li>No material adverse change in the business prior to completion</li>
+        <li>Receipt of all necessary regulatory approvals and third-party consents</li>
+      </ul>
+      ${data.additionalConditions ? `<p><strong>Additional conditions:</strong> ${data.additionalConditions}</p>` : ''}
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">6. Due Diligence</h2>
+      <p>The Buyer shall be entitled to conduct full financial, legal, commercial, and operational due diligence on the Company during the Exclusivity Period. The Seller agrees to provide reasonable access to all requested information and documentation.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">7. Exclusivity</h2>
+      <p>The Seller agrees that for a period of <strong>${raw.exclusivityPeriodDays || 90} days</strong> from the date of these Heads of Terms, they shall not directly or indirectly solicit, encourage, or negotiate with any third party regarding the sale of the Company or any material part of its business or assets.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">8. Timetable</h2>
+      <p>The parties shall use reasonable endeavours to complete the transaction within <strong>${raw.targetCompletionWeeks || 12} weeks</strong> from the date of these Heads of Terms, subject to satisfactory completion of due diligence and agreement of the Share Purchase Agreement.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">9. Costs</h2>
+      <p>Each party shall bear their own costs in relation to the negotiation and completion of the proposed acquisition, including legal, accounting, and advisory fees.</p>
+
+      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">10. Governing Law</h2>
+      <p>These Heads of Terms and any dispute arising from them shall be governed by and construed in accordance with English law. The courts of England and Wales shall have exclusive jurisdiction.</p>
+
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd;">
+        <p style="margin-bottom: 4px;"><strong>Status:</strong> These Heads of Terms are not legally binding save for the provisions relating to exclusivity, confidentiality, and costs, which are intended to be legally binding.</p>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <p>Signed on behalf of the Buyer:</p>
+        <br/>
+        <p><strong>${data.buyerSignatoryName || ''}</strong></p>
+        <p>${data.buyerSignatoryTitle || ''}</p>
+        <p>${data.buyerCompanyName || ''}</p>
+      </div>
+    </div>
+  `;
+}
+
+STEP 4: Wire the HoT HTML renderer into the public portal route
+
+In the public GET /:token/:documentId/html route, find the section that checks documentType:
+
+EXISTING:
+  if (doc.documentType === 'offer_letter' && doc.documentData) {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else {
+
+CHANGE TO:
+  if (doc.documentType === 'offer_letter' && doc.documentData) {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
+    html = buildHoTHtml(doc.documentData as any);
+  } else {
+
+
+ALSO do the same in the authenticated GET /:id/html route if it exists — check if there's a similar documentType check there. If it just does mammoth conversion for all types, add the same conditional:
+  if (doc.documentType === 'offer_letter' && doc.documentData) { ... }
+  else if (doc.documentType === 'heads_of_terms' && doc.documentData) { ... }
+  else { mammoth conversion }
+
+
+IMPORTANT RULES:
+- Do NOT modify createOfferFromDealModel or buildOfferLetterHtml or any NDA logic
+- Do NOT modify the portal respond/acceptance endpoints — HoT uses the same acceptance flow
+- Do NOT modify any schema files
+- Place the /generate-hot route BEFORE any /:id routes in the router to avoid path conflicts
+- Follow the same import patterns already in the file
+- If the service file imports from portal.repository for the offer flow, use the same import for HoT
+- Test that there are no TypeScript compilation errors
+
+When complete, confirm:
+- Files modified (list them)
+- That createHoTFromAcceptedOffer method is implemented
+- That POST /generate-hot route is registered
+- That buildHoTHtml function is added
+- That both public and authenticated HTML routes handle heads_of_terms
+- No compilation errors
+- Briefly describe the HoT generation flow end-to-end
