@@ -1,0 +1,37 @@
+Read-only investigation. Do NOT modify any files.
+
+QUESTION 1: Can the categoriser overwrite DD document categories?
+
+Trace the FULL lifecycle of a document after upload. I need to know every place where documents.documentCategory could be updated after initial creation.
+
+1. Read server/services/file-analysis.service.ts — trace what happens after classifyDocumentWithGemini returns a result. Does anything update the documents table?
+
+2. Search ALL service files, repository files, and route files for any code that updates documents.document_category or documentCategory on an existing document record. Use grep or search across:
+   - server/services/*.ts
+   - server/repositories/*.ts  
+   - server/routes/*.ts
+   - Any webhook handlers or callback endpoints
+
+3. Check if there's an n8n webhook callback that updates document records. Look for any endpoint that receives analysis results and could modify the document.
+
+4. Check the fileUploadEvents table processing — when analysis completes, what gets updated? Only the fileUploadEvents record, or also the documents record?
+
+5. Specifically check: if a document is uploaded with category "Due Diligence" and Gemini classifies it as "profit_and_loss", does anything change the stored category to "Profit & Loss"?
+
+QUESTION 2: Stage 1 Document Library filtering
+
+1. Read the component that renders the Document Library on Stage 1 (the Financial tab). What component is it and where?
+2. Does it filter by category or show everything?
+3. Does it fetch from a different endpoint or the same getCompanyDocuments?
+
+QUESTION 3: What does the categoriser actually do with its classification result?
+
+1. Where is the classification result stored?
+2. Is it used to SET the initial category on upload, or to UPDATE it afterwards?
+3. For portal uploads specifically, the category is set during submission (e.g. "Due Diligence") — does anything later override this?
+
+Provide:
+- Every file you read
+- Every code path that touches documents.documentCategory after creation
+- A definitive YES or NO: can DD document categories be overwritten post-upload?
+- How Stage 1 currently filters (or doesn't filter) documents
