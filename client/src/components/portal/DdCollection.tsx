@@ -16,6 +16,7 @@ import {
   Loader2,
   Paperclip,
   X,
+  XCircle,
   ClipboardList,
   MinusCircle,
 } from 'lucide-react';
@@ -35,6 +36,7 @@ interface DdRequirement {
   priority: string;
   category: string;
   status: string;
+  notes: string | null;
   documentId: number | null;
   linkedDocumentName: string | null;
   linkedDocumentFilename: string | null;
@@ -80,7 +82,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
   const summary = ddData?.data?.summary;
 
   const hasDocumentCount = categories.reduce((sum, cat) => {
-    return sum + cat.requirements.filter(r => r.status !== 'not_started').length;
+    return sum + cat.requirements.filter(r => r.status === 'submitted' || r.status === 'approved').length;
   }, 0);
   const totalRequirements = summary?.total || 0;
   const progressPercent = totalRequirements > 0 ? Math.round((hasDocumentCount / totalRequirements) * 100) : 0;
@@ -181,10 +183,12 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case 'ready':
+      case 'approved':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'in_progress':
+      case 'submitted':
         return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
       case 'na':
         return <MinusCircle className="h-4 w-4 text-gray-400" />;
       default:
@@ -194,8 +198,9 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
   const statusLabel = (status: string) => {
     switch (status) {
-      case 'ready': return 'Complete';
-      case 'in_progress': return 'Uploaded';
+      case 'approved': return 'Approved';
+      case 'submitted': return 'Submitted';
+      case 'rejected': return 'Rejected';
       case 'na': return 'N/A';
       default: return 'Awaiting';
     }
@@ -249,7 +254,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
       <CardContent className="space-y-3">
         {categories.map((cat, catIndex) => {
           const isExpanded = expandedCategories.has(cat.id) || (catIndex === 0 && expandedCategories.size === 0);
-          const catAddressed = cat.requirements.filter(r => r.status !== 'not_started').length;
+          const catAddressed = cat.requirements.filter(r => r.status === 'submitted' || r.status === 'approved').length;
 
           return (
             <div key={cat.id} className="border rounded-lg overflow-hidden">
@@ -294,12 +299,18 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                                 <span>{req.linkedDocumentFilename || req.linkedDocumentName}</span>
                               </div>
                             )}
+                            {req.status === 'rejected' && req.notes && (
+                              <div className="mt-1 flex items-start gap-1.5">
+                                <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                <span className="text-xs text-red-600">{req.notes}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-xs text-gray-500">{statusLabel(req.status)}</span>
-                          {req.status !== 'na' && (
+                          {(req.status === 'not_submitted' || req.status === 'rejected' || req.status === 'submitted') && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -307,7 +318,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                               onClick={() => handleStartUpload(req.id)}
                             >
                               <Upload className="h-3 w-3 mr-1" />
-                              {req.status === 'not_started' ? 'Upload' : 'Replace'}
+                              {req.status === 'not_submitted' ? 'Upload' : 'Replace'}
                             </Button>
                           )}
                         </div>
