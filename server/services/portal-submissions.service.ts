@@ -5,6 +5,10 @@ import { dueDiligenceService } from './due-diligence.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
 import { sendFileUploadWebhook } from './file-analysis.service';
+import { db } from '../db';
+import { ddRequirements, ddCategories } from '@shared/schema/due-diligence';
+import { documents } from '@shared/schema/documents';
+import { eq } from 'drizzle-orm';
 
 const PORTAL_CATEGORY_MAP: Record<string, string> = {
   'company_accounts_1': 'Company Accounts', 'company_accounts_2': 'Company Accounts', 'company_accounts_3': 'Company Accounts',
@@ -68,6 +72,18 @@ export class PortalSubmissionsService {
     });
     if (submission.documentRequirementId) {
       try {
+        const [reqCategory] = await db
+          .select({ categoryName: ddCategories.categoryName })
+          .from(ddRequirements)
+          .innerJoin(ddCategories, eq(ddRequirements.categoryId, ddCategories.id))
+          .where(eq(ddRequirements.id, submission.documentRequirementId));
+
+        if (reqCategory) {
+          await db.update(documents)
+            .set({ secondaryCategory: reqCategory.categoryName })
+            .where(eq(documents.id, mainDocument.id));
+        }
+
         await dueDiligenceService.updateRequirementStatus({
           requirementId: submission.documentRequirementId,
           targetCompanyId: token.targetCompanyId,

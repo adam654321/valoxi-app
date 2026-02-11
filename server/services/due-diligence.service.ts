@@ -143,6 +143,23 @@ class DueDiligenceService {
       throw new NotFoundError(`Requirement with id ${data.requirementId} not found`);
     }
 
+    if (data.documentId) {
+      try {
+        const [reqCategory] = await db
+          .select({ categoryName: ddCategories.categoryName })
+          .from(ddCategories)
+          .where(eq(ddCategories.id, requirement.categoryId));
+
+        if (reqCategory) {
+          await db.update(documents)
+            .set({ secondaryCategory: reqCategory.categoryName })
+            .where(eq(documents.id, data.documentId));
+        }
+      } catch (err) {
+        console.error('[DD] Failed to set secondary category:', err);
+      }
+    }
+
     const [existing] = await db.select().from(ddRequirementStatus)
       .where(and(
         eq(ddRequirementStatus.requirementId, data.requirementId),
