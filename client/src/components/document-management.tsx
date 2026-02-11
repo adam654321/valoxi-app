@@ -531,7 +531,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     select: (response: any) => response.data,
   });
   
-  const groupedDocuments = documentsData?.grouped || {};
+  const groupedDocuments = Object.fromEntries(
+    Object.entries(documentsData?.grouped || {}).filter(([category]) => category !== 'Due Diligence')
+  );
 
   // Get analysis completion status for badge-based filtering
   const { data: analysisCompletion } = useQuery<{
