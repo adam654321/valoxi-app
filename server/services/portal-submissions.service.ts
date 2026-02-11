@@ -87,7 +87,7 @@ export class PortalSubmissionsService {
         await dueDiligenceService.updateRequirementStatus({
           requirementId: submission.documentRequirementId,
           targetCompanyId: token.targetCompanyId,
-          status: 'in_progress',
+          status: 'submitted',
           externalSubmissionId: submission.id,
           documentId: mainDocument.id,
           updatedBy: token.createdBy,

@@ -33,7 +33,7 @@ export const ddRequirementStatus = pgTable("dd_requirement_status", {
   id: serial("id").primaryKey(),
   requirementId: integer("requirement_id").references(() => ddRequirements.id).notNull(),
   targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
-  status: varchar("status", { length: 30 }).default("not_started").notNull(),
+  status: varchar("status", { length: 30 }).default("not_submitted").notNull(),
   notes: text("notes"),
   documentId: integer("document_id").references(() => documents.id),
   externalSubmissionId: integer("external_submission_id").references(() => externalDocumentSubmissions.id),

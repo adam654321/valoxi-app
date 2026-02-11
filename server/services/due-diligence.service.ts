@@ -105,7 +105,7 @@ class DueDiligenceService {
 
       const isCompleted = (statusRow: DdRequirementStatus | null) => {
         if (!statusRow) return false;
-        return statusRow.status === 'ready' || statusRow.status === 'na';
+        return statusRow.status === 'approved' || statusRow.status === 'na';
       };
 
       const completedCount = catReqs.filter(r => isCompleted(r.status)).length;
@@ -132,7 +132,7 @@ class DueDiligenceService {
     externalSubmissionId?: number;
     updatedBy: number;
   }) {
-    const validStatuses = ['not_started', 'in_progress', 'ready', 'na'];
+    const validStatuses = ['not_submitted', 'submitted', 'approved', 'rejected', 'na'];
     if (!validStatuses.includes(data.status)) {
       throw new BadRequestError(`Invalid status: ${data.status}. Must be one of: ${validStatuses.join(', ')}`);
     }
@@ -176,8 +176,8 @@ class DueDiligenceService {
           externalSubmissionId: data.externalSubmissionId ?? existing.externalSubmissionId,
           updatedBy: data.updatedBy,
           updatedAt: new Date(),
-          reviewedBy: (data.status === 'ready' || data.status === 'na') ? data.updatedBy : existing.reviewedBy,
-          reviewedAt: (data.status === 'ready' || data.status === 'na') ? new Date() : existing.reviewedAt,
+          reviewedBy: (data.status === 'approved' || data.status === 'rejected' || data.status === 'na') ? data.updatedBy : existing.reviewedBy,
+          reviewedAt: (data.status === 'approved' || data.status === 'rejected' || data.status === 'na') ? new Date() : existing.reviewedAt,
         })
         .where(eq(ddRequirementStatus.id, existing.id))
         .returning();
@@ -191,8 +191,8 @@ class DueDiligenceService {
         documentId: data.documentId || null,
         externalSubmissionId: data.externalSubmissionId || null,
         updatedBy: data.updatedBy,
-        reviewedBy: (data.status === 'ready' || data.status === 'na') ? data.updatedBy : null,
-        reviewedAt: (data.status === 'ready' || data.status === 'na') ? new Date() : null,
+        reviewedBy: (data.status === 'approved' || data.status === 'rejected' || data.status === 'na') ? data.updatedBy : null,
+        reviewedAt: (data.status === 'approved' || data.status === 'rejected' || data.status === 'na') ? new Date() : null,
       }).returning();
       return created;
     }
@@ -203,7 +203,7 @@ class DueDiligenceService {
 
     const isCompleted = (statusRow: DdRequirementStatus | null) => {
       if (!statusRow) return false;
-      return statusRow.status === 'ready' || statusRow.status === 'na';
+      return statusRow.status === 'approved' || statusRow.status === 'na';
     };
 
     let total = 0;

@@ -52,7 +52,7 @@ router.get('/company/:targetCompanyId/summary', async (req, res) => {
 });
 
 const updateStatusSchema = z.object({
-  status: z.enum(['not_started', 'in_progress', 'ready', 'na']),
+  status: z.enum(['not_submitted', 'submitted', 'approved', 'rejected', 'na']),
   notes: z.string().optional(),
   documentId: z.number().nullable().optional(),
   externalSubmissionId: z.number().optional(),
