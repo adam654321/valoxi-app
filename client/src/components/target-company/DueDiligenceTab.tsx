@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -101,12 +103,13 @@ function PriorityBadge({ priority }: { priority: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    not_started: { label: "Not Started", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
-    in_progress: { label: "In Progress", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
-    ready: { label: "Ready", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+    not_submitted: { label: "Not Submitted", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
+    submitted: { label: "Submitted", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    approved: { label: "Approved", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+    rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
     na: { label: "N/A", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" },
   };
-  const c = config[status] || config.not_started;
+  const c = config[status] || config.not_submitted;
   return <Badge className={`text-[10px] px-1.5 py-0 h-5 font-medium hover:opacity-90 ${c.className}`}>{c.label}</Badge>;
 }
 
@@ -308,18 +311,21 @@ function RequirementRow({
   companyDocuments,
   linkedDocMap,
   onUploadAndLink,
+  onReject,
 }: {
   req: DdRequirementWithStatus;
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
   onUploadAndLink: (file: File, docName: string) => Promise<void>;
+  onReject: (requirementId: number) => void;
 }) {
   const { toast } = useToast();
-  const currentStatus = req.status?.status || "not_started";
+  const currentStatus = req.status?.status || "not_submitted";
   const linkedDocName = req.status?.linkedDocumentFilename || req.status?.linkedDocumentName;
   const linkedDocId = req.status?.documentId;
   const isPortalLinked = !!req.status?.externalSubmissionId;
+  const isApproved = currentStatus === "approved";
 
   const statusMutation = useMutation({
     mutationFn: (newStatus: string) =>
@@ -349,12 +355,23 @@ function RequirementRow({
   });
 
   const handleLink = (docId: number) => {
-    const newStatus = currentStatus === "not_started" ? "in_progress" : currentStatus;
+    const newStatus = currentStatus === "not_submitted" ? "submitted" : currentStatus;
     linkMutation.mutate({ documentId: docId, status: newStatus });
   };
 
   const handleUnlink = () => {
     linkMutation.mutate({ documentId: null, status: currentStatus });
+  };
+
+  const handleApprove = async () => {
+    await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/status`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'approved' }),
+    });
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
   };
 
   return (
@@ -365,6 +382,28 @@ function RequirementRow({
           <span className="text-sm font-medium">{req.documentName}</span>
           <PriorityBadge priority={req.priority} />
           <StatusBadge status={currentStatus} />
+          {currentStatus === 'submitted' && (
+            <div className="flex items-center gap-1 ml-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 gap-1 px-2"
+                onClick={handleApprove}
+              >
+                <CheckCircle className="h-3 w-3" />
+                Approve
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 gap-1 px-2"
+                onClick={() => onReject(req.id)}
+              >
+                <XCircle className="h-3 w-3" />
+                Reject
+              </Button>
+            </div>
+          )}
         </div>
         {req.guidance && (
           <p className="text-xs text-muted-foreground italic mt-1 leading-relaxed">{req.guidance}</p>
@@ -379,16 +418,18 @@ function RequirementRow({
                 Portal
               </Badge>
             )}
-            <button
-              onClick={handleUnlink}
-              disabled={linkMutation.isPending}
-              className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
-              title="Unlink document"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            {!isApproved && (
+              <button
+                onClick={handleUnlink}
+                disabled={linkMutation.isPending}
+                className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
+                title="Unlink document"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-        ) : (
+        ) : !isApproved ? (
           <div className="mt-1.5">
             <DocumentLinkPicker
               targetCompanyId={targetCompanyId}
@@ -398,23 +439,30 @@ function RequirementRow({
               onUploadAndLink={onUploadAndLink}
             />
           </div>
+        ) : null}
+        {currentStatus === 'rejected' && req.status?.notes && (
+          <div className="mt-1 flex items-start gap-1.5">
+            <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+            <span className="text-xs text-red-600">Rejected: {req.status.notes}</span>
+          </div>
         )}
       </div>
-      <Select
-        value={currentStatus}
-        onValueChange={(val) => statusMutation.mutate(val)}
-        disabled={statusMutation.isPending}
-      >
-        <SelectTrigger className="w-[120px] h-7 text-xs shrink-0">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="not_started">Not Started</SelectItem>
-          <SelectItem value="in_progress">In Progress</SelectItem>
-          <SelectItem value="ready">Ready</SelectItem>
-          <SelectItem value="na">N/A</SelectItem>
-        </SelectContent>
-      </Select>
+      {!isApproved && (
+        <Select
+          value={currentStatus}
+          onValueChange={(val) => statusMutation.mutate(val)}
+          disabled={statusMutation.isPending}
+        >
+          <SelectTrigger className="w-[130px] h-7 text-xs shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="not_submitted">Not Submitted</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="na">N/A</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }
@@ -425,23 +473,28 @@ function CategoryAccordion({
   companyDocuments,
   linkedDocMap,
   onUploadAndLink,
+  onReject,
 }: {
   item: DdCategoryWithStatus;
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
   onUploadAndLink: (requirementId: number, file: File, docName: string) => Promise<void>;
+  onReject: (requirementId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
 
-  const activeReqs = item.requirements.filter(r => (r.status?.status || "not_started") !== "na");
+  const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
   const activeTotal = activeReqs.length;
   const submittedCount = activeReqs.filter(r => {
-    const s = r.status?.status || "not_started";
-    return s === "in_progress" || s === "ready";
+    const s = r.status?.status || "not_submitted";
+    return s === "submitted" || s === "approved";
   }).length;
-  const toReviewCount = activeReqs.filter(r => (r.status?.status || "not_started") === "in_progress").length;
-  const mandatoryOutstanding = activeReqs.filter(r => r.priority === "Mandatory" && (r.status?.status || "not_started") === "not_started").length;
+  const toReviewCount = activeReqs.filter(r => (r.status?.status || "not_submitted") === "submitted").length;
+  const mandatoryOutstanding = activeReqs.filter(r => {
+    const s = r.status?.status || "not_submitted";
+    return r.priority === "Mandatory" && (s === "not_submitted" || s === "rejected");
+  }).length;
   const pct = activeTotal > 0 ? Math.round((submittedCount / activeTotal) * 100) : 0;
 
   return (
@@ -484,6 +537,7 @@ function CategoryAccordion({
               onUploadAndLink={async (file, name) => {
                 await onUploadAndLink(req.id, file, name);
               }}
+              onReject={onReject}
             />
           ))}
         </div>
@@ -560,7 +614,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        status: 'in_progress',
+        status: 'submitted',
         documentId: docId,
       }),
     });
@@ -584,34 +638,41 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     return map;
   }, [categories]);
 
+  const [rejectingRequirementId, setRejectingRequirementId] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+
   const clientStats = useMemo(() => {
     const allReqs = categories.flatMap(c => c.requirements);
-    const active = allReqs.filter(r => (r.status?.status || "not_started") !== "na");
+    const active = allReqs.filter(r => (r.status?.status || "not_submitted") !== "na");
     const total = active.length;
     const submitted = active.filter(r => {
-      const s = r.status?.status || "not_started";
-      return s === "in_progress" || s === "ready";
+      const s = r.status?.status || "not_submitted";
+      return s === "submitted" || s === "approved";
     }).length;
-    const toReview = active.filter(r => (r.status?.status || "not_started") === "in_progress").length;
-    const verified = active.filter(r => (r.status?.status || "not_started") === "ready").length;
+    const toReview = active.filter(r => (r.status?.status || "not_submitted") === "submitted").length;
+    const verified = active.filter(r => (r.status?.status || "not_submitted") === "approved").length;
 
     const mandatoryReqs = active.filter(r => r.priority === "Mandatory");
     const mandatorySubmitted = mandatoryReqs.filter(r => {
-      const s = r.status?.status || "not_started";
-      return s === "in_progress" || s === "ready";
+      const s = r.status?.status || "not_submitted";
+      return s === "submitted" || s === "approved";
     }).length;
-    const mandatoryOutstanding = mandatoryReqs.filter(r => (r.status?.status || "not_started") === "not_started").length;
+    const mandatoryOutstanding = mandatoryReqs.filter(r => {
+      const s = r.status?.status || "not_submitted";
+      return s === "not_submitted" || s === "rejected";
+    }).length;
 
     const advisoryReqs = active.filter(r => r.priority === "Advisory");
     const advisorySubmitted = advisoryReqs.filter(r => {
-      const s = r.status?.status || "not_started";
-      return s === "in_progress" || s === "ready";
+      const s = r.status?.status || "not_submitted";
+      return s === "submitted" || s === "approved";
     }).length;
 
     const addsValueReqs = active.filter(r => r.priority === "Adds Value");
     const addsValueSubmitted = addsValueReqs.filter(r => {
-      const s = r.status?.status || "not_started";
-      return s === "in_progress" || s === "ready";
+      const s = r.status?.status || "not_submitted";
+      return s === "submitted" || s === "approved";
     }).length;
 
     return {
@@ -679,7 +740,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               <span className="text-sm text-muted-foreground">
                 {clientStats.submitted} of {clientStats.total}
                 {clientStats.verified > 0 && (
-                  <span className="text-green-600 dark:text-green-400 ml-1">({clientStats.verified} verified)</span>
+                  <span className="text-green-600 dark:text-green-400 ml-1">({clientStats.verified} approved)</span>
                 )}
               </span>
             </div>
@@ -730,12 +791,66 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                   companyDocuments={companyDocuments}
                   linkedDocMap={linkedDocMap}
                   onUploadAndLink={handleUploadAndLink}
+                  onReject={(reqId) => setRejectingRequirementId(reqId)}
                 />
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={rejectingRequirementId !== null} onOpenChange={(open) => {
+        if (!open) { setRejectingRequirementId(null); setRejectionReason(''); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Document</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejection. This will be shared with the seller so they can upload a corrected document.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Reason for rejection..."
+              className="min-h-[80px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setRejectingRequirementId(null); setRejectionReason(''); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={!rejectionReason.trim() || rejecting}
+                onClick={async () => {
+                  setRejecting(true);
+                  try {
+                    await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${rejectingRequirementId}/status`, {
+                      method: 'PUT',
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ status: 'rejected', notes: rejectionReason.trim() }),
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
+                    setRejectingRequirementId(null);
+                    setRejectionReason('');
+                  } catch (err) {
+                    console.error('Reject failed:', err);
+                  } finally {
+                    setRejecting(false);
+                  }
+                }}
+              >
+                {rejecting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                Reject
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
