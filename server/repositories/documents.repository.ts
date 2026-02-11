@@ -55,6 +55,7 @@ export class DocumentsRepository {
         fileSize: documents.fileSize,
         fileType: documents.fileType,
         documentCategory: documents.documentCategory,
+        secondaryCategory: documents.secondaryCategory,
         description: documents.description,
         isConfidential: documents.isConfidential,
         uploadDate: documents.uploadDate,

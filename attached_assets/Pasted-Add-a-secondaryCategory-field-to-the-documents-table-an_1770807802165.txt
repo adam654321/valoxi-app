@@ -1,0 +1,117 @@
+Add a secondaryCategory field to the documents table and populate it when documents are linked to DD requirements. This will be used later for categorised zip exports.
+
+STEP 1: Schema change
+
+Modify shared/schema/documents.ts
+
+Add a new nullable field to the documents table:
+```typescript
+secondaryCategory: text("secondary_category"),
+```
+
+Place it after the documentCategory field. No foreign key needed — it's a plain text field storing the DD category name (e.g. "Financial Information", "Employees", "Pensions & Benefits").
+
+Then run the database migration to add the column. Check how other schema changes have been applied — there may be a drizzle migration command or a push command. Use whatever pattern the project uses.
+
+STEP 2: Set secondaryCategory on portal DD uploads
+
+Modify server/services/portal-submissions.service.ts
+
+In the submitDocument method, where DD auto-linking happens (the block that checks for documentRequirementId), after looking up the requirement to link it:
+
+1. Look up the DD requirement's parent category name
+2. Set secondaryCategory on the document record
+```typescript
+if (submission.documentRequirementId) {
+  try {
+    // Look up the requirement's parent category
+    const [requirement] = await db
+      .select({
+        categoryName: ddCategories.categoryName,
+      })
+      .from(ddRequirements)
+      .innerJoin(ddCategories, eq(ddRequirements.categoryId, ddCategories.id))
+      .where(eq(ddRequirements.id, submission.documentRequirementId));
+
+    if (requirement) {
+      // Update the document's secondary category
+      await db.update(documents)
+        .set({ secondaryCategory: requirement.categoryName })
+        .where(eq(documents.id, documentId));
+    }
+
+    // existing DD status update code...
+    await dueDiligenceService.updateRequirementStatus({...});
+  } catch (ddError) {
+    console.error('[PORTAL] Failed to link DD requirement:', ddError);
+  }
+}
+```
+
+Make sure the required imports are at the top: ddRequirements, ddCategories from the schema, and the db instance. Check what's already imported and follow the same pattern.
+
+STEP 3: Set secondaryCategory on buyer-side DD linking
+
+Modify server/routes/due-diligence.routes.ts OR server/services/due-diligence.service.ts
+
+In the updateRequirementStatus method (or the PUT route handler), when a documentId is being set on a requirement:
+
+1. Look up the requirement's parent category name
+2. Update the document's secondaryCategory
+```typescript
+if (params.documentId) {
+  try {
+    const [requirement] = await db
+      .select({
+        categoryName: ddCategories.categoryName,
+      })
+      .from(ddRequirements)
+      .innerJoin(ddCategories, eq(ddRequirements.categoryId, ddCategories.id))
+      .where(eq(ddRequirements.id, params.requirementId));
+
+    if (requirement) {
+      await db.update(documents)
+        .set({ secondaryCategory: requirement.categoryName })
+        .where(eq(documents.id, params.documentId));
+    }
+  } catch (err) {
+    console.error('[DD] Failed to set secondary category:', err);
+  }
+}
+```
+
+When unlinking (documentId is null), do NOT clear secondaryCategory — the document keeps its category for organisational purposes even if unlinked.
+
+STEP 4: Include secondaryCategory in document queries
+
+Modify server/repositories/documents.repository.ts
+
+In the getCompanyDocuments method (or wherever documents are fetched), make sure secondaryCategory is included in the select. Check if it uses select(*) or explicit field selection. If explicit, add secondaryCategory.
+
+STEP 5: Filter DD documents from Stage 1
+
+This was the original fix we needed. Modify client/src/components/document-management.tsx
+
+Filter out documents with category "Due Diligence" from the Stage 1 display:
+```typescript
+const stage1Documents = (documents || []).filter((d: any) => d.documentCategory !== 'Due Diligence');
+```
+
+Use stage1Documents instead of the full array for rendering. Make sure count badges also use the filtered list.
+
+DO NOT:
+- Modify the DD tab frontend (DueDiligenceTab.tsx)
+- Modify the portal components
+- Add secondaryCategory display anywhere yet — we're just storing the data for now
+- Change how primary documentCategory works
+- Add any API endpoints — this is purely schema + backend logic
+
+When complete, confirm:
+- Files modified (list all)
+- That the migration ran successfully
+- That portal DD uploads get secondaryCategory set from the requirement's parent category
+- That buyer-side DD linking also sets secondaryCategory
+- That Stage 1 no longer shows DD documents
+- That secondaryCategory is included in document query responses
+- No compilation errors
+- Show an example: if a document is uploaded against requirement 2.1 (Financial Information category), what do the document fields look like?

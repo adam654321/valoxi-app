@@ -26,6 +26,7 @@ export const documents = pgTable("documents", {
   fileSize: integer("file_size").notNull(),
   fileType: varchar("file_type", { length: 200 }).notNull(),
   documentCategory: varchar("document_category", { length: 100 }).notNull(),
+  secondaryCategory: text("secondary_category"),
   description: text("description"),
   isConfidential: boolean("is_confidential").default(true),
   uploadDate: timestamp("upload_date").defaultNow(),
