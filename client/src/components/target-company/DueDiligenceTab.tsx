@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -115,14 +115,38 @@ function DocumentLinkPicker({
   companyDocuments,
   linkedDocMap,
   onSelect,
+  onUploadAndLink,
 }: {
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
   onSelect: (docId: number) => void;
+  onUploadAndLink: (file: File, docName: string) => Promise<void>;
 }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'upload' | 'link'>('upload');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [docName, setDocName] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      await onUploadAndLink(selectedFile, docName || selectedFile.name);
+      setOpen(false);
+      setSelectedFile(null);
+      setDocName('');
+      setMode('upload');
+    } catch (err: any) {
+      setUploadError(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!search.trim()) return companyDocuments;
@@ -146,68 +170,133 @@ function DocumentLinkPicker({
   }, [filtered]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        setSelectedFile(null);
+        setDocName('');
+        setUploadError('');
+        setMode('upload');
+        setSearch('');
+      }
+    }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground gap-1 px-1.5">
-          <Paperclip className="h-3 w-3" />
-          Link
+          <Upload className="h-3 w-3" />
+          Upload
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-2 border-b">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search documents..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 text-xs pl-7"
-            />
+          <div className="flex gap-1 p-1 bg-muted rounded-md">
+            <button
+              onClick={() => setMode('upload')}
+              className={`flex-1 text-xs py-1.5 rounded transition-colors ${mode === 'upload' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Upload New
+            </button>
+            <button
+              onClick={() => setMode('link')}
+              className={`flex-1 text-xs py-1.5 rounded transition-colors ${mode === 'link' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Link Existing
+            </button>
           </div>
         </div>
-        <div className="max-h-64 overflow-y-auto">
-          {Object.keys(grouped).length === 0 ? (
-            <div className="p-4 text-center text-xs text-muted-foreground">
-              {companyDocuments.length === 0
-                ? "No documents uploaded yet"
-                : "No documents match your search"}
+
+        {mode === 'upload' ? (
+          <div className="p-3 space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Select File</label>
+              <input
+                type="file"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] || null;
+                  setSelectedFile(f);
+                  if (f) setDocName(f.name.replace(/\.[^.]+$/, ''));
+                  setUploadError('');
+                }}
+                className="text-xs w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary file:text-primary-foreground cursor-pointer"
+              />
             </div>
-          ) : (
-            Object.entries(grouped).map(([cat, docs]) => (
-              <div key={cat}>
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 sticky top-0">
-                  {cat}
-                </div>
-                {docs.map((doc) => {
-                  const linkedTo = linkedDocMap.get(doc.id);
-                  return (
-                    <button
-                      key={doc.id}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-start gap-2"
-                      onClick={() => {
-                        onSelect(doc.id);
-                        setOpen(false);
-                        setSearch("");
-                      }}
-                    >
-                      <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-500" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium truncate">
-                          {doc.originalFilename || doc.documentName}
-                        </div>
-                        {linkedTo && (
-                          <div className="text-[10px] text-amber-600 dark:text-amber-400">
-                            Linked to {linkedTo}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Document Name</label>
+              <Input
+                value={docName}
+                onChange={(e) => setDocName(e.target.value)}
+                placeholder="Auto-filled from filename"
+                className="h-7 text-xs"
+              />
+            </div>
+            {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+            <Button
+              size="sm"
+              className="w-full h-7 text-xs"
+              disabled={!selectedFile || uploading}
+              onClick={handleUpload}
+            >
+              {uploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+              Upload & Link
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="p-2 border-b">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search documents..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-8 text-xs pl-7"
+                />
               </div>
-            ))
-          )}
-        </div>
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              {Object.keys(grouped).length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground">
+                  {companyDocuments.length === 0
+                    ? "No documents uploaded yet"
+                    : "No documents match your search"}
+                </div>
+              ) : (
+                Object.entries(grouped).map(([cat, docs]) => (
+                  <div key={cat}>
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 sticky top-0">
+                      {cat}
+                    </div>
+                    {docs.map((doc) => {
+                      const linkedTo = linkedDocMap.get(doc.id);
+                      return (
+                        <button
+                          key={doc.id}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-start gap-2"
+                          onClick={() => {
+                            onSelect(doc.id);
+                            setOpen(false);
+                            setSearch("");
+                          }}
+                        >
+                          <FileText className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-500" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium truncate">
+                              {doc.originalFilename || doc.documentName}
+                            </div>
+                            {linkedTo && (
+                              <div className="text-[10px] text-amber-600 dark:text-amber-400">
+                                Linked to {linkedTo}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -218,11 +307,13 @@ function RequirementRow({
   targetCompanyId,
   companyDocuments,
   linkedDocMap,
+  onUploadAndLink,
 }: {
   req: DdRequirementWithStatus;
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
+  onUploadAndLink: (file: File, docName: string) => Promise<void>;
 }) {
   const { toast } = useToast();
   const currentStatus = req.status?.status || "not_started";
@@ -304,6 +395,7 @@ function RequirementRow({
               companyDocuments={companyDocuments}
               linkedDocMap={linkedDocMap}
               onSelect={handleLink}
+              onUploadAndLink={onUploadAndLink}
             />
           </div>
         )}
@@ -332,11 +424,13 @@ function CategoryAccordion({
   targetCompanyId,
   companyDocuments,
   linkedDocMap,
+  onUploadAndLink,
 }: {
   item: DdCategoryWithStatus;
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
+  onUploadAndLink: (requirementId: number, file: File, docName: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -387,6 +481,9 @@ function CategoryAccordion({
               targetCompanyId={targetCompanyId}
               companyDocuments={companyDocuments}
               linkedDocMap={linkedDocMap}
+              onUploadAndLink={async (file, name) => {
+                await onUploadAndLink(req.id, file, name);
+              }}
             />
           ))}
         </div>
@@ -434,6 +531,46 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
 
   const companyDocuments = documentsQuery.data?.documents || [];
   const categories = statusQuery.data || [];
+
+  const handleUploadAndLink = async (requirementId: number, file: File, docName: string) => {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('document_name', docName);
+    formData.append('document_category', 'Due Diligence');
+    formData.append('description', '');
+    formData.append('is_confidential', 'true');
+
+    const uploadRes = await fetch(`/api/v2/files/company/${targetCompanyId}/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text();
+      throw new Error(errText || 'Upload failed');
+    }
+
+    const result = await uploadRes.json();
+    const docId = result?.data?.document?.id || result?.data?.id || result?.id;
+    if (!docId) throw new Error('No document ID returned');
+
+    const linkRes = await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/status`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'in_progress',
+        documentId: docId,
+      }),
+    });
+
+    if (!linkRes.ok) throw new Error('Failed to link document');
+
+    queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "status"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "summary"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
+  };
 
   const linkedDocMap = useMemo(() => {
     const map = new Map<number, string>();
@@ -592,6 +729,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                   targetCompanyId={targetCompanyId}
                   companyDocuments={companyDocuments}
                   linkedDocMap={linkedDocMap}
+                  onUploadAndLink={handleUploadAndLink}
                 />
               ))}
             </div>
