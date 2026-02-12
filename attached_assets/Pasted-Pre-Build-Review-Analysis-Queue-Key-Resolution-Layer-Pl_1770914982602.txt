@@ -1,0 +1,74 @@
+Pre-Build Review: Analysis Queue & Key Resolution Layer
+Please read the following files and summarise what exists in each. Do not make any changes. Report back the key details listed under each file.
+Files to read:
+
+server/services/file-analysis.service.ts
+
+How is analyzeUploadedFileWithGemini called?
+What is the full flow from entry point to completion?
+How are errors handled and statuses updated?
+What is the ANALYSIS_LOCK_TIMEOUT_MS mechanism doing?
+
+
+server/services/gemini-client.ts
+
+How is the singleton geminiClient created and exported?
+What does the constructor accept?
+How does withRetry work (retry conditions, delays, max attempts)?
+What is the default model?
+
+
+server/services/gemini-document-classification-service.ts
+
+How does it use geminiClient?
+What does it return?
+
+
+server/services/gemini-step2-analysis-service.ts
+
+How does runStep2AnalysisForTypes iterate through document types?
+Is it sequential or parallel?
+How does each individual analyzeDocumentWithGemini call use geminiClient?
+
+
+server/services/portal-submissions.service.ts
+
+Find the exact line where sendFileUploadWebhook is called
+Is it awaited or fire-and-forget?
+What parameters are available at that point (eventId, targetCompanyId, userCompanyId etc)?
+
+
+server/services/expert-analysis.service.ts
+
+How does this service call Gemini?
+Does it use geminiClient directly or through another path?
+Is there any queuing or concurrency control already in place?
+
+
+server/routes/file-upload.routes.ts (or wherever buyer-side uploads trigger analysis)
+
+Find any other code paths that call sendFileUploadWebhook or analyzeUploadedFileWithGemini
+List every entry point that triggers Gemini analysis
+
+
+server/config.ts (or server/config/index.ts)
+
+What environment variables are used for Gemini configuration?
+Is there a baseUrl config?
+
+
+shared/schema/core.ts
+
+What does the userCompanies table look like?
+Is there any existing settings or config column we could use?
+
+
+
+Summary format:
+For each file, provide:
+
+File path confirmed
+Key findings for each bullet point above
+Any other Gemini-related calls or patterns you notice
+
+Do not suggest changes or write any code. Just report what exists.
