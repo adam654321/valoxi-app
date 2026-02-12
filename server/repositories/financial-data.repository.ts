@@ -418,6 +418,10 @@ export class FinancialDataRepository {
       }
     }
     
+    // Also delete any income statements / balance sheets that reference document directly
+    await db.delete(incomeStatements).where(eq(incomeStatements.sourceDocumentId, documentId));
+    await db.delete(balanceSheets).where(eq(balanceSheets.sourceDocumentId, documentId));
+    
     // Delete records that reference document directly
     await db.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
     await db.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
