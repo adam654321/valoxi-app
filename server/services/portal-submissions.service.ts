@@ -44,24 +44,23 @@ export class PortalSubmissionsService {
     const submittedType = body.documentType || body.document_category || 'general';
     const mappedCategory = PORTAL_CATEGORY_MAP[submittedType] || 'Company Accounts';
     const originalFilename = file.originalname;
-    const prefixedFilename = mappedCategory === 'Company Accounts' ? `COMPANY ACCOUNTS- ${originalFilename}` : originalFilename;
     const submission = await portalSubmissionsRepository.createSubmission({
       portalTokenId: token.id, targetCompanyId: token.targetCompanyId, targetContactId: token.targetContactId,
-      originalFilename: prefixedFilename, storedFilename: file.filename, filePath: file.path,
+      originalFilename: originalFilename, storedFilename: file.filename, filePath: file.path,
       fileSize: file.size, fileType: file.mimetype, documentCategory: submittedType,
       submissionNotes: body.submissionNotes || body.submission_notes || null,
       submissionIp: ipAddress, submissionUserAgent: userAgent,
       documentRequirementId: body.requirement_id ? parseInt(body.requirement_id) : null,
     });
     const mainDocument = await portalSubmissionsRepository.createDocument({
-      targetCompanyId: token.targetCompanyId, uploadedBy: 1, documentName: prefixedFilename,
-      originalFilename: prefixedFilename, filePath: file.path, fileSize: file.size, fileType: file.mimetype,
+      targetCompanyId: token.targetCompanyId, uploadedBy: 1, documentName: originalFilename,
+      originalFilename: originalFilename, filePath: file.path, fileSize: file.size, fileType: file.mimetype,
       documentCategory: mappedCategory, description: `Submitted via external portal${body.submissionNotes ? ': ' + body.submissionNotes : ''}`,
       isConfidential: false, externalSubmissionId: submission.id,
     });
     const uploadEvent = await portalSubmissionsRepository.createFileUploadEvent({
       documentId: mainDocument.id, targetCompanyId: token.targetCompanyId, uploadedBy: 1,
-      fileName: prefixedFilename, fileUrl: `${baseUrl}/api/v2/public/documents/${mainDocument.id}/download`,
+      fileName: originalFilename, fileUrl: `${baseUrl}/api/v2/public/documents/${mainDocument.id}/download`,
       webhookSent: false, webhookStatus: 'pending',
     });
     await portalSubmissionsRepository.reviewSubmission(submission.id, token.createdBy, 'approved', 'Auto-approved - unified upload process');
@@ -101,9 +100,9 @@ export class PortalSubmissionsService {
     }
     await portalSubmissionsRepository.logActivity({
       portalTokenId: token.id, targetContactId: token.targetContactId, activityType: 'document_submitted',
-      activityDescription: `Document submitted: ${prefixedFilename}`, ipAddress, userAgent, relatedDocumentId: submission.id,
+      activityDescription: `Document submitted: ${originalFilename}`, ipAddress, userAgent, relatedDocumentId: submission.id,
     });
-    return { submissionId: submission.id, documentId: mainDocument.id, uploadEventId: uploadEvent.id, filename: prefixedFilename };
+    return { submissionId: submission.id, documentId: mainDocument.id, uploadEventId: uploadEvent.id, filename: originalFilename };
   }
 
   async getSubmissions(accessToken: string, ipAddress?: string, userAgent?: string): Promise<any[]> {

@@ -84,12 +84,11 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
       await documentsFilesService.verifyCompanyAccess(targetCompanyId, userCompanyId);
       const documentCategory = req.body.document_category || 'Company Accounts';
       const originalFilename = req.file.originalname;
-      const prefixedFilename = documentCategory === 'Company Accounts' ? `COMPANY ACCOUNTS- ${originalFilename}` : originalFilename;
       const document = await documentsFilesService.createDocument({
         targetCompanyId,
         uploadedBy: userId,
-        documentName: req.body.document_name || prefixedFilename,
-        originalFilename: prefixedFilename,
+        documentName: req.body.document_name || originalFilename,
+        originalFilename: originalFilename,
         filePath: req.file.path,
         fileSize: req.file.size,
         fileType: req.file.mimetype,
@@ -102,7 +101,7 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         documentId: document.id,
         targetCompanyId,
         uploadedBy: userId,
-        fileName: prefixedFilename,
+        fileName: originalFilename,
         fileUrl: `${baseUrl}/api/v2/public/documents/${document.id}/download`,
       });
       
