@@ -5,7 +5,7 @@ import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
-import { sendFileUploadWebhook } from '../services/file-analysis.service';
+
 import { uploadLimiter } from '../middleware/rate-limit';
 
 const router = Router();
@@ -106,9 +106,11 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         fileUrl: `${baseUrl}/api/v2/public/documents/${document.id}/download`,
       });
       
-      // Trigger Gemini file analysis webhook (runs in background)
-      sendFileUploadWebhook(uploadEvent.id).catch(err => {
-        console.error('[V2_UPLOAD] File analysis webhook failed:', err);
+      // Queue analysis instead of fire-and-forget to prevent Gemini rate limiting
+      const { analysisQueue } = await import('../services/analysis-queue.service');
+      analysisQueue.enqueue({
+        eventId: uploadEvent.id,
+        targetCompanyId: parseInt(req.params.id),
       });
       
       sendCreated(res, { success: true, document, uploadEventId: uploadEvent.id, message: 'Document uploaded successfully' });

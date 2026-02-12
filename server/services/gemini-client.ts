@@ -311,3 +311,12 @@ export class GeminiClient {
 }
 
 export const geminiClient = new GeminiClient();
+
+/**
+ * Create a new GeminiClient instance with a specific API key.
+ * Used by the analysis queue to support per-job key resolution.
+ * Falls back to the default singleton behaviour if no key provided.
+ */
+export function createGeminiClient(apiKey?: string): GeminiClient {
+  return new GeminiClient(apiKey ? { apiKey } : undefined);
+}

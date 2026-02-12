@@ -4,7 +4,7 @@ import { portalSubmissionsRepository } from '../repositories/portal-submissions.
 import { dueDiligenceService } from './due-diligence.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
-import { sendFileUploadWebhook } from './file-analysis.service';
+
 import { db } from '../db';
 import { ddRequirements, ddCategories } from '@shared/schema/due-diligence';
 import { documents } from '@shared/schema/documents';
@@ -66,9 +66,11 @@ export class PortalSubmissionsService {
     });
     await portalSubmissionsRepository.reviewSubmission(submission.id, token.createdBy, 'approved', 'Auto-approved - unified upload process');
     
-    // Trigger Gemini analysis asynchronously (don't wait for it to complete)
-    sendFileUploadWebhook(uploadEvent.id).catch(err => {
-      console.error(`[PORTAL_UPLOAD] Gemini analysis failed for event ${uploadEvent.id}:`, err);
+    // Queue analysis instead of fire-and-forget to prevent Gemini rate limiting
+    const { analysisQueue } = await import('./analysis-queue.service');
+    analysisQueue.enqueue({
+      eventId: uploadEvent.id,
+      targetCompanyId: token.targetCompanyId,
     });
     if (submission.documentRequirementId) {
       try {
