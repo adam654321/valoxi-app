@@ -1,0 +1,252 @@
+Pre-Build Review & Build: Analysis Queue with Concurrency Control & Key Resolution Layer
+
+== OVERVIEW ==
+
+We are replacing the fire-and-forget Gemini analysis pattern with a managed queue that processes analysis jobs sequentially. This prevents rate limiting when multiple files are uploaded in quick succession. We are also introducing a key resolution layer so we can later support users providing their own Gemini API key.
+
+== STEP 1: CREATE NEW FILE server/services/gemini-key-resolver.ts ==
+
+Create this file with the following exact content:
+
+import { config } from '../config';
+
+/**
+ * Resolves which Gemini API key to use for a given analysis job.
+ * 
+ * Current behaviour: always returns the platform key.
+ * Future: will check userCompanies settings for a custom key first,
+ * falling back to the platform key if none is configured.
+ */
+export async function resolveGeminiApiKey(userCompanyId?: number): Promise<string> {
+  // FUTURE: lookup userCompanies.geminiApiKey by userCompanyId here
+  // For now, always return platform key
+  
+  const platformKey = process.env.GOOGLE_GEMINI_API_KEY;
+  if (!platformKey) {
+    throw new Error('GOOGLE_GEMINI_API_KEY is not configured');
+  }
+  return platformKey;
+}
+
+== STEP 2: MODIFY server/services/gemini-client.ts ==
+
+Keep everything exactly as-is. Do not remove or modify the existing singleton export. Add the following factory function AFTER the existing "export const geminiClient = new GeminiClient();" line at the bottom of the file:
+
+/**
+ * Create a new GeminiClient instance with a specific API key.
+ * Used by the analysis queue to support per-job key resolution.
+ * Falls back to the default singleton behaviour if no key provided.
+ */
+export function createGeminiClient(apiKey?: string): GeminiClient {
+  return new GeminiClient(apiKey ? { apiKey } : undefined);
+}
+
+== STEP 3: CREATE NEW FILE server/services/analysis-queue.service.ts ==
+
+Create this file with the following exact content:
+
+import { analyzeUploadedFileWithGemini } from './file-analysis.service';
+
+interface AnalysisJob {
+  eventId: number;
+  targetCompanyId: number;
+  userCompanyId?: number;
+  addedAt: Date;
+  retryCount: number;
+}
+
+interface QueueStats {
+  pending: number;
+  processing: boolean;
+  totalProcessed: number;
+  totalFailed: number;
+}
+
+const MAX_RETRIES = 2;
+const INTER_JOB_DELAY_MS = 3000;
+const MAX_QUEUE_SIZE = 100;
+
+class AnalysisQueue {
+  private queue: AnalysisJob[] = [];
+  private isProcessing = false;
+  private totalProcessed = 0;
+  private totalFailed = 0;
+
+  /**
+   * Add an analysis job to the queue. If the queue is idle, processing starts immediately.
+   */
+  enqueue(job: { eventId: number; targetCompanyId: number; userCompanyId?: number }): void {
+    if (this.queue.length >= MAX_QUEUE_SIZE) {
+      console.error(`[ANALYSIS_QUEUE] Queue full (${MAX_QUEUE_SIZE} jobs). Dropping job for event ${job.eventId}`);
+      return;
+    }
+
+    const exists = this.queue.some(j => j.eventId === job.eventId);
+    if (exists) {
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} already in queue, skipping duplicate`);
+      return;
+    }
+
+    const queueJob: AnalysisJob = {
+      eventId: job.eventId,
+      targetCompanyId: job.targetCompanyId,
+      userCompanyId: job.userCompanyId,
+      addedAt: new Date(),
+      retryCount: 0,
+    };
+
+    this.queue.push(queueJob);
+    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} (queue length: ${this.queue.length})`);
+
+    if (!this.isProcessing) {
+      this.processNext();
+    }
+  }
+
+  /**
+   * Process jobs one at a time with a delay between each.
+   */
+  private async processNext(): Promise<void> {
+    if (this.queue.length === 0) {
+      this.isProcessing = false;
+      console.log(`[ANALYSIS_QUEUE] Queue empty, idle. Total processed: ${this.totalProcessed}, failed: ${this.totalFailed}`);
+      return;
+    }
+
+    this.isProcessing = true;
+    const job = this.queue.shift()!;
+
+    console.log(`[ANALYSIS_QUEUE] Processing event ${job.eventId} (remaining: ${this.queue.length})`);
+
+    try {
+      await analyzeUploadedFileWithGemini(job.eventId);
+      this.totalProcessed++;
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} completed successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed: ${errorMessage}`);
+
+      if (job.retryCount < MAX_RETRIES) {
+        job.retryCount++;
+        this.queue.push(job);
+        console.log(`[ANALYSIS_QUEUE] Re-queued event ${job.eventId} (retry ${job.retryCount}/${MAX_RETRIES})`);
+      } else {
+        this.totalFailed++;
+        console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed after ${MAX_RETRIES} retries, giving up`);
+      }
+    }
+
+    await new Promise(resolve => setTimeout(resolve, INTER_JOB_DELAY_MS));
+
+    this.processNext();
+  }
+
+  /**
+   * Get current queue statistics.
+   */
+  getStats(): QueueStats {
+    return {
+      pending: this.queue.length,
+      processing: this.isProcessing,
+      totalProcessed: this.totalProcessed,
+      totalFailed: this.totalFailed,
+    };
+  }
+}
+
+export const analysisQueue = new AnalysisQueue();
+
+== STEP 4: MODIFY server/services/portal-submissions.service.ts ==
+
+Find this block (around line 70):
+
+    sendFileUploadWebhook(uploadEvent.id).catch(err => {
+      console.error(`[PORTAL_UPLOAD] Gemini analysis failed for event ${uploadEvent.id}:`, err);
+    });
+
+Replace it with:
+
+    // Queue analysis instead of fire-and-forget to prevent Gemini rate limiting
+    const { analysisQueue } = await import('./analysis-queue.service');
+    analysisQueue.enqueue({
+      eventId: uploadEvent.id,
+      targetCompanyId: token.targetCompanyId,
+    });
+
+Then check the top of the file. If sendFileUploadWebhook is imported from './file-analysis.service' and is no longer used anywhere else in this file, remove that import line. If it is still used elsewhere in this file, leave the import.
+
+== STEP 5: MODIFY server/routes/documents-files.routes.ts ==
+
+Find this block (around line 110):
+
+    sendFileUploadWebhook(uploadEvent.id).catch(err => {
+      console.error('[V2_UPLOAD] File analysis webhook failed:', err);
+    });
+
+Replace it with:
+
+    // Queue analysis instead of fire-and-forget to prevent Gemini rate limiting
+    const { analysisQueue } = await import('../services/analysis-queue.service');
+    analysisQueue.enqueue({
+      eventId: uploadEvent.id,
+      targetCompanyId: parseInt(req.params.id),
+    });
+
+Then check the top of the file. If sendFileUploadWebhook is imported from the file-analysis service and is no longer used anywhere else in this file, remove that import line. If it is still used elsewhere in this file, leave the import.
+
+== STEP 6: MODIFY server/services/gemini-step2-analysis-service.ts ==
+
+In the runStep2AnalysisForTypes function, find the for...of loop that iterates through document types. It currently looks like:
+
+  for (const docType of typesToAnalyze) {
+    const result = await analyzeDocumentWithGemini({
+      fileUrl,
+      mimeType,
+      fileName,
+      documentType: docType,
+    });
+    results.push(result);
+  }
+
+Replace the entire loop with:
+
+  for (let i = 0; i < typesToAnalyze.length; i++) {
+    const docType = typesToAnalyze[i];
+    
+    // Add delay between Step 2 calls to avoid rate limiting
+    if (i > 0) {
+      console.log(`[GEMINI_STEP2] Waiting 2s before next analysis...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    const result = await analyzeDocumentWithGemini({
+      fileUrl,
+      mimeType,
+      fileName,
+      documentType: docType,
+    });
+    results.push(result);
+  }
+
+== WHAT NOT TO CHANGE ==
+
+- Do not modify gemini-client.ts singleton behaviour. Other services still import it directly. Only add the factory function.
+- Do not modify file-analysis.service.ts internal logic. The queue calls the existing analyzeUploadedFileWithGemini function as-is.
+- Do not modify expert-analysis.service.ts. Expert analysis is triggered from within file-analysis.service.ts after document analysis completes, so it naturally benefits from the queue serialisation.
+- Do not modify gemini-document-classification-service.ts or any step 2 prompt files.
+- Do not add any database migrations or schema changes.
+- Do not remove the sendFileUploadWebhook export from file-analysis.service.ts. Keep it exported in case anything else references it.
+
+== VERIFICATION CHECKLIST ==
+
+After making all changes, verify:
+
+1. server/services/analysis-queue.service.ts exists and exports analysisQueue
+2. server/services/gemini-key-resolver.ts exists and exports resolveGeminiApiKey
+3. server/services/gemini-client.ts exports both geminiClient (singleton, unchanged) and createGeminiClient (new factory function)
+4. portal-submissions.service.ts calls analysisQueue.enqueue() instead of sendFileUploadWebhook()
+5. documents-files.routes.ts calls analysisQueue.enqueue() instead of sendFileUploadWebhook()
+6. gemini-step2-analysis-service.ts has a 2-second delay between sequential type analyses in the loop
+7. No broken imports — run the app and check for import errors in the server logs
+8. Upload a single file via portal or buyer dashboard and check server logs for "[ANALYSIS_QUEUE] Enqueued event X" followed by "[ANALYSIS_QUEUE] Processing event X" messages
+9. Upload 2-3 files quickly and confirm in logs that they queue up and process one at a time with gaps between them, not concurrently
