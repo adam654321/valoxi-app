@@ -11,9 +11,11 @@ import { documents } from '@shared/schema/documents';
 import { eq } from 'drizzle-orm';
 
 const PORTAL_CATEGORY_MAP: Record<string, string> = {
+  'company_accounts': 'Company Accounts',
   'company_accounts_1': 'Company Accounts', 'company_accounts_2': 'Company Accounts', 'company_accounts_3': 'Company Accounts',
   'company_accounts_4': 'Company Accounts', 'company_accounts_5': 'Company Accounts',
-  'sales_ledger': 'Sales Ledger', 'balance_sheet': 'Balance Sheet', 'profit_loss': 'Profit & Loss', 'p_and_l': 'Profit & Loss',
+  'sales_ledger': 'Sales Ledger', 'balance_sheet': 'Balance Sheet',
+  'profit_loss': 'Profit & Loss', 'p_and_l': 'Profit & Loss', 'profit_and_loss': 'Profit & Loss',
   'staff_matrix': 'Staff Matrix', 'asset_register': 'Asset Register',
   'legal_documents': 'Company Accounts', 'correspondence': 'Company Accounts', 'marketing': 'Company Accounts',
   'technical': 'Company Accounts', 'other': 'Company Accounts', 'general': 'Company Accounts',
