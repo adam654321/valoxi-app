@@ -135,6 +135,12 @@ export class PortalSubmissionsService {
     const token = await this.validateToken(accessToken);
     const document = await portalSubmissionsRepository.getDocument(documentId);
     if (!document || document.targetCompanyId !== token.targetCompanyId) throw new NotFoundError('Document not found');
+    const { financialDataRepository } = await import('../repositories/financial-data.repository');
+    try {
+      await financialDataRepository.deleteByDocumentId(documentId);
+    } catch (error) {
+      console.error(`[PORTAL_DELETE] Error deleting financial data for document ${documentId}:`, error);
+    }
     const success = await portalSubmissionsRepository.deleteDocument(documentId);
     if (!success) throw new Error('Failed to delete document');
     await this.cleanupFile(document.filePath);
