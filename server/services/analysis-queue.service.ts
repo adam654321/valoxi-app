@@ -6,6 +6,7 @@ interface AnalysisJob {
   userCompanyId?: number;
   addedAt: Date;
   retryCount: number;
+  isRetrigger: boolean;
 }
 
 interface QueueStats {
@@ -19,25 +20,28 @@ interface QueueStats {
 const MAX_RETRIES = 2;
 const INTER_JOB_DELAY_MS = 500;
 const MAX_QUEUE_SIZE_PER_COMPANY = 20;
+const MAX_COMPLETION_RETRIGGERS = 1;
 
 /**
  * Per-company analysis queue. Each company's uploads are processed sequentially
  * to prevent Gemini rate limiting from burst uploads. Different companies
  * process in parallel so users never wait behind other companies' work.
+ *
+ * When a company's queue empties, runs a completion check:
+ * 1. Checks if all 10 required documents are analysed
+ * 2. Re-queues any failed analyses (once only)
+ * 3. Auto-triggers expert pipeline only when all 10 are complete
  */
 class AnalysisQueue {
   private companyQueues: Map<number, AnalysisJob[]> = new Map();
   private processingCompanies: Set<number> = new Set();
+  private completionRetriggerCounts: Map<number, number> = new Map();
   private totalProcessed = 0;
   private totalFailed = 0;
 
-  /**
-   * Add an analysis job to the queue for its target company.
-   * If no jobs are currently processing for that company, starts immediately.
-   */
-  enqueue(job: { eventId: number; targetCompanyId: number; userCompanyId?: number }): void {
+  enqueue(job: { eventId: number; targetCompanyId: number; userCompanyId?: number; isRetrigger?: boolean }): void {
     const companyId = job.targetCompanyId;
-    
+
     if (!this.companyQueues.has(companyId)) {
       this.companyQueues.set(companyId, []);
     }
@@ -61,27 +65,26 @@ class AnalysisQueue {
       userCompanyId: job.userCompanyId,
       addedAt: new Date(),
       retryCount: 0,
+      isRetrigger: job.isRetrigger || false,
     };
 
     queue.push(queueJob);
-    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} for company ${companyId} (company queue: ${queue.length}, active companies: ${this.processingCompanies.size})`);
+    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} for company ${companyId}${queueJob.isRetrigger ? ' (retrigger)' : ''} (company queue: ${queue.length}, active companies: ${this.processingCompanies.size})`);
 
     if (!this.processingCompanies.has(companyId)) {
       this.processNextForCompany(companyId);
     }
   }
 
-  /**
-   * Process jobs sequentially for a single company.
-   * Runs independently per company so different companies process in parallel.
-   */
   private async processNextForCompany(companyId: number): Promise<void> {
     const queue = this.companyQueues.get(companyId);
 
     if (!queue || queue.length === 0) {
       this.processingCompanies.delete(companyId);
       this.companyQueues.delete(companyId);
-      console.log(`[ANALYSIS_QUEUE] Company ${companyId} queue empty, idle. Active companies: ${this.processingCompanies.size}`);
+      console.log(`[ANALYSIS_QUEUE] Company ${companyId} queue empty. Running completion check...`);
+
+      await this.runCompletionCheck(companyId);
       return;
     }
 
@@ -108,16 +111,101 @@ class AnalysisQueue {
       }
     }
 
-    // Short delay between jobs for the same company
     await new Promise(resolve => setTimeout(resolve, INTER_JOB_DELAY_MS));
 
-    // Process next job for this company
     this.processNextForCompany(companyId);
   }
 
-  /**
-   * Get current queue statistics.
-   */
+  private async runCompletionCheck(companyId: number): Promise<void> {
+    try {
+      const { portalSubmissionsRepository } = await import('../repositories/portal-submissions.repository');
+      const completionStatus = await portalSubmissionsRepository.getAnalysisCompletionStatus(companyId);
+
+      console.log(`[ANALYSIS_QUEUE] Completion check for company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} (${completionStatus.completionPercentage}%)`);
+
+      if (completionStatus.isComplete) {
+        console.log(`[ANALYSIS_QUEUE] All ${completionStatus.totalCount} documents analysed for company ${companyId}. Checking expert pipeline...`);
+        this.completionRetriggerCounts.delete(companyId);
+        await this.triggerExpertPipelineIfReady(companyId);
+        return;
+      }
+
+      const retriggerCount = this.completionRetriggerCounts.get(companyId) || 0;
+
+      if (retriggerCount >= MAX_COMPLETION_RETRIGGERS) {
+        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} complete. Already retriggered ${retriggerCount} time(s), not retrying again. Use manual trigger if needed.`);
+        if (completionStatus.missingTypes && completionStatus.missingTypes.length > 0) {
+          console.log(`[ANALYSIS_QUEUE] Missing types: ${completionStatus.missingTypes.join(', ')}`);
+        }
+        this.completionRetriggerCounts.delete(companyId);
+        return;
+      }
+
+      const { documentsRepository } = await import('../repositories/documents.repository');
+      const { documentAnalysisRepository } = await import('../repositories/document-analysis.repository');
+
+      const allEvents = await documentsRepository.getFileUploadEventsForCompany(companyId);
+      const allResults = await documentAnalysisRepository.getAllAnalysisResultsForCompany(companyId);
+
+      const documentIdsWithResults = new Set(allResults.map((r: any) => r.documentId));
+      const failedEvents = allEvents.filter((e: any) => !documentIdsWithResults.has(e.documentId));
+
+      if (failedEvents.length > 0) {
+        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: Found ${failedEvents.length} document(s) without analysis results. Re-queuing...`);
+        this.completionRetriggerCounts.set(companyId, retriggerCount + 1);
+
+        for (const event of failedEvents) {
+          this.enqueue({
+            eventId: event.id,
+            targetCompanyId: companyId,
+            isRetrigger: true,
+          });
+        }
+      } else {
+        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} documents analysed. No failed events to retrigger. Waiting for more uploads.`);
+        this.completionRetriggerCounts.delete(companyId);
+      }
+
+    } catch (error) {
+      console.error(`[ANALYSIS_QUEUE] Completion check failed for company ${companyId}:`, error);
+    }
+  }
+
+  private async triggerExpertPipelineIfReady(companyId: number): Promise<void> {
+    try {
+      const { expertAnalysisService } = await import('./expert-analysis.service');
+      const existingResults = await expertAnalysisService.getExpertResults(companyId);
+
+      const hasRunningExperts = existingResults.some(
+        (r: any) => r.status === 'processing' || r.status === 'pending'
+      );
+      const hasCompletedScreening = existingResults.some(
+        (r: any) => r.expertType === 'screening' && r.status === 'success'
+      );
+
+      if (hasRunningExperts) {
+        console.log(`[ANALYSIS_QUEUE] Expert pipeline already running for company ${companyId}, skipping auto-trigger`);
+        return;
+      }
+
+      if (hasCompletedScreening) {
+        console.log(`[ANALYSIS_QUEUE] Expert screening already completed for company ${companyId}, skipping auto-trigger`);
+        return;
+      }
+
+      const { documentsRepository } = await import('../repositories/documents.repository');
+      const events = await documentsRepository.getFileUploadEventsForCompany(companyId);
+      const triggeredBy = events.length > 0 ? events[events.length - 1].uploadedBy : 1;
+
+      console.log(`[ANALYSIS_QUEUE] All 10 documents analysed. Auto-triggering Expert Phase 1 for company ${companyId}`);
+      await expertAnalysisService.triggerNewStage1Pipeline(companyId, triggeredBy);
+      console.log(`[ANALYSIS_QUEUE] Expert Phase 1 triggered successfully for company ${companyId}`);
+
+    } catch (error) {
+      console.error(`[ANALYSIS_QUEUE] Expert pipeline auto-trigger failed for company ${companyId}:`, error);
+    }
+  }
+
   getStats(): QueueStats {
     const perCompany: QueueStats['perCompany'] = [];
     this.companyQueues.forEach((queue, companyId) => {

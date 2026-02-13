@@ -1,0 +1,356 @@
+Build: Expert Pipeline Auto-Trigger Only When All 10 Documents Analysed
+
+== OVERVIEW ==
+
+Currently the expert analysis pipeline (Stage 2) auto-triggers inside file-analysis.service.ts after ANY single document finishes analysis, as long as one P&L or company accounts result exists. This means it fires with incomplete data.
+
+We are changing this so:
+- The auto-trigger is REMOVED from inside file-analysis.service.ts
+- Instead, the analysis queue detects when a company's queue empties and runs a completion check
+- The completion check verifies all 10 documents are analysed using the existing getAnalysisCompletionStatus method
+- If documents exist but their analysis failed, those specific events are re-queued for retry
+- Expert pipeline ONLY auto-triggers when getAnalysisCompletionStatus returns isComplete === true
+- Manual trigger routes remain unchanged — they fire regardless of document count (this is intentional, it is the buyer's override)
+
+== STEP 1: MODIFY server/services/file-analysis.service.ts ==
+
+Remove the entire expert auto-trigger block. Find this exact code block (around lines 263-289):
+
+    try {
+      const existingExpertResults = await expertAnalysisService.getExpertResults(event.targetCompanyId);
+      const hasRunningExperts = existingExpertResults.some(
+        (r: any) => r.status === 'processing' || r.status === 'pending'
+      );
+      const hasCompletedScreening = existingExpertResults.some(
+        (r: any) => r.expertType === 'screening' && r.status === 'success'
+      );
+
+      if (!hasRunningExperts && !hasCompletedScreening) {
+        const companyAccountsResults = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('company_accounts', event.targetCompanyId);
+        const plResults = await documentAnalysisRepository.getAnalysisResultsByTypeForCompany('profit_and_loss', event.targetCompanyId);
+
+        if (companyAccountsResults.length > 0 || plResults.length > 0) {
+          console.log(`[FILE_ANALYSIS] Auto-triggering Expert Phase 1 (Data Quality + Screening) for company ${event.targetCompanyId}`);
+          expertAnalysisService.triggerNewStage1Pipeline(event.targetCompanyId, event.uploadedBy).catch(err => {
+            console.error(`[FILE_ANALYSIS] Expert Phase 1 auto-trigger failed for company ${event.targetCompanyId}:`, err.message);
+          });
+        } else {
+          console.log(`[FILE_ANALYSIS] Skipping Expert Phase 1 auto-trigger for company ${event.targetCompanyId} — no financial documents analysed yet`);
+        }
+      } else {
+        console.log(`[FILE_ANALYSIS] Skipping Expert Phase 1 auto-trigger for company ${event.targetCompanyId} — ${hasRunningExperts ? 'experts already running' : 'screening already completed'}`);
+      }
+    } catch (expertError) {
+      console.error(`[FILE_ANALYSIS] Error in Expert Phase 1 auto-trigger check:`, expertError);
+    }
+
+Replace with:
+
+    // Expert pipeline auto-trigger has been moved to analysis-queue.service.ts
+    // It now only fires when all 10 documents are analysed (queue empty + completion check)
+    console.log(`[FILE_ANALYSIS] Analysis complete for event ${eventId}. Expert trigger deferred to queue completion check.`);
+
+Also check the imports at the top of the file. If expertAnalysisService is imported and no longer used anywhere else in the file, remove that import. If documentAnalysisRepository is still used elsewhere in the file (it is — for the existingResults check earlier), keep that import.
+
+== STEP 2: REPLACE server/services/analysis-queue.service.ts ==
+
+Replace the entire file content with:
+
+import { analyzeUploadedFileWithGemini } from './file-analysis.service';
+
+interface AnalysisJob {
+  eventId: number;
+  targetCompanyId: number;
+  userCompanyId?: number;
+  addedAt: Date;
+  retryCount: number;
+  isRetrigger: boolean;
+}
+
+interface QueueStats {
+  pending: number;
+  activeCompanies: number;
+  totalProcessed: number;
+  totalFailed: number;
+  perCompany: Array<{ targetCompanyId: number; pending: number; processing: boolean }>;
+}
+
+const MAX_RETRIES = 2;
+const INTER_JOB_DELAY_MS = 500;
+const MAX_QUEUE_SIZE_PER_COMPANY = 20;
+const MAX_COMPLETION_RETRIGGERS = 1;
+
+/**
+ * Per-company analysis queue. Each company's uploads are processed sequentially
+ * to prevent Gemini rate limiting from burst uploads. Different companies
+ * process in parallel so users never wait behind other companies' work.
+ *
+ * When a company's queue empties, runs a completion check:
+ * 1. Checks if all 10 required documents are analysed
+ * 2. Re-queues any failed analyses (once only)
+ * 3. Auto-triggers expert pipeline only when all 10 are complete
+ */
+class AnalysisQueue {
+  private companyQueues: Map<number, AnalysisJob[]> = new Map();
+  private processingCompanies: Set<number> = new Set();
+  private completionRetriggerCounts: Map<number, number> = new Map();
+  private totalProcessed = 0;
+  private totalFailed = 0;
+
+  /**
+   * Add an analysis job to the queue for its target company.
+   * If no jobs are currently processing for that company, starts immediately.
+   */
+  enqueue(job: { eventId: number; targetCompanyId: number; userCompanyId?: number; isRetrigger?: boolean }): void {
+    const companyId = job.targetCompanyId;
+
+    if (!this.companyQueues.has(companyId)) {
+      this.companyQueues.set(companyId, []);
+    }
+
+    const queue = this.companyQueues.get(companyId)!;
+
+    if (queue.length >= MAX_QUEUE_SIZE_PER_COMPANY) {
+      console.error(`[ANALYSIS_QUEUE] Company ${companyId} queue full (${MAX_QUEUE_SIZE_PER_COMPANY} jobs). Dropping job for event ${job.eventId}`);
+      return;
+    }
+
+    const exists = queue.some(j => j.eventId === job.eventId);
+    if (exists) {
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} already in queue for company ${companyId}, skipping duplicate`);
+      return;
+    }
+
+    const queueJob: AnalysisJob = {
+      eventId: job.eventId,
+      targetCompanyId: companyId,
+      userCompanyId: job.userCompanyId,
+      addedAt: new Date(),
+      retryCount: 0,
+      isRetrigger: job.isRetrigger || false,
+    };
+
+    queue.push(queueJob);
+    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} for company ${companyId}${queueJob.isRetrigger ? ' (retrigger)' : ''} (company queue: ${queue.length}, active companies: ${this.processingCompanies.size})`);
+
+    if (!this.processingCompanies.has(companyId)) {
+      this.processNextForCompany(companyId);
+    }
+  }
+
+  /**
+   * Process jobs sequentially for a single company.
+   * Runs independently per company so different companies process in parallel.
+   * When queue empties, runs completion check.
+   */
+  private async processNextForCompany(companyId: number): Promise<void> {
+    const queue = this.companyQueues.get(companyId);
+
+    if (!queue || queue.length === 0) {
+      this.processingCompanies.delete(companyId);
+      this.companyQueues.delete(companyId);
+      console.log(`[ANALYSIS_QUEUE] Company ${companyId} queue empty. Running completion check...`);
+
+      await this.runCompletionCheck(companyId);
+      return;
+    }
+
+    this.processingCompanies.add(companyId);
+    const job = queue.shift()!;
+
+    console.log(`[ANALYSIS_QUEUE] Processing event ${job.eventId} for company ${companyId} (remaining for company: ${queue.length})`);
+
+    try {
+      await analyzeUploadedFileWithGemini(job.eventId);
+      this.totalProcessed++;
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} completed successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed: ${errorMessage}`);
+
+      if (job.retryCount < MAX_RETRIES) {
+        job.retryCount++;
+        queue.push(job);
+        console.log(`[ANALYSIS_QUEUE] Re-queued event ${job.eventId} (retry ${job.retryCount}/${MAX_RETRIES})`);
+      } else {
+        this.totalFailed++;
+        console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed after ${MAX_RETRIES} retries, giving up`);
+      }
+    }
+
+    // Short delay between jobs for the same company
+    await new Promise(resolve => setTimeout(resolve, INTER_JOB_DELAY_MS));
+
+    // Process next job for this company
+    this.processNextForCompany(companyId);
+  }
+
+  /**
+   * Completion check when a company's queue empties.
+   * 
+   * 1. Checks if all 10 required documents are analysed
+   * 2. If documents exist but analysis is missing, re-queues those events (once only)
+   * 3. If all 10 complete, auto-triggers expert pipeline
+   */
+  private async runCompletionCheck(companyId: number): Promise<void> {
+    try {
+      const { portalSubmissionsRepository } = await import('../repositories/portal-submissions.repository');
+      const completionStatus = await portalSubmissionsRepository.getAnalysisCompletionStatus(companyId);
+
+      console.log(`[ANALYSIS_QUEUE] Completion check for company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} (${completionStatus.completionPercentage}%)`);
+
+      if (completionStatus.isComplete) {
+        console.log(`[ANALYSIS_QUEUE] All ${completionStatus.totalCount} documents analysed for company ${companyId}. Checking expert pipeline...`);
+        this.completionRetriggerCounts.delete(companyId);
+        await this.triggerExpertPipelineIfReady(companyId);
+        return;
+      }
+
+      // Not all 10 complete — check if we can retrigger failed analyses
+      const retriggerCount = this.completionRetriggerCounts.get(companyId) || 0;
+
+      if (retriggerCount >= MAX_COMPLETION_RETRIGGERS) {
+        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} complete. Already retriggered ${retriggerCount} time(s), not retrying again. Use manual trigger if needed.`);
+        if (completionStatus.missingTypes && completionStatus.missingTypes.length > 0) {
+          console.log(`[ANALYSIS_QUEUE] Missing types: ${completionStatus.missingTypes.join(', ')}`);
+        }
+        this.completionRetriggerCounts.delete(companyId);
+        return;
+      }
+
+      // Find file upload events that have no analysis results and re-queue them
+      const { documentsRepository } = await import('../repositories/documents.repository');
+      const { documentAnalysisRepository } = await import('../repositories/document-analysis.repository');
+
+      const allEvents = await documentsRepository.getFileUploadEventsForCompany(companyId);
+      const allResults = await documentAnalysisRepository.getAllAnalysisResultsForCompany(companyId);
+
+      const documentIdsWithResults = new Set(allResults.map((r: any) => r.documentId));
+      const failedEvents = allEvents.filter((e: any) => !documentIdsWithResults.has(e.documentId));
+
+      if (failedEvents.length > 0) {
+        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: Found ${failedEvents.length} document(s) without analysis results. Re-queuing...`);
+        this.completionRetriggerCounts.set(companyId, retriggerCount + 1);
+
+        for (const event of failedEvents) {
+          this.enqueue({
+            eventId: event.id,
+            targetCompanyId: companyId,
+            isRetrigger: true,
+          });
+        }
+      } else {
+        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} documents analysed. No failed events to retrigger. Waiting for more uploads.`);
+        this.completionRetriggerCounts.delete(companyId);
+      }
+
+    } catch (error) {
+      console.error(`[ANALYSIS_QUEUE] Completion check failed for company ${companyId}:`, error);
+    }
+  }
+
+  /**
+   * Trigger expert pipeline only if no experts are already running/completed.
+   */
+  private async triggerExpertPipelineIfReady(companyId: number): Promise<void> {
+    try {
+      const { expertAnalysisService } = await import('./expert-analysis.service');
+      const existingResults = await expertAnalysisService.getExpertResults(companyId);
+
+      const hasRunningExperts = existingResults.some(
+        (r: any) => r.status === 'processing' || r.status === 'pending'
+      );
+      const hasCompletedScreening = existingResults.some(
+        (r: any) => r.expertType === 'screening' && r.status === 'success'
+      );
+
+      if (hasRunningExperts) {
+        console.log(`[ANALYSIS_QUEUE] Expert pipeline already running for company ${companyId}, skipping auto-trigger`);
+        return;
+      }
+
+      if (hasCompletedScreening) {
+        console.log(`[ANALYSIS_QUEUE] Expert screening already completed for company ${companyId}, skipping auto-trigger`);
+        return;
+      }
+
+      // Find a userId to attribute the trigger to (use the most recent upload event)
+      const { documentsRepository } = await import('../repositories/documents.repository');
+      const events = await documentsRepository.getFileUploadEventsForCompany(companyId);
+      const triggeredBy = events.length > 0 ? events[events.length - 1].uploadedBy : 1;
+
+      console.log(`[ANALYSIS_QUEUE] All 10 documents analysed. Auto-triggering Expert Phase 1 for company ${companyId}`);
+      await expertAnalysisService.triggerNewStage1Pipeline(companyId, triggeredBy);
+      console.log(`[ANALYSIS_QUEUE] Expert Phase 1 triggered successfully for company ${companyId}`);
+
+    } catch (error) {
+      console.error(`[ANALYSIS_QUEUE] Expert pipeline auto-trigger failed for company ${companyId}:`, error);
+    }
+  }
+
+  /**
+   * Get current queue statistics.
+   */
+  getStats(): QueueStats {
+    const perCompany: QueueStats['perCompany'] = [];
+    for (const [companyId, queue] of this.companyQueues) {
+      perCompany.push({
+        targetCompanyId: companyId,
+        pending: queue.length,
+        processing: this.processingCompanies.has(companyId),
+      });
+    }
+
+    let totalPending = 0;
+    for (const queue of this.companyQueues.values()) {
+      totalPending += queue.length;
+    }
+
+    return {
+      pending: totalPending,
+      activeCompanies: this.processingCompanies.size,
+      totalProcessed: this.totalProcessed,
+      totalFailed: this.totalFailed,
+      perCompany,
+    };
+  }
+}
+
+export const analysisQueue = new AnalysisQueue();
+
+== STEP 3: ADD METHOD TO server/repositories/documents.repository.ts ==
+
+Find the documentsRepository object or class. Add this method to it. If it is a class, add it as a method. If it is a plain object with methods, add it in the same pattern.
+
+The method:
+
+async getFileUploadEventsForCompany(targetCompanyId: number) {
+  return db.select()
+    .from(fileUploadEvents)
+    .where(eq(fileUploadEvents.targetCompanyId, targetCompanyId))
+    .orderBy(fileUploadEvents.createdAt);
+}
+
+Make sure the fileUploadEvents table is imported from '@shared/schema/documents' at the top of the file. Check if it is already imported — if so, do not add a duplicate import. Also ensure eq and the db instance are imported (they almost certainly are already).
+
+== WHAT NOT TO CHANGE ==
+
+- Do not modify any expert analysis routes. The manual triggers (POST /trigger-stage1/:id, POST /trigger-pipeline/:id, POST /retry/:id/:expertType) must remain exactly as they are with NO document count checks. These are the buyer's override.
+- Do not modify expert-analysis.service.ts
+- Do not modify portal-submissions.repository.ts (we are using getAnalysisCompletionStatus as-is)
+- Do not modify gemini-client.ts, gemini-key-resolver.ts, or any Gemini service files
+- Do not modify portal-submissions.service.ts or documents-files.routes.ts (they already enqueue correctly)
+- Do not add database migrations or schema changes
+
+== VERIFICATION CHECKLIST ==
+
+After making changes:
+
+1. App starts without import errors
+2. file-analysis.service.ts no longer contains any reference to expertAnalysisService or triggerNewStage1Pipeline (unless used elsewhere in the file — check before removing imports)
+3. analysis-queue.service.ts contains the new runCompletionCheck and triggerExpertPipelineIfReady methods
+4. documents.repository.ts has the new getFileUploadEventsForCompany method
+5. Upload a single file — it processes through the queue, queue empties, completion check runs and logs something like "3/10 documents analysed. No failed events to retrigger. Waiting for more uploads."
+6. Expert pipeline does NOT trigger until all 10 documents are analysed
+7. Manual trigger routes still work — POST /trigger-stage1/:id should fire regardless of document count
+8. If a document analysis failed (classification_failed or no results), the completion check should detect it and re-queue that event once

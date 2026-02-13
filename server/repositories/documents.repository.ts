@@ -163,6 +163,13 @@ export class DocumentsRepository {
       .orderBy(desc(fileUploadEvents.id));
   }
 
+  async getFileUploadEventsForCompany(targetCompanyId: number) {
+    return db.select()
+      .from(fileUploadEvents)
+      .where(eq(fileUploadEvents.targetCompanyId, targetCompanyId))
+      .orderBy(fileUploadEvents.createdAt);
+  }
+
   async updateFileUploadEventWebhookStatus(eventId: number, status: string, response?: string, sentAt?: Date): Promise<FileUploadEvent | undefined> {
     const [updated] = await db.update(fileUploadEvents)
       .set({ webhookStatus: status, webhookResponse: response, webhookSentAt: sentAt, webhookSent: true })
