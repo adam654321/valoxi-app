@@ -1,0 +1,58 @@
+Pre-Build Review: Deal Modeler & QOE System
+
+Please read the following files and answer the specific questions listed under each. Do not make any changes.
+
+1. Find the QOE expert prompt file (likely in server/prompts/ — search for files containing "qoe" or "quality_of_earnings" or "adjustments")
+   - Copy the full prompt text
+   - What instructions does it give about addbacks vs deductions?
+   - What format does it request for the response JSON?
+   - Does it mention defensibility, confidence scoring, or reasons to include/exclude?
+
+2. Find the deal modeler page/component (likely in client/src/components/ or client/src/pages/ — search for "deal-model" or "dealModel" or "valuation")
+   - What is the file path?
+   - What sections/tabs does it contain?
+   - List every sub-component it imports
+
+3. Find the "What should we adjust?" component (the QOE adjustments display)
+   - What is the file path?
+   - How does it render addbacks and deductions?
+   - How does it receive data — from an API call or from a parent component?
+   - What is the current data structure it expects for each adjustment item?
+
+4. Find the EV to Equity Bridge component
+   - What is the file path?
+   - How are the input fields managed — local state, form, API save?
+   - Find the save/persist logic — is it using a mutation, API call, or local storage?
+   - What fields does it contain?
+   - Is there a working capital field already?
+
+5. Find the "How do we pay for it?" / funding component
+   - What is the file path?
+   - Where are transaction fees currently being added?
+   - Find the DSCR calculation logic — what thresholds are defined and what labels do they use?
+   - What funding source types are listed?
+
+6. Find the deal summary component
+   - What is the file path?
+   - What does it currently display?
+   - Does it currently include transaction fees?
+
+7. Find the expert analysis prompts directory (server/prompts/)
+   - List all files in this directory
+   - Identify which prompt file drives the QOE/adjustments analysis
+   - Identify which prompt file drives the operational analysis
+
+8. Find the expert results display components
+   - How are expert results rendered in the deal modeler?
+   - Is there a component that maps expert output to the adjustments list?
+
+9. Find any API routes or services related to the deal modeler calculations
+   - Search for routes containing "deal-model" or "valuation" or "ebitda"
+   - What endpoints exist for saving/loading deal modeler data?
+   - Is there a service that calculates adjusted EBITDA, multiples, or DSCR?
+
+10. Find the schema for deal modeler data storage
+    - Search shared/schema/ for deal model related tables
+    - What tables store the valuation data, adjustments, bridge values, funding structure?
+
+Summary format: For each item, provide the file path and answer each specific question. Copy exact code blocks for prompts, DSCR thresholds, and data structures.
