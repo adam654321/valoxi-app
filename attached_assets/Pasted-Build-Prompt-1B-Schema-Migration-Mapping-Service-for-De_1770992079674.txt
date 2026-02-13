@@ -1,0 +1,89 @@
+Build Prompt 1B: Schema Migration + Mapping Service for Defensibility Fields
+
+== OVERVIEW ==
+
+The QOE prompt now returns three new fields per adjustment (defensibility_score, case_for_inclusion, case_for_exclusion) and a benchmark_range_used field in director salary analysis. We need to:
+1. Add three new columns to the deal_model_adjustments table
+2. Update the mapping service to store these new fields
+3. Run a database migration
+
+== STEP 1: MODIFY shared/schema/deal-models.ts ==
+
+In the dealModelAdjustments table definition, add three new columns AFTER the existing "confidence" column and BEFORE the "status" column:
+
+Find this line:
+  confidence: varchar("confidence", { length: 20 }),
+
+Add these three lines immediately after it:
+  defensibilityScore: integer("defensibility_score"),
+  caseForInclusion: text("case_for_inclusion"),
+  caseForExclusion: text("case_for_exclusion"),
+
+Do not change anything else in the file. The types (DealModelAdjustment, InsertDealModelAdjustment) will automatically pick up the new columns from the table definition.
+
+== STEP 2: DATABASE MIGRATION ==
+
+Run the following SQL to add the columns to the existing table. Use whatever migration mechanism the project uses (drizzle-kit push, or a manual migration). If using drizzle-kit, run: npx drizzle-kit push
+
+If you need to run raw SQL instead:
+
+ALTER TABLE deal_model_adjustments ADD COLUMN IF NOT EXISTS defensibility_score INTEGER;
+ALTER TABLE deal_model_adjustments ADD COLUMN IF NOT EXISTS case_for_inclusion TEXT;
+ALTER TABLE deal_model_adjustments ADD COLUMN IF NOT EXISTS case_for_exclusion TEXT;
+
+== STEP 3: MODIFY server/services/deal-model-mapping.service.ts ==
+
+In the createAdjustmentsFromQoE method, update both the add-backs loop and the deductions loop to include the new fields.
+
+CHANGE 1: In the add-backs loop, find this block inside the db.insert call:
+
+            reasoning: item.justification || item.reasoning || undefined,
+            confidence: item.confidence || undefined,
+
+Replace with:
+
+            reasoning: item.justification || item.reasoning || undefined,
+            confidence: item.confidence || undefined,
+            defensibilityScore: typeof item.defensibility_score === 'number' ? item.defensibility_score : undefined,
+            caseForInclusion: item.case_for_inclusion || undefined,
+            caseForExclusion: item.case_for_exclusion || undefined,
+
+CHANGE 2: In the deductions loop, find the same block inside the db.insert call:
+
+            reasoning: item.justification || item.reasoning || undefined,
+            confidence: item.confidence || undefined,
+
+Replace with:
+
+            reasoning: item.justification || item.reasoning || undefined,
+            confidence: item.confidence || undefined,
+            defensibilityScore: typeof item.defensibility_score === 'number' ? item.defensibility_score : undefined,
+            caseForInclusion: item.case_for_inclusion || undefined,
+            caseForExclusion: item.case_for_exclusion || undefined,
+
+CHANGE 3: In the director salary adjustment section (the directorAnalysis loop), there are two db.insert calls — one for add_back (when currentSalary > marketRate) and one for deduction (when currentSalary < marketRate). For BOTH of these inserts, find:
+
+              confidence: 'medium',
+
+Replace with:
+
+              confidence: 'medium',
+              defensibilityScore: 6,
+              caseForInclusion: `Director compensation of £${currentSalary.toLocaleString()} differs from the UK SME market rate of £${marketRate.toLocaleString()} for this role and company size.`,
+              caseForExclusion: `Market rate estimates are benchmarks, not exact figures. The seller may argue the director's specific skills or responsibilities justify their current compensation.`,
+
+== WHAT NOT TO CHANGE ==
+
+- Do not modify the QOE prompt (already done in 1A)
+- Do not modify AdjustmentsSection.tsx (that's 1C)
+- Do not modify deal-model.calc.ts
+- Do not modify any API routes
+- Do not change the createFundingLineSeeds method or any other method in the mapping service
+
+== VERIFICATION ==
+
+1. App starts without errors
+2. The deal_model_adjustments table has the three new columns (check via database or drizzle studio)
+3. Create a new deal model from expert data for a company that has completed QOE analysis — the new adjustments should have defensibilityScore, caseForInclusion, and caseForExclusion populated
+4. Existing deal models still load without errors (the new columns are nullable so old data is unaffected)
+5. The TypeScript types DealModelAdjustment and InsertDealModelAdjustment now include the new fields (check that the frontend build doesn't error)
