@@ -10,66 +10,85 @@ interface AnalysisJob {
 
 interface QueueStats {
   pending: number;
-  processing: boolean;
+  activeCompanies: number;
   totalProcessed: number;
   totalFailed: number;
+  perCompany: Array<{ targetCompanyId: number; pending: number; processing: boolean }>;
 }
 
 const MAX_RETRIES = 2;
-const INTER_JOB_DELAY_MS = 3000;
-const MAX_QUEUE_SIZE = 100;
+const INTER_JOB_DELAY_MS = 500;
+const MAX_QUEUE_SIZE_PER_COMPANY = 20;
 
+/**
+ * Per-company analysis queue. Each company's uploads are processed sequentially
+ * to prevent Gemini rate limiting from burst uploads. Different companies
+ * process in parallel so users never wait behind other companies' work.
+ */
 class AnalysisQueue {
-  private queue: AnalysisJob[] = [];
-  private isProcessing = false;
+  private companyQueues: Map<number, AnalysisJob[]> = new Map();
+  private processingCompanies: Set<number> = new Set();
   private totalProcessed = 0;
   private totalFailed = 0;
 
   /**
-   * Add an analysis job to the queue. If the queue is idle, processing starts immediately.
+   * Add an analysis job to the queue for its target company.
+   * If no jobs are currently processing for that company, starts immediately.
    */
   enqueue(job: { eventId: number; targetCompanyId: number; userCompanyId?: number }): void {
-    if (this.queue.length >= MAX_QUEUE_SIZE) {
-      console.error(`[ANALYSIS_QUEUE] Queue full (${MAX_QUEUE_SIZE} jobs). Dropping job for event ${job.eventId}`);
+    const companyId = job.targetCompanyId;
+    
+    if (!this.companyQueues.has(companyId)) {
+      this.companyQueues.set(companyId, []);
+    }
+
+    const queue = this.companyQueues.get(companyId)!;
+
+    if (queue.length >= MAX_QUEUE_SIZE_PER_COMPANY) {
+      console.error(`[ANALYSIS_QUEUE] Company ${companyId} queue full (${MAX_QUEUE_SIZE_PER_COMPANY} jobs). Dropping job for event ${job.eventId}`);
       return;
     }
 
-    const exists = this.queue.some(j => j.eventId === job.eventId);
+    const exists = queue.some(j => j.eventId === job.eventId);
     if (exists) {
-      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} already in queue, skipping duplicate`);
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} already in queue for company ${companyId}, skipping duplicate`);
       return;
     }
 
     const queueJob: AnalysisJob = {
       eventId: job.eventId,
-      targetCompanyId: job.targetCompanyId,
+      targetCompanyId: companyId,
       userCompanyId: job.userCompanyId,
       addedAt: new Date(),
       retryCount: 0,
     };
 
-    this.queue.push(queueJob);
-    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} (queue length: ${this.queue.length})`);
+    queue.push(queueJob);
+    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} for company ${companyId} (company queue: ${queue.length}, active companies: ${this.processingCompanies.size})`);
 
-    if (!this.isProcessing) {
-      this.processNext();
+    if (!this.processingCompanies.has(companyId)) {
+      this.processNextForCompany(companyId);
     }
   }
 
   /**
-   * Process jobs one at a time with a delay between each.
+   * Process jobs sequentially for a single company.
+   * Runs independently per company so different companies process in parallel.
    */
-  private async processNext(): Promise<void> {
-    if (this.queue.length === 0) {
-      this.isProcessing = false;
-      console.log(`[ANALYSIS_QUEUE] Queue empty, idle. Total processed: ${this.totalProcessed}, failed: ${this.totalFailed}`);
+  private async processNextForCompany(companyId: number): Promise<void> {
+    const queue = this.companyQueues.get(companyId);
+
+    if (!queue || queue.length === 0) {
+      this.processingCompanies.delete(companyId);
+      this.companyQueues.delete(companyId);
+      console.log(`[ANALYSIS_QUEUE] Company ${companyId} queue empty, idle. Active companies: ${this.processingCompanies.size}`);
       return;
     }
 
-    this.isProcessing = true;
-    const job = this.queue.shift()!;
+    this.processingCompanies.add(companyId);
+    const job = queue.shift()!;
 
-    console.log(`[ANALYSIS_QUEUE] Processing event ${job.eventId} (remaining: ${this.queue.length})`);
+    console.log(`[ANALYSIS_QUEUE] Processing event ${job.eventId} for company ${companyId} (remaining for company: ${queue.length})`);
 
     try {
       await analyzeUploadedFileWithGemini(job.eventId);
@@ -81,7 +100,7 @@ class AnalysisQueue {
 
       if (job.retryCount < MAX_RETRIES) {
         job.retryCount++;
-        this.queue.push(job);
+        queue.push(job);
         console.log(`[ANALYSIS_QUEUE] Re-queued event ${job.eventId} (retry ${job.retryCount}/${MAX_RETRIES})`);
       } else {
         this.totalFailed++;
@@ -89,20 +108,37 @@ class AnalysisQueue {
       }
     }
 
+    // Short delay between jobs for the same company
     await new Promise(resolve => setTimeout(resolve, INTER_JOB_DELAY_MS));
 
-    this.processNext();
+    // Process next job for this company
+    this.processNextForCompany(companyId);
   }
 
   /**
    * Get current queue statistics.
    */
   getStats(): QueueStats {
+    const perCompany: QueueStats['perCompany'] = [];
+    this.companyQueues.forEach((queue, companyId) => {
+      perCompany.push({
+        targetCompanyId: companyId,
+        pending: queue.length,
+        processing: this.processingCompanies.has(companyId),
+      });
+    });
+
+    let totalPending = 0;
+    this.companyQueues.forEach((queue) => {
+      totalPending += queue.length;
+    });
+
     return {
-      pending: this.queue.length,
-      processing: this.isProcessing,
+      pending: totalPending,
+      activeCompanies: this.processingCompanies.size,
       totalProcessed: this.totalProcessed,
       totalFailed: this.totalFailed,
+      perCompany,
     };
   }
 }

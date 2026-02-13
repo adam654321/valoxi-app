@@ -1,0 +1,189 @@
+Build: Hybrid Per-Company Queue with Parallel Cross-Company Processing
+
+== OVERVIEW ==
+
+The current analysis queue processes ALL jobs globally one at a time with a 3-second delay. This is too slow for multi-user scenarios. We are changing to per-company sequential queuing with parallel processing across different companies. This means:
+
+- If one user uploads 5 files, they process one at a time for that company (prevents rate limiting from burst uploads)
+- If 10 different users each upload a file at the same time, all 10 process in parallel (no waiting behind other companies)
+- Inter-job delay reduced from 3 seconds to 500ms
+- Step 2 inter-call delay reduced from 2 seconds to 1 second
+
+== STEP 1: REPLACE server/services/analysis-queue.service.ts ==
+
+Replace the entire file content with:
+
+import { analyzeUploadedFileWithGemini } from './file-analysis.service';
+
+interface AnalysisJob {
+  eventId: number;
+  targetCompanyId: number;
+  userCompanyId?: number;
+  addedAt: Date;
+  retryCount: number;
+}
+
+interface QueueStats {
+  pending: number;
+  activeCompanies: number;
+  totalProcessed: number;
+  totalFailed: number;
+  perCompany: Array<{ targetCompanyId: number; pending: number; processing: boolean }>;
+}
+
+const MAX_RETRIES = 2;
+const INTER_JOB_DELAY_MS = 500;
+const MAX_QUEUE_SIZE_PER_COMPANY = 20;
+
+/**
+ * Per-company analysis queue. Each company's uploads are processed sequentially
+ * to prevent Gemini rate limiting from burst uploads. Different companies
+ * process in parallel so users never wait behind other companies' work.
+ */
+class AnalysisQueue {
+  private companyQueues: Map<number, AnalysisJob[]> = new Map();
+  private processingCompanies: Set<number> = new Set();
+  private totalProcessed = 0;
+  private totalFailed = 0;
+
+  /**
+   * Add an analysis job to the queue for its target company.
+   * If no jobs are currently processing for that company, starts immediately.
+   */
+  enqueue(job: { eventId: number; targetCompanyId: number; userCompanyId?: number }): void {
+    const companyId = job.targetCompanyId;
+    
+    if (!this.companyQueues.has(companyId)) {
+      this.companyQueues.set(companyId, []);
+    }
+
+    const queue = this.companyQueues.get(companyId)!;
+
+    if (queue.length >= MAX_QUEUE_SIZE_PER_COMPANY) {
+      console.error(`[ANALYSIS_QUEUE] Company ${companyId} queue full (${MAX_QUEUE_SIZE_PER_COMPANY} jobs). Dropping job for event ${job.eventId}`);
+      return;
+    }
+
+    const exists = queue.some(j => j.eventId === job.eventId);
+    if (exists) {
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} already in queue for company ${companyId}, skipping duplicate`);
+      return;
+    }
+
+    const queueJob: AnalysisJob = {
+      eventId: job.eventId,
+      targetCompanyId: companyId,
+      userCompanyId: job.userCompanyId,
+      addedAt: new Date(),
+      retryCount: 0,
+    };
+
+    queue.push(queueJob);
+    console.log(`[ANALYSIS_QUEUE] Enqueued event ${job.eventId} for company ${companyId} (company queue: ${queue.length}, active companies: ${this.processingCompanies.size})`);
+
+    if (!this.processingCompanies.has(companyId)) {
+      this.processNextForCompany(companyId);
+    }
+  }
+
+  /**
+   * Process jobs sequentially for a single company.
+   * Runs independently per company so different companies process in parallel.
+   */
+  private async processNextForCompany(companyId: number): Promise<void> {
+    const queue = this.companyQueues.get(companyId);
+
+    if (!queue || queue.length === 0) {
+      this.processingCompanies.delete(companyId);
+      this.companyQueues.delete(companyId);
+      console.log(`[ANALYSIS_QUEUE] Company ${companyId} queue empty, idle. Active companies: ${this.processingCompanies.size}`);
+      return;
+    }
+
+    this.processingCompanies.add(companyId);
+    const job = queue.shift()!;
+
+    console.log(`[ANALYSIS_QUEUE] Processing event ${job.eventId} for company ${companyId} (remaining for company: ${queue.length})`);
+
+    try {
+      await analyzeUploadedFileWithGemini(job.eventId);
+      this.totalProcessed++;
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} completed successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed: ${errorMessage}`);
+
+      if (job.retryCount < MAX_RETRIES) {
+        job.retryCount++;
+        queue.push(job);
+        console.log(`[ANALYSIS_QUEUE] Re-queued event ${job.eventId} (retry ${job.retryCount}/${MAX_RETRIES})`);
+      } else {
+        this.totalFailed++;
+        console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed after ${MAX_RETRIES} retries, giving up`);
+      }
+    }
+
+    // Short delay between jobs for the same company
+    await new Promise(resolve => setTimeout(resolve, INTER_JOB_DELAY_MS));
+
+    // Process next job for this company
+    this.processNextForCompany(companyId);
+  }
+
+  /**
+   * Get current queue statistics.
+   */
+  getStats(): QueueStats {
+    const perCompany: QueueStats['perCompany'] = [];
+    for (const [companyId, queue] of this.companyQueues) {
+      perCompany.push({
+        targetCompanyId: companyId,
+        pending: queue.length,
+        processing: this.processingCompanies.has(companyId),
+      });
+    }
+
+    let totalPending = 0;
+    for (const queue of this.companyQueues.values()) {
+      totalPending += queue.length;
+    }
+
+    return {
+      pending: totalPending,
+      activeCompanies: this.processingCompanies.size,
+      totalProcessed: this.totalProcessed,
+      totalFailed: this.totalFailed,
+      perCompany,
+    };
+  }
+}
+
+export const analysisQueue = new AnalysisQueue();
+
+== STEP 2: MODIFY server/services/gemini-step2-analysis-service.ts ==
+
+Find the delay between Step 2 calls that was added in the previous build. It currently says:
+
+      console.log(`[GEMINI_STEP2] Waiting 2s before next analysis...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+Change to:
+
+      console.log(`[GEMINI_STEP2] Waiting 1s before next analysis...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+== WHAT NOT TO CHANGE ==
+
+- Do not modify any other files. The portal-submissions.service.ts and documents-files.routes.ts changes from the previous build already call analysisQueue.enqueue() correctly and pass targetCompanyId, so they work with the new per-company queue without any changes.
+- Do not modify gemini-client.ts, gemini-key-resolver.ts, file-analysis.service.ts, or any other service.
+- Do not add database migrations or schema changes.
+
+== VERIFICATION CHECKLIST ==
+
+After making changes:
+
+1. The app starts without import errors
+2. Upload a single file — logs show "[ANALYSIS_QUEUE] Enqueued event X for company Y" then "[ANALYSIS_QUEUE] Processing event X for company Y" and it completes normally
+3. Upload 3 files quickly for the SAME company — logs show all 3 enqueued, then processed one at a time with the first starting immediately and subsequent ones waiting for the previous to finish
+4. If you can test with two different target companies simultaneously, both should process in parallel (you will see interleaved log messages from both companies)
+5. When a company's queue empties, logs show "Company X queue empty, idle"

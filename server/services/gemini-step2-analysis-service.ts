@@ -134,8 +134,8 @@ export async function runStep2AnalysisForTypes(
     
     // Add delay between Step 2 calls to avoid rate limiting
     if (i > 0) {
-      console.log(`[GEMINI_STEP2] Waiting 2s before next analysis...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`[GEMINI_STEP2] Waiting 1s before next analysis...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     const result = await analyzeDocumentWithGemini({
