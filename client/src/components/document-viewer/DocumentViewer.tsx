@@ -142,7 +142,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
     });
     
     try {
-      const response = await fetch(`/api/documents/${document.id}/retry-analysis-webhook`, {
+      const response = await fetch(`/api/v2/document-analysis/document/${document.id}/retry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
@@ -150,17 +150,17 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
       
       if (response.ok) {
         toast({
-          title: "Analysis Complete",
-          description: "Document analysis finished successfully.",
+          title: "Analysis Queued",
+          description: "Document analysis has been queued. Results will appear automatically.",
         });
         queryClient.invalidateQueries({ queryKey: ["/api/v2/document-analysis/document", document.id] });
       } else {
-        throw new Error('Failed to trigger analysis webhook');
+        throw new Error('Failed to trigger analysis');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to analyze document. Please try again.",
+        description: "Failed to retrigger analysis. Please try again.",
         variant: "destructive",
       });
     } finally {

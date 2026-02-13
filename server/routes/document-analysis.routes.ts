@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { documentAnalysisService } from '../services/document-analysis.service';
+import { retriggerAnalysisForDocument } from '../services/file-analysis.service';
 import { sendSuccess, sendError } from '../utils/response';
-import { BadRequestError } from '../utils/errors';
+import { BadRequestError, UnauthorizedError } from '../utils/errors';
 
 const router = Router();
 
@@ -63,6 +64,17 @@ router.get('/company/:companyId/summary', async (req: Request, res: Response) =>
     if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
     const summary = await documentAnalysisService.getAnalysisSummaryForCompany(targetCompanyId, userCompanyId);
     sendSuccess(res, summary);
+  } catch (error) { sendError(res, error); }
+});
+
+router.post('/document/:documentId/retry', async (req: Request, res: Response) => {
+  try {
+    const documentId = parseInt(req.params.documentId);
+    const userId = req.session?.userId;
+    if (!userId) throw new UnauthorizedError();
+    if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+    await retriggerAnalysisForDocument(documentId);
+    sendSuccess(res, { message: 'Analysis retriggered successfully', documentId });
   } catch (error) { sendError(res, error); }
 });
 

@@ -304,7 +304,34 @@ export async function sendFileUploadWebhook(eventId: number) {
   return analyzeUploadedFileWithGemini(eventId);
 }
 
+export async function retriggerAnalysisForDocument(documentId: number): Promise<void> {
+  const events = await documentsRepository.getFileUploadEventsByDocumentId(documentId);
+  if (!events || events.length === 0) {
+    throw new Error(`No upload events found for document ${documentId}`);
+  }
+
+  const latestEvent = events[0];
+  console.log(`[FILE_ANALYSIS] Retriggering analysis for document ${documentId}, event ${latestEvent.id}`);
+
+  await documentAnalysisRepository.deleteByDocumentId(documentId);
+  try {
+    const { financialDataRepository } = await import('../repositories/financial-data.repository');
+    await financialDataRepository.deleteByDocumentId(documentId);
+  } catch (err) {
+    console.error(`[FILE_ANALYSIS] Error clearing financial data for document ${documentId}:`, err);
+  }
+
+  await documentsRepository.updateFileUploadEventWebhookStatus(latestEvent.id, 'pending', undefined, undefined);
+
+  const { analysisQueue } = await import('./analysis-queue.service');
+  analysisQueue.enqueue({
+    eventId: latestEvent.id,
+    targetCompanyId: latestEvent.targetCompanyId,
+  });
+}
+
 export const fileAnalysisService = {
   analyzeUploadedFileWithGemini,
   sendFileUploadWebhook,
+  retriggerAnalysisForDocument,
 };
