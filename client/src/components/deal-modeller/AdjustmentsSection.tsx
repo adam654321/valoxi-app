@@ -56,6 +56,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   director_remuneration: 'Director Remuneration',
   covid_related: 'COVID Related',
   normalisation: 'Normalisation',
+  replacement_salary: 'Replacement Salary',
+  missing_management: 'Missing Management',
+  deferred_maintenance: 'Deferred Maintenance',
+  unsustainable_revenue: 'Unsustainable Revenue',
+  bad_debt_provision: 'Bad Debt Provision',
+  redundant_cost: 'Redundant Cost',
   other: 'Other',
   custom: 'Custom',
 };
@@ -65,6 +71,19 @@ const CONFIDENCE_COLOURS: Record<string, string> = {
   medium: 'bg-amber-100 text-amber-700',
   low: 'bg-red-100 text-red-700',
 };
+
+const DEFENSIBILITY_COLOURS: Record<string, string> = {
+  strong: 'bg-green-100 text-green-700 border-green-200',
+  moderate: 'bg-amber-100 text-amber-700 border-amber-200',
+  weak: 'bg-red-100 text-red-700 border-red-200',
+};
+
+function defensibilityLabel(score: number | null | undefined): { label: string; colour: string } {
+  if (score == null) return { label: '', colour: '' };
+  if (score >= 8) return { label: `${score}/10`, colour: DEFENSIBILITY_COLOURS.strong };
+  if (score >= 5) return { label: `${score}/10`, colour: DEFENSIBILITY_COLOURS.moderate };
+  return { label: `${score}/10`, colour: DEFENSIBILITY_COLOURS.weak };
+}
 
 const STATUS_BORDER: Record<string, string> = {
   accepted: 'border-l-4 border-l-green-500',
@@ -82,6 +101,33 @@ function formatCompactCurrency(val: number): string {
     return `£${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
   }
   return formatCurrency(val);
+}
+
+interface CategoryGroup {
+  category: string;
+  label: string;
+  items: DealModelAdjustment[];
+  total: number;
+}
+
+function groupByCategory(adjustments: DealModelAdjustment[]): CategoryGroup[] {
+  const groups: Record<string, DealModelAdjustment[]> = {};
+  for (const adj of adjustments) {
+    const cat = adj.category || 'other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(adj);
+  }
+
+  return Object.entries(groups)
+    .map(([category, items]) => ({
+      category,
+      label: categoryLabel(category),
+      items: items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id),
+      total: items
+        .filter(a => a.status === 'accepted' || a.status === 'modified')
+        .reduce((sum, a) => sum + toNum(a.amount), 0),
+    }))
+    .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
 }
 
 function PerYearGrid({ years, amounts, onChange }: {
@@ -134,6 +180,15 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
   const [addPerYear, setAddPerYear] = useState(false);
   const [addYearAmounts, setAddYearAmounts] = useState<Record<string, string>>({});
   const [expandedReasoning, setExpandedReasoning] = useState<Set<number>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  function toggleCategory(key: string) {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
 
   const updateMutation = useMutation({
     mutationFn: async ({ adjId, body }: { adjId: number; body: any }) => {
@@ -196,6 +251,8 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
   const manualAdjustments = adjustments.filter(a => a.isManual);
   const addBacks = expertAdjustments.filter(a => a.adjustmentType === 'add_back').sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id);
   const deductions = expertAdjustments.filter(a => a.adjustmentType === 'deduction').sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id);
+  const addBackGroups = useMemo(() => groupByCategory(addBacks), [addBacks]);
+  const deductionGroups = useMemo(() => groupByCategory(deductions), [deductions]);
   const suggested = expertAdjustments.filter(a => a.status === 'suggested');
 
   const counts = {
@@ -355,6 +412,11 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
                 {adj.confidence}
               </Badge>
             )}
+            {(adj as any).defensibilityScore != null && (
+              <Badge variant="outline" className={`text-xs ${defensibilityLabel((adj as any).defensibilityScore).colour}`}>
+                Defensibility: {defensibilityLabel((adj as any).defensibilityScore).label}
+              </Badge>
+            )}
             {adj.status === 'accepted' && <Badge className="bg-green-100 text-green-700 text-xs"><Check className="h-3 w-3 mr-0.5" />Accepted</Badge>}
             {adj.status === 'rejected' && <Badge className="bg-red-100 text-red-700 text-xs"><X className="h-3 w-3 mr-0.5" />Rejected</Badge>}
             {adj.status === 'modified' && <Badge className="bg-amber-100 text-amber-700 text-xs"><Pencil className="h-3 w-3 mr-0.5" />Modified</Badge>}
@@ -366,16 +428,39 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
             <p className="text-xs text-muted-foreground">Suggested by {adj.sourceExpert.replace(/_/g, ' ')}</p>
           )}
 
-          {adj.reasoning && (
+          {(adj.reasoning || (adj as any).caseForInclusion || (adj as any).caseForExclusion) && (
             <Collapsible open={expandedReasoning.has(adj.id)} onOpenChange={() => toggleReasoning(adj.id)}>
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                   {expandedReasoning.has(adj.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  Expert reasoning
+                  Analysis &amp; defensibility
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <p className="text-xs text-muted-foreground mt-1 bg-muted/50 p-2 rounded">{adj.reasoning}</p>
+                <div className="mt-1 space-y-2">
+                  {adj.reasoning && (
+                    <div className="bg-muted/50 p-2 rounded">
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">Expert reasoning</p>
+                      <p className="text-xs text-muted-foreground">{adj.reasoning}</p>
+                    </div>
+                  )}
+                  {((adj as any).caseForInclusion || (adj as any).caseForExclusion) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {(adj as any).caseForInclusion && (
+                        <div className="bg-green-50 border border-green-200 p-2 rounded">
+                          <p className="text-xs font-medium text-green-700 mb-0.5">Case for including</p>
+                          <p className="text-xs text-green-800">{(adj as any).caseForInclusion}</p>
+                        </div>
+                      )}
+                      {(adj as any).caseForExclusion && (
+                        <div className="bg-red-50 border border-red-200 p-2 rounded">
+                          <p className="text-xs font-medium text-red-700 mb-0.5">Case against</p>
+                          <p className="text-xs text-red-800">{(adj as any).caseForExclusion}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CollapsibleContent>
             </Collapsible>
           )}
@@ -472,19 +557,65 @@ export default function AdjustmentsSection({ modelId, adjustments, calculations,
             <p className="text-sm text-muted-foreground text-center py-6">No expert-suggested adjustments found. Run expert analysis to generate adjustment recommendations.</p>
           ) : (
             <div>
-              {addBacks.length > 0 && (
+              {addBackGroups.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 tracking-wider">Add-backs</h4>
-                  <div className="divide-y">
-                    {addBacks.map(a => renderAdjustmentRow(a, false))}
+                  <div className="space-y-1">
+                    {addBackGroups.map(group => {
+                      const groupKey = `ab-${group.category}`;
+                      const isExpanded = expandedCategories.has(groupKey);
+                      return (
+                        <div key={groupKey} className="border rounded-md">
+                          <button
+                            className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                            onClick={() => toggleCategory(groupKey)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                              <span className="text-sm font-medium">{group.label}</span>
+                              <Badge variant="outline" className="text-xs">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</Badge>
+                            </div>
+                            <span className="text-sm font-semibold text-green-700">{group.total > 0 ? `+${formatCurrency(group.total)}` : ''}</span>
+                          </button>
+                          {isExpanded && (
+                            <div className="border-t divide-y">
+                              {group.items.map(a => renderAdjustmentRow(a, false))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
-              {deductions.length > 0 && (
+              {deductionGroups.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 tracking-wider">Deductions</h4>
-                  <div className="divide-y">
-                    {deductions.map(a => renderAdjustmentRow(a, false))}
+                  <div className="space-y-1">
+                    {deductionGroups.map(group => {
+                      const groupKey = `ded-${group.category}`;
+                      const isExpanded = expandedCategories.has(groupKey);
+                      return (
+                        <div key={groupKey} className="border rounded-md">
+                          <button
+                            className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                            onClick={() => toggleCategory(groupKey)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                              <span className="text-sm font-medium">{group.label}</span>
+                              <Badge variant="outline" className="text-xs">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</Badge>
+                            </div>
+                            <span className="text-sm font-semibold text-red-700">{group.total > 0 ? `-${formatCurrency(group.total)}` : ''}</span>
+                          </button>
+                          {isExpanded && (
+                            <div className="border-t divide-y">
+                              {group.items.map(a => renderAdjustmentRow(a, false))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -1,0 +1,292 @@
+Build Prompt 1C: Adjustments Section UI Redesign — Category Grouping & Defensibility Display
+
+== OVERVIEW ==
+
+The "What Should We Adjust?" section currently renders add-backs and deductions as flat lists. With 20-30 adjustments this is overwhelming. We are redesigning it to:
+1. Group adjustments by category within each section (add-backs / deductions)
+2. Each category group is collapsible with a header showing category name, item count, and total amount
+3. Each adjustment row now displays a defensibility score badge
+4. The expandable reasoning section now shows case for inclusion and case for exclusion alongside expert reasoning
+5. Summary grid at the bottom stays exactly the same
+6. Manual adjustments section stays exactly the same
+7. All existing functionality (accept/reject/modify/undo/bulk accept/delete) remains unchanged
+
+== MODIFY: client/src/components/deal-modeller/AdjustmentsSection.tsx ==
+
+This is a significant UI change. I will describe each change precisely. Read the ENTIRE current file first before making any changes.
+
+=== CHANGE 1: Add defensibility score colour mapping ===
+
+Find the existing CONFIDENCE_COLOURS constant. Add a new constant immediately after it:
+
+const DEFENSIBILITY_COLOURS: Record<string, string> = {
+  strong: 'bg-green-100 text-green-700 border-green-200',
+  moderate: 'bg-amber-100 text-amber-700 border-amber-200',
+  weak: 'bg-red-100 text-red-700 border-red-200',
+};
+
+function defensibilityLabel(score: number | null | undefined): { label: string; colour: string } {
+  if (score == null) return { label: '', colour: '' };
+  if (score >= 8) return { label: `${score}/10`, colour: DEFENSIBILITY_COLOURS.strong };
+  if (score >= 5) return { label: `${score}/10`, colour: DEFENSIBILITY_COLOURS.moderate };
+  return { label: `${score}/10`, colour: DEFENSIBILITY_COLOURS.weak };
+}
+
+=== CHANGE 2: Add category grouping helper ===
+
+Add this type and function somewhere above the main component (after the existing helper functions):
+
+interface CategoryGroup {
+  category: string;
+  label: string;
+  items: DealModelAdjustment[];
+  total: number;
+}
+
+function groupByCategory(adjustments: DealModelAdjustment[]): CategoryGroup[] {
+  const groups: Record<string, DealModelAdjustment[]> = {};
+  for (const adj of adjustments) {
+    const cat = adj.category || 'other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(adj);
+  }
+  
+  return Object.entries(groups)
+    .map(([category, items]) => ({
+      category,
+      label: categoryLabel(category),
+      items: items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id),
+      total: items
+        .filter(a => a.status === 'accepted' || a.status === 'modified')
+        .reduce((sum, a) => sum + toNum(a.amount), 0),
+    }))
+    .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
+}
+
+=== CHANGE 3: Add state for expanded category groups ===
+
+Inside the main component, after the existing expandedReasoning state, add:
+
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  function toggleCategory(key: string) {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+=== CHANGE 4: Add grouped data computation ===
+
+After the existing line that computes deductions (the const deductions = ...), add:
+
+  const addBackGroups = useMemo(() => groupByCategory(addBacks), [addBacks]);
+  const deductionGroups = useMemo(() => groupByCategory(deductions), [deductions]);
+
+=== CHANGE 5: Update the renderAdjustmentRow function ===
+
+In the renderAdjustmentRow function, we need to add the defensibility badge and the case for/against display.
+
+CHANGE 5a: Add defensibility badge to the badges row.
+
+Find the block where confidence badge is rendered:
+
+            {adj.confidence && (
+              <Badge className={`text-xs ${CONFIDENCE_COLOURS[adj.confidence] || ''}`}>
+                {adj.confidence}
+              </Badge>
+            )}
+
+Add immediately AFTER that block:
+
+            {(adj as any).defensibilityScore != null && (
+              <Badge variant="outline" className={`text-xs ${defensibilityLabel((adj as any).defensibilityScore).colour}`}>
+                Defensibility: {defensibilityLabel((adj as any).defensibilityScore).label}
+              </Badge>
+            )}
+
+Note: We cast to `any` for defensibilityScore because the TypeScript type from the schema should include it, but if there are any build issues with the type, this is safer. If the type already includes defensibilityScore without issues, the cast is harmless.
+
+CHANGE 5b: Expand the reasoning collapsible to include case for/against.
+
+Find the existing reasoning Collapsible block:
+
+          {adj.reasoning && (
+            <Collapsible open={expandedReasoning.has(adj.id)} onOpenChange={() => toggleReasoning(adj.id)}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  {expandedReasoning.has(adj.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  Expert reasoning
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <p className="text-xs text-muted-foreground mt-1 bg-muted/50 p-2 rounded">{adj.reasoning}</p>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+Replace that entire block with:
+
+          {(adj.reasoning || (adj as any).caseForInclusion || (adj as any).caseForExclusion) && (
+            <Collapsible open={expandedReasoning.has(adj.id)} onOpenChange={() => toggleReasoning(adj.id)}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  {expandedReasoning.has(adj.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  Analysis &amp; defensibility
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-1 space-y-2">
+                  {adj.reasoning && (
+                    <div className="bg-muted/50 p-2 rounded">
+                      <p className="text-xs font-medium text-muted-foreground mb-0.5">Expert reasoning</p>
+                      <p className="text-xs text-muted-foreground">{adj.reasoning}</p>
+                    </div>
+                  )}
+                  {((adj as any).caseForInclusion || (adj as any).caseForExclusion) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {(adj as any).caseForInclusion && (
+                        <div className="bg-green-50 border border-green-200 p-2 rounded">
+                          <p className="text-xs font-medium text-green-700 mb-0.5">Case for including</p>
+                          <p className="text-xs text-green-800">{(adj as any).caseForInclusion}</p>
+                        </div>
+                      )}
+                      {(adj as any).caseForExclusion && (
+                        <div className="bg-red-50 border border-red-200 p-2 rounded">
+                          <p className="text-xs font-medium text-red-700 mb-0.5">Case against</p>
+                          <p className="text-xs text-red-800">{(adj as any).caseForExclusion}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+=== CHANGE 6: Replace the flat list rendering with category-grouped rendering ===
+
+Find the block that renders expert adjustments. It currently looks like this:
+
+            <div>
+              {addBacks.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 tracking-wider">Add-backs</h4>
+                  <div className="divide-y">
+                    {addBacks.map(a => renderAdjustmentRow(a, false))}
+                  </div>
+                </div>
+              )}
+              {deductions.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 tracking-wider">Deductions</h4>
+                  <div className="divide-y">
+                    {deductions.map(a => renderAdjustmentRow(a, false))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+Replace that entire block with:
+
+            <div>
+              {addBackGroups.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 tracking-wider">Add-backs</h4>
+                  <div className="space-y-1">
+                    {addBackGroups.map(group => {
+                      const groupKey = `ab-${group.category}`;
+                      const isExpanded = expandedCategories.has(groupKey);
+                      return (
+                        <div key={groupKey} className="border rounded-md">
+                          <button
+                            className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                            onClick={() => toggleCategory(groupKey)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                              <span className="text-sm font-medium">{group.label}</span>
+                              <Badge variant="outline" className="text-xs">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</Badge>
+                            </div>
+                            <span className="text-sm font-semibold text-green-700">{group.total > 0 ? `+${formatCurrency(group.total)}` : ''}</span>
+                          </button>
+                          {isExpanded && (
+                            <div className="border-t divide-y">
+                              {group.items.map(a => renderAdjustmentRow(a, false))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {deductionGroups.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 tracking-wider">Deductions</h4>
+                  <div className="space-y-1">
+                    {deductionGroups.map(group => {
+                      const groupKey = `ded-${group.category}`;
+                      const isExpanded = expandedCategories.has(groupKey);
+                      return (
+                        <div key={groupKey} className="border rounded-md">
+                          <button
+                            className="flex items-center justify-between w-full px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                            onClick={() => toggleCategory(groupKey)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                              <span className="text-sm font-medium">{group.label}</span>
+                              <Badge variant="outline" className="text-xs">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</Badge>
+                            </div>
+                            <span className="text-sm font-semibold text-red-700">{group.total > 0 ? `-${formatCurrency(group.total)}` : ''}</span>
+                          </button>
+                          {isExpanded && (
+                            <div className="border-t divide-y">
+                              {group.items.map(a => renderAdjustmentRow(a, false))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+=== CHANGE 7: Add missing CATEGORY_LABELS for deduction categories ===
+
+The existing CATEGORY_LABELS map is missing entries for the deduction categories. Find the CATEGORY_LABELS constant and add these entries if they are not already present:
+
+  replacement_salary: 'Replacement Salary',
+  missing_management: 'Missing Management',
+  deferred_maintenance: 'Deferred Maintenance',
+  unsustainable_revenue: 'Unsustainable Revenue',
+  bad_debt_provision: 'Bad Debt Provision',
+  redundant_cost: 'Redundant Cost',
+
+Add them inside the existing object. Do not remove any existing entries. Only add ones that are missing.
+
+== WHAT NOT TO CHANGE ==
+
+- Do not modify the modify dialog, add dialog, or manual adjustments section — they stay exactly as they are
+- Do not modify the summary grid at the bottom
+- Do not modify any mutations, API calls, or data fetching
+- Do not modify the deal-model.calc.ts calculator
+- Do not modify the schema or mapping service
+- Do not modify any other components
+
+== VERIFICATION ==
+
+1. App builds and runs without errors
+2. Navigate to a deal model that has adjustments — they should now be grouped by category under collapsible headers
+3. Each category header shows: category name, item count, and total accepted amount
+4. Clicking a category header expands/collapses to show the individual adjustments
+5. If adjustments have defensibilityScore populated, a colour-coded "Defensibility: X/10" badge appears on the adjustment row
+6. Clicking "Analysis & defensibility" on an adjustment expands to show expert reasoning plus the green "Case for including" and red "Case against" boxes side by side
+7. Accept/reject/modify/undo buttons still work correctly
+8. Bulk "Accept All Suggested" still works
+9. Manual adjustments section below the separator is unchanged
+10. Summary grid (Total Add-backs, Total Deductions, Net Adjustment Impact, Adjusted Avg EBITDA) is unchanged
+11. All categories have readable labels (no raw snake_case showing in the UI)
