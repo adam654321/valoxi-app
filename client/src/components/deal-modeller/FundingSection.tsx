@@ -554,7 +554,7 @@ export default function FundingSection({
             <div>
               <p className="text-sm text-muted-foreground">Total to Fund</p>
               <p className="text-xl font-bold">{formatCurrency(totalFundingRequired)}</p>
-              <p className="text-xs text-muted-foreground">Purchase price + fees</p>
+              <p className="text-xs text-muted-foreground">Offer price (excl. transaction fees)</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Funded So Far</p>

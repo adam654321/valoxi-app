@@ -193,6 +193,8 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       feeLoanArrangementType: (modelDetails.feeLoanArrangementType as 'percent' | 'fixed') ?? 'percent',
       feeDealMakerType: (modelDetails.feeDealMakerType as 'percent' | 'fixed') ?? 'percent',
       customFees: null,
+      workingCapitalMonths: (modelDetails as any).workingCapitalMonths ?? 3,
+      workingCapitalMonthlyAmount: toNum((modelDetails as any).workingCapitalMonthlyAmount),
     };
 
     return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput);
@@ -397,10 +399,10 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     <CardContent className="py-4">
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Banknote className="h-3.5 w-3.5" />
-                        Total Funding Required
+                        Deal Cost
                       </p>
                       <p className="text-2xl font-bold mt-1">
-                        {calculations ? formatCurrency(calculations.totalFundingRequired) : '—'}
+                        {calculations ? formatCurrency(calculations.offerPrice) : '—'}
                       </p>
                     </CardContent>
                   </Card>
@@ -470,7 +472,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     modelId={selectedModelId}
                     fundingLines={modelDetails.fundingLines || []}
                     calculations={calculations}
-                    totalFundingRequired={calculations?.totalFundingRequired ?? 0}
+                    totalFundingRequired={calculations?.offerPrice ?? 0}
                     isLocked={isLocked}
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });

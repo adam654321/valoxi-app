@@ -275,9 +275,9 @@ export function calculatePaymentCover(
   const paymentCoverRatio = averageAdjustedEbitda / totalAnnualDebtService;
 
   let paymentCoverRating: 'strong' | 'adequate' | 'tight' | 'unfundable';
-  if (paymentCoverRatio > 2.0) {
+  if (paymentCoverRatio > 1.8) {
     paymentCoverRating = 'strong';
-  } else if (paymentCoverRatio >= 1.5) {
+  } else if (paymentCoverRatio >= 1.4) {
     paymentCoverRating = 'adequate';
   } else if (paymentCoverRatio >= 1.0) {
     paymentCoverRating = 'tight';
@@ -304,11 +304,11 @@ export function calculateFullDealModel(
 
   const fees = calculateFees(offerPrice, model);
 
-  const funding = calculateFundingStack(fundingLines, fees.totalFundingRequired);
+  const funding = calculateFundingStack(fundingLines, offerPrice);
 
   const adjustedTotalFees = fees.totalFees + funding.totalArrangementFees;
-  const adjustedTotalFundingRequired = fees.totalFundingRequired + funding.totalArrangementFees;
-  const adjustedFundingGap = Math.round((adjustedTotalFundingRequired - funding.totalFunded) * 100) / 100;
+  const adjustedTotalFundingRequired = offerPrice + adjustedTotalFees;
+  const adjustedFundingGap = Math.round((offerPrice - funding.totalFunded) * 100) / 100;
 
   const { paymentCoverRatio, paymentCoverRating } = calculatePaymentCover(
     averageAdjustedEbitda,
