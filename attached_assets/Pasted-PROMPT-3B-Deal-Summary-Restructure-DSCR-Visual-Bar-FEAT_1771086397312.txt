@@ -1,0 +1,210 @@
+PROMPT 3B: Deal Summary Restructure + DSCR Visual Bar
+FEATURE: Restructure Deal Summary table and fix DSCR visual bar segments
+
+STEP 1: RESTRUCTURE THE DEAL SUMMARY TABLE
+
+File: client/src/components/deal-modeller/ViabilitySection.tsx
+
+The Deal Summary table (right column in the grid) currently shows:
+- Offer Price
+- + Transaction Fees
+- = Total Funding Required
+- − Total Funded
+- = Cash to Introduce / Fully Funded
+
+It needs restructuring to show the deal funding FIRST, then fees added at the end:
+
+Replace the entire Deal Summary table (the <div> containing the "Deal Summary" heading and the table that follows it) with:
+```tsx
+<div>
+  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+    <PoundSterling className="h-4 w-4 text-muted-foreground" />
+    Deal Summary
+  </h3>
+  <div className="border rounded-lg overflow-hidden">
+    <table className="w-full text-sm">
+      <tbody>
+        <tr className="bg-muted/30">
+          <td className="px-3 py-2 text-muted-foreground">Offer Price</td>
+          <td className="px-3 py-2 text-right font-medium tabular-nums">
+            {calculations ? formatCurrency(calculations.offerPrice) : '—'}
+          </td>
+        </tr>
+        <tr>
+          <td className="px-3 py-2 text-muted-foreground">− Total Funded</td>
+          <td className="px-3 py-2 text-right font-medium tabular-nums text-green-700">
+            {calculations ? formatCurrency(calculations.totalFunded) : '—'}
+          </td>
+        </tr>
+        <tr className={`border-t font-semibold ${
+          !calculations ? ''
+          : Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0 ? 'bg-green-50 text-green-800'
+          : 'bg-red-50 text-red-800'
+        }`}>
+          <td className="px-3 py-2">
+            {calculations && (Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0) ? 'Surplus / Fully Funded' : 'Cash to Introduce'}
+          </td>
+          <td className="px-3 py-2 text-right tabular-nums">
+            {calculations ? (Math.abs(calculations.fundingGap) < 1 ? '£0' : formatCurrency(Math.abs(calculations.fundingGap))) : '—'}
+          </td>
+        </tr>
+        <tr className="border-t bg-muted/30">
+          <td className="px-3 py-2 text-muted-foreground">+ Transaction Fees</td>
+          <td className="px-3 py-2 text-right font-medium tabular-nums">
+            {calculations ? formatCurrency(calculations.totalFees) : '—'}
+          </td>
+        </tr>
+        <tr className="border-t-2 font-semibold bg-primary/5">
+          <td className="px-3 py-2">Total Outlay</td>
+          <td className="px-3 py-2 text-right tabular-nums">
+            {calculations ? formatCurrency(calculations.totalFundingRequired) : '—'}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {hasDebtService && calculations && (
+    <div className="mt-3 border rounded-lg overflow-hidden">
+      <table className="w-full text-sm">
+        <tbody>
+          <tr className="bg-muted/30">
+            <td className="px-3 py-2 text-muted-foreground">Annual Debt Service</td>
+            <td className="px-3 py-2 text-right font-medium tabular-nums">
+              {formatCurrency(calculations.totalAnnualDebtService)}
+            </td>
+          </tr>
+          <tr>
+            <td className="px-3 py-2 text-muted-foreground">Monthly Debt Service</td>
+            <td className="px-3 py-2 text-right font-medium tabular-nums">
+              {formatCurrency(calculations.totalAnnualDebtService / 12)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+```
+
+The key change: the funding gap (Cash to Introduce) is now calculated against just the offer price. Then transaction fees are added BELOW the gap line, and the Total Outlay at the bottom shows the true all-in cost.
+
+STEP 2: UPDATE THE DSCR VISUAL BAR SEGMENTS
+
+Same file: client/src/components/deal-modeller/ViabilitySection.tsx
+
+The DSCR visual bar has hardcoded segment widths and labels. The thresholds have been changed in the calculator (Prompt 3A) to:
+- Unfundable: < 1.0
+- Tight: 1.0 - 1.39
+- Adequate: 1.4 - 1.8
+- Strong: > 1.8
+
+Update the bar segment proportions to match. Find the bar markup with the coloured segments:
+```tsx
+<div className="absolute inset-y-0 left-0 flex w-full">
+  <div className="bg-red-400 h-full" style={{ width: '25%' }} />
+  <div className="bg-amber-400 h-full" style={{ width: '12.5%' }} />
+  <div className="bg-blue-400 h-full" style={{ width: '12.5%' }} />
+  <div className="bg-green-400 h-full" style={{ width: '50%' }} />
+</div>
+```
+
+The bar goes from 0x to 4x. The thresholds are at 1.0, 1.4, and 1.8. So:
+- 0-1.0 = 25% (unfundable, red)
+- 1.0-1.4 = 10% (tight, amber)
+- 1.4-1.8 = 10% (adequate, blue)
+- 1.8-4.0 = 55% (strong, green)
+
+Change to:
+```tsx
+<div className="absolute inset-y-0 left-0 flex w-full">
+  <div className="bg-red-400 h-full" style={{ width: '25%' }} />
+  <div className="bg-amber-400 h-full" style={{ width: '10%' }} />
+  <div className="bg-blue-400 h-full" style={{ width: '10%' }} />
+  <div className="bg-green-400 h-full" style={{ width: '55%' }} />
+</div>
+```
+
+Also update the scale labels above the bar. Currently:
+```tsx
+<div className="flex justify-between text-xs text-muted-foreground mb-1">
+  <span>0x</span>
+  <span>1x</span>
+  <span>1.5x</span>
+  <span>2x</span>
+  <span>4x+</span>
+</div>
+```
+
+Change to match the new thresholds:
+```tsx
+<div className="flex justify-between text-xs text-muted-foreground mb-1">
+  <span>0x</span>
+  <span>1.0x</span>
+  <span>1.4x</span>
+  <span>1.8x</span>
+  <span>4x+</span>
+</div>
+```
+
+STEP 3: UPDATE THE VIABILITY ASSESSMENT LOGIC
+
+Same file: client/src/components/deal-modeller/ViabilitySection.tsx
+
+In the overallVerdict useMemo, there's a check for fees being too high. Currently:
+```typescript
+if (calculations.totalFees > calculations.offerPrice * 0.15) {
+  issues.push('Total fees exceed 15% of the offer price');
+}
+```
+
+This is fine to keep. But also update the funding gap check — since fundingGap is now based on offer price only, the wording should be clear:
+
+Current:
+```typescript
+if (calculations.fundingGap > 0 && Math.abs(calculations.fundingGap) >= 1) {
+  issues.push(`Funding shortfall of ${formatCurrency(calculations.fundingGap)} needs to be addressed`);
+} else {
+  positives.push('Fully funded — no additional cash required');
+}
+```
+
+Change to:
+```typescript
+if (calculations.fundingGap > 0 && Math.abs(calculations.fundingGap) >= 1) {
+  issues.push(`Deal funding shortfall of ${formatCurrency(calculations.fundingGap)} (before transaction fees)`);
+} else {
+  positives.push('Deal fully funded — no additional cash required for the purchase');
+}
+```
+
+STEP 4: UPDATE LENDER CONTEXT
+
+Same file. The lender context box mentions DSCR thresholds. Update to match:
+
+Find:
+```tsx
+<li>Most lenders require a minimum DSCR of 1.25x–1.50x for senior debt.</li>
+<li>A DSCR above 2.0x provides comfortable headroom for covenant compliance.</li>
+```
+
+Change to:
+```tsx
+<li>Most lenders require a minimum DSCR of 1.25x–1.40x for senior debt.</li>
+<li>A DSCR above 1.8x provides comfortable headroom for covenant compliance.</li>
+```
+
+VERIFICATION:
+- Open a deal model with funding sources and fees configured
+- Funding Section (section 4): "Total to Fund" should show the offer price only, progress bar and gap based on offer price
+- Deal Summary table should now show:
+  1. Offer Price
+  2. − Total Funded
+  3. = Cash to Introduce (or Fully Funded) — this is the deal gap, fees NOT included
+  4. + Transaction Fees
+  5. = Total Outlay — this is the all-in number
+- DSCR bar should show threshold markers at 1.0x, 1.4x, 1.8x, 4x+
+- A DSCR of 1.5x should show as "Adequate" (blue) not "Tight" (amber)
+- A DSCR of 1.9x should show as "Strong" (green) not "Adequate"
+- The viability assessment wording should reference "deal funding shortfall" to be clear it excludes fees
+- Lender context should reference 1.40x and 1.8x thresholds

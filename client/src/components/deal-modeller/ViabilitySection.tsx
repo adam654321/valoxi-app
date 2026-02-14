@@ -193,9 +193,9 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     const positives: string[] = [];
 
     if (calculations.fundingGap > 0 && Math.abs(calculations.fundingGap) >= 1) {
-      issues.push(`Funding shortfall of ${formatCurrency(calculations.fundingGap)} needs to be addressed`);
+      issues.push(`Deal funding shortfall of ${formatCurrency(calculations.fundingGap)} (before transaction fees)`);
     } else {
-      positives.push('Fully funded — no additional cash required');
+      positives.push('Deal fully funded — no additional cash required for the purchase');
     }
 
     if (calculations.paymentCoverRating === 'unfundable') {
@@ -269,17 +269,17 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               <div className="mb-3">
                 <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>0x</span>
-                  <span>1x</span>
-                  <span>1.5x</span>
-                  <span>2x</span>
+                  <span>1.0x</span>
+                  <span>1.4x</span>
+                  <span>1.8x</span>
                   <span>4x+</span>
                 </div>
                 <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
                   <div className="absolute inset-y-0 left-0 flex w-full">
                     <div className="bg-red-400 h-full" style={{ width: '25%' }} />
-                    <div className="bg-amber-400 h-full" style={{ width: '12.5%' }} />
-                    <div className="bg-blue-400 h-full" style={{ width: '12.5%' }} />
-                    <div className="bg-green-400 h-full" style={{ width: '50%' }} />
+                    <div className="bg-amber-400 h-full" style={{ width: '10%' }} />
+                    <div className="bg-blue-400 h-full" style={{ width: '10%' }} />
+                    <div className="bg-green-400 h-full" style={{ width: '55%' }} />
                   </div>
                   {calculations?.paymentCoverRatio != null && (
                     <div
@@ -345,8 +345,8 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               <h4 className="text-sm font-medium text-slate-700">Lender Context</h4>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-600 ml-6">
-              <li>Most lenders require a minimum DSCR of 1.25x–1.50x for senior debt.</li>
-              <li>A DSCR above 2.0x provides comfortable headroom for covenant compliance.</li>
+              <li>Most lenders require a minimum DSCR of 1.25x–1.40x for senior debt.</li>
+              <li>A DSCR above 1.8x provides comfortable headroom for covenant compliance.</li>
               <li>DSCR below 1.0x means the business cannot service its debt from operating cash flow.</li>
             </ul>
           </div>
@@ -448,18 +448,6 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-2 text-muted-foreground">+ Transaction Fees</td>
-                    <td className="px-3 py-2 text-right font-medium tabular-nums">
-                      {calculations ? formatCurrency(calculations.totalFees) : '—'}
-                    </td>
-                  </tr>
-                  <tr className="border-t font-semibold bg-muted/50">
-                    <td className="px-3 py-2">Total Funding Required</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {calculations ? formatCurrency(calculations.totalFundingRequired) : '—'}
-                    </td>
-                  </tr>
-                  <tr>
                     <td className="px-3 py-2 text-muted-foreground">− Total Funded</td>
                     <td className="px-3 py-2 text-right font-medium tabular-nums text-green-700">
                       {calculations ? formatCurrency(calculations.totalFunded) : '—'}
@@ -475,6 +463,18 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
                       {calculations ? (Math.abs(calculations.fundingGap) < 1 ? '£0' : formatCurrency(Math.abs(calculations.fundingGap))) : '—'}
+                    </td>
+                  </tr>
+                  <tr className="border-t bg-muted/30">
+                    <td className="px-3 py-2 text-muted-foreground">+ Transaction Fees</td>
+                    <td className="px-3 py-2 text-right font-medium tabular-nums">
+                      {calculations ? formatCurrency(calculations.totalFees) : '—'}
+                    </td>
+                  </tr>
+                  <tr className="border-t-2 font-semibold bg-primary/5">
+                    <td className="px-3 py-2">Total Outlay</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {calculations ? formatCurrency(calculations.totalFundingRequired) : '—'}
                     </td>
                   </tr>
                 </tbody>
