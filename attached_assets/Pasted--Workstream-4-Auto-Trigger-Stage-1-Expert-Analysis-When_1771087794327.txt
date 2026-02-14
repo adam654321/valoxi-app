@@ -1,0 +1,253 @@
+# Workstream 4: Auto-Trigger Stage 1 Expert Analysis When All 10 Documents Are Uploaded AND Analysed
+
+## Context
+
+When documents are uploaded for a target company, each one is classified and analysed by Gemini (in `server/services/file-analysis.service.ts` → `analyzeUploadedFileWithGemini()`). At the end of that function, there is already logic that auto-triggers **Stage 1** (Data Quality + Screening) when financial documents are first detected.
+
+Currently this trigger fires too early — it triggers as soon as any company_accounts or profit_and_loss document exists. We want it to wait until ALL 10 required documents are uploaded AND have completed their Gemini document analysis (classification + data extraction).
+
+The full expert deep dive (Phase 2) always remains a manual user decision — this workstream does NOT auto-trigger Phase 2.
+
+## The 10 Required Documents
+
+The completion logic already exists in `server/services/document-analysis.service.ts` → the private `calculateCompletionStatus()` method. It tracks:
+- 5× Company Accounts (company_accounts_1 through company_accounts_5)
+- 1× Asset Register
+- 1× Sales Ledger
+- 1× Staff Matrix
+- 1× Profit & Loss
+- 1× Balance Sheet
+
+When `isComplete === true` (i.e. `completedCount === 10`), all document types are covered.
+
+**Important distinction:** "present" means the document file has been uploaded. "Analysed" means Gemini has successfully classified it and extracted data (i.e. there is a row in `document_analysis_results` for that document). Both must be true for all 10 before Stage 1 auto-triggers.
+
+## Changes Required
+
+### File: `server/services/document-analysis.service.ts`
+
+**Change 1:** The `calculateCompletionStatus` method is currently private and requires `userCompanyId` for access control. We need an internal version that can be called server-side without user context (since the file-analysis service runs in background after each upload).
+
+Refactor as follows:
+
+1. Rename the existing private `calculateCompletionStatus(targetCompanyId)` method to `calculateCompletionStatus_impl(targetCompanyId)` (keep it private)
+2. Update the existing public `getCompletionStatus()` method to call `this.calculateCompletionStatus_impl(targetCompanyId)` instead of `this.calculateCompletionStatus(targetCompanyId)`
+3. Add a new public method:
+
+```typescript
+/**
+ * Server-side internal method — no user access check.
+ * Used by file-analysis service to check completion after each upload.
+ */
+async calculateCompletionStatusInternal(targetCompanyId: number): Promise<AnalysisCompletionStatus> {
+  return await this.calculateCompletionStatus_impl(targetCompanyId);
+}
+```
+
+**Change 2:** Add a new public method to find documents that are uploaded but missing their Gemini analysis:
+
+```typescript
+/**
+ * Returns document IDs that exist in the documents table for this company
+ * but do NOT have any corresponding rows in document_analysis_results.
+ * Used to identify documents that need their analysis re-triggered.
+ */
+async getDocumentsMissingAnalysis(targetCompanyId: number): Promise<number[]> {
+  const allDocuments = await documentAnalysisRepository.getAllDocumentsForCompany(targetCompanyId);
+  const missingAnalysis: number[] = [];
+  
+  for (const doc of allDocuments) {
+    const analysisResults = await documentAnalysisRepository.getAnalysisResultsByDocumentId(doc.id);
+    if (!analysisResults || analysisResults.length === 0) {
+      missingAnalysis.push(doc.id);
+    }
+  }
+  
+  return missingAnalysis;
+}
+```
+
+### File: `server/services/file-analysis.service.ts`
+
+**Change 1 (top of file):** Add import if not already present:
+```typescript
+import { documentAnalysisService } from './document-analysis.service';
+```
+
+**Change 2:** Replace the entire existing expert auto-trigger `try/catch` block at the end of `analyzeUploadedFileWithGemini()`. 
+
+Find the block that starts with:
+```
+try {
+  const existingExpertResults = await expertAnalysisService.getExpertResults(event.targetCompanyId);
+```
+
+And ends with:
+```
+} catch (expertError) {
+  console.error(`[FILE_ANALYSIS] Error in Expert Phase 1 auto-trigger check:`, expertError);
+}
+```
+
+Replace the entire thing with:
+
+```typescript
+    // === AUTO-TRIGGER LOGIC: Stage 1 when all 10 documents uploaded AND analysed ===
+    try {
+      const completionStatus = await documentAnalysisService.calculateCompletionStatusInternal(event.targetCompanyId);
+      console.log(`[FILE_ANALYSIS] Document completion for company ${event.targetCompanyId}: ${completionStatus.completedCount}/${completionStatus.totalCount}`);
+
+      if (!completionStatus.isComplete) {
+        console.log(`[FILE_ANALYSIS] Only ${completionStatus.completedCount}/10 document types present for company ${event.targetCompanyId} — waiting for all documents before triggering expert analysis`);
+      } else {
+        // All 10 document types are covered — now check every document has completed analysis
+        const documentsMissingAnalysis = await documentAnalysisService.getDocumentsMissingAnalysis(event.targetCompanyId);
+
+        if (documentsMissingAnalysis.length > 0) {
+          // Some documents uploaded but not yet analysed — re-trigger their analysis
+          console.log(`[FILE_ANALYSIS] All 10 document types present but ${documentsMissingAnalysis.length} document(s) missing analysis — re-triggering analysis for document IDs: ${documentsMissingAnalysis.join(', ')}`);
+
+          for (const docId of documentsMissingAnalysis) {
+            try {
+              // Find the most recent file_upload_event for this document
+              const uploadEvent = await documentsRepository.getFileUploadEventByDocumentId(docId);
+              if (uploadEvent) {
+                console.log(`[FILE_ANALYSIS] Re-triggering analysis for document ${docId} (event ${uploadEvent.id})`);
+                // Reset the event status so it can be re-processed
+                await documentsRepository.updateFileUploadEventWebhookStatus(uploadEvent.id, 'pending', undefined, undefined);
+                // Fire and forget — don't await, these run in parallel
+                analyzeUploadedFileWithGemini(uploadEvent.id).catch(err => {
+                  console.error(`[FILE_ANALYSIS] Re-trigger failed for document ${docId}:`, err.message);
+                });
+              } else {
+                console.warn(`[FILE_ANALYSIS] No upload event found for document ${docId} — cannot re-trigger analysis`);
+              }
+            } catch (retriggerError) {
+              console.error(`[FILE_ANALYSIS] Error re-triggering analysis for document ${docId}:`, retriggerError);
+            }
+          }
+          // Don't trigger Stage 1 yet — wait for re-triggered analyses to complete
+          // They will each call this function again when done, and eventually all will be analysed
+        } else {
+          // All 10 documents present AND all analysed — check if Stage 1 should run
+          const existingExpertResults = await expertAnalysisService.getExpertResults(event.targetCompanyId);
+          const hasRunningExperts = existingExpertResults.some(
+            (r: any) => r.status === 'processing' || r.status === 'pending'
+          );
+          const hasCompletedScreening = existingExpertResults.some(
+            (r: any) => r.expertType === 'screening' && r.status === 'success'
+          );
+
+          if (hasRunningExperts) {
+            console.log(`[FILE_ANALYSIS] All 10 documents complete and analysed for company ${event.targetCompanyId}, but experts already running — skipping auto-trigger`);
+          } else if (hasCompletedScreening) {
+            console.log(`[FILE_ANALYSIS] All 10 documents complete and analysed for company ${event.targetCompanyId}, but screening already completed — skipping auto-trigger`);
+          } else {
+            console.log(`[FILE_ANALYSIS] ✅ All 10 documents uploaded and analysed for company ${event.targetCompanyId} — auto-triggering Stage 1 (Data Quality + Screening)`);
+            expertAnalysisService.triggerNewStage1Pipeline(event.targetCompanyId, event.uploadedBy).catch(err => {
+              console.error(`[FILE_ANALYSIS] Stage 1 auto-trigger failed for company ${event.targetCompanyId}:`, err.message);
+            });
+          }
+        }
+      }
+    } catch (expertError) {
+      console.error(`[FILE_ANALYSIS] Error in expert auto-trigger check:`, expertError);
+    }
+```
+
+### File: `server/repositories/documents.repository.ts`
+
+**Add a new method** to look up a file_upload_event by document ID (needed for re-triggering analysis on documents that were uploaded but not analysed):
+
+```typescript
+async getFileUploadEventByDocumentId(documentId: number): Promise<FileUploadEvent | null> {
+  const [event] = await db
+    .select()
+    .from(fileUploadEvents)
+    .where(eq(fileUploadEvents.documentId, documentId))
+    .orderBy(desc(fileUploadEvents.createdAt))
+    .limit(1);
+  return event || null;
+}
+```
+
+Make sure the necessary imports are present at the top of the file (`desc` from drizzle-orm, `fileUploadEvents` from schema, etc.). Check the existing imports — most should already be there since the repository already works with `fileUploadEvents`.
+
+### File: `client/src/components/document-management.tsx`
+
+**Change:** In the `AnalysisCompletionIndicator` component, update the green completion message to reflect that Stage 1 will auto-trigger.
+
+Find:
+```tsx
+{isComplete && (
+  <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded">
+    <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+      <TrendingUp className="w-4 h-4" />
+      <span className="text-sm font-medium">All financial analysis types completed! Ready for comprehensive due diligence review.</span>
+    </div>
+  </div>
+)}
+```
+
+Replace with:
+```tsx
+{isComplete && (
+  <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded">
+    <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+      <TrendingUp className="w-4 h-4" />
+      <span className="text-sm font-medium">
+        {hasCompletedScreening
+          ? "All document types uploaded and analysed. Screening complete — ready for expert deep dive."
+          : hasRunningExperts
+            ? "All document types uploaded and analysed. Screening analysis is running..."
+            : "All document types uploaded and analysed. Screening analysis will trigger automatically."}
+      </span>
+    </div>
+  </div>
+)}
+```
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `server/services/document-analysis.service.ts` | Expose `calculateCompletionStatusInternal()` for server-side use + add `getDocumentsMissingAnalysis()` method |
+| `server/repositories/documents.repository.ts` | Add `getFileUploadEventByDocumentId()` method for re-trigger lookup |
+| `server/services/file-analysis.service.ts` | Import `documentAnalysisService`, replace entire auto-trigger block with completion-aware logic |
+| `client/src/components/document-management.tsx` | Update completion message to reflect auto-trigger behaviour |
+
+## Two Paths to Stage 1
+
+There are two ways Stage 1 can be triggered:
+
+### Path A: Automatic (all 10 documents)
+1. After EVERY document analysis completes, check: are all 10 document types present?
+2. If NO → log the count and do nothing (wait for more uploads)
+3. If YES → check: do all uploaded documents have completed analysis results?
+4. If some are MISSING analysis → re-trigger Gemini analysis for those specific documents (they will loop back through this check when done)
+5. If ALL analysed → check: has Stage 1 already run or is it running?
+6. If NOT → auto-trigger Stage 1 (Data Quality + Screening) only
+
+### Path B: Manual bypass ("Progress to Analysis" button)
+The "Progress to Analysis" button in the `AnalysisCompletionIndicator` component is a **manual override**. It exists because not every company will have all 10 documents (e.g. a company trading for only 4 years will have 3 years of accounts, not 5). When the user clicks this button:
+
+1. It calls the API route `/api/v2/expert-analysis/trigger-stage1/:id` directly
+2. This goes straight to `expertAnalysisService.triggerNewStage1Pipeline()` — it does NOT pass through the file-analysis auto-trigger logic
+3. The 10/10 completion check is completely bypassed — Stage 1 runs with whatever documents are available
+
+**This already works correctly** because the manual button calls the API route directly, which has no completion checks. The auto-trigger logic only lives inside `file-analysis.service.ts` and only runs after individual document analyses complete. These are two completely separate code paths.
+
+**Critical: Do NOT add any completion checks to the API route or the `triggerNewStage1Pipeline` method.** These must remain callable at any time regardless of document count. The completion gating is ONLY in the auto-trigger path.
+
+Once Stage 1 has been triggered (by either path), the `hasCompletedScreening` / `hasRunningExperts` checks in the auto-trigger logic prevent it from re-running.
+
+Stage 2 (full expert deep dive) is ALWAYS a manual user decision via the existing "Start Expert Deep Dive" button — neither path auto-triggers it.
+
+## Important Notes
+
+- Do NOT remove any manual trigger buttons — the "Progress to Analysis" button, "Start Expert Deep Dive" button, retry/cancel controls all remain exactly as they are
+- Do NOT auto-trigger Stage 2 (the full deep dive) under any circumstances
+- Do NOT add completion checks to the expert-analysis API routes or service methods — they must remain callable regardless of document count
+- The re-trigger for missing analyses is fire-and-forget — each re-triggered analysis will call `analyzeUploadedFileWithGemini` again, which will re-check completion at the end, creating a natural convergence loop
+- The `hasCompletedScreening` check prevents re-triggering Stage 1 on subsequent uploads after screening has already run (whether it was triggered automatically or manually)
+- The `hasRunningExperts` check prevents duplicate triggers if Stage 1 is already in progress

@@ -40,10 +40,37 @@ export class DocumentAnalysisService {
   async getCompletionStatus(targetCompanyId: number, userCompanyId: number): Promise<AnalysisCompletionStatus> {
     const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
     if (!company) throw new ForbiddenError('Company not found or access denied');
-    return await this.calculateCompletionStatus(targetCompanyId);
+    return await this.calculateCompletionStatus_impl(targetCompanyId);
   }
 
-  private async calculateCompletionStatus(targetCompanyId: number): Promise<AnalysisCompletionStatus> {
+  /**
+   * Server-side internal method — no user access check.
+   * Used by file-analysis service to check completion after each upload.
+   */
+  async calculateCompletionStatusInternal(targetCompanyId: number): Promise<AnalysisCompletionStatus> {
+    return await this.calculateCompletionStatus_impl(targetCompanyId);
+  }
+
+  /**
+   * Returns document IDs that exist in the documents table for this company
+   * but do NOT have any corresponding rows in document_analysis_results.
+   * Used to identify documents that need their analysis re-triggered.
+   */
+  async getDocumentsMissingAnalysis(targetCompanyId: number): Promise<number[]> {
+    const allDocuments = await documentAnalysisRepository.getAllDocumentsForCompany(targetCompanyId);
+    const missingAnalysis: number[] = [];
+    
+    for (const doc of allDocuments) {
+      const analysisResults = await documentAnalysisRepository.getAnalysisResultsByDocumentId(doc.id);
+      if (!analysisResults || analysisResults.length === 0) {
+        missingAnalysis.push(doc.id);
+      }
+    }
+    
+    return missingAnalysis;
+  }
+
+  private async calculateCompletionStatus_impl(targetCompanyId: number): Promise<AnalysisCompletionStatus> {
     const requiredTypes = ['asset_register', 'sales_ledger', 'staff_matrix', 'profit_and_loss', 'balance_sheet'];
     const categoryToType: Record<string, string> = {
       'Asset Register': 'asset_register',
@@ -129,7 +156,7 @@ export class DocumentAnalysisService {
       if (!byType[result.documentType]) byType[result.documentType] = [];
       byType[result.documentType].push(result);
     }
-    const completion = await this.calculateCompletionStatus(targetCompanyId);
+    const completion = await this.calculateCompletionStatus_impl(targetCompanyId);
     return { byType, completion, totalResults: allResults.length };
   }
 

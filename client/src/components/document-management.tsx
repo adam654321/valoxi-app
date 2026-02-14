@@ -368,7 +368,13 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
         <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded">
           <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <TrendingUp className="w-4 h-4" />
-            <span className="text-sm font-medium">All financial analysis types completed! Ready for comprehensive due diligence review.</span>
+            <span className="text-sm font-medium">
+              {hasCompletedScreening
+                ? "All document types uploaded and analysed. Screening complete — ready for expert deep dive."
+                : hasRunningExperts
+                  ? "All document types uploaded and analysed. Screening analysis is running..."
+                  : "All document types uploaded and analysed. Screening analysis will trigger automatically."}
+            </span>
           </div>
         </div>
       )}

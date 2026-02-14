@@ -178,6 +178,16 @@ export class DocumentsRepository {
     return updated || undefined;
   }
 
+  async getFileUploadEventByDocumentId(documentId: number): Promise<FileUploadEvent | null> {
+    const [event] = await db
+      .select()
+      .from(fileUploadEvents)
+      .where(eq(fileUploadEvents.documentId, documentId))
+      .orderBy(desc(fileUploadEvents.createdAt))
+      .limit(1);
+    return event || null;
+  }
+
   async getExternalSubmission(submissionId: number, userCompanyId: number): Promise<ExternalDocumentSubmission | undefined> {
     const [submission] = await db
       .select()
