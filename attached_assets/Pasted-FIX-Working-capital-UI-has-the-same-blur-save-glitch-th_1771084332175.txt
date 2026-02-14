@@ -1,0 +1,73 @@
+FIX: Working capital UI has the same blur/save glitch that was just fixed for the other bridge fields
+
+The new working capital section in ValuationSection.tsx was built with inline save logic that doesn't use the fixed handleFocus/handleBlur handlers. Two things need fixing:
+
+1. MANUAL OVERRIDE INPUT - The override Input for working capital must use the same handleFocus and handleBlur as every other bridge field input. Find the manual override Input (the one inside the workingCapitalOverride === true branch) and make sure it has:
+   onFocus={handleFocus}
+   onBlur={handleBlur}
+
+If these are already present, good. But also check that its onChange uses updateLocal() consistently rather than calling setLocal + debounceSave separately, since updateLocal already handles the debounce.
+
+2. SLIDER onValueChange - The slider currently calls setLocal() and debounceSave() directly. This is fine for the slider itself (sliders don't blur the same way inputs do), BUT it needs to set isEditingRef.current = true while dragging to prevent the useEffect from overwriting mid-drag. Update the slider's onValueChange to:
+```tsx
+onValueChange={([v]) => {
+  isEditingRef.current = true;
+  const months = Math.round(v);
+  const newTotal = Math.round(local.workingCapitalMonthlyAmount * months);
+  setLocal(prev => ({
+    ...prev,
+    workingCapitalMonths: months,
+    minusWorkingCapitalAdj: newTotal,
+  }));
+  if (!isLocked) {
+    debounceSave({
+      workingCapitalMonths: String(months),
+      minusWorkingCapitalAdj: String(newTotal),
+    });
+  }
+}}
+```
+
+And add an onPointerUp or onValueCommit handler to release the editing flag after the slider interaction completes. If the Slider component supports onValueCommit (shadcn/radix sliders do), add:
+
+onValueCommit={() => {
+  isEditingRef.current = false;
+  // Flush pending save
+  if (debounceRef.current) {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+  }
+  if (pendingRef.current) {
+    updateMutation.mutate(pendingRef.current);
+    pendingRef.current = null;
+  }
+}}
+
+3. OVERRIDE TOGGLE BUTTONS - The "Override manually" and "Use auto-calculation" buttons call setLocal and debounceSave directly. These are fine since they're button clicks not input fields, but make sure the debounceSave call in the "Use auto-calculation" button flushes immediately since the user expects instant feedback. Change it to use updateMutation.mutate directly instead of debounceSave:
+```tsx
+onClick={() => {
+  const newTotal = Math.round(local.workingCapitalMonthlyAmount * local.workingCapitalMonths);
+  setLocal(prev => ({
+    ...prev,
+    workingCapitalOverride: false,
+    minusWorkingCapitalAdj: newTotal,
+  }));
+  if (!isLocked) {
+    // Clear any pending debounce and save immediately
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    pendingRef.current = null;
+    updateMutation.mutate({ minusWorkingCapitalAdj: String(newTotal) });
+  }
+}}
+```
+
+VERIFICATION:
+- Drag the working capital months slider - value should update smoothly with no flicker
+- Release the slider - value should persist, "Saving/Saved" indicator should appear
+- Click "Override manually", type a value, click away - value should persist with no flicker
+- Click "Use auto-calculation" - should instantly revert to calculated value and save
+- Edit any OTHER bridge field after using the working capital controls - should still work correctly
+- Refresh the page - all values should persist

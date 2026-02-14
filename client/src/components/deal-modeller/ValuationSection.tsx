@@ -536,6 +536,7 @@ export default function ValuationSection({
                             <Slider
                               value={[local.workingCapitalMonths]}
                               onValueChange={([v]) => {
+                                isEditingRef.current = true;
                                 const months = Math.round(v);
                                 const newTotal = Math.round(local.workingCapitalMonthlyAmount * months);
                                 setLocal(prev => ({
@@ -548,6 +549,17 @@ export default function ValuationSection({
                                     workingCapitalMonths: String(months),
                                     minusWorkingCapitalAdj: String(newTotal),
                                   });
+                                }
+                              }}
+                              onValueCommit={() => {
+                                isEditingRef.current = false;
+                                if (debounceRef.current) {
+                                  clearTimeout(debounceRef.current);
+                                  debounceRef.current = null;
+                                }
+                                if (pendingRef.current) {
+                                  updateMutation.mutate(pendingRef.current);
+                                  pendingRef.current = null;
                                 }
                               }}
                               min={1}
@@ -601,7 +613,12 @@ export default function ValuationSection({
                                 minusWorkingCapitalAdj: newTotal,
                               }));
                               if (!isLocked) {
-                                debounceSave({ minusWorkingCapitalAdj: String(newTotal) });
+                                if (debounceRef.current) {
+                                  clearTimeout(debounceRef.current);
+                                  debounceRef.current = null;
+                                }
+                                pendingRef.current = null;
+                                updateMutation.mutate({ minusWorkingCapitalAdj: String(newTotal) });
                               }
                             }}
                             disabled={isLocked}
