@@ -29,6 +29,8 @@ export const dealModels = pgTable("deal_models", {
   minusOtherDebt: decimal("minus_other_debt"),
   minusCorpTaxDue: decimal("minus_corp_tax_due"),
   minusWorkingCapitalAdj: decimal("minus_working_capital_adj"),
+  workingCapitalMonths: integer("working_capital_months").default(3),
+  workingCapitalMonthlyAmount: decimal("working_capital_monthly_amount"),
   totalPurchasePrice: decimal("total_purchase_price"),
   totalFundingAvailable: decimal("total_funding_available"),
   equityRequired: decimal("equity_required"),

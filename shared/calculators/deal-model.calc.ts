@@ -28,6 +28,9 @@ export interface DealModelInput {
   minusCorpTaxDue: string | number;
   minusWorkingCapitalAdj: string | number;
   plusPropertyValue: string | number;
+  workingCapitalMonths?: number;
+  workingCapitalMonthlyAmount?: number;
+  workingCapitalOverride?: boolean;
   otherAdjustments?: Array<{ label: string; amount: number }> | null;
 
   feeLegalDdPercent: string | number;
