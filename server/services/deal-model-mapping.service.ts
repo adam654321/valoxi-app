@@ -6,6 +6,7 @@ import {
   dealModelAdjustments,
   dealModelFundingLines,
   balanceSheets,
+  incomeStatements,
   fixedAssetsRegister,
   financialPeriods,
   type DealModel,
@@ -166,9 +167,23 @@ export class DealModelMappingService {
 
     const latestBalance = await this.getLatestBalanceSheet(targetCompanyId);
     const latestAssets = await this.getLatestFixedAssets(targetCompanyId);
+    const latestIncome = await this.getLatestIncomeStatement(targetCompanyId);
 
     if (latestBalance?.corporationTaxDue) {
       modelValues.minusCorpTaxDue = String(latestBalance.corporationTaxDue);
+    }
+
+    if (latestIncome) {
+      const cos = Number(latestIncome.costOfSales) || 0;
+      const admin = Number(latestIncome.administrativeExpenses) || 0;
+      const annualOpex = Math.abs(cos) + Math.abs(admin);
+      if (annualOpex > 0) {
+        const monthlyAmount = Math.round(annualOpex / 12);
+        modelValues.workingCapitalMonthlyAmount = String(monthlyAmount);
+        modelValues.workingCapitalMonths = 3;
+        modelValues.minusWorkingCapitalAdj = String(monthlyAmount * 3);
+        console.log(`[DEAL_MODEL_MAPPING] Working capital: monthly=${monthlyAmount}, total=${monthlyAmount * 3} (from COS=${cos}, Admin=${admin})`);
+      }
     }
 
     modelValues.expertDataSnapshot = {
@@ -505,6 +520,23 @@ export class DealModelMappingService {
       return result?.balance_sheets || null;
     } catch (err) {
       console.log(`[DEAL_MODEL_MAPPING] Warning: Could not fetch balance sheet`, err);
+      return null;
+    }
+  }
+
+  private async getLatestIncomeStatement(targetCompanyId: number): Promise<Record<string, any> | null> {
+    try {
+      const [result] = await db
+        .select()
+        .from(incomeStatements)
+        .innerJoin(financialPeriods, eq(incomeStatements.financialPeriodId, financialPeriods.id))
+        .where(eq(incomeStatements.targetCompanyId, targetCompanyId))
+        .orderBy(desc(financialPeriods.periodEnd))
+        .limit(1);
+
+      return result?.income_statements || null;
+    } catch (err) {
+      console.log(`[DEAL_MODEL_MAPPING] Warning: Could not fetch income statement`, err);
       return null;
     }
   }
