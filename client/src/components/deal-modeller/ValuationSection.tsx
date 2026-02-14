@@ -47,9 +47,19 @@ interface LocalValues {
   minusOtherDebt: number;
   minusCorpTaxDue: number;
   minusWorkingCapitalAdj: number;
+  workingCapitalMonths: number;
+  workingCapitalMonthlyAmount: number;
+  workingCapitalOverride: boolean;
 }
 
 function initLocal(model: DealModel): LocalValues {
+  const m = model as any;
+  const monthlyAmount = toNum(m.workingCapitalMonthlyAmount);
+  const months = m.workingCapitalMonths ?? 3;
+  const calculatedTotal = monthlyAmount * months;
+  const storedTotal = toNum(model.minusWorkingCapitalAdj);
+  const isOverridden = monthlyAmount > 0 && Math.abs(storedTotal - calculatedTotal) > 1;
+
   return {
     averagingYears: model.averagingYears ?? 3,
     ebitdaMultiple: toNum(model.ebitdaMultiple),
@@ -58,7 +68,10 @@ function initLocal(model: DealModel): LocalValues {
     minusPrimaryDebt: toNum(model.minusPrimaryDebt),
     minusOtherDebt: toNum(model.minusOtherDebt),
     minusCorpTaxDue: toNum((model as any).minusCorpTaxDue),
-    minusWorkingCapitalAdj: toNum(model.minusWorkingCapitalAdj),
+    minusWorkingCapitalAdj: storedTotal,
+    workingCapitalMonths: months,
+    workingCapitalMonthlyAmount: monthlyAmount,
+    workingCapitalOverride: isOverridden,
   };
 }
 
@@ -72,6 +85,9 @@ function buildModelInput(local: LocalValues, model: DealModel): DealModelInput {
     minusCorpTaxDue: local.minusCorpTaxDue,
     minusWorkingCapitalAdj: local.minusWorkingCapitalAdj,
     plusPropertyValue: local.plusPropertyValue,
+    workingCapitalMonths: local.workingCapitalMonths,
+    workingCapitalMonthlyAmount: local.workingCapitalMonthlyAmount,
+    workingCapitalOverride: local.workingCapitalOverride,
     otherAdjustments: null,
     feeLegalDdPercent: model.feeLegalDdPercent ?? '2.5',
     feeAccountingDdPercent: model.feeAccountingDdPercent ?? '1.5',
@@ -225,9 +241,10 @@ export default function ValuationSection({
   const offerPrice = localCalcs?.offerPrice ?? 0;
   const avgEbitda = localCalcs?.averageAdjustedEbitda ?? 0;
 
+  type NumericLocalField = Exclude<keyof LocalValues, 'workingCapitalOverride'>;
   const bridgeItems: Array<{
     label: string;
-    field: keyof LocalValues;
+    field: NumericLocalField;
     dbField: string;
     direction: '+' | '-';
     expertField?: string;
@@ -237,7 +254,6 @@ export default function ValuationSection({
     { label: 'Primary Debt', field: 'minusPrimaryDebt', dbField: 'minusPrimaryDebt', direction: '-', expertField: 'minusPrimaryDebt' },
     { label: 'Other Debt / Director Loans', field: 'minusOtherDebt', dbField: 'minusOtherDebt', direction: '-', expertField: 'minusOtherDebt' },
     { label: 'Corporation Tax Due', field: 'minusCorpTaxDue', dbField: 'minusCorpTaxDue', direction: '-', expertField: 'minusCorpTaxDue' },
-    { label: 'Working Capital Adjustment', field: 'minusWorkingCapitalAdj', dbField: 'minusWorkingCapitalAdj', direction: '-', expertField: 'minusWorkingCapitalAdj' },
   ];
 
   const upfrontCash = toNum(model.upfrontCash);
@@ -457,6 +473,152 @@ export default function ValuationSection({
                 </div>
               );
             })}
+
+            {(() => {
+              const hasAutoCalc = local.workingCapitalMonthlyAmount > 0;
+              const calculatedTotal = local.workingCapitalMonthlyAmount * local.workingCapitalMonths;
+              const displayValue = local.workingCapitalOverride ? local.minusWorkingCapitalAdj : calculatedTotal;
+
+              if (!hasAutoCalc) {
+                return (
+                  <div className="flex items-center gap-3 px-4 py-3 border-b border-l-4 border-l-red-400">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-sm font-bold text-red-600">−</span>
+                      <span className="text-sm font-medium truncate">Working Capital Adjustment</span>
+                      <span className="text-xs text-muted-foreground">(no income data)</span>
+                    </div>
+                    <div className="w-36 shrink-0">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                        <Input
+                          type="number"
+                          value={local.minusWorkingCapitalAdj || ''}
+                          onFocus={handleFocus}
+                          onBlur={handleBlur}
+                          onChange={e => {
+                            const v = parseFloat(e.target.value);
+                            updateLocal('minusWorkingCapitalAdj', isNaN(v) ? 0 : v, 'minusWorkingCapitalAdj');
+                          }}
+                          disabled={isLocked}
+                          className="pl-7 text-right text-base h-9"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="border-b border-l-4 border-l-red-400">
+                  <div className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-red-600">−</span>
+                        <span className="text-sm font-medium">Working Capital Adjustment</span>
+                        {!local.workingCapitalOverride && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                            Auto-calculated
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="font-semibold text-base tabular-nums">
+                        {formatCurrency(displayValue)}
+                      </span>
+                    </div>
+
+                    {!local.workingCapitalOverride ? (
+                      <div className="space-y-2 ml-5">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span>{formatCurrency(local.workingCapitalMonthlyAmount)}/mo</span>
+                          <span>×</span>
+                          <div className="flex items-center gap-2 flex-1">
+                            <Slider
+                              value={[local.workingCapitalMonths]}
+                              onValueChange={([v]) => {
+                                const months = Math.round(v);
+                                const newTotal = Math.round(local.workingCapitalMonthlyAmount * months);
+                                setLocal(prev => ({
+                                  ...prev,
+                                  workingCapitalMonths: months,
+                                  minusWorkingCapitalAdj: newTotal,
+                                }));
+                                if (!isLocked) {
+                                  debounceSave({
+                                    workingCapitalMonths: String(months),
+                                    minusWorkingCapitalAdj: String(newTotal),
+                                  });
+                                }
+                              }}
+                              min={1}
+                              max={12}
+                              step={1}
+                              disabled={isLocked}
+                              className="flex-1"
+                            />
+                            <span className="font-medium w-16 text-right tabular-nums text-foreground">
+                              {local.workingCapitalMonths} month{local.workingCapitalMonths !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setLocal(prev => ({ ...prev, workingCapitalOverride: true }));
+                          }}
+                          disabled={isLocked}
+                          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                        >
+                          Override manually
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 ml-5">
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                            <Input
+                              type="number"
+                              value={local.minusWorkingCapitalAdj || ''}
+                              onFocus={handleFocus}
+                              onBlur={handleBlur}
+                              onChange={e => {
+                                const v = parseFloat(e.target.value);
+                                updateLocal('minusWorkingCapitalAdj', isNaN(v) ? 0 : v, 'minusWorkingCapitalAdj');
+                              }}
+                              disabled={isLocked}
+                              className="pl-7 text-right text-base h-9"
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => {
+                              const newTotal = Math.round(local.workingCapitalMonthlyAmount * local.workingCapitalMonths);
+                              setLocal(prev => ({
+                                ...prev,
+                                workingCapitalOverride: false,
+                                minusWorkingCapitalAdj: newTotal,
+                              }));
+                              if (!isLocked) {
+                                debounceSave({ minusWorkingCapitalAdj: String(newTotal) });
+                              }
+                            }}
+                            disabled={isLocked}
+                            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                          >
+                            ← Use auto-calculation
+                          </button>
+                          <span className="text-xs text-muted-foreground">
+                            Auto would be: {formatCurrency(calculatedTotal)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flex items-center justify-between px-4 py-3 bg-primary/5">
               <span className="text-base font-semibold">Offer Price</span>
