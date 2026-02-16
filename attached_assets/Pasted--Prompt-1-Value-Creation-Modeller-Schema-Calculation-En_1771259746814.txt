@@ -1,0 +1,1196 @@
+# Prompt 1: Value Creation Modeller — Schema + Calculation Engine
+
+## Context
+
+We're building a Value Creation Modeller — a new post-acquisition financial modelling feature within the existing deal page. This is the foundation prompt: it creates the database tables to store value creation assumptions and a pure TypeScript calculation engine that all UI sections will consume.
+
+**The existing codebase already has:**
+- A deal modeller with a shared calculator at `shared/calculators/deal-model.calc.ts` — we follow the same pure-function pattern
+- Schema files in `shared/schema/` using Drizzle ORM (pgTable, serial, varchar, decimal, integer, json, timestamp, boolean, text)
+- Schema index at `shared/schema/index.ts` that re-exports all schema modules
+- Income statement data in the `income_statements` table (revenue, costOfSales, grossProfit, administrativeExpenses, operatingProfit, staffCosts, directorsRemuneration, depreciationAmortisation, interestPayable, corporationTax, netProfit)
+- Funding stack data in `deal_model_funding_lines` (fundingType, amountUsed, interestRate, termMonths, isDebt, isActive)
+- Deal model data in `deal_models` (adjustedEbitda, enterpriseValue, totalPurchasePrice, ebitdaMultiple, plus equity bridge fields)
+- The `toNum()` helper already exported from `deal-model.calc.ts`
+- Express routes pattern in `server/routes/` with services in `server/services/`
+- Route registration in `server/routes/index.ts` using `registerModularRoutes()`
+- DB instance at `server/db.ts`
+- Response helpers: `sendSuccess`, `sendCreated`, `sendError` from `server/utils/response`
+- Auth pattern: `req.session?.userId`, `req.session?.userCompanyId`, `UnauthorizedError` from `server/utils/errors`
+
+## Step-by-Step Instructions
+
+### Step 1: Create the Schema File
+
+Create a new file at `shared/schema/value-creation.ts`:
+
+```typescript
+import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, json } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
+import { users } from './core';
+import { dealModels } from './deal-models';
+
+// Stores the full set of assumptions for a deal model's value creation projections.
+// One row per scenario per deal model. The "base" scenario is always created automatically.
+export const valueCreationScenarios = pgTable("value_creation_scenarios", {
+  id: serial("id").primaryKey(),
+  dealModelId: integer("deal_model_id").references(() => dealModels.id, { onDelete: 'cascade' }).notNull(),
+  scenarioType: varchar("scenario_type", { length: 20 }).notNull().default('base'), // 'bear', 'base', 'bull', 'custom'
+  name: varchar("name", { length: 100 }).notNull().default('Base Case'),
+  
+  // Scenario multipliers (applied to base assumptions for bear/bull)
+  revenueGrowthMultiplier: decimal("revenue_growth_multiplier").default('1.0'),
+  costPressureAdjustment: decimal("cost_pressure_adjustment").default('0'), // additional % added to cost inflation
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Year-by-year growth assumptions. One row per year (1-5) per scenario.
+export const valueCreationAssumptions = pgTable("value_creation_assumptions", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => valueCreationScenarios.id, { onDelete: 'cascade' }).notNull(),
+  year: integer("year").notNull(), // 1-5
+  
+  // Growth assumptions
+  revenueGrowthPercent: decimal("revenue_growth_percent").default('5.0'),
+  costOfSalesGrowthPercent: decimal("cost_of_sales_growth_percent").default('3.0'),
+  adminCostGrowthPercent: decimal("admin_cost_growth_percent").default('2.0'),
+  staffCostGrowthPercent: decimal("staff_cost_growth_percent").default('3.0'),
+  depreciationGrowthPercent: decimal("depreciation_growth_percent").default('0'),
+  capexPerYear: decimal("capex_per_year").default('0'),
+  workingCapitalPercent: decimal("working_capital_percent").default('0'), // % of revenue change
+  taxRatePercent: decimal("tax_rate_percent").default('25.0'),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Individual synergy levers with realisation timelines
+export const valueCreationSynergies = pgTable("value_creation_synergies", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => valueCreationScenarios.id, { onDelete: 'cascade' }).notNull(),
+  
+  synergyType: varchar("synergy_type", { length: 20 }).notNull(), // 'revenue' or 'cost'
+  name: varchar("name", { length: 200 }).notNull(),
+  targetValue: decimal("target_value").default('0'), // £ amount at full realisation
+  
+  // Realisation percentages per year (what % of target is achieved)
+  realisationY1: decimal("realisation_y1").default('20'),
+  realisationY2: decimal("realisation_y2").default('50'),
+  realisationY3: decimal("realisation_y3").default('80'),
+  realisationY4: decimal("realisation_y4").default('100'),
+  realisationY5: decimal("realisation_y5").default('100'),
+  
+  // One-off implementation cost (reduces Y1 benefit)
+  implementationCost: decimal("implementation_cost").default('0'),
+  
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Exit assumptions for terminal value modelling
+export const valueCreationExitAssumptions = pgTable("value_creation_exit_assumptions", {
+  id: serial("id").primaryKey(),
+  dealModelId: integer("deal_model_id").references(() => dealModels.id, { onDelete: 'cascade' }).notNull(),
+  
+  exitMultiple: decimal("exit_multiple").default('4.0'),
+  holdPeriodYears: integer("hold_period_years").default(5),
+  exitCostPercent: decimal("exit_cost_percent").default('3.0'), // % of exit EV for transaction costs
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Insert schemas
+export const insertValueCreationScenarioSchema = createInsertSchema(valueCreationScenarios).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export const insertValueCreationAssumptionSchema = createInsertSchema(valueCreationAssumptions).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export const insertValueCreationSynergySchema = createInsertSchema(valueCreationSynergies).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export const insertValueCreationExitAssumptionSchema = createInsertSchema(valueCreationExitAssumptions).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+
+// Types
+export type ValueCreationScenario = typeof valueCreationScenarios.$inferSelect;
+export type InsertValueCreationScenario = z.infer<typeof insertValueCreationScenarioSchema>;
+export type ValueCreationAssumption = typeof valueCreationAssumptions.$inferSelect;
+export type InsertValueCreationAssumption = z.infer<typeof insertValueCreationAssumptionSchema>;
+export type ValueCreationSynergy = typeof valueCreationSynergies.$inferSelect;
+export type InsertValueCreationSynergy = z.infer<typeof insertValueCreationSynergySchema>;
+export type ValueCreationExitAssumption = typeof valueCreationExitAssumptions.$inferSelect;
+export type InsertValueCreationExitAssumption = z.infer<typeof insertValueCreationExitAssumptionSchema>;
+```
+
+### Step 2: Register the Schema
+
+Add the export to `shared/schema/index.ts` — add this line with the other exports:
+
+```typescript
+export * from './value-creation';
+```
+
+### Step 3: Run Database Migration
+
+Run the Drizzle push command to create the tables:
+
+```bash
+npm run db:push
+```
+
+### Step 4: Create the Calculation Engine
+
+Create a new file at `shared/calculators/value-creation.calc.ts`:
+
+```typescript
+import { toNum } from './deal-model.calc';
+
+// ─── INPUT INTERFACES ───
+
+export interface BaseYearData {
+  revenue: number;
+  costOfSales: number;
+  grossProfit: number;
+  administrativeExpenses: number;
+  staffCosts: number;
+  depreciationAmortisation: number;
+  operatingProfit: number;
+  interestPayable: number;
+  corporationTax: number;
+  netProfit: number;
+  adjustedEbitda: number;
+}
+
+export interface YearAssumptions {
+  year: number;
+  revenueGrowthPercent: number;
+  costOfSalesGrowthPercent: number;
+  adminCostGrowthPercent: number;
+  staffCostGrowthPercent: number;
+  depreciationGrowthPercent: number;
+  capexPerYear: number;
+  workingCapitalPercent: number;
+  taxRatePercent: number;
+}
+
+export interface SynergyInput {
+  synergyType: 'revenue' | 'cost';
+  name: string;
+  targetValue: number;
+  realisationByYear: number[]; // [Y1%, Y2%, Y3%, Y4%, Y5%] as decimals (0-1)
+  implementationCost: number;
+}
+
+export interface FundingLineForProjection {
+  amountUsed: number;
+  interestRate: number; // annual %
+  termMonths: number;
+  isDebt: boolean;
+  isActive: boolean;
+}
+
+export interface ExitAssumptions {
+  exitMultiple: number;
+  holdPeriodYears: number; // 3-7
+  exitCostPercent: number;
+}
+
+export interface ScenarioMultipliers {
+  revenueGrowthMultiplier: number;
+  costPressureAdjustment: number; // additional % to add to cost growth rates
+}
+
+// ─── OUTPUT INTERFACES ───
+
+export interface ProjectedYear {
+  year: number; // 1-5
+  revenue: number;
+  costOfSales: number;
+  grossProfit: number;
+  staffCosts: number;
+  adminExpenses: number;
+  totalOverheads: number;
+  ebitdaBeforeSynergies: number;
+  synergiesRevenue: number;
+  synergiesCost: number;
+  synergiesImplementationCost: number;
+  synergiesNet: number;
+  ebitda: number;
+  depreciationAmortisation: number;
+  operatingProfit: number;
+  interestPayable: number;
+  profitBeforeTax: number;
+  corporationTax: number;
+  netProfit: number;
+  totalDebtService: number;
+  cashAfterDebtService: number;
+  dscr: number;
+  capex: number;
+  workingCapitalChange: number;
+  freeCashFlow: number;
+}
+
+export interface DebtFacilitySchedule {
+  facilityIndex: number;
+  years: Array<{
+    year: number;
+    openingBalance: number;
+    interestPayment: number;
+    principalRepayment: number;
+    closingBalance: number;
+  }>;
+}
+
+export interface WaterfallYear {
+  year: number;
+  ebitda: number;
+  tax: number;
+  interest: number;
+  principalRepayments: number;
+  capex: number;
+  workingCapitalChange: number;
+  freeCashFlow: number;
+}
+
+export interface ReturnMetrics {
+  irr: number; // as decimal (0.25 = 25%)
+  moic: number;
+  paybackPeriodYears: number;
+  totalReturn: number; // £
+  totalCashDistributions: number;
+  
+  // Value creation bridge components (£)
+  entryEquity: number;
+  ebitdaGrowthValue: number;
+  multipleExpansionValue: number;
+  debtPaydownValue: number;
+  cashDistributionsValue: number;
+  feesDeducted: number;
+  exitEquity: number;
+}
+
+export interface SensitivityResult {
+  tornadoData: Array<{
+    variable: string;
+    baseValue: number;
+    lowValue: number;
+    highValue: number;
+    lowOutput: number;
+    highOutput: number;
+  }>;
+  heatmapData: {
+    rowVariable: string;
+    colVariable: string;
+    rowValues: number[];
+    colValues: number[];
+    cells: number[][]; // [row][col]
+    baseRowIndex: number;
+    baseColIndex: number;
+  };
+  breakEvenRevDeclineDSCR: number; // % decline before DSCR < 1.0
+  breakEvenRevDeclineFCF: number; // % decline before FCF < 0
+  breakEvenInterestRateIncrease: number; // % points increase before DSCR < 1.0
+}
+
+// ─── CALCULATION FUNCTIONS ───
+
+/**
+ * Calculate 5-year P&L projections from base year data and assumptions.
+ */
+export function calculateProjections(
+  baseYear: BaseYearData,
+  assumptions: YearAssumptions[],
+  synergies: SynergyInput[],
+  fundingLines: FundingLineForProjection[],
+  scenario: ScenarioMultipliers = { revenueGrowthMultiplier: 1, costPressureAdjustment: 0 }
+): ProjectedYear[] {
+  const years: ProjectedYear[] = [];
+  const sortedAssumptions = [...assumptions].sort((a, b) => a.year - b.year);
+  const debtSchedules = calculateDebtSchedules(fundingLines);
+
+  let prevRevenue = baseYear.revenue;
+  let prevCostOfSales = baseYear.costOfSales;
+  let prevStaffCosts = baseYear.staffCosts;
+  let prevAdminExpenses = baseYear.administrativeExpenses;
+  let prevDepreciation = baseYear.depreciationAmortisation;
+
+  for (let i = 0; i < 5; i++) {
+    const yearNum = i + 1;
+    const a = sortedAssumptions[i] || sortedAssumptions[sortedAssumptions.length - 1];
+    
+    // Apply scenario multipliers
+    const effectiveRevenueGrowth = a.revenueGrowthPercent * scenario.revenueGrowthMultiplier;
+    const effectiveCostGrowth = a.costOfSalesGrowthPercent + scenario.costPressureAdjustment;
+    const effectiveStaffGrowth = a.staffCostGrowthPercent + scenario.costPressureAdjustment;
+    const effectiveAdminGrowth = a.adminCostGrowthPercent + scenario.costPressureAdjustment;
+
+    // Project P&L lines
+    const revenue = prevRevenue * (1 + effectiveRevenueGrowth / 100);
+    const costOfSales = prevCostOfSales * (1 + effectiveCostGrowth / 100);
+    const grossProfit = revenue - costOfSales;
+    
+    const staffCosts = prevStaffCosts * (1 + effectiveStaffGrowth / 100);
+    const adminExpenses = prevAdminExpenses * (1 + effectiveAdminGrowth / 100);
+    const totalOverheads = staffCosts + adminExpenses;
+    
+    const ebitdaBeforeSynergies = grossProfit - totalOverheads;
+
+    // Calculate synergies for this year
+    let synergiesRevenue = 0;
+    let synergiesCost = 0;
+    let synergiesImplementationCost = 0;
+    
+    for (const syn of synergies) {
+      const realisationPct = (syn.realisationByYear[i] || 0);
+      const yearValue = syn.targetValue * realisationPct;
+      
+      if (syn.synergyType === 'revenue') {
+        synergiesRevenue += yearValue;
+      } else {
+        synergiesCost += yearValue;
+      }
+      
+      // Implementation costs only in year 1
+      if (yearNum === 1) {
+        synergiesImplementationCost += syn.implementationCost;
+      }
+    }
+    
+    const synergiesNet = synergiesRevenue + synergiesCost - synergiesImplementationCost;
+    const ebitda = ebitdaBeforeSynergies + synergiesNet;
+    
+    const depreciationAmortisation = prevDepreciation * (1 + a.depreciationGrowthPercent / 100);
+    const operatingProfit = ebitda - depreciationAmortisation;
+
+    // Debt service calculations
+    let totalInterest = 0;
+    let totalPrincipal = 0;
+    for (const schedule of debtSchedules) {
+      const yearData = schedule.years.find(y => y.year === yearNum);
+      if (yearData) {
+        totalInterest += yearData.interestPayment;
+        totalPrincipal += yearData.principalRepayment;
+      }
+    }
+    
+    const interestPayable = totalInterest;
+    const profitBeforeTax = operatingProfit - interestPayable;
+    const corporationTax = Math.max(0, profitBeforeTax * a.taxRatePercent / 100);
+    const netProfit = profitBeforeTax - corporationTax;
+    
+    const totalDebtService = totalInterest + totalPrincipal;
+    const cashAfterDebtService = ebitda - corporationTax - totalDebtService;
+    const dscr = totalDebtService > 0 ? ebitda / totalDebtService : 999;
+
+    // Cash flow items
+    const capex = a.capexPerYear;
+    const revenueChange = revenue - prevRevenue;
+    const workingCapitalChange = revenueChange * a.workingCapitalPercent / 100;
+    const freeCashFlow = cashAfterDebtService - capex - workingCapitalChange;
+
+    years.push({
+      year: yearNum,
+      revenue,
+      costOfSales,
+      grossProfit,
+      staffCosts,
+      adminExpenses,
+      totalOverheads,
+      ebitdaBeforeSynergies,
+      synergiesRevenue,
+      synergiesCost,
+      synergiesImplementationCost,
+      synergiesNet,
+      ebitda,
+      depreciationAmortisation,
+      operatingProfit,
+      interestPayable,
+      profitBeforeTax,
+      corporationTax,
+      netProfit,
+      totalDebtService,
+      cashAfterDebtService,
+      dscr,
+      capex,
+      workingCapitalChange,
+      freeCashFlow,
+    });
+
+    // Carry forward for next year
+    prevRevenue = revenue;
+    prevCostOfSales = costOfSales;
+    prevStaffCosts = staffCosts;
+    prevAdminExpenses = adminExpenses;
+    prevDepreciation = depreciationAmortisation;
+  }
+
+  return years;
+}
+
+/**
+ * Generate full debt amortisation schedules for each funding facility.
+ */
+export function calculateDebtSchedules(fundingLines: FundingLineForProjection[]): DebtFacilitySchedule[] {
+  const schedules: DebtFacilitySchedule[] = [];
+
+  fundingLines.forEach((line, index) => {
+    if (!line.isActive || !line.isDebt || line.amountUsed <= 0) {
+      return;
+    }
+
+    const yearData: DebtFacilitySchedule['years'] = [];
+    let balance = line.amountUsed;
+    const monthlyRate = line.interestRate / 100 / 12;
+    const totalMonths = line.termMonths || 60;
+
+    // Calculate monthly payment (PMT)
+    let monthlyPayment: number;
+    if (monthlyRate === 0) {
+      monthlyPayment = balance / totalMonths;
+    } else {
+      const factor = Math.pow(1 + monthlyRate, totalMonths);
+      monthlyPayment = (balance * monthlyRate * factor) / (factor - 1);
+    }
+
+    for (let year = 1; year <= 5; year++) {
+      const openingBalance = balance;
+      let yearInterest = 0;
+      let yearPrincipal = 0;
+
+      for (let month = 0; month < 12; month++) {
+        if (balance <= 0) break;
+        
+        const monthsElapsed = (year - 1) * 12 + month;
+        if (monthsElapsed >= totalMonths) break;
+
+        const interestPayment = balance * monthlyRate;
+        const principalPayment = Math.min(monthlyPayment - interestPayment, balance);
+        
+        yearInterest += interestPayment;
+        yearPrincipal += principalPayment;
+        balance -= principalPayment;
+      }
+
+      yearData.push({
+        year,
+        openingBalance,
+        interestPayment: yearInterest,
+        principalRepayment: yearPrincipal,
+        closingBalance: Math.max(0, balance),
+      });
+    }
+
+    schedules.push({ facilityIndex: index, years: yearData });
+  });
+
+  return schedules;
+}
+
+/**
+ * Build cash flow waterfall data for each year.
+ */
+export function calculateWaterfall(projections: ProjectedYear[]): WaterfallYear[] {
+  return projections.map(p => ({
+    year: p.year,
+    ebitda: p.ebitda,
+    tax: -p.corporationTax,
+    interest: -p.interestPayable,
+    principalRepayments: -(p.totalDebtService - p.interestPayable),
+    capex: -p.capex,
+    workingCapitalChange: -p.workingCapitalChange,
+    freeCashFlow: p.freeCashFlow,
+  }));
+}
+
+/**
+ * Calculate investment return metrics and value creation bridge.
+ */
+export function calculateReturns(
+  projections: ProjectedYear[],
+  exitAssumptions: ExitAssumptions,
+  entryEquity: number,
+  entryMultiple: number,
+  totalDebtAtEntry: number,
+  totalFees: number,
+  fundingLines: FundingLineForProjection[]
+): ReturnMetrics {
+  const holdYears = Math.min(exitAssumptions.holdPeriodYears, 5);
+  const exitYear = projections[holdYears - 1];
+  if (!exitYear) {
+    return emptyReturns(entryEquity);
+  }
+
+  // Exit valuation
+  const exitEV = exitYear.ebitda * exitAssumptions.exitMultiple;
+  const exitCosts = exitEV * exitAssumptions.exitCostPercent / 100;
+  
+  // Remaining debt at exit
+  const debtSchedules = calculateDebtSchedules(fundingLines);
+  let remainingDebt = 0;
+  for (const schedule of debtSchedules) {
+    const yearData = schedule.years.find(y => y.year === holdYears);
+    if (yearData) {
+      remainingDebt += yearData.closingBalance;
+    }
+  }
+
+  const exitEquity = exitEV - remainingDebt - exitCosts;
+  
+  // Cumulative cash distributions (free cash flow taken out each year)
+  const totalCashDistributions = projections
+    .filter(p => p.year <= holdYears)
+    .reduce((sum, p) => sum + Math.max(0, p.freeCashFlow), 0);
+
+  const totalReturn = exitEquity + totalCashDistributions;
+  const moic = entryEquity > 0 ? totalReturn / entryEquity : 0;
+
+  // Payback period
+  let cumCash = 0;
+  let paybackPeriodYears = holdYears;
+  for (const p of projections) {
+    if (p.year > holdYears) break;
+    cumCash += Math.max(0, p.freeCashFlow);
+    if (cumCash >= entryEquity && paybackPeriodYears === holdYears) {
+      // Interpolate within the year
+      const prevCum = cumCash - Math.max(0, p.freeCashFlow);
+      const remaining = entryEquity - prevCum;
+      const fraction = Math.max(0, p.freeCashFlow) > 0 ? remaining / Math.max(0, p.freeCashFlow) : 1;
+      paybackPeriodYears = p.year - 1 + fraction;
+    }
+  }
+
+  // IRR calculation
+  const cashFlows: number[] = [-entryEquity];
+  for (let y = 1; y <= holdYears; y++) {
+    const yearProjection = projections[y - 1];
+    let cf = Math.max(0, yearProjection?.freeCashFlow || 0);
+    if (y === holdYears) {
+      cf += exitEquity;
+    }
+    cashFlows.push(cf);
+  }
+  const irr = calculateIRR(cashFlows);
+
+  // Value creation bridge
+  const entryEbitda = projections.length > 0 
+    ? projections[0].ebitda - (projections[0].ebitda - (projections[0].ebitdaBeforeSynergies + projections[0].synergiesNet))
+    : 0;
+  // Use base year EBITDA for entry, exit year for exit
+  const baseEbitda = exitYear.ebitda / projections.slice(0, holdYears).reduce((m, p) => {
+    return m; // We need the entry EBITDA
+  }, 1);
+  
+  const ebitdaGrowthValue = (exitYear.ebitda - projections[0].ebitdaBeforeSynergies) * entryMultiple;
+  const multipleExpansionValue = exitYear.ebitda * (exitAssumptions.exitMultiple - entryMultiple);
+  const debtPaydownValue = totalDebtAtEntry - remainingDebt;
+  const feesDeducted = totalFees + exitCosts;
+
+  return {
+    irr,
+    moic,
+    paybackPeriodYears: Math.round(paybackPeriodYears * 10) / 10,
+    totalReturn,
+    totalCashDistributions,
+    entryEquity,
+    ebitdaGrowthValue,
+    multipleExpansionValue,
+    debtPaydownValue,
+    cashDistributionsValue: totalCashDistributions,
+    feesDeducted,
+    exitEquity,
+  };
+}
+
+/**
+ * Run projections through three scenarios (bear/base/bull).
+ */
+export function calculateScenarios(
+  baseYear: BaseYearData,
+  assumptions: YearAssumptions[],
+  synergies: SynergyInput[],
+  fundingLines: FundingLineForProjection[],
+  bearMultipliers?: ScenarioMultipliers,
+  bullMultipliers?: ScenarioMultipliers
+): { bear: ProjectedYear[]; base: ProjectedYear[]; bull: ProjectedYear[] } {
+  const defaultBear: ScenarioMultipliers = bearMultipliers || { revenueGrowthMultiplier: 0.6, costPressureAdjustment: 1.5 };
+  const defaultBull: ScenarioMultipliers = bullMultipliers || { revenueGrowthMultiplier: 1.4, costPressureAdjustment: -0.5 };
+  const baseScenario: ScenarioMultipliers = { revenueGrowthMultiplier: 1, costPressureAdjustment: 0 };
+
+  return {
+    bear: calculateProjections(baseYear, assumptions, synergies, fundingLines, defaultBear),
+    base: calculateProjections(baseYear, assumptions, synergies, fundingLines, baseScenario),
+    bull: calculateProjections(baseYear, assumptions, synergies, fundingLines, defaultBull),
+  };
+}
+
+/**
+ * Calculate sensitivity analysis: tornado chart data, heatmap grid, and break-even points.
+ */
+export function calculateSensitivity(
+  baseYear: BaseYearData,
+  assumptions: YearAssumptions[],
+  synergies: SynergyInput[],
+  fundingLines: FundingLineForProjection[],
+  exitAssumptions: ExitAssumptions,
+  entryEquity: number,
+  entryMultiple: number,
+  totalDebtAtEntry: number,
+  totalFees: number
+): SensitivityResult {
+  // Helper to compute a target metric from given assumptions
+  const computeMetric = (modifiedAssumptions: YearAssumptions[], modifiedExit: ExitAssumptions): number => {
+    const proj = calculateProjections(baseYear, modifiedAssumptions, synergies, fundingLines);
+    const returns = calculateReturns(proj, modifiedExit, entryEquity, entryMultiple, totalDebtAtEntry, totalFees, fundingLines);
+    return returns.exitEquity + returns.totalCashDistributions; // Total return as default metric
+  };
+
+  const baseMetric = computeMetric(assumptions, exitAssumptions);
+
+  // Tornado: test each variable ±
+  const tornadoVariables: Array<{
+    variable: string;
+    modifyLow: () => [YearAssumptions[], ExitAssumptions];
+    modifyHigh: () => [YearAssumptions[], ExitAssumptions];
+    lowLabel: number;
+    highLabel: number;
+  }> = [
+    {
+      variable: 'Revenue Growth',
+      modifyLow: () => [assumptions.map(a => ({ ...a, revenueGrowthPercent: a.revenueGrowthPercent - 5 })), exitAssumptions],
+      modifyHigh: () => [assumptions.map(a => ({ ...a, revenueGrowthPercent: a.revenueGrowthPercent + 5 })), exitAssumptions],
+      lowLabel: assumptions[0]?.revenueGrowthPercent - 5,
+      highLabel: assumptions[0]?.revenueGrowthPercent + 5,
+    },
+    {
+      variable: 'Exit Multiple',
+      modifyLow: () => [assumptions, { ...exitAssumptions, exitMultiple: exitAssumptions.exitMultiple - 1 }],
+      modifyHigh: () => [assumptions, { ...exitAssumptions, exitMultiple: exitAssumptions.exitMultiple + 1 }],
+      lowLabel: exitAssumptions.exitMultiple - 1,
+      highLabel: exitAssumptions.exitMultiple + 1,
+    },
+    {
+      variable: 'Cost Inflation',
+      modifyLow: () => [assumptions.map(a => ({ ...a, costOfSalesGrowthPercent: a.costOfSalesGrowthPercent - 3 })), exitAssumptions],
+      modifyHigh: () => [assumptions.map(a => ({ ...a, costOfSalesGrowthPercent: a.costOfSalesGrowthPercent + 3 })), exitAssumptions],
+      lowLabel: assumptions[0]?.costOfSalesGrowthPercent - 3,
+      highLabel: assumptions[0]?.costOfSalesGrowthPercent + 3,
+    },
+    {
+      variable: 'Tax Rate',
+      modifyLow: () => [assumptions.map(a => ({ ...a, taxRatePercent: a.taxRatePercent - 5 })), exitAssumptions],
+      modifyHigh: () => [assumptions.map(a => ({ ...a, taxRatePercent: a.taxRatePercent + 5 })), exitAssumptions],
+      lowLabel: assumptions[0]?.taxRatePercent - 5,
+      highLabel: assumptions[0]?.taxRatePercent + 5,
+    },
+    {
+      variable: 'Staff Cost Growth',
+      modifyLow: () => [assumptions.map(a => ({ ...a, staffCostGrowthPercent: a.staffCostGrowthPercent - 3 })), exitAssumptions],
+      modifyHigh: () => [assumptions.map(a => ({ ...a, staffCostGrowthPercent: a.staffCostGrowthPercent + 3 })), exitAssumptions],
+      lowLabel: assumptions[0]?.staffCostGrowthPercent - 3,
+      highLabel: assumptions[0]?.staffCostGrowthPercent + 3,
+    },
+  ];
+
+  const tornadoData = tornadoVariables.map(v => {
+    const [lowA, lowE] = v.modifyLow();
+    const [highA, highE] = v.modifyHigh();
+    return {
+      variable: v.variable,
+      baseValue: baseMetric,
+      lowValue: v.lowLabel,
+      highValue: v.highLabel,
+      lowOutput: computeMetric(lowA, lowE),
+      highOutput: computeMetric(highA, highE),
+    };
+  }).sort((a, b) => Math.abs(b.highOutput - b.lowOutput) - Math.abs(a.highOutput - a.lowOutput));
+
+  // Heatmap: Revenue growth vs Exit multiple
+  const rowValues = [-5, -2.5, 0, 2.5, 5, 7.5, 10, 12.5, 15];
+  const colValues = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0];
+  
+  const baseRevGrowth = assumptions[0]?.revenueGrowthPercent || 5;
+  const baseRowIndex = rowValues.findIndex(v => Math.abs(v - baseRevGrowth) < 0.1) || 4;
+  const baseColIndex = colValues.findIndex(v => Math.abs(v - exitAssumptions.exitMultiple) < 0.1) || 2;
+
+  const cells = rowValues.map(revGrowth => {
+    return colValues.map(exitMult => {
+      const modA = assumptions.map(a => ({ ...a, revenueGrowthPercent: revGrowth }));
+      const modE = { ...exitAssumptions, exitMultiple: exitMult };
+      return computeMetric(modA, modE);
+    });
+  });
+
+  // Break-even analysis
+  const breakEvenRevDeclineDSCR = findBreakEven(0, -50, 0.5, (decline) => {
+    const modA = assumptions.map(a => ({ ...a, revenueGrowthPercent: decline }));
+    const proj = calculateProjections(baseYear, modA, synergies, fundingLines);
+    const worstDSCR = Math.min(...proj.map(p => p.dscr));
+    return worstDSCR >= 1.0;
+  });
+
+  const breakEvenRevDeclineFCF = findBreakEven(0, -50, 0.5, (decline) => {
+    const modA = assumptions.map(a => ({ ...a, revenueGrowthPercent: decline }));
+    const proj = calculateProjections(baseYear, modA, synergies, fundingLines);
+    return proj.every(p => p.freeCashFlow >= 0);
+  });
+
+  const baseRate = fundingLines.length > 0 ? Math.max(...fundingLines.filter(f => f.isDebt && f.isActive).map(f => f.interestRate)) : 5;
+  const breakEvenInterestRateIncrease = findBreakEven(0, 20, 0.25, (increase) => {
+    const modFunding = fundingLines.map(f => ({ ...f, interestRate: f.interestRate + increase }));
+    const proj = calculateProjections(baseYear, assumptions, synergies, modFunding);
+    const worstDSCR = Math.min(...proj.map(p => p.dscr));
+    return worstDSCR >= 1.0;
+  });
+
+  return {
+    tornadoData,
+    heatmapData: {
+      rowVariable: 'Revenue Growth %',
+      colVariable: 'Exit Multiple',
+      rowValues,
+      colValues,
+      cells,
+      baseRowIndex,
+      baseColIndex,
+    },
+    breakEvenRevDeclineDSCR: Math.abs(breakEvenRevDeclineDSCR),
+    breakEvenRevDeclineFCF: Math.abs(breakEvenRevDeclineFCF),
+    breakEvenInterestRateIncrease,
+  };
+}
+
+// ─── HELPERS ───
+
+/**
+ * Calculate IRR using Newton-Raphson method.
+ */
+export function calculateIRR(cashFlows: number[], guess: number = 0.1, maxIterations: number = 100, tolerance: number = 0.00001): number {
+  if (cashFlows.length < 2) return 0;
+  
+  let rate = guess;
+  
+  for (let i = 0; i < maxIterations; i++) {
+    let npv = 0;
+    let dnpv = 0;
+    
+    for (let t = 0; t < cashFlows.length; t++) {
+      const denominator = Math.pow(1 + rate, t);
+      npv += cashFlows[t] / denominator;
+      dnpv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
+    }
+    
+    if (Math.abs(dnpv) < 1e-10) break;
+    
+    const newRate = rate - npv / dnpv;
+    
+    if (Math.abs(newRate - rate) < tolerance) {
+      return newRate;
+    }
+    
+    rate = newRate;
+  }
+  
+  return rate;
+}
+
+/**
+ * Binary search for break-even point.
+ */
+function findBreakEven(start: number, end: number, step: number, condition: (value: number) => boolean): number {
+  let value = start;
+  while (condition(value) && (start < end ? value < end : value > end)) {
+    value += start < end ? step : -step;
+  }
+  return value - (start < end ? step : -step);
+}
+
+function emptyReturns(entryEquity: number): ReturnMetrics {
+  return {
+    irr: 0, moic: 0, paybackPeriodYears: 0, totalReturn: 0, totalCashDistributions: 0,
+    entryEquity, ebitdaGrowthValue: 0, multipleExpansionValue: 0, debtPaydownValue: 0,
+    cashDistributionsValue: 0, feesDeducted: 0, exitEquity: 0,
+  };
+}
+```
+
+### Step 5: Create the Backend Service
+
+Create a new file at `server/services/value-creation.service.ts`:
+
+```typescript
+import { db } from '../db';
+import { eq, and } from 'drizzle-orm';
+import {
+  valueCreationScenarios,
+  valueCreationAssumptions,
+  valueCreationSynergies,
+  valueCreationExitAssumptions,
+  dealModels,
+} from '@shared/schema';
+
+class ValueCreationService {
+  
+  // Get or create scenarios + assumptions for a deal model
+  async getOrCreateForModel(dealModelId: number) {
+    // Check if scenarios exist
+    const existing = await db.select().from(valueCreationScenarios)
+      .where(eq(valueCreationScenarios.dealModelId, dealModelId));
+    
+    if (existing.length > 0) {
+      return this.getFullData(dealModelId);
+    }
+
+    // Create default scenarios (bear, base, bull)
+    const scenarioDefaults = [
+      { scenarioType: 'bear', name: 'Bear Case', revenueGrowthMultiplier: '0.6', costPressureAdjustment: '1.5' },
+      { scenarioType: 'base', name: 'Base Case', revenueGrowthMultiplier: '1.0', costPressureAdjustment: '0' },
+      { scenarioType: 'bull', name: 'Bull Case', revenueGrowthMultiplier: '1.4', costPressureAdjustment: '-0.5' },
+    ];
+
+    for (const scenDef of scenarioDefaults) {
+      const [scenario] = await db.insert(valueCreationScenarios).values({
+        dealModelId,
+        ...scenDef,
+      }).returning();
+
+      // Create default assumptions for years 1-5
+      for (let year = 1; year <= 5; year++) {
+        await db.insert(valueCreationAssumptions).values({
+          scenarioId: scenario.id,
+          year,
+          revenueGrowthPercent: '5.0',
+          costOfSalesGrowthPercent: '3.0',
+          adminCostGrowthPercent: '2.0',
+          staffCostGrowthPercent: '3.0',
+          depreciationGrowthPercent: '0',
+          capexPerYear: '0',
+          workingCapitalPercent: '0',
+          taxRatePercent: '25.0',
+        });
+      }
+    }
+
+    // Create default exit assumptions
+    await db.insert(valueCreationExitAssumptions).values({
+      dealModelId,
+      exitMultiple: '4.0',
+      holdPeriodYears: 5,
+      exitCostPercent: '3.0',
+    });
+
+    return this.getFullData(dealModelId);
+  }
+
+  // Get all data for a deal model's value creation modeller
+  async getFullData(dealModelId: number) {
+    const scenarios = await db.select().from(valueCreationScenarios)
+      .where(eq(valueCreationScenarios.dealModelId, dealModelId));
+
+    const scenarioIds = scenarios.map(s => s.id);
+    
+    let assumptions: any[] = [];
+    let synergies: any[] = [];
+    
+    for (const sid of scenarioIds) {
+      const a = await db.select().from(valueCreationAssumptions)
+        .where(eq(valueCreationAssumptions.scenarioId, sid));
+      assumptions.push(...a);
+      
+      const s = await db.select().from(valueCreationSynergies)
+        .where(eq(valueCreationSynergies.scenarioId, sid));
+      synergies.push(...s);
+    }
+
+    const [exitAssumptions] = await db.select().from(valueCreationExitAssumptions)
+      .where(eq(valueCreationExitAssumptions.dealModelId, dealModelId));
+
+    return {
+      scenarios,
+      assumptions,
+      synergies,
+      exitAssumptions: exitAssumptions || null,
+    };
+  }
+
+  // Update assumptions for a specific scenario + year
+  async updateAssumption(assumptionId: number, data: Partial<typeof valueCreationAssumptions.$inferInsert>) {
+    const [updated] = await db.update(valueCreationAssumptions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(valueCreationAssumptions.id, assumptionId))
+      .returning();
+    return updated;
+  }
+
+  // Bulk update assumptions (for auto-save)
+  async bulkUpdateAssumptions(updates: Array<{ id: number; data: Record<string, any> }>) {
+    const results = [];
+    for (const { id, data } of updates) {
+      const [updated] = await db.update(valueCreationAssumptions)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(valueCreationAssumptions.id, id))
+        .returning();
+      results.push(updated);
+    }
+    return results;
+  }
+
+  // Update scenario multipliers
+  async updateScenario(scenarioId: number, data: Partial<typeof valueCreationScenarios.$inferInsert>) {
+    const [updated] = await db.update(valueCreationScenarios)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(valueCreationScenarios.id, scenarioId))
+      .returning();
+    return updated;
+  }
+
+  // Add a synergy lever
+  async addSynergy(scenarioId: number, data: typeof valueCreationSynergies.$inferInsert) {
+    const [created] = await db.insert(valueCreationSynergies)
+      .values({ ...data, scenarioId })
+      .returning();
+    return created;
+  }
+
+  // Update a synergy lever
+  async updateSynergy(synergyId: number, data: Partial<typeof valueCreationSynergies.$inferInsert>) {
+    const [updated] = await db.update(valueCreationSynergies)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(valueCreationSynergies.id, synergyId))
+      .returning();
+    return updated;
+  }
+
+  // Delete a synergy lever
+  async deleteSynergy(synergyId: number) {
+    await db.delete(valueCreationSynergies)
+      .where(eq(valueCreationSynergies.id, synergyId));
+    return { deleted: true };
+  }
+
+  // Update exit assumptions
+  async updateExitAssumptions(dealModelId: number, data: Partial<typeof valueCreationExitAssumptions.$inferInsert>) {
+    const existing = await db.select().from(valueCreationExitAssumptions)
+      .where(eq(valueCreationExitAssumptions.dealModelId, dealModelId));
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(valueCreationExitAssumptions)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(valueCreationExitAssumptions.dealModelId, dealModelId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(valueCreationExitAssumptions)
+        .values({ dealModelId, ...data })
+        .returning();
+      return created;
+    }
+  }
+}
+
+export const valueCreationService = new ValueCreationService();
+```
+
+### Step 6: Create the Routes
+
+Create a new file at `server/routes/value-creation.routes.ts`:
+
+```typescript
+import { Router, Request, Response } from 'express';
+import { valueCreationService } from '../services/value-creation.service';
+import { sendSuccess, sendCreated, sendError } from '../utils/response';
+import { UnauthorizedError } from '../utils/errors';
+
+const router = Router();
+
+// Get or initialise value creation data for a deal model
+router.get('/deal-model/:dealModelId', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const dealModelId = parseInt(req.params.dealModelId);
+    const result = await valueCreationService.getOrCreateForModel(dealModelId);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Update a specific assumption row
+router.put('/assumptions/:id', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const id = parseInt(req.params.id);
+    const result = await valueCreationService.updateAssumption(id, req.body);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Bulk update assumptions (for debounced auto-save)
+router.put('/assumptions/bulk', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const { updates } = req.body;
+    const result = await valueCreationService.bulkUpdateAssumptions(updates);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Update scenario multipliers
+router.put('/scenarios/:id', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const id = parseInt(req.params.id);
+    const result = await valueCreationService.updateScenario(id, req.body);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Add a synergy lever
+router.post('/synergies/:scenarioId', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const scenarioId = parseInt(req.params.scenarioId);
+    const result = await valueCreationService.addSynergy(scenarioId, req.body);
+    sendCreated(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Update a synergy lever
+router.put('/synergies/:id', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const id = parseInt(req.params.id);
+    const result = await valueCreationService.updateSynergy(id, req.body);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Delete a synergy lever
+router.delete('/synergies/:id', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const id = parseInt(req.params.id);
+    const result = await valueCreationService.deleteSynergy(id);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+// Update exit assumptions
+router.put('/exit/:dealModelId', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const dealModelId = parseInt(req.params.dealModelId);
+    const result = await valueCreationService.updateExitAssumptions(dealModelId, req.body);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+export default router;
+```
+
+### Step 7: Register the Routes
+
+In `server/routes/index.ts`, add the import at the top with the other imports:
+
+```typescript
+import valueCreationRoutes from './value-creation.routes';
+```
+
+And add this line inside the `registerModularRoutes` function, alongside the other route registrations:
+
+```typescript
+app.use('/api/v2/value-creation', isAuthenticated, valueCreationRoutes);
+```
+
+### Step 8: Push the Schema to Database
+
+Run:
+
+```bash
+npm run db:push
+```
+
+This will create the four new tables: `value_creation_scenarios`, `value_creation_assumptions`, `value_creation_synergies`, `value_creation_exit_assumptions`.
+
+## Confirmation Checklist — What to Test
+
+After implementation, confirm these things work:
+
+1. **Schema created:** Check the database — the four new tables should exist. You can verify by looking at the Replit database tab or running a quick query.
+
+2. **API — GET initialisation:** Open a deal that has an existing deal model. Call `GET /api/v2/value-creation/deal-model/{dealModelId}` (use the deal model ID). It should return:
+   - 3 scenarios (bear, base, bull)
+   - 15 assumption rows (5 years × 3 scenarios)
+   - 0 synergies (none created yet)
+   - 1 exit assumption row (defaults: 4.0x multiple, 5 years, 3% exit cost)
+   
+3. **API — Second call returns same data:** Calling the same GET endpoint again should NOT create duplicate scenarios — it should return the same data created on the first call.
+
+4. **API — Update assumption:** Call `PUT /api/v2/value-creation/assumptions/{id}` with body `{ "revenueGrowthPercent": "8.0" }` using an assumption ID from the GET response. It should return the updated row.
+
+5. **API — Add synergy:** Call `POST /api/v2/value-creation/synergies/{scenarioId}` with body:
+   ```json
+   {
+     "synergyType": "cost",
+     "name": "Procurement Savings",
+     "targetValue": "25000",
+     "realisationY1": "40",
+     "realisationY2": "80",
+     "realisationY3": "100",
+     "realisationY4": "100",
+     "realisationY5": "100"
+   }
+   ```
+   It should return the created synergy row.
+
+6. **API — Update exit assumptions:** Call `PUT /api/v2/value-creation/exit/{dealModelId}` with body `{ "exitMultiple": "5.0", "holdPeriodYears": 4 }`. Should return the updated row.
+
+7. **Calculation engine compiles:** The file `shared/calculators/value-creation.calc.ts` should compile without TypeScript errors. You can verify by running `npx tsc --noEmit` or just checking that the dev server starts without errors.
+
+8. **No existing functionality broken:** The existing deal modeller tab should still work exactly as before. Navigate to a deal → Deal Modeller tab and confirm everything loads.
+
+---
+
+**Once all 8 checks pass, reply with:**
+- The deal model ID you tested with
+- How many scenarios/assumptions were created
+- Any errors or issues encountered
+
+Then we'll move to **Prompt 2: Layout Shell + Assumptions Panel**.
