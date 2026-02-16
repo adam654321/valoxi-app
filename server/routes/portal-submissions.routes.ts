@@ -188,4 +188,26 @@ router.post('/:token/dd-requirements/:requirementId/unmark-complete', async (req
   } catch (error) { sendError(res, error); }
 });
 
+router.delete('/:token/dd-requirements/:requirementId/documents/:docLinkId', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+    const docLinkId = parseInt(req.params.docLinkId);
+
+    const { ddRequirementDocuments } = await import('@shared/schema/due-diligence');
+    const [link] = await db.select().from(ddRequirementDocuments)
+      .where(and(
+        eq(ddRequirementDocuments.id, docLinkId),
+        eq(ddRequirementDocuments.targetCompanyId, token.targetCompanyId),
+        eq(ddRequirementDocuments.documentSource, 'seller_uploaded'),
+      ));
+
+    if (!link) {
+      return res.status(404).json({ error: 'Document link not found or cannot be removed' });
+    }
+
+    await db.delete(ddRequirementDocuments).where(eq(ddRequirementDocuments.id, docLinkId));
+    sendSuccess(res, { success: true });
+  } catch (error) { sendError(res, error); }
+});
+
 export default router;

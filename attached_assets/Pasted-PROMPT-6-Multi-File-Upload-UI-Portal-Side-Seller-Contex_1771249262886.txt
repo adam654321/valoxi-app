@@ -1,0 +1,338 @@
+PROMPT 6: Multi-File Upload UI — Portal Side (Seller)
+Context for Replit:
+The backend now supports multiple documents per DD requirement via the junction table, seller completion marking, and buyer review status. The portal DD requirements endpoint already returns linkedDocuments, sellerMarkedComplete, buyerReviewStatus, and buyerReviewNotes per requirement.
+Now we need to update the portal's DD Collection component (client/src/components/portal/DdCollection.tsx) to use these new fields. Currently it shows one document per requirement with a single-file upload flow.
+Prompt:
+Update client/src/components/portal/DdCollection.tsx to support multi-file uploads, display all linked documents by source, show buyer review status, and let the seller mark requirements as complete.
+
+=== STEP 1: UPDATE THE DATA INTERFACES ===
+
+Update the DdRequirement interface to include the new fields from the API:
+
+interface LinkedDocument {
+  id: number;
+  source: 'buyer_linked' | 'seller_uploaded';
+  documentId: number | null;
+  externalSubmissionId: number | null;
+  filename: string;
+  fileType: string | null;
+  fileSize: number | null;
+  addedAt: string;
+  notes: string | null;
+}
+
+Update DdRequirement to add:
+  linkedDocuments: LinkedDocument[];
+  sellerMarkedComplete: boolean;
+  buyerReviewStatus: 'not_reviewed' | 'satisfied' | 'more_needed';
+  buyerReviewNotes: string | null;
+
+=== STEP 2: REWRITE EACH REQUIREMENT'S DISPLAY ===
+
+Replace the current requirement rendering (inside the category expansion) with a richer layout for each requirement:
+
+For each requirement, render this structure:
+
+<div key={req.id} className="p-4 border-b last:border-b-0">
+  {/* Header row: ref, name, priority, status */}
+  <div className="flex items-start justify-between gap-3">
+    <div className="flex items-start gap-2 flex-1">
+      {/* Status icon based on computed display status */}
+      <div className="flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-mono text-gray-400">{req.refNumber}</span>
+          <span className="text-sm font-medium">{req.documentName}</span>
+          {priorityBadge(req.priority)}
+          {/* Display status badge - see step 3 */}
+        </div>
+        {req.description && <p className="text-xs text-gray-500 mt-1">{req.description}</p>}
+      </div>
+    </div>
+  </div>
+
+  {/* Buyer review alert - if more_needed */}
+  {req.buyerReviewStatus === 'more_needed' && (
+    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+      <div className="flex items-start gap-2">
+        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-medium text-amber-800">Additional documents requested</p>
+          {req.buyerReviewNotes && (
+            <p className="text-xs text-amber-700 mt-1">{req.buyerReviewNotes}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Buyer verified banner */}
+  {req.buyerReviewStatus === 'satisfied' && (
+    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+      <CheckCircle className="h-4 w-4 text-green-600" />
+      <span className="text-sm text-green-700 font-medium">Verified by buyer</span>
+    </div>
+  )}
+
+  {/* Document list - grouped by source */}
+  {req.linkedDocuments.length > 0 && (
+    <div className="mt-3 space-y-2">
+      {/* Already held by buyer */}
+      {req.linkedDocuments.filter(d => d.source === 'buyer_linked').length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
+            <FileText className="h-3 w-3" /> Already held
+          </p>
+          {req.linkedDocuments.filter(d => d.source === 'buyer_linked').map(doc => (
+            <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
+              <Paperclip className="h-3 w-3 text-blue-500 flex-shrink-0" />
+              <span className="text-xs text-gray-700 truncate">{doc.filename}</span>
+              {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Seller uploads */}
+      {req.linkedDocuments.filter(d => d.source === 'seller_uploaded').length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-green-600 mb-1 flex items-center gap-1">
+            <Upload className="h-3 w-3" /> Your uploads
+          </p>
+          {req.linkedDocuments.filter(d => d.source === 'seller_uploaded').map(doc => (
+            <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
+              <FileText className="h-3 w-3 text-green-500 flex-shrink-0" />
+              <span className="text-xs text-gray-700 truncate">{doc.filename}</span>
+              {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+              {/* Remove button - only if requirement is not verified */}
+              {req.buyerReviewStatus !== 'satisfied' && (
+                <button
+                  onClick={() => handleRemoveDocument(req.id, doc.id)}
+                  className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                  title="Remove"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )}
+
+  {/* Add document button + upload form - only if NOT verified */}
+  {req.buyerReviewStatus !== 'satisfied' && (
+    <div className="mt-3">
+      {uploadingRequirementId === req.id ? (
+        /* Existing upload form - keep the current inline upload UI but after successful upload,
+           DON'T close the form. Instead, reset selectedFile and submissionNotes so they can upload another.
+           Also invalidate the dd-requirements query to refresh the document list. */
+        <div className="p-3 bg-gray-50 rounded-lg border space-y-3">
+          {/* ... existing upload form content ... */}
+          {/* Change the submit handler - see step 4 */}
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs h-7"
+          onClick={() => handleStartUpload(req.id)}
+        >
+          <Upload className="h-3 w-3 mr-1" />
+          Add document
+        </Button>
+      )}
+    </div>
+  )}
+
+  {/* Mark as complete / completion status */}
+  {req.buyerReviewStatus !== 'satisfied' && req.linkedDocuments.length > 0 && (
+    <div className="mt-3 pt-3 border-t">
+      {req.sellerMarkedComplete ? (
+        <div className="flex items-center gap-2">
+          <Badge className="bg-blue-100 text-blue-700 text-xs">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Marked as complete
+          </Badge>
+          <button
+            onClick={() => handleUnmarkComplete(req.id)}
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+          >
+            Undo
+          </button>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs h-7 border-green-300 text-green-700 hover:bg-green-50"
+          onClick={() => handleMarkComplete(req.id)}
+        >
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Mark as complete
+        </Button>
+      )}
+    </div>
+  )}
+</div>
+
+=== STEP 3: STATUS DISPLAY LOGIC ===
+
+Create a helper function to compute the display status for each requirement:
+
+function getDisplayStatus(req: DdRequirement): { label: string; color: string; icon: React.ReactNode } {
+  if (req.buyerReviewStatus === 'satisfied') {
+    return { label: 'Verified', color: 'bg-green-100 text-green-700', icon: <CheckCircle className="h-3.5 w-3.5 text-green-500" /> };
+  }
+  if (req.buyerReviewStatus === 'more_needed') {
+    return { label: 'More needed', color: 'bg-amber-100 text-amber-700', icon: <AlertCircle className="h-3.5 w-3.5 text-amber-500" /> };
+  }
+  if (req.sellerMarkedComplete) {
+    return { label: 'Pending review', color: 'bg-blue-100 text-blue-700', icon: <Clock className="h-3.5 w-3.5 text-blue-500" /> };
+  }
+  if (req.linkedDocuments.length > 0) {
+    return { label: 'In progress', color: 'bg-gray-100 text-gray-600', icon: <Clock className="h-3.5 w-3.5 text-gray-400" /> };
+  }
+  if (req.status === 'na') {
+    return { label: 'N/A', color: 'bg-gray-100 text-gray-500', icon: <MinusCircle className="h-3.5 w-3.5 text-gray-400" /> };
+  }
+  return { label: 'Awaiting', color: 'bg-gray-50 text-gray-400', icon: <AlertCircle className="h-3.5 w-3.5 text-gray-300" /> };
+}
+
+Use this in the header row to show the appropriate badge:
+const displayStatus = getDisplayStatus(req);
+<Badge className={`text-xs ${displayStatus.color}`}>{displayStatus.label}</Badge>
+
+And use displayStatus.icon as the leading icon for each requirement row.
+
+=== STEP 4: UPDATE UPLOAD HANDLER ===
+
+Modify handleUploadSubmit so that after a successful upload:
+1. Reset selectedFile to null and submissionNotes to ''
+2. Do NOT set uploadingRequirementId to null (keep the form open so they can upload another)
+3. Show a brief success toast
+4. Invalidate the dd-requirements query to refresh the document list
+
+Add a separate "Done" or close button in the upload form header that calls handleCancelUpload to close the form when they're finished uploading.
+
+=== STEP 5: ADD NEW HANDLER FUNCTIONS ===
+
+Add these functions alongside the existing handlers:
+
+const handleMarkComplete = async (requirementId: number) => {
+  try {
+    const response = await fetch(`/api/v2/portal-submit/${token}/dd-requirements/${requirementId}/mark-complete`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to mark complete');
+    }
+    toast({ title: 'Marked as complete', description: 'The buyer will be notified to review.' });
+    queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
+  } catch (err: any) {
+    toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  }
+};
+
+const handleUnmarkComplete = async (requirementId: number) => {
+  try {
+    await fetch(`/api/v2/portal-submit/${token}/dd-requirements/${requirementId}/unmark-complete`, {
+      method: 'POST',
+    });
+    queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
+  } catch (err: any) {
+    toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  }
+};
+
+const handleRemoveDocument = async (requirementId: number, docLinkId: number) => {
+  try {
+    // This calls through the portal endpoint — but we don't have a portal-side delete for junction entries yet.
+    // For now, just refresh the data. We'll add the endpoint if needed.
+    // Actually — we need a portal endpoint for this. Add it:
+    // For now, just show a toast that this will be available soon, OR implement it inline.
+    toast({ title: 'Document removal', description: 'This feature will be available shortly.' });
+  } catch (err: any) {
+    toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  }
+};
+
+ACTUALLY — we need a portal endpoint to delete a document link. Add this to server/routes/portal-submissions.routes.ts:
+
+router.delete('/:token/dd-requirements/:requirementId/documents/:docLinkId', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+    const docLinkId = parseInt(req.params.docLinkId);
+    
+    // Verify the link belongs to this company and is seller_uploaded
+    const { ddRequirementDocuments } = await import('@shared/schema/due-diligence');
+    const [link] = await db.select().from(ddRequirementDocuments)
+      .where(and(
+        eq(ddRequirementDocuments.id, docLinkId),
+        eq(ddRequirementDocuments.targetCompanyId, token.targetCompanyId),
+        eq(ddRequirementDocuments.documentSource, 'seller_uploaded'),
+      ));
+    
+    if (!link) {
+      return res.status(404).json({ error: 'Document link not found or cannot be removed' });
+    }
+    
+    await db.delete(ddRequirementDocuments).where(eq(ddRequirementDocuments.id, docLinkId));
+    sendSuccess(res, { success: true });
+  } catch (error) { sendError(res, error); }
+});
+
+Then update handleRemoveDocument in the frontend to actually call this:
+
+const handleRemoveDocument = async (requirementId: number, docLinkId: number) => {
+  try {
+    const response = await fetch(`/api/v2/portal-submit/${token}/dd-requirements/${requirementId}/documents/${docLinkId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to remove document');
+    queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
+    toast({ title: 'Document removed' });
+  } catch (err: any) {
+    toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  }
+};
+
+=== STEP 6: UPDATE PROGRESS TRACKING ===
+
+Update the progress calculation at the top of the component. Replace the current hasDocumentCount / progressPercent calculation:
+
+const verifiedCount = categories.reduce((sum, cat) => {
+  return sum + cat.requirements.filter((r: any) => r.buyerReviewStatus === 'satisfied').length;
+}, 0);
+
+const pendingReviewCount = categories.reduce((sum, cat) => {
+  return sum + cat.requirements.filter((r: any) => r.sellerMarkedComplete && r.buyerReviewStatus !== 'satisfied' && r.buyerReviewStatus !== 'more_needed').length;
+}, 0);
+
+const inProgressCount = categories.reduce((sum, cat) => {
+  return sum + cat.requirements.filter((r: any) => r.linkedDocuments?.length > 0 && !r.sellerMarkedComplete && r.buyerReviewStatus === 'not_reviewed').length;
+}, 0);
+
+const progressPercent = totalRequirements > 0 ? Math.round((verifiedCount / totalRequirements) * 100) : 0;
+
+Update the progress bar text to: "{verifiedCount} of {totalRequirements} requirements verified"
+
+Below the progress bar, show the breakdown:
+<div className="flex gap-4 text-xs text-gray-500 mt-2">
+  <span className="text-green-600">{verifiedCount} verified</span>
+  <span className="text-blue-600">{pendingReviewCount} pending review</span>
+  <span className="text-gray-600">{inProgressCount} in progress</span>
+</div>
+
+Also update the per-category badge in the category header to show verified count instead of submitted count.
+Confirmation:
+
+Each DD requirement shows all linked documents grouped by "Already held" (buyer) and "Your uploads" (seller) with appropriate icons
+The seller can click "Add document" to upload — after uploading, the form stays open for another upload and the new file appears in the list immediately
+The seller can remove their own uploaded documents (the X button) — buyer-linked docs have no remove button
+"Mark as complete" button appears when documents exist, toggles to "Marked as complete" badge with Undo link
+If buyer requests "more needed", an amber alert box shows with the buyer's note
+If buyer marks "satisfied", a green verified banner shows and upload/complete controls are hidden
+Progress bar at the top now shows verified count and the breakdown (verified / pending review / in progress)
+The existing upload flow still works — uploading creates both the old single-link and the new junction table entry
