@@ -4,6 +4,7 @@ import NdaAgreement from '@/components/portal/NdaAgreement';
 import OfferReview from '@/components/portal/OfferReview';
 import HoTReview from '@/components/portal/HoTReview';
 import DdCollection from '@/components/portal/DdCollection';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -49,7 +50,9 @@ import {
   User,
   AlertTriangle,
   FolderOpen,
-  Code
+  Code,
+  Shield,
+  FileCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DocumentViewer } from '@/components/document-viewer';
@@ -384,6 +387,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<Document | null>(null);
   const [showViewer, setShowViewer] = useState(false);
+  const [activePortalTab, setActivePortalTab] = useState<string>('stage1');
   
   const { toast } = useToast();
 
@@ -469,6 +473,16 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       eventSource.close();
     };
   }, [portalData?.targetCompanyId, token]);
+
+  const hotAccepted = (dealDocsData?.documents || []).some(
+    (d: any) => d.documentType === 'heads_of_terms' && d.status === 'accepted'
+  );
+
+  useEffect(() => {
+    if (hotAccepted) {
+      setActivePortalTab('stage2');
+    }
+  }, [hotAccepted]);
 
   // Submit document mutation
   const submitDocumentMutation = useMutation({
@@ -664,324 +678,360 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           </CardHeader>
         </Card>
 
-        {offerDocuments.length > 0 && (
-          <div className="mb-6">
-            <OfferReview
-              token={token}
-              offers={offerDocuments}
-              onResponseSubmitted={() => refetchDealDocs()}
-            />
-          </div>
-        )}
+        <Tabs value={activePortalTab} onValueChange={setActivePortalTab} className="space-y-6">
+          <TabsList className="flex w-full">
+            <TabsTrigger value="stage1" className="flex items-center gap-2 flex-1">
+              <FileText className="w-4 h-4" />
+              Stage 1: Financial
+            </TabsTrigger>
+            {hotAccepted && (
+              <TabsTrigger value="stage2" className="flex items-center gap-2 flex-1">
+                <FileCheck className="w-4 h-4" />
+                Stage 2: Due Diligence
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="deal-documents" className="flex items-center gap-2 flex-1">
+              <Shield className="w-4 h-4" />
+              Deal Documents
+            </TabsTrigger>
+          </TabsList>
 
-        {hotDocuments.length > 0 && (
-          <div className="mb-6">
-            <HoTReview
-              documents={hotDocuments}
-              token={token}
-              onResponseSubmitted={() => refetchDealDocs()}
-            />
-          </div>
-        )}
-
-        {(dealDocsData?.documents || []).some(
-          (d: any) => d.documentType === 'heads_of_terms' && d.status === 'accepted'
-        ) && (
-          <DdCollection
-            token={token}
-            onDocumentUploaded={() => {
-              queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-              queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
-              queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
-            }}
-          />
-        )}
-
-        {/* Document Management Section - similar to document library */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2" data-testid="text-document-library-title">
-                  <FileText className="w-5 h-5" />
-                  Document Library
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1" data-testid="text-document-count">
-                  Manage documents for {portalData.company_name} ({totalDocuments} documents)
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Analysis Progress Indicator */}
-            <PortalAnalysisCompletionIndicator targetCompanyId={portalData.targetCompanyId} token={token} />
-            
-            {totalDocuments === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2" data-testid="text-no-documents">No documents uploaded yet</p>
-                <p className="text-sm mb-4">Upload documents to keep track of important files</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {Object.entries(documentsByCategory).map(([category, categoryDocuments]) => (
-                  <div key={category} className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                      <h3 className="text-lg font-semibold flex items-center gap-2" data-testid={`text-category-${category.replace(/\s+/g, '-').toLowerCase()}`}>
-                        <FileText className="w-5 h-5" />
-                        {category}
-                        <Badge variant="outline" className="ml-2" data-testid={`badge-count-${category.replace(/\s+/g, '-').toLowerCase()}`}>
-                          {categoryDocuments.length}
-                        </Badge>
-                      </h3>
-                    </div>
-                    
-                    <div className="grid gap-3">
-                      {categoryDocuments.map((document) => (
-                        <div key={document.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors" data-testid={`card-document-${document.id}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start space-x-3 flex-1">
-                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-5 h-5 text-blue-600" />
-                              </div>
-                              
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-900 truncate" data-testid={`text-filename-${document.id}`}>
-                                  {document.originalFilename}
-                                </h4>
-                                
-                                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                  <span className="flex items-center gap-1" data-testid={`text-upload-date-${document.id}`}>
-                                    <Calendar className="w-3 h-3" />
-                                    {formatDate(document.uploadDate)}
-                                  </span>
-                                  <span className="flex items-center gap-1" data-testid={`text-uploader-${document.id}`}>
-                                    <User className="w-3 h-3" />
-                                    {document.uploadedByName || 'External Portal'}
-                                  </span>
-                                  <span data-testid={`text-file-size-${document.id}`}>{formatFileSize(document.fileSize)}</span>
-                                  {document.isConfidential && (
-                                    <Badge variant="outline" className="text-red-600 border-red-300" data-testid={`badge-confidential-${document.id}`}>
-                                      Confidential
-                                    </Badge>
-                                  )}
+          <TabsContent value="stage1" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2" data-testid="text-document-library-title">
+                      <FileText className="w-5 h-5" />
+                      Document Library
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1" data-testid="text-document-count">
+                      Manage documents for {portalData.company_name} ({totalDocuments} documents)
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <PortalAnalysisCompletionIndicator targetCompanyId={portalData.targetCompanyId} token={token} />
+                
+                {totalDocuments === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2" data-testid="text-no-documents">No documents uploaded yet</p>
+                    <p className="text-sm mb-4">Upload documents to keep track of important files</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {Object.entries(documentsByCategory).map(([category, categoryDocuments]) => (
+                      <div key={category} className="space-y-3">
+                        <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                          <h3 className="text-lg font-semibold flex items-center gap-2" data-testid={`text-category-${category.replace(/\s+/g, '-').toLowerCase()}`}>
+                            <FileText className="w-5 h-5" />
+                            {category}
+                            <Badge variant="outline" className="ml-2" data-testid={`badge-count-${category.replace(/\s+/g, '-').toLowerCase()}`}>
+                              {categoryDocuments.length}
+                            </Badge>
+                          </h3>
+                        </div>
+                        
+                        <div className="grid gap-3">
+                          {categoryDocuments.map((document) => (
+                            <div key={document.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors" data-testid={`card-document-${document.id}`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start space-x-3 flex-1">
+                                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-5 h-5 text-blue-600" />
+                                  </div>
+                                  
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium text-gray-900 truncate" data-testid={`text-filename-${document.id}`}>
+                                      {document.originalFilename}
+                                    </h4>
+                                    
+                                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                      <span className="flex items-center gap-1" data-testid={`text-upload-date-${document.id}`}>
+                                        <Calendar className="w-3 h-3" />
+                                        {formatDate(document.uploadDate)}
+                                      </span>
+                                      <span className="flex items-center gap-1" data-testid={`text-uploader-${document.id}`}>
+                                        <User className="w-3 h-3" />
+                                        {document.uploadedByName || 'External Portal'}
+                                      </span>
+                                      <span data-testid={`text-file-size-${document.id}`}>{formatFileSize(document.fileSize)}</span>
+                                      {document.isConfidential && (
+                                        <Badge variant="outline" className="text-red-600 border-red-300" data-testid={`badge-confidential-${document.id}`}>
+                                          Confidential
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    <PortalDocumentAnalysisBadges documentId={document.id} documentCategory={document.documentCategory} />
+                                  </div>
                                 </div>
                                 
-                                {/* Document analysis badges */}
-                                <PortalDocumentAnalysisBadges documentId={document.id} documentCategory={document.documentCategory} />
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleViewDocument(document)}
+                                    data-testid={`button-view-${document.id}`}
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    View
+                                  </Button>
+                                  
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" data-testid={`button-menu-${document.id}`}>
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleViewDocument(document)} data-testid={`menu-view-${document.id}`}>
+                                        <Eye className="w-4 h-4 mr-2" />
+                                        View Document
+                                      </DropdownMenuItem>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} data-testid={`menu-delete-${document.id}`}>
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete Document
+                                          </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle className="flex items-center gap-2">
+                                              <AlertTriangle className="w-5 h-5 text-red-500" />
+                                              Delete Document
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to delete "{document.originalFilename}"? This action cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel data-testid={`button-cancel-delete-${document.id}`}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction 
+                                              onClick={() => handleDelete(document.id)}
+                                              className="bg-red-600 hover:bg-red-700"
+                                              disabled={deleteMutation.isPending}
+                                              data-testid={`button-confirm-delete-${document.id}`}
+                                            >
+                                              {deleteMutation.isPending ? "Deleting..." : "Delete Document"}
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
                               </div>
                             </div>
-                            
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewDocument(document)}
-                                data-testid={`button-view-${document.id}`}
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                View
-                              </Button>
-                              
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" data-testid={`button-menu-${document.id}`}>
-                                    <MoreVertical className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleViewDocument(document)} data-testid={`menu-view-${document.id}`}>
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View Document
-                                  </DropdownMenuItem>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} data-testid={`menu-delete-${document.id}`}>
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Delete Document
-                                      </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle className="flex items-center gap-2">
-                                          <AlertTriangle className="w-5 h-5 text-red-500" />
-                                          Delete Document
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Are you sure you want to delete "{document.originalFilename}"? This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel data-testid={`button-cancel-delete-${document.id}`}>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction 
-                                          onClick={() => handleDelete(document.id)}
-                                          className="bg-red-600 hover:bg-red-700"
-                                          disabled={deleteMutation.isPending}
-                                          data-testid={`button-confirm-delete-${document.id}`}
-                                        >
-                                          {deleteMutation.isPending ? "Deleting..." : "Delete Document"}
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Upload Section */}
-        {!isCompleted && (
-          <Card>
-            <CardHeader>
-              <CardTitle data-testid="text-upload-section-title">Upload Document</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Document Type Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Document Type</label>
-                <Select value={selectedDocumentType} onValueChange={setSelectedDocumentType}>
-                  <SelectTrigger data-testid="select-document-type">
-                    <SelectValue placeholder="Select document type to upload" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOCUMENT_TYPES
-                      .filter(type => {
-                        if (!analysisCompletion || !analysisCompletion.completedTypes) return true;
-                        
-                        const completedTypes = analysisCompletion.completedTypes || [];
-                        
-                        // Filter logic for available document types based on analysis completion
-                        switch (type.value) {
-                          case 'company_accounts':
-                            const companyAccountsCompleted = completedTypes.filter(t => 
-                              t.startsWith('company_accounts')
-                            ).length;
-                            return companyAccountsCompleted < 5;
-                          case 'asset_register':
-                            return !completedTypes.includes('asset_register');
-                          case 'balance_sheet':
-                            return !completedTypes.includes('balance_sheet');
-                          case 'profit_and_loss':
-                            return !completedTypes.includes('profit_and_loss');
-                          case 'sales_ledger':
-                            return !completedTypes.includes('sales_ledger');
-                          case 'staff_matrix':
-                            return !completedTypes.includes('staff_matrix');
-                          default:
-                            return true;
-                        }
-                      })
-                      .map(type => (
-                        <SelectItem key={type.value} value={type.value} data-testid={`option-${type.value}`}>
-                          {type.label}
-                        </SelectItem>
-                      ))
-                    }
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* File Upload */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select File</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                  <input
-                    type="file"
-                    id="document-file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    data-testid="input-file-upload"
-                  />
-                  <label htmlFor="document-file" className="cursor-pointer block">
-                    <FileUp className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <div className="text-lg font-medium text-gray-700">
-                      Click to upload document
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      Supported formats: PDF, Word, Excel
-                    </div>
-                  </label>
-                </div>
-                
-                {selectedFile && (
-                  <div className="bg-gray-50 rounded-lg p-3" data-testid="selected-file-preview">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-gray-900" data-testid="text-selected-filename">{selectedFile.name}</div>
-                        <div className="text-sm text-gray-500" data-testid="text-selected-filesize">{formatFileSize(selectedFile.size)}</div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedFile(null)}
-                        data-testid="button-remove-file"
-                      >
-                        Remove
-                      </Button>
-                    </div>
+                    ))}
                   </div>
                 )}
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Notes */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Additional Notes (Optional)</label>
-                <Textarea
-                  value={submissionNotes}
-                  onChange={(e) => setSubmissionNotes(e.target.value)}
-                  placeholder="Any additional information about this document..."
-                  rows={3}
-                  data-testid="textarea-submission-notes"
-                />
-              </div>
+            {!isCompleted && (
+              <Card>
+                <CardHeader>
+                  <CardTitle data-testid="text-upload-section-title">Upload Document</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Document Type</label>
+                    <Select value={selectedDocumentType} onValueChange={setSelectedDocumentType}>
+                      <SelectTrigger data-testid="select-document-type">
+                        <SelectValue placeholder="Select document type to upload" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DOCUMENT_TYPES
+                          .filter(type => {
+                            if (!analysisCompletion || !analysisCompletion.completedTypes) return true;
+                            
+                            const completedTypes = analysisCompletion.completedTypes || [];
+                            
+                            switch (type.value) {
+                              case 'company_accounts':
+                                const companyAccountsCompleted = completedTypes.filter(t => 
+                                  t.startsWith('company_accounts')
+                                ).length;
+                                return companyAccountsCompleted < 5;
+                              case 'asset_register':
+                                return !completedTypes.includes('asset_register');
+                              case 'balance_sheet':
+                                return !completedTypes.includes('balance_sheet');
+                              case 'profit_and_loss':
+                                return !completedTypes.includes('profit_and_loss');
+                              case 'sales_ledger':
+                                return !completedTypes.includes('sales_ledger');
+                              case 'staff_matrix':
+                                return !completedTypes.includes('staff_matrix');
+                              default:
+                                return true;
+                            }
+                          })
+                          .map(type => (
+                            <SelectItem key={type.value} value={type.value} data-testid={`option-${type.value}`}>
+                              {type.label}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {/* Submit Button */}
-              <Button
-                onClick={handleSubmit}
-                disabled={!selectedFile || !selectedDocumentType || isUploading}
-                className="w-full"
-                size="lg"
-                data-testid="button-submit-document"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Uploading...
-                  </>
-                ) : (
-                  'Submit Document'
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Select File</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <input
+                        type="file"
+                        id="document-file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        data-testid="input-file-upload"
+                      />
+                      <label htmlFor="document-file" className="cursor-pointer block">
+                        <FileUp className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                        <div className="text-lg font-medium text-gray-700">
+                          Click to upload document
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          Supported formats: PDF, Word, Excel
+                        </div>
+                      </label>
+                    </div>
+                    
+                    {selectedFile && (
+                      <div className="bg-gray-50 rounded-lg p-3" data-testid="selected-file-preview">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900" data-testid="text-selected-filename">{selectedFile.name}</div>
+                            <div className="text-sm text-gray-500" data-testid="text-selected-filesize">{formatFileSize(selectedFile.size)}</div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedFile(null)}
+                            data-testid="button-remove-file"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-        {/* Completion Message */}
-        {isCompleted && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto" />
-                <h3 className="text-xl font-semibold text-green-800" data-testid="text-completion-title">
-                  All Documents Submitted!
-                </h3>
-                <p className="text-gray-600" data-testid="text-completion-message">
-                  Thank you for submitting all required documents. Our team will review them and be in touch soon.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Additional Notes (Optional)</label>
+                    <Textarea
+                      value={submissionNotes}
+                      onChange={(e) => setSubmissionNotes(e.target.value)}
+                      placeholder="Any additional information about this document..."
+                      rows={3}
+                      data-testid="textarea-submission-notes"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!selectedFile || !selectedDocumentType || isUploading}
+                    className="w-full"
+                    size="lg"
+                    data-testid="button-submit-document"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      'Submit Document'
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {isCompleted && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-4">
+                    <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto" />
+                    <h3 className="text-xl font-semibold text-green-800" data-testid="text-completion-title">
+                      All Documents Submitted!
+                    </h3>
+                    <p className="text-gray-600" data-testid="text-completion-message">
+                      Thank you for submitting all required documents. Our team will review them and be in touch soon.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="stage2">
+            <DdCollection
+              token={token}
+              onDocumentUploaded={() => {
+                queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+                queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+                queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="deal-documents" className="space-y-6">
+            {ndaDocument && ndaAccepted && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Non-Disclosure Agreement</h4>
+                        <p className="text-sm text-muted-foreground">Signed and accepted</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-100 text-green-700">Accepted</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {offerDocuments.length > 0 && (
+              <OfferReview
+                token={token}
+                offers={offerDocuments}
+                onResponseSubmitted={() => refetchDealDocs()}
+              />
+            )}
+
+            {hotDocuments.length > 0 && (
+              <HoTReview
+                documents={hotDocuments}
+                token={token}
+                onResponseSubmitted={() => refetchDealDocs()}
+              />
+            )}
+
+            {!ndaDocument && offerDocuments.length === 0 && hotDocuments.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">No deal documents yet</p>
+                  <p className="text-sm">Deal documents like offer letters and heads of terms will appear here.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Document Viewer */}

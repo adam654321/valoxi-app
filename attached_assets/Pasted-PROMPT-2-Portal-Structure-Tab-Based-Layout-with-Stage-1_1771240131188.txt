@@ -1,0 +1,138 @@
+PROMPT 2: Portal Structure — Tab-Based Layout with Stage 1, Stage 2, Deal Documents
+Context for Replit:
+The portal is in client/src/components/enhanced-portal-display.tsx. Currently it renders content in a single scrollable page: NDA gate → Offer letters → Heads of Terms → DD Collection → Document Library → Upload section. There is no tab navigation.
+We need to restructure this into a tabbed layout mirroring the buyer backend: Stage 1 (the existing document upload/library for financial documents), Stage 2 (the DD Collection, only visible when HoT is accepted), and Deal Documents (showing the NDA, offer letters, and HoT documents). The NDA gate stays as-is — if the NDA is unsigned, nothing else shows. Once NDA is signed, the tabbed layout appears.
+The portal should default to Stage 1 initially. Once HoT is accepted, the portal should default to Stage 2 instead (but Stage 1 remains accessible).
+Prompt:
+Restructure the portal in client/src/components/enhanced-portal-display.tsx to use a tabbed layout with three tabs. The NDA gate remains unchanged — if the NDA is unsigned, show only the NdaAgreement component as currently implemented.
+
+Once the NDA IS signed, instead of rendering everything in a single scrollable page, render a tabbed interface using the existing Tabs, TabsList, TabsTrigger, TabsContent components from @/components/ui/tabs.
+
+Import Tabs, TabsList, TabsTrigger, TabsContent from "@/components/ui/tabs" at the top of the file. Also import the Shield and FileCheck icons from lucide-react (FileText is already imported).
+
+DETERMINE HOT STATUS (this logic already exists in the file, reuse it):
+const hotAccepted = (dealDocsData?.documents || []).some(
+  (d: any) => d.documentType === 'heads_of_terms' && d.status === 'accepted'
+);
+
+CONTROLLED TABS STATE:
+const [activePortalTab, setActivePortalTab] = useState<string>(hotAccepted ? 'stage2' : 'stage1');
+
+useEffect(() => {
+  if (hotAccepted) {
+    setActivePortalTab('stage2');
+  }
+}, [hotAccepted]);
+
+THE THREE TABS (render inside the main portal container, after the header card):
+
+<Tabs value={activePortalTab} onValueChange={setActivePortalTab} className="space-y-6">
+  <TabsList className="flex w-full">
+    <TabsTrigger value="stage1" className="flex items-center gap-2 flex-1">
+      <FileText className="w-4 h-4" />
+      Stage 1: Financial
+    </TabsTrigger>
+    {hotAccepted && (
+      <TabsTrigger value="stage2" className="flex items-center gap-2 flex-1">
+        <FileCheck className="w-4 h-4" />
+        Stage 2: Due Diligence
+      </TabsTrigger>
+    )}
+    <TabsTrigger value="deal-documents" className="flex items-center gap-2 flex-1">
+      <Shield className="w-4 h-4" />
+      Deal Documents
+    </TabsTrigger>
+  </TabsList>
+
+  ... TabsContent for each tab ...
+</Tabs>
+
+TAB CONTENT — Stage 1 (value="stage1"):
+Move the following existing elements into this tab (cut them from where they currently render in the main body):
+- The PortalAnalysisCompletionIndicator component (currently inside the Document Library card — keep it there)
+- The "Document Library" Card (the whole card with document list grouped by category)
+- The "Upload Document" Card (the upload section, including the completion message when isCompleted)
+
+TAB CONTENT — Stage 2 (value="stage2"):
+Move the DdCollection component rendering into this tab. Currently it's conditionally rendered when HoT is accepted — keep that same condition but now it lives inside the TabsContent. Since the tab itself only appears when hotAccepted is true, you can render DdCollection directly:
+<TabsContent value="stage2">
+  <DdCollection
+    token={token}
+    onDocumentUploaded={() => {
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+    }}
+  />
+</TabsContent>
+
+TAB CONTENT — Deal Documents (value="deal-documents"):
+Create a new section that shows all deal documents. Move the OfferReview and HoTReview components here (they currently render in the main body). Also show the signed NDA status. Structure:
+
+<TabsContent value="deal-documents" className="space-y-6">
+  {/* Signed NDA Card */}
+  {ndaDocument && ndaAccepted && (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h4 className="font-medium">Non-Disclosure Agreement</h4>
+              <p className="text-sm text-muted-foreground">Signed and accepted</p>
+            </div>
+          </div>
+          <Badge className="bg-green-100 text-green-700">Accepted</Badge>
+        </div>
+      </CardContent>
+    </Card>
+  )}
+
+  {/* Offer Letters */}
+  {offerDocuments.length > 0 && (
+    <OfferReview
+      token={token}
+      offers={offerDocuments}
+      onResponseSubmitted={() => refetchDealDocs()}
+    />
+  )}
+
+  {/* Heads of Terms */}
+  {hotDocuments.length > 0 && (
+    <HoTReview
+      documents={hotDocuments}
+      token={token}
+      onResponseSubmitted={() => refetchDealDocs()}
+    />
+  )}
+
+  {/* Empty state if no deal documents yet */}
+  {!ndaDocument && offerDocuments.length === 0 && hotDocuments.length === 0 && (
+    <Card>
+      <CardContent className="py-12 text-center text-muted-foreground">
+        <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p className="text-lg font-medium mb-2">No deal documents yet</p>
+        <p className="text-sm">Deal documents like offer letters and heads of terms will appear here.</p>
+      </CardContent>
+    </Card>
+  )}
+</TabsContent>
+
+IMPORTANT NOTES:
+- Keep the header card (portal title + company name) ABOVE the tabs, not inside any tab
+- Remove the OfferReview, HoTReview, and DdCollection from their current positions in the main render body — they now live inside tabs only
+- The ndaDocument and ndaAccepted variables are already computed before the NDA gate check — make sure they remain accessible for the Deal Documents tab
+- Do NOT remove any imports or existing component logic — just reorganise WHERE things render
+- The Document Viewer dialog at the bottom of the component should remain outside the tabs (it's a modal overlay)
+- Make sure useState for activePortalTab is declared alongside the other useState declarations at the top of the component function
+- Make sure the useEffect for hotAccepted is placed with the other useEffect hooks
+Confirmation:
+
+Load the portal with a signed NDA but no HoT — you should see two tabs: "Stage 1: Financial" (selected) and "Deal Documents". Stage 2 tab should NOT be visible.
+The Stage 1 tab should show the analysis progress, document library, and upload section exactly as before.
+The Deal Documents tab should show the signed NDA card and any offer letters or HoT documents with their review components.
+If HoT has been accepted, a third tab "Stage 2: Due Diligence" should appear and be auto-selected. The DD Collection checklist should render inside it.
+All existing upload, review, and document viewing functionality should work as before.
+The portal header (title + company name) should remain visible above all tabs.
