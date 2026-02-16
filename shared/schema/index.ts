@@ -8,6 +8,7 @@ export * from './deal-models';
 export * from './dashboard';
 export * from './deal-documents';
 export * from './due-diligence';
+export * from './value-creation';
 
 // Relations
 export * from './relations';
