@@ -12,12 +12,8 @@ interface DocumentsTabProps {
 
 export function DocumentsTab({ companyId, targetCompanyId, companyName }: DocumentsTabProps) {
   return (
-    <Tabs defaultValue="deal-documents" className="space-y-4">
+    <Tabs defaultValue="stage1" className="space-y-4">
       <TabsList className="h-9 bg-muted/50">
-        <TabsTrigger value="deal-documents" className="text-xs gap-1.5 px-3">
-          <Shield className="w-3.5 h-3.5" />
-          Deal Documents
-        </TabsTrigger>
         <TabsTrigger value="stage1" className="text-xs gap-1.5 px-3">
           <FileText className="w-3.5 h-3.5" />
           Stage 1: Financial
@@ -26,11 +22,11 @@ export function DocumentsTab({ companyId, targetCompanyId, companyName }: Docume
           <FileCheck className="w-3.5 h-3.5" />
           Stage 2: Due Diligence
         </TabsTrigger>
+        <TabsTrigger value="deal-documents" className="text-xs gap-1.5 px-3">
+          <Shield className="w-3.5 h-3.5" />
+          Deal Documents
+        </TabsTrigger>
       </TabsList>
-
-      <TabsContent value="deal-documents">
-        <DealDocumentsSummary targetCompanyId={targetCompanyId} />
-      </TabsContent>
 
       <TabsContent value="stage1">
         <DocumentManagement targetCompanyId={targetCompanyId} companyName={companyName} />
@@ -38,6 +34,10 @@ export function DocumentsTab({ companyId, targetCompanyId, companyName }: Docume
 
       <TabsContent value="stage2">
         <DueDiligenceTab targetCompanyId={targetCompanyId} />
+      </TabsContent>
+
+      <TabsContent value="deal-documents">
+        <DealDocumentsSummary targetCompanyId={targetCompanyId} />
       </TabsContent>
     </Tabs>
   );
