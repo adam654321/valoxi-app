@@ -1,0 +1,437 @@
+Good, I've got the full picture now. This is the biggest prompt — schema changes, junction table, and updated routes. I'll keep it focused and clear.
+
+PROMPT 5: Multi-File Upload for Stage 2 DD Requirements (Schema + Backend)
+Context for Replit:
+Currently each DD requirement can only link to ONE document — via ddRequirementStatus.documentId (buyer-linked) and ddRequirementStatus.externalSubmissionId (seller-uploaded). Both are single integer fields. We need a junction table so each requirement can have multiple documents from both sources, plus new fields for the seller completion and buyer review workflow.
+Key files:
+
+Schema: shared/schema/due-diligence.ts
+Schema index: shared/schema/index.ts
+Buyer DD service: server/services/due-diligence.service.ts
+Buyer DD routes: server/routes/due-diligence.routes.ts
+Portal submissions service: server/services/portal-submissions.service.ts
+Portal submissions routes: server/routes/portal-submissions.routes.ts
+
+Prompt:
+Add multi-document support for DD requirements with seller completion tracking and buyer review workflow. This involves schema changes, new API endpoints, and modifications to existing endpoints.
+
+=== PART 1: SCHEMA CHANGES ===
+
+In shared/schema/due-diligence.ts:
+
+A) Add a NEW JUNCTION TABLE after the existing ddRequirementStatus table:
+
+export const ddRequirementDocuments = pgTable("dd_requirement_documents", {
+  id: serial("id").primaryKey(),
+  requirementStatusId: integer("requirement_status_id").references(() => ddRequirementStatus.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  documentSource: varchar("document_source", { length: 20 }).notNull(), // 'buyer_linked' or 'seller_uploaded'
+  documentId: integer("document_id").references(() => documents.id),
+  externalSubmissionId: integer("external_submission_id").references(() => externalDocumentSubmissions.id),
+  addedBy: integer("added_by").references(() => users.id),
+  addedAt: timestamp("added_at").defaultNow(),
+  notes: text("notes"),
+});
+
+Add the import for externalDocumentSubmissions from './portal' if not already imported (it already is — check the existing imports at the top of the file).
+
+Add the insert schema and types:
+
+export const insertDdRequirementDocumentSchema = createInsertSchema(ddRequirementDocuments).omit({
+  id: true,
+  addedAt: true,
+});
+
+export type DdRequirementDocument = typeof ddRequirementDocuments.$inferSelect;
+export type InsertDdRequirementDocument = z.infer<typeof insertDdRequirementDocumentSchema>;
+
+B) Add NEW COLUMNS to the existing ddRequirementStatus table definition. Add these columns after the existing updatedAt column:
+
+  sellerMarkedComplete: boolean("seller_marked_complete").default(false),
+  sellerMarkedCompleteAt: timestamp("seller_marked_complete_at"),
+  buyerReviewStatus: varchar("buyer_review_status", { length: 30 }).default("not_reviewed"),
+  buyerReviewNotes: text("buyer_review_notes"),
+  buyerReviewedAt: timestamp("buyer_reviewed_at"),
+  buyerReviewedBy: integer("buyer_reviewed_by").references(() => users.id),
+
+C) In shared/schema/index.ts — make sure the new table ddRequirementDocuments is exported. Find the line that exports from './due-diligence' and ensure ddRequirementDocuments is included.
+
+=== PART 2: GENERATE AND APPLY MIGRATION ===
+
+After making schema changes, run:
+npx drizzle-kit generate
+npx drizzle-kit push
+
+(Or however migrations are run in this project — check if there's a migrate script in package.json)
+
+=== PART 3: NEW API ENDPOINTS (Buyer Side) ===
+
+In server/routes/due-diligence.routes.ts, add these new endpoints:
+
+A) GET /company/:targetCompanyId/requirement/:requirementId/documents
+Returns all documents linked to a requirement via the junction table.
+
+router.get('/company/:targetCompanyId/requirement/:requirementId/documents', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const requirementId = parseInt(req.params.requirementId);
+    const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId);
+    res.json(docs);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+B) POST /company/:targetCompanyId/requirement/:requirementId/documents
+Links an existing document to a requirement (buyer action). Does NOT replace — adds alongside existing links.
+
+router.post('/company/:targetCompanyId/requirement/:requirementId/documents', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const requirementId = parseInt(req.params.requirementId);
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const { documentId, notes } = req.body;
+    if (!documentId) return res.status(400).json({ message: 'documentId is required' });
+    
+    const result = await dueDiligenceService.linkDocumentToRequirement({
+      requirementId, targetCompanyId, documentId, notes, addedBy: userId,
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+C) DELETE /company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId
+Removes a document link (does NOT delete the actual document).
+
+router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', async (req, res) => {
+  try {
+    const docLinkId = parseInt(req.params.docLinkId);
+    await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+D) POST /company/:targetCompanyId/requirement/:requirementId/buyer-review
+Buyer reviews a requirement (satisfied or more_needed).
+
+router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const requirementId = parseInt(req.params.requirementId);
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const { reviewStatus, notes } = req.body;
+    if (!['satisfied', 'more_needed'].includes(reviewStatus)) {
+      return res.status(400).json({ message: 'reviewStatus must be satisfied or more_needed' });
+    }
+    
+    const result = await dueDiligenceService.setBuyerReview({
+      requirementId, targetCompanyId, reviewStatus, notes, reviewedBy: userId,
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+=== PART 4: NEW SERVICE METHODS (Buyer Side) ===
+
+In server/services/due-diligence.service.ts, add these imports at the top:
+
+import { ddRequirementDocuments } from '@shared/schema/due-diligence';
+import { externalDocumentSubmissions } from '@shared/schema/portal';
+
+Then add these methods to the DueDiligenceService class:
+
+async getRequirementDocuments(requirementId: number, targetCompanyId: number) {
+  // First find the requirement status row
+  const [statusRow] = await db.select().from(ddRequirementStatus)
+    .where(and(
+      eq(ddRequirementStatus.requirementId, requirementId),
+      eq(ddRequirementStatus.targetCompanyId, targetCompanyId),
+    ));
+  
+  if (!statusRow) return [];
+  
+  const links = await db.select({
+    id: ddRequirementDocuments.id,
+    documentSource: ddRequirementDocuments.documentSource,
+    documentId: ddRequirementDocuments.documentId,
+    externalSubmissionId: ddRequirementDocuments.externalSubmissionId,
+    addedAt: ddRequirementDocuments.addedAt,
+    notes: ddRequirementDocuments.notes,
+    // Join fields for buyer-linked docs
+    docName: documents.documentName,
+    docFilename: documents.originalFilename,
+    docFileType: documents.fileType,
+    docFileSize: documents.fileSize,
+    // Join fields for seller-uploaded docs
+    extFilename: externalDocumentSubmissions.originalFilename,
+    extFileType: externalDocumentSubmissions.fileType,
+    extFileSize: externalDocumentSubmissions.fileSize,
+  })
+    .from(ddRequirementDocuments)
+    .leftJoin(documents, eq(documents.id, ddRequirementDocuments.documentId))
+    .leftJoin(externalDocumentSubmissions, eq(externalDocumentSubmissions.id, ddRequirementDocuments.externalSubmissionId))
+    .where(eq(ddRequirementDocuments.requirementStatusId, statusRow.id));
+  
+  return links.map(l => ({
+    id: l.id,
+    source: l.documentSource,
+    documentId: l.documentId,
+    externalSubmissionId: l.externalSubmissionId,
+    filename: l.documentSource === 'buyer_linked' ? (l.docFilename || l.docName) : l.extFilename,
+    fileType: l.documentSource === 'buyer_linked' ? l.docFileType : l.extFileType,
+    fileSize: l.documentSource === 'buyer_linked' ? l.docFileSize : l.extFileSize,
+    addedAt: l.addedAt,
+    notes: l.notes,
+  }));
+}
+
+async linkDocumentToRequirement(data: {
+  requirementId: number;
+  targetCompanyId: number;
+  documentId: number;
+  notes?: string;
+  addedBy: number;
+}) {
+  // Ensure a status row exists (create if not)
+  let [statusRow] = await db.select().from(ddRequirementStatus)
+    .where(and(
+      eq(ddRequirementStatus.requirementId, data.requirementId),
+      eq(ddRequirementStatus.targetCompanyId, data.targetCompanyId),
+    ));
+  
+  if (!statusRow) {
+    [statusRow] = await db.insert(ddRequirementStatus).values({
+      requirementId: data.requirementId,
+      targetCompanyId: data.targetCompanyId,
+      status: 'submitted',
+      updatedBy: data.addedBy,
+    }).returning();
+  } else if (statusRow.status === 'not_submitted') {
+    await db.update(ddRequirementStatus)
+      .set({ status: 'submitted', updatedBy: data.addedBy, updatedAt: new Date() })
+      .where(eq(ddRequirementStatus.id, statusRow.id));
+  }
+  
+  const [link] = await db.insert(ddRequirementDocuments).values({
+    requirementStatusId: statusRow.id,
+    targetCompanyId: data.targetCompanyId,
+    documentSource: 'buyer_linked',
+    documentId: data.documentId,
+    addedBy: data.addedBy,
+    notes: data.notes || null,
+  }).returning();
+  
+  return link;
+}
+
+async unlinkDocumentFromRequirement(docLinkId: number) {
+  await db.delete(ddRequirementDocuments)
+    .where(eq(ddRequirementDocuments.id, docLinkId));
+}
+
+async setBuyerReview(data: {
+  requirementId: number;
+  targetCompanyId: number;
+  reviewStatus: string;
+  notes?: string;
+  reviewedBy: number;
+}) {
+  const [statusRow] = await db.select().from(ddRequirementStatus)
+    .where(and(
+      eq(ddRequirementStatus.requirementId, data.requirementId),
+      eq(ddRequirementStatus.targetCompanyId, data.targetCompanyId),
+    ));
+  
+  if (!statusRow) throw new NotFoundError('Requirement status not found');
+  
+  const updateData: any = {
+    buyerReviewStatus: data.reviewStatus,
+    buyerReviewNotes: data.notes || null,
+    buyerReviewedAt: new Date(),
+    buyerReviewedBy: data.reviewedBy,
+    updatedAt: new Date(),
+  };
+  
+  // If buyer marks satisfied, also set status to approved
+  if (data.reviewStatus === 'satisfied') {
+    updateData.status = 'approved';
+    updateData.reviewedBy = data.reviewedBy;
+    updateData.reviewedAt = new Date();
+  }
+  
+  // If buyer requests more, reset seller completion flag
+  if (data.reviewStatus === 'more_needed') {
+    updateData.sellerMarkedComplete = false;
+    updateData.sellerMarkedCompleteAt = null;
+    updateData.status = 'submitted'; // keep as submitted, not rejected
+  }
+  
+  const [updated] = await db.update(ddRequirementStatus)
+    .set(updateData)
+    .where(eq(ddRequirementStatus.id, statusRow.id))
+    .returning();
+  
+  return updated;
+}
+
+=== PART 5: PORTAL ENDPOINTS FOR SELLER COMPLETION ===
+
+In server/routes/portal-submissions.routes.ts, add two new endpoints BEFORE the export:
+
+// Seller marks a DD requirement as complete
+router.post('/:token/dd-requirements/:requirementId/mark-complete', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+    const requirementId = parseInt(req.params.requirementId);
+    
+    // Verify at least one document is linked
+    const docs = await dueDiligenceService.getRequirementDocuments(requirementId, token.targetCompanyId);
+    if (docs.length === 0) {
+      return res.status(400).json({ error: 'Cannot mark complete — no documents linked to this requirement' });
+    }
+    
+    // Update the status row
+    const [statusRow] = await db.select().from(ddRequirementStatus)
+      .where(and(
+        eq(ddRequirementStatus.requirementId, requirementId),
+        eq(ddRequirementStatus.targetCompanyId, token.targetCompanyId),
+      ));
+    
+    if (!statusRow) {
+      return res.status(404).json({ error: 'Requirement status not found' });
+    }
+    
+    await db.update(ddRequirementStatus)
+      .set({
+        sellerMarkedComplete: true,
+        sellerMarkedCompleteAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(ddRequirementStatus.id, statusRow.id));
+    
+    sendSuccess(res, { success: true });
+  } catch (error) { sendError(res, error); }
+});
+
+// Seller unmarks a DD requirement as complete
+router.post('/:token/dd-requirements/:requirementId/unmark-complete', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+    const requirementId = parseInt(req.params.requirementId);
+    
+    const [statusRow] = await db.select().from(ddRequirementStatus)
+      .where(and(
+        eq(ddRequirementStatus.requirementId, requirementId),
+        eq(ddRequirementStatus.targetCompanyId, token.targetCompanyId),
+      ));
+    
+    if (!statusRow) {
+      return res.status(404).json({ error: 'Requirement status not found' });
+    }
+    
+    await db.update(ddRequirementStatus)
+      .set({
+        sellerMarkedComplete: false,
+        sellerMarkedCompleteAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(ddRequirementStatus.id, statusRow.id));
+    
+    sendSuccess(res, { success: true });
+  } catch (error) { sendError(res, error); }
+});
+
+Add the required imports at the top of portal-submissions.routes.ts:
+import { db } from '../db';
+import { ddRequirementStatus } from '@shared/schema/due-diligence';
+import { and, eq } from 'drizzle-orm';
+
+=== PART 6: UPDATE PORTAL DD REQUIREMENTS ENDPOINT ===
+
+In the existing GET /:token/dd-requirements route in server/routes/portal-submissions.routes.ts, update the requirements mapping to include the new fields and linked documents. Replace the current requirements mapping with:
+
+    const categories = await Promise.all(categoriesWithStatus.map(async cat => ({
+      ...cat.category,
+      requirements: await Promise.all(cat.requirements.map(async req => {
+        const statusData = req.status as any;
+        const linkedDocs = await dueDiligenceService.getRequirementDocuments(req.id, token.targetCompanyId);
+        return {
+          id: req.id,
+          refNumber: req.refNumber,
+          documentName: req.documentName,
+          description: req.guidance,
+          priority: req.priority,
+          category: cat.category.categoryName,
+          status: statusData?.status || 'not_submitted',
+          notes: statusData?.notes || null,
+          documentId: statusData?.documentId || null,
+          linkedDocumentName: statusData?.linkedDocumentName || null,
+          linkedDocumentFilename: statusData?.linkedDocumentFilename || null,
+          externalSubmissionId: statusData?.externalSubmissionId || null,
+          // New fields
+          linkedDocuments: linkedDocs,
+          sellerMarkedComplete: statusData?.sellerMarkedComplete || false,
+          buyerReviewStatus: statusData?.buyerReviewStatus || 'not_reviewed',
+          buyerReviewNotes: statusData?.buyerReviewNotes || null,
+        };
+      })),
+      completedCount: cat.completedCount,
+      totalCount: cat.totalCount,
+    })));
+
+=== PART 7: UPDATE PORTAL UPLOAD TO USE JUNCTION TABLE ===
+
+In server/services/portal-submissions.service.ts, in the submitDocument method, find the block that handles DD requirement linking (the block starting with `if (submission.documentRequirementId)`). After the existing call to dueDiligenceService.updateRequirementStatus, ALSO create a junction table entry:
+
+    // After the existing updateRequirementStatus call, add:
+    try {
+      const { ddRequirementDocuments, ddRequirementStatus: ddReqStatus } = await import('@shared/schema/due-diligence');
+      const { and: andOp, eq: eqOp } = await import('drizzle-orm');
+      
+      const [statusRow] = await db.select().from(ddReqStatus)
+        .where(andOp(
+          eqOp(ddReqStatus.requirementId, submission.documentRequirementId!),
+          eqOp(ddReqStatus.targetCompanyId, token.targetCompanyId),
+        ));
+      
+      if (statusRow) {
+        await db.insert(ddRequirementDocuments).values({
+          requirementStatusId: statusRow.id,
+          targetCompanyId: token.targetCompanyId,
+          documentSource: 'seller_uploaded',
+          documentId: mainDocument.id,
+          externalSubmissionId: submission.id,
+          notes: body.submissionNotes || null,
+        });
+        console.log(`[PORTAL_UPLOAD] Created junction table entry for DD requirement ${submission.documentRequirementId}`);
+      }
+    } catch (junctionErr) {
+      console.error('[PORTAL_UPLOAD] Failed to create junction table entry:', junctionErr);
+    }
+
+IMPORTANT NOTES:
+- Do NOT remove the existing documentId and externalSubmissionId columns from ddRequirementStatus — keep for backward compatibility
+- The existing updateRequirementStatus call should still work as before (it sets the single-link fields)
+- The junction table ADDS multi-document support on top of the existing system
+- Make sure all drizzle-kit migration/push commands run successfully
+Confirmation:
+
+Migration applies cleanly — dd_requirement_documents table exists with correct columns
+dd_requirement_status table has new columns: seller_marked_complete, seller_marked_complete_at, buyer_review_status, buyer_review_notes, buyer_reviewed_at, buyer_reviewed_by
+Test: POST to /api/v2/due-diligence/company/1/requirement/1/documents with { "documentId": 5 } creates a junction entry
+Test: GET /api/v2/due-diligence/company/1/requirement/1/documents returns the linked document
+Test: Upload a document via the portal against a DD requirement — both the old single-link AND the new junction table entry are created
+Test: GET portal DD requirements returns the new linkedDocuments, sellerMarkedComplete, and buyerReviewStatus fields
+Test: POST to /:token/dd-requirements/:id/mark-complete works when documents exist, fails when none exist
+Test: POST to /api/v2/due-diligence/company/1/requirement/1/buyer-review with { "reviewStatus": "satisfied" } updates the status
+All existing DD functionality (status updates, single-doc linking, portal uploads) still works as before

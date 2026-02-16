@@ -42,6 +42,24 @@ export const ddRequirementStatus = pgTable("dd_requirement_status", {
   updatedBy: integer("updated_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  sellerMarkedComplete: boolean("seller_marked_complete").default(false),
+  sellerMarkedCompleteAt: timestamp("seller_marked_complete_at"),
+  buyerReviewStatus: varchar("buyer_review_status", { length: 30 }).default("not_reviewed"),
+  buyerReviewNotes: text("buyer_review_notes"),
+  buyerReviewedAt: timestamp("buyer_reviewed_at"),
+  buyerReviewedBy: integer("buyer_reviewed_by").references(() => users.id),
+});
+
+export const ddRequirementDocuments = pgTable("dd_requirement_documents", {
+  id: serial("id").primaryKey(),
+  requirementStatusId: integer("requirement_status_id").references(() => ddRequirementStatus.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  documentSource: varchar("document_source", { length: 20 }).notNull(),
+  documentId: integer("document_id").references(() => documents.id),
+  externalSubmissionId: integer("external_submission_id").references(() => externalDocumentSubmissions.id),
+  addedBy: integer("added_by").references(() => users.id),
+  addedAt: timestamp("added_at").defaultNow(),
+  notes: text("notes"),
 });
 
 export const insertDdCategorySchema = createInsertSchema(ddCategories).omit({
@@ -61,6 +79,11 @@ export const insertDdRequirementStatusSchema = createInsertSchema(ddRequirementS
   reviewedAt: true,
 });
 
+export const insertDdRequirementDocumentSchema = createInsertSchema(ddRequirementDocuments).omit({
+  id: true,
+  addedAt: true,
+});
+
 export type DdCategory = typeof ddCategories.$inferSelect;
 export type InsertDdCategory = z.infer<typeof insertDdCategorySchema>;
 
@@ -69,3 +92,6 @@ export type InsertDdRequirement = z.infer<typeof insertDdRequirementSchema>;
 
 export type DdRequirementStatus = typeof ddRequirementStatus.$inferSelect;
 export type InsertDdRequirementStatus = z.infer<typeof insertDdRequirementStatusSchema>;
+
+export type DdRequirementDocument = typeof ddRequirementDocuments.$inferSelect;
+export type InsertDdRequirementDocument = z.infer<typeof insertDdRequirementDocumentSchema>;
