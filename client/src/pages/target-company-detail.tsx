@@ -38,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator, LineChart } from "lucide-react";
 import ExpertAnalysisDashboard from "@/components/analysis/ExpertAnalysisDashboard";
 import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
@@ -48,6 +48,7 @@ import { OverviewTab } from "@/components/target-company/OverviewTab";
 import { TeamTab } from "@/components/target-company/TeamTab";
 import { DocumentsTab } from "@/components/target-company/DocumentsTab";
 import DealModeller from "@/components/target-company/DealModeller";
+import ValueCreationModeller from "@/components/target-company/ValueCreationModeller";
 import { useTargetCompany } from "@/hooks/useTargetCompany";
 
 import ReactMarkdown from "react-markdown";
@@ -531,6 +532,10 @@ export default function TargetCompanyDetail() {
               <Calculator className="w-4 h-4" />
               Deal Modeller
             </TabsTrigger>
+            <TabsTrigger value="value-creation" className="flex items-center gap-2 flex-1">
+              <LineChart className="w-4 h-4" />
+              Value Creation
+            </TabsTrigger>
             <TabsTrigger value="pipeline" className="flex items-center gap-2 flex-1">
               <TrendingUp className="w-4 h-4" />
               Pipeline
@@ -975,6 +980,10 @@ export default function TargetCompanyDetail() {
 
           <TabsContent value="deal-modeller" className="space-y-6">
             <DealModeller companyId={company.id} />
+          </TabsContent>
+
+          <TabsContent value="value-creation" className="space-y-6">
+            <ValueCreationModeller companyId={company.id} />
           </TabsContent>
 
           <TabsContent value="pipeline" className="space-y-6">
