@@ -180,18 +180,18 @@ function DocumentLinkPicker({
     }
   };
 
-  const safeDocuments = Array.isArray(companyDocuments) ? companyDocuments : [];
+  const docs = Array.isArray(companyDocuments) ? companyDocuments : [];
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return safeDocuments;
+    if (!search.trim()) return docs;
     const q = search.toLowerCase();
-    return safeDocuments.filter(
+    return docs.filter(
       (d) =>
         d.documentName?.toLowerCase().includes(q) ||
         d.originalFilename?.toLowerCase().includes(q) ||
         d.documentCategory?.toLowerCase().includes(q)
     );
-  }, [safeDocuments, search]);
+  }, [docs, search]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, CompanyDocument[]> = {};
@@ -658,17 +658,18 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   });
 
   const documentsQuery = useQuery<CompanyDocument[]>({
-    queryKey: ["/api/v2/files/company", targetCompanyId],
+    queryKey: ["/api/v2/files/company", targetCompanyId, "docs-list"],
     queryFn: async () => {
       const res = await fetch(`/api/v2/files/company/${targetCompanyId}`, { credentials: "include" });
       if (!res.ok) return [];
       const json = await res.json();
       const data = json?.data || json;
-      return data?.documents || [];
+      const arr = data?.documents || data;
+      return Array.isArray(arr) ? arr : [];
     },
   });
 
-  const companyDocuments = documentsQuery.data || [];
+  const companyDocuments = Array.isArray(documentsQuery.data) ? documentsQuery.data : [];
   const categories = statusQuery.data || [];
 
   const [ddFilter, setDdFilter] = useState<string>('all');
@@ -705,7 +706,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
 
     queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "status"] });
     queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "summary"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
+    queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId, "docs-list"] });
     queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
   };
 
