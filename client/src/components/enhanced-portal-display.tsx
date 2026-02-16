@@ -1048,7 +1048,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="px-4 pb-4 border-t">
-                      <div className="pt-4">
+                      <div className="pt-4 space-y-4">
                         {ndaHtmlLoading && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -1060,6 +1060,40 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                         )}
                         {!ndaHtml && !ndaHtmlLoading && (
                           <p className="text-sm text-muted-foreground">NDA Version {ndaDocument.version} — signed and in effect.</p>
+                        )}
+                        {ndaDocument.responses && ndaDocument.responses.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Signatures</h4>
+                            {ndaDocument.responses.map((r: any) => (
+                              <div key={r.id} className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-sm">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs">
+                                    {r.responseType}
+                                  </Badge>
+                                  <span className="text-gray-500 dark:text-gray-400">by {r.respondentName}</span>
+                                  <span className="text-gray-400 dark:text-gray-500">
+                                    {new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </span>
+                                </div>
+                                {r.comments && (
+                                  <p className="text-gray-600 dark:text-gray-400 mt-1">{r.comments}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {(!ndaDocument.responses || ndaDocument.responses.length === 0) && ndaDocument.respondedAt && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Signatures</h4>
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs">accepted</Badge>
+                                <span className="text-gray-400 dark:text-gray-500">
+                                  {new Date(ndaDocument.respondedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>

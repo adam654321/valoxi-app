@@ -266,7 +266,14 @@ publicRouter.get('/:token', async (req, res) => {
     const docs = await dealDocumentService.getDocumentsForPortal(portalData.tokenId);
     const ndaAccepted = await dealDocumentService.isNdaAccepted(portalData.tokenId);
 
-    res.json({ documents: docs, ndaAccepted });
+    const docsWithResponses = await Promise.all(
+      docs.map(async (doc) => {
+        const responses = await dealDocumentService.getDocumentResponses(doc.id);
+        return { ...doc, responses };
+      })
+    );
+
+    res.json({ documents: docsWithResponses, ndaAccepted });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
