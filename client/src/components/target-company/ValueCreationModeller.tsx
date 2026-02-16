@@ -35,6 +35,7 @@ import type {
   ValueCreationExitAssumption,
 } from '@shared/schema';
 import AssumptionsPanel from '@/components/value-creation/AssumptionsPanel';
+import PLProjectionsSection from '@/components/value-creation/PLProjectionsSection';
 import {
   LineChart,
   Calculator,
@@ -452,26 +453,13 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
               </Card>
             ) : (
               <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-bold text-blue-700 dark:text-blue-300">1</span>
-                      P&L Projections
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-muted/30 rounded-lg p-6 text-center text-sm text-muted-foreground">
-                      <p className="font-medium mb-1">Section ready for Prompt 3</p>
-                      <p>{baseYearLabel} &rarr; Year 5 projections calculated ({projections.length} years)</p>
-                      <p className="mt-2 font-mono text-xs">
-                        Y1 Revenue: {formatCurrency(projections[0]?.revenue)} &rarr; Y5: {formatCurrency(projections[4]?.revenue)}
-                      </p>
-                      <p className="font-mono text-xs">
-                        Y1 EBITDA: {formatCurrency(projections[0]?.ebitda)} &rarr; Y5: {formatCurrency(projections[4]?.ebitda)}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PLProjectionsSection
+                  projections={projections}
+                  baseYearData={baseYearData!}
+                  baseYearLabel={baseYearLabel}
+                  synergies={synergyInputs}
+                  scenarioType={activeScenarioType}
+                />
 
                 <Card>
                   <CardHeader>
