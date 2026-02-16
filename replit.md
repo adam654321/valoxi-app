@@ -83,10 +83,16 @@ Preferred communication style: Simple, everyday language.
   - `portal.ts` — External portal tokens, submissions, chase-ups, campaigns, analytics (13 tables)
   - `financials.ts` — P&L, balance sheets, staff data, assets, loans, EBITDA adjustments, valuations (9 tables)
   - `dashboard.ts` — Dashboard preferences, alerts, composite types (2 tables)
+  - `value-creation.ts` — Value creation scenarios, assumptions, synergies, exit assumptions (4 tables)
   - `relations.ts` — All 33 Drizzle relation definitions (centralized to avoid circular deps)
   - `index.ts` — Barrel re-export of all modules
   - `shared/schema.ts` — Top-level re-export (`export * from './schema/index'`) so all existing imports continue to work unchanged
-- **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, standardized document requirements, `chase_up_schedules`, and `chase_up_emails`.
+- **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, standardized document requirements, `chase_up_schedules`, `chase_up_emails`, and value creation modelling tables.
+- **Value Creation Modeller**: Post-acquisition financial modelling feature:
+    - Pure TypeScript calculation engine at `shared/calculators/value-creation.calc.ts` (5-year P&L projections, debt schedules, waterfall, returns/IRR/MOIC, sensitivity analysis)
+    - Service at `server/services/value-creation.service.ts`, routes at `server/routes/value-creation.routes.ts`
+    - V2 API endpoints: `/api/v2/value-creation/*` for scenarios, assumptions, synergies, exit assumptions
+    - Auto-creates bear/base/bull scenarios with 5-year assumptions on first access per deal model
 
 ## Authentication & Security
 - **Session Management**: PostgreSQL-backed sessions.
