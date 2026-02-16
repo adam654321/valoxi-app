@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,18 @@ interface DdCollectionProps {
   onDocumentUploaded: () => void;
 }
 
+interface LinkedDocument {
+  id: number;
+  source: 'buyer_linked' | 'seller_uploaded';
+  documentId: number | null;
+  externalSubmissionId: number | null;
+  filename: string;
+  fileType: string | null;
+  fileSize: number | null;
+  addedAt: string;
+  notes: string | null;
+}
+
 interface DdRequirement {
   id: number;
   refNumber: string;
@@ -41,6 +53,10 @@ interface DdRequirement {
   linkedDocumentName: string | null;
   linkedDocumentFilename: string | null;
   externalSubmissionId: number | null;
+  linkedDocuments: LinkedDocument[];
+  sellerMarkedComplete: boolean;
+  buyerReviewStatus: 'not_reviewed' | 'satisfied' | 'more_needed';
+  buyerReviewNotes: string | null;
 }
 
 interface DdCategoryData {
@@ -58,6 +74,25 @@ interface DdSummary {
   mandatory: { total: number; completed: number };
   advisory: { total: number; completed: number };
   addsValue: { total: number; completed: number };
+}
+
+function getDisplayStatus(req: DdRequirement): { label: string; color: string; icon: React.ReactNode } {
+  if (req.buyerReviewStatus === 'satisfied') {
+    return { label: 'Verified', color: 'bg-green-100 text-green-700', icon: <CheckCircle className="h-3.5 w-3.5 text-green-500" /> };
+  }
+  if (req.buyerReviewStatus === 'more_needed') {
+    return { label: 'More needed', color: 'bg-amber-100 text-amber-700', icon: <AlertCircle className="h-3.5 w-3.5 text-amber-500" /> };
+  }
+  if (req.sellerMarkedComplete) {
+    return { label: 'Pending review', color: 'bg-blue-100 text-blue-700', icon: <Clock className="h-3.5 w-3.5 text-blue-500" /> };
+  }
+  if (req.linkedDocuments && req.linkedDocuments.length > 0) {
+    return { label: 'In progress', color: 'bg-gray-100 text-gray-600', icon: <Clock className="h-3.5 w-3.5 text-gray-400" /> };
+  }
+  if (req.status === 'na') {
+    return { label: 'N/A', color: 'bg-gray-100 text-gray-500', icon: <MinusCircle className="h-3.5 w-3.5 text-gray-400" /> };
+  }
+  return { label: 'Awaiting', color: 'bg-gray-50 text-gray-400', icon: <AlertCircle className="h-3.5 w-3.5 text-gray-300" /> };
 }
 
 export default function DdCollection({ token, onDocumentUploaded }: DdCollectionProps) {
@@ -80,12 +115,21 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
   const categories = ddData?.data?.categories || [];
   const summary = ddData?.data?.summary;
-
-  const hasDocumentCount = categories.reduce((sum, cat) => {
-    return sum + cat.requirements.filter(r => r.status === 'submitted' || r.status === 'approved').length;
-  }, 0);
   const totalRequirements = summary?.total || 0;
-  const progressPercent = totalRequirements > 0 ? Math.round((hasDocumentCount / totalRequirements) * 100) : 0;
+
+  const verifiedCount = categories.reduce((sum, cat) => {
+    return sum + cat.requirements.filter((r: any) => r.buyerReviewStatus === 'satisfied').length;
+  }, 0);
+
+  const pendingReviewCount = categories.reduce((sum, cat) => {
+    return sum + cat.requirements.filter((r: any) => r.sellerMarkedComplete && r.buyerReviewStatus !== 'satisfied' && r.buyerReviewStatus !== 'more_needed').length;
+  }, 0);
+
+  const inProgressCount = categories.reduce((sum, cat) => {
+    return sum + cat.requirements.filter((r: any) => r.linkedDocuments?.length > 0 && !r.sellerMarkedComplete && r.buyerReviewStatus === 'not_reviewed').length;
+  }, 0);
+
+  const progressPercent = totalRequirements > 0 ? Math.round((verifiedCount / totalRequirements) * 100) : 0;
 
   const toggleCategory = (categoryId: number) => {
     setExpandedCategories(prev => {
@@ -138,12 +182,12 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
       toast({
         title: 'Document Uploaded',
-        description: 'Your document has been submitted and linked to the requirement.',
+        description: 'Your document has been submitted. You can upload another or click Done.',
       });
 
-      setUploadingRequirementId(null);
       setSelectedFile(null);
       setSubmissionNotes('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
 
       queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
@@ -157,6 +201,46 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleMarkComplete = async (requirementId: number) => {
+    try {
+      const response = await fetch(`/api/v2/portal-submit/${token}/dd-requirements/${requirementId}/mark-complete`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to mark complete');
+      }
+      toast({ title: 'Marked as complete', description: 'The buyer will be notified to review.' });
+      queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleUnmarkComplete = async (requirementId: number) => {
+    try {
+      await fetch(`/api/v2/portal-submit/${token}/dd-requirements/${requirementId}/unmark-complete`, {
+        method: 'POST',
+      });
+      queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleRemoveDocument = async (requirementId: number, docLinkId: number) => {
+    try {
+      const response = await fetch(`/api/v2/portal-submit/${token}/dd-requirements/${requirementId}/documents/${docLinkId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to remove document');
+      queryClient.invalidateQueries({ queryKey: ['portal-dd-requirements', token] });
+      toast({ title: 'Document removed' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
 
@@ -178,31 +262,6 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
         return <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 bg-blue-50">Adds Value</Badge>;
       default:
         return <Badge variant="outline" className="text-xs">{priority}</Badge>;
-    }
-  };
-
-  const statusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'submitted':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'na':
-        return <MinusCircle className="h-4 w-4 text-gray-400" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-gray-300" />;
-    }
-  };
-
-  const statusLabel = (status: string) => {
-    switch (status) {
-      case 'approved': return 'Approved';
-      case 'submitted': return 'Submitted';
-      case 'rejected': return 'Rejected';
-      case 'na': return 'N/A';
-      default: return 'Awaiting';
     }
   };
 
@@ -235,26 +294,24 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">
-              {hasDocumentCount} of {totalRequirements} requirements addressed
+              {verifiedCount} of {totalRequirements} requirements verified
             </span>
             <span className="font-medium text-gray-900">{progressPercent}%</span>
           </div>
           <Progress value={progressPercent} className="h-2" />
 
-          {summary && (
-            <div className="flex gap-4 text-xs text-gray-500 mt-2">
-              <span>Mandatory: {summary.mandatory.completed}/{summary.mandatory.total}</span>
-              <span>Advisory: {summary.advisory.completed}/{summary.advisory.total}</span>
-              <span>Adds Value: {summary.addsValue.completed}/{summary.addsValue.total}</span>
-            </div>
-          )}
+          <div className="flex gap-4 text-xs text-gray-500 mt-2">
+            <span className="text-green-600">{verifiedCount} verified</span>
+            <span className="text-blue-600">{pendingReviewCount} pending review</span>
+            <span className="text-gray-600">{inProgressCount} in progress</span>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-3">
         {categories.map((cat, catIndex) => {
           const isExpanded = expandedCategories.has(cat.id) || (catIndex === 0 && expandedCategories.size === 0);
-          const catAddressed = cat.requirements.filter(r => r.status === 'submitted' || r.status === 'approved').length;
+          const catVerified = cat.requirements.filter(r => r.buyerReviewStatus === 'satisfied').length;
 
           return (
             <div key={cat.id} className="border rounded-lg overflow-hidden">
@@ -270,140 +327,226 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                   <span className="font-medium text-gray-900">{cat.categoryName}</span>
                 </div>
                 <Badge
-                  variant={catAddressed === cat.totalCount ? 'default' : 'outline'}
+                  variant={catVerified === cat.totalCount ? 'default' : 'outline'}
                   className="text-xs"
                 >
-                  {catAddressed} / {cat.totalCount}
+                  {catVerified} / {cat.totalCount}
                 </Badge>
               </button>
 
               {isExpanded && (
                 <div className="divide-y">
-                  {cat.requirements.map(req => (
-                    <div key={req.id} className="p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2 flex-1 min-w-0">
-                          {statusIcon(req.status)}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-mono text-gray-400">{req.refNumber}</span>
-                              <span className="text-sm font-medium text-gray-900">{req.documentName}</span>
-                              {priorityBadge(req.priority)}
+                  {cat.requirements.map(req => {
+                    const displayStatus = getDisplayStatus(req);
+                    const buyerDocs = (req.linkedDocuments || []).filter(d => d.source === 'buyer_linked');
+                    const sellerDocs = (req.linkedDocuments || []).filter(d => d.source === 'seller_uploaded');
+                    const allDocs = req.linkedDocuments || [];
+
+                    return (
+                      <div key={req.id} className="p-4 border-b last:border-b-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-2 flex-1">
+                            {displayStatus.icon}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-mono text-gray-400">{req.refNumber}</span>
+                                <span className="text-sm font-medium">{req.documentName}</span>
+                                {priorityBadge(req.priority)}
+                                <Badge className={`text-xs ${displayStatus.color}`}>{displayStatus.label}</Badge>
+                              </div>
+                              {req.description && <p className="text-xs text-gray-500 mt-1">{req.description}</p>}
                             </div>
-                            {req.description && (
-                              <p className="text-xs text-gray-500 mt-1">{req.description}</p>
-                            )}
-                            {req.linkedDocumentName && (
-                              <div className="flex items-center gap-1 mt-1 text-xs text-green-700">
-                                <Paperclip className="h-3 w-3" />
-                                <span>{req.linkedDocumentFilename || req.linkedDocumentName}</span>
-                              </div>
-                            )}
-                            {req.status === 'rejected' && req.notes && (
-                              <div className="mt-1 flex items-start gap-1.5">
-                                <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-xs text-red-600">{req.notes}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs text-gray-500">{statusLabel(req.status)}</span>
-                          {(req.status === 'not_submitted' || req.status === 'rejected' || req.status === 'submitted') && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs h-7"
-                              onClick={() => handleStartUpload(req.id)}
-                            >
-                              <Upload className="h-3 w-3 mr-1" />
-                              {req.status === 'not_submitted' ? 'Upload' : 'Replace'}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {uploadingRequirementId === req.id && (
-                        <div className="mt-3 ml-6 p-3 bg-gray-50 rounded-lg border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">
-                              Upload for: {req.refNumber} — {req.documentName}
-                            </span>
-                            <Button variant="ghost" size="sm" onClick={handleCancelUpload} className="h-6 w-6 p-0">
-                              <X className="h-4 w-4" />
-                            </Button>
+                        {req.buyerReviewStatus === 'more_needed' && (
+                          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-amber-800">Additional documents requested</p>
+                                {req.buyerReviewNotes && (
+                                  <p className="text-xs text-amber-700 mt-1">{req.buyerReviewNotes}</p>
+                                )}
+                              </div>
+                            </div>
                           </div>
+                        )}
 
-                          <div>
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
-                              onChange={handleFileSelect}
-                              className="hidden"
-                            />
-                            {selectedFile ? (
-                              <div className="flex items-center justify-between bg-white p-2 rounded border">
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-blue-500" />
-                                  <div>
-                                    <span className="text-sm font-medium">{selectedFile.name}</span>
-                                    <span className="text-xs text-gray-500 ml-2">{formatFileSize(selectedFile.size)}</span>
+                        {req.buyerReviewStatus === 'satisfied' && (
+                          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-green-700 font-medium">Verified by buyer</span>
+                          </div>
+                        )}
+
+                        {allDocs.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {buyerDocs.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
+                                  <FileText className="h-3 w-3" /> Already held
+                                </p>
+                                {buyerDocs.map(doc => (
+                                  <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
+                                    <Paperclip className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                                    <span className="text-xs text-gray-700 truncate">{doc.filename}</span>
+                                    {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
                                   </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {sellerDocs.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-green-600 mb-1 flex items-center gap-1">
+                                  <Upload className="h-3 w-3" /> Your uploads
+                                </p>
+                                {sellerDocs.map(doc => (
+                                  <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
+                                    <FileText className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                    <span className="text-xs text-gray-700 truncate">{doc.filename}</span>
+                                    {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                                    {req.buyerReviewStatus !== 'satisfied' && (
+                                      <button
+                                        onClick={() => handleRemoveDocument(req.id, doc.id)}
+                                        className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                                        title="Remove"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {req.buyerReviewStatus !== 'satisfied' && (
+                          <div className="mt-3">
+                            {uploadingRequirementId === req.id ? (
+                              <div className="p-3 bg-gray-50 rounded-lg border space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-700">
+                                    Upload for: {req.refNumber} — {req.documentName}
+                                  </span>
+                                  <Button variant="ghost" size="sm" onClick={handleCancelUpload} className="h-6 text-xs">
+                                    Done
+                                  </Button>
                                 </div>
+
+                                <div>
+                                  <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                  />
+                                  {selectedFile ? (
+                                    <div className="flex items-center justify-between bg-white p-2 rounded border">
+                                      <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-blue-500" />
+                                        <div>
+                                          <span className="text-sm font-medium">{selectedFile.name}</span>
+                                          <span className="text-xs text-gray-500 ml-2">{formatFileSize(selectedFile.size)}</span>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                        className="h-6 text-xs"
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => fileInputRef.current?.click()}
+                                      className="w-full border-dashed"
+                                    >
+                                      <Upload className="h-4 w-4 mr-2" />
+                                      Select file to upload
+                                    </Button>
+                                  )}
+                                </div>
+
+                                <Textarea
+                                  value={submissionNotes}
+                                  onChange={(e) => setSubmissionNotes(e.target.value)}
+                                  placeholder="Optional notes about this document..."
+                                  rows={2}
+                                  className="text-sm"
+                                />
+
                                 <Button
-                                  variant="ghost"
+                                  onClick={handleUploadSubmit}
+                                  disabled={!selectedFile || isUploading}
                                   size="sm"
-                                  onClick={() => setSelectedFile(null)}
-                                  className="h-6 text-xs"
+                                  className="w-full"
                                 >
-                                  Remove
+                                  {isUploading ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      Uploading...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="h-4 w-4 mr-2" />
+                                      Submit Document
+                                    </>
+                                  )}
                                 </Button>
                               </div>
                             ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full border-dashed"
+                                className="text-xs h-7"
+                                onClick={() => handleStartUpload(req.id)}
                               >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Select file to upload
+                                <Upload className="h-3 w-3 mr-1" />
+                                Add document
                               </Button>
                             )}
                           </div>
+                        )}
 
-                          <Textarea
-                            value={submissionNotes}
-                            onChange={(e) => setSubmissionNotes(e.target.value)}
-                            placeholder="Optional notes about this document..."
-                            rows={2}
-                            className="text-sm"
-                          />
-
-                          <Button
-                            onClick={handleUploadSubmit}
-                            disabled={!selectedFile || isUploading}
-                            size="sm"
-                            className="w-full"
-                          >
-                            {isUploading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Uploading...
-                              </>
+                        {req.buyerReviewStatus !== 'satisfied' && allDocs.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            {req.sellerMarkedComplete ? (
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Marked as complete
+                                </Badge>
+                                <button
+                                  onClick={() => handleUnmarkComplete(req.id)}
+                                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                                >
+                                  Undo
+                                </button>
+                              </div>
                             ) : (
-                              <>
-                                <Upload className="h-4 w-4 mr-2" />
-                                Submit Document
-                              </>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7 border-green-300 text-green-700 hover:bg-green-50"
+                                onClick={() => handleMarkComplete(req.id)}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Mark as complete
+                              </Button>
                             )}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
