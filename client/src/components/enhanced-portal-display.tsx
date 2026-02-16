@@ -392,6 +392,8 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const [showViewer, setShowViewer] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<string>('stage1');
   const [expandedDealDocs, setExpandedDealDocs] = useState<Set<string>>(new Set());
+  const [ndaHtml, setNdaHtml] = useState<string | null>(null);
+  const [ndaHtmlLoading, setNdaHtmlLoading] = useState(false);
   
   const { toast } = useToast();
 
@@ -402,6 +404,22 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       else next.add(docKey);
       return next;
     });
+  };
+
+  const loadNdaHtml = async (docId: number) => {
+    if (ndaHtml) return;
+    setNdaHtmlLoading(true);
+    try {
+      const res = await fetch(`/api/v2/public/deal-documents/${token}/${docId}/html`);
+      if (res.ok) {
+        const data = await res.json();
+        setNdaHtml(data.html || '');
+      }
+    } catch (err) {
+      console.error('Failed to load NDA content:', err);
+    } finally {
+      setNdaHtmlLoading(false);
+    }
   };
 
   // Fetch portal data
@@ -1026,13 +1044,25 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   <CollapsibleContent>
                     <div className="px-4 pb-4 border-t">
                       <div className="pt-4 text-sm text-muted-foreground">
-                        <p>NDA Version {ndaDocument.version} — signed and in effect.</p>
-                        {ndaDocument.contentSnapshot && (
-                          <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
-                            {typeof ndaDocument.contentSnapshot === 'string' 
-                              ? ndaDocument.contentSnapshot.substring(0, 500) + (ndaDocument.contentSnapshot.length > 500 ? '...' : '')
-                              : 'Document content available'}
+                        <p className="mb-3">NDA Version {ndaDocument.version} — signed and in effect.</p>
+                        {!ndaHtml && !ndaHtmlLoading && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => loadNdaHtml(ndaDocument.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        )}
+                        {ndaHtmlLoading && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            Loading document...
                           </div>
+                        )}
+                        {ndaHtml && (
+                          <div className="mt-3 p-4 bg-white dark:bg-gray-900 border rounded-lg max-h-96 overflow-y-auto text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: ndaHtml }} />
                         )}
                       </div>
                     </div>
@@ -1042,12 +1072,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
             )}
 
             {offerDocuments.length > 0 && (() => {
-              const allOffersResolved = offerDocuments.every(
-                (d: any) => d.status === 'accepted' || d.status === 'rejected'
-              );
+              const latestOffer = offerDocuments[0];
+              const latestOfferResolved = latestOffer.status === 'accepted' || latestOffer.status === 'rejected';
               
-              if (allOffersResolved) {
-                const latestOffer = offerDocuments[0];
+              if (latestOfferResolved) {
                 return (
                   <Collapsible open={expandedDealDocs.has('offers')} onOpenChange={() => toggleDealDoc('offers')}>
                     <Card>
@@ -1098,12 +1126,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
             })()}
 
             {hotDocuments.length > 0 && (() => {
-              const allHotResolved = hotDocuments.every(
-                (d: any) => d.status === 'accepted' || d.status === 'rejected'
-              );
+              const latestHot = hotDocuments[0];
+              const latestHotResolved = latestHot.status === 'accepted' || latestHot.status === 'rejected';
               
-              if (allHotResolved) {
-                const latestHot = hotDocuments[0];
+              if (latestHotResolved) {
                 return (
                   <Collapsible open={expandedDealDocs.has('hot')} onOpenChange={() => toggleDealDoc('hot')}>
                     <Card>
