@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,6 +39,12 @@ interface DdRequirementStatus {
   updatedBy: number | null;
   linkedDocumentName: string | null;
   linkedDocumentFilename: string | null;
+  sellerMarkedComplete: boolean;
+  sellerMarkedCompleteAt: string | null;
+  buyerReviewStatus: string;
+  buyerReviewNotes: string | null;
+  buyerReviewedAt: string | null;
+  buyerReviewedBy: number | null;
 }
 
 interface DdRequirementWithStatus {
@@ -79,6 +85,18 @@ interface CompanyDocument {
   createdAt: string;
 }
 
+interface LinkedDoc {
+  id: number;
+  source: string;
+  documentId: number | null;
+  externalSubmissionId: number | null;
+  filename: string;
+  fileType: string | null;
+  fileSize: number | null;
+  addedAt: string;
+  notes: string | null;
+}
+
 function ProgressBar({ value, max, className = "" }: { value: number; max: number; className?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
@@ -108,9 +126,20 @@ function StatusBadge({ status }: { status: string }) {
     approved: { label: "Approved", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
     rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
     na: { label: "N/A", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" },
+    satisfied: { label: "Verified", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+    more_needed: { label: "More Needed", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    pending_review: { label: "Pending Review", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
   };
   const c = config[status] || config.not_submitted;
   return <Badge className={`text-[10px] px-1.5 py-0 h-5 font-medium hover:opacity-90 ${c.className}`}>{c.label}</Badge>;
+}
+
+function getComputedDisplayStatus(req: DdRequirementWithStatus): string {
+  const buyerReview = req.status?.buyerReviewStatus || 'not_reviewed';
+  if (buyerReview === 'satisfied') return 'satisfied';
+  if (buyerReview === 'more_needed') return 'more_needed';
+  if (req.status?.sellerMarkedComplete && buyerReview === 'not_reviewed') return 'pending_review';
+  return req.status?.status || 'not_submitted';
 }
 
 function DocumentLinkPicker({
@@ -186,7 +215,7 @@ function DocumentLinkPicker({
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground gap-1 px-1.5">
           <Upload className="h-3 w-3" />
-          Upload
+          Upload / Link
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
@@ -310,22 +339,27 @@ function RequirementRow({
   targetCompanyId,
   companyDocuments,
   linkedDocMap,
+  linkedDocuments,
   onUploadAndLink,
-  onReject,
+  onBuyerReview,
+  onOpenMoreNeeded,
 }: {
   req: DdRequirementWithStatus;
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
+  linkedDocuments: LinkedDoc[];
   onUploadAndLink: (file: File, docName: string) => Promise<void>;
-  onReject: (requirementId: number) => void;
+  onBuyerReview: (requirementId: number, reviewStatus: string, notes?: string) => Promise<void>;
+  onOpenMoreNeeded: (requirementId: number) => void;
 }) {
   const { toast } = useToast();
   const currentStatus = req.status?.status || "not_submitted";
-  const linkedDocName = req.status?.linkedDocumentFilename || req.status?.linkedDocumentName;
-  const linkedDocId = req.status?.documentId;
-  const isPortalLinked = !!req.status?.externalSubmissionId;
-  const isApproved = currentStatus === "approved";
+  const displayStatus = getComputedDisplayStatus(req);
+  const isVerified = displayStatus === 'satisfied';
+  const buyerDocs = linkedDocuments.filter(d => d.source === 'buyer_linked');
+  const sellerDocs = linkedDocuments.filter(d => d.source === 'seller_uploaded');
+  const hasLinkedDocs = linkedDocuments.length > 0;
 
   const statusMutation = useMutation({
     mutationFn: (newStatus: string) =>
@@ -339,39 +373,34 @@ function RequirementRow({
     },
   });
 
-  const linkMutation = useMutation({
-    mutationFn: ({ documentId, status }: { documentId: number | null; status: string }) =>
-      apiRequest("PUT", `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/status`, {
-        status,
-        documentId,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "status"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "summary"] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to link document", variant: "destructive" });
-    },
-  });
-
-  const handleLink = (docId: number) => {
-    const newStatus = currentStatus === "not_submitted" ? "submitted" : currentStatus;
-    linkMutation.mutate({ documentId: docId, status: newStatus });
+  const handleLinkDoc = async (docId: number) => {
+    try {
+      await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId }),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to link document", variant: "destructive" });
+    }
   };
 
-  const handleUnlink = () => {
-    linkMutation.mutate({ documentId: null, status: currentStatus });
-  };
-
-  const handleApprove = async () => {
-    await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/status`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'approved' }),
-    });
-    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
+  const handleUnlinkDoc = async (docLinkId: number) => {
+    try {
+      await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents/${docLinkId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to unlink document", variant: "destructive" });
+    }
   };
 
   return (
@@ -381,73 +410,105 @@ function RequirementRow({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium">{req.documentName}</span>
           <PriorityBadge priority={req.priority} />
-          <StatusBadge status={currentStatus} />
-          {currentStatus === 'submitted' && (
-            <div className="flex items-center gap-1 ml-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 gap-1 px-2"
-                onClick={handleApprove}
-              >
-                <CheckCircle className="h-3 w-3" />
-                Approve
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 gap-1 px-2"
-                onClick={() => onReject(req.id)}
-              >
-                <XCircle className="h-3 w-3" />
-                Reject
-              </Button>
-            </div>
-          )}
+          <StatusBadge status={displayStatus} />
         </div>
         {req.guidance && (
           <p className="text-xs text-muted-foreground italic mt-1 leading-relaxed">{req.guidance}</p>
         )}
-        {linkedDocName ? (
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <FileText className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
-            <span className="text-xs text-green-700 dark:text-green-400 truncate">{linkedDocName}</span>
-            {isPortalLinked && (
-              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-normal border-indigo-300 text-indigo-600 dark:border-indigo-700 dark:text-indigo-400">
-                <Globe className="h-2.5 w-2.5 mr-0.5" />
-                Portal
-              </Badge>
-            )}
-            {!isApproved && (
-              <button
-                onClick={handleUnlink}
-                disabled={linkMutation.isPending}
-                className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
-                title="Unlink document"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+
+        {req.status?.sellerMarkedComplete && req.status?.buyerReviewStatus !== 'satisfied' && (
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Seller marked complete — review required</span>
           </div>
-        ) : !isApproved ? (
+        )}
+
+        {req.status?.buyerReviewStatus === 'more_needed' && req.status?.buyerReviewNotes && (
+          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-3.5 w-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <span className="text-xs text-amber-700 dark:text-amber-300">More needed: {req.status.buyerReviewNotes}</span>
+            </div>
+          </div>
+        )}
+
+        {hasLinkedDocs && (
+          <div className="mt-2 space-y-1.5">
+            {buyerDocs.map(doc => (
+              <div key={doc.id} className="flex items-center gap-2 ml-1">
+                <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                <span className="text-xs truncate">{doc.filename}</span>
+                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-blue-300 text-blue-600">Held</Badge>
+                {!isVerified && (
+                  <button onClick={() => handleUnlinkDoc(doc.id)} className="text-gray-400 hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {sellerDocs.map(doc => (
+              <div key={doc.id} className="flex items-center gap-2 ml-1">
+                <FileText className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                <span className="text-xs truncate">{doc.filename}</span>
+                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-indigo-300 text-indigo-600">
+                  <Globe className="h-2.5 w-2.5 mr-0.5" /> Portal
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isVerified && (
           <div className="mt-1.5">
             <DocumentLinkPicker
               targetCompanyId={targetCompanyId}
               companyDocuments={companyDocuments}
               linkedDocMap={linkedDocMap}
-              onSelect={handleLink}
+              onSelect={handleLinkDoc}
               onUploadAndLink={onUploadAndLink}
             />
           </div>
-        ) : null}
+        )}
+
         {currentStatus === 'rejected' && req.status?.notes && (
           <div className="mt-1 flex items-start gap-1.5">
             <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
             <span className="text-xs text-red-600">Rejected: {req.status.notes}</span>
           </div>
         )}
+
+        {hasLinkedDocs && !isVerified && (
+          <div className="flex items-center gap-2 mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 gap-1"
+              onClick={() => onBuyerReview(req.id, 'satisfied')}
+            >
+              <CheckCircle className="h-3.5 w-3.5" />
+              Mark Verified
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1"
+              onClick={() => onOpenMoreNeeded(req.id)}
+            >
+              <AlertCircle className="h-3.5 w-3.5" />
+              Request More
+            </Button>
+          </div>
+        )}
+
+        {isVerified && (
+          <div className="mt-2">
+            <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+              <CheckCircle className="h-3 w-3 mr-0.5" /> Verified
+            </Badge>
+          </div>
+        )}
       </div>
-      {!isApproved && (
+      {!isVerified && !hasLinkedDocs && (
         <Select
           value={currentStatus}
           onValueChange={(val) => statusMutation.mutate(val)}
@@ -473,29 +534,51 @@ function CategoryAccordion({
   companyDocuments,
   linkedDocMap,
   onUploadAndLink,
-  onReject,
+  onBuyerReview,
+  onOpenMoreNeeded,
 }: {
   item: DdCategoryWithStatus;
   targetCompanyId: number;
   companyDocuments: CompanyDocument[];
   linkedDocMap: Map<number, string>;
   onUploadAndLink: (requirementId: number, file: File, docName: string) => Promise<void>;
-  onReject: (requirementId: number) => void;
+  onBuyerReview: (requirementId: number, reviewStatus: string, notes?: string) => Promise<void>;
+  onOpenMoreNeeded: (requirementId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
 
+  const { data: categoryDocs } = useQuery<Record<number, LinkedDoc[]>>({
+    queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs', item.category.id],
+    queryFn: async () => {
+      const docsByReq: Record<number, LinkedDoc[]> = {};
+      await Promise.all(
+        item.requirements.map(async (req) => {
+          try {
+            const res = await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents`, { credentials: 'include' });
+            if (res.ok) {
+              docsByReq[req.id] = await res.json();
+            }
+          } catch { }
+        })
+      );
+      return docsByReq;
+    },
+    enabled: open,
+  });
+
   const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
   const activeTotal = activeReqs.length;
-  const submittedCount = activeReqs.filter(r => {
-    const s = r.status?.status || "not_submitted";
-    return s === "submitted" || s === "approved";
+
+  const verifiedCount = activeReqs.filter(r => {
+    const br = r.status?.buyerReviewStatus || 'not_reviewed';
+    return br === 'satisfied' || (r.status?.status || "not_submitted") === "approved";
   }).length;
-  const toReviewCount = activeReqs.filter(r => (r.status?.status || "not_submitted") === "submitted").length;
-  const mandatoryOutstanding = activeReqs.filter(r => {
-    const s = r.status?.status || "not_submitted";
-    return r.priority === "Mandatory" && (s === "not_submitted" || s === "rejected");
+
+  const toReviewCount = activeReqs.filter(r => {
+    return r.status?.sellerMarkedComplete && (r.status?.buyerReviewStatus || 'not_reviewed') === 'not_reviewed';
   }).length;
-  const pct = activeTotal > 0 ? Math.round((submittedCount / activeTotal) * 100) : 0;
+
+  const pct = activeTotal > 0 ? Math.round((verifiedCount / activeTotal) * 100) : 0;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -506,21 +589,16 @@ function CategoryAccordion({
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">{item.category.categoryName}</span>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
-                {submittedCount} of {activeTotal}
+                {verifiedCount} of {activeTotal}
               </Badge>
               {toReviewCount > 0 && (
-                <Badge className="text-[10px] px-1.5 py-0 h-5 font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100">
+                <Badge className="text-[10px] px-1.5 py-0 h-5 font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
                   <Eye className="h-3 w-3 mr-0.5" />
                   {toReviewCount} to review
                 </Badge>
               )}
-              {mandatoryOutstanding > 0 && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700">
-                  {mandatoryOutstanding} mandatory outstanding
-                </Badge>
-              )}
             </div>
-            <ProgressBar value={submittedCount} max={activeTotal} className="mt-1.5" />
+            <ProgressBar value={verifiedCount} max={activeTotal} className="mt-1.5" />
           </div>
           <span className="text-xs text-muted-foreground shrink-0">{pct}%</span>
         </div>
@@ -534,10 +612,12 @@ function CategoryAccordion({
               targetCompanyId={targetCompanyId}
               companyDocuments={companyDocuments}
               linkedDocMap={linkedDocMap}
+              linkedDocuments={categoryDocs?.[req.id] || []}
               onUploadAndLink={async (file, name) => {
                 await onUploadAndLink(req.id, file, name);
               }}
-              onReject={onReject}
+              onBuyerReview={onBuyerReview}
+              onOpenMoreNeeded={onOpenMoreNeeded}
             />
           ))}
         </div>
@@ -586,6 +666,8 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const companyDocuments = documentsQuery.data?.documents || [];
   const categories = statusQuery.data || [];
 
+  const [ddFilter, setDdFilter] = useState<string>('all');
+
   const handleUploadAndLink = async (requirementId: number, file: File, docName: string) => {
     const formData = new FormData();
     formData.append('document', file);
@@ -609,21 +691,33 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     const docId = result?.data?.document?.id || result?.data?.id || result?.id;
     if (!docId) throw new Error('No document ID returned');
 
-    const linkRes = await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/status`, {
-      method: 'PUT',
+    await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/documents`, {
+      method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: 'submitted',
-        documentId: docId,
-      }),
+      body: JSON.stringify({ documentId: docId }),
     });
-
-    if (!linkRes.ok) throw new Error('Failed to link document');
 
     queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "status"] });
     queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "summary"] });
     queryClient.invalidateQueries({ queryKey: ["/api/v2/files/company", targetCompanyId] });
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
+  };
+
+  const handleBuyerReview = async (requirementId: number, reviewStatus: string, notes?: string) => {
+    try {
+      await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/buyer-review`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewStatus, notes }),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
+    } catch (err) {
+      console.error('Review failed:', err);
+    }
   };
 
   const linkedDocMap = useMemo(() => {
@@ -642,16 +736,32 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
+  const [moreNeededRequirementId, setMoreNeededRequirementId] = useState<number | null>(null);
+  const [moreNeededNotes, setMoreNeededNotes] = useState('');
+  const [submittingMoreNeeded, setSubmittingMoreNeeded] = useState(false);
+
   const clientStats = useMemo(() => {
     const allReqs = categories.flatMap(c => c.requirements);
     const active = allReqs.filter(r => (r.status?.status || "not_submitted") !== "na");
     const total = active.length;
+
+    const verified = active.filter(r => {
+      const br = (r.status as any)?.buyerReviewStatus || 'not_reviewed';
+      return br === 'satisfied' || (r.status?.status || "not_submitted") === "approved";
+    }).length;
+
+    const toReview = active.filter(r => {
+      return (r.status as any)?.sellerMarkedComplete && ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'not_reviewed';
+    }).length;
+
+    const moreNeeded = active.filter(r => {
+      return ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'more_needed';
+    }).length;
+
     const submitted = active.filter(r => {
       const s = r.status?.status || "not_submitted";
       return s === "submitted" || s === "approved";
     }).length;
-    const toReview = active.filter(r => (r.status?.status || "not_submitted") === "submitted").length;
-    const verified = active.filter(r => (r.status?.status || "not_submitted") === "approved").length;
 
     const mandatoryReqs = active.filter(r => r.priority === "Mandatory");
     const mandatorySubmitted = mandatoryReqs.filter(r => {
@@ -678,8 +788,9 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     return {
       total,
       submitted,
-      toReview,
       verified,
+      toReview,
+      moreNeeded,
       mandatorySubmitted,
       mandatoryTotal: mandatoryReqs.length,
       mandatoryOutstanding,
@@ -689,6 +800,33 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
       addsValueTotal: addsValueReqs.length,
     };
   }, [categories]);
+
+  const filteredCategories = useMemo(() => {
+    if (ddFilter === 'all') return categories;
+
+    return categories.map(cat => {
+      const filteredReqs = cat.requirements.filter(req => {
+        const br = (req.status as any)?.buyerReviewStatus || 'not_reviewed';
+        const sc = (req.status as any)?.sellerMarkedComplete;
+        const s = req.status?.status || 'not_submitted';
+
+        switch (ddFilter) {
+          case 'needs_review':
+            return sc && br !== 'satisfied';
+          case 'more_needed':
+            return br === 'more_needed';
+          case 'outstanding':
+            return !req.status?.documentId && s !== 'na' && br !== 'satisfied';
+          case 'verified':
+            return br === 'satisfied' || s === 'approved';
+          default:
+            return true;
+        }
+      });
+
+      return { ...cat, requirements: filteredReqs };
+    }).filter(cat => cat.requirements.length > 0);
+  }, [categories, ddFilter]);
 
   if (dealDocsLoading || statusQuery.isLoading || summaryQuery.isLoading) {
     return (
@@ -724,28 +862,34 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Due Diligence Progress</CardTitle>
-            {clientStats.toReview > 0 && (
-              <Badge className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100">
-                <Eye className="h-3.5 w-3.5 mr-1" />
-                {clientStats.toReview} awaiting review
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base">Due Diligence Progress</CardTitle>
+              {clientStats.toReview > 0 && (
+                <Badge className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
+                  <Eye className="h-3.5 w-3.5 mr-1" />
+                  {clientStats.toReview} pending review
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-medium">Documents Submitted</span>
+              <span className="text-sm font-medium">Verification Progress</span>
               <span className="text-sm text-muted-foreground">
-                {clientStats.submitted} of {clientStats.total}
-                {clientStats.verified > 0 && (
-                  <span className="text-green-600 dark:text-green-400 ml-1">({clientStats.verified} approved)</span>
-                )}
+                {clientStats.verified} of {clientStats.total} verified
               </span>
             </div>
-            <ProgressBar value={clientStats.submitted} max={clientStats.total} />
+            <ProgressBar value={clientStats.verified} max={clientStats.total} />
           </div>
+
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <span className="text-green-600 dark:text-green-400">{clientStats.verified} verified</span>
+            <span className="text-blue-600 dark:text-blue-400">{clientStats.toReview} pending review</span>
+            <span className="text-amber-600 dark:text-amber-400">{clientStats.moreNeeded} more needed</span>
+          </div>
+
           {clientStats.mandatoryOutstanding > 0 && (
             <div className="text-xs text-red-600 dark:text-red-400 font-medium">
               {clientStats.mandatoryOutstanding} mandatory requirement{clientStats.mandatoryOutstanding !== 1 ? 's' : ''} still outstanding
@@ -774,16 +918,31 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
         </CardContent>
       </Card>
 
+      <div className="flex items-center justify-between">
+        <Select value={ddFilter} onValueChange={setDdFilter}>
+          <SelectTrigger className="w-[200px] h-8 text-xs">
+            <SelectValue placeholder="Filter requirements" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All requirements</SelectItem>
+            <SelectItem value="needs_review">Needs review</SelectItem>
+            <SelectItem value="more_needed">More needed sent</SelectItem>
+            <SelectItem value="outstanding">Outstanding</SelectItem>
+            <SelectItem value="verified">Verified</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card>
         <CardContent className="p-2">
-          {categories.length === 0 ? (
+          {filteredCategories.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No DD categories found</p>
+              <p className="text-sm">{ddFilter === 'all' ? 'No DD categories found' : 'No matching requirements'}</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {categories.map((item) => (
+              {filteredCategories.map((item) => (
                 <CategoryAccordion
                   key={item.category.id}
                   item={item}
@@ -791,7 +950,8 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                   companyDocuments={companyDocuments}
                   linkedDocMap={linkedDocMap}
                   onUploadAndLink={handleUploadAndLink}
-                  onReject={(reqId) => setRejectingRequirementId(reqId)}
+                  onBuyerReview={handleBuyerReview}
+                  onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
                 />
               ))}
             </div>
@@ -846,6 +1006,48 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               >
                 {rejecting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
                 Reject
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={moreNeededRequirementId !== null} onOpenChange={(open) => {
+        if (!open) { setMoreNeededRequirementId(null); setMoreNeededNotes(''); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Additional Documents</DialogTitle>
+            <DialogDescription>
+              Let the seller know what additional documents are needed. They'll see this note in their portal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              value={moreNeededNotes}
+              onChange={(e) => setMoreNeededNotes(e.target.value)}
+              placeholder="Please provide details about what additional documents are required..."
+              rows={3}
+              className="text-sm"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setMoreNeededRequirementId(null); setMoreNeededNotes(''); }}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={!moreNeededNotes.trim() || submittingMoreNeeded}
+                onClick={async () => {
+                  setSubmittingMoreNeeded(true);
+                  await handleBuyerReview(moreNeededRequirementId!, 'more_needed', moreNeededNotes.trim());
+                  setMoreNeededRequirementId(null);
+                  setMoreNeededNotes('');
+                  setSubmittingMoreNeeded(false);
+                }}
+              >
+                {submittingMoreNeeded ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                Send Request
               </Button>
             </div>
           </div>
