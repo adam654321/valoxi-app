@@ -5,6 +5,7 @@ import { dealModels, dealModelAdjustments, dealModelFundingLines } from '@shared
 import { financialPeriods, incomeStatements } from '@shared/schema/financials';
 import { eq, and, desc, not, inArray } from 'drizzle-orm';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
+import { extendPortalTokenForCompany } from './portal-token.service';
 
 export class DealDocumentService {
 
@@ -167,6 +168,14 @@ export class DealDocumentService {
       console.error('[DEAL_DOCS] Failed to send document emails:', emailErr);
     }
 
+    if (doc.documentType === 'offer_letter' || doc.documentType === 'heads_of_terms') {
+      const docLabel = doc.documentType === 'offer_letter' ? 'Offer Letter' : 'Heads of Terms';
+      await extendPortalTokenForCompany(
+        doc.targetCompanyId,
+        `${docLabel} sent to seller`
+      );
+    }
+
     return this.getDocumentById(documentId);
   }
 
@@ -311,6 +320,20 @@ export class DealDocumentService {
         }
       } catch (stageErr) {
         console.error('[DEAL_DOCS] Auto-stage-progression failed (non-critical):', stageErr);
+      }
+
+      if (doc.documentType === 'heads_of_terms') {
+        await extendPortalTokenForCompany(
+          doc.targetCompanyId,
+          'Heads of Terms accepted — Stage 2 activated'
+        );
+      }
+
+      if (doc.documentType === 'offer_letter') {
+        await extendPortalTokenForCompany(
+          doc.targetCompanyId,
+          'Offer Letter accepted'
+        );
       }
     }
 
