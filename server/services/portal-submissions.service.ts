@@ -96,6 +96,31 @@ export class PortalSubmissionsService {
           updatedBy: token.createdBy,
         });
         console.log(`[PORTAL_UPLOAD] Linked submission ${submission.id} to DD requirement ${submission.documentRequirementId}`);
+
+        try {
+          const { ddRequirementDocuments, ddRequirementStatus: ddReqStatus } = await import('@shared/schema/due-diligence');
+          const { and: andOp, eq: eqOp } = await import('drizzle-orm');
+
+          const [statusRow] = await db.select().from(ddReqStatus)
+            .where(andOp(
+              eqOp(ddReqStatus.requirementId, submission.documentRequirementId!),
+              eqOp(ddReqStatus.targetCompanyId, token.targetCompanyId),
+            ));
+
+          if (statusRow) {
+            await db.insert(ddRequirementDocuments).values({
+              requirementStatusId: statusRow.id,
+              targetCompanyId: token.targetCompanyId,
+              documentSource: 'seller_uploaded',
+              documentId: mainDocument.id,
+              externalSubmissionId: submission.id,
+              notes: body.submissionNotes || null,
+            });
+            console.log(`[PORTAL_UPLOAD] Created junction table entry for DD requirement ${submission.documentRequirementId}`);
+          }
+        } catch (junctionErr) {
+          console.error('[PORTAL_UPLOAD] Failed to create junction table entry:', junctionErr);
+        }
       } catch (ddError) {
         console.error('[PORTAL_UPLOAD] Failed to link DD requirement:', ddError);
       }

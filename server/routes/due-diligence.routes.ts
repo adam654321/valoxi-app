@@ -99,4 +99,65 @@ router.put('/company/:targetCompanyId/requirement/:requirementId/status', async 
   }
 });
 
+router.get('/company/:targetCompanyId/requirement/:requirementId/documents', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const requirementId = parseInt(req.params.requirementId);
+    const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId);
+    res.json(docs);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post('/company/:targetCompanyId/requirement/:requirementId/documents', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const requirementId = parseInt(req.params.requirementId);
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const { documentId, notes } = req.body;
+    if (!documentId) return res.status(400).json({ message: 'documentId is required' });
+
+    const result = await dueDiligenceService.linkDocumentToRequirement({
+      requirementId, targetCompanyId, documentId, notes, addedBy: userId,
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', async (req, res) => {
+  try {
+    const docLinkId = parseInt(req.params.docLinkId);
+    await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review', async (req, res) => {
+  try {
+    const targetCompanyId = parseInt(req.params.targetCompanyId);
+    const requirementId = parseInt(req.params.requirementId);
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const { reviewStatus, notes } = req.body;
+    if (!['satisfied', 'more_needed'].includes(reviewStatus)) {
+      return res.status(400).json({ message: 'reviewStatus must be satisfied or more_needed' });
+    }
+
+    const result = await dueDiligenceService.setBuyerReview({
+      requirementId, targetCompanyId, reviewStatus, notes, reviewedBy: userId,
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

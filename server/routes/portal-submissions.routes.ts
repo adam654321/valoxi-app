@@ -6,6 +6,9 @@ import { portalSubmissionsService } from '../services/portal-submissions.service
 import { dueDiligenceService } from '../services/due-diligence.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { BadRequestError } from '../utils/errors';
+import { db } from '../db';
+import { ddRequirementStatus } from '@shared/schema/due-diligence';
+import { and, eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -94,10 +97,11 @@ router.get('/:token/dd-requirements', async (req: Request, res: Response) => {
     const categoriesWithStatus = await dueDiligenceService.getDdStatusForCompany(token.targetCompanyId);
     const summary = await dueDiligenceService.getCompletionSummary(token.targetCompanyId);
 
-    const categories = categoriesWithStatus.map(cat => ({
+    const categories = await Promise.all(categoriesWithStatus.map(async cat => ({
       ...cat.category,
-      requirements: cat.requirements.map(req => {
+      requirements: await Promise.all(cat.requirements.map(async req => {
         const statusData = req.status as any;
+        const linkedDocs = await dueDiligenceService.getRequirementDocuments(req.id, token.targetCompanyId);
         return {
           id: req.id,
           refNumber: req.refNumber,
@@ -111,13 +115,76 @@ router.get('/:token/dd-requirements', async (req: Request, res: Response) => {
           linkedDocumentName: statusData?.linkedDocumentName || null,
           linkedDocumentFilename: statusData?.linkedDocumentFilename || null,
           externalSubmissionId: statusData?.externalSubmissionId || null,
+          linkedDocuments: linkedDocs,
+          sellerMarkedComplete: statusData?.sellerMarkedComplete || false,
+          buyerReviewStatus: statusData?.buyerReviewStatus || 'not_reviewed',
+          buyerReviewNotes: statusData?.buyerReviewNotes || null,
         };
-      }),
+      })),
       completedCount: cat.completedCount,
       totalCount: cat.totalCount,
-    }));
+    })));
 
     sendSuccess(res, { categories, summary });
+  } catch (error) { sendError(res, error); }
+});
+
+router.post('/:token/dd-requirements/:requirementId/mark-complete', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+    const requirementId = parseInt(req.params.requirementId);
+
+    const docs = await dueDiligenceService.getRequirementDocuments(requirementId, token.targetCompanyId);
+    if (docs.length === 0) {
+      return res.status(400).json({ error: 'Cannot mark complete — no documents linked to this requirement' });
+    }
+
+    const [statusRow] = await db.select().from(ddRequirementStatus)
+      .where(and(
+        eq(ddRequirementStatus.requirementId, requirementId),
+        eq(ddRequirementStatus.targetCompanyId, token.targetCompanyId),
+      ));
+
+    if (!statusRow) {
+      return res.status(404).json({ error: 'Requirement status not found' });
+    }
+
+    await db.update(ddRequirementStatus)
+      .set({
+        sellerMarkedComplete: true,
+        sellerMarkedCompleteAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(ddRequirementStatus.id, statusRow.id));
+
+    sendSuccess(res, { success: true });
+  } catch (error) { sendError(res, error); }
+});
+
+router.post('/:token/dd-requirements/:requirementId/unmark-complete', async (req: Request, res: Response) => {
+  try {
+    const token = await portalSubmissionsService.validateToken(req.params.token);
+    const requirementId = parseInt(req.params.requirementId);
+
+    const [statusRow] = await db.select().from(ddRequirementStatus)
+      .where(and(
+        eq(ddRequirementStatus.requirementId, requirementId),
+        eq(ddRequirementStatus.targetCompanyId, token.targetCompanyId),
+      ));
+
+    if (!statusRow) {
+      return res.status(404).json({ error: 'Requirement status not found' });
+    }
+
+    await db.update(ddRequirementStatus)
+      .set({
+        sellerMarkedComplete: false,
+        sellerMarkedCompleteAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(ddRequirementStatus.id, statusRow.id));
+
+    sendSuccess(res, { success: true });
   } catch (error) { sendError(res, error); }
 });
 
