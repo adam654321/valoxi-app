@@ -18,19 +18,6 @@ router.get('/deal-model/:dealModelId', async (req: Request, res: Response) => {
   }
 });
 
-router.put('/assumptions/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userCompanyId) throw new UnauthorizedError();
-    
-    const id = parseInt(req.params.id);
-    const result = await valueCreationService.updateAssumption(id, req.body);
-    sendSuccess(res, result);
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
 router.put('/assumptions/bulk', async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session?.userCompanyId;
@@ -38,6 +25,19 @@ router.put('/assumptions/bulk', async (req: Request, res: Response) => {
     
     const { updates } = req.body;
     const result = await valueCreationService.bulkUpdateAssumptions(updates);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+router.put('/assumptions/:id', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const id = parseInt(req.params.id);
+    const result = await valueCreationService.updateAssumption(id, req.body);
     sendSuccess(res, result);
   } catch (error) {
     sendError(res, error);
