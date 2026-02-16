@@ -180,16 +180,18 @@ function DocumentLinkPicker({
     }
   };
 
+  const safeDocuments = Array.isArray(companyDocuments) ? companyDocuments : [];
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return companyDocuments;
+    if (!search.trim()) return safeDocuments;
     const q = search.toLowerCase();
-    return companyDocuments.filter(
+    return safeDocuments.filter(
       (d) =>
         d.documentName?.toLowerCase().includes(q) ||
         d.originalFilename?.toLowerCase().includes(q) ||
         d.documentCategory?.toLowerCase().includes(q)
     );
-  }, [companyDocuments, search]);
+  }, [safeDocuments, search]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, CompanyDocument[]> = {};
