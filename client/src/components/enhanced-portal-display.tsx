@@ -164,6 +164,8 @@ interface PortalData {
   document_status: DocumentStatus[];
   portal_expires_at: string;
   targetCompanyId: number;
+  token?: { id: number; expiresAt: string; customMessage: string | null };
+  company?: { id: number; name: string };
 }
 
 interface Document {
@@ -467,9 +469,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   // SSE subscription for real-time document updates
   useEffect(() => {
-    if (!portalData?.targetCompanyId) return;
+    const companyId = portalData?.targetCompanyId || portalData?.company?.id;
+    if (!companyId) return;
 
-    const targetCompanyId = portalData.targetCompanyId;
+    const targetCompanyId = companyId;
     console.log(`[PORTAL] Setting up SSE for company ${targetCompanyId}`);
     
     const eventSource = new EventSource(`/api/document-updates/stream/${targetCompanyId}`);
@@ -503,7 +506,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       console.log(`[PORTAL SSE] Disconnecting from document update stream for company: ${targetCompanyId}`);
       eventSource.close();
     };
-  }, [portalData?.targetCompanyId, token]);
+  }, [portalData?.targetCompanyId, portalData?.company?.id, token]);
 
   const hotAccepted = (dealDocsData?.documents || []).some(
     (d: any) => d.documentType === 'heads_of_terms' && d.status === 'accepted'
@@ -669,7 +672,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       <NdaAgreement
         token={token}
         ndaDocument={ndaDocument}
-        buyerCompanyName={portalData.company_name}
+        buyerCompanyName={portalData.company_name || portalData.company?.name || ''}
         onAgreed={() => refetchDealDocs()}
       />
     );
@@ -704,8 +707,19 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
               Document Submission Portal
             </CardTitle>
             <p className="text-center text-gray-600" data-testid="text-company-name">
-              {portalData.company_name}
+              {portalData.company_name || portalData.company?.name}
             </p>
+            {portalData.token?.expiresAt && (
+              <p className={`text-xs mt-1 text-center ${
+                new Date(portalData.token.expiresAt).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
+                  ? 'text-red-500 font-medium'
+                  : new Date(portalData.token.expiresAt).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000
+                    ? 'text-amber-500'
+                    : 'text-muted-foreground'
+              }`}>
+                Portal access expires: {new Date(portalData.token.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            )}
           </CardHeader>
         </Card>
 
@@ -737,13 +751,13 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                       Document Library
                     </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1" data-testid="text-document-count">
-                      Manage documents for {portalData.company_name} ({totalDocuments} documents)
+                      Manage documents for {portalData.company_name || portalData.company?.name} ({totalDocuments} documents)
                     </p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <PortalAnalysisCompletionIndicator targetCompanyId={portalData.targetCompanyId} token={token} />
+                <PortalAnalysisCompletionIndicator targetCompanyId={portalData.targetCompanyId || portalData.company?.id || 0} token={token} />
                 
                 {totalDocuments === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
