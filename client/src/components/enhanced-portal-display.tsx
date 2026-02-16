@@ -5,6 +5,7 @@ import OfferReview from '@/components/portal/OfferReview';
 import HoTReview from '@/components/portal/HoTReview';
 import DdCollection from '@/components/portal/DdCollection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,7 +53,9 @@ import {
   FolderOpen,
   Code,
   Shield,
-  FileCheck
+  FileCheck,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DocumentViewer } from '@/components/document-viewer';
@@ -388,8 +391,18 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const [viewingDocument, setViewingDocument] = useState<Document | null>(null);
   const [showViewer, setShowViewer] = useState(false);
   const [activePortalTab, setActivePortalTab] = useState<string>('stage1');
+  const [expandedDealDocs, setExpandedDealDocs] = useState<Set<string>>(new Set());
   
   const { toast } = useToast();
+
+  const toggleDealDoc = (docKey: string) => {
+    setExpandedDealDocs(prev => {
+      const next = new Set(prev);
+      if (next.has(docKey)) next.delete(docKey);
+      else next.add(docKey);
+      return next;
+    });
+  };
 
   // Fetch portal data
   const { data: portalData, isLoading: isPortalLoading } = useQuery<PortalData>({
@@ -987,39 +1000,158 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
           <TabsContent value="deal-documents" className="space-y-6">
             {ndaDocument && ndaAccepted && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-green-600" />
+              <Collapsible open={expandedDealDocs.has('nda')} onOpenChange={() => toggleDealDoc('nda')}>
+                <Card>
+                  <CollapsibleTrigger className="w-full">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-medium">Non-Disclosure Agreement</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Signed {ndaDocument.respondedAt ? new Date(ndaDocument.respondedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Accepted</Badge>
+                          {expandedDealDocs.has('nda') ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium">Non-Disclosure Agreement</h4>
-                        <p className="text-sm text-muted-foreground">Signed and accepted</p>
+                    </CardContent>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-4 pb-4 border-t">
+                      <div className="pt-4 text-sm text-muted-foreground">
+                        <p>NDA Version {ndaDocument.version} — signed and in effect.</p>
+                        {ndaDocument.contentSnapshot && (
+                          <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+                            {typeof ndaDocument.contentSnapshot === 'string' 
+                              ? ndaDocument.contentSnapshot.substring(0, 500) + (ndaDocument.contentSnapshot.length > 500 ? '...' : '')
+                              : 'Document content available'}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-700">Accepted</Badge>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             )}
 
-            {offerDocuments.length > 0 && (
-              <OfferReview
-                token={token}
-                offers={offerDocuments}
-                onResponseSubmitted={() => refetchDealDocs()}
-              />
-            )}
+            {offerDocuments.length > 0 && (() => {
+              const allOffersResolved = offerDocuments.every(
+                (d: any) => d.status === 'accepted' || d.status === 'rejected'
+              );
+              
+              if (allOffersResolved) {
+                const latestOffer = offerDocuments[0];
+                return (
+                  <Collapsible open={expandedDealDocs.has('offers')} onOpenChange={() => toggleDealDoc('offers')}>
+                    <Card>
+                      <CollapsibleTrigger className="w-full">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${latestOffer.status === 'accepted' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                                <FileText className={`w-5 h-5 ${latestOffer.status === 'accepted' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+                              </div>
+                              <div className="text-left">
+                                <h4 className="font-medium">Offer Letter</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {latestOffer.status === 'accepted' ? 'Accepted' : 'Rejected'} — Version {latestOffer.version}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge className={latestOffer.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}>
+                                {latestOffer.status === 'accepted' ? 'Accepted' : 'Rejected'}
+                              </Badge>
+                              {expandedDealDocs.has('offers') ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="border-t">
+                          <OfferReview
+                            token={token}
+                            offers={offerDocuments}
+                            onResponseSubmitted={() => refetchDealDocs()}
+                          />
+                        </div>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                );
+              }
+              
+              return (
+                <OfferReview
+                  token={token}
+                  offers={offerDocuments}
+                  onResponseSubmitted={() => refetchDealDocs()}
+                />
+              );
+            })()}
 
-            {hotDocuments.length > 0 && (
-              <HoTReview
-                documents={hotDocuments}
-                token={token}
-                onResponseSubmitted={() => refetchDealDocs()}
-              />
-            )}
+            {hotDocuments.length > 0 && (() => {
+              const allHotResolved = hotDocuments.every(
+                (d: any) => d.status === 'accepted' || d.status === 'rejected'
+              );
+              
+              if (allHotResolved) {
+                const latestHot = hotDocuments[0];
+                return (
+                  <Collapsible open={expandedDealDocs.has('hot')} onOpenChange={() => toggleDealDoc('hot')}>
+                    <Card>
+                      <CollapsibleTrigger className="w-full">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${latestHot.status === 'accepted' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                                <FileCheck className={`w-5 h-5 ${latestHot.status === 'accepted' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+                              </div>
+                              <div className="text-left">
+                                <h4 className="font-medium">Heads of Terms</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {latestHot.status === 'accepted' ? 'Accepted' : 'Rejected'} — Version {latestHot.version}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge className={latestHot.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}>
+                                {latestHot.status === 'accepted' ? 'Accepted' : 'Rejected'}
+                              </Badge>
+                              {expandedDealDocs.has('hot') ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="border-t">
+                          <HoTReview
+                            documents={hotDocuments}
+                            token={token}
+                            onResponseSubmitted={() => refetchDealDocs()}
+                          />
+                        </div>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                );
+              }
+              
+              return (
+                <HoTReview
+                  documents={hotDocuments}
+                  token={token}
+                  onResponseSubmitted={() => refetchDealDocs()}
+                />
+              );
+            })()}
 
             {!ndaDocument && offerDocuments.length === 0 && hotDocuments.length === 0 && (
               <Card>

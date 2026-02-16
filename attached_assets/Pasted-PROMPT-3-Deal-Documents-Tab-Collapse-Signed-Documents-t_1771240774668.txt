@@ -1,0 +1,197 @@
+PROMPT 3: Deal Documents Tab — Collapse Signed Documents to Heading
+Context for Replit:
+In the portal (client/src/components/enhanced-portal-display.tsx), the Deal Documents tab now shows the NDA, offer letters, and HoT. Currently the signed NDA shows as a simple card, but the OfferReview and HoTReview components always render in full regardless of status.
+We want accepted/signed documents to collapse to a compact heading row by default. Documents that still need action (sent, viewed, countered) should remain fully expanded. The user can click to expand a collapsed document and view its full content.
+Prompt:
+In client/src/components/enhanced-portal-display.tsx, update the Deal Documents tab content to use collapsible cards for accepted/signed deal documents.
+
+Import Collapsible, CollapsibleTrigger, CollapsibleContent from "@/components/ui/collapsible" if not already imported (check the imports — it may already be imported elsewhere in the file). Also import ChevronDown and ChevronRight from lucide-react if not already imported.
+
+Add a state variable with the other useState declarations:
+const [expandedDealDocs, setExpandedDealDocs] = useState<Set<string>>(new Set());
+
+Add a toggle helper:
+const toggleDealDoc = (docKey: string) => {
+  setExpandedDealDocs(prev => {
+    const next = new Set(prev);
+    if (next.has(docKey)) next.delete(docKey);
+    else next.add(docKey);
+    return next;
+  });
+};
+
+Now update the Deal Documents TabsContent. Replace the current content with this structure:
+
+FOR THE NDA (when ndaDocument exists and ndaAccepted is true):
+The NDA is always accepted at this point (that's the gate condition), so always show it collapsed by default.
+
+<Collapsible open={expandedDealDocs.has('nda')} onOpenChange={() => toggleDealDoc('nda')}>
+  <Card>
+    <CollapsibleTrigger className="w-full">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="text-left">
+              <h4 className="font-medium">Non-Disclosure Agreement</h4>
+              <p className="text-sm text-muted-foreground">
+                Signed {ndaDocument.respondedAt ? new Date(ndaDocument.respondedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Accepted</Badge>
+            {expandedDealDocs.has('nda') ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+          </div>
+        </div>
+      </CardContent>
+    </CollapsibleTrigger>
+    <CollapsibleContent>
+      <div className="px-4 pb-4 border-t">
+        <div className="pt-4 text-sm text-muted-foreground">
+          <p>NDA Version {ndaDocument.version} — signed and in effect.</p>
+          {ndaDocument.contentSnapshot && (
+            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+              {typeof ndaDocument.contentSnapshot === 'string' 
+                ? ndaDocument.contentSnapshot.substring(0, 500) + (ndaDocument.contentSnapshot.length > 500 ? '...' : '')
+                : 'Document content available'}
+            </div>
+          )}
+        </div>
+      </div>
+    </CollapsibleContent>
+  </Card>
+</Collapsible>
+
+FOR OFFER LETTERS (offerDocuments):
+Check if ALL offer documents have been responded to (status is 'accepted' or 'rejected'). If so, collapse by default. If any offer still needs action (status is 'sent', 'viewed', or 'countered'), show expanded.
+
+{offerDocuments.length > 0 && (() => {
+  const allOffersResolved = offerDocuments.every(
+    (d: any) => d.status === 'accepted' || d.status === 'rejected'
+  );
+  
+  if (allOffersResolved) {
+    const latestOffer = offerDocuments[0]; // already sorted by version desc
+    return (
+      <Collapsible open={expandedDealDocs.has('offers')} onOpenChange={() => toggleDealDoc('offers')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${latestOffer.status === 'accepted' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                    <FileText className={`w-5 h-5 ${latestOffer.status === 'accepted' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium">Offer Letter</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {latestOffer.status === 'accepted' ? 'Accepted' : 'Rejected'} — Version {latestOffer.version}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge className={latestOffer.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}>
+                    {latestOffer.status === 'accepted' ? 'Accepted' : 'Rejected'}
+                  </Badge>
+                  {expandedDealDocs.has('offers') ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="border-t">
+              <OfferReview
+                token={token}
+                offers={offerDocuments}
+                onResponseSubmitted={() => refetchDealDocs()}
+              />
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    );
+  }
+  
+  // Offers still need action — show fully expanded (no collapsible wrapper)
+  return (
+    <OfferReview
+      token={token}
+      offers={offerDocuments}
+      onResponseSubmitted={() => refetchDealDocs()}
+    />
+  );
+})()}
+
+FOR HEADS OF TERMS (hotDocuments):
+Same pattern. If all HoT documents are accepted or rejected, collapse. Otherwise show expanded.
+
+{hotDocuments.length > 0 && (() => {
+  const allHotResolved = hotDocuments.every(
+    (d: any) => d.status === 'accepted' || d.status === 'rejected'
+  );
+  
+  if (allHotResolved) {
+    const latestHot = hotDocuments[0];
+    return (
+      <Collapsible open={expandedDealDocs.has('hot')} onOpenChange={() => toggleDealDoc('hot')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${latestHot.status === 'accepted' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                    <FileCheck className={`w-5 h-5 ${latestHot.status === 'accepted' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium">Heads of Terms</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {latestHot.status === 'accepted' ? 'Accepted' : 'Rejected'} — Version {latestHot.version}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge className={latestHot.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}>
+                    {latestHot.status === 'accepted' ? 'Accepted' : 'Rejected'}
+                  </Badge>
+                  {expandedDealDocs.has('hot') ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="border-t">
+              <HoTReview
+                documents={hotDocuments}
+                token={token}
+                onResponseSubmitted={() => refetchDealDocs()}
+              />
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    );
+  }
+  
+  return (
+    <HoTReview
+      documents={hotDocuments}
+      token={token}
+      onResponseSubmitted={() => refetchDealDocs()}
+    />
+  );
+})()}
+
+Keep the empty state card at the bottom (when no deal documents exist at all) — no changes needed there.
+
+Make sure FileCheck is imported from lucide-react (it should already be, but verify).
+Confirmation:
+
+In the portal Deal Documents tab, the signed NDA shows as a single collapsed row with "Accepted" badge and signed date. Clicking it expands to show document details.
+If an offer letter has been accepted or rejected, it collapses to a heading row. Clicking expands to show the full OfferReview component.
+If an offer letter is still pending action (sent/viewed/countered), it shows the full OfferReview component expanded — no collapse wrapper.
+Same behaviour for Heads of Terms — collapsed when resolved, expanded when needing action.
+The chevron icon toggles between right (collapsed) and down (expanded).
+All existing review/response functionality still works when documents are expanded.
