@@ -357,10 +357,10 @@ publicRouter.get('/:token/:documentId/html', async (req, res) => {
       html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
     }
 
-    if (doc.documentType === 'nda' && doc.status === 'accepted') {
+    if (['nda', 'offer_letter', 'heads_of_terms'].includes(doc.documentType)) {
       const responses = await dealDocumentService.getDocumentResponses(documentId);
       const docData = doc.documentData as any;
-      html += buildNdaSignatureBlock(docData, responses, doc.respondedAt);
+      html += buildSignatureBlock(doc.documentType, docData, responses, doc.respondedAt);
     }
 
     res.json({ html, documentData: doc.documentData });
@@ -369,8 +369,9 @@ publicRouter.get('/:token/:documentId/html', async (req, res) => {
   }
 });
 
-function buildNdaSignatureBlock(docData: any, responses: any[], respondedAt: Date | null): string {
+function buildSignatureBlock(documentType: string, docData: any, responses: any[], respondedAt: Date | null): string {
   const sellerResponse = responses.length > 0 ? responses[0] : null;
+  const isSigned = !!sellerResponse || !!respondedAt;
   const signedDate = sellerResponse
     ? new Date(sellerResponse.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : respondedAt
@@ -383,13 +384,31 @@ function buildNdaSignatureBlock(docData: any, responses: any[], respondedAt: Dat
   const sellerName = sellerResponse?.respondentName || '';
   const sellerCompany = docData?.sellerCompanyName || '';
 
+  const docTitleMap: Record<string, string> = {
+    'nda': 'Non-Disclosure Agreement',
+    'offer_letter': 'Offer Letter',
+    'heads_of_terms': 'Heads of Terms',
+  };
+  const docTitle = docTitleMap[documentType] || 'Agreement';
+
+  const buyerLabelMap: Record<string, string> = {
+    'nda': 'Disclosing Party (Buyer)',
+    'offer_letter': 'Buyer',
+    'heads_of_terms': 'Buyer',
+  };
+  const sellerLabelMap: Record<string, string> = {
+    'nda': 'Receiving Party (Seller)',
+    'offer_letter': 'Seller',
+    'heads_of_terms': 'Seller',
+  };
+
   return `
     <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #333;">
       <h2 style="text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;">Execution</h2>
-      <p style="margin-bottom: 24px; font-size: 13px;">IN WITNESS WHEREOF, the parties hereto have executed this Non-Disclosure Agreement as of the date last signed below.</p>
+      <p style="margin-bottom: 24px; font-size: 13px;">IN WITNESS WHEREOF, the parties hereto have executed this ${docTitle} as of the date last signed below.</p>
       <div style="display: flex; justify-content: space-between; gap: 40px;">
         <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background: #fafafa;">
-          <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 12px; font-weight: 600;">Disclosing Party (Buyer)</p>
+          <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 12px; font-weight: 600;">${buyerLabelMap[documentType] || 'Buyer'}</p>
           <div style="border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 8px; min-height: 28px;">
             <span style="font-family: 'Brush Script MT', 'Segoe Script', cursive; font-size: 22px; color: #1a3a5c;">${buyerName}</span>
           </div>
@@ -399,7 +418,7 @@ function buildNdaSignatureBlock(docData: any, responses: any[], respondedAt: Dat
           <p style="font-size: 13px; margin: 4px 0;"><strong>Date:</strong> ${docData?.currentDate || ''}</p>
         </div>
         <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background: #fafafa;">
-          <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 12px; font-weight: 600;">Receiving Party (Seller)</p>
+          <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 12px; font-weight: 600;">${sellerLabelMap[documentType] || 'Seller'}</p>
           ${sellerName ? `
             <div style="border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 8px; min-height: 28px;">
               <span style="font-family: 'Brush Script MT', 'Segoe Script', cursive; font-size: 22px; color: #1a3a5c;">${sellerName}</span>
@@ -410,14 +429,16 @@ function buildNdaSignatureBlock(docData: any, responses: any[], respondedAt: Dat
             <p style="font-size: 13px; margin: 4px 0;"><strong>Name:</strong> _______________</p>
           `}
           <p style="font-size: 13px; margin: 4px 0;"><strong>Company:</strong> ${sellerCompany}</p>
-          <p style="font-size: 13px; margin: 4px 0;"><strong>Date:</strong> ${signedDate}</p>
+          <p style="font-size: 13px; margin: 4px 0;"><strong>Date:</strong> ${isSigned ? signedDate : '_______________'}</p>
         </div>
       </div>
-      <div style="margin-top: 20px; padding: 12px 16px; background: #f0f7f0; border: 1px solid #c3e6c3; border-radius: 6px; text-align: center;">
-        <p style="font-size: 12px; color: #2d6a2d; margin: 0;">
-          ✓ This document was electronically signed and executed on <strong>${signedDate}</strong>
-        </p>
-      </div>
+      ${isSigned ? `
+        <div style="margin-top: 20px; padding: 12px 16px; background: #f0f7f0; border: 1px solid #c3e6c3; border-radius: 6px; text-align: center;">
+          <p style="font-size: 12px; color: #2d6a2d; margin: 0;">
+            ✓ This document was electronically signed and executed on <strong>${signedDate}</strong>
+          </p>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -484,10 +505,6 @@ function buildOfferLetterHtml(data: any): string {
       <p>This offer is subject to due diligence and legal contract. I trust this offer meets with your approval and await your response. Following the acceptance of this offer, a heads of terms document will be submitted and negotiated to include agreements on working capital, exclusivity period and a timetable for due diligence and legal contract.</p>
       <br/>
       <p>Yours sincerely,</p>
-      <br/>
-      <p><strong>${data.buyerSignatoryName || ''}</strong></p>
-      <p>${data.buyerSignatoryTitle || ''}</p>
-      <p>${data.buyerCompanyName || ''}</p>
     </div>
   `;
 }
@@ -611,13 +628,6 @@ function buildHoTHtml(data: any): string {
         <p style="margin-bottom: 4px;"><strong>Status:</strong> These Heads of Terms are not legally binding save for the provisions relating to exclusivity, confidentiality, and costs, which are intended to be legally binding.</p>
       </div>
 
-      <div style="margin-top: 40px;">
-        <p>Signed on behalf of the Buyer:</p>
-        <br/>
-        <p><strong>${data.buyerSignatoryName || ''}</strong></p>
-        <p>${data.buyerSignatoryTitle || ''}</p>
-        <p>${data.buyerCompanyName || ''}</p>
-      </div>
     </div>
   `;
 }
