@@ -655,15 +655,18 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     }),
   });
 
-  const documentsQuery = useQuery<{ documents: CompanyDocument[] }>({
+  const documentsQuery = useQuery<CompanyDocument[]>({
     queryKey: ["/api/v2/files/company", targetCompanyId],
-    queryFn: () => fetch(`/api/v2/files/company/${targetCompanyId}`, { credentials: "include" }).then(r => {
-      if (!r.ok) return { documents: [] };
-      return r.json().then(d => d.data || d);
-    }),
+    queryFn: async () => {
+      const res = await fetch(`/api/v2/files/company/${targetCompanyId}`, { credentials: "include" });
+      if (!res.ok) return [];
+      const json = await res.json();
+      const data = json?.data || json;
+      return data?.documents || [];
+    },
   });
 
-  const companyDocuments = documentsQuery.data?.documents || [];
+  const companyDocuments = documentsQuery.data || [];
   const categories = statusQuery.data || [];
 
   const [ddFilter, setDdFilter] = useState<string>('all');
