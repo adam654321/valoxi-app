@@ -1,0 +1,607 @@
+# Prompt 7: Exit Modelling & Scenario Comparison
+
+## CONTEXT
+
+We are building the Value Creation Modeller for an M&A CRM platform. Prompts 1–6 delivered all infrastructure, calculator functions, and Sections 1, 4, 5, and 6. This is the **final section** — Section 7.
+
+### What already exists:
+
+- **Calculator**: `shared/calculators/value-creation.calc.ts` — includes `calculateScenarios()` and `calculateReturns()`
+- **Orchestrator**: `client/src/components/target-company/ValueCreationModeller.tsx` — computes projections, returns, and sensitivity for the *active* scenario only
+
+The orchestrator currently has these available:
+- `baseYearData` — `BaseYearData | null`
+- `activeAssumptions` — `YearAssumptions[]` (for the currently selected scenario tab)
+- `synergyInputs` — `SynergyInput[]` (for the currently selected scenario)
+- `fundingLineInputs` — `FundingLineForProjection[]`
+- `exitAssumptions` — `ExitAssumptionsType`
+- `entryEquity` — `number`
+- `entryMultiple` — `number`
+- `totalDebt` — `number`
+- `totalFees` — `number`
+- `projections` — `ProjectedYear[]`
+- `returnMetrics` — `ReturnMetrics | null`
+- `vcData` — contains `scenarios`, `assumptions`, `synergies` for ALL three scenarios (bear/base/bull)
+
+The `calculateScenarios()` function signature:
+```typescript
+function calculateScenarios(
+  baseYear: BaseYearData,
+  assumptions: YearAssumptions[],
+  synergies: SynergyInput[],
+  fundingLines: FundingLineForProjection[],
+  bearMultipliers?: ScenarioMultipliers,
+  bullMultipliers?: ScenarioMultipliers
+): { bear: ProjectedYear[]; base: ProjectedYear[]; bull: ProjectedYear[] }
+```
+
+The `ScenarioMultipliers` type:
+```typescript
+interface ScenarioMultipliers {
+  revenueGrowthMultiplier: number;
+  costPressureAdjustment: number;
+}
+```
+
+Each scenario in `vcData.scenarios` has `revenueGrowthMultiplier` and `costPressureAdjustment` fields (stored as decimal strings).
+
+---
+
+## WHAT TO BUILD
+
+One new component file plus orchestrator updates to compute multi-scenario data and render the final section.
+
+---
+
+## STEP 1: Update `client/src/components/target-company/ValueCreationModeller.tsx`
+
+### 1a. Add import for `calculateScenarios`
+
+In the existing import block from `@shared/calculators/value-creation.calc`, add `calculateScenarios` to the list (it may already be there — only add if missing):
+
+```tsx
+import {
+  calculateProjections,
+  calculateDebtSchedules,
+  calculateWaterfall,
+  calculateReturns,
+  calculateSensitivity,
+  calculateScenarios,  // ADD THIS IF MISSING
+  type BaseYearData,
+  type YearAssumptions,
+  type SynergyInput,
+  type FundingLineForProjection,
+  type ExitAssumptions as ExitAssumptionsType,
+  type ScenarioMultipliers,
+  type ProjectedYear,
+  type ReturnMetrics,  // ADD THIS IF MISSING
+} from '@shared/calculators/value-creation.calc';
+```
+
+### 1b. Add import for new component
+
+```tsx
+import ExitScenarioSection from '@/components/value-creation/ExitScenarioSection';
+```
+
+### 1c. Add useMemo block for multi-scenario data
+
+Add this **after** the `sensitivityData` useMemo block. This computes projections and returns for all three scenarios simultaneously, using the **base case assumptions** modified by each scenario's multipliers (which is exactly what `calculateScenarios` does):
+
+```tsx
+const scenarioComparison = useMemo(() => {
+  if (!baseYearData || activeAssumptions.length === 0 || entryEquity <= 0 || !vcData?.scenarios) return null;
+
+  // Get the base scenario's assumptions (used as the input that gets modified by multipliers)
+  const baseScenario = vcData.scenarios.find(s => s.scenarioType === 'base');
+  const bearScenario = vcData.scenarios.find(s => s.scenarioType === 'bear');
+  const bullScenario = vcData.scenarios.find(s => s.scenarioType === 'bull');
+
+  if (!baseScenario) return null;
+
+  // Get the base case assumptions (the ones used as input to calculateScenarios)
+  const baseAssumptions = vcData.assumptions
+    .filter(a => a.scenarioId === baseScenario.id)
+    .sort((a, b) => a.year - b.year)
+    .map(a => ({
+      year: a.year,
+      revenueGrowthPercent: toNum(a.revenueGrowthPercent),
+      costOfSalesGrowthPercent: toNum(a.costOfSalesGrowthPercent),
+      adminCostGrowthPercent: toNum(a.adminCostGrowthPercent),
+      staffCostGrowthPercent: toNum(a.staffCostGrowthPercent),
+      depreciationGrowthPercent: toNum(a.depreciationGrowthPercent),
+      capexPerYear: toNum(a.capexPerYear),
+      workingCapitalPercent: toNum(a.workingCapitalPercent),
+      taxRatePercent: toNum(a.taxRatePercent),
+    }));
+
+  // Get base case synergies
+  const baseSynergies = vcData.synergies
+    .filter(s => s.scenarioId === baseScenario.id)
+    .map(s => ({
+      synergyType: s.synergyType as 'revenue' | 'cost',
+      name: s.name,
+      targetValue: toNum(s.targetValue),
+      realisationByYear: [
+        toNum(s.realisationY1) / 100,
+        toNum(s.realisationY2) / 100,
+        toNum(s.realisationY3) / 100,
+        toNum(s.realisationY4) / 100,
+        toNum(s.realisationY5) / 100,
+      ],
+      implementationCost: toNum(s.implementationCost),
+    }));
+
+  if (baseAssumptions.length === 0) return null;
+
+  const bearMult: ScenarioMultipliers = bearScenario
+    ? { revenueGrowthMultiplier: toNum(bearScenario.revenueGrowthMultiplier), costPressureAdjustment: toNum(bearScenario.costPressureAdjustment) }
+    : { revenueGrowthMultiplier: 0.6, costPressureAdjustment: 1.5 };
+
+  const bullMult: ScenarioMultipliers = bullScenario
+    ? { revenueGrowthMultiplier: toNum(bullScenario.revenueGrowthMultiplier), costPressureAdjustment: toNum(bullScenario.costPressureAdjustment) }
+    : { revenueGrowthMultiplier: 1.4, costPressureAdjustment: -0.5 };
+
+  const scenarios = calculateScenarios(baseYearData, baseAssumptions, baseSynergies, fundingLineInputs, bearMult, bullMult);
+
+  const bearReturns = calculateReturns(scenarios.bear, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+  const baseReturns = calculateReturns(scenarios.base, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+  const bullReturns = calculateReturns(scenarios.bull, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+
+  return {
+    projections: scenarios,
+    returns: { bear: bearReturns, base: baseReturns, bull: bullReturns },
+  };
+}, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
+```
+
+### 1d. Add the section in JSX
+
+Immediately after the `{sensitivityData && (<SensitivityAnalysisSection ... />)}` block, add:
+
+```tsx
+{scenarioComparison && (
+  <ExitScenarioSection
+    scenarios={scenarioComparison.projections}
+    returns={scenarioComparison.returns}
+    exitAssumptions={exitAssumptions}
+    entryMultiple={entryMultiple}
+    entryEquity={entryEquity}
+    baseYearData={baseYearData!}
+  />
+)}
+```
+
+---
+
+## STEP 2: Create `client/src/components/value-creation/ExitScenarioSection.tsx`
+
+### Props Interface
+
+```tsx
+import type {
+  ProjectedYear,
+  ReturnMetrics,
+  BaseYearData,
+} from '@shared/calculators/value-creation.calc';
+
+interface ExitAssumptions {
+  exitMultiple: number;
+  holdPeriodYears: number;
+  exitCostPercent: number;
+}
+
+interface ExitScenarioSectionProps {
+  scenarios: {
+    bear: ProjectedYear[];
+    base: ProjectedYear[];
+    bull: ProjectedYear[];
+  };
+  returns: {
+    bear: ReturnMetrics;
+    base: ReturnMetrics;
+    bull: ReturnMetrics;
+  };
+  exitAssumptions: ExitAssumptions;
+  entryMultiple: number;
+  entryEquity: number;
+  baseYearData: BaseYearData;
+}
+```
+
+### Imports Required
+
+```tsx
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from '@/components/ui/chart';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart as RechartsLineChart,
+  Line,
+  BarChart,
+  Bar,
+  Cell,
+  ReferenceLine,
+} from 'recharts';
+import { formatCurrency, formatPercent } from '@/lib/format-utils';
+import type {
+  ProjectedYear,
+  ReturnMetrics,
+  BaseYearData,
+} from '@shared/calculators/value-creation.calc';
+import {
+  LogOut,
+  TrendingUp,
+  BarChart3,
+  GitCompare,
+  Info,
+  ArrowRight,
+  Target,
+} from 'lucide-react';
+```
+
+### Internal State
+
+```tsx
+const [activeTab, setActiveTab] = useState<string>('comparison');
+```
+
+### Computed Data (useMemo)
+
+**1. Scenario overlay chart data** — year-by-year EBITDA & Revenue for all 3 scenarios:
+
+```tsx
+const overlayChartData = useMemo(() => {
+  const years = [1, 2, 3, 4, 5];
+  return years.map(y => {
+    const bear = scenarios.bear[y - 1];
+    const base = scenarios.base[y - 1];
+    const bull = scenarios.bull[y - 1];
+    return {
+      name: `Y${y}`,
+      bearEbitda: bear?.ebitda ?? 0,
+      baseEbitda: base?.ebitda ?? 0,
+      bullEbitda: bull?.ebitda ?? 0,
+      bearRevenue: bear?.revenue ?? 0,
+      baseRevenue: base?.revenue ?? 0,
+      bullRevenue: bull?.revenue ?? 0,
+      bearFCF: bear?.freeCashFlow ?? 0,
+      baseFCF: base?.freeCashFlow ?? 0,
+      bullFCF: bull?.freeCashFlow ?? 0,
+    };
+  });
+}, [scenarios]);
+```
+
+**2. Exit valuation breakdown per scenario:**
+
+```tsx
+const exitValuations = useMemo(() => {
+  const holdYears = Math.min(exitAssumptions.holdPeriodYears, 5);
+
+  const calc = (projections: ProjectedYear[], ret: ReturnMetrics) => {
+    const exitYear = projections[holdYears - 1];
+    if (!exitYear) return null;
+    const exitEV = exitYear.ebitda * exitAssumptions.exitMultiple;
+    const exitCosts = exitEV * exitAssumptions.exitCostPercent / 100;
+    return {
+      exitYearEbitda: exitYear.ebitda,
+      exitEV,
+      exitCosts,
+      remainingDebt: exitEV - ret.exitEquity - exitCosts,
+      exitEquity: ret.exitEquity,
+      y5Revenue: exitYear.revenue,
+      y5EbitdaMargin: exitYear.revenue > 0 ? (exitYear.ebitda / exitYear.revenue) * 100 : 0,
+    };
+  };
+
+  return {
+    bear: calc(scenarios.bear, returns.bear),
+    base: calc(scenarios.base, returns.base),
+    bull: calc(scenarios.bull, returns.bull),
+  };
+}, [scenarios, returns, exitAssumptions]);
+```
+
+### Render Structure
+
+The component renders a single `<Card>` with three tabbed sub-views.
+
+**A) Header row:**
+- Left: indigo/slate circle with "7", title "Exit Modelling & Scenario Comparison"
+- Right: nothing (tabs handle switching)
+
+**B) Internal tabs:**
+
+```tsx
+<Tabs value={activeTab} onValueChange={setActiveTab}>
+  <TabsList className="h-9">
+    <TabsTrigger value="comparison" className="text-xs px-3 gap-1.5">
+      <GitCompare className="h-3.5 w-3.5" />
+      Scenario Comparison
+    </TabsTrigger>
+    <TabsTrigger value="trajectories" className="text-xs px-3 gap-1.5">
+      <TrendingUp className="h-3.5 w-3.5" />
+      Trajectories
+    </TabsTrigger>
+    <TabsTrigger value="exit" className="text-xs px-3 gap-1.5">
+      <LogOut className="h-3.5 w-3.5" />
+      Exit Valuation
+    </TabsTrigger>
+  </TabsList>
+```
+
+---
+
+### Tab 1: Scenario Comparison (`<TabsContent value="comparison">`)
+
+A side-by-side comparison table showing key metrics across all three scenarios.
+
+**Layout**: A table with 4 columns — Metric, Bear, Base, Bull.
+
+The Bear column header should use `text-red-600`, Base uses `text-blue-600`, Bull uses `text-green-600`. Add small emoji badges: 🐻 Bear, 📊 Base, 🐂 Bull.
+
+**Rows** (grouped with section headers and separators):
+
+*Section: Returns*
+| Metric | Bear | Base | Bull |
+|--------|------|------|------|
+| IRR | `(returns.bear.irr * 100).toFixed(1)%` | ... | ... |
+| MOIC | `returns.bear.moic.toFixed(2)x` | ... | ... |
+| Total Return | `formatCurrency(returns.bear.totalReturn)` | ... | ... |
+| Payback Period | `returns.bear.paybackPeriodYears` yrs | ... | ... |
+
+*Separator*
+
+*Section: Exit Year Metrics (Y{holdPeriod})*
+| Exit EBITDA | | | |
+| Exit Revenue | | | |
+| EBITDA Margin | | | |
+| Enterprise Value at Exit | | | |
+| Exit Equity | | | |
+
+*Separator*
+
+*Section: Value Creation Sources*
+| EBITDA Growth Value | | | |
+| Multiple Expansion | | | |
+| Debt Paydown | | | |
+| Cash Distributions | | | |
+| Less: Fees & Costs | | | |
+
+**Styling rules:**
+- Section headers: `text-xs font-semibold uppercase tracking-wide text-muted-foreground` spanning full row, with `bg-muted/30`
+- Metric label column: `text-sm` with `w-[200px] min-w-[160px]`
+- Value columns: `text-right font-mono tabular-nums text-sm`
+- Bold rows: IRR, MOIC, Total Return, Exit Equity
+- The `bg-primary/5` highlight on the Total Return row
+- Negative values in `text-red-600 dark:text-red-400`
+- IRR colour coding: same thresholds as Section 5 (>=25 green, >=15 blue, >=10 amber, <10 red)
+- MOIC colour coding: same thresholds as Section 5 (>=3 green, >=2 blue, >=1.5 amber, <1.5 red)
+- Use the Base column with a subtle `bg-blue-50/50 dark:bg-blue-950/20` background to highlight it as the primary case
+
+---
+
+### Tab 2: Trajectories (`<TabsContent value="trajectories">`)
+
+Three line charts stacked vertically showing bear/base/bull trajectories over 5 years.
+
+**Chart 1: EBITDA Trajectory**
+
+Use `AreaChart` with three `Area` components:
+- Bear: `stroke="hsl(0, 72%, 51%)"` with light red fill gradient
+- Base: `stroke="hsl(221, 83%, 53%)"` with light blue fill gradient
+- Bull: `stroke="hsl(142, 71%, 45%)"` with light green fill gradient
+
+Add a horizontal `ReferenceLine` at `baseYearData.adjustedEbitda` (dashed, labelled "Base Year EBITDA") so users can see the starting point.
+
+Height: `h-[220px]`. Y-axis: £K/£M formatter. X-axis: Y1–Y5.
+
+Title above chart: "EBITDA Trajectory" (text-sm font-medium).
+
+**Chart 2: Revenue Trajectory**
+
+Same layout as EBITDA but with `bearRevenue`, `baseRevenue`, `bullRevenue` data keys.
+
+ReferenceLine at `baseYearData.revenue`.
+
+Title: "Revenue Trajectory"
+
+**Chart 3: Free Cash Flow Trajectory**
+
+Same layout but with `bearFCF`, `baseFCF`, `bullFCF`.
+
+Add a `ReferenceLine` at `y={0}` (solid, to highlight the zero line — important for bear case which might go negative).
+
+Title: "Free Cash Flow"
+
+**Shared legend** below all three charts:
+```tsx
+<div className="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
+  <span className="flex items-center gap-1.5">
+    <span className="h-2.5 w-6 rounded-sm bg-red-500" /> Bear
+  </span>
+  <span className="flex items-center gap-1.5">
+    <span className="h-2.5 w-6 rounded-sm bg-blue-500" /> Base
+  </span>
+  <span className="flex items-center gap-1.5">
+    <span className="h-2.5 w-6 rounded-sm bg-green-500" /> Bull
+  </span>
+</div>
+```
+
+**Chart config** for all three:
+```tsx
+const trajectoryConfig: ChartConfig = {
+  bear: { label: 'Bear', color: 'hsl(0, 72%, 51%)' },
+  base: { label: 'Base', color: 'hsl(221, 83%, 53%)' },
+  bull: { label: 'Bull', color: 'hsl(142, 71%, 45%)' },
+};
+```
+
+Custom tooltip (shared across all 3 charts):
+```tsx
+function TrajectoryTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border bg-background px-3 py-2 shadow-xl">
+      <p className="text-sm font-medium mb-1">{label}</p>
+      {payload.map((entry: any, i: number) => (
+        <div key={i} className="flex items-center gap-2 text-xs">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+          <span className="text-muted-foreground">{entry.name}:</span>
+          <span className="font-mono font-medium">{formatCurrency(entry.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+### Tab 3: Exit Valuation (`<TabsContent value="exit">`)
+
+A focused view on the exit mechanics.
+
+**A) Three exit valuation cards** in a `grid grid-cols-1 lg:grid-cols-3 gap-4`:
+
+For each scenario (bear, base, bull), render a card:
+
+```tsx
+<div className={`rounded-lg border p-4 space-y-3 ${
+  scenario === 'bear' ? 'border-l-4 border-l-red-500' :
+  scenario === 'base' ? 'border-l-4 border-l-blue-500' :
+  'border-l-4 border-l-green-500'
+}`}>
+```
+
+Each card contains:
+- Header: scenario name + emoji badge (🐻/📊/🐂)
+- Stacked rows showing the exit waterfall:
+
+```
+Exit Year EBITDA          £xxx
+× Exit Multiple           4.0x
+─────────────────────────
+Enterprise Value          £xxx
+Less: Remaining Debt      (£xxx)
+Less: Exit Costs          (£xxx)
+─────────────────────────
+EXIT EQUITY               £xxx    ← bold, larger text, coloured
+```
+
+- Below the waterfall, show key return metrics:
+  - IRR: coloured
+  - MOIC: coloured
+  - Total Return: bold
+
+Use a compact table layout within each card. Separator rows as thin dashed lines. The Exit Equity row should be emphasised with `text-lg font-bold` and the scenario's colour.
+
+**B) Multiple expansion/contraction callout:**
+
+Below the three cards, add a summary bar:
+
+```tsx
+<div className="rounded-lg border bg-muted/20 p-4 mt-4">
+  <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+    <div className="flex items-center gap-2">
+      <Target className="h-4 w-4 text-muted-foreground" />
+      <span className="text-sm">
+        Entry: <span className="font-bold">{entryMultiple.toFixed(1)}x</span>
+        <ArrowRight className="h-3 w-3 inline mx-1.5 text-muted-foreground" />
+        Exit: <span className="font-bold">{exitAssumptions.exitMultiple.toFixed(1)}x</span>
+      </span>
+      {exitAssumptions.exitMultiple > entryMultiple ? (
+        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-[10px]">
+          +{((exitAssumptions.exitMultiple - entryMultiple) / entryMultiple * 100).toFixed(0)}% expansion
+        </Badge>
+      ) : exitAssumptions.exitMultiple < entryMultiple ? (
+        <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-[10px]">
+          {((exitAssumptions.exitMultiple - entryMultiple) / entryMultiple * 100).toFixed(0)}% contraction
+        </Badge>
+      ) : (
+        <Badge variant="secondary" className="text-[10px]">Flat</Badge>
+      )}
+    </div>
+    <div className="text-sm text-muted-foreground">
+      Hold period: <span className="font-medium text-foreground">{exitAssumptions.holdPeriodYears} years</span>
+    </div>
+    <div className="text-sm text-muted-foreground">
+      Exit costs: <span className="font-medium text-foreground">{exitAssumptions.exitCostPercent}%</span>
+    </div>
+  </div>
+</div>
+```
+
+---
+
+### D) Info footer:
+
+```tsx
+<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-4">
+  <Info className="h-3 w-3 shrink-0" />
+  All scenarios use the same exit multiple and hold period. Bear/bull cases adjust revenue growth 
+  and cost pressure from the base assumptions. Returns include interim cash distributions.
+</div>
+```
+
+### Full export
+
+```tsx
+export default function ExitScenarioSection({
+  scenarios,
+  returns,
+  exitAssumptions,
+  entryMultiple,
+  entryEquity,
+  baseYearData,
+}: ExitScenarioSectionProps) {
+```
+
+---
+
+## DO NOT
+
+- Modify any calculator files
+- Modify the schema or database
+- Modify any backend services or routes
+- Modify any previously built sections (PLProjectionsSection, CashFlowWaterfallSection, ReturnsAnalysisSection, SensitivityAnalysisSection)
+- Add any new API endpoints
+
+---
+
+## CONFIRMATION CHECKLIST
+
+After implementation, verify:
+
+1. `ExitScenarioSection.tsx` exists at `client/src/components/value-creation/ExitScenarioSection.tsx`
+2. `calculateScenarios` is imported in `ValueCreationModeller.tsx`
+3. `scenarioComparison` useMemo block exists and computes projections + returns for all 3 scenarios
+4. The section renders after `SensitivityAnalysisSection` in the JSX
+5. The section conditionally renders only when `scenarioComparison` is not null
+6. **Comparison tab**: side-by-side table shows Returns, Exit Year Metrics, and Value Creation Sources for all 3 scenarios
+7. **Comparison tab**: Base column has a subtle blue background highlight
+8. **Comparison tab**: IRR and MOIC values are colour-coded by quality
+9. **Trajectories tab**: three line charts (EBITDA, Revenue, FCF) render with bear/base/bull lines
+10. **Trajectories tab**: bear is red, base is blue, bull is green — consistent across all charts
+11. **Trajectories tab**: reference lines show base year starting values and zero line for FCF
+12. **Exit Valuation tab**: three cards show the exit waterfall breakdown per scenario
+13. **Exit Valuation tab**: each card shows EBITDA × multiple = EV → minus debt → minus costs = Exit Equity
+14. **Exit Valuation tab**: multiple expansion/contraction callout renders correctly
+15. No TypeScript compilation errors
+16. No console errors when switching between tabs
+17. Section handles the case where all scenarios have identical projections (e.g. when multipliers are at defaults) gracefully

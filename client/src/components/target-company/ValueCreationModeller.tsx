@@ -19,6 +19,7 @@ import {
   calculateWaterfall,
   calculateReturns,
   calculateSensitivity,
+  calculateScenarios,
   type BaseYearData,
   type YearAssumptions,
   type SynergyInput,
@@ -26,6 +27,7 @@ import {
   type ExitAssumptions as ExitAssumptionsType,
   type ScenarioMultipliers,
   type ProjectedYear,
+  type ReturnMetrics,
 } from '@shared/calculators/value-creation.calc';
 import type {
   DealModel,
@@ -40,6 +42,7 @@ import PLProjectionsSection from '@/components/value-creation/PLProjectionsSecti
 import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
 import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisSection';
 import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
+import ExitScenarioSection from '@/components/value-creation/ExitScenarioSection';
 import {
   LineChart,
   Calculator,
@@ -297,6 +300,68 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     );
   }, [baseYearData, activeAssumptions, synergyInputs, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
 
+  const scenarioComparison = useMemo(() => {
+    if (!baseYearData || activeAssumptions.length === 0 || entryEquity <= 0 || !vcData?.scenarios) return null;
+
+    const baseScenario = vcData.scenarios.find(s => s.scenarioType === 'base');
+    const bearScenario = vcData.scenarios.find(s => s.scenarioType === 'bear');
+    const bullScenario = vcData.scenarios.find(s => s.scenarioType === 'bull');
+
+    if (!baseScenario) return null;
+
+    const baseAssumptions = vcData.assumptions
+      .filter(a => a.scenarioId === baseScenario.id)
+      .sort((a, b) => a.year - b.year)
+      .map(a => ({
+        year: a.year,
+        revenueGrowthPercent: toNum(a.revenueGrowthPercent),
+        costOfSalesGrowthPercent: toNum(a.costOfSalesGrowthPercent),
+        adminCostGrowthPercent: toNum(a.adminCostGrowthPercent),
+        staffCostGrowthPercent: toNum(a.staffCostGrowthPercent),
+        depreciationGrowthPercent: toNum(a.depreciationGrowthPercent),
+        capexPerYear: toNum(a.capexPerYear),
+        workingCapitalPercent: toNum(a.workingCapitalPercent),
+        taxRatePercent: toNum(a.taxRatePercent),
+      }));
+
+    const baseSynergies = vcData.synergies
+      .filter(s => s.scenarioId === baseScenario.id)
+      .map(s => ({
+        synergyType: s.synergyType as 'revenue' | 'cost',
+        name: s.name,
+        targetValue: toNum(s.targetValue),
+        realisationByYear: [
+          toNum(s.realisationY1) / 100,
+          toNum(s.realisationY2) / 100,
+          toNum(s.realisationY3) / 100,
+          toNum(s.realisationY4) / 100,
+          toNum(s.realisationY5) / 100,
+        ],
+        implementationCost: toNum(s.implementationCost),
+      }));
+
+    if (baseAssumptions.length === 0) return null;
+
+    const bearMult: ScenarioMultipliers = bearScenario
+      ? { revenueGrowthMultiplier: toNum(bearScenario.revenueGrowthMultiplier), costPressureAdjustment: toNum(bearScenario.costPressureAdjustment) }
+      : { revenueGrowthMultiplier: 0.6, costPressureAdjustment: 1.5 };
+
+    const bullMult: ScenarioMultipliers = bullScenario
+      ? { revenueGrowthMultiplier: toNum(bullScenario.revenueGrowthMultiplier), costPressureAdjustment: toNum(bullScenario.costPressureAdjustment) }
+      : { revenueGrowthMultiplier: 1.4, costPressureAdjustment: -0.5 };
+
+    const scenarios = calculateScenarios(baseYearData, baseAssumptions, baseSynergies, fundingLineInputs, bearMult, bullMult);
+
+    const bearReturns = calculateReturns(scenarios.bear, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+    const baseReturns = calculateReturns(scenarios.base, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+    const bullReturns = calculateReturns(scenarios.bull, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+
+    return {
+      projections: scenarios,
+      returns: { bear: bearReturns, base: baseReturns, bull: bullReturns },
+    };
+  }, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
+
   if (modelsLoading) {
     return (
       <div className="space-y-4">
@@ -531,6 +596,17 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                     data={sensitivityData}
                     baseAssumptions={activeAssumptions}
                     exitAssumptions={exitAssumptions}
+                  />
+                )}
+
+                {scenarioComparison && (
+                  <ExitScenarioSection
+                    scenarios={scenarioComparison.projections}
+                    returns={scenarioComparison.returns}
+                    exitAssumptions={exitAssumptions}
+                    entryMultiple={entryMultiple}
+                    entryEquity={entryEquity}
+                    baseYearData={baseYearData!}
                   />
                 )}
               </>
