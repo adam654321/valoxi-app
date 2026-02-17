@@ -46,6 +46,8 @@ import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisS
 import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
 import ExitScenarioSection from '@/components/value-creation/ExitScenarioSection';
 import ValueCreationEmptyState from '@/components/value-creation/ValueCreationEmptyState';
+import ValuationDashboard from '@/components/value-creation/ValuationDashboard';
+import type { ImpactMetrics } from '@/components/value-creation/ImpactSummaryBar';
 import {
   LineChart,
   Calculator,
@@ -59,6 +61,7 @@ import {
   LayoutDashboard,
   Banknote,
   LogOut,
+  Clock,
 } from 'lucide-react';
 
 interface ValueCreationModellerProps {
@@ -83,6 +86,10 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const [activeScenarioType, setActiveScenarioType] = useState<string>('base');
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'projections' | 'cash-debt' | 'returns-exit' | 'risk'>('dashboard');
+
+  const prevMetricsRef = useRef<ImpactMetrics | null>(null);
+  const [displayPrevious, setDisplayPrevious] = useState<ImpactMetrics | null>(null);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
     queryKey: ['/api/v2/deal-models/company', companyId],
@@ -381,6 +388,39 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     };
   }, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
 
+  const currentImpactMetrics = useMemo<ImpactMetrics | null>(() => {
+    if (!kpis) return null;
+    return {
+      y5Ebitda: kpis.y5Ebitda,
+      cumulativeFcf: kpis.totalCashGenerated,
+      irr: returnMetrics?.irr ?? null,
+      moic: returnMetrics?.moic ?? null,
+      worstDscr: kpis.worstDscr,
+    };
+  }, [kpis, returnMetrics]);
+
+  useEffect(() => {
+    if (!currentImpactMetrics) return;
+
+    if (prevMetricsRef.current) {
+      const changed = JSON.stringify(currentImpactMetrics) !== JSON.stringify(prevMetricsRef.current);
+      if (changed) {
+        setDisplayPrevious({ ...prevMetricsRef.current });
+        if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+        fadeTimerRef.current = setTimeout(() => {
+          setDisplayPrevious(null);
+        }, 8000);
+      }
+    }
+    prevMetricsRef.current = { ...currentImpactMetrics };
+  }, [currentImpactMetrics]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    };
+  }, []);
+
   if (modelsLoading) {
     return (
       <div className="space-y-4">
@@ -445,19 +485,21 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
           </SelectContent>
         </Select>
 
-        <Tabs value={activeScenarioType} onValueChange={setActiveScenarioType}>
-          <TabsList className="h-9">
-            <TabsTrigger value="bear" className="text-xs px-3 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/30 dark:data-[state=active]:text-red-300">
-              Bear
-            </TabsTrigger>
-            <TabsTrigger value="base" className="text-xs px-3 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 dark:data-[state=active]:text-blue-300">
-              Base
-            </TabsTrigger>
-            <TabsTrigger value="bull" className="text-xs px-3 data-[state=active]:bg-green-100 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30 dark:data-[state=active]:text-green-300">
-              Bull
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {activeTab !== 'dashboard' && (
+          <Tabs value={activeScenarioType} onValueChange={setActiveScenarioType}>
+            <TabsList className="h-9">
+              <TabsTrigger value="bear" className="text-xs px-3 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/30 dark:data-[state=active]:text-red-300">
+                Bear
+              </TabsTrigger>
+              <TabsTrigger value="base" className="text-xs px-3 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 dark:data-[state=active]:text-blue-300">
+                Base
+              </TabsTrigger>
+              <TabsTrigger value="bull" className="text-xs px-3 data-[state=active]:bg-green-100 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30 dark:data-[state=active]:text-green-300">
+                Bull
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
 
         <div className="flex items-center gap-2 ml-auto">
           {entryMultiple > 0 && (
@@ -499,7 +541,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
       </div>
 
       {kpis && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className={`grid gap-3 ${returnMetrics ? 'grid-cols-2 lg:grid-cols-4 xl:grid-cols-7' : 'grid-cols-2 lg:grid-cols-4'}`}>
           <Card className="border-l-4 border-l-blue-500">
             <CardContent className="py-3 px-4">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -548,6 +590,72 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
               </p>
             </CardContent>
           </Card>
+
+          {returnMetrics && (
+            <>
+              <Card className={`border-l-4 ${
+                returnMetrics.irr >= 0.25 ? 'border-l-green-500' :
+                returnMetrics.irr >= 0.15 ? 'border-l-blue-500' :
+                returnMetrics.irr >= 0.10 ? 'border-l-amber-500' :
+                'border-l-red-500'
+              }`}>
+                <CardContent className="py-3 px-4">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    IRR
+                  </p>
+                  <p className={`text-lg font-bold mt-0.5 ${
+                    returnMetrics.irr >= 0.25 ? 'text-green-700 dark:text-green-400' :
+                    returnMetrics.irr >= 0.15 ? 'text-blue-700 dark:text-blue-400' :
+                    returnMetrics.irr >= 0.10 ? 'text-amber-700 dark:text-amber-400' :
+                    'text-red-700 dark:text-red-400'
+                  }`}>
+                    {isFinite(returnMetrics.irr) && !isNaN(returnMetrics.irr) && returnMetrics.irr <= 10
+                      ? `${(returnMetrics.irr * 100).toFixed(1)}%`
+                      : '∞'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className={`border-l-4 ${
+                returnMetrics.moic >= 3 ? 'border-l-green-500' :
+                returnMetrics.moic >= 2 ? 'border-l-blue-500' :
+                returnMetrics.moic >= 1.5 ? 'border-l-amber-500' :
+                'border-l-red-500'
+              }`}>
+                <CardContent className="py-3 px-4">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" />
+                    MOIC
+                  </p>
+                  <p className={`text-lg font-bold mt-0.5 ${
+                    returnMetrics.moic >= 3 ? 'text-green-700 dark:text-green-400' :
+                    returnMetrics.moic >= 2 ? 'text-blue-700 dark:text-blue-400' :
+                    returnMetrics.moic >= 1.5 ? 'text-amber-700 dark:text-amber-400' :
+                    'text-red-700 dark:text-red-400'
+                  }`}>
+                    {isFinite(returnMetrics.moic) ? `${returnMetrics.moic.toFixed(2)}x` : '∞'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-purple-500">
+                <CardContent className="py-3 px-4">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Payback
+                  </p>
+                  <p className="text-lg font-bold mt-0.5">
+                    {returnMetrics.paybackPeriodYears === 0 
+                      ? 'Instant'
+                      : returnMetrics.paybackPeriodYears > exitAssumptions.holdPeriodYears
+                      ? `>${exitAssumptions.holdPeriodYears}yrs`
+                      : `${returnMetrics.paybackPeriodYears.toFixed(1)} yrs`}
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       )}
 
@@ -614,7 +722,18 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
             ) : (
               <>
                 {activeTab === 'dashboard' && (
-                  <DashboardPlaceholder />
+                  <ValuationDashboard
+                    projections={projections}
+                    baseYearData={baseYearData!}
+                    baseYearLabel={baseYearLabel}
+                    returnMetrics={returnMetrics}
+                    scenarioComparison={scenarioComparison}
+                    exitAssumptions={exitAssumptions}
+                    entryMultiple={entryMultiple}
+                    entryEquity={entryEquity}
+                    previousMetrics={displayPrevious}
+                    currentMetrics={currentImpactMetrics}
+                  />
                 )}
 
                 {activeTab === 'projections' && (
@@ -713,14 +832,3 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   );
 }
 
-function DashboardPlaceholder() {
-  return (
-    <Card>
-      <CardContent className="py-10 text-center">
-        <LayoutDashboard className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-        <h3 className="font-semibold mb-1">Valuation Dashboard</h3>
-        <p className="text-sm text-muted-foreground">Coming soon — a single-screen overview of all key metrics.</p>
-      </CardContent>
-    </Card>
-  );
-}
