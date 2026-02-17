@@ -39,6 +39,7 @@ import type {
 } from '@shared/schema';
 import AssumptionsPanel from '@/components/value-creation/AssumptionsPanel';
 import PLProjectionsSection from '@/components/value-creation/PLProjectionsSection';
+import SynergiesDetailSection from '@/components/value-creation/SynergiesDetailSection';
 import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
 import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisSection';
 import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
@@ -585,6 +586,13 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                   synergies={synergyInputs}
                   scenarioType={activeScenarioType}
                 />
+
+                {synergyInputs.length > 0 && projections.length > 0 && (
+                  <SynergiesDetailSection
+                    synergies={synergyInputs}
+                    projections={projections}
+                  />
+                )}
 
                 <CashFlowWaterfallSection
                   projections={projections}
