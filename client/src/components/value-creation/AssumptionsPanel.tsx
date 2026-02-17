@@ -171,6 +171,111 @@ function CurrencyStepper({
   );
 }
 
+function SynergyCard({
+  synergy,
+  onUpdate,
+  onDelete,
+}: {
+  synergy: ValueCreationSynergy;
+  onUpdate: (data: Record<string, string>) => void;
+  onDelete: () => void;
+}) {
+  const [localImplCost, setLocalImplCost] = useState(String(toNum(synergy.implementationCost)));
+  const [localRealisations, setLocalRealisations] = useState({
+    realisationY1: String(toNum(synergy.realisationY1)),
+    realisationY2: String(toNum(synergy.realisationY2)),
+    realisationY3: String(toNum(synergy.realisationY3)),
+    realisationY4: String(toNum(synergy.realisationY4)),
+    realisationY5: String(toNum(synergy.realisationY5)),
+  });
+
+  useEffect(() => {
+    setLocalImplCost(String(toNum(synergy.implementationCost)));
+    setLocalRealisations({
+      realisationY1: String(toNum(synergy.realisationY1)),
+      realisationY2: String(toNum(synergy.realisationY2)),
+      realisationY3: String(toNum(synergy.realisationY3)),
+      realisationY4: String(toNum(synergy.realisationY4)),
+      realisationY5: String(toNum(synergy.realisationY5)),
+    });
+  }, [synergy]);
+
+  return (
+    <div className="border rounded-lg p-2 bg-muted/20 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Badge
+            variant="outline"
+            className={`text-[9px] h-4 px-1 ${
+              synergy.synergyType === 'revenue'
+                ? 'border-green-300 text-green-700 dark:text-green-400'
+                : 'border-blue-300 text-blue-700 dark:text-blue-400'
+            }`}
+          >
+            {synergy.synergyType === 'revenue' ? 'Rev' : 'Cost'}
+          </Badge>
+          <span className="text-xs font-medium truncate max-w-[120px]">{synergy.name}</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-muted-foreground">Target value</span>
+        <span className="text-xs font-mono">{formatCurrency(toNum(synergy.targetValue))}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-muted-foreground">Impl. cost</span>
+        <div className="relative w-24">
+          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">£</span>
+          <Input
+            type="number"
+            className="h-7 text-xs text-right font-mono pl-4 pr-1.5"
+            value={localImplCost}
+            onChange={e => setLocalImplCost(e.target.value)}
+            onBlur={() => {
+              const val = String(parseFloat(localImplCost) || 0);
+              if (val !== String(toNum(synergy.implementationCost))) {
+                onUpdate({ implementationCost: val });
+              }
+            }}
+          />
+        </div>
+      </div>
+      <div className="space-y-0.5">
+        <span className="text-[11px] text-muted-foreground">Realisation %</span>
+        <div className="grid grid-cols-5 gap-1">
+          {[1, 2, 3, 4, 5].map(y => {
+            const key = `realisationY${y}` as keyof typeof localRealisations;
+            return (
+              <div key={y} className="text-center">
+                <p className="text-[9px] text-muted-foreground mb-0.5">Y{y}</p>
+                <Input
+                  type="number"
+                  className="h-6 text-[11px] text-center p-0 font-mono"
+                  value={localRealisations[key]}
+                  onChange={e => setLocalRealisations(prev => ({ ...prev, [key]: e.target.value }))}
+                  onBlur={() => {
+                    const val = String(parseFloat(localRealisations[key]) || 0);
+                    if (val !== String(toNum((synergy as any)[key]))) {
+                      onUpdate({ [key]: val });
+                    }
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AssumptionsPanel({
   scenario,
   assumptions,
@@ -601,62 +706,12 @@ export default function AssumptionsPanel({
           )}
 
           {scenarioSynergies.map(s => (
-            <div key={s.id} className="border rounded-lg p-2 bg-muted/20 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Badge
-                    variant="outline"
-                    className={`text-[9px] h-4 px-1 ${
-                      s.synergyType === 'revenue'
-                        ? 'border-green-300 text-green-700 dark:text-green-400'
-                        : 'border-blue-300 text-blue-700 dark:text-blue-400'
-                    }`}
-                  >
-                    {s.synergyType === 'revenue' ? 'Rev' : 'Cost'}
-                  </Badge>
-                  <span className="text-xs font-medium truncate max-w-[120px]">{s.name}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
-                  onClick={() => deleteSynergyMutation.mutate(s.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">Target value</span>
-                <span className="text-xs font-mono">{formatCurrency(toNum(s.targetValue))}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">Impl. cost</span>
-                <CurrencyStepper
-                  value={toNum(s.implementationCost)}
-                  onChange={v => updateSynergyMutation.mutate({ id: s.id, data: { implementationCost: String(v) } })}
-                  step={5000}
-                />
-              </div>
-              <div className="space-y-0.5">
-                <span className="text-[11px] text-muted-foreground">Realisation %</span>
-                <div className="grid grid-cols-5 gap-1">
-                  {[1, 2, 3, 4, 5].map(y => (
-                    <div key={y} className="text-center">
-                      <p className="text-[9px] text-muted-foreground mb-0.5">Y{y}</p>
-                      <Input
-                        type="number"
-                        className="h-6 text-[11px] text-center p-0 font-mono"
-                        value={toNum((s as any)[`realisationY${y}`])}
-                        onChange={e => updateSynergyMutation.mutate({
-                          id: s.id,
-                          data: { [`realisationY${y}`]: String(e.target.value || '0') },
-                        })}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <SynergyCard
+              key={s.id}
+              synergy={s}
+              onUpdate={(data) => updateSynergyMutation.mutate({ id: s.id, data })}
+              onDelete={() => deleteSynergyMutation.mutate(s.id)}
+            />
           ))}
 
           {addingSynergy ? (
