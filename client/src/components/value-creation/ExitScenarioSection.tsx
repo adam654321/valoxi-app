@@ -117,6 +117,7 @@ export default function ExitScenarioSection({
   baseYearData,
 }: ExitScenarioSectionProps) {
   const [activeTab, setActiveTab] = useState<string>('comparison');
+  const [trajectoryMetric, setTrajectoryMetric] = useState<'ebitda' | 'revenue' | 'fcf'>('ebitda');
 
   const overlayChartData = useMemo(() => {
     const years = [1, 2, 3, 4, 5];
@@ -322,108 +323,94 @@ export default function ExitScenarioSection({
             </div>
           </TabsContent>
 
-          <TabsContent value="trajectories" className="mt-4 space-y-6">
-            <div>
-              <p className="text-sm font-medium mb-2">EBITDA Trajectory</p>
-              <ChartContainer config={trajectoryConfig} className="h-[220px] w-full">
-                <AreaChart data={overlayChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="bearFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="baseFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="bullFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={formatAxis} width={70} />
-                  <ReferenceLine y={baseYearData.adjustedEbitda} stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" label={{ value: 'Base Year', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                  <ChartTooltip content={<TrajectoryTooltip />} />
-                  <Area type="monotone" dataKey="bearEbitda" name="Bear" stroke="hsl(0, 72%, 51%)" fill="url(#bearFill)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="baseEbitda" name="Base" stroke="hsl(221, 83%, 53%)" fill="url(#baseFill)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="bullEbitda" name="Bull" stroke="hsl(142, 71%, 45%)" fill="url(#bullFill)" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ChartContainer>
+          <TabsContent value="trajectories" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex border rounded-md overflow-hidden">
+                {([
+                  { key: 'ebitda' as const, label: 'EBITDA' },
+                  { key: 'revenue' as const, label: 'Revenue' },
+                  { key: 'fcf' as const, label: 'Free Cash Flow' },
+                ] as const).map(m => (
+                  <button
+                    key={m.key}
+                    onClick={() => setTrajectoryMetric(m.key)}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      trajectoryMetric === m.key ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-6 rounded-sm bg-red-500" /> Bear
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-6 rounded-sm bg-blue-500" /> Base
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-6 rounded-sm bg-green-500" /> Bull
+                </span>
+              </div>
             </div>
 
-            <div>
-              <p className="text-sm font-medium mb-2">Revenue Trajectory</p>
-              <ChartContainer config={trajectoryConfig} className="h-[220px] w-full">
-                <AreaChart data={overlayChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="bearFillRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="baseFillRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="bullFillRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={formatAxis} width={70} />
-                  <ReferenceLine y={baseYearData.revenue} stroke="hsl(var(--muted-foreground))" strokeDasharray="5 5" label={{ value: 'Base Year', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                  <ChartTooltip content={<TrajectoryTooltip />} />
-                  <Area type="monotone" dataKey="bearRevenue" name="Bear" stroke="hsl(0, 72%, 51%)" fill="url(#bearFillRev)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="baseRevenue" name="Base" stroke="hsl(221, 83%, 53%)" fill="url(#baseFillRev)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="bullRevenue" name="Bull" stroke="hsl(142, 71%, 45%)" fill="url(#bullFillRev)" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ChartContainer>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium mb-2">Free Cash Flow</p>
-              <ChartContainer config={trajectoryConfig} className="h-[220px] w-full">
-                <AreaChart data={overlayChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="bearFillFCF" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="baseFillFCF" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="bullFillFCF" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={formatAxis} width={70} />
-                  <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
-                  <ChartTooltip content={<TrajectoryTooltip />} />
-                  <Area type="monotone" dataKey="bearFCF" name="Bear" stroke="hsl(0, 72%, 51%)" fill="url(#bearFillFCF)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="baseFCF" name="Base" stroke="hsl(221, 83%, 53%)" fill="url(#baseFillFCF)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="bullFCF" name="Bull" stroke="hsl(142, 71%, 45%)" fill="url(#bullFillFCF)" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ChartContainer>
-            </div>
-
-            <div className="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-6 rounded-sm bg-red-500" /> Bear
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-6 rounded-sm bg-blue-500" /> Base
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-6 rounded-sm bg-green-500" /> Bull
-              </span>
-            </div>
+            <ChartContainer config={trajectoryConfig} className="h-[280px] w-full">
+              <AreaChart data={overlayChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="bearFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(0, 72%, 51%)" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="baseFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="bullFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(142, 71%, 45%)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={formatAxis} width={70} />
+                <ReferenceLine
+                  y={trajectoryMetric === 'ebitda' ? baseYearData.adjustedEbitda : trajectoryMetric === 'revenue' ? baseYearData.revenue : 0}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray={trajectoryMetric === 'fcf' ? undefined : '5 5'}
+                  strokeWidth={trajectoryMetric === 'fcf' ? 1 : undefined}
+                  label={trajectoryMetric !== 'fcf' ? { value: 'Base Year', fontSize: 10, fill: 'hsl(var(--muted-foreground))' } : undefined}
+                />
+                <ChartTooltip content={<TrajectoryTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey={trajectoryMetric === 'ebitda' ? 'bearEbitda' : trajectoryMetric === 'revenue' ? 'bearRevenue' : 'bearFCF'}
+                  name="Bear"
+                  stroke="hsl(0, 72%, 51%)"
+                  fill="url(#bearFill)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey={trajectoryMetric === 'ebitda' ? 'baseEbitda' : trajectoryMetric === 'revenue' ? 'baseRevenue' : 'baseFCF'}
+                  name="Base"
+                  stroke="hsl(221, 83%, 53%)"
+                  fill="url(#baseFill)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey={trajectoryMetric === 'ebitda' ? 'bullEbitda' : trajectoryMetric === 'revenue' ? 'bullRevenue' : 'bullFCF'}
+                  name="Bull"
+                  stroke="hsl(142, 71%, 45%)"
+                  fill="url(#bullFill)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </AreaChart>
+            </ChartContainer>
           </TabsContent>
 
           <TabsContent value="exit" className="mt-4">
