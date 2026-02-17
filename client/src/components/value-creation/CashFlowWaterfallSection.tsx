@@ -142,7 +142,6 @@ export default function CashFlowWaterfallSection({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-xs font-bold text-purple-700 dark:text-purple-300">4</span>
             Cash Flow Waterfall
           </CardTitle>
           <div className="flex items-center gap-2">

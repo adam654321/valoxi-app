@@ -156,7 +156,6 @@ export default function ReturnsAnalysisSection({ metrics, projections, exitAssum
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-xs font-bold text-emerald-700 dark:text-emerald-300">5</span>
             Returns Analysis
           </CardTitle>
           <div className="flex border rounded-md overflow-hidden">

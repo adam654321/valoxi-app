@@ -139,7 +139,6 @@ export default function SensitivityAnalysisSection({ data, baseAssumptions, exit
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-xs font-bold text-amber-700 dark:text-amber-300">6</span>
             Sensitivity Analysis
           </CardTitle>
         </div>

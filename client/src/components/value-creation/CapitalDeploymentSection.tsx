@@ -104,7 +104,6 @@ export default function CapitalDeploymentSection({ projections, assumptions, bas
     <Card>
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-600 text-white text-sm font-bold">3</div>
           <h3 className="text-base font-semibold">Working Capital & Capex</h3>
           <Badge variant="secondary" className="text-[10px]">
             5yr Capex: {formatCurrency(summary.totalCapex)}

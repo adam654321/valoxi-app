@@ -178,7 +178,6 @@ export default function ExitScenarioSection({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-xs font-bold text-indigo-700 dark:text-indigo-300">7</span>
             Exit Modelling & Scenario Comparison
           </CardTitle>
         </div>

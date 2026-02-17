@@ -238,7 +238,6 @@ export default function PLProjectionsSection({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-bold text-blue-700 dark:text-blue-300">1</span>
             P&L Projections
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -478,7 +477,8 @@ export default function PLProjectionsSection({
                               : (
                                 <span className="inline-flex items-center">
                                   {renderCell(val, row.negative)}
-                                  {row.bold && !row.margin && val !== null && prevVal !== null && prevVal !== 0 && (
+                                  {row.bold && !row.margin && !row.synergy && !row.indent && val !== null && prevVal !== null && prevVal !== 0
+                                    && ['Revenue', 'Gross Profit', 'EBITDA', 'Net Profit', 'Free Cash Flow'].includes(row.label) && (
                                     growthBadge(val!, prevVal!)
                                   )}
                                 </span>

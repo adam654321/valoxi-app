@@ -106,7 +106,6 @@ export default function SynergiesDetailSection({ synergies, projections }: Syner
     <Card>
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold">2</div>
           <h3 className="text-base font-semibold">Synergies Detail</h3>
           {summary.revenueSynergies.length > 0 && (
             <Badge variant="secondary" className="text-[10px]">

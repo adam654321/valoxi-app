@@ -45,6 +45,7 @@ import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterf
 import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisSection';
 import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
 import ExitScenarioSection from '@/components/value-creation/ExitScenarioSection';
+import ValueCreationEmptyState from '@/components/value-creation/ValueCreationEmptyState';
 import {
   LineChart,
   Calculator,
@@ -55,6 +56,9 @@ import {
   Shield,
   DollarSign,
   BarChart3,
+  LayoutDashboard,
+  Banknote,
+  LogOut,
 } from 'lucide-react';
 
 interface ValueCreationModellerProps {
@@ -78,6 +82,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [activeScenarioType, setActiveScenarioType] = useState<string>('base');
   const [panelCollapsed, setPanelCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'projections' | 'cash-debt' | 'returns-exit' | 'risk'>('dashboard');
 
   const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
     queryKey: ['/api/v2/deal-models/company', companyId],
@@ -409,6 +414,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
 
   const assumptionsPanelContent = activeScenario && vcData ? (
     <AssumptionsPanel
+      activeTab={activeTab}
       scenario={activeScenario}
       assumptions={vcData.assumptions.filter(a => a.scenarioId === activeScenario.id)}
       synergies={vcData.synergies.filter(s => s.scenarioId === activeScenario.id)}
@@ -545,6 +551,31 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
         </div>
       )}
 
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList className="h-9 w-full justify-start overflow-x-auto">
+          <TabsTrigger value="dashboard" className="text-xs px-4 gap-1.5">
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="projections" className="text-xs px-4 gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Projections
+          </TabsTrigger>
+          <TabsTrigger value="cash-debt" className="text-xs px-4 gap-1.5">
+            <Banknote className="h-3.5 w-3.5" />
+            Cash & Debt
+          </TabsTrigger>
+          <TabsTrigger value="returns-exit" className="text-xs px-4 gap-1.5">
+            <TrendingUp className="h-3.5 w-3.5" />
+            Returns & Exit
+          </TabsTrigger>
+          <TabsTrigger value="risk" className="text-xs px-4 gap-1.5">
+            <Shield className="h-3.5 w-3.5" />
+            Risk
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {vcLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-96 w-full" />
@@ -582,61 +613,96 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
               </Card>
             ) : (
               <>
-                <PLProjectionsSection
-                  projections={projections}
-                  baseYearData={baseYearData!}
-                  baseYearLabel={baseYearLabel}
-                  synergies={synergyInputs}
-                  scenarioType={activeScenarioType}
-                />
-
-                {synergyInputs.length > 0 && projections.length > 0 && (
-                  <SynergiesDetailSection
-                    synergies={synergyInputs}
-                    projections={projections}
-                  />
+                {activeTab === 'dashboard' && (
+                  <DashboardPlaceholder />
                 )}
 
-                {projections.length > 0 && (
-                  <CapitalDeploymentSection
-                    projections={projections}
-                    assumptions={activeAssumptions}
-                    baseYearRevenue={baseYearData?.revenue ?? 0}
-                  />
+                {activeTab === 'projections' && (
+                  <>
+                    <PLProjectionsSection
+                      projections={projections}
+                      baseYearData={baseYearData!}
+                      baseYearLabel={baseYearLabel}
+                      synergies={synergyInputs}
+                      scenarioType={activeScenarioType}
+                    />
+                    {synergyInputs.length > 0 && projections.length > 0 && (
+                      <SynergiesDetailSection
+                        synergies={synergyInputs}
+                        projections={projections}
+                      />
+                    )}
+                  </>
                 )}
 
-                <CashFlowWaterfallSection
-                  projections={projections}
-                  fundingLines={fundingLineInputs}
-                  baseYearLabel={baseYearLabel}
-                />
-
-                {returnMetrics && (
-                  <ReturnsAnalysisSection
-                    metrics={returnMetrics}
-                    projections={projections}
-                    exitAssumptions={exitAssumptions}
-                    entryMultiple={entryMultiple}
-                  />
+                {activeTab === 'cash-debt' && (
+                  <>
+                    {projections.length > 0 && (
+                      <CapitalDeploymentSection
+                        projections={projections}
+                        assumptions={activeAssumptions}
+                        baseYearRevenue={baseYearData?.revenue ?? 0}
+                      />
+                    )}
+                    <CashFlowWaterfallSection
+                      projections={projections}
+                      fundingLines={fundingLineInputs}
+                      baseYearLabel={baseYearLabel}
+                    />
+                  </>
                 )}
 
-                {sensitivityData && (
-                  <SensitivityAnalysisSection
-                    data={sensitivityData}
-                    baseAssumptions={activeAssumptions}
-                    exitAssumptions={exitAssumptions}
-                  />
+                {activeTab === 'returns-exit' && (
+                  <>
+                    {returnMetrics ? (
+                      <ReturnsAnalysisSection
+                        metrics={returnMetrics}
+                        projections={projections}
+                        exitAssumptions={exitAssumptions}
+                        entryMultiple={entryMultiple}
+                      />
+                    ) : (
+                      <ValueCreationEmptyState
+                        title="Returns Analysis"
+                        message="Add active funding lines in the Deal Modeller tab to unlock returns analysis. The returns calculation needs at least one funding line to determine the investment structure."
+                        icon={<TrendingUp className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+                      />
+                    )}
+                    {scenarioComparison ? (
+                      <ExitScenarioSection
+                        scenarios={scenarioComparison.projections}
+                        returns={scenarioComparison.returns}
+                        exitAssumptions={exitAssumptions}
+                        entryMultiple={entryMultiple}
+                        entryEquity={entryEquity}
+                        baseYearData={baseYearData!}
+                      />
+                    ) : (
+                      <ValueCreationEmptyState
+                        title="Exit Modelling & Scenario Comparison"
+                        message="Configure scenarios and ensure active funding lines exist to see exit modelling and scenario comparisons."
+                        icon={<LogOut className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+                      />
+                    )}
+                  </>
                 )}
 
-                {scenarioComparison && (
-                  <ExitScenarioSection
-                    scenarios={scenarioComparison.projections}
-                    returns={scenarioComparison.returns}
-                    exitAssumptions={exitAssumptions}
-                    entryMultiple={entryMultiple}
-                    entryEquity={entryEquity}
-                    baseYearData={baseYearData!}
-                  />
+                {activeTab === 'risk' && (
+                  <>
+                    {sensitivityData ? (
+                      <SensitivityAnalysisSection
+                        data={sensitivityData}
+                        baseAssumptions={activeAssumptions}
+                        exitAssumptions={exitAssumptions}
+                      />
+                    ) : (
+                      <ValueCreationEmptyState
+                        title="Sensitivity & Risk Analysis"
+                        message="Add active funding lines in the Deal Modeller tab to unlock sensitivity analysis. This module stress-tests your assumptions across revenue growth, exit multiples, cost inflation, and interest rates."
+                        icon={<Shield className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+                      />
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -644,5 +710,17 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
         </div>
       )}
     </div>
+  );
+}
+
+function DashboardPlaceholder() {
+  return (
+    <Card>
+      <CardContent className="py-10 text-center">
+        <LayoutDashboard className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold mb-1">Valuation Dashboard</h3>
+        <p className="text-sm text-muted-foreground">Coming soon — a single-screen overview of all key metrics.</p>
+      </CardContent>
+    </Card>
   );
 }

@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 
 interface AssumptionsPanelProps {
+  activeTab?: 'dashboard' | 'projections' | 'cash-debt' | 'returns-exit' | 'risk';
   scenario: ValueCreationScenario;
   assumptions: ValueCreationAssumption[];
   synergies: ValueCreationSynergy[];
@@ -277,6 +278,7 @@ function SynergyCard({
 }
 
 export default function AssumptionsPanel({
+  activeTab,
   scenario,
   assumptions,
   synergies,
@@ -292,6 +294,44 @@ export default function AssumptionsPanel({
   const [debtOpen, setDebtOpen] = useState(false);
   const [synergiesOpen, setSynergiesOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(true);
+  const userOverrideRef = useRef<Set<string>>(new Set());
+
+  const handleGrowthToggle = (open: boolean) => {
+    userOverrideRef.current.add('growth');
+    setGrowthOpen(open);
+  };
+  const handleDebtToggle = (open: boolean) => {
+    userOverrideRef.current.add('debt');
+    setDebtOpen(open);
+  };
+  const handleSynergiesToggle = (open: boolean) => {
+    userOverrideRef.current.add('synergies');
+    setSynergiesOpen(open);
+  };
+  const handleExitToggle = (open: boolean) => {
+    userOverrideRef.current.add('exit');
+    setExitOpen(open);
+  };
+
+  useEffect(() => {
+    const defaults: Record<string, Record<string, boolean>> = {
+      'dashboard': { growth: false, debt: false, synergies: false, exit: true },
+      'projections': { growth: true, debt: false, synergies: true, exit: false },
+      'cash-debt': { growth: false, debt: true, synergies: false, exit: false },
+      'returns-exit': { growth: false, debt: true, synergies: false, exit: true },
+      'risk': { growth: false, debt: false, synergies: false, exit: true },
+    };
+
+    const tab = activeTab || 'projections';
+    const d = defaults[tab] || defaults['projections'];
+
+    if (!userOverrideRef.current.has('growth')) setGrowthOpen(d.growth);
+    if (!userOverrideRef.current.has('debt')) setDebtOpen(d.debt);
+    if (!userOverrideRef.current.has('synergies')) setSynergiesOpen(d.synergies);
+    if (!userOverrideRef.current.has('exit')) setExitOpen(d.exit);
+
+    userOverrideRef.current.clear();
+  }, [activeTab]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [addingSynergy, setAddingSynergy] = useState(false);
   const [newSynergyType, setNewSynergyType] = useState<'revenue' | 'cost'>('revenue');
@@ -510,7 +550,7 @@ export default function AssumptionsPanel({
         {scenario.name} {scenario.scenarioType === 'bear' ? '\uD83D\uDC3B' : scenario.scenarioType === 'bull' ? '\uD83D\uDC02' : '\uD83D\uDCCA'}
       </Badge>
 
-      <Collapsible open={growthOpen} onOpenChange={setGrowthOpen}>
+      <Collapsible open={growthOpen} onOpenChange={handleGrowthToggle}>
         <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-md px-2 transition-colors">
           {growthOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <TrendingUp className="h-4 w-4 text-blue-600" />
@@ -648,7 +688,7 @@ export default function AssumptionsPanel({
 
       <Separator />
 
-      <Collapsible open={debtOpen} onOpenChange={setDebtOpen}>
+      <Collapsible open={debtOpen} onOpenChange={handleDebtToggle}>
         <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-md px-2 transition-colors">
           {debtOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <Banknote className="h-4 w-4 text-amber-600" />
@@ -691,7 +731,7 @@ export default function AssumptionsPanel({
 
       <Separator />
 
-      <Collapsible open={synergiesOpen} onOpenChange={setSynergiesOpen}>
+      <Collapsible open={synergiesOpen} onOpenChange={handleSynergiesToggle}>
         <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-md px-2 transition-colors">
           {synergiesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <Zap className="h-4 w-4 text-purple-600" />
@@ -781,7 +821,7 @@ export default function AssumptionsPanel({
 
       <Separator />
 
-      <Collapsible open={exitOpen} onOpenChange={setExitOpen}>
+      <Collapsible open={exitOpen} onOpenChange={handleExitToggle}>
         <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-md px-2 transition-colors">
           {exitOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <LogOut className="h-4 w-4 text-emerald-600" />
