@@ -1,0 +1,480 @@
+# Value Creation Module — UX Redesign Implementation Prompt
+
+## Overview
+
+Redesign the Value Creation Modeller from a 7-section vertical scroll layout into a three-tier architecture: pinned executive cockpit, tabbed analysis views, and a contextual assumptions panel. The core interaction pattern is **"tweak left, see impact right, instantly"** — every input change should produce visible feedback without scrolling.
+
+---
+
+## Architecture: Three Tiers
+
+### Tier 1: Pinned Top Strip (Always Visible)
+
+**Current state:** Deal model selector + Bear/Base/Bull tabs + 4 KPI cards (Y5 Revenue, Y5 EBITDA, Total Cash Generated, Worst DSCR) + Entry/Debt badges + panel toggle.
+
+**Changes:**
+
+1. **Add an "Impact Summary" bar** directly below the existing KPI cards. This is the most important new element in the entire redesign. It shows the delta impact whenever any assumption changes:
+
+```
+EBITDA: £420K → £485K (+15.5%)  ·  IRR: 18.2% → 23.1%  ·  MOIC: 2.1x → 2.4x  ·  Cumulative FCF: +£62K
+```
+
+Implementation:
+- Add state to track `previousMetrics` (a snapshot of key values BEFORE the latest assumption change)
+- On each recalculation of `projections`, `returnMetrics`, etc., compare new values against `previousMetrics`
+- Show deltas with green ↑ / red ↓ colouring and percentage change
+- The bar should animate in when a change is detected and fade the deltas after ~5 seconds (keeping the current values visible permanently)
+- If `returnMetrics` is null (no equity / no funding), show EBITDA and FCF deltas only (these always work)
+
+Key metrics to show in the impact bar:
+- **Y5 EBITDA** (always available when projections exist)
+- **Cumulative FCF** (always available)  
+- **IRR** (when returnMetrics available)
+- **MOIC** (when returnMetrics available)
+- **Worst DSCR** (always available when projections exist)
+
+2. **Pull IRR, MOIC, Payback into the existing KPI strip** as additional cards. Currently these are buried in section 5 (ReturnsAnalysisSection). The top strip should expand to show up to 7 KPI cards in a responsive grid:
+   - Y5 Revenue, Y5 EBITDA, Total Cash Generated, Worst DSCR (existing)
+   - IRR, MOIC, Payback Period (new — from `returnMetrics`)
+   - When `returnMetrics` is null, only show the original 4
+
+3. **Add a horizontal tab bar** for switching between analysis views (replaces vertical scroll). Place this directly below the impact summary bar. Use a `Tabs` component with these tabs:
+   - 📊 Projections
+   - 💷 Cash & Debt
+   - 📈 Returns & Exit
+   - ⚠️ Risk
+
+The entire top section (deal selector row + KPI cards + impact bar + tab bar) should be wrapped in a sticky container that pins to the top on scroll so it's always visible.
+
+---
+
+### Tier 2: Tabbed Analysis Views (Replace Vertical Scroll)
+
+Replace the current vertical stack of 7 sections with 4 tabbed views. Only one tab's content renders at a time (reducing DOM weight by ~70%).
+
+#### Tab: Projections
+Contains:
+- `PLProjectionsSection` — as-is
+- `SynergiesDetailSection` — rendered below P&L when synergies exist (as currently)
+
+Rationale: Synergies feed directly into P&L projections. Users adjusting revenue/cost growth want to see the synergy overlay on the same view.
+
+#### Tab: Cash & Debt  
+Contains:
+- `CapitalDeploymentSection` — working capital & capex analysis
+- `CashFlowWaterfallSection` — cash flow waterfall + debt amortisation
+
+Rationale: All cash-related. Capital deployment (capex + working capital) directly feeds the FCF waterfall. Currently these are sections 3 and 4 in the vertical scroll and users always look at them together.
+
+#### Tab: Returns & Exit
+Contains:
+- `ReturnsAnalysisSection` — IRR/MOIC/Payback hero cards + value bridge chart
+- `ExitScenarioSection` — Bear/base/bull comparison with trajectory charts
+
+Rationale: Both answer the same question ("what do I get back?") from different angles. Currently separated by the Sensitivity section which breaks the logical flow. The value bridge chart (in Returns) and the exit scenario comparison (in Exit) are the two most important decision-support visuals and belong together.
+
+Conditional rendering: If `returnMetrics` is null AND `scenarioComparison` is null, show an empty state card explaining what's needed (equity funding line or active funding). Don't just show nothing.
+
+#### Tab: Risk
+Contains:
+- `SensitivityAnalysisSection` — tornado chart, heatmap, break-even analysis
+
+Rationale: Already internally tabbed and works as a standalone analytical view. The tornado and heatmap are typically used for investment committee presentations rather than day-to-day modelling, so isolating them in their own tab keeps the other views cleaner.
+
+Conditional rendering: If `sensitivityData` is null, show empty state explaining what's needed.
+
+**Important implementation note:** Remove the numbered badges (①②③ etc.) from all section headers. They imply a sequential workflow that doesn't exist. Users jump between sections based on what they're investigating, not in order.
+
+---
+
+### Tier 3: Contextual Assumptions Panel
+
+**Current state:** The `AssumptionsPanel` component renders in a collapsible left sidebar (320px) with 4 collapsible sections: Growth Assumptions, Debt & Financing (read-only), Synergies, Exit Assumptions. All sections are always present regardless of which analysis section the user is viewing.
+
+**Changes:**
+
+Make the assumptions panel **contextually aware** of which tab is active. This means surfacing the most relevant inputs for the current view, while keeping everything accessible.
+
+Implementation: Pass the active tab name as a prop to `AssumptionsPanel`:
+
+```typescript
+interface AssumptionsPanelProps {
+  // ... existing props
+  activeTab?: 'projections' | 'cash-debt' | 'returns-exit' | 'risk';
+}
+```
+
+Then change the **default open/closed state** of each collapsible section based on the active tab:
+
+| Collapsible Section | Projections tab | Cash & Debt tab | Returns & Exit tab | Risk tab |
+|---|---|---|---|---|
+| Growth Assumptions | **Open** | Closed | Closed | Closed |
+| Debt & Financing | Closed | **Open** | **Open** | Closed |
+| Synergies | **Open** | Closed | Closed | Closed |
+| Exit Assumptions | Closed | Closed | **Open** | **Open** |
+
+Use a `useEffect` that watches `activeTab` and updates the open states:
+
+```typescript
+useEffect(() => {
+  switch (activeTab) {
+    case 'projections':
+      setGrowthOpen(true);
+      setSynergiesOpen(true);
+      setDebtOpen(false);
+      setExitOpen(false);
+      break;
+    case 'cash-debt':
+      setGrowthOpen(false);
+      setSynergiesOpen(false);
+      setDebtOpen(true);
+      setExitOpen(false);
+      break;
+    case 'returns-exit':
+      setGrowthOpen(false);
+      setSynergiesOpen(false);
+      setDebtOpen(true);
+      setExitOpen(true);
+      break;
+    case 'risk':
+      setGrowthOpen(false);
+      setSynergiesOpen(false);
+      setDebtOpen(false);
+      setExitOpen(true);
+      break;
+  }
+}, [activeTab]);
+```
+
+**Important:** This only changes the DEFAULT state when switching tabs. Users can still manually open/close any section on any tab. Add a `userOverride` ref that tracks if the user has manually toggled a section — if they have, don't auto-collapse it on tab change.
+
+---
+
+## Component-Level Changes
+
+### `ValueCreationModeller.tsx` (Main orchestrator)
+
+This is the biggest change. The component currently renders all 7 sections in a vertical `<>...</>` fragment. Restructure to:
+
+```tsx
+// New state
+const [activeTab, setActiveTab] = useState<'projections' | 'cash-debt' | 'returns-exit' | 'risk'>('projections');
+const [previousMetrics, setPreviousMetrics] = useState<ImpactMetrics | null>(null);
+
+// Impact tracking - snapshot metrics before recalculation
+// Use a ref to store "last stable" metrics, update it with a slight delay
+// so the user sees the before → after transition
+
+return (
+  <div className="space-y-4">
+    {/* Row 1: Deal selector + scenario tabs + badges + panel toggle */}
+    {/* (keep as-is) */}
+
+    {/* Row 2: KPI cards - EXPANDED */}
+    {/* Add IRR, MOIC, Payback when returnMetrics available */}
+    
+    {/* Row 3: Impact Summary Bar (NEW) */}
+    <ImpactSummaryBar 
+      current={currentMetrics} 
+      previous={previousMetrics} 
+    />
+
+    {/* Row 4: Analysis Tab Selector (NEW) */}
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList>
+        <TabsTrigger value="projections">Projections</TabsTrigger>
+        <TabsTrigger value="cash-debt">Cash & Debt</TabsTrigger>
+        <TabsTrigger value="returns-exit">Returns & Exit</TabsTrigger>
+        <TabsTrigger value="risk">Risk</TabsTrigger>
+      </TabsList>
+    </Tabs>
+
+    {/* Main content area: sidebar + tabbed view */}
+    <div className="flex gap-4">
+      {/* Left: Assumptions Panel (contextual) */}
+      <AssumptionsPanel activeTab={activeTab} ... />
+      
+      {/* Right: Active tab content */}
+      <div className="flex-1 min-w-0 space-y-6">
+        {activeTab === 'projections' && (
+          <>
+            <PLProjectionsSection ... />
+            {synergyInputs.length > 0 && <SynergiesDetailSection ... />}
+          </>
+        )}
+        {activeTab === 'cash-debt' && (
+          <>
+            <CapitalDeploymentSection ... />
+            <CashFlowWaterfallSection ... />
+          </>
+        )}
+        {activeTab === 'returns-exit' && (
+          <>
+            {returnMetrics ? (
+              <ReturnsAnalysisSection ... />
+            ) : (
+              <EmptyState message="Add active funding lines in the Deal Modeller to unlock returns analysis." />
+            )}
+            {scenarioComparison ? (
+              <ExitScenarioSection ... />
+            ) : (
+              <EmptyState message="Configure scenarios to see exit modelling." />
+            )}
+          </>
+        )}
+        {activeTab === 'risk' && (
+          <>
+            {sensitivityData ? (
+              <SensitivityAnalysisSection ... />
+            ) : (
+              <EmptyState message="Add active funding lines in the Deal Modeller to unlock sensitivity analysis." />
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+);
+```
+
+### New Component: `ImpactSummaryBar.tsx`
+
+Create: `client/src/components/value-creation/ImpactSummaryBar.tsx`
+
+This component receives current and previous metric snapshots and displays deltas.
+
+```typescript
+interface ImpactMetrics {
+  y5Ebitda: number;
+  cumulativeFcf: number;
+  irr: number | null;       // null when returnMetrics unavailable
+  moic: number | null;
+  worstDscr: number;
+}
+
+interface ImpactSummaryBarProps {
+  current: ImpactMetrics | null;
+  previous: ImpactMetrics | null;
+}
+```
+
+Display logic:
+- If `previous` is null (first load), show current values only, no deltas
+- If `previous` exists and differs from `current`, show: `£420K → £485K (+15.5%)` format
+- Deltas should fade out after 5 seconds using a CSS transition (opacity 1 → 0.4), leaving the arrow and new value visible
+- Green for positive changes in EBITDA/FCF/IRR/MOIC, red for negative
+- For DSCR: green when moving AWAY from 1.0 (safer), red when moving TOWARD 1.0
+- Skip IRR/MOIC display entirely when null (don't show "N/A" in the impact bar — that's noise)
+
+Visual design:
+- Compact horizontal bar, not cards — think dashboard ticker
+- Use `bg-muted/30` background with subtle left border
+- Monospace font for numbers
+- Small enough to not compete with the KPI cards above it
+
+### `AssumptionsPanel.tsx` Changes
+
+1. Accept new `activeTab` prop
+2. Add contextual default open/close behaviour (see table above)
+3. Add `userOverride` tracking so manual toggles are respected:
+
+```typescript
+const userOverrideRef = useRef<Set<string>>(new Set());
+
+const handleToggle = (section: string, open: boolean, setter: (v: boolean) => void) => {
+  userOverrideRef.current.add(section);
+  setter(open);
+};
+
+useEffect(() => {
+  // Only auto-toggle sections the user hasn't manually touched
+  if (!userOverrideRef.current.has('growth')) setGrowthOpen(activeTab === 'projections');
+  if (!userOverrideRef.current.has('debt')) setDebtOpen(activeTab === 'cash-debt' || activeTab === 'returns-exit');
+  if (!userOverrideRef.current.has('synergies')) setSynergiesOpen(activeTab === 'projections');
+  if (!userOverrideRef.current.has('exit')) setExitOpen(activeTab === 'returns-exit' || activeTab === 'risk');
+  
+  // Reset overrides on tab change so contextual defaults apply next time
+  userOverrideRef.current.clear();
+}, [activeTab]);
+```
+
+4. No other changes to the panel's internal structure — the collapsibles, steppers, synergy cards, etc. all stay as-is.
+
+---
+
+## Section-Level Polish (Apply During Restructure)
+
+These are targeted improvements to individual sections. Apply them as you move sections into the tabbed layout.
+
+### PLProjectionsSection
+- **Remove growth badges from non-summary rows.** Currently every row shows (↑3.2%, ↓1.1%). Only show on: Revenue, Gross Profit, EBITDA, Net Profit. This reduces visual noise significantly.
+- Chart/table toggle and expandable rows: keep as-is, they work well.
+
+### SynergiesDetailSection
+- **No structural changes.** The conditional render `{synergyInputs.length > 0 && ...}` stays — it correctly hides when no synergies exist.
+- Consider: replace the 5-column realisation % input grid with a mini sparkline showing the realisation curve, with an "Edit" button that opens a focused editor. But this is a NICE-TO-HAVE, not required for this restructure.
+
+### CapitalDeploymentSection  
+- **No changes.** Works well as-is.
+
+### CashFlowWaterfallSection
+- **Visual fix:** If the stacked bar chart isn't rendering as a true waterfall (bars cascading where each starts where previous ended), fix this. A proper waterfall is significantly more intuitive for cash flow visualisation than side-by-side stacked bars.
+- The debt amortisation sub-section within this component: keep as summary view with link to Deal Modeller for facility-level breakdown.
+
+### ReturnsAnalysisSection
+- IRR/MOIC/Payback hero cards: **KEEP in this section** even though we're also pulling them into the top KPI strip. In the KPI strip they serve as an at-a-glance indicator. In this section they provide the detailed context (e.g. IRR with the value bridge chart explaining where the return comes from).
+- Value bridge chart: this is the most important visualisation in the module. Give it visual prominence — maybe slightly larger or with a subtle highlight border.
+- Handle zero-equity edge case per the separate prompt (∞ display, "no money down" badge).
+
+### SensitivityAnalysisSection
+- **No changes.** The internal tornado/heatmap/break-even tabs are well-structured and work perfectly as a standalone tab.
+
+### ExitScenarioSection
+- **Merge three trajectory charts** (EBITDA, Revenue, FCF area charts stacked vertically) into a single chart with a metric selector toggle (dropdown or pill buttons). Three full-height area charts is excessive and forces unnecessary scrolling even within this one section.
+- The three-card Bear/Base/Bull layout with mini P&L waterfalls: keep as-is, it's clean and effective.
+
+---
+
+## Empty State Components
+
+Create a simple reusable empty state component for tabs where data isn't available:
+
+```tsx
+// client/src/components/value-creation/EmptyState.tsx
+function ValueCreationEmptyState({ 
+  icon?: React.ReactNode,
+  title: string, 
+  message: string,
+  action?: { label: string, onClick: () => void }
+}) {
+  return (
+    <Card>
+      <CardContent className="py-10 text-center">
+        {icon || <Calculator className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+        <h3 className="font-semibold mb-1">{title}</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">{message}</p>
+        {action && (
+          <Button variant="outline" size="sm" className="mt-3" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+Use this in:
+- Returns & Exit tab when `returnMetrics` is null → "Add active funding lines in the Deal Modeller to see returns analysis and exit scenarios."
+- Risk tab when `sensitivityData` is null → same message
+- Projections tab when `baseYearData` is null → existing empty state (already handled)
+
+---
+
+## Impact Tracking Implementation Detail
+
+The impact summary bar needs to know what the metrics were BEFORE the latest change. Here's the approach:
+
+In `ValueCreationModeller.tsx`:
+
+```typescript
+const prevMetricsRef = useRef<ImpactMetrics | null>(null);
+const [displayPrevious, setDisplayPrevious] = useState<ImpactMetrics | null>(null);
+
+// Build current metrics from computed values
+const currentImpactMetrics = useMemo<ImpactMetrics | null>(() => {
+  if (!kpis) return null;
+  return {
+    y5Ebitda: kpis.y5Ebitda,
+    cumulativeFcf: kpis.totalCashGenerated,
+    irr: returnMetrics?.irr ?? null,
+    moic: returnMetrics?.moic ?? null,
+    worstDscr: kpis.worstDscr,
+  };
+}, [kpis, returnMetrics]);
+
+// When metrics change, snapshot the previous values for delta display
+useEffect(() => {
+  if (currentImpactMetrics && prevMetricsRef.current) {
+    // Only show deltas if values actually changed
+    const changed = JSON.stringify(currentImpactMetrics) !== JSON.stringify(prevMetricsRef.current);
+    if (changed) {
+      setDisplayPrevious(prevMetricsRef.current);
+      // Clear deltas after 5 seconds
+      const timer = setTimeout(() => setDisplayPrevious(null), 5000);
+      // Update ref to current
+      prevMetricsRef.current = { ...currentImpactMetrics };
+      return () => clearTimeout(timer);
+    }
+  }
+  // First load — just store, no deltas
+  if (currentImpactMetrics && !prevMetricsRef.current) {
+    prevMetricsRef.current = { ...currentImpactMetrics };
+  }
+}, [currentImpactMetrics]);
+```
+
+This means:
+1. First page load: metrics display without deltas
+2. User changes revenue growth from 5% to 8%: assumptions panel auto-saves (800ms debounce), projections recalculate, impact bar shows deltas for 5 seconds
+3. User makes another change: previous deltas replaced with new ones, timer resets
+
+---
+
+## Responsive Behaviour
+
+The existing mobile handling (Sheet component for assumptions panel on `lg:hidden`) should continue to work. The tab bar needs to be scrollable on mobile:
+
+```tsx
+<TabsList className="w-full justify-start overflow-x-auto">
+```
+
+On mobile, the tab content takes full width (no sidebar). The impact summary bar should stack metrics vertically on small screens or show only the 2-3 most important (EBITDA + IRR if available).
+
+---
+
+## What NOT to Change
+
+- **Calculation engine** (`@shared/calculators/value-creation.calc.ts`) — no changes except the zero-equity handling from the separate prompt
+- **API layer** — no new endpoints needed, all data already fetched
+- **Individual section internal logic** — charts, tables, toggles within each section stay as-is unless specifically noted above  
+- **Assumptions Panel internal controls** — steppers, synergy cards, debt read-only display all stay
+- **Bear/Base/Bull scenario tabs** — stay in the top strip as-is
+- **Deal model selector** — stays as-is
+
+---
+
+## File Changes Summary
+
+| File | Change Type | Description |
+|------|------------|-------------|
+| `ValueCreationModeller.tsx` | Major restructure | Add tabs, impact tracking, expanded KPIs, remove vertical scroll |
+| `AssumptionsPanel.tsx` | Moderate | Add `activeTab` prop, contextual open/close, user override tracking |
+| `ImpactSummaryBar.tsx` | **New file** | Delta display component |
+| `EmptyState.tsx` | **New file** | Reusable empty state for unavailable sections |
+| `PLProjectionsSection.tsx` | Minor | Remove growth badges from non-summary rows |
+| `ExitScenarioSection.tsx` | Moderate | Merge 3 trajectory charts into 1 with toggle |
+| `CashFlowWaterfallSection.tsx` | Minor | Fix waterfall chart if not true cascading waterfall |
+| `ReturnsAnalysisSection.tsx` | Minor | Visual prominence for value bridge chart |
+| `SynergiesDetailSection.tsx` | None | No changes |
+| `CapitalDeploymentSection.tsx` | None | No changes |
+| `SensitivityAnalysisSection.tsx` | None | No changes |
+
+---
+
+## Test Scenarios
+
+1. **Full deal (equity + debt + synergies + all assumptions):** All 4 tabs should render content. Impact bar should show all 5 metrics. Switching tabs should contextually adjust assumptions panel.
+
+2. **No equity (fully debt-funded):** Projections and Cash & Debt tabs work normally. Returns & Exit shows sections with ∞ handling. Risk tab works. Impact bar shows EBITDA, FCF, DSCR (skips IRR/MOIC or shows ∞).
+
+3. **No funding lines at all:** Projections and Cash & Debt tabs work (they don't need funding). Returns & Exit shows empty state. Risk shows empty state. Impact bar shows EBITDA, FCF, DSCR only.
+
+4. **No financial data (no base year):** All tabs show the existing "No Financial Data" empty state.
+
+5. **Assumption change flow:** User clicks revenue growth stepper from 5% → 8%. Within ~1 second (800ms save debounce + recalc), impact bar shows deltas. The active tab's charts/tables update. After 5 seconds, deltas fade.
+
+6. **Tab switching:** User is on Projections tab with Growth Assumptions open. Switches to Returns & Exit. Debt & Financing and Exit Assumptions should auto-open in the sidebar. Growth and Synergies should auto-close (unless user had manually opened them).
+
+7. **Mobile:** Assumptions panel accessible via Sheet (existing). Tabs horizontally scrollable. Impact bar stacks or truncates gracefully.
