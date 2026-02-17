@@ -1,0 +1,607 @@
+# Prompt 6: Sensitivity Analysis (Tornado Chart, Heatmap & Break-Even Thresholds)
+
+## CONTEXT
+
+We are building the Value Creation Modeller for an M&A CRM platform. Prompts 1–5 delivered:
+
+- **Schema**: `shared/schema/value-creation.ts` — 4 tables
+- **Calculator**: `shared/calculators/value-creation.calc.ts` — includes `calculateSensitivity()` returning a `SensitivityResult` object
+- **Service + Routes**: full CRUD at `/api/v2/value-creation/`
+- **Frontend Section 1**: `PLProjectionsSection.tsx` — P&L projections
+- **Frontend Section 4**: `CashFlowWaterfallSection.tsx` — cash flow waterfall & debt schedules
+- **Frontend Section 5**: `ReturnsAnalysisSection.tsx` — IRR, MOIC, payback & value creation bridge
+- **Orchestrator**: `client/src/components/target-company/ValueCreationModeller.tsx`
+
+The orchestrator already has these computed values available in `useMemo`:
+- `baseYearData` — `BaseYearData | null`
+- `activeAssumptions` — `YearAssumptions[]`
+- `synergyInputs` — `SynergyInput[]`
+- `fundingLineInputs` — `FundingLineForProjection[]`
+- `exitAssumptions` — `ExitAssumptionsType`
+- `entryEquity` — `number` (sum of non-debt active funding lines)
+- `entryMultiple` — `number` (`toNum(modelDetails?.ebitdaMultiple)`)
+- `totalDebt` — `number` (sum of active debt lines)
+- `totalFees` — `number` (computed from deal model fee fields)
+- `projections` — `ProjectedYear[]`
+
+The `calculateSensitivity` function is already exported from the calculator but **not yet imported** in the orchestrator. Its signature:
+
+```typescript
+function calculateSensitivity(
+  baseYear: BaseYearData,
+  assumptions: YearAssumptions[],
+  synergies: SynergyInput[],
+  fundingLines: FundingLineForProjection[],
+  exitAssumptions: ExitAssumptions,
+  entryEquity: number,
+  entryMultiple: number,
+  totalDebtAtEntry: number,
+  totalFees: number
+): SensitivityResult
+```
+
+It returns:
+
+```typescript
+interface SensitivityResult {
+  tornadoData: Array<{
+    variable: string;
+    baseValue: number;      // the base total return
+    lowValue: number;       // the low input value (e.g. revenue growth -5%)
+    highValue: number;      // the high input value
+    lowOutput: number;      // total return at low input
+    highOutput: number;     // total return at high input
+  }>;
+  heatmapData: {
+    rowVariable: string;    // "Revenue Growth %"
+    colVariable: string;    // "Exit Multiple"
+    rowValues: number[];    // [-5, -2.5, 0, 2.5, 5, 7.5, 10, 12.5, 15]
+    colValues: number[];    // [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0]
+    cells: number[][];      // 2D array of total return values
+    baseRowIndex: number;   // index of current base row
+    baseColIndex: number;   // index of current base column
+  };
+  breakEvenRevDeclineDSCR: number;      // max rev decline before DSCR < 1.0
+  breakEvenRevDeclineFCF: number;       // max rev decline before FCF goes negative
+  breakEvenInterestRateIncrease: number; // max rate increase before DSCR < 1.0
+}
+```
+
+There is currently **no placeholder for Section 6** in the orchestrator. Section 6 needs to be added after the `<ReturnsAnalysisSection>` component.
+
+---
+
+## WHAT TO BUILD
+
+One new component file plus orchestrator updates to compute sensitivity data and render the section.
+
+---
+
+## STEP 1: Update `client/src/components/target-company/ValueCreationModeller.tsx`
+
+### 1a. Add import for `calculateSensitivity`
+
+In the existing import block from `@shared/calculators/value-creation.calc`, add `calculateSensitivity` to the list:
+
+```tsx
+import {
+  calculateProjections,
+  calculateDebtSchedules,
+  calculateWaterfall,
+  calculateReturns,
+  calculateSensitivity,  // ADD THIS
+  type BaseYearData,
+  type YearAssumptions,
+  type SynergyInput,
+  type FundingLineForProjection,
+  type ExitAssumptions as ExitAssumptionsType,
+  type ScenarioMultipliers,
+  type ProjectedYear,
+} from '@shared/calculators/value-creation.calc';
+```
+
+### 1b. Add import for new component
+
+With the other value-creation component imports:
+
+```tsx
+import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
+```
+
+### 1c. Add new useMemo block for sensitivity data
+
+Add this **after** the `returnMetrics` useMemo block:
+
+```tsx
+const sensitivityData = useMemo(() => {
+  if (!baseYearData || activeAssumptions.length === 0 || entryEquity <= 0) return null;
+  return calculateSensitivity(
+    baseYearData,
+    activeAssumptions,
+    synergyInputs,
+    fundingLineInputs,
+    exitAssumptions,
+    entryEquity,
+    entryMultiple,
+    totalDebt,
+    totalFees
+  );
+}, [baseYearData, activeAssumptions, synergyInputs, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
+```
+
+### 1d. Add the section after ReturnsAnalysisSection
+
+In the JSX, immediately after the `{returnMetrics && (<ReturnsAnalysisSection ... />)}` block, add:
+
+```tsx
+{sensitivityData && (
+  <SensitivityAnalysisSection
+    data={sensitivityData}
+    baseAssumptions={activeAssumptions}
+    exitAssumptions={exitAssumptions}
+  />
+)}
+```
+
+---
+
+## STEP 2: Create `client/src/components/value-creation/SensitivityAnalysisSection.tsx`
+
+### Props Interface
+
+```tsx
+import type { SensitivityResult } from '@shared/calculators/value-creation.calc';
+
+// Re-define the ExitAssumptions shape locally to avoid naming conflicts
+interface ExitAssumptions {
+  exitMultiple: number;
+  holdPeriodYears: number;
+  exitCostPercent: number;
+}
+
+interface YearAssumption {
+  year: number;
+  revenueGrowthPercent: number;
+  [key: string]: any;
+}
+
+interface SensitivityAnalysisSectionProps {
+  data: SensitivityResult;
+  baseAssumptions: YearAssumption[];
+  exitAssumptions: ExitAssumptions;
+}
+```
+
+### Imports Required
+
+```tsx
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from '@/components/ui/chart';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Cell,
+  ReferenceLine,
+  LabelList,
+} from 'recharts';
+import { formatCurrency } from '@/lib/format-utils';
+import type { SensitivityResult } from '@shared/calculators/value-creation.calc';
+import {
+  Activity,
+  BarChart3,
+  Grid3x3,
+  ShieldAlert,
+  Info,
+  TrendingDown,
+  AlertTriangle,
+  Percent,
+} from 'lucide-react';
+```
+
+### Internal State
+
+```tsx
+const [activeTab, setActiveTab] = useState<string>('tornado');
+```
+
+### Render Structure
+
+The component renders a single `<Card>` containing three sub-views accessible via internal tabs.
+
+**A) Header row:**
+- Left: amber/orange circle with "6", title "Sensitivity Analysis"
+- Right: nothing extra needed (tabs handle view switching)
+
+**B) Internal tabs** — use `<Tabs>` with `<TabsList>` containing three triggers:
+
+```tsx
+<Tabs value={activeTab} onValueChange={setActiveTab}>
+  <TabsList className="h-9">
+    <TabsTrigger value="tornado" className="text-xs px-3 gap-1.5">
+      <BarChart3 className="h-3.5 w-3.5" />
+      Tornado
+    </TabsTrigger>
+    <TabsTrigger value="heatmap" className="text-xs px-3 gap-1.5">
+      <Grid3x3 className="h-3.5 w-3.5" />
+      Heatmap
+    </TabsTrigger>
+    <TabsTrigger value="breakeven" className="text-xs px-3 gap-1.5">
+      <ShieldAlert className="h-3.5 w-3.5" />
+      Break-Even
+    </TabsTrigger>
+  </TabsList>
+```
+
+---
+
+### Tab 1: Tornado Chart (`<TabsContent value="tornado">`)
+
+The tornado chart is a **horizontal bar chart** showing which variables have the most impact on total return.
+
+**Data preparation (useMemo):**
+
+The `data.tornadoData` array is already sorted by impact (widest range first). Transform it for the chart:
+
+```tsx
+const tornadoChartData = useMemo(() => {
+  return data.tornadoData.map(t => ({
+    variable: t.variable,
+    lowSpread: t.lowOutput - t.baseValue,  // negative number (worse outcome)
+    highSpread: t.highOutput - t.baseValue, // positive number (better outcome)
+    lowOutput: t.lowOutput,
+    highOutput: t.highOutput,
+    baseValue: t.baseValue,
+    lowInput: t.lowValue,
+    highInput: t.highValue,
+  }));
+}, [data.tornadoData]);
+```
+
+**Rendering:**
+
+Use a **horizontal** `BarChart` (`layout="vertical"`) with two bars per variable:
+- One bar extending left (negative spread — the downside)
+- One bar extending right (positive spread — the upside)
+
+```tsx
+<BarChart
+  layout="vertical"
+  data={tornadoChartData}
+  margin={{ top: 10, right: 40, left: 20, bottom: 5 }}
+  stackOffset="sign"
+>
+  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
+  <XAxis
+    type="number"
+    tick={{ fontSize: 11 }}
+    tickLine={false}
+    axisLine={false}
+    tickFormatter={(v: number) => {
+      if (Math.abs(v) >= 1000000) return `£${(v / 1000000).toFixed(1)}M`;
+      if (Math.abs(v) >= 1000) return `£${(v / 1000).toFixed(0)}K`;
+      return `£${v}`;
+    }}
+  />
+  <YAxis
+    type="category"
+    dataKey="variable"
+    tick={{ fontSize: 12 }}
+    tickLine={false}
+    axisLine={false}
+    width={120}
+  />
+  <ReferenceLine x={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} />
+  <ChartTooltip
+    content={({ active, payload }) => {
+      if (!active || !payload?.length) return null;
+      const d = payload[0]?.payload;
+      if (!d) return null;
+      return (
+        <div className="rounded-lg border bg-background px-3 py-2 shadow-xl text-xs">
+          <p className="font-medium mb-1">{d.variable}</p>
+          <div className="space-y-0.5">
+            <p>
+              <span className="text-red-600">Low ({d.lowInput.toFixed(1)}):</span>{' '}
+              <span className="font-mono">{formatCurrency(d.lowOutput)}</span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Base:</span>{' '}
+              <span className="font-mono">{formatCurrency(d.baseValue)}</span>
+            </p>
+            <p>
+              <span className="text-green-600">High ({d.highInput.toFixed(1)}):</span>{' '}
+              <span className="font-mono">{formatCurrency(d.highOutput)}</span>
+            </p>
+          </div>
+        </div>
+      );
+    }}
+  />
+  <Bar dataKey="lowSpread" stackId="tornado" fill="hsl(0, 72%, 60%)" radius={[4, 0, 0, 4]} barSize={24} />
+  <Bar dataKey="highSpread" stackId="tornado" fill="hsl(142, 71%, 50%)" radius={[0, 4, 4, 0]} barSize={24} />
+</BarChart>
+```
+
+Chart height: `h-[280px]`.
+
+Below the chart, add a small legend:
+```tsx
+<div className="flex items-center justify-center gap-6 mt-2 text-xs text-muted-foreground">
+  <span className="flex items-center gap-1.5">
+    <span className="h-2.5 w-2.5 rounded-sm bg-red-500" />
+    Downside (vs base)
+  </span>
+  <span className="flex items-center gap-1.5">
+    <span className="h-2.5 w-2.5 rounded-sm bg-green-500" />
+    Upside (vs base)
+  </span>
+</div>
+```
+
+---
+
+### Tab 2: Two-Variable Heatmap (`<TabsContent value="heatmap">`)
+
+This is a coloured data table (NOT a recharts chart). Render it as an HTML table.
+
+**Data**: `data.heatmapData` provides `rowValues` (Revenue Growth %), `colValues` (Exit Multiple), and `cells` (2D array of total return values).
+
+**Colour scale**: Compute min and max across all cells, then assign a gradient:
+
+```tsx
+const heatmapRange = useMemo(() => {
+  const allVals = data.heatmapData.cells.flat();
+  return { min: Math.min(...allVals), max: Math.max(...allVals) };
+}, [data.heatmapData]);
+
+function getCellColor(value: number): string {
+  const { min, max } = heatmapRange;
+  if (max === min) return 'hsl(210, 20%, 95%)';
+  const ratio = (value - min) / (max - min);
+  // Red (0) → Yellow (0.5) → Green (1.0)
+  if (ratio <= 0.5) {
+    const t = ratio / 0.5;
+    const h = 0 + t * 45; // hue 0 (red) to 45 (yellow)
+    return `hsl(${h}, 75%, ${85 - t * 10}%)`;
+  } else {
+    const t = (ratio - 0.5) / 0.5;
+    const h = 45 + t * 97; // hue 45 (yellow) to 142 (green)
+    return `hsl(${h}, 75%, ${75 - t * 10}%)`;
+  }
+}
+```
+
+**Rendering:**
+
+```tsx
+<div className="overflow-x-auto">
+  <table className="w-full text-xs border-collapse">
+    <thead>
+      <tr>
+        <th className="p-2 text-left font-medium text-muted-foreground border-b">
+          {data.heatmapData.rowVariable} ↓ / {data.heatmapData.colVariable} →
+        </th>
+        {data.heatmapData.colValues.map((col, ci) => (
+          <th
+            key={ci}
+            className={`p-2 text-center font-medium border-b min-w-[80px] ${
+              ci === data.heatmapData.baseColIndex
+                ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                : 'text-muted-foreground'
+            }`}
+          >
+            {col.toFixed(1)}x
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {data.heatmapData.rowValues.map((row, ri) => (
+        <tr key={ri}>
+          <td
+            className={`p-2 font-medium border-b ${
+              ri === data.heatmapData.baseRowIndex
+                ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                : 'text-muted-foreground'
+            }`}
+          >
+            {row.toFixed(1)}%
+          </td>
+          {data.heatmapData.colValues.map((_, ci) => {
+            const cellValue = data.heatmapData.cells[ri][ci];
+            const isBase = ri === data.heatmapData.baseRowIndex && ci === data.heatmapData.baseColIndex;
+            return (
+              <td
+                key={ci}
+                className={`p-2 text-center font-mono border-b transition-colors ${
+                  isBase ? 'ring-2 ring-blue-500 ring-inset font-bold' : ''
+                }`}
+                style={{ backgroundColor: getCellColor(cellValue) }}
+              >
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-default text-gray-800 dark:text-gray-900">
+                        {Math.abs(cellValue) >= 1000000
+                          ? `£${(cellValue / 1000000).toFixed(1)}M`
+                          : `£${(cellValue / 1000).toFixed(0)}K`}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        Rev Growth: {row.toFixed(1)}% / Exit Multiple: {data.heatmapData.colValues[ci].toFixed(1)}x
+                      </p>
+                      <p className="text-xs font-mono font-bold">{formatCurrency(cellValue)}</p>
+                      {isBase && <p className="text-[10px] text-blue-600">Current base case</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+```
+
+Below the heatmap, add context:
+```tsx
+<div className="flex items-center gap-4 mt-3">
+  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+    <span className="h-3 w-6 rounded-sm" style={{ backgroundColor: getCellColor(heatmapRange.min) }} />
+    {formatCurrency(heatmapRange.min)}
+  </div>
+  <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-red-400 via-yellow-400 to-green-500" />
+  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+    <span className="h-3 w-6 rounded-sm" style={{ backgroundColor: getCellColor(heatmapRange.max) }} />
+    {formatCurrency(heatmapRange.max)}
+  </div>
+</div>
+<p className="text-[11px] text-muted-foreground mt-1">
+  Cell with <span className="text-blue-600 font-medium">blue border</span> = current base case assumptions.
+  Values show total return (exit equity + cumulative distributions).
+</p>
+```
+
+---
+
+### Tab 3: Break-Even Thresholds (`<TabsContent value="breakeven">`)
+
+Three metric cards in a `grid grid-cols-1 sm:grid-cols-3 gap-4` layout.
+
+**Card 1: Revenue Decline to DSCR < 1.0**
+- Icon: `TrendingDown` (h-6 w-6)
+- Icon colour: based on severity — if value >= 15 green, >= 10 blue, >= 5 amber, < 5 red
+- Title: "Revenue Decline to Breach DSCR" (text-xs text-muted-foreground)
+- Value: `data.breakEvenRevDeclineDSCR.toFixed(1)%` decline (text-xl font-bold)
+- Interpretation text (text-[11px] text-muted-foreground): "Revenue can fall {value}% before annual debt service coverage drops below 1.0x"
+- Card styling: `rounded-lg border p-5`, with a coloured left border matching severity
+
+**Card 2: Revenue Decline to Negative FCF**
+- Icon: `AlertTriangle` (h-6 w-6)
+- Same severity colouring
+- Title: "Revenue Decline to Negative FCF"
+- Value: `data.breakEvenRevDeclineFCF.toFixed(1)%` decline
+- Interpretation: "Revenue can fall {value}% before free cash flow turns negative in any year"
+
+**Card 3: Interest Rate Headroom**
+- Icon: `Percent` (h-6 w-6)
+- Severity: if value >= 5 green, >= 3 blue, >= 1.5 amber, < 1.5 red
+- Title: "Interest Rate Headroom"
+- Value: `+{data.breakEvenInterestRateIncrease.toFixed(1)}%` (text-xl font-bold)
+- Interpretation: "Interest rates can increase {value} percentage points before DSCR drops below 1.0x"
+
+Below the three cards, add a summary assessment:
+
+```tsx
+<div className="mt-4 rounded-lg border p-4 bg-muted/20">
+  <div className="flex items-start gap-3">
+    <ShieldAlert className={`h-5 w-5 mt-0.5 shrink-0 ${overallRiskColor}`} />
+    <div>
+      <p className="text-sm font-semibold">{overallRiskLabel}</p>
+      <p className="text-xs text-muted-foreground mt-0.5">{overallRiskDescription}</p>
+    </div>
+  </div>
+</div>
+```
+
+Compute `overallRiskColor`, `overallRiskLabel`, and `overallRiskDescription` based on the weakest break-even metric:
+
+```tsx
+const overallRisk = useMemo(() => {
+  const worstRevDecline = Math.min(data.breakEvenRevDeclineDSCR, data.breakEvenRevDeclineFCF);
+  const rateHeadroom = data.breakEvenInterestRateIncrease;
+
+  if (worstRevDecline >= 15 && rateHeadroom >= 5) {
+    return {
+      color: 'text-green-600',
+      label: 'Strong Downside Protection',
+      description: 'The deal structure provides substantial margin of safety across revenue decline and interest rate scenarios.',
+    };
+  } else if (worstRevDecline >= 10 && rateHeadroom >= 3) {
+    return {
+      color: 'text-blue-600',
+      label: 'Adequate Downside Protection',
+      description: 'Reasonable headroom exists but a significant downturn could pressure debt covenants.',
+    };
+  } else if (worstRevDecline >= 5 && rateHeadroom >= 1.5) {
+    return {
+      color: 'text-amber-600',
+      label: 'Limited Downside Protection',
+      description: 'Thin margins of safety. A moderate revenue decline or rate increase could breach covenants.',
+    };
+  } else {
+    return {
+      color: 'text-red-600',
+      label: 'Weak Downside Protection',
+      description: 'Very limited headroom. Even a small revenue decline or rate increase could cause distress. Consider reducing leverage.',
+    };
+  }
+}, [data]);
+```
+
+---
+
+### D) Info footer — below all TabsContent blocks but still inside the Card:
+
+```tsx
+<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-4">
+  <Info className="h-3 w-3 shrink-0" />
+  Tornado chart varies each assumption ±independently. Heatmap shows total return across revenue growth and exit multiple combinations.
+  Break-even thresholds use iterative search to find failure points.
+</div>
+```
+
+### Full export
+
+```tsx
+export default function SensitivityAnalysisSection({ data, baseAssumptions, exitAssumptions }: SensitivityAnalysisSectionProps) {
+```
+
+---
+
+## DO NOT
+
+- Modify any calculator files (`value-creation.calc.ts` or `deal-model.calc.ts`)
+- Modify the schema or database
+- Modify any backend services or routes
+- Modify `AssumptionsPanel.tsx`, `PLProjectionsSection.tsx`, `CashFlowWaterfallSection.tsx`, or `ReturnsAnalysisSection.tsx`
+- Add any new API endpoints
+- Change how `calculateSensitivity` works — use it as-is
+
+---
+
+## CONFIRMATION CHECKLIST
+
+After implementation, verify:
+
+1. `SensitivityAnalysisSection.tsx` exists at `client/src/components/value-creation/SensitivityAnalysisSection.tsx`
+2. `calculateSensitivity` is imported in `ValueCreationModeller.tsx`
+3. `sensitivityData` useMemo block exists and calls `calculateSensitivity()` with all 9 arguments
+4. The section renders after `ReturnsAnalysisSection` in the JSX
+5. The section conditionally renders only when `sensitivityData` is not null
+6. **Tornado tab**: horizontal bars render with red (downside) left and green (upside) right, sorted by impact width (widest at top)
+7. **Tornado tab**: a vertical reference line at x=0 separates downside from upside
+8. **Tornado tab**: tooltip shows low/base/high values for each variable
+9. **Heatmap tab**: coloured grid renders with Revenue Growth % as rows and Exit Multiple as columns
+10. **Heatmap tab**: the base case cell has a blue ring/border distinguishing it
+11. **Heatmap tab**: cell colours range from red (low return) through yellow to green (high return)
+12. **Heatmap tab**: hovering a cell shows a tooltip with the exact inputs and total return value
+13. **Break-even tab**: three cards show revenue decline to DSCR breach, revenue decline to negative FCF, and interest rate headroom
+14. **Break-even tab**: cards are colour-coded by severity
+15. **Break-even tab**: an overall risk assessment summary renders below the cards
+16. No TypeScript compilation errors
+17. No console errors when switching between tabs

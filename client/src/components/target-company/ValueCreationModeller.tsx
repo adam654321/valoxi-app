@@ -18,6 +18,7 @@ import {
   calculateDebtSchedules,
   calculateWaterfall,
   calculateReturns,
+  calculateSensitivity,
   type BaseYearData,
   type YearAssumptions,
   type SynergyInput,
@@ -38,6 +39,7 @@ import AssumptionsPanel from '@/components/value-creation/AssumptionsPanel';
 import PLProjectionsSection from '@/components/value-creation/PLProjectionsSection';
 import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
 import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisSection';
+import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
 import {
   LineChart,
   Calculator,
@@ -280,6 +282,21 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     );
   }, [projections, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs]);
 
+  const sensitivityData = useMemo(() => {
+    if (!baseYearData || activeAssumptions.length === 0 || entryEquity <= 0) return null;
+    return calculateSensitivity(
+      baseYearData,
+      activeAssumptions,
+      synergyInputs,
+      fundingLineInputs,
+      exitAssumptions,
+      entryEquity,
+      entryMultiple,
+      totalDebt,
+      totalFees
+    );
+  }, [baseYearData, activeAssumptions, synergyInputs, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
+
   if (modelsLoading) {
     return (
       <div className="space-y-4">
@@ -506,6 +523,14 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                     projections={projections}
                     exitAssumptions={exitAssumptions}
                     entryMultiple={entryMultiple}
+                  />
+                )}
+
+                {sensitivityData && (
+                  <SensitivityAnalysisSection
+                    data={sensitivityData}
+                    baseAssumptions={activeAssumptions}
+                    exitAssumptions={exitAssumptions}
                   />
                 )}
               </>
