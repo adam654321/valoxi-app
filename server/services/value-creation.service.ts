@@ -18,30 +18,42 @@ class ValueCreationService {
       return this.getFullData(dealModelId);
     }
 
+    const baseDefaults = {
+      revenueGrowthPercent: 5.0,
+      costOfSalesGrowthPercent: 3.0,
+      adminCostGrowthPercent: 2.0,
+      staffCostGrowthPercent: 3.0,
+      depreciationGrowthPercent: 0,
+      capexPerYear: 0,
+      workingCapitalPercent: 0,
+      taxRatePercent: 25.0,
+    };
+
     const scenarioDefaults = [
-      { scenarioType: 'bear', name: 'Bear Case', revenueGrowthMultiplier: '0.6', costPressureAdjustment: '1.5' },
-      { scenarioType: 'base', name: 'Base Case', revenueGrowthMultiplier: '1.0', costPressureAdjustment: '0' },
-      { scenarioType: 'bull', name: 'Bull Case', revenueGrowthMultiplier: '1.4', costPressureAdjustment: '-0.5' },
+      { scenarioType: 'bear', name: 'Bear Case', revenueGrowthMultiplier: '0.6', costPressureAdjustment: '1.5', factor: 0.9 },
+      { scenarioType: 'base', name: 'Base Case', revenueGrowthMultiplier: '1.0', costPressureAdjustment: '0', factor: 1.0 },
+      { scenarioType: 'bull', name: 'Bull Case', revenueGrowthMultiplier: '1.4', costPressureAdjustment: '-0.5', factor: 1.1 },
     ];
 
     for (const scenDef of scenarioDefaults) {
+      const { factor, ...scenFields } = scenDef;
       const [scenario] = await db.insert(valueCreationScenarios).values({
         dealModelId,
-        ...scenDef,
+        ...scenFields,
       }).returning();
 
       for (let year = 1; year <= 5; year++) {
         await db.insert(valueCreationAssumptions).values({
           scenarioId: scenario.id,
           year,
-          revenueGrowthPercent: '5.0',
-          costOfSalesGrowthPercent: '3.0',
-          adminCostGrowthPercent: '2.0',
-          staffCostGrowthPercent: '3.0',
-          depreciationGrowthPercent: '0',
-          capexPerYear: '0',
-          workingCapitalPercent: '0',
-          taxRatePercent: '25.0',
+          revenueGrowthPercent: String(parseFloat((baseDefaults.revenueGrowthPercent * factor).toFixed(2))),
+          costOfSalesGrowthPercent: String(parseFloat((baseDefaults.costOfSalesGrowthPercent * factor).toFixed(2))),
+          adminCostGrowthPercent: String(parseFloat((baseDefaults.adminCostGrowthPercent * factor).toFixed(2))),
+          staffCostGrowthPercent: String(parseFloat((baseDefaults.staffCostGrowthPercent * factor).toFixed(2))),
+          depreciationGrowthPercent: String(baseDefaults.depreciationGrowthPercent),
+          capexPerYear: String(baseDefaults.capexPerYear),
+          workingCapitalPercent: String(baseDefaults.workingCapitalPercent),
+          taxRatePercent: String(baseDefaults.taxRatePercent),
         });
       }
     }
