@@ -54,6 +54,10 @@ interface AssumptionsPanelProps {
   fundingLines: DealModelFundingLine[];
   baseYearData: BaseYearData | null;
   onDataChange: () => void;
+  scenarioMode: 'linked' | 'custom';
+  rangePercent: number;
+  onModeChange: (mode: 'linked' | 'custom') => void;
+  onRangeChange: (range: number) => void;
 }
 
 function NumericStepper({
@@ -287,6 +291,10 @@ export default function AssumptionsPanel({
   fundingLines,
   baseYearData,
   onDataChange,
+  scenarioMode,
+  rangePercent,
+  onModeChange,
+  onRangeChange,
 }: AssumptionsPanelProps) {
   const { toast } = useToast();
   const [perYearMode, setPerYearMode] = useState(false);
@@ -549,6 +557,100 @@ export default function AssumptionsPanel({
       <Badge variant="secondary" className="text-xs">
         {scenario.name} {scenario.scenarioType === 'bear' ? '\uD83D\uDC3B' : scenario.scenarioType === 'bull' ? '\uD83D\uDC02' : '\uD83D\uDCCA'}
       </Badge>
+
+      <div className="space-y-2 rounded-lg border p-2.5 bg-muted/10">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium">Scenario Mode</span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant={scenarioMode === 'linked' ? 'default' : 'outline'}
+              size="sm"
+              className="h-6 text-[10px] px-2"
+              onClick={() => onModeChange('linked')}
+            >
+              Linked
+            </Button>
+            <Button
+              variant={scenarioMode === 'custom' ? 'default' : 'outline'}
+              size="sm"
+              className="h-6 text-[10px] px-2"
+              onClick={() => onModeChange('custom')}
+            >
+              Custom
+            </Button>
+          </div>
+        </div>
+
+        {scenarioMode === 'linked' && (
+          <>
+            <div className="space-y-1.5">
+              <span className="text-[11px] text-muted-foreground">Range</span>
+              <div className="flex gap-1">
+                {[5, 10, 15, 20, 30].map(r => (
+                  <Button
+                    key={r}
+                    variant={rangePercent === r ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-6 text-[10px] px-2 flex-1"
+                    onClick={() => onRangeChange(r)}
+                  >
+                    {r}%
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Derived from base</p>
+              <div className="grid grid-cols-3 gap-1.5 text-center">
+                {(['bear', 'base', 'bull'] as const).map(s => {
+                  const baseRevGrowth = simpleVal('revenueGrowthPercent');
+                  const baseCosGrowth = simpleVal('costOfSalesGrowthPercent');
+                  const exitMult = localExit?.exitMultiple ?? 4;
+                  const r2 = rangePercent / 100;
+                  const exitDelta = (rangePercent / 10) * 0.5;
+
+                  const revGrowth = s === 'bear' ? baseRevGrowth * (1 - r2)
+                    : s === 'bull' ? baseRevGrowth * (1 + r2) : baseRevGrowth;
+                  const cosGrowth = s === 'bear' ? baseCosGrowth + (baseCosGrowth * r2 * 0.5)
+                    : s === 'bull' ? baseCosGrowth - (baseCosGrowth * r2 * 0.5) : baseCosGrowth;
+                  const exitM = s === 'bear' ? Math.max(1, exitMult - exitDelta)
+                    : s === 'bull' ? exitMult + exitDelta : exitMult;
+
+                  const borderColor = s === 'bear' ? 'border-red-300' : s === 'bull' ? 'border-green-300' : 'border-blue-300';
+                  const textColor = s === 'bear' ? 'text-red-600' : s === 'bull' ? 'text-green-600' : 'text-blue-600';
+
+                  return (
+                    <div key={s} className={`rounded border ${borderColor} p-1.5 space-y-0.5`}>
+                      <p className={`text-[9px] font-semibold ${textColor} uppercase`}>{s}</p>
+                      <div className="text-[10px] space-y-0.5">
+                        <div>
+                          <span className="text-muted-foreground">Rev</span>{' '}
+                          <span className="font-mono">{revGrowth.toFixed(1)}%</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">CoS</span>{' '}
+                          <span className="font-mono">{cosGrowth.toFixed(1)}%</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Exit</span>{' '}
+                          <span className="font-mono">{exitM.toFixed(1)}x</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {scenarioMode === 'custom' && (
+          <p className="text-[10px] text-muted-foreground italic">
+            Each scenario has independent assumptions. Switch Bear/Base/Bull tabs above to edit.
+          </p>
+        )}
+      </div>
 
       <Collapsible open={growthOpen} onOpenChange={handleGrowthToggle}>
         <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-md px-2 transition-colors">

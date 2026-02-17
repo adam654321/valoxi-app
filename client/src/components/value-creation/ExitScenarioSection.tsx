@@ -52,6 +52,7 @@ interface ExitScenarioSectionProps {
   entryMultiple: number;
   entryEquity: number;
   baseYearData: BaseYearData;
+  derivedExitMultiples?: { bear: number; base: number; bull: number } | null;
 }
 
 const trajectoryConfig: ChartConfig = {
@@ -115,6 +116,7 @@ export default function ExitScenarioSection({
   entryMultiple,
   entryEquity,
   baseYearData,
+  derivedExitMultiples,
 }: ExitScenarioSectionProps) {
   const [activeTab, setActiveTab] = useState<string>('comparison');
   const [trajectoryMetric, setTrajectoryMetric] = useState<'ebitda' | 'revenue' | 'fcf'>('ebitda');
@@ -143,15 +145,16 @@ export default function ExitScenarioSection({
   const exitValuations = useMemo(() => {
     const holdYears = Math.min(exitAssumptions.holdPeriodYears, 5);
 
-    const calc = (projections: ProjectedYear[], ret: ReturnMetrics) => {
+    const calc = (projections: ProjectedYear[], ret: ReturnMetrics, scenarioExitMultiple: number) => {
       const exitYear = projections[holdYears - 1];
       if (!exitYear) return null;
-      const exitEV = exitYear.ebitda * exitAssumptions.exitMultiple;
+      const exitEV = exitYear.ebitda * scenarioExitMultiple;
       const exitCosts = exitEV * exitAssumptions.exitCostPercent / 100;
       return {
         exitYearEbitda: exitYear.ebitda,
         exitEV,
         exitCosts,
+        exitMultiple: scenarioExitMultiple,
         remainingDebt: exitEV - ret.exitEquity - exitCosts,
         exitEquity: ret.exitEquity,
         y5Revenue: exitYear.revenue,
@@ -159,12 +162,16 @@ export default function ExitScenarioSection({
       };
     };
 
+    const bearMult = derivedExitMultiples?.bear ?? exitAssumptions.exitMultiple;
+    const baseMult = derivedExitMultiples?.base ?? exitAssumptions.exitMultiple;
+    const bullMult = derivedExitMultiples?.bull ?? exitAssumptions.exitMultiple;
+
     return {
-      bear: calc(scenarios.bear, returns.bear),
-      base: calc(scenarios.base, returns.base),
-      bull: calc(scenarios.bull, returns.bull),
+      bear: calc(scenarios.bear, returns.bear, bearMult),
+      base: calc(scenarios.base, returns.base, baseMult),
+      bull: calc(scenarios.bull, returns.bull, bullMult),
     };
-  }, [scenarios, returns, exitAssumptions]);
+  }, [scenarios, returns, exitAssumptions, derivedExitMultiples]);
 
   const holdYears = Math.min(exitAssumptions.holdPeriodYears, 5);
 
@@ -248,6 +255,12 @@ export default function ExitScenarioSection({
                   </TableRow>
                   {exitValuations.bear && exitValuations.base && exitValuations.bull && (
                     <>
+                      <TableRow>
+                        <TableCell className="text-sm">Exit Multiple</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums text-sm">{exitValuations.bear.exitMultiple.toFixed(1)}x</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums text-sm bg-blue-50/50 dark:bg-blue-950/20">{exitValuations.base.exitMultiple.toFixed(1)}x</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums text-sm">{exitValuations.bull.exitMultiple.toFixed(1)}x</TableCell>
+                      </TableRow>
                       <TableRow>
                         <TableCell className="text-sm">Exit EBITDA</TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-sm">{formatCurrency(exitValuations.bear.exitYearEbitda)}</TableCell>

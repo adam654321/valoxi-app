@@ -20,6 +20,7 @@ import {
   calculateReturns,
   calculateSensitivity,
   calculateScenarios,
+  calculateLinkedScenarios,
   type BaseYearData,
   type YearAssumptions,
   type SynergyInput,
@@ -28,6 +29,7 @@ import {
   type ScenarioMultipliers,
   type ProjectedYear,
   type ReturnMetrics,
+  type LinkedScenarioResult,
 } from '@shared/calculators/value-creation.calc';
 import type {
   DealModel,
@@ -90,6 +92,39 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const prevMetricsRef = useRef<ImpactMetrics | null>(null);
   const [displayPrevious, setDisplayPrevious] = useState<ImpactMetrics | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scenarioMode = useMemo<'linked' | 'custom'>(() => {
+    if (!vcData?.scenarios?.length) return 'linked';
+    return (vcData.scenarios[0].scenarioMode as 'linked' | 'custom') || 'custom';
+  }, [vcData]);
+
+  const rangePercent = useMemo<number>(() => {
+    if (!vcData?.scenarios?.length) return 10;
+    return toNum(vcData.scenarios[0].rangePercent) || 10;
+  }, [vcData]);
+
+  const updateModeMutation = useMutation({
+    mutationFn: async (data: { scenarioMode?: string; rangePercent?: string }) => {
+      await apiRequest('PUT', `/api/v2/value-creation/scenarios/deal-model/${selectedModelId}`, data);
+    },
+    onSuccess: () => {
+      handleDataChange();
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update mode', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const handleModeChange = useCallback((mode: 'linked' | 'custom') => {
+    updateModeMutation.mutate({ scenarioMode: mode });
+    if (mode === 'linked') {
+      setActiveScenarioType('base');
+    }
+  }, [updateModeMutation]);
+
+  const handleRangeChange = useCallback((range: number) => {
+    updateModeMutation.mutate({ rangePercent: String(range) });
+  }, [updateModeMutation]);
 
   const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
     queryKey: ['/api/v2/deal-models/company', companyId],
@@ -368,6 +403,27 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
 
     if (baseAssumptions.length === 0) return null;
 
+    if (scenarioMode === 'linked') {
+      const linked = calculateLinkedScenarios(
+        baseYearData, baseAssumptions, baseSynergies, fundingLineInputs,
+        rangePercent, exitAssumptions.exitMultiple
+      );
+
+      const bearExitAssumptions = { ...exitAssumptions, exitMultiple: linked.derivedExitMultiples.bear };
+      const baseExitAssumptions = { ...exitAssumptions, exitMultiple: linked.derivedExitMultiples.base };
+      const bullExitAssumptions = { ...exitAssumptions, exitMultiple: linked.derivedExitMultiples.bull };
+
+      const bearReturns = calculateReturns(linked.bear, bearExitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+      const baseReturns = calculateReturns(linked.base, baseExitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+      const bullReturns = calculateReturns(linked.bull, bullExitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs);
+
+      return {
+        projections: { bear: linked.bear, base: linked.base, bull: linked.bull },
+        returns: { bear: bearReturns, base: baseReturns, bull: bullReturns },
+        derivedExitMultiples: linked.derivedExitMultiples,
+      };
+    }
+
     const bearMult: ScenarioMultipliers = bearScenario
       ? { revenueGrowthMultiplier: toNum(bearScenario.revenueGrowthMultiplier), costPressureAdjustment: toNum(bearScenario.costPressureAdjustment) }
       : { revenueGrowthMultiplier: 0.6, costPressureAdjustment: 1.5 };
@@ -385,8 +441,9 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     return {
       projections: scenarios,
       returns: { bear: bearReturns, base: baseReturns, bull: bullReturns },
+      derivedExitMultiples: null,
     };
-  }, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
+  }, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, scenarioMode, rangePercent]);
 
   const currentImpactMetrics = useMemo<ImpactMetrics | null>(() => {
     if (!kpis) return null;
@@ -463,6 +520,10 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
       fundingLines={modelDetails?.fundingLines || []}
       baseYearData={baseYearData}
       onDataChange={handleDataChange}
+      scenarioMode={scenarioMode}
+      rangePercent={rangePercent}
+      onModeChange={handleModeChange}
+      onRangeChange={handleRangeChange}
     />
   ) : null;
 
@@ -485,7 +546,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
           </SelectContent>
         </Select>
 
-        {activeTab !== 'dashboard' && (
+        {activeTab !== 'dashboard' && scenarioMode === 'custom' && (
           <Tabs value={activeScenarioType} onValueChange={setActiveScenarioType}>
             <TabsList className="h-9">
               <TabsTrigger value="bear" className="text-xs px-3 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/30 dark:data-[state=active]:text-red-300">
@@ -499,6 +560,12 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
               </TabsTrigger>
             </TabsList>
           </Tabs>
+        )}
+
+        {activeTab !== 'dashboard' && scenarioMode === 'linked' && (
+          <Badge variant="outline" className="text-xs text-muted-foreground">
+            Linked mode ({rangePercent}%)
+          </Badge>
         )}
 
         <div className="flex items-center gap-2 ml-auto">
@@ -795,6 +862,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                         entryMultiple={entryMultiple}
                         entryEquity={entryEquity}
                         baseYearData={baseYearData!}
+                        derivedExitMultiples={scenarioComparison.derivedExitMultiples}
                       />
                     ) : (
                       <ValueCreationEmptyState

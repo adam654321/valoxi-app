@@ -32,6 +32,7 @@ interface ValuationDashboardProps {
   scenarioComparison: {
     projections: { bear: ProjectedYear[]; base: ProjectedYear[]; bull: ProjectedYear[] };
     returns: { bear: ReturnMetrics; base: ReturnMetrics; bull: ReturnMetrics };
+    derivedExitMultiples?: { bear: number; base: number; bull: number } | null;
   } | null;
   exitAssumptions: ExitAssumptions;
   entryMultiple: number;
@@ -185,12 +186,16 @@ export default function ValuationDashboard({
       const proj = sc.projections[scenario];
       const exitYear = proj[Math.min(holdYears, proj.length) - 1];
       if (!exitYear) return null;
-      const exitEV = exitYear.ebitda * exitAssumptions.exitMultiple;
+      const scenarioExitMultiple = sc.derivedExitMultiples
+        ? sc.derivedExitMultiples[scenario]
+        : exitAssumptions.exitMultiple;
+      const exitEV = exitYear.ebitda * scenarioExitMultiple;
       return {
         scenario,
         exitEbitda: exitYear.ebitda,
         exitEV,
         exitEquity: ret.exitEquity,
+        exitMultiple: scenarioExitMultiple,
         irr: ret.irr,
         moic: ret.moic,
       };
@@ -199,6 +204,7 @@ export default function ValuationDashboard({
       exitEbitda: number;
       exitEV: number;
       exitEquity: number;
+      exitMultiple: number;
       irr: number;
       moic: number;
     }>;
@@ -414,6 +420,10 @@ export default function ValuationDashboard({
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Exit EBITDA</span>
                           <span className="font-mono">{formatCurrency(s.exitEbitda)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Exit Multiple</span>
+                          <span className="font-mono">{s.exitMultiple.toFixed(1)}x</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Exit EV</span>
