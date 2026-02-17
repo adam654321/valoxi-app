@@ -93,6 +93,36 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const [displayPrevious, setDisplayPrevious] = useState<ImpactMetrics | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
+    queryKey: ['/api/v2/deal-models/company', companyId],
+    select: (response: any) => response?.data || response || [],
+    enabled: !!companyId,
+  });
+
+  useEffect(() => {
+    if (models.length > 0 && selectedModelId === null) {
+      setSelectedModelId(models[0].id);
+    }
+  }, [models, selectedModelId]);
+
+  const { data: modelDetails } = useQuery<DealModelWithDetails>({
+    queryKey: ['/api/v2/deal-models', selectedModelId],
+    select: (response: any) => response?.data || response,
+    enabled: !!selectedModelId,
+  });
+
+  const { data: financialsRaw } = useQuery<any>({
+    queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
+    select: (response: any) => response?.data || response,
+    enabled: !!companyId,
+  });
+
+  const { data: vcData, isLoading: vcLoading } = useQuery<ValueCreationData>({
+    queryKey: ['/api/v2/value-creation/deal-model', selectedModelId],
+    select: (response: any) => response?.data || response,
+    enabled: !!selectedModelId,
+  });
+
   const scenarioMode = useMemo<'linked' | 'custom'>(() => {
     if (!vcData?.scenarios?.length) return 'linked';
     return (vcData.scenarios[0].scenarioMode as 'linked' | 'custom') || 'custom';
@@ -125,36 +155,6 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const handleRangeChange = useCallback((range: number) => {
     updateModeMutation.mutate({ rangePercent: String(range) });
   }, [updateModeMutation]);
-
-  const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
-    queryKey: ['/api/v2/deal-models/company', companyId],
-    select: (response: any) => response?.data || response || [],
-    enabled: !!companyId,
-  });
-
-  useEffect(() => {
-    if (models.length > 0 && selectedModelId === null) {
-      setSelectedModelId(models[0].id);
-    }
-  }, [models, selectedModelId]);
-
-  const { data: modelDetails } = useQuery<DealModelWithDetails>({
-    queryKey: ['/api/v2/deal-models', selectedModelId],
-    select: (response: any) => response?.data || response,
-    enabled: !!selectedModelId,
-  });
-
-  const { data: financialsRaw } = useQuery<any>({
-    queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
-    select: (response: any) => response?.data || response,
-    enabled: !!companyId,
-  });
-
-  const { data: vcData, isLoading: vcLoading } = useQuery<ValueCreationData>({
-    queryKey: ['/api/v2/value-creation/deal-model', selectedModelId],
-    select: (response: any) => response?.data || response,
-    enabled: !!selectedModelId,
-  });
 
   const baseYearData = useMemo<BaseYearData | null>(() => {
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return null;
