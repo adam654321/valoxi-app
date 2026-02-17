@@ -23,6 +23,13 @@ import type {
 } from '@shared/schema';
 import type { BaseYearData } from '@shared/calculators/value-creation.calc';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   ChevronDown,
   ChevronRight,
   TrendingUp,
@@ -32,6 +39,9 @@ import {
   Loader2,
   Info,
   Lock,
+  Zap,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 interface AssumptionsPanelProps {
@@ -175,8 +185,13 @@ export default function AssumptionsPanel({
   const [perYearMode, setPerYearMode] = useState(false);
   const [growthOpen, setGrowthOpen] = useState(true);
   const [debtOpen, setDebtOpen] = useState(false);
+  const [synergiesOpen, setSynergiesOpen] = useState(false);
   const [exitOpen, setExitOpen] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [addingSynergy, setAddingSynergy] = useState(false);
+  const [newSynergyType, setNewSynergyType] = useState<'revenue' | 'cost'>('revenue');
+  const [newSynergyName, setNewSynergyName] = useState('');
+  const [newSynergyValue, setNewSynergyValue] = useState('');
   
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAssumptionUpdates = useRef<Map<number, Record<string, any>>>(new Map());
@@ -250,6 +265,53 @@ export default function AssumptionsPanel({
       toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     },
   });
+
+  const addSynergyMutation = useMutation({
+    mutationFn: async (data: { synergyType: string; name: string; targetValue: string }) => {
+      await apiRequest('POST', `/api/v2/value-creation/synergies/${scenario.id}`, data);
+    },
+    onSuccess: () => {
+      setAddingSynergy(false);
+      setNewSynergyName('');
+      setNewSynergyValue('');
+      setNewSynergyType('revenue');
+      onDataChange();
+      toast({ title: 'Synergy added' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to add synergy', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const updateSynergyMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Record<string, any> }) => {
+      await apiRequest('PUT', `/api/v2/value-creation/synergies/${id}`, data);
+    },
+    onSuccess: () => {
+      onDataChange();
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteSynergyMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/v2/value-creation/synergies/${id}`);
+    },
+    onSuccess: () => {
+      onDataChange();
+      toast({ title: 'Synergy removed' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const scenarioSynergies = useMemo(() =>
+    synergies.filter(s => s.scenarioId === scenario.id),
+    [synergies, scenario.id]
+  );
 
   const flushSave = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -518,6 +580,146 @@ export default function AssumptionsPanel({
                 </div>
               )}
             </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      <Separator />
+
+      <Collapsible open={synergiesOpen} onOpenChange={setSynergiesOpen}>
+        <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-md px-2 transition-colors">
+          {synergiesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <Zap className="h-4 w-4 text-purple-600" />
+          <span className="text-sm font-medium flex-1 text-left">Synergies</span>
+          {scenarioSynergies.length > 0 && (
+            <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{scenarioSynergies.length}</Badge>
+          )}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-2 pt-2 px-1">
+          {scenarioSynergies.length === 0 && !addingSynergy && (
+            <p className="text-xs text-muted-foreground text-center py-2">No synergies added yet</p>
+          )}
+
+          {scenarioSynergies.map(s => (
+            <div key={s.id} className="border rounded-lg p-2 bg-muted/20 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] h-4 px-1 ${
+                      s.synergyType === 'revenue'
+                        ? 'border-green-300 text-green-700 dark:text-green-400'
+                        : 'border-blue-300 text-blue-700 dark:text-blue-400'
+                    }`}
+                  >
+                    {s.synergyType === 'revenue' ? 'Rev' : 'Cost'}
+                  </Badge>
+                  <span className="text-xs font-medium truncate max-w-[120px]">{s.name}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+                  onClick={() => deleteSynergyMutation.mutate(s.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">Target value</span>
+                <span className="text-xs font-mono">{formatCurrency(toNum(s.targetValue))}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">Impl. cost</span>
+                <CurrencyStepper
+                  value={toNum(s.implementationCost)}
+                  onChange={v => updateSynergyMutation.mutate({ id: s.id, data: { implementationCost: String(v) } })}
+                  step={5000}
+                />
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-[11px] text-muted-foreground">Realisation %</span>
+                <div className="grid grid-cols-5 gap-1">
+                  {[1, 2, 3, 4, 5].map(y => (
+                    <div key={y} className="text-center">
+                      <p className="text-[9px] text-muted-foreground mb-0.5">Y{y}</p>
+                      <Input
+                        type="number"
+                        className="h-6 text-[11px] text-center p-0 font-mono"
+                        value={toNum((s as any)[`realisationY${y}`])}
+                        onChange={e => updateSynergyMutation.mutate({
+                          id: s.id,
+                          data: { [`realisationY${y}`]: String(e.target.value || '0') },
+                        })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {addingSynergy ? (
+            <div className="border rounded-lg p-2 space-y-2 bg-muted/10">
+              <Select value={newSynergyType} onValueChange={(v: 'revenue' | 'cost') => setNewSynergyType(v)}>
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="revenue">Revenue synergy</SelectItem>
+                  <SelectItem value="cost">Cost synergy</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Name (e.g. Cross-sell)"
+                className="h-7 text-xs"
+                value={newSynergyName}
+                onChange={e => setNewSynergyName(e.target.value)}
+              />
+              <Input
+                placeholder="Target value (£)"
+                type="number"
+                className="h-7 text-xs"
+                value={newSynergyValue}
+                onChange={e => setNewSynergyValue(e.target.value)}
+              />
+              <div className="flex gap-1.5">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs flex-1"
+                  disabled={!newSynergyName.trim() || !newSynergyValue || addSynergyMutation.isPending}
+                  onClick={() => addSynergyMutation.mutate({
+                    synergyType: newSynergyType,
+                    name: newSynergyName.trim(),
+                    targetValue: newSynergyValue,
+                  })}
+                >
+                  {addSynergyMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Add'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    setAddingSynergy(false);
+                    setNewSynergyName('');
+                    setNewSynergyValue('');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-7 text-xs gap-1"
+              onClick={() => setAddingSynergy(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Add synergy
+            </Button>
           )}
         </CollapsibleContent>
       </Collapsible>
