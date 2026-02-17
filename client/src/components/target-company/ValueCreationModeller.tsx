@@ -93,6 +93,9 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const [displayPrevious, setDisplayPrevious] = useState<ImpactMetrics | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [localAssumptionOverrides, setLocalAssumptionOverrides] = useState<Record<number, Record<string, number>> | null>(null);
+  const [localExitOverrides, setLocalExitOverrides] = useState<{ exitMultiple: number; holdPeriodYears: number; exitCostPercent: number } | null>(null);
+
   const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
     queryKey: ['/api/v2/deal-models/company', companyId],
     select: (response: any) => response?.data || response || [],
@@ -227,18 +230,21 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     return vcData.assumptions
       .filter(a => a.scenarioId === activeScenario.id)
       .sort((a, b) => a.year - b.year)
-      .map(a => ({
-        year: a.year,
-        revenueGrowthPercent: toNum(a.revenueGrowthPercent),
-        costOfSalesGrowthPercent: toNum(a.costOfSalesGrowthPercent),
-        adminCostGrowthPercent: toNum(a.adminCostGrowthPercent),
-        staffCostGrowthPercent: toNum(a.staffCostGrowthPercent),
-        depreciationGrowthPercent: toNum(a.depreciationGrowthPercent),
-        capexPerYear: toNum(a.capexPerYear),
-        workingCapitalPercent: toNum(a.workingCapitalPercent),
-        taxRatePercent: toNum(a.taxRatePercent),
-      }));
-  }, [vcData, activeScenario]);
+      .map(a => {
+        const overrides = localAssumptionOverrides?.[a.id];
+        return {
+          year: a.year,
+          revenueGrowthPercent: overrides?.revenueGrowthPercent ?? toNum(a.revenueGrowthPercent),
+          costOfSalesGrowthPercent: overrides?.costOfSalesGrowthPercent ?? toNum(a.costOfSalesGrowthPercent),
+          adminCostGrowthPercent: overrides?.adminCostGrowthPercent ?? toNum(a.adminCostGrowthPercent),
+          staffCostGrowthPercent: overrides?.staffCostGrowthPercent ?? toNum(a.staffCostGrowthPercent),
+          depreciationGrowthPercent: overrides?.depreciationGrowthPercent ?? toNum(a.depreciationGrowthPercent),
+          capexPerYear: overrides?.capexPerYear ?? toNum(a.capexPerYear),
+          workingCapitalPercent: overrides?.workingCapitalPercent ?? toNum(a.workingCapitalPercent),
+          taxRatePercent: overrides?.taxRatePercent ?? toNum(a.taxRatePercent),
+        };
+      });
+  }, [vcData, activeScenario, localAssumptionOverrides]);
 
   const synergyInputs = useMemo<SynergyInput[]>(() => {
     if (!vcData?.synergies || !activeScenario) return [];
@@ -271,6 +277,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   }, [modelDetails]);
 
   const exitAssumptions = useMemo<ExitAssumptionsType>(() => {
+    if (localExitOverrides) return localExitOverrides;
     if (!vcData?.exitAssumptions) {
       return { exitMultiple: 4.0, holdPeriodYears: 5, exitCostPercent: 3.0 };
     }
@@ -279,7 +286,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
       holdPeriodYears: vcData.exitAssumptions.holdPeriodYears ?? 5,
       exitCostPercent: toNum(vcData.exitAssumptions.exitCostPercent),
     };
-  }, [vcData]);
+  }, [vcData, localExitOverrides]);
 
   const projections = useMemo<ProjectedYear[]>(() => {
     if (!baseYearData || activeAssumptions.length === 0) return [];
@@ -373,17 +380,20 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     const baseAssumptions = vcData.assumptions
       .filter(a => a.scenarioId === baseScenario.id)
       .sort((a, b) => a.year - b.year)
-      .map(a => ({
-        year: a.year,
-        revenueGrowthPercent: toNum(a.revenueGrowthPercent),
-        costOfSalesGrowthPercent: toNum(a.costOfSalesGrowthPercent),
-        adminCostGrowthPercent: toNum(a.adminCostGrowthPercent),
-        staffCostGrowthPercent: toNum(a.staffCostGrowthPercent),
-        depreciationGrowthPercent: toNum(a.depreciationGrowthPercent),
-        capexPerYear: toNum(a.capexPerYear),
-        workingCapitalPercent: toNum(a.workingCapitalPercent),
-        taxRatePercent: toNum(a.taxRatePercent),
-      }));
+      .map(a => {
+        const overrides = localAssumptionOverrides?.[a.id];
+        return {
+          year: a.year,
+          revenueGrowthPercent: overrides?.revenueGrowthPercent ?? toNum(a.revenueGrowthPercent),
+          costOfSalesGrowthPercent: overrides?.costOfSalesGrowthPercent ?? toNum(a.costOfSalesGrowthPercent),
+          adminCostGrowthPercent: overrides?.adminCostGrowthPercent ?? toNum(a.adminCostGrowthPercent),
+          staffCostGrowthPercent: overrides?.staffCostGrowthPercent ?? toNum(a.staffCostGrowthPercent),
+          depreciationGrowthPercent: overrides?.depreciationGrowthPercent ?? toNum(a.depreciationGrowthPercent),
+          capexPerYear: overrides?.capexPerYear ?? toNum(a.capexPerYear),
+          workingCapitalPercent: overrides?.workingCapitalPercent ?? toNum(a.workingCapitalPercent),
+          taxRatePercent: overrides?.taxRatePercent ?? toNum(a.taxRatePercent),
+        };
+      });
 
     const baseSynergies = vcData.synergies
       .filter(s => s.scenarioId === baseScenario.id)
@@ -443,7 +453,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
       returns: { bear: bearReturns, base: baseReturns, bull: bullReturns },
       derivedExitMultiples: null,
     };
-  }, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, scenarioMode, rangePercent]);
+  }, [baseYearData, activeAssumptions, vcData, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, scenarioMode, rangePercent, localAssumptionOverrides]);
 
   const currentImpactMetrics = useMemo<ImpactMetrics | null>(() => {
     if (!kpis) return null;
@@ -509,6 +519,14 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
 
   const selectedModel = models.find(m => m.id === selectedModelId);
 
+  const handleLocalAssumptionChange = useCallback((overrides: Record<number, Record<string, number>>) => {
+    setLocalAssumptionOverrides(overrides);
+  }, []);
+
+  const handleLocalExitChange = useCallback((exit: { exitMultiple: number; holdPeriodYears: number; exitCostPercent: number }) => {
+    setLocalExitOverrides(exit);
+  }, []);
+
   const assumptionsPanelContent = activeScenario && vcData ? (
     <AssumptionsPanel
       activeTab={activeTab}
@@ -524,6 +542,8 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
       rangePercent={rangePercent}
       onModeChange={handleModeChange}
       onRangeChange={handleRangeChange}
+      onLocalAssumptionChange={handleLocalAssumptionChange}
+      onLocalExitChange={handleLocalExitChange}
     />
   ) : null;
 

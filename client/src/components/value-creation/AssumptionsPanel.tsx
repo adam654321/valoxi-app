@@ -58,6 +58,8 @@ interface AssumptionsPanelProps {
   rangePercent: number;
   onModeChange: (mode: 'linked' | 'custom') => void;
   onRangeChange: (range: number) => void;
+  onLocalAssumptionChange?: (overrides: Record<number, Record<string, number>>) => void;
+  onLocalExitChange?: (exit: { exitMultiple: number; holdPeriodYears: number; exitCostPercent: number }) => void;
 }
 
 function NumericStepper({
@@ -295,6 +297,8 @@ export default function AssumptionsPanel({
   rangePercent,
   onModeChange,
   onRangeChange,
+  onLocalAssumptionChange,
+  onLocalExitChange,
 }: AssumptionsPanelProps) {
   const { toast } = useToast();
   const [perYearMode, setPerYearMode] = useState(false);
@@ -497,15 +501,19 @@ export default function AssumptionsPanel({
   }, []);
 
   const updateAssumption = useCallback((assumptionId: number, field: string, value: number) => {
-    setLocalAssumptions(prev => ({
-      ...prev,
-      [assumptionId]: { ...(prev[assumptionId] || {}), [field]: value },
-    }));
+    setLocalAssumptions(prev => {
+      const next = {
+        ...prev,
+        [assumptionId]: { ...(prev[assumptionId] || {}), [field]: value },
+      };
+      onLocalAssumptionChange?.(next);
+      return next;
+    });
 
     const existing = pendingAssumptionUpdates.current.get(assumptionId) || {};
     pendingAssumptionUpdates.current.set(assumptionId, { ...existing, [field]: String(value) });
     scheduleSave();
-  }, [scheduleSave]);
+  }, [scheduleSave, onLocalAssumptionChange]);
 
   const updateAllYears = useCallback((field: string, value: number) => {
     for (const a of sorted) {
@@ -514,10 +522,14 @@ export default function AssumptionsPanel({
   }, [sorted, updateAssumption]);
 
   const updateExit = useCallback((field: string, value: number) => {
-    setLocalExit(prev => prev ? { ...prev, [field]: value } : null);
+    setLocalExit(prev => {
+      const next = prev ? { ...prev, [field]: value } : null;
+      if (next) onLocalExitChange?.(next);
+      return next;
+    });
     pendingExitUpdates.current = { ...(pendingExitUpdates.current || {}), [field]: String(value) };
     scheduleSave();
-  }, [scheduleSave]);
+  }, [scheduleSave, onLocalExitChange]);
 
   const getLocal = (assumptionId: number, field: string): number => {
     return localAssumptions[assumptionId]?.[field] ?? 0;
