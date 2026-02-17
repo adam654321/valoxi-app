@@ -37,6 +37,7 @@ import type {
 import AssumptionsPanel from '@/components/value-creation/AssumptionsPanel';
 import PLProjectionsSection from '@/components/value-creation/PLProjectionsSection';
 import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
+import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisSection';
 import {
   LineChart,
   Calculator,
@@ -247,6 +248,37 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const totalDebt = fundingLineInputs
     .filter(f => f.isDebt && f.isActive)
     .reduce((sum, f) => sum + f.amountUsed, 0);
+
+  const entryEquity = useMemo(() => {
+    return fundingLineInputs
+      .filter(f => !f.isDebt && f.isActive)
+      .reduce((sum, f) => sum + f.amountUsed, 0);
+  }, [fundingLineInputs]);
+
+  const totalFees = useMemo(() => {
+    if (!modelDetails) return 0;
+    const offerPrice = toNum(modelDetails.totalPurchasePrice) || toNum(modelDetails.enterpriseValue);
+    if (offerPrice <= 0) return 0;
+    const fee = (val: any, type: any) => type === 'fixed' ? toNum(val) : offerPrice * toNum(val) / 100;
+    return fee(modelDetails.feeLegalDdPercent, modelDetails.feeLegalDdType)
+         + fee(modelDetails.feeAccountingDdPercent, modelDetails.feeAccountingDdType)
+         + fee(modelDetails.feeBrokerPercent, modelDetails.feeBrokerType)
+         + fee(modelDetails.feeLoanArrangementPercent, modelDetails.feeLoanArrangementType)
+         + fee(modelDetails.feeDealMakerPercent, modelDetails.feeDealMakerType);
+  }, [modelDetails]);
+
+  const returnMetrics = useMemo(() => {
+    if (projections.length === 0 || entryEquity <= 0) return null;
+    return calculateReturns(
+      projections,
+      exitAssumptions,
+      entryEquity,
+      entryMultiple,
+      totalDebt,
+      totalFees,
+      fundingLineInputs
+    );
+  }, [projections, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs]);
 
   if (modelsLoading) {
     return (
@@ -468,19 +500,14 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                   baseYearLabel={baseYearLabel}
                 />
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-xs font-bold text-emerald-700 dark:text-emerald-300">5</span>
-                      Returns Analysis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-muted/30 rounded-lg p-6 text-center text-sm text-muted-foreground">
-                      <p className="font-medium">Section ready for Prompt 5</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                {returnMetrics && (
+                  <ReturnsAnalysisSection
+                    metrics={returnMetrics}
+                    projections={projections}
+                    exitAssumptions={exitAssumptions}
+                    entryMultiple={entryMultiple}
+                  />
+                )}
               </>
             )}
           </div>
