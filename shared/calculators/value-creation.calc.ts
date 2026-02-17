@@ -153,10 +153,17 @@ export function calculateProjections(
   const sortedAssumptions = [...assumptions].sort((a, b) => a.year - b.year);
   const debtSchedules = calculateDebtSchedules(fundingLines);
 
+  const actualBaseOverheads = baseYear.grossProfit - baseYear.adjustedEbitda;
+  const rawStaff = Math.abs(baseYear.staffCosts);
+  const rawAdmin = Math.abs(baseYear.administrativeExpenses);
+  const rawTotal = rawStaff + rawAdmin;
+  const staffProportion = rawTotal > 0 ? rawStaff / rawTotal : 0.5;
+  const adminProportion = rawTotal > 0 ? rawAdmin / rawTotal : 0.5;
+
   let prevRevenue = baseYear.revenue;
   let prevCostOfSales = baseYear.costOfSales;
-  let prevStaffCosts = baseYear.staffCosts;
-  let prevAdminExpenses = baseYear.administrativeExpenses;
+  let prevStaffCosts = actualBaseOverheads * staffProportion;
+  let prevAdminExpenses = actualBaseOverheads * adminProportion;
   let prevDepreciation = baseYear.depreciationAmortisation;
 
   for (let i = 0; i < 5; i++) {

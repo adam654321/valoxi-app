@@ -130,8 +130,8 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     const revenue = toNum(income.revenue);
     const costOfSales = toNum(income.costOfSales);
     const grossProfit = toNum(income.grossProfit) || (revenue - costOfSales);
-    const adminExpenses = toNum(income.administrativeExpenses);
-    const staffCosts = toNum(income.staffCosts);
+    const rawAdmin = toNum(income.administrativeExpenses);
+    const rawStaff = toNum(income.staffCosts);
     const depreciation = toNum(income.depreciationAmortisation);
     const operatingProfit = toNum(income.operatingProfit);
     const interestPayable = toNum(income.interestPayable);
@@ -139,12 +139,17 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     const netProfit = toNum(income.netProfit);
     const adjustedEbitda = operatingProfit + depreciation;
 
+    const actualOverheads = grossProfit - adjustedEbitda;
+    const rawTotal = Math.abs(rawStaff) + Math.abs(rawAdmin);
+    const staffProportion = rawTotal > 0 ? Math.abs(rawStaff) / rawTotal : 0.5;
+    const adminProportion = rawTotal > 0 ? Math.abs(rawAdmin) / rawTotal : 0.5;
+
     return {
       revenue,
       costOfSales,
       grossProfit,
-      administrativeExpenses: adminExpenses,
-      staffCosts,
+      administrativeExpenses: actualOverheads * adminProportion,
+      staffCosts: actualOverheads * staffProportion,
       depreciationAmortisation: depreciation,
       operatingProfit,
       interestPayable,
