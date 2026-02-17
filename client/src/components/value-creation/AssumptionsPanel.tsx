@@ -607,13 +607,12 @@ export default function AssumptionsPanel({
                   const baseRevGrowth = simpleVal('revenueGrowthPercent');
                   const baseCosGrowth = simpleVal('costOfSalesGrowthPercent');
                   const exitMult = localExit?.exitMultiple ?? 4;
-                  const r2 = rangePercent / 100;
                   const exitDelta = (rangePercent / 10) * 0.5;
 
-                  const revGrowth = s === 'bear' ? baseRevGrowth * (1 - r2)
-                    : s === 'bull' ? baseRevGrowth * (1 + r2) : baseRevGrowth;
-                  const cosGrowth = s === 'bear' ? baseCosGrowth + (baseCosGrowth * r2 * 0.5)
-                    : s === 'bull' ? baseCosGrowth - (baseCosGrowth * r2 * 0.5) : baseCosGrowth;
+                  const revGrowth = s === 'bear' ? baseRevGrowth - rangePercent
+                    : s === 'bull' ? baseRevGrowth + rangePercent : baseRevGrowth;
+                  const cosGrowth = s === 'bear' ? baseCosGrowth + (rangePercent * 0.5)
+                    : s === 'bull' ? baseCosGrowth - (rangePercent * 0.5) : baseCosGrowth;
                   const exitM = s === 'bear' ? Math.max(1, exitMult - exitDelta)
                     : s === 'bull' ? exitMult + exitDelta : exitMult;
 

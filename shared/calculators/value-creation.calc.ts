@@ -446,18 +446,20 @@ export function calculateLinkedScenarios(
   rangePercent: number,
   baseExitMultiple: number
 ): LinkedScenarioResult {
-  const r = rangePercent / 100;
-
   const bearAssumptions = baseAssumptions.map(a => ({
     ...a,
-    revenueGrowthPercent: a.revenueGrowthPercent * (1 - r),
-    costOfSalesGrowthPercent: a.costOfSalesGrowthPercent + (a.costOfSalesGrowthPercent * r * 0.5),
+    revenueGrowthPercent: a.revenueGrowthPercent - rangePercent,
+    costOfSalesGrowthPercent: a.costOfSalesGrowthPercent + (rangePercent * 0.5),
+    staffCostGrowthPercent: a.staffCostGrowthPercent + (rangePercent * 0.2),
+    adminCostGrowthPercent: a.adminCostGrowthPercent + (rangePercent * 0.2),
   }));
 
   const bullAssumptions = baseAssumptions.map(a => ({
     ...a,
-    revenueGrowthPercent: a.revenueGrowthPercent * (1 + r),
-    costOfSalesGrowthPercent: a.costOfSalesGrowthPercent - (a.costOfSalesGrowthPercent * r * 0.5),
+    revenueGrowthPercent: a.revenueGrowthPercent + rangePercent,
+    costOfSalesGrowthPercent: a.costOfSalesGrowthPercent - (rangePercent * 0.5),
+    staffCostGrowthPercent: a.staffCostGrowthPercent - (rangePercent * 0.2),
+    adminCostGrowthPercent: a.adminCostGrowthPercent - (rangePercent * 0.2),
   }));
 
   const exitMultipleDelta = (rangePercent / 10) * 0.5;

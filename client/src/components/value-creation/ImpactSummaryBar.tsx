@@ -50,7 +50,8 @@ export default function ImpactSummaryBar({ current, previous }: ImpactSummaryBar
   if (!changed) return null;
 
   const formatIrrVal = (v: number) => {
-    if (!isFinite(v) || isNaN(v) || v > 10) return '∞';
+    if (!isFinite(v) || isNaN(v) || Math.abs(v) > 10) return '∞';
+    if (v < -1) return '< -100%';
     return `${(v * 100).toFixed(1)}%`;
   };
 

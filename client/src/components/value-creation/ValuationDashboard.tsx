@@ -97,7 +97,8 @@ const dscrBorder = (v: number) => {
 
 const formatIrr = (v: number) => {
   if (v === Infinity) return '∞';
-  if (isNaN(v) || !isFinite(v) || v > 10) return '—';
+  if (isNaN(v) || !isFinite(v) || Math.abs(v) > 10) return '—';
+  if (v < -1) return '< -100%';
   return `${(v * 100).toFixed(1)}%`;
 };
 

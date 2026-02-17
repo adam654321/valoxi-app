@@ -1,0 +1,30 @@
+Prompt: Fix Linked Scenario Reversal on Zero/Negative Base Growth
+There's a critical bug in the linked scenario system. When base revenue growth is 0% or negative, Bear and Bull scenarios invert — Bear becomes the optimistic case and Bull becomes pessimistic. At 0% base, there's no spread at all.
+Root cause: The offsets are being applied multiplicatively (e.g. baseGrowth * (1 - range/100)) instead of additively (e.g. baseGrowth - range). Multiplying a negative number by a larger factor makes it MORE negative, which flips the bear/bull relationship.
+The fix: In calculateLinkedScenarios (in shared/calculators/value-creation.calc.ts), ensure ALL offsets are additive in percentage points, not multiplicative. The range value IS the offset — it gets added to or subtracted from the base value directly.
+The correct formulas (as specified in the original prompt):
+typescript// Revenue: full range as pp offset
+const bearRevenueGrowth = baseRevenueGrowth - range;    // e.g. -5% - 30 = -35%
+const bullRevenueGrowth = baseRevenueGrowth + range;    // e.g. -5% + 30 = +25%
+
+// CoS: half range, inverse direction (bear = costs rise, bull = costs fall)
+const bearCosGrowth = baseCosGrowth + (range * 0.5);    // e.g. 3.5% + 15 = 18.5%
+const bullCosGrowth = baseCosGrowth - (range * 0.5);    // e.g. 3.5% - 15 = -11.5%
+
+// Overheads: slight adjustment at 20% of range
+const bearOverheadGrowth = baseOverheadGrowth + (range * 0.2);  // costs up in bear
+const bullOverheadGrowth = baseOverheadGrowth - (range * 0.2);  // costs down in bull
+
+// Exit multiple: ±0.5x per 10pp of range
+const bearExitMultiple = baseExitMultiple - (range / 10) * 0.5;  // lower exit in bear
+const bullExitMultiple = baseExitMultiple + (range / 10) * 0.5;  // higher exit in bull
+Check these places:
+
+calculateLinkedScenarios() in value-creation.calc.ts — this is where the actual projections are computed. The bear/bull assumption arrays must use additive offsets, not multiplicative. Specifically check how revenueGrowthPercent, costOfSalesGrowthPercent, staffCostGrowthPercent, and adminCostGrowthPercent are modified for bear and bull.
+The preview grid in AssumptionsPanel.tsx — the "Derived from Base" display should use the same additive formula. If it shows Bear Rev 0.0% when base is 0% and range is 30%, it's using the same multiplicative logic. Fix to: (baseRevenueGrowth - rangePercent).toFixed(1) for bear and (baseRevenueGrowth + rangePercent).toFixed(1) for bull.
+The exit multiple derivation — verify it uses baseMultiple - offset not baseMultiple * (1 - factor).
+
+Verification after fix:
+Base RevRangeBear RevBull Rev5%10%−5%15%0%10%−10%10%0%30%−30%30%−5%10%−15%5%−5%30%−35%25%
+In ALL cases: Bear revenue < Base revenue < Bull revenue. Bear EBITDA < Base EBITDA < Bull EBITDA. Bear is always the pessimistic scenario.
+Also check that the IRR/MOIC display handles the extreme negative values gracefully — image 1 shows IRR of −3284972401.4% which is the IRR solver diverging on a value-destroying deal. The formatIrr function should cap display at something sensible like "N/A" or "< −100%" when the value is outside a reasonable range (e.g. Math.abs(irr) > 10).
