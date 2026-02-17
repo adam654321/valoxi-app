@@ -40,6 +40,8 @@ class ValueCreationService {
       const [scenario] = await db.insert(valueCreationScenarios).values({
         dealModelId,
         ...scenFields,
+        scenarioMode: 'linked',
+        rangePercent: '10',
       }).returning();
 
       for (let year = 1; year <= 5; year++) {
@@ -122,6 +124,14 @@ class ValueCreationService {
     const [updated] = await db.update(valueCreationScenarios)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(valueCreationScenarios.id, scenarioId))
+      .returning();
+    return updated;
+  }
+
+  async updateAllScenariosForModel(dealModelId: number, data: Partial<typeof valueCreationScenarios.$inferInsert>) {
+    const updated = await db.update(valueCreationScenarios)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(valueCreationScenarios.dealModelId, dealModelId))
       .returning();
     return updated;
   }

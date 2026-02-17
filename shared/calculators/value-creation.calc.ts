@@ -431,6 +431,52 @@ export function calculateReturns(
   };
 }
 
+export interface LinkedScenarioResult {
+  bear: ProjectedYear[];
+  base: ProjectedYear[];
+  bull: ProjectedYear[];
+  derivedExitMultiples: { bear: number; base: number; bull: number };
+}
+
+export function calculateLinkedScenarios(
+  baseYear: BaseYearData,
+  baseAssumptions: YearAssumptions[],
+  synergies: SynergyInput[],
+  fundingLines: FundingLineForProjection[],
+  rangePercent: number,
+  baseExitMultiple: number
+): LinkedScenarioResult {
+  const r = rangePercent / 100;
+
+  const bearAssumptions = baseAssumptions.map(a => ({
+    ...a,
+    revenueGrowthPercent: a.revenueGrowthPercent * (1 - r),
+    costOfSalesGrowthPercent: a.costOfSalesGrowthPercent + (a.costOfSalesGrowthPercent * r * 0.5),
+  }));
+
+  const bullAssumptions = baseAssumptions.map(a => ({
+    ...a,
+    revenueGrowthPercent: a.revenueGrowthPercent * (1 + r),
+    costOfSalesGrowthPercent: a.costOfSalesGrowthPercent - (a.costOfSalesGrowthPercent * r * 0.5),
+  }));
+
+  const exitMultipleDelta = (rangePercent / 10) * 0.5;
+  const derivedExitMultiples = {
+    bear: Math.max(1, baseExitMultiple - exitMultipleDelta),
+    base: baseExitMultiple,
+    bull: baseExitMultiple + exitMultipleDelta,
+  };
+
+  const noScenario: ScenarioMultipliers = { revenueGrowthMultiplier: 1, costPressureAdjustment: 0 };
+
+  return {
+    bear: calculateProjections(baseYear, bearAssumptions, synergies, fundingLines, noScenario),
+    base: calculateProjections(baseYear, baseAssumptions, synergies, fundingLines, noScenario),
+    bull: calculateProjections(baseYear, bullAssumptions, synergies, fundingLines, noScenario),
+    derivedExitMultiples,
+  };
+}
+
 export function calculateScenarios(
   baseYear: BaseYearData,
   assumptions: YearAssumptions[],

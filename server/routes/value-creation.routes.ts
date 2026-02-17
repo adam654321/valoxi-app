@@ -44,6 +44,19 @@ router.put('/assumptions/:id', async (req: Request, res: Response) => {
   }
 });
 
+router.put('/scenarios/deal-model/:dealModelId', async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userCompanyId) throw new UnauthorizedError();
+    
+    const dealModelId = parseInt(req.params.dealModelId);
+    const result = await valueCreationService.updateAllScenariosForModel(dealModelId, req.body);
+    sendSuccess(res, result);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 router.put('/scenarios/:id', async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session?.userCompanyId;
