@@ -1,0 +1,62 @@
+Prompt: Dashboard Year Selector + Scenario Summary Spacing
+Two targeted fixes for the Dashboard tab.
+1. Add Year Selector to Dashboard
+Add a pill toggle (Y1–Y5) to the Dashboard that controls which projection year the hero cards, P&L Summary, and Value Bridge display. Default to Y5 (current behaviour).
+In ValuationDashboard.tsx:
+tsxconst [displayYear, setDisplayYear] = useState<number>(5);
+Add the toggle at the top of the dashboard content, right-aligned above the hero cards:
+tsx<div className="flex items-center justify-between mb-3">
+  <h3 className="text-sm font-semibold text-muted-foreground">Valuation Overview</h3>
+  <div className="flex items-center gap-2">
+    <span className="text-xs text-muted-foreground">Projection year</span>
+    <div className="flex border rounded-md overflow-hidden">
+      {[1, 2, 3, 4, 5].map(y => (
+        <button
+          key={y}
+          onClick={() => setDisplayYear(y)}
+          className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+            displayYear === y
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background hover:bg-muted'
+          } ${y !== 1 ? 'border-l' : ''}`}
+        >
+          Y{y}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+Then update all data references to use displayYear instead of hardcoded index [4] or [projections.length - 1]:
+
+Hero cards: Y5 EBITDA → projections[displayYear - 1].ebitda. Cumulative FCF → sum of projections[0..displayYear-1].freeCashFlow. Worst DSCR → min of projections[0..displayYear-1].dscr. Update the card labels to show the selected year (e.g. "Y3 EBITDA" not "Y5 EBITDA").
+IRR/MOIC/Payback cards: These should stay fixed at the hold period (they're deal-level return metrics, not per-year). Don't change these based on the year selector.
+P&L Summary table: Change the "Y5 Projected" column header to Y{displayYear} Projected. Pull values from projections[displayYear - 1] instead of the last projection. Change % deltas accordingly.
+Value Bridge chart: The value bridge shows return sources which are inherently exit-year metrics. When displayYear changes, recalculate the bridge using projections[displayYear - 1].ebitda for EBITDA growth value, and cumulative cash/debt through that year. This means the bridge answers "what if we exited at Y{displayYear}?" — which is useful for hold period sensitivity.
+Scenario Summary cards: Update Exit EBITDA, Exit EV, and Exit Equity to use displayYear. Keep IRR/MOIC at full hold period (these are deal returns, not per-year snapshots).
+
+2. Fix Scenario Summary Card Spacing
+The three Bear/Base/Bull cards are too compressed. Fix the bottom row grid to give Scenario Summary more horizontal space:
+tsx<div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+  <div className="lg:col-span-2">
+    {/* P&L Summary */}
+  </div>
+  <div className="lg:col-span-3">
+    {/* Scenario Summary — gets 60% of the width */}
+  </div>
+</div>
+Inside the Scenario Summary, ensure the three cards use grid-cols-3 with adequate padding:
+tsx<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+  {(['bear', 'base', 'bull'] as const).map(scenario => (
+    <div key={scenario} className={`rounded-lg border border-l-4 ${borderColor} p-3 space-y-2`}>
+      {/* Card content */}
+      <div className="space-y-1.5 text-xs">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Exit EBITDA</span>
+          <span className="font-mono font-medium">{formatCurrency(value)}</span>
+        </div>
+        {/* ... other rows ... */}
+      </div>
+    </div>
+  ))}
+</div>
+Each data row inside the cards should use flex justify-between to keep labels left and values right, preventing the cramped look. Remove any line breaks in label text (e.g. "Exit EBITDA" should not wrap to two lines — if it does, the card needs more width or the font needs to shrink to text-[11px]).

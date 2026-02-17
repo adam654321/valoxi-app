@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   ChartContainer,
@@ -143,9 +143,11 @@ export default function ValuationDashboard({
   previousMetrics,
   currentMetrics,
 }: ValuationDashboardProps) {
-  const y5 = projections[projections.length - 1];
-  const cumulativeFcf = projections.reduce((sum, p) => sum + p.freeCashFlow, 0);
-  const worstDscr = Math.min(...projections.map(p => p.dscr));
+  const [displayYear, setDisplayYear] = useState<number>(5);
+
+  const dy = projections[Math.min(displayYear, projections.length) - 1];
+  const cumulativeFcf = projections.slice(0, displayYear).reduce((sum, p) => sum + p.freeCashFlow, 0);
+  const worstDscr = Math.min(...projections.slice(0, displayYear).map(p => p.dscr));
 
   const hasReturns = returnMetrics !== null;
   const sc = scenarioComparison;
@@ -182,10 +184,11 @@ export default function ValuationDashboard({
 
   const miniScenarios = useMemo(() => {
     if (!sc) return null;
+    const yearIdx = Math.min(displayYear, 5) - 1;
     return (['bear', 'base', 'bull'] as const).map(scenario => {
       const ret = sc.returns[scenario];
       const proj = sc.projections[scenario];
-      const exitYear = proj[Math.min(holdYears, proj.length) - 1];
+      const exitYear = proj[Math.min(yearIdx, proj.length - 1)];
       if (!exitYear) return null;
       const scenarioExitMultiple = sc.derivedExitMultiples
         ? sc.derivedExitMultiples[scenario]
@@ -209,13 +212,37 @@ export default function ValuationDashboard({
       irr: number;
       moic: number;
     }>;
-  }, [sc, exitAssumptions, holdYears]);
+  }, [sc, exitAssumptions, displayYear]);
 
   const baseMargin = baseYearData.revenue > 0 ? (baseYearData.adjustedEbitda / baseYearData.revenue) * 100 : 0;
-  const y5Margin = y5.revenue > 0 ? (y5.ebitda / y5.revenue) * 100 : 0;
+  const dyMargin = dy && dy.revenue > 0 ? (dy.ebitda / dy.revenue) * 100 : 0;
+
+  if (!dy) return null;
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-sm font-semibold text-muted-foreground">Valuation Overview</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Projection year</span>
+          <div className="flex border rounded-md overflow-hidden">
+            {[1, 2, 3, 4, 5].map(y => (
+              <button
+                key={y}
+                onClick={() => setDisplayYear(y)}
+                className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                  displayYear === y
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background hover:bg-muted'
+                } ${y !== 1 ? 'border-l' : ''}`}
+              >
+                Y{y}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className={`grid gap-3 ${hasReturns ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-3'}`}>
         {hasReturns && (
           <>
@@ -273,16 +300,16 @@ export default function ValuationDashboard({
         <Card className="border-l-4 border-l-green-500">
           <CardContent className="py-3 px-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <BarChart3 className="h-3 w-3" /> Y5 EBITDA
+              <BarChart3 className="h-3 w-3" /> Y{displayYear} EBITDA
             </p>
             {sc ? (
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-[10px] text-red-600 font-mono">{formatCurrency(sc.projections.bear[sc.projections.bear.length - 1]?.ebitda ?? 0)}</span>
-                <span className="text-lg font-bold font-mono">{formatCurrency(y5.ebitda)}</span>
-                <span className="text-[10px] text-green-600 font-mono">{formatCurrency(sc.projections.bull[sc.projections.bull.length - 1]?.ebitda ?? 0)}</span>
+                <span className="text-[10px] text-red-600 font-mono">{formatCurrency(sc.projections.bear[Math.min(displayYear, sc.projections.bear.length) - 1]?.ebitda ?? 0)}</span>
+                <span className="text-lg font-bold font-mono">{formatCurrency(dy.ebitda)}</span>
+                <span className="text-[10px] text-green-600 font-mono">{formatCurrency(sc.projections.bull[Math.min(displayYear, sc.projections.bull.length) - 1]?.ebitda ?? 0)}</span>
               </div>
             ) : (
-              <p className="text-lg font-bold mt-0.5 font-mono">{formatCurrency(y5.ebitda)}</p>
+              <p className="text-lg font-bold mt-0.5 font-mono">{formatCurrency(dy.ebitda)}</p>
             )}
           </CardContent>
         </Card>
@@ -290,7 +317,7 @@ export default function ValuationDashboard({
         <Card className="border-l-4 border-l-emerald-500">
           <CardContent className="py-3 px-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" /> Cumulative FCF
+              <TrendingUp className="h-3 w-3" /> Cumulative FCF (Y1–Y{displayYear})
             </p>
             <p className="text-lg font-bold mt-0.5 font-mono">{formatCurrency(cumulativeFcf)}</p>
           </CardContent>
@@ -299,7 +326,7 @@ export default function ValuationDashboard({
         <Card className={`border-l-4 ${dscrBorder(worstDscr)}`}>
           <CardContent className="py-3 px-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Shield className="h-3 w-3" /> Worst DSCR
+              <Shield className="h-3 w-3" /> Worst DSCR (Y1–Y{displayYear})
             </p>
             <p className={`text-lg font-bold mt-0.5 font-mono ${dscrColor(worstDscr)}`}>
               {worstDscr >= 100 ? '∞' : `${worstDscr.toFixed(2)}x`}
@@ -371,17 +398,17 @@ export default function ValuationDashboard({
                   <tr className="border-b">
                     <th className="text-left py-1.5 font-medium text-muted-foreground"></th>
                     <th className="text-right py-1.5 font-medium text-muted-foreground">{baseYearLabel}</th>
-                    <th className="text-right py-1.5 font-medium text-muted-foreground">Y5 Projected</th>
+                    <th className="text-right py-1.5 font-medium text-muted-foreground">Y{displayYear} Projected</th>
                     <th className="text-right py-1.5 font-medium text-muted-foreground">Change</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { label: 'Revenue', baseVal: baseYearData.revenue, y5Val: y5.revenue },
-                    { label: 'Gross Profit', baseVal: baseYearData.grossProfit, y5Val: y5.grossProfit },
-                    { label: 'EBITDA', baseVal: baseYearData.adjustedEbitda, y5Val: y5.ebitda, bold: true },
-                    { label: 'EBITDA Margin', baseVal: baseMargin, y5Val: y5Margin, isMargin: true },
-                    { label: 'Net Profit', baseVal: baseYearData.netProfit, y5Val: y5.netProfit },
+                    { label: 'Revenue', baseVal: baseYearData.revenue, projVal: dy.revenue },
+                    { label: 'Gross Profit', baseVal: baseYearData.grossProfit, projVal: dy.grossProfit },
+                    { label: 'EBITDA', baseVal: baseYearData.adjustedEbitda, projVal: dy.ebitda, bold: true },
+                    { label: 'EBITDA Margin', baseVal: baseMargin, projVal: dyMargin, isMargin: true },
+                    { label: 'Net Profit', baseVal: baseYearData.netProfit, projVal: dy.netProfit },
                   ].map(row => (
                     <tr key={row.label} className="border-b last:border-0">
                       <td className={`py-1.5 ${row.bold ? 'font-semibold' : ''}`}>{row.label}</td>
@@ -389,12 +416,12 @@ export default function ValuationDashboard({
                         {row.isMargin ? `${row.baseVal.toFixed(1)}%` : formatCurrency(row.baseVal)}
                       </td>
                       <td className="text-right py-1.5 font-mono">
-                        {row.isMargin ? `${row.y5Val.toFixed(1)}%` : formatCurrency(row.y5Val)}
+                        {row.isMargin ? `${row.projVal.toFixed(1)}%` : formatCurrency(row.projVal)}
                       </td>
-                      <td className={`text-right py-1.5 font-mono ${changeColor(row.baseVal, row.y5Val)}`}>
+                      <td className={`text-right py-1.5 font-mono ${changeColor(row.baseVal, row.projVal)}`}>
                         {row.isMargin
-                          ? `${(row.y5Val - row.baseVal) >= 0 ? '+' : ''}${(row.y5Val - row.baseVal).toFixed(1)}pp`
-                          : changePercent(row.baseVal, row.y5Val)}
+                          ? `${(row.projVal - row.baseVal) >= 0 ? '+' : ''}${(row.projVal - row.baseVal).toFixed(1)}pp`
+                          : changePercent(row.baseVal, row.projVal)}
                       </td>
                     </tr>
                   ))}
@@ -408,30 +435,30 @@ export default function ValuationDashboard({
           <Card className="lg:col-span-3">
             <CardContent className="py-3 px-4">
               <p className="text-xs font-medium text-muted-foreground mb-2">Scenario Summary</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {miniScenarios.map(s => {
                   const borderColor = s.scenario === 'bear' ? 'border-l-red-500' : s.scenario === 'base' ? 'border-l-blue-500' : 'border-l-green-500';
                   const textColor = s.scenario === 'bear' ? 'text-red-600' : s.scenario === 'base' ? 'text-blue-600' : 'text-green-600';
                   const label = s.scenario === 'bear' ? '🐻 Bear' : s.scenario === 'base' ? '📊 Base' : '🐂 Bull';
 
                   return (
-                    <div key={s.scenario} className={`rounded-lg border border-l-4 ${borderColor} p-2.5 space-y-1.5`}>
+                    <div key={s.scenario} className={`rounded-lg border border-l-4 ${borderColor} p-3 space-y-2`}>
                       <p className={`text-[11px] font-semibold ${textColor}`}>{label}</p>
-                      <div className="space-y-1 text-[11px]">
+                      <div className="space-y-1.5 text-[11px]">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit EBITDA</span>
-                          <span className="font-mono">{formatCurrency(s.exitEbitda)}</span>
+                          <span className="text-muted-foreground whitespace-nowrap">Exit EBITDA</span>
+                          <span className="font-mono font-medium">{formatCurrency(s.exitEbitda)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit Multiple</span>
-                          <span className="font-mono">{s.exitMultiple.toFixed(1)}x</span>
+                          <span className="text-muted-foreground whitespace-nowrap">Exit Multiple</span>
+                          <span className="font-mono font-medium">{s.exitMultiple.toFixed(1)}x</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit EV</span>
-                          <span className="font-mono">{formatCurrency(s.exitEV)}</span>
+                          <span className="text-muted-foreground whitespace-nowrap">Exit EV</span>
+                          <span className="font-mono font-medium">{formatCurrency(s.exitEV)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit Equity</span>
+                          <span className="text-muted-foreground whitespace-nowrap">Exit Equity</span>
                           <span className="font-mono font-semibold">{formatCurrency(s.exitEquity)}</span>
                         </div>
                         <div className="border-t my-1" />
