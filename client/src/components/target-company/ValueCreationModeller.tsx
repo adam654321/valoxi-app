@@ -488,6 +488,14 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     };
   }, []);
 
+  const handleLocalAssumptionChange = useCallback((overrides: Record<number, Record<string, number>>) => {
+    setLocalAssumptionOverrides(overrides);
+  }, []);
+
+  const handleLocalExitChange = useCallback((exit: { exitMultiple: number; holdPeriodYears: number; exitCostPercent: number }) => {
+    setLocalExitOverrides(exit);
+  }, []);
+
   if (modelsLoading) {
     return (
       <div className="space-y-4">
@@ -518,14 +526,6 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   }
 
   const selectedModel = models.find(m => m.id === selectedModelId);
-
-  const handleLocalAssumptionChange = useCallback((overrides: Record<number, Record<string, number>>) => {
-    setLocalAssumptionOverrides(overrides);
-  }, []);
-
-  const handleLocalExitChange = useCallback((exit: { exitMultiple: number; holdPeriodYears: number; exitCostPercent: number }) => {
-    setLocalExitOverrides(exit);
-  }, []);
 
   const assumptionsPanelContent = activeScenario && vcData ? (
     <AssumptionsPanel
