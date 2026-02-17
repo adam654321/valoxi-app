@@ -110,8 +110,12 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const baseYearData = useMemo<BaseYearData | null>(() => {
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return null;
 
+    const incomeStatementPeriodIds = new Set(
+      financialsRaw.incomeStatements.map((i: any) => i.financialPeriodId)
+    );
+
     const statutory = financialsRaw.periods
-      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
+      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear && incomeStatementPeriodIds.has(p.id))
       .sort((a: any, b: any) => new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime());
 
     if (statutory.length === 0) return null;
@@ -151,9 +155,10 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   }, [financialsRaw]);
 
   const baseYearLabel = useMemo<string>(() => {
-    if (!financialsRaw?.periods) return 'Base';
+    if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return 'Base';
+    const incomeIds = new Set(financialsRaw.incomeStatements.map((i: any) => i.financialPeriodId));
     const statutory = financialsRaw.periods
-      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
+      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear && incomeIds.has(p.id))
       .sort((a: any, b: any) => new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime());
     return statutory[0]?.fiscalYear ? `FY${statutory[0].fiscalYear}` : 'Base';
   }, [financialsRaw]);
