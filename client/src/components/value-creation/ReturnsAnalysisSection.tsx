@@ -73,13 +73,23 @@ const paybackColor = (v: number) => {
 export default function ReturnsAnalysisSection({ metrics, projections, exitAssumptions, entryMultiple }: ReturnsAnalysisSectionProps) {
   const [view, setView] = useState<'chart' | 'table'>('chart');
 
-  const irrDisplay = isNaN(metrics.irr) || !isFinite(metrics.irr) || metrics.irr > 10
-    ? 'N/A'
-    : `${(metrics.irr * 100).toFixed(1)}%`;
+  const isNoEquityDeal = metrics.entryEquity === 0;
 
-  const paybackDisplay = metrics.paybackPeriodYears <= 0 || metrics.paybackPeriodYears >= exitAssumptions.holdPeriodYears
-    ? `>${exitAssumptions.holdPeriodYears}yrs`
-    : `${metrics.paybackPeriodYears} yrs`;
+  const irrDisplay = metrics.irr === Infinity
+    ? '∞'
+    : isNaN(metrics.irr) || !isFinite(metrics.irr) || metrics.irr > 10
+      ? 'N/A'
+      : `${(metrics.irr * 100).toFixed(1)}%`;
+
+  const moicDisplay = metrics.moic === Infinity
+    ? '∞'
+    : `${metrics.moic.toFixed(2)}x`;
+
+  const paybackDisplay = metrics.paybackPeriodYears === 0 && isNoEquityDeal
+    ? 'Instant'
+    : metrics.paybackPeriodYears <= 0 || metrics.paybackPeriodYears >= exitAssumptions.holdPeriodYears
+      ? `>${exitAssumptions.holdPeriodYears}yrs`
+      : `${metrics.paybackPeriodYears} yrs`;
 
   const bridgeData = useMemo(() => {
     const m = metrics;
@@ -174,7 +184,7 @@ export default function ReturnsAnalysisSection({ metrics, projections, exitAssum
           <div className="rounded-lg border p-4 text-center">
             <Percent className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-xs text-muted-foreground uppercase tracking-wide">IRR</p>
-            <p className={`text-2xl font-bold ${irrDisplay === 'N/A' ? 'text-muted-foreground' : irrColor(metrics.irr)}`}>
+            <p className={`text-2xl font-bold ${irrDisplay === 'N/A' ? 'text-muted-foreground' : irrDisplay === '∞' ? 'text-green-600 dark:text-green-400' : irrColor(metrics.irr)}`}>
               {irrDisplay}
             </p>
             <p className="text-[11px] text-muted-foreground">Internal Rate of Return</p>
@@ -182,8 +192,8 @@ export default function ReturnsAnalysisSection({ metrics, projections, exitAssum
           <div className="rounded-lg border p-4 text-center">
             <Layers className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-xs text-muted-foreground uppercase tracking-wide">MOIC</p>
-            <p className={`text-2xl font-bold ${moicColor(metrics.moic)}`}>
-              {metrics.moic.toFixed(2)}x
+            <p className={`text-2xl font-bold ${metrics.moic === Infinity ? 'text-green-600 dark:text-green-400' : moicColor(metrics.moic)}`}>
+              {moicDisplay}
             </p>
             <p className="text-[11px] text-muted-foreground">Multiple on Invested Capital</p>
           </div>
@@ -191,15 +201,24 @@ export default function ReturnsAnalysisSection({ metrics, projections, exitAssum
             <Timer className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Payback</p>
             <p className={`text-2xl font-bold ${
-              metrics.paybackPeriodYears <= 0 || metrics.paybackPeriodYears >= exitAssumptions.holdPeriodYears
-                ? 'text-red-600 dark:text-red-400'
-                : paybackColor(metrics.paybackPeriodYears)
+              paybackDisplay === 'Instant'
+                ? 'text-green-600 dark:text-green-400'
+                : metrics.paybackPeriodYears <= 0 || metrics.paybackPeriodYears >= exitAssumptions.holdPeriodYears
+                  ? 'text-red-600 dark:text-red-400'
+                  : paybackColor(metrics.paybackPeriodYears)
             }`}>
               {paybackDisplay}
             </p>
             <p className="text-[11px] text-muted-foreground">Years to recover equity</p>
           </div>
         </div>
+
+        {isNoEquityDeal && (
+          <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 rounded-md px-3 py-1.5">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            No equity invested — fully debt funded. MOIC and IRR are infinite by definition.
+          </div>
+        )}
 
         {view === 'chart' ? (
           <ChartContainer config={chartConfig} className="h-[320px] w-full">
@@ -324,16 +343,18 @@ export default function ReturnsAnalysisSection({ metrics, projections, exitAssum
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-sm font-semibold">MOIC</TableCell>
-                  <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${moicColor(metrics.moic)}`}>
-                    {metrics.moic.toFixed(2)}x
+                  <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${metrics.moic === Infinity ? 'text-green-600 dark:text-green-400' : moicColor(metrics.moic)}`}>
+                    {moicDisplay}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="text-sm font-semibold">Payback Period</TableCell>
                   <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${
-                    metrics.paybackPeriodYears <= 0 || metrics.paybackPeriodYears >= exitAssumptions.holdPeriodYears
-                      ? 'text-red-600 dark:text-red-400'
-                      : paybackColor(metrics.paybackPeriodYears)
+                    paybackDisplay === 'Instant'
+                      ? 'text-green-600 dark:text-green-400'
+                      : metrics.paybackPeriodYears <= 0 || metrics.paybackPeriodYears >= exitAssumptions.holdPeriodYears
+                        ? 'text-red-600 dark:text-red-400'
+                        : paybackColor(metrics.paybackPeriodYears)
                   }`}>
                     {paybackDisplay}
                   </TableCell>

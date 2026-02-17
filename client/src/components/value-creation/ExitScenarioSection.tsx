@@ -76,8 +76,14 @@ const moicColor = (v: number) => {
 };
 
 const formatIrr = (v: number) => {
+  if (v === Infinity) return '∞';
   if (isNaN(v) || !isFinite(v) || v > 10) return 'N/A';
   return `${(v * 100).toFixed(1)}%`;
+};
+
+const formatMoic = (v: number) => {
+  if (v === Infinity) return '∞';
+  return `${v.toFixed(2)}x`;
 };
 
 const formatAxis = (v: number) => {
@@ -216,9 +222,9 @@ export default function ExitScenarioSection({
                   </TableRow>
                   <TableRow>
                     <TableCell className="text-sm font-semibold">MOIC</TableCell>
-                    <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${moicColor(returns.bear.moic)}`}>{returns.bear.moic.toFixed(2)}x</TableCell>
-                    <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold bg-blue-50/50 dark:bg-blue-950/20 ${moicColor(returns.base.moic)}`}>{returns.base.moic.toFixed(2)}x</TableCell>
-                    <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${moicColor(returns.bull.moic)}`}>{returns.bull.moic.toFixed(2)}x</TableCell>
+                    <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${returns.bear.moic === Infinity ? 'text-green-600 dark:text-green-400' : moicColor(returns.bear.moic)}`}>{formatMoic(returns.bear.moic)}</TableCell>
+                    <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold bg-blue-50/50 dark:bg-blue-950/20 ${returns.base.moic === Infinity ? 'text-green-600 dark:text-green-400' : moicColor(returns.base.moic)}`}>{formatMoic(returns.base.moic)}</TableCell>
+                    <TableCell className={`text-right font-mono tabular-nums text-sm font-semibold ${returns.bull.moic === Infinity ? 'text-green-600 dark:text-green-400' : moicColor(returns.bull.moic)}`}>{formatMoic(returns.bull.moic)}</TableCell>
                   </TableRow>
                   <TableRow className="bg-primary/5">
                     <TableCell className="text-sm font-semibold">Total Return</TableCell>
@@ -476,7 +482,7 @@ export default function ExitScenarioSection({
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">MOIC</span>
-                        <span className={`font-mono font-semibold ${moicColor(ret.moic)}`}>{ret.moic.toFixed(2)}x</span>
+                        <span className={`font-mono font-semibold ${ret.moic === Infinity ? 'text-green-600 dark:text-green-400' : moicColor(ret.moic)}`}>{formatMoic(ret.moic)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Total Return</span>

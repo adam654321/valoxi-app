@@ -284,8 +284,10 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
          + fee(modelDetails.feeDealMakerPercent, modelDetails.feeDealMakerType);
   }, [modelDetails]);
 
+  const hasActiveFunding = fundingLineInputs.some(f => f.isActive);
+
   const returnMetrics = useMemo(() => {
-    if (projections.length === 0 || entryEquity <= 0) return null;
+    if (projections.length === 0 || !hasActiveFunding) return null;
     return calculateReturns(
       projections,
       exitAssumptions,
@@ -298,7 +300,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   }, [projections, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees, fundingLineInputs]);
 
   const sensitivityData = useMemo(() => {
-    if (!baseYearData || activeAssumptions.length === 0 || entryEquity <= 0) return null;
+    if (!baseYearData || activeAssumptions.length === 0 || !hasActiveFunding) return null;
     return calculateSensitivity(
       baseYearData,
       activeAssumptions,
@@ -313,7 +315,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   }, [baseYearData, activeAssumptions, synergyInputs, fundingLineInputs, exitAssumptions, entryEquity, entryMultiple, totalDebt, totalFees]);
 
   const scenarioComparison = useMemo(() => {
-    if (!baseYearData || activeAssumptions.length === 0 || entryEquity <= 0 || !vcData?.scenarios) return null;
+    if (!baseYearData || activeAssumptions.length === 0 || !hasActiveFunding || !vcData?.scenarios) return null;
 
     const baseScenario = vcData.scenarios.find(s => s.scenarioType === 'base');
     const bearScenario = vcData.scenarios.find(s => s.scenarioType === 'bear');

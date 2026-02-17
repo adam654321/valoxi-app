@@ -374,31 +374,41 @@ export function calculateReturns(
     .reduce((sum, p) => sum + Math.max(0, p.freeCashFlow), 0);
 
   const totalReturn = exitEquity + totalCashDistributions;
-  const moic = entryEquity > 0 ? totalReturn / entryEquity : 0;
+  const moic = entryEquity > 0 ? totalReturn / entryEquity : (totalReturn > 0 ? Infinity : 0);
 
   let cumCash = 0;
-  let paybackPeriodYears = holdYears;
-  for (const p of projections) {
-    if (p.year > holdYears) break;
-    cumCash += Math.max(0, p.freeCashFlow);
-    if (cumCash >= entryEquity && paybackPeriodYears === holdYears) {
-      const prevCum = cumCash - Math.max(0, p.freeCashFlow);
-      const remaining = entryEquity - prevCum;
-      const fraction = Math.max(0, p.freeCashFlow) > 0 ? remaining / Math.max(0, p.freeCashFlow) : 1;
-      paybackPeriodYears = p.year - 1 + fraction;
+  let paybackPeriodYears: number;
+  if (entryEquity === 0) {
+    paybackPeriodYears = 0;
+  } else {
+    paybackPeriodYears = holdYears;
+    for (const p of projections) {
+      if (p.year > holdYears) break;
+      cumCash += Math.max(0, p.freeCashFlow);
+      if (cumCash >= entryEquity && paybackPeriodYears === holdYears) {
+        const prevCum = cumCash - Math.max(0, p.freeCashFlow);
+        const remaining = entryEquity - prevCum;
+        const fraction = Math.max(0, p.freeCashFlow) > 0 ? remaining / Math.max(0, p.freeCashFlow) : 1;
+        paybackPeriodYears = p.year - 1 + fraction;
+      }
     }
   }
 
-  const cashFlows: number[] = [-entryEquity];
-  for (let y = 1; y <= holdYears; y++) {
-    const yearProjection = projections[y - 1];
-    let cf = Math.max(0, yearProjection?.freeCashFlow || 0);
-    if (y === holdYears) {
-      cf += exitEquity;
+  let irr: number;
+  if (entryEquity === 0) {
+    irr = totalReturn > 0 ? Infinity : 0;
+  } else {
+    const cashFlows: number[] = [-entryEquity];
+    for (let y = 1; y <= holdYears; y++) {
+      const yearProjection = projections[y - 1];
+      let cf = Math.max(0, yearProjection?.freeCashFlow || 0);
+      if (y === holdYears) {
+        cf += exitEquity;
+      }
+      cashFlows.push(cf);
     }
-    cashFlows.push(cf);
+    irr = calculateIRR(cashFlows);
   }
-  const irr = calculateIRR(cashFlows);
 
   const ebitdaGrowthValue = (exitYear.ebitda - projections[0].ebitdaBeforeSynergies) * entryMultiple;
   const multipleExpansionValue = exitYear.ebitda * (exitAssumptions.exitMultiple - entryMultiple);
