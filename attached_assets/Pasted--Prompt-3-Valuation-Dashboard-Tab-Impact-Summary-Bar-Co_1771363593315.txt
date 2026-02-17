@@ -1,0 +1,438 @@
+# Prompt 3: Valuation Dashboard Tab & Impact Summary Bar
+
+## Context
+
+This is prompt 3 of 4 in the Value Creation Modeller redesign. Prompts 1 (zero-equity fix) and 2 (tab architecture) should already be applied. The 5-tab structure exists with a Dashboard placeholder. This prompt replaces that placeholder with a full single-screen valuation dashboard and adds a live impact summary bar.
+
+After this prompt, the core "tweak left, see impact right, instantly" experience is live.
+
+---
+
+## 1. Create `ValuationDashboard.tsx`
+
+Create: `client/src/components/value-creation/ValuationDashboard.tsx`
+
+This is the default landing view for the Value Creation module. It must fit on one screen without scrolling (target max height ~700-800px on a standard 1080p display). It shows all key metrics at a glance with Bear/Base/Bull side by side.
+
+### Props Interface
+
+```typescript
+interface ValuationDashboardProps {
+  // Core data
+  projections: ProjectedYear[];
+  baseYearData: BaseYearData;
+  baseYearLabel: string;
+  
+  // Returns & scenarios
+  returnMetrics: ReturnMetrics | null;
+  scenarioComparison: {
+    projections: { bear: ProjectedYear[]; base: ProjectedYear[]; bull: ProjectedYear[] };
+    returns: { bear: ReturnMetrics; base: ReturnMetrics; bull: ReturnMetrics };
+  } | null;
+  
+  // Deal context
+  exitAssumptions: ExitAssumptions;
+  entryMultiple: number;
+  entryEquity: number;
+  
+  // For impact tracking
+  previousMetrics: ImpactMetrics | null;
+  currentMetrics: ImpactMetrics | null;
+}
+```
+
+### Layout Structure
+
+The dashboard has 3 rows:
+
+**Row 1: Hero Metric Cards (most important row)**
+
+A responsive grid of metric cards showing the key decision metrics. Each card shows Bear/Base/Bull values side by side where scenario data is available.
+
+Metrics to display:
+- **IRR** — from `returnMetrics` and `scenarioComparison.returns`. Colour-coded: ≥25% green, ≥15% blue, ≥10% amber, <10% red. If unavailable show "—" not "N/A".
+- **MOIC** — same sources, colour-coded: ≥3x green, ≥2x blue, ≥1.5x amber, <1.5x red.
+- **Payback Period** — from `returnMetrics`. Show in years. If >hold period, show ">5yrs" in amber.
+- **Y5 EBITDA** — from `projections` and `scenarioComparison.projections`. Always available.
+- **Cumulative FCF** — sum of `projections[].freeCashFlow`. Always available.
+- **Worst DSCR** — min of `projections[].dscr`. Colour-coded: ≥1.8 green, ≥1.4 blue, ≥1.0 amber, <1.0 red.
+
+Card design:
+```tsx
+<div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+  {/* Each card */}
+  <Card className="border-l-4 border-l-{color}">
+    <CardContent className="py-3 px-4">
+      <p className="text-xs text-muted-foreground">{metric name}</p>
+      
+      {/* If scenario data available, show all three inline */}
+      {scenarioComparison ? (
+        <div className="flex items-baseline gap-2 mt-1">
+          <span className="text-[10px] text-red-600 font-mono">{bear value}</span>
+          <span className="text-lg font-bold font-mono">{base value}</span>
+          <span className="text-[10px] text-green-600 font-mono">{bull value}</span>
+        </div>
+      ) : (
+        <p className="text-lg font-bold mt-0.5 font-mono">{base value only}</p>
+      )}
+    </CardContent>
+  </Card>
+</div>
+```
+
+The bear value is small text left, base value is large centre, bull value is small text right. This gives instant range visibility without toggling.
+
+When `returnMetrics` is null (no equity/funding), only show Y5 EBITDA, Cumulative FCF, and Worst DSCR (3 cards instead of 6).
+
+**Row 2: Value Bridge Chart (centre stage)**
+
+This is the single most important visualisation in the module. It shows where returns come from: EBITDA growth, multiple expansion, debt paydown, cash distributions, less fees.
+
+Pull the value bridge chart logic from `ReturnsAnalysisSection.tsx` and render it here at a larger size. If `returnMetrics` is null, show a compact empty state instead.
+
+The chart should be a horizontal or vertical waterfall bar chart showing:
+- Entry Equity (starting point)
+- + EBITDA Growth Value
+- + Multiple Expansion Value  
+- + Debt Paydown Value
+- + Cash Distributions
+- − Fees & Costs
+- = Total Return (endpoint)
+
+Use `returnMetrics.ebitdaGrowthValue`, `returnMetrics.multipleExpansionValue`, `returnMetrics.debtPaydownValue`, `returnMetrics.cashDistributionsValue`, `returnMetrics.feesDeducted`.
+
+If `scenarioComparison` is available, show three grouped bars (Bear/Base/Bull) for each waterfall step. If not, single bars for base case only.
+
+Target height: ~250-300px.
+
+**Row 3: Two compact panels side by side**
+
+Left panel (~50% width): **Mini P&L Summary**
+
+A compact table showing the base year vs Y5 projected values for key P&L lines:
+
+| | Base Year | Y5 Projected | Change |
+|---|---|---|---|
+| Revenue | £X | £Y | +Z% |
+| Gross Profit | £X | £Y | +Z% |
+| EBITDA | £X | £Y | +Z% |
+| EBITDA Margin | X% | Y% | +Zpp |
+| Net Profit | £X | £Y | +Z% |
+
+Use data from `baseYearData` and `projections[projections.length - 1]`. The "Change" column should be colour-coded green/red.
+
+If `scenarioComparison` is available, add bear and bull Y5 columns. Keep it compact — only these 5 rows.
+
+Right panel (~50% width): **Mini Scenario Summary**
+
+Three compact cards (Bear/Base/Bull) showing:
+- Exit EBITDA
+- Exit EV  
+- Exit Equity
+- IRR
+- MOIC
+
+Use data from `scenarioComparison.returns` and calculated exit values. If `scenarioComparison` is null, show an empty state saying "Configure scenarios to see comparison."
+
+Layout: three narrow cards in a row, coloured left-border (red/blue/green) matching the existing Bear/Base/Bull colour scheme.
+
+Target height for Row 3: ~200-250px combined.
+
+### Responsive Behaviour
+
+- **xl (≥1280px):** All 6 hero cards in one row. Value bridge full width. Bottom two panels side by side.
+- **lg (≥1024px):** 3 hero cards per row (2 rows). Rest same.
+- **md and below:** 2 hero cards per row. Bottom panels stack vertically. Value bridge may need reduced height.
+
+---
+
+## 2. Create `ImpactSummaryBar.tsx`
+
+Create: `client/src/components/value-creation/ImpactSummaryBar.tsx`
+
+This component shows the "what just changed?" delta when assumptions are modified. It lives on the Dashboard tab only, positioned between Row 1 (hero cards) and Row 2 (value bridge).
+
+### Types
+
+```typescript
+export interface ImpactMetrics {
+  y5Ebitda: number;
+  cumulativeFcf: number;
+  irr: number | null;       // null when returnMetrics unavailable
+  moic: number | null;       // null when returnMetrics unavailable
+  worstDscr: number;
+}
+
+interface ImpactSummaryBarProps {
+  current: ImpactMetrics | null;
+  previous: ImpactMetrics | null;
+}
+```
+
+### Display Logic
+
+- If `previous` is null (first load, no change yet): **don't render anything** (return null). The hero cards already show current values.
+- If `previous` exists and values differ from `current`: show the impact bar with deltas.
+- Format: `EBITDA: £420K → £485K (+15.5%)  ·  IRR: 18.2% → 23.1%  ·  MOIC: 2.1x → 2.4x  ·  FCF: +£62K`
+- Green text for positive changes in EBITDA/FCF/IRR/MOIC. Red for negative.
+- For DSCR: green when moving AWAY from 1.0 (getting safer), red when moving TOWARD 1.0.
+- Skip metrics where value is null in both current and previous (don't show "N/A → N/A").
+- The bar should have a subtle entrance animation (opacity 0→1, slight translateY).
+
+### Visual Design
+
+```tsx
+<div className="rounded-lg border bg-muted/30 border-l-4 border-l-primary px-4 py-2 flex items-center gap-4 overflow-x-auto animate-in fade-in slide-in-from-bottom-1 duration-300">
+  {/* Each metric delta */}
+  <div className="flex items-center gap-1.5 whitespace-nowrap">
+    <span className="text-xs text-muted-foreground">EBITDA</span>
+    <span className="text-xs font-mono text-muted-foreground">{formatCurrency(previous.y5Ebitda)}</span>
+    <span className="text-xs text-muted-foreground">→</span>
+    <span className="text-xs font-mono font-semibold">{formatCurrency(current.y5Ebitda)}</span>
+    <span className={`text-[10px] font-mono ${delta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+      ({delta >= 0 ? '+' : ''}{deltaPercent.toFixed(1)}%)
+    </span>
+  </div>
+  
+  {/* Separator dot between metrics */}
+  <span className="text-muted-foreground/30">·</span>
+  
+  {/* ... more metrics ... */}
+</div>
+```
+
+---
+
+## 3. Impact Tracking in `ValueCreationModeller.tsx`
+
+Add the state and logic to track metric deltas in the main component.
+
+### Import the ImpactMetrics type
+
+```typescript
+import type { ImpactMetrics } from '@/components/value-creation/ImpactSummaryBar';
+```
+
+### Add State
+
+```typescript
+const prevMetricsRef = useRef<ImpactMetrics | null>(null);
+const [displayPrevious, setDisplayPrevious] = useState<ImpactMetrics | null>(null);
+const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+```
+
+### Build Current Metrics
+
+```typescript
+const currentImpactMetrics = useMemo<ImpactMetrics | null>(() => {
+  if (!kpis) return null;
+  return {
+    y5Ebitda: kpis.y5Ebitda,
+    cumulativeFcf: kpis.totalCashGenerated,
+    irr: returnMetrics?.irr ?? null,
+    moic: returnMetrics?.moic ?? null,
+    worstDscr: kpis.worstDscr,
+  };
+}, [kpis, returnMetrics]);
+```
+
+### Track Changes
+
+```typescript
+useEffect(() => {
+  if (!currentImpactMetrics) return;
+
+  if (prevMetricsRef.current) {
+    const changed = JSON.stringify(currentImpactMetrics) !== JSON.stringify(prevMetricsRef.current);
+    if (changed) {
+      setDisplayPrevious({ ...prevMetricsRef.current });
+      
+      // Clear previous deltas timer if exists
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      
+      // Fade out deltas after 8 seconds
+      fadeTimerRef.current = setTimeout(() => {
+        setDisplayPrevious(null);
+      }, 8000);
+    }
+  }
+  
+  // Always update the ref to latest
+  prevMetricsRef.current = { ...currentImpactMetrics };
+}, [currentImpactMetrics]);
+
+// Cleanup timer on unmount
+useEffect(() => {
+  return () => {
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+  };
+}, []);
+```
+
+### Pass to Dashboard
+
+Replace the `DashboardPlaceholder` from Prompt 2 with:
+
+```tsx
+{activeTab === 'dashboard' && (
+  <ValuationDashboard
+    projections={projections}
+    baseYearData={baseYearData!}
+    baseYearLabel={baseYearLabel}
+    returnMetrics={returnMetrics}
+    scenarioComparison={scenarioComparison}
+    exitAssumptions={exitAssumptions}
+    entryMultiple={entryMultiple}
+    entryEquity={entryEquity}
+    previousMetrics={displayPrevious}
+    currentMetrics={currentImpactMetrics}
+  />
+)}
+```
+
+---
+
+## 4. Expand Top KPI Cards
+
+The existing 4 KPI cards (Y5 Revenue, Y5 EBITDA, Total Cash, Worst DSCR) should be expanded to include IRR, MOIC, and Payback when `returnMetrics` is available.
+
+In `ValueCreationModeller.tsx`, modify the KPI cards grid:
+
+```tsx
+{kpis && (
+  <div className={`grid gap-3 ${returnMetrics ? 'grid-cols-2 lg:grid-cols-4 xl:grid-cols-7' : 'grid-cols-2 lg:grid-cols-4'}`}>
+    {/* Existing 4 cards stay as-is */}
+    
+    {/* New cards - only when returnMetrics exists */}
+    {returnMetrics && (
+      <>
+        <Card className={`border-l-4 ${
+          returnMetrics.irr >= 0.25 ? 'border-l-green-500' :
+          returnMetrics.irr >= 0.15 ? 'border-l-blue-500' :
+          returnMetrics.irr >= 0.10 ? 'border-l-amber-500' :
+          'border-l-red-500'
+        }`}>
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              IRR
+            </p>
+            <p className={`text-lg font-bold mt-0.5 ${
+              returnMetrics.irr >= 0.25 ? 'text-green-700 dark:text-green-400' :
+              returnMetrics.irr >= 0.15 ? 'text-blue-700 dark:text-blue-400' :
+              returnMetrics.irr >= 0.10 ? 'text-amber-700 dark:text-amber-400' :
+              'text-red-700 dark:text-red-400'
+            }`}>
+              {isFinite(returnMetrics.irr) && !isNaN(returnMetrics.irr) && returnMetrics.irr <= 10
+                ? `${(returnMetrics.irr * 100).toFixed(1)}%`
+                : '∞'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className={`border-l-4 ${
+          returnMetrics.moic >= 3 ? 'border-l-green-500' :
+          returnMetrics.moic >= 2 ? 'border-l-blue-500' :
+          returnMetrics.moic >= 1.5 ? 'border-l-amber-500' :
+          'border-l-red-500'
+        }`}>
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <BarChart3 className="h-3 w-3" />
+              MOIC
+            </p>
+            <p className={`text-lg font-bold mt-0.5 ${
+              returnMetrics.moic >= 3 ? 'text-green-700 dark:text-green-400' :
+              returnMetrics.moic >= 2 ? 'text-blue-700 dark:text-blue-400' :
+              returnMetrics.moic >= 1.5 ? 'text-amber-700 dark:text-amber-400' :
+              'text-red-700 dark:text-red-400'
+            }`}>
+              {isFinite(returnMetrics.moic) ? `${returnMetrics.moic.toFixed(2)}x` : '∞'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="py-3 px-4">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Payback
+            </p>
+            <p className="text-lg font-bold mt-0.5">
+              {returnMetrics.paybackPeriodYears === 0 
+                ? 'Instant'
+                : returnMetrics.paybackPeriodYears > exitAssumptions.holdPeriodYears
+                ? `>${exitAssumptions.holdPeriodYears}yrs`
+                : `${returnMetrics.paybackPeriodYears.toFixed(1)} yrs`}
+            </p>
+          </CardContent>
+        </Card>
+      </>
+    )}
+  </div>
+)}
+```
+
+Import `Clock` from `lucide-react`.
+
+---
+
+## 5. Remove Bear/Base/Bull Toggle from Top Strip
+
+With the Dashboard now showing all three scenarios side by side, the top-strip `Tabs` component for Bear/Base/Bull scenario switching needs a behaviour change:
+
+**On the Dashboard tab:** The Bear/Base/Bull toggle should be **hidden** because the dashboard shows all three scenarios simultaneously. 
+
+**On all other tabs:** The toggle stays visible and works as before — it controls which scenario's projections are shown in the detail views.
+
+In `ValueCreationModeller.tsx`, wrap the scenario tabs conditionally:
+
+```tsx
+{activeTab !== 'dashboard' && (
+  <Tabs value={activeScenarioType} onValueChange={setActiveScenarioType}>
+    <TabsList className="h-9">
+      {/* Bear/Base/Bull triggers - unchanged */}
+    </TabsList>
+  </Tabs>
+)}
+```
+
+---
+
+## 6. What NOT to Change
+
+- **Calculation engine** — no changes
+- **API layer** — no new endpoints  
+- **AssumptionsPanel** — already contextual from Prompt 2, no further changes
+- **Individual analysis sections** — already restructured into tabs from Prompt 2
+- **Tab structure** — keep all 5 tabs from Prompt 2, just replace the placeholder
+
+---
+
+## 7. Files Changed
+
+| File | Change Type |
+|------|------------|
+| `ValuationDashboard.tsx` | **New file** — full dashboard component |
+| `ImpactSummaryBar.tsx` | **New file** — delta display component |
+| `ValueCreationModeller.tsx` | Moderate — impact tracking state, expanded KPIs, conditional scenario toggle, wire up dashboard |
+
+---
+
+## 8. Test Scenarios
+
+1. **Dashboard default view:** Load the Value Creation tab. Dashboard should be the active tab. All hero metrics visible. Value bridge chart prominent. Mini P&L and scenario summary at bottom.
+
+2. **No returns data:** When no funding lines exist, dashboard should show only 3 hero cards (EBITDA, FCF, DSCR). Value bridge should show empty state. Mini scenario summary should show empty state. Mini P&L should still work.
+
+3. **Impact bar trigger:** On Dashboard tab, change revenue growth from 5% to 8% in the assumptions panel. Within ~1 second, the impact bar should appear showing deltas (e.g. "EBITDA: £420K → £485K (+15.5%)"). Bar should fade after 8 seconds.
+
+4. **Impact bar on other tabs:** Switch to Projections tab and change an assumption. The impact bar should NOT appear (it only lives on the Dashboard). But the projections charts should update.
+
+5. **Bear/Base/Bull on dashboard:** All hero metric cards should show three values (bear small left, base large centre, bull small right). No Bear/Base/Bull toggle should be visible in the top strip.
+
+6. **Bear/Base/Bull on detail tabs:** Switch to Projections. The Bear/Base/Bull toggle should reappear in the top strip. Switching between scenarios should change the projections displayed.
+
+7. **KPI card expansion:** When returnMetrics exists, 7 KPI cards visible. When null, 4 cards visible. The grid should be responsive and not break layout.
+
+8. **Single screen fit:** Dashboard content should fit within ~800px viewport height without scrolling on a standard desktop display. If content overflows, the bottom row (mini P&L + scenario summary) should be the first thing to scroll off.
