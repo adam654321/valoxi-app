@@ -36,6 +36,7 @@ import type {
 } from '@shared/schema';
 import AssumptionsPanel from '@/components/value-creation/AssumptionsPanel';
 import PLProjectionsSection from '@/components/value-creation/PLProjectionsSection';
+import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
 import {
   LineChart,
   Calculator,
@@ -461,19 +462,11 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                   scenarioType={activeScenarioType}
                 />
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-xs font-bold text-purple-700 dark:text-purple-300">4</span>
-                      Cash Flow Waterfall
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-muted/30 rounded-lg p-6 text-center text-sm text-muted-foreground">
-                      <p className="font-medium">Section ready for Prompt 4</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CashFlowWaterfallSection
+                  projections={projections}
+                  fundingLines={fundingLineInputs}
+                  baseYearLabel={baseYearLabel}
+                />
 
                 <Card>
                   <CardHeader>

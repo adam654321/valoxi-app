@@ -1,0 +1,377 @@
+# Prompt 4: Cash Flow Waterfall & Debt Schedule
+
+## CONTEXT
+
+We are building the Value Creation Modeller for an M&A CRM platform. Prompts 1–3 delivered:
+
+- **Schema**: `shared/schema/value-creation.ts` — 4 tables (scenarios, assumptions, synergies, exit assumptions)
+- **Calculator**: `shared/calculators/value-creation.calc.ts` — all financial logic including `calculateDebtSchedules()`, `calculateWaterfall()`, `calculateProjections()`, and `calculateReturns()`
+- **Service + Routes**: `server/services/value-creation.service.ts` and `server/routes/value-creation.routes.ts` — full CRUD at `/api/v2/value-creation/`
+- **Frontend**: `client/src/components/value-creation/AssumptionsPanel.tsx` (left sidebar), `client/src/components/value-creation/PLProjectionsSection.tsx` (Section 1 — P&L table + chart), and `client/src/components/target-company/ValueCreationModeller.tsx` (orchestrator page)
+
+The orchestrator (`ValueCreationModeller.tsx`) already computes these in `useMemo`:
+- `projections` — `ProjectedYear[]` from `calculateProjections()`
+- `fundingLineInputs` — `FundingLineForProjection[]` mapped from `modelDetails.fundingLines`
+
+There is a **placeholder** in `ValueCreationModeller.tsx` at approximately line 350 that currently renders:
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle className="text-base flex items-center gap-2">
+      <span className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-xs font-bold text-purple-700 dark:text-purple-300">4</span>
+      Cash Flow Waterfall
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="bg-muted/30 rounded-lg p-6 text-center text-sm text-muted-foreground">
+      <p className="font-medium">Section ready for Prompt 4</p>
+    </div>
+  </CardContent>
+</Card>
+```
+
+This prompt replaces that placeholder with a full interactive section. **This is frontend-only. No backend, schema, or calculator changes.**
+
+---
+
+## WHAT TO BUILD
+
+Create one new component file and update the orchestrator to wire it in.
+
+---
+
+## STEP 1: Create `client/src/components/value-creation/CashFlowWaterfallSection.tsx`
+
+This component receives pre-computed data and renders three sub-sections: a waterfall chart, debt amortisation tables, and a summary metrics bar.
+
+### Props Interface
+
+```tsx
+interface CashFlowWaterfallSectionProps {
+  projections: ProjectedYear[];
+  fundingLines: FundingLineForProjection[];
+  baseYearLabel: string;
+}
+```
+
+### Imports Required
+
+```tsx
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from '@/components/ui/chart';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+  Cell,
+  ResponsiveContainer,
+} from 'recharts';
+import { formatCurrency } from '@/lib/format-utils';
+import {
+  calculateDebtSchedules,
+  calculateWaterfall,
+  type ProjectedYear,
+  type FundingLineForProjection,
+  type DebtFacilitySchedule,
+  type WaterfallYear,
+} from '@shared/calculators/value-creation.calc';
+import {
+  Droplets,
+  ChevronDown,
+  ChevronRight,
+  Landmark,
+  Info,
+  TrendingDown,
+  TrendingUp,
+  Banknote,
+  BarChart3,
+  Table as TableIcon,
+} from 'lucide-react';
+```
+
+### Internal State
+
+```tsx
+const [view, setView] = useState<'chart' | 'table'>('chart');
+const [debtOpen, setDebtOpen] = useState(false);
+```
+
+### Computed Data (useMemo)
+
+**1. Debt schedules:**
+```tsx
+const debtSchedules = useMemo(() => calculateDebtSchedules(fundingLines), [fundingLines]);
+```
+
+**2. Waterfall data:**
+```tsx
+const waterfallData = useMemo(() => calculateWaterfall(projections), [projections]);
+```
+
+**3. Chart-ready waterfall data for the stacked bar chart:**
+
+Build this as an array of objects, one per year. Each object has:
+- `name`: `"Y1"`, `"Y2"`, etc.
+- For the waterfall visualisation, use a **floating bar** approach. Each bar segment needs a `start` and `end` value so they stack from EBITDA downward:
+
+```tsx
+const chartData = useMemo(() => {
+  return waterfallData.map(w => {
+    // Start from EBITDA, subtract each item to show the waterfall
+    const afterTax = w.ebitda + w.tax; // tax is negative
+    const afterInterest = afterTax + w.interest; // interest is negative
+    const afterPrincipal = afterInterest + w.principalRepayments; // negative
+    const afterCapex = afterPrincipal + w.capex; // negative
+    const afterWC = afterCapex + w.workingCapitalChange; // negative
+
+    return {
+      name: `Y${w.year}`,
+      ebitda: w.ebitda,
+      tax: w.tax,
+      interest: w.interest,
+      principal: w.principalRepayments,
+      capex: w.capex,
+      workingCapital: w.workingCapitalChange,
+      freeCashFlow: w.freeCashFlow,
+      // For stacked display
+      segments: [
+        { label: 'Tax', value: w.tax, color: 'hsl(0, 72%, 51%)' },
+        { label: 'Interest', value: w.interest, color: 'hsl(25, 95%, 53%)' },
+        { label: 'Principal', value: w.principalRepayments, color: 'hsl(45, 93%, 47%)' },
+        { label: 'Capex', value: w.capex, color: 'hsl(262, 83%, 58%)' },
+        { label: 'WC Change', value: w.workingCapitalChange, color: 'hsl(199, 89%, 48%)' },
+      ],
+    };
+  });
+}, [waterfallData]);
+```
+
+**4. Summary metrics:**
+```tsx
+const summaryMetrics = useMemo(() => {
+  const totalInterest = waterfallData.reduce((sum, w) => sum + Math.abs(w.interest), 0);
+  const totalPrincipal = waterfallData.reduce((sum, w) => sum + Math.abs(w.principalRepayments), 0);
+  const totalTax = waterfallData.reduce((sum, w) => sum + Math.abs(w.tax), 0);
+  const totalCapex = waterfallData.reduce((sum, w) => sum + Math.abs(w.capex), 0);
+  const totalFCF = waterfallData.reduce((sum, w) => sum + w.freeCashFlow, 0);
+  const cumulativeFCF: number[] = [];
+  let running = 0;
+  for (const w of waterfallData) {
+    running += w.freeCashFlow;
+    cumulativeFCF.push(running);
+  }
+  const allPositive = waterfallData.every(w => w.freeCashFlow > 0);
+  return { totalInterest, totalPrincipal, totalTax, totalCapex, totalFCF, cumulativeFCF, allPositive };
+}, [waterfallData]);
+```
+
+### Render Structure
+
+The component renders a single `<Card>` matching the existing section pattern (numbered circle badge, title, chart/table toggle). Inside:
+
+**A) Header row** — same pattern as PLProjectionsSection:
+- Left: purple circle with "4", title "Cash Flow Waterfall"
+- Right: summary badges (Total Interest Paid, Total FCF) + chart/table toggle buttons
+
+**B) Chart view** — a grouped/stacked bar chart showing, for each projected year:
+
+Use Recharts `BarChart` with **individual bars per cost category** side by side or stacked. The simplest clear approach:
+
+- Render a **simple stacked bar chart** where:
+  - One tall green bar = EBITDA
+  - Stacked red/orange bars on the negative side = Tax, Interest, Principal, Capex, WC Change
+  - A separate bar or overlaid line = Free Cash Flow (the net result)
+
+**Recommended approach**: Use a `ComposedChart` with:
+- A positive green `Bar` for EBITDA
+- Negative stacked bars for each deduction (tax, interest, principal, capex, WC)
+- A `Bar` for Free Cash Flow in a distinct colour (emerald-500) shown separately
+
+Here is the specific chart implementation to use:
+
+```tsx
+// Use a simple grouped approach: EBITDA bar, deductions bar, FCF bar
+const barChartData = waterfallData.map(w => ({
+  name: `Y${w.year}`,
+  EBITDA: w.ebitda,
+  Tax: w.tax,
+  Interest: w.interest,
+  'Debt Repayment': w.principalRepayments,
+  Capex: w.capex,
+  'WC Change': w.workingCapitalChange,
+  'Free Cash Flow': w.freeCashFlow,
+}));
+```
+
+Render with:
+```tsx
+<BarChart data={barChartData} stackOffset="sign">
+```
+
+Using `stackOffset="sign"` groups positive values upward and negative values downward automatically. Stack all items together:
+
+- `EBITDA` — `fill: hsl(142, 71%, 45%)` (green)
+- `Tax` — `fill: hsl(0, 72%, 51%)` (red)
+- `Interest` — `fill: hsl(25, 95%, 53%)` (orange)
+- `Debt Repayment` — `fill: hsl(45, 93%, 47%)` (amber)
+- `Capex` — `fill: hsl(262, 83%, 58%)` (purple)
+- `WC Change` — `fill: hsl(199, 89%, 48%)` (blue)
+
+Then overlay `Free Cash Flow` as a **separate non-stacked bar** with `stackId` omitted so it floats independently:
+- `fill: hsl(160, 84%, 39%)` (emerald)
+- `barSize={20}` to make it narrower than the stack
+
+All stacked bars share `stackId="waterfall"`. The FCF bar has no `stackId`.
+
+Chart height: `h-[320px]`. Wrap in `ChartContainer` with appropriate `ChartConfig`.
+
+Y-axis formatter: same as PLProjectionsSection (£K / £M shorthand). Use `width={70}`.
+
+Custom tooltip: show all values formatted with `formatCurrency()`, skip items that are 0.
+
+**C) Table view** — a detailed year-by-year breakdown table:
+
+| Row | Y1 | Y2 | Y3 | Y4 | Y5 |
+|-----|----|----|----|----|-----|
+| **EBITDA** | | | | | |
+| Less: Corporation Tax | | | | | |
+| Less: Interest | | | | | |
+| Less: Debt Repayment | | | | | |
+| Less: Capex | | | | | |
+| Less: Working Capital Change | | | | | |
+| **Free Cash Flow** | bold, highlight row | | | | |
+| Cumulative FCF | italic, muted | | | | |
+
+Use the same table styling patterns as PLProjectionsSection:
+- Row label column sticky left
+- Bold for EBITDA and FCF rows
+- `bg-primary/5 font-semibold` for the FCF highlight row
+- Negative values in `text-red-600 dark:text-red-400`
+- Cumulative FCF row in `text-muted-foreground italic text-xs`
+- Separator rows (thin dashed border) above EBITDA and FCF
+
+Format all currency values with `formatCurrency()`. Show negative values in parentheses (formatCurrency already handles this).
+
+**D) Debt Amortisation Schedule** — a collapsible section below the chart/table:
+
+Wrapped in `<Collapsible>` defaulting to closed. Trigger shows:
+- `Landmark` icon
+- "Debt Amortisation Schedule"  
+- Badge showing number of active debt facilities
+- Chevron
+
+Content: For each `DebtFacilitySchedule` in `debtSchedules`, render a sub-card or bordered section with:
+
+Title: "Facility {index + 1}" — and if the corresponding `fundingLines[schedule.facilityIndex]` has data, show the amount. Get facility label from the funding line if possible (note: `FundingLineForProjection` doesn't have `label`, so just show "Facility 1", "Facility 2" etc. with the amount used).
+
+Table per facility:
+
+| | Y1 | Y2 | Y3 | Y4 | Y5 |
+|---|---|---|---|---|---|
+| Opening Balance | | | | | |
+| Interest | | | | | |
+| Principal | | | | | |
+| **Closing Balance** | | | | | |
+
+All values formatted with `formatCurrency()`. Closing Balance row in bold. If closing balance is 0, show in green text.
+
+**After all facility tables**, show a **Totals** row:
+- Total Annual Interest (sum across all facilities per year)
+- Total Annual Principal (sum across all facilities per year)
+- Total Annual Debt Service (interest + principal per year)
+
+**E) Summary metrics bar** — a grid of 4 small metric cards at the bottom (same pattern as KPI cards in the orchestrator but smaller):
+
+```
+| Total Interest Paid | Total Debt Repaid | Total Tax | 5-Year FCF |
+```
+
+Each card: icon, label (text-xs text-muted-foreground), value (text-base font-bold). Use:
+- Total Interest — Banknote icon, amber border
+- Total Debt Repaid — TrendingDown icon, blue border  
+- Total Tax — Landmark icon, red border
+- 5-Year FCF — TrendingUp icon, green border (or red if negative)
+
+**F) Info footer** — same pattern as PLProjectionsSection:
+```tsx
+<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+  <Info className="h-3 w-3 shrink-0" />
+  Cash flow waterfall shows how EBITDA converts to free cash after all obligations. 
+  Debt schedules are derived from the Deal Modeller funding stack.
+</div>
+```
+
+### Full export
+
+```tsx
+export default function CashFlowWaterfallSection({ ... }: CashFlowWaterfallSectionProps) {
+```
+
+---
+
+## STEP 2: Update `client/src/components/target-company/ValueCreationModeller.tsx`
+
+### 2a. Add import
+
+At the top of the file, with the other value-creation imports, add:
+
+```tsx
+import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
+```
+
+### 2b. Replace placeholder
+
+Find the entire placeholder `<Card>` block that contains `"Section ready for Prompt 4"` and replace it with:
+
+```tsx
+<CashFlowWaterfallSection
+  projections={projections}
+  fundingLines={fundingLineInputs}
+  baseYearLabel={baseYearLabel}
+/>
+```
+
+That's it. The component receives the already-computed data from the parent's `useMemo` hooks.
+
+---
+
+## DO NOT
+
+- Modify any calculator files (`value-creation.calc.ts` or `deal-model.calc.ts`)
+- Modify the schema or database
+- Modify any backend services or routes
+- Modify `AssumptionsPanel.tsx` or `PLProjectionsSection.tsx`
+- Add any new API endpoints
+- Change the props or data flow in the parent orchestrator beyond the import and placeholder replacement
+
+---
+
+## CONFIRMATION CHECKLIST
+
+After implementation, verify:
+
+1. The `CashFlowWaterfallSection.tsx` file exists at `client/src/components/value-creation/CashFlowWaterfallSection.tsx`
+2. The placeholder in `ValueCreationModeller.tsx` has been replaced with the `<CashFlowWaterfallSection>` component
+3. The import for `CashFlowWaterfallSection` is present in `ValueCreationModeller.tsx`
+4. The chart renders with EBITDA as a positive green bar and deductions stacking downward
+5. The Free Cash Flow bar renders separately (not part of the stack)
+6. The table view shows all waterfall rows with the FCF row highlighted
+7. Cumulative FCF shows in the table below the FCF row
+8. The debt amortisation collapsible opens and shows per-facility schedules
+9. The summary metrics bar shows 4 cards: Interest, Debt Repaid, Tax, FCF
+10. No TypeScript compilation errors
+11. No console errors when rendering the section
+12. The section renders correctly when there are zero debt facilities (shows "No debt facilities" message in the amortisation section, and the waterfall still works — interest and principal will be 0)
