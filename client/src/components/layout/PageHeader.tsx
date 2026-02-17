@@ -56,10 +56,12 @@ export function PageHeader() {
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbs.map((crumb, index) => (
-            <BreadcrumbItem key={index}>
+            <span key={index} className="contents">
               {index > 0 && <BreadcrumbSeparator />}
-              <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </span>
           ))}
         </BreadcrumbList>
       </Breadcrumb>
