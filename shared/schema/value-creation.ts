@@ -13,6 +13,9 @@ export const valueCreationScenarios = pgTable("value_creation_scenarios", {
   revenueGrowthMultiplier: decimal("revenue_growth_multiplier").default('1.0'),
   costPressureAdjustment: decimal("cost_pressure_adjustment").default('0'),
   
+  scenarioMode: varchar("scenario_mode", { length: 10 }).default('linked'),
+  rangePercent: decimal("range_percent").default('10'),
+  
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
