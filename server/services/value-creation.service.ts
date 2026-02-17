@@ -30,9 +30,9 @@ class ValueCreationService {
     };
 
     const scenarioDefaults = [
-      { scenarioType: 'bear', name: 'Bear Case', revenueGrowthMultiplier: '0.6', costPressureAdjustment: '1.5', factor: 0.9 },
+      { scenarioType: 'bear', name: 'Bear Case', revenueGrowthMultiplier: '0.6', costPressureAdjustment: '1.5', factor: 0.8 },
       { scenarioType: 'base', name: 'Base Case', revenueGrowthMultiplier: '1.0', costPressureAdjustment: '0', factor: 1.0 },
-      { scenarioType: 'bull', name: 'Bull Case', revenueGrowthMultiplier: '1.4', costPressureAdjustment: '-0.5', factor: 1.1 },
+      { scenarioType: 'bull', name: 'Bull Case', revenueGrowthMultiplier: '1.4', costPressureAdjustment: '-0.5', factor: 1.2 },
     ];
 
     for (const scenDef of scenarioDefaults) {
