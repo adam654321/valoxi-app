@@ -40,6 +40,7 @@ import type {
 import AssumptionsPanel from '@/components/value-creation/AssumptionsPanel';
 import PLProjectionsSection from '@/components/value-creation/PLProjectionsSection';
 import SynergiesDetailSection from '@/components/value-creation/SynergiesDetailSection';
+import CapitalDeploymentSection from '@/components/value-creation/CapitalDeploymentSection';
 import CashFlowWaterfallSection from '@/components/value-creation/CashFlowWaterfallSection';
 import ReturnsAnalysisSection from '@/components/value-creation/ReturnsAnalysisSection';
 import SensitivityAnalysisSection from '@/components/value-creation/SensitivityAnalysisSection';
@@ -591,6 +592,14 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                   <SynergiesDetailSection
                     synergies={synergyInputs}
                     projections={projections}
+                  />
+                )}
+
+                {projections.length > 0 && (
+                  <CapitalDeploymentSection
+                    projections={projections}
+                    assumptions={activeAssumptions}
+                    baseYearRevenue={baseYearData?.revenue ?? 0}
                   />
                 )}
 
