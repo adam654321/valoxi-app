@@ -209,7 +209,7 @@ export default function ValuationDashboard({
 
   return (
     <div className="space-y-3">
-      <div className={`grid gap-3 ${hasReturns ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-6' : 'grid-cols-1 sm:grid-cols-3'}`}>
+      <div className={`grid gap-3 ${hasReturns ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-3'}`}>
         {hasReturns && (
           <>
             <Card className={`border-l-4 ${irrBorder(returnMetrics.irr)}`}>
@@ -307,8 +307,8 @@ export default function ValuationDashboard({
         <Card>
           <CardContent className="py-3 px-4">
             <p className="text-xs font-medium text-muted-foreground mb-1">Value Bridge</p>
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <BarChart data={bridgeData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+            <ChartContainer config={chartConfig} className="h-[280px] w-full">
+              <BarChart data={bridgeData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={0} />
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={formatAxis} width={60} />
@@ -354,8 +354,8 @@ export default function ValuationDashboard({
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <Card className="lg:col-span-2">
           <CardContent className="py-3 px-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">P&L Summary</p>
             <div className="overflow-x-auto">
@@ -364,42 +364,26 @@ export default function ValuationDashboard({
                   <tr className="border-b">
                     <th className="text-left py-1.5 font-medium text-muted-foreground"></th>
                     <th className="text-right py-1.5 font-medium text-muted-foreground">{baseYearLabel}</th>
-                    {sc ? (
-                      <>
-                        <th className="text-right py-1.5 font-medium text-red-600">Y5 Bear</th>
-                        <th className="text-right py-1.5 font-medium text-blue-600">Y5 Base</th>
-                        <th className="text-right py-1.5 font-medium text-green-600">Y5 Bull</th>
-                      </>
-                    ) : (
-                      <th className="text-right py-1.5 font-medium text-muted-foreground">Y5 Projected</th>
-                    )}
+                    <th className="text-right py-1.5 font-medium text-muted-foreground">Y5 Projected</th>
                     <th className="text-right py-1.5 font-medium text-muted-foreground">Change</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { label: 'Revenue', baseVal: baseYearData.revenue, y5Val: y5.revenue, bearVal: sc?.projections.bear[4]?.revenue, bullVal: sc?.projections.bull[4]?.revenue },
-                    { label: 'Gross Profit', baseVal: baseYearData.grossProfit, y5Val: y5.grossProfit, bearVal: sc?.projections.bear[4]?.grossProfit, bullVal: sc?.projections.bull[4]?.grossProfit },
-                    { label: 'EBITDA', baseVal: baseYearData.adjustedEbitda, y5Val: y5.ebitda, bearVal: sc?.projections.bear[4]?.ebitda, bullVal: sc?.projections.bull[4]?.ebitda, bold: true },
+                    { label: 'Revenue', baseVal: baseYearData.revenue, y5Val: y5.revenue },
+                    { label: 'Gross Profit', baseVal: baseYearData.grossProfit, y5Val: y5.grossProfit },
+                    { label: 'EBITDA', baseVal: baseYearData.adjustedEbitda, y5Val: y5.ebitda, bold: true },
                     { label: 'EBITDA Margin', baseVal: baseMargin, y5Val: y5Margin, isMargin: true },
-                    { label: 'Net Profit', baseVal: baseYearData.netProfit, y5Val: y5.netProfit, bearVal: sc?.projections.bear[4]?.netProfit, bullVal: sc?.projections.bull[4]?.netProfit },
+                    { label: 'Net Profit', baseVal: baseYearData.netProfit, y5Val: y5.netProfit },
                   ].map(row => (
                     <tr key={row.label} className="border-b last:border-0">
                       <td className={`py-1.5 ${row.bold ? 'font-semibold' : ''}`}>{row.label}</td>
                       <td className="text-right py-1.5 font-mono">
                         {row.isMargin ? `${row.baseVal.toFixed(1)}%` : formatCurrency(row.baseVal)}
                       </td>
-                      {sc && !row.isMargin ? (
-                        <>
-                          <td className="text-right py-1.5 font-mono text-red-600">{formatCurrency(row.bearVal ?? 0)}</td>
-                          <td className="text-right py-1.5 font-mono text-blue-600">{formatCurrency(row.y5Val)}</td>
-                          <td className="text-right py-1.5 font-mono text-green-600">{formatCurrency(row.bullVal ?? 0)}</td>
-                        </>
-                      ) : (
-                        <td className="text-right py-1.5 font-mono">
-                          {row.isMargin ? `${row.y5Val.toFixed(1)}%` : formatCurrency(row.y5Val)}
-                        </td>
-                      )}
+                      <td className="text-right py-1.5 font-mono">
+                        {row.isMargin ? `${row.y5Val.toFixed(1)}%` : formatCurrency(row.y5Val)}
+                      </td>
                       <td className={`text-right py-1.5 font-mono ${changeColor(row.baseVal, row.y5Val)}`}>
                         {row.isMargin
                           ? `${(row.y5Val - row.baseVal) >= 0 ? '+' : ''}${(row.y5Val - row.baseVal).toFixed(1)}pp`
@@ -414,7 +398,7 @@ export default function ValuationDashboard({
         </Card>
 
         {miniScenarios ? (
-          <Card>
+          <Card className="lg:col-span-3">
             <CardContent className="py-3 px-4">
               <p className="text-xs font-medium text-muted-foreground mb-2">Scenario Summary</p>
               <div className="grid grid-cols-3 gap-2">
@@ -456,7 +440,7 @@ export default function ValuationDashboard({
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="lg:col-span-3">
             <CardContent className="py-8 text-center">
               <Info className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">

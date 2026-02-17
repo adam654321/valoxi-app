@@ -1,0 +1,37 @@
+Prompt: Fix Dashboard Duplication & Tidy Layout
+The Dashboard tab currently doubles up metrics — the top KPI strip and the Dashboard hero cards show the same data. Fix this by making the top KPI strip context-aware:
+1. Hide top KPI strip on Dashboard tab
+In ValueCreationModeller.tsx, wrap the KPI cards grid conditionally:
+tsx{kpis && activeTab !== 'dashboard' && (
+  <div className={`grid gap-3 ...`}>
+    {/* All existing KPI cards */}
+  </div>
+)}
+The Dashboard IS the overview — it doesn't need a summary above itself. On Projections, Cash & Debt, Returns & Exit, and Risk tabs, the KPI strip stays visible as a persistent reference while you're in the detail views.
+2. Clean up the Dashboard hero cards row
+The Dashboard hero cards are cramped with 6 cards in one row. Change the grid to show a maximum of 3 cards per row on large screens, 2 on medium:
+tsx<div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+This gives each card more breathing room and makes the Bear/Base/Bull values inside each card legible.
+3. Tidy the P&L Summary table
+The P&L Summary table is showing FY2024, Y5 Bear, Y5 Base, Y5 Bull, and Change columns — that's 5 columns of numbers which is too dense at this width. Simplify:
+
+Show only FY2024 (base year) and Y5 Base columns by default
+Add a Change column showing the delta
+The Bear/Bull values are already visible in the Scenario Summary cards to the right, so they're redundant here
+
+If you want to keep the Bear/Bull columns, make them togglable with a small "Show scenarios" toggle above the table rather than always visible.
+4. Scenario Summary card spacing
+The three Scenario Summary cards (Bear/Base/Bull) are too compressed horizontally. Change the bottom row from a 50/50 split to giving the Scenario Summary more space:
+tsx<div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+  <div className="lg:col-span-2">
+    {/* P&L Summary */}
+  </div>
+  <div className="lg:col-span-3">
+    {/* Scenario Summary */}
+  </div>
+</div>
+This gives the three scenario cards enough room to breathe since they have more data density than the P&L table.
+5. Value Bridge chart label overlap
+The Value Bridge bar labels (£106K, £2.6M, £4.0M etc.) are overlapping the bars at certain sizes. Add a small top margin to the chart container and ensure labels sit cleanly above bars:
+tsx<div className="h-[280px]">  {/* increase from current height if needed */}
+Also verify the chart's margin.top is at least 20px to give labels room.

@@ -540,7 +540,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
         </div>
       </div>
 
-      {kpis && (
+      {kpis && activeTab !== 'dashboard' && (
         <div className={`grid gap-3 ${returnMetrics ? 'grid-cols-2 lg:grid-cols-4 xl:grid-cols-7' : 'grid-cols-2 lg:grid-cols-4'}`}>
           <Card className="border-l-4 border-l-blue-500">
             <CardContent className="py-3 px-4">
