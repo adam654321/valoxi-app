@@ -440,7 +440,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                                   <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.csv,.tsv,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.webp,.numbers,.pages,.key,.odt,.ods,.odp,.rtf"
                                     onChange={handleFileSelect}
                                     className="hidden"
                                   />

@@ -29,13 +29,39 @@ const uploadStorage = multer.diskStorage({
 
 const fileFilter = (req: any, file: any, cb: any) => {
   const allowedTypes = [
-    'application/pdf', 'application/msword',
+    'application/pdf',
+    'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'text/plain', 'text/csv', 'image/jpeg', 'image/png'
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel.sheet.macroEnabled.12',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain',
+    'text/csv',
+    'text/tab-separated-values',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/bmp',
+    'image/tiff',
+    'image/webp',
+    'application/vnd.apple.numbers',
+    'application/vnd.apple.pages',
+    'application/vnd.apple.keynote',
+    'application/vnd.oasis.opendocument.text',
+    'application/vnd.oasis.opendocument.spreadsheet',
+    'application/vnd.oasis.opendocument.presentation',
+    'application/rtf',
+    'application/octet-stream',
   ];
-  cb(null, allowedTypes.includes(file.mimetype));
+  const ext = file.originalname?.toLowerCase()?.split('.').pop();
+  const allowedExts = [
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx',
+    'txt', 'csv', 'tsv', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp',
+    'numbers', 'pages', 'key', 'odt', 'ods', 'odp', 'rtf',
+  ];
+  cb(null, allowedTypes.includes(file.mimetype) || allowedExts.includes(ext));
 };
 
 const upload = multer({ storage: uploadStorage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });

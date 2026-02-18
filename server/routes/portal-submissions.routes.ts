@@ -28,7 +28,7 @@ const portalUpload = multer({
     }
   }),
   fileFilter: (req, file, cb) => {
-    const allowedExtensions = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|jpg|jpeg|png|gif)$/i;
+    const allowedExtensions = /\.(pdf|doc|docx|xls|xlsx|xlsm|ppt|pptx|txt|csv|tsv|jpg|jpeg|png|gif|bmp|tiff|tif|webp|numbers|pages|key|odt|ods|odp|rtf)$/i;
     if (allowedExtensions.test(file.originalname)) cb(null, true);
     else cb(new Error('Only PDF, Office documents, text files and images are allowed'));
   },

@@ -2,6 +2,10 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 let csrfToken: string | null = null;
 
+export function getCsrfToken(): string | null {
+  return csrfToken;
+}
+
 export async function refreshCsrfToken(): Promise<void> {
   try {
     const res = await fetch("/api/v2/auth/csrf", { credentials: "include" });

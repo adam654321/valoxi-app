@@ -670,8 +670,14 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
       formData.append('description', data.description || '');
       formData.append('is_confidential', data.is_confidential.toString());
 
+      const { getCsrfToken } = await import('@/lib/queryClient');
+      const headers: Record<string, string> = {};
+      const token = getCsrfToken();
+      if (token) headers['x-csrf-token'] = token;
+
       const response = await fetch(`/api/v2/files/company/${targetCompanyId}/upload`, {
         method: 'POST',
+        headers,
         body: formData,
         credentials: 'include',
       });
@@ -921,7 +927,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                             ref={fileInputRef}
                             type="file"
                             onChange={handleFileSelect}
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.ppt,.pptx,.txt,.csv,.tsv,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.webp,.numbers,.pages,.key,.odt,.ods,.odp,.rtf"
                             className="w-full p-2 border rounded-md"
                           />
                           {selectedFile && (

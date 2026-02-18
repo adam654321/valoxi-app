@@ -935,7 +935,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                       <input
                         type="file"
                         id="document-file"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.csv,.tsv,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.webp,.numbers,.pages,.key,.odt,.ods,.odp,.rtf"
                         onChange={handleFileSelect}
                         className="hidden"
                         data-testid="input-file-upload"
