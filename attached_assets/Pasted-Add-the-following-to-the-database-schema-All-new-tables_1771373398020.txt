@@ -1,0 +1,43 @@
+Add the following to the database schema. All new tables should follow the existing patterns in shared/schema/.
+
+1. Add isSystemAdmin boolean column (default false, not null) to the users table in shared/schema/core.ts
+
+2. Create a new token_usage table in shared/schema/core.ts with these columns:
+- id: serial primary key
+- userId: integer, foreign key to users.id, not null
+- userCompanyId: integer, foreign key to userCompanies.id, nullable
+- dealId: integer, foreign key to targetCompanies.id, nullable
+- documentId: integer, nullable (no FK needed, loose reference)
+- service: varchar(100) not null — e.g. 'gemini-classification', 'gemini-expert', 'gemini-step2', 'gemini-website'
+- model: varchar(100) not null
+- promptTokens: integer not null default 0
+- candidateTokens: integer not null default 0
+- totalTokens: integer not null default 0
+- estimatedCostUsd: numeric(10,6) not null default 0
+- createdAt: timestamp default now() not null
+
+3. Create a platform_costs table in shared/schema/core.ts with these columns:
+- id: serial primary key
+- costType: varchar(50) not null — values will be 'google_api', 'replit_storage', 'replit_compute', 'other'
+- provider: varchar(100) not null
+- description: varchar(255) not null
+- periodStart: date not null
+- periodEnd: date not null
+- amountUsd: numeric(10,2) not null
+- notes: text nullable
+- createdBy: integer, foreign key to users.id, not null
+- createdAt: timestamp default now() not null
+
+4. Create a webhook_events table in shared/schema/core.ts with these columns:
+- id: serial primary key
+- source: varchar(100) not null
+- eventType: varchar(100) not null
+- payload: jsonb not null default '{}'
+- status: varchar(20) not null default 'received' — values: 'received', 'processed', 'failed'
+- error: text nullable
+- processedAt: timestamp nullable
+- createdAt: timestamp default now() not null
+
+5. Export all four new tables and their inferred insert/select types from the barrel file at shared/schema/index.ts following the existing export pattern.
+
+6. Run: npm run db:push to apply the schema changes.
