@@ -6,6 +6,7 @@ import { UnauthorizedError } from '../utils/errors';
 import { insertUserSchema } from '@shared/schema';
 import { isAuthenticated } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
+import { rolesService } from '../services/roles.service';
 
 const router = Router();
 
@@ -76,6 +77,15 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
   }
 
   const result = await authService.getCurrentUser(userId);
+
+  let permissions = null;
+  try {
+    const userWithPerms = await rolesService.getUserWithPermissions(userId);
+    permissions = userWithPerms.permissions ?? null;
+  } catch {
+    permissions = null;
+  }
+
   sendSuccess(res, {
     id: result.user.id,
     email: result.user.email,
@@ -83,6 +93,7 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
     lastName: result.user.lastName,
     isSystemAdmin: result.user.isSystemAdmin ?? false,
     company: result.company,
+    permissions,
   });
 }));
 
