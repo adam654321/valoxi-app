@@ -1,4 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
+import { db } from '../db';
+import { tokenUsage } from '@shared/schema';
+import { calculateTokenCost } from '../utils/token-cost';
 
 export interface GeminiClientConfig {
   apiKey?: string;
@@ -7,6 +10,11 @@ export interface GeminiClientConfig {
   baseDelayMs?: number;
   maxDelayMs?: number;
   timeoutMs?: number;
+  userId?: number;
+  userCompanyId?: number;
+  dealId?: number;
+  documentId?: number;
+  service?: string;
 }
 
 export interface GeminiResponse {
@@ -25,6 +33,11 @@ export interface GenerateContentOptions {
   temperature?: number;
   responseMimeType?: string;
   fileData?: { fileUri: string; mimeType: string };
+  userId?: number;
+  userCompanyId?: number;
+  dealId?: number;
+  documentId?: number;
+  service?: string;
 }
 
 const DEFAULT_MODEL = "gemini-3-flash-preview";
@@ -48,6 +61,11 @@ export class GeminiClient {
   private baseDelayMs: number;
   private maxDelayMs: number;
   private timeoutMs: number;
+  private userId?: number;
+  private userCompanyId?: number;
+  private dealId?: number;
+  private documentId?: number;
+  private service?: string;
 
   constructor(config: GeminiClientConfig = {}) {
     const apiKey = config.apiKey || process.env.GOOGLE_GEMINI_API_KEY;
@@ -60,6 +78,11 @@ export class GeminiClient {
     this.baseDelayMs = config.baseDelayMs ?? DEFAULT_RETRY.baseDelayMs;
     this.maxDelayMs = config.maxDelayMs ?? DEFAULT_RETRY.maxDelayMs;
     this.timeoutMs = config.timeoutMs ?? DEFAULT_RETRY.timeoutMs;
+    this.userId = config.userId;
+    this.userCompanyId = config.userCompanyId;
+    this.dealId = config.dealId;
+    this.documentId = config.documentId;
+    this.service = config.service;
   }
 
   /**
@@ -122,6 +145,28 @@ export class GeminiClient {
     let json: any | null = null;
     if (options.responseMimeType === "application/json" || text.trimStart().startsWith("{")) {
       json = this.parseJsonWithRecovery(text);
+    }
+
+    const resolvedUserId = options.userId ?? this.userId;
+    if (usage && resolvedUserId) {
+      try {
+        const resolvedService = options.service ?? this.service ?? 'gemini-unknown';
+        const estimatedCostUsd = calculateTokenCost(model, usage.promptTokens, usage.candidateTokens);
+        await db.insert(tokenUsage).values({
+          userId: resolvedUserId,
+          userCompanyId: options.userCompanyId ?? this.userCompanyId ?? null,
+          dealId: options.dealId ?? this.dealId ?? null,
+          documentId: options.documentId ?? this.documentId ?? null,
+          service: resolvedService,
+          model,
+          promptTokens: usage.promptTokens,
+          candidateTokens: usage.candidateTokens,
+          totalTokens: usage.totalTokens,
+          estimatedCostUsd: estimatedCostUsd.toFixed(6),
+        });
+      } catch (err) {
+        console.warn('[GEMINI_CLIENT] Failed to persist token usage:', err);
+      }
     }
 
     return { text, json, usage };
@@ -317,6 +362,6 @@ export const geminiClient = new GeminiClient();
  * Used by the analysis queue to support per-job key resolution.
  * Falls back to the default singleton behaviour if no key provided.
  */
-export function createGeminiClient(apiKey?: string): GeminiClient {
-  return new GeminiClient(apiKey ? { apiKey } : undefined);
+export function createGeminiClient(apiKey?: string, config?: Partial<GeminiClientConfig>): GeminiClient {
+  return new GeminiClient({ ...config, ...(apiKey ? { apiKey } : {}) });
 }
