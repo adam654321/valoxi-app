@@ -5,6 +5,7 @@ declare module 'express-session' {
   interface SessionData {
     userId?: number;
     userCompanyId?: number;
+    csrfToken?: string;
   }
 }
 

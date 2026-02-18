@@ -4,6 +4,7 @@ import { authService } from '../services/auth.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { insertUserSchema } from '@shared/schema';
+import { isAuthenticated } from '../middleware/auth';
 
 const router = Router();
 
@@ -94,6 +95,10 @@ router.get('/me', async (req: Request, res: Response) => {
   } catch (error) {
     sendError(res, error);
   }
+});
+
+router.get('/csrf', isAuthenticated, (req: Request, res: Response) => {
+  sendSuccess(res, { csrfToken: req.session.csrfToken });
 });
 
 export default router;

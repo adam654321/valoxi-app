@@ -101,6 +101,11 @@ Preferred communication style: Simple, everyday language.
 ## Authentication & Security
 - **Session Management**: PostgreSQL-backed sessions.
 - **Password Security**: bcrypt hashing.
+- **CSRF Protection**: Token-based CSRF protection (`server/middleware/csrf.ts`):
+  - `attachCsrfToken`: Generates and stores a per-session CSRF token (crypto randomBytes) on every request.
+  - `validateCsrfToken`: Validates `x-csrf-token` header against session token for all non-GET/HEAD/OPTIONS requests. Returns 403 on mismatch.
+  - Applied to all authenticated route groups; excluded from public/portal routes and auth login/register endpoints.
+  - Frontend fetches token via `GET /api/v2/auth/csrf` on auth check and after login/register, attaches it to all mutating `apiRequest` calls.
 - **Authorization**: Comprehensive role-based access control (RBAC) with company admin and role-specific permissions, and deal-specific team assignments.
 - **User Onboarding**: Invitation-based with secure token validation.
 - **Data Isolation**: Ensures data isolation by user company ID.

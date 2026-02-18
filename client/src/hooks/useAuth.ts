@@ -1,5 +1,6 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { getQueryFn, refreshCsrfToken } from "@/lib/queryClient";
 
 export interface AuthUser {
   id: number;
@@ -20,6 +21,14 @@ export function useAuth() {
     select: (response: any) => response?.data || response,
     retry: false,
   });
+
+  const csrfFetched = useRef(false);
+  useEffect(() => {
+    if (user && !csrfFetched.current) {
+      csrfFetched.current = true;
+      refreshCsrfToken();
+    }
+  }, [user]);
 
   return {
     user,

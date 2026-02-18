@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, refreshCsrfToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,8 @@ export default function Register() {
       const response = await apiRequest("POST", "/api/v2/auth/register", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await refreshCsrfToken();
       queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
       setLocation("/dashboard");
       toast({
