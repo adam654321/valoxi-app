@@ -88,6 +88,7 @@ router.get('/me', async (req: Request, res: Response) => {
       email: result.user.email,
       firstName: result.user.firstName,
       lastName: result.user.lastName,
+      isSystemAdmin: result.user.isSystemAdmin ?? false,
       company: result.company,
     });
   } catch (error) {

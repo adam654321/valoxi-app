@@ -22,6 +22,7 @@ export interface AuthResult {
     email: string;
     firstName: string;
     lastName: string;
+    isSystemAdmin?: boolean;
   };
   company: UserCompany | null;
 }
@@ -103,6 +104,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        isSystemAdmin: user.isSystemAdmin ?? false,
       },
       company: userCompany || null,
     };
