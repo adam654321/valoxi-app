@@ -114,7 +114,8 @@ export async function runStep2AnalysisForTypes(
   fileUrl: string,
   mimeType: string,
   fileName: string,
-  documentTypes: string[]
+  documentTypes: string[],
+  documentId?: number
 ): Promise<Step2AnalysisResult[]> {
   const validTypes: DocumentType[] = ['asset_register', 'balance_sheet', 'profit_and_loss', 'sales_ledger', 'staff_matrix'];
   
@@ -131,8 +132,26 @@ export async function runStep2AnalysisForTypes(
   
   for (let i = 0; i < typesToAnalyze.length; i++) {
     const docType = typesToAnalyze[i];
+
+    if (documentId) {
+      try {
+        const { documentAnalysisRepository } = await import('../repositories/document-analysis.repository');
+        const existing = await documentAnalysisRepository.getAnalysisResultByDocumentIdAndType(documentId, docType);
+        if (existing) {
+          console.log(`[GEMINI_STEP2] Skipping ${docType} for document ${documentId} — result already exists (id: ${existing.id})`);
+          results.push({
+            success: true,
+            documentType: docType,
+            analysisData: existing.analysisData,
+            processingTime: 0,
+          });
+          continue;
+        }
+      } catch (checkError) {
+        console.warn(`[GEMINI_STEP2] Could not check existing results for ${docType}, proceeding with API call`);
+      }
+    }
     
-    // Add delay between Step 2 calls to avoid rate limiting
     if (i > 0) {
       console.log(`[GEMINI_STEP2] Waiting 1s before next analysis...`);
       await new Promise(resolve => setTimeout(resolve, 1000));

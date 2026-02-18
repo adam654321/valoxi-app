@@ -205,7 +205,8 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       fileUrl,
       mimeType,
       event.fileName,
-      classificationResult.documentTypes
+      classificationResult.documentTypes,
+      event.documentId
     );
 
     for (const result of step2Results) {
@@ -213,29 +214,34 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
         console.log(`[FILE_ANALYSIS] Storing ${result.documentType} analysis result for document ${event.documentId}`);
         
         try {
-          await documentAnalysisRepository.createAnalysisResult({
-            documentId: event.documentId,
-            fileUploadEventId: eventId,
-            documentType: result.documentType,
-            analysisData: result.analysisData,
-            processingTime: result.processingTime || 0,
-            usageMetadata: result.usageMetadata || null,
-          });
-          console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
-          
-          try {
-            const normalizationResult = await financialDataService.processExtractedData(
-              result.documentType,
-              result.analysisData,
-              event.targetCompanyId,
-              event.documentId
-            );
-            console.log(`[FILE_ANALYSIS] Financial data normalization for ${result.documentType}: ${normalizationResult.message}`);
-            if (normalizationResult.errors && normalizationResult.errors.length > 0) {
-              console.warn(`[FILE_ANALYSIS] Normalization warnings:`, normalizationResult.errors);
+          const existingResult = await documentAnalysisRepository.getAnalysisResultByDocumentIdAndType(event.documentId, result.documentType);
+          if (existingResult) {
+            console.log(`[FILE_ANALYSIS] ${result.documentType} analysis already stored for document ${event.documentId} (id: ${existingResult.id}), skipping duplicate store`);
+          } else {
+            await documentAnalysisRepository.createAnalysisResult({
+              documentId: event.documentId,
+              fileUploadEventId: eventId,
+              documentType: result.documentType,
+              analysisData: result.analysisData,
+              processingTime: result.processingTime || 0,
+              usageMetadata: result.usageMetadata || null,
+            });
+            console.log(`[FILE_ANALYSIS] Successfully stored ${result.documentType} analysis for document ${event.documentId}`);
+
+            try {
+              const normalizationResult = await financialDataService.processExtractedData(
+                result.documentType,
+                result.analysisData,
+                event.targetCompanyId,
+                event.documentId
+              );
+              console.log(`[FILE_ANALYSIS] Financial data normalization for ${result.documentType}: ${normalizationResult.message}`);
+              if (normalizationResult.errors && normalizationResult.errors.length > 0) {
+                console.warn(`[FILE_ANALYSIS] Normalization warnings:`, normalizationResult.errors);
+              }
+            } catch (normalizationError) {
+              console.error(`[FILE_ANALYSIS] Financial data normalization failed for ${result.documentType}:`, normalizationError);
             }
-          } catch (normalizationError) {
-            console.error(`[FILE_ANALYSIS] Financial data normalization failed for ${result.documentType}:`, normalizationError);
           }
         } catch (storeError) {
           console.error(`[FILE_ANALYSIS] Failed to store ${result.documentType} analysis:`, storeError);

@@ -114,6 +114,12 @@ export class DocumentAnalysisRepository {
     return uniqueDocuments.size;
   }
 
+  async getAnalysisResultByDocumentIdAndType(documentId: number, documentType: string): Promise<DocumentAnalysisResult | undefined> {
+    const [result] = await db.select().from(documentAnalysisResults)
+      .where(and(eq(documentAnalysisResults.documentId, documentId), eq(documentAnalysisResults.documentType, documentType)));
+    return result || undefined;
+  }
+
   async deleteByDocumentId(documentId: number): Promise<void> {
     await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
     console.log(`[DOCUMENT_ANALYSIS] Deleted analysis results for document ${documentId}`);

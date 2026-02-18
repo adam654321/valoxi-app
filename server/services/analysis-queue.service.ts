@@ -35,6 +35,7 @@ const MAX_COMPLETION_RETRIGGERS = 1;
 class AnalysisQueue {
   private companyQueues: Map<number, AnalysisJob[]> = new Map();
   private processingCompanies: Set<number> = new Set();
+  private activeEventIds: Set<number> = new Set();
   private completionRetriggerCounts: Map<number, number> = new Map();
   private totalProcessed = 0;
   private totalFailed = 0;
@@ -50,6 +51,11 @@ class AnalysisQueue {
 
     if (queue.length >= MAX_QUEUE_SIZE_PER_COMPANY) {
       console.error(`[ANALYSIS_QUEUE] Company ${companyId} queue full (${MAX_QUEUE_SIZE_PER_COMPANY} jobs). Dropping job for event ${job.eventId}`);
+      return;
+    }
+
+    if (this.activeEventIds.has(job.eventId)) {
+      console.log(`[ANALYSIS_QUEUE] Event ${job.eventId} is currently being processed, skipping duplicate enqueue`);
       return;
     }
 
@@ -90,6 +96,7 @@ class AnalysisQueue {
 
     this.processingCompanies.add(companyId);
     const job = queue.shift()!;
+    this.activeEventIds.add(job.eventId);
 
     console.log(`[ANALYSIS_QUEUE] Processing event ${job.eventId} for company ${companyId} (remaining for company: ${queue.length})`);
 
@@ -103,12 +110,15 @@ class AnalysisQueue {
 
       if (job.retryCount < MAX_RETRIES) {
         job.retryCount++;
+        this.activeEventIds.delete(job.eventId);
         queue.push(job);
         console.log(`[ANALYSIS_QUEUE] Re-queued event ${job.eventId} (retry ${job.retryCount}/${MAX_RETRIES})`);
       } else {
         this.totalFailed++;
         console.error(`[ANALYSIS_QUEUE] Event ${job.eventId} failed after ${MAX_RETRIES} retries, giving up`);
       }
+    } finally {
+      this.activeEventIds.delete(job.eventId);
     }
 
     await new Promise(resolve => setTimeout(resolve, INTER_JOB_DELAY_MS));
@@ -209,6 +219,7 @@ class AnalysisQueue {
   async recoverStuckEvents(): Promise<void> {
     try {
       const { documentsRepository } = await import('../repositories/documents.repository');
+      const { documentAnalysisRepository } = await import('../repositories/document-analysis.repository');
       const stuckStatuses = ['processing', 'classification_complete', 'pending'];
       const allEvents = await documentsRepository.getAllFileUploadEvents();
       const stuckEvents = allEvents.filter((e: any) => stuckStatuses.includes(e.webhookStatus));
@@ -218,23 +229,30 @@ class AnalysisQueue {
         return;
       }
 
-      console.log(`[ANALYSIS_QUEUE] Startup recovery: Found ${stuckEvents.length} stuck event(s), re-queuing...`);
+      console.log(`[ANALYSIS_QUEUE] Startup recovery: Found ${stuckEvents.length} stuck event(s), checking for existing results...`);
+
+      let requeued = 0;
+      let alreadyComplete = 0;
 
       for (const event of stuckEvents) {
-        if (event.webhookStatus === 'processing') {
-          await documentsRepository.updateFileUploadEventWebhookStatus(event.id, 'pending', undefined, undefined);
+        const existingResults = await documentAnalysisRepository.getAnalysisResultsByDocumentId(event.documentId);
+        if (existingResults && existingResults.length > 0) {
+          console.log(`[ANALYSIS_QUEUE] Event ${event.id} (document ${event.documentId}) already has ${existingResults.length} analysis result(s) — marking complete`);
+          await documentsRepository.updateFileUploadEventWebhookStatus(event.id, 'analysis_complete', undefined, new Date());
+          alreadyComplete++;
+          continue;
         }
-        if (event.webhookStatus === 'classification_complete') {
-          await documentsRepository.updateFileUploadEventWebhookStatus(event.id, 'pending', undefined, undefined);
-        }
+
+        await documentsRepository.updateFileUploadEventWebhookStatus(event.id, 'pending', undefined, undefined);
         this.enqueue({
           eventId: event.id,
           targetCompanyId: event.targetCompanyId,
           isRetrigger: true,
         });
+        requeued++;
       }
 
-      console.log(`[ANALYSIS_QUEUE] Startup recovery: Re-queued ${stuckEvents.length} event(s)`);
+      console.log(`[ANALYSIS_QUEUE] Startup recovery: ${requeued} re-queued, ${alreadyComplete} already had results (marked complete)`);
     } catch (error) {
       console.error(`[ANALYSIS_QUEUE] Startup recovery failed:`, error);
     }
