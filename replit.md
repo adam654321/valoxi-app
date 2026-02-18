@@ -52,6 +52,7 @@ Preferred communication style: Simple, everyday language.
     - `notificationsRepository`: User notifications
     - `teamRepository`: Team members and roles
     - `chaseUpRepository`: Chase-up schedules and email tracking for portal submissions
+    - `passwordResetRepository`: Password reset token creation, validation, and cleanup
 - **Legacy Storage Facade**: The `server/storage.ts` facade remains for route compatibility but services use repositories directly. Legacy stores (`server/storage/*.store.ts`) are deprecated.
 - **Feature Specifications**:
     - **Target Company Management**: Full CRUD operations with detailed information, industry categorization, and card-based views.
