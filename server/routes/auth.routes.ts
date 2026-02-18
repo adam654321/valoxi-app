@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service';
-import { sendSuccess, sendCreated, sendError } from '../utils/response';
+import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { insertUserSchema } from '@shared/schema';
 import { isAuthenticated } from '../middleware/auth';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
@@ -22,49 +23,41 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-router.post('/register', async (req: Request, res: Response) => {
-  try {
-    const validatedData = registerSchema.parse(req.body);
-    
-    const result = await authService.register({
-      email: validatedData.email,
-      password: validatedData.password,
-      firstName: validatedData.firstName,
-      lastName: validatedData.lastName,
-      companyName: validatedData.companyName,
-    });
+router.post('/register', asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = registerSchema.parse(req.body);
+  
+  const result = await authService.register({
+    email: validatedData.email,
+    password: validatedData.password,
+    firstName: validatedData.firstName,
+    lastName: validatedData.lastName,
+    companyName: validatedData.companyName,
+  });
 
-    req.session.userId = result.user.id;
-    req.session.userCompanyId = result.company?.id;
+  req.session.userId = result.user.id;
+  req.session.userCompanyId = result.company?.id;
 
-    sendCreated(res, {
-      message: 'User created successfully',
-      user: result.user,
-      company: result.company,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
+  sendCreated(res, {
+    message: 'User created successfully',
+    user: result.user,
+    company: result.company,
+  });
+}));
 
-router.post('/login', async (req: Request, res: Response) => {
-  try {
-    const { email, password } = loginSchema.parse(req.body);
-    
-    const result = await authService.login({ email, password });
+router.post('/login', asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = loginSchema.parse(req.body);
+  
+  const result = await authService.login({ email, password });
 
-    req.session.userId = result.user.id;
-    req.session.userCompanyId = result.company?.id;
+  req.session.userId = result.user.id;
+  req.session.userCompanyId = result.company?.id;
 
-    sendSuccess(res, {
-      message: 'Login successful',
-      user: result.user,
-      company: result.company,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
+  sendSuccess(res, {
+    message: 'Login successful',
+    user: result.user,
+    company: result.company,
+  });
+}));
 
 router.post('/logout', (req: Request, res: Response) => {
   req.session.destroy((err) => {
@@ -76,26 +69,22 @@ router.post('/logout', (req: Request, res: Response) => {
   });
 });
 
-router.get('/me', async (req: Request, res: Response) => {
-  try {
-    const userId = req.session?.userId;
-    if (!userId) {
-      throw new UnauthorizedError();
-    }
-
-    const result = await authService.getCurrentUser(userId);
-    sendSuccess(res, {
-      id: result.user.id,
-      email: result.user.email,
-      firstName: result.user.firstName,
-      lastName: result.user.lastName,
-      isSystemAdmin: result.user.isSystemAdmin ?? false,
-      company: result.company,
-    });
-  } catch (error) {
-    sendError(res, error);
+router.get('/me', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  if (!userId) {
+    throw new UnauthorizedError();
   }
-});
+
+  const result = await authService.getCurrentUser(userId);
+  sendSuccess(res, {
+    id: result.user.id,
+    email: result.user.email,
+    firstName: result.user.firstName,
+    lastName: result.user.lastName,
+    isSystemAdmin: result.user.isSystemAdmin ?? false,
+    company: result.company,
+  });
+}));
 
 router.get('/csrf', isAuthenticated, (req: Request, res: Response) => {
   sendSuccess(res, { csrfToken: req.session.csrfToken });

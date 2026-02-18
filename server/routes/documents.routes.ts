@@ -1,86 +1,67 @@
 import { Router, Request, Response } from 'express';
 import { documentsService } from '../services/documents.service';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
-router.get('/categories', async (req: Request, res: Response) => {
-  try {
-    const categories = await documentsService.getDocumentCategories();
-    sendSuccess(res, categories);
-  } catch (error) {
-    sendError(res, error);
+router.get('/categories', asyncHandler(async (req: Request, res: Response) => {
+  const categories = await documentsService.getDocumentCategories();
+  sendSuccess(res, categories);
+}));
+
+router.get('/company/:companyId', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
+
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/company/:companyId', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const targetCompanyId = parseInt(req.params.companyId);
+  const documents = await documentsService.getCompanyDocuments(targetCompanyId, userCompanyId);
+  sendSuccess(res, documents);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const documentId = parseInt(req.params.id);
 
-    const documents = await documentsService.getCompanyDocuments(targetCompanyId, userCompanyId);
-    sendSuccess(res, documents);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const documentId = parseInt(req.params.id);
+  const document = await documentsService.getDocument(documentId, userCompanyId);
+  sendSuccess(res, document);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const documentId = parseInt(req.params.id);
 
-    const document = await documentsService.getDocument(documentId, userCompanyId);
-    sendSuccess(res, document);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const documentId = parseInt(req.params.id);
+  const updatedDocument = await documentsService.updateDocument(
+    documentId,
+    req.body,
+    userCompanyId
+  );
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+  sendSuccess(res, updatedDocument);
+}));
 
-    const updatedDocument = await documentsService.updateDocument(
-      documentId,
-      req.body,
-      userCompanyId
-    );
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const documentId = parseInt(req.params.id);
 
-    sendSuccess(res, updatedDocument);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const documentId = parseInt(req.params.id);
-
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
-
-    await documentsService.deleteDocument(documentId, userCompanyId);
-    sendSuccess(res, { message: 'Document deleted successfully' });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
+  await documentsService.deleteDocument(documentId, userCompanyId);
+  sendSuccess(res, { message: 'Document deleted successfully' });
+}));
 
 export default router;

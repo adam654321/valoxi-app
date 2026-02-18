@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { contactsService } from '../services/contacts.service';
-import { sendSuccess, sendCreated, sendError } from '../utils/response';
+import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { insertTargetContactSchema } from '@shared/schema';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
@@ -10,113 +11,89 @@ const contactCreateSchema = insertTargetContactSchema.omit({
   targetCompanyId: true,
 });
 
-router.get('/all', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
+router.get('/all', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
-
-    const contacts = await contactsService.getAllContactsForUserCompany(userCompanyId);
-    sendSuccess(res, contacts);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/company/:companyId', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const targetCompanyId = parseInt(req.params.companyId);
+  const contacts = await contactsService.getAllContactsForUserCompany(userCompanyId);
+  sendSuccess(res, contacts);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.get('/company/:companyId', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
 
-    const contacts = await contactsService.getContactsForTargetCompany(targetCompanyId, userCompanyId);
-    sendSuccess(res, contacts);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const contactId = parseInt(req.params.id);
+  const contacts = await contactsService.getContactsForTargetCompany(targetCompanyId, userCompanyId);
+  sendSuccess(res, contacts);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const contactId = parseInt(req.params.id);
 
-    const contact = await contactsService.getTargetContact(contactId, userCompanyId);
-    sendSuccess(res, contact);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.post('/company/:companyId', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const targetCompanyId = parseInt(req.params.companyId);
+  const contact = await contactsService.getTargetContact(contactId, userCompanyId);
+  sendSuccess(res, contact);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.post('/company/:companyId', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
 
-    const validatedData = contactCreateSchema.parse(req.body);
-
-    const contact = await contactsService.createTargetContact(
-      targetCompanyId,
-      validatedData,
-      userCompanyId
-    );
-
-    sendCreated(res, contact);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const contactId = parseInt(req.params.id);
+  const validatedData = contactCreateSchema.parse(req.body);
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+  const contact = await contactsService.createTargetContact(
+    targetCompanyId,
+    validatedData,
+    userCompanyId
+  );
 
-    const validatedData = contactCreateSchema.partial().parse(req.body);
+  sendCreated(res, contact);
+}));
 
-    const updatedContact = await contactsService.updateTargetContact(
-      contactId,
-      validatedData,
-      userCompanyId
-    );
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const contactId = parseInt(req.params.id);
 
-    sendSuccess(res, updatedContact);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const contactId = parseInt(req.params.id);
+  const validatedData = contactCreateSchema.partial().parse(req.body);
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+  const updatedContact = await contactsService.updateTargetContact(
+    contactId,
+    validatedData,
+    userCompanyId
+  );
 
-    await contactsService.deleteTargetContact(contactId, userCompanyId);
-    sendSuccess(res, { message: 'Contact deleted successfully' });
-  } catch (error) {
-    sendError(res, error);
+  sendSuccess(res, updatedContact);
+}));
+
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const contactId = parseInt(req.params.id);
+
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
+
+  await contactsService.deleteTargetContact(contactId, userCompanyId);
+  sendSuccess(res, { message: 'Contact deleted successfully' });
+}));
 
 export default router;

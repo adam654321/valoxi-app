@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { activitiesService } from '../services/activities.service';
-import { sendSuccess, sendCreated, sendError } from '../utils/response';
+import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { insertActivitySchema } from '@shared/schema';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
@@ -19,125 +20,97 @@ const activityUpdateSchema = z.object({
   followUpDate: z.string().datetime().optional().nullable().or(z.date().optional().nullable()),
 });
 
-router.get('/types', async (req: Request, res: Response) => {
-  try {
-    const types = await activitiesService.getActivityTypes();
-    sendSuccess(res, types);
-  } catch (error) {
-    sendError(res, error);
+router.get('/types', asyncHandler(async (req: Request, res: Response) => {
+  const types = await activitiesService.getActivityTypes();
+  sendSuccess(res, types);
+}));
+
+router.get('/recent', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const limit = parseInt(req.query.limit as string) || 20;
+
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/recent', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const limit = parseInt(req.query.limit as string) || 20;
+  const activities = await activitiesService.getRecentActivities(userCompanyId, limit);
+  sendSuccess(res, activities);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.get('/company/:companyId', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
 
-    const activities = await activitiesService.getRecentActivities(userCompanyId, limit);
-    sendSuccess(res, activities);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/company/:companyId', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const targetCompanyId = parseInt(req.params.companyId);
+  const activities = await activitiesService.getActivitiesForCompany(targetCompanyId, userCompanyId);
+  sendSuccess(res, activities);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.get('/company/:companyId/timeline', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
 
-    const activities = await activitiesService.getActivitiesForCompany(targetCompanyId, userCompanyId);
-    sendSuccess(res, activities);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.get('/company/:companyId/timeline', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const targetCompanyId = parseInt(req.params.companyId);
+  const timeline = await activitiesService.getActivityTimeline(targetCompanyId, userCompanyId);
+  sendSuccess(res, timeline);
+}));
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+router.post('/company/:companyId', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
 
-    const timeline = await activitiesService.getActivityTimeline(targetCompanyId, userCompanyId);
-    sendSuccess(res, timeline);
-  } catch (error) {
-    sendError(res, error);
+  if (!userId || !userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.post('/company/:companyId', async (req: Request, res: Response) => {
-  try {
-    const userId = req.session?.userId;
-    const userCompanyId = req.session?.userCompanyId;
-    const targetCompanyId = parseInt(req.params.companyId);
+  const activityData = insertActivitySchema.omit({ targetCompanyId: true, userId: true }).parse(req.body);
 
-    if (!userId || !userCompanyId) {
-      throw new UnauthorizedError();
-    }
+  const activity = await activitiesService.createActivity(
+    targetCompanyId,
+    activityData,
+    userId,
+    userCompanyId
+  );
 
-    const activityData = insertActivitySchema.omit({ targetCompanyId: true, userId: true }).parse(req.body);
+  sendCreated(res, activity);
+}));
 
-    const activity = await activitiesService.createActivity(
-      targetCompanyId,
-      activityData,
-      userId,
-      userCompanyId
-    );
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const activityId = parseInt(req.params.id);
 
-    sendCreated(res, activity);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const activityId = parseInt(req.params.id);
+  const updateData = activityUpdateSchema.parse(req.body);
 
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
+  const updatedActivity = await activitiesService.updateActivity(
+    activityId,
+    updateData,
+    userCompanyId
+  );
 
-    const updateData = activityUpdateSchema.parse(req.body);
+  sendSuccess(res, updatedActivity);
+}));
 
-    const updatedActivity = await activitiesService.updateActivity(
-      activityId,
-      updateData,
-      userCompanyId
-    );
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const activityId = parseInt(req.params.id);
 
-    sendSuccess(res, updatedActivity);
-  } catch (error) {
-    sendError(res, error);
+  if (!userCompanyId) {
+    throw new UnauthorizedError();
   }
-});
 
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const activityId = parseInt(req.params.id);
-
-    if (!userCompanyId) {
-      throw new UnauthorizedError();
-    }
-
-    await activitiesService.deleteActivity(activityId, userCompanyId);
-    sendSuccess(res, { message: 'Activity deleted successfully' });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
+  await activitiesService.deleteActivity(activityId, userCompanyId);
+  sendSuccess(res, { message: 'Activity deleted successfully' });
+}));
 
 export default router;

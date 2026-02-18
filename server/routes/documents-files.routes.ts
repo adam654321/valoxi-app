@@ -5,6 +5,7 @@ import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
 
 import { uploadLimiter } from '../middleware/rate-limit';
 
@@ -39,34 +40,28 @@ const fileFilter = (req: any, file: any, cb: any) => {
 
 const upload = multer({ storage: uploadStorage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
-router.delete('/clear-all', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    const userId = req.session?.userId;
-    if (!userCompanyId || !userId) throw new UnauthorizedError();
+router.delete('/clear-all', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const userId = req.session?.userId;
+  if (!userCompanyId || !userId) throw new UnauthorizedError();
 
-    console.log(`[API] Clearing all documents for user company ${userCompanyId}, requested by user ${userId}`);
+  console.log(`[API] Clearing all documents for user company ${userCompanyId}, requested by user ${userId}`);
 
-    const result = await documentsFilesService.clearAllCompanyDocuments(userCompanyId);
+  const result = await documentsFilesService.clearAllCompanyDocuments(userCompanyId);
 
-    console.log(`[API] Document clearing completed:`, result);
+  console.log(`[API] Document clearing completed:`, result);
 
-    sendSuccess(res, {
-      success: true,
-      message: 'All company documents have been cleared successfully',
-      details: result
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
+  sendSuccess(res, {
+    success: true,
+    message: 'All company documents have been cleared successfully',
+    details: result
+  });
+}));
 
-router.get('/categories', async (req: Request, res: Response) => {
-  try {
-    const categories = await documentsFilesService.getDocumentCategories();
-    sendSuccess(res, categories);
-  } catch (error) { sendError(res, error); }
-});
+router.get('/categories', asyncHandler(async (req: Request, res: Response) => {
+  const categories = await documentsFilesService.getDocumentCategories();
+  sendSuccess(res, categories);
+}));
 
 router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) => {
   upload.single('document')(req, res, async (err) => {
@@ -105,7 +100,6 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         fileUrl: `${baseUrl}/api/v2/public/documents/${document.id}/download`,
       });
       
-      // Queue analysis instead of fire-and-forget to prevent Gemini rate limiting
       const { analysisQueue } = await import('../services/analysis-queue.service');
       analysisQueue.enqueue({
         eventId: uploadEvent.id,
@@ -117,110 +111,94 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
   });
 });
 
-router.get('/company/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userCompanyId) throw new UnauthorizedError();
-    const targetCompanyId = parseInt(req.params.id);
-    if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-    const { documents, grouped } = await documentsFilesService.getCompanyDocuments(targetCompanyId, userCompanyId);
-    sendSuccess(res, { documents, grouped, count: documents.length });
-  } catch (error) { sendError(res, error); }
-});
+router.get('/company/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const targetCompanyId = parseInt(req.params.id);
+  if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
+  const { documents, grouped } = await documentsFilesService.getCompanyDocuments(targetCompanyId, userCompanyId);
+  sendSuccess(res, { documents, grouped, count: documents.length });
+}));
 
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userCompanyId) throw new UnauthorizedError();
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
-    const document = await documentsFilesService.getDocument(documentId, userCompanyId);
-    sendSuccess(res, document);
-  } catch (error) { sendError(res, error); }
-});
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  const document = await documentsFilesService.getDocument(documentId, userCompanyId);
+  sendSuccess(res, document);
+}));
 
-router.get('/:id/view', async (req: Request, res: Response) => {
-  try {
-    const userId = req.session?.userId;
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userId || !userCompanyId) throw new UnauthorizedError();
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
-    const document = await documentsFilesService.getDocument(documentId, userCompanyId);
-    await documentsFilesService.logAccess(documentId, userId, 'view', req.ip);
-    res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
-    res.setHeader('Cache-Control', 'private, max-age=3600');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.sendFile(path.resolve(document.filePath));
-  } catch (error) { sendError(res, error); }
-});
+router.get('/:id/view', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userId || !userCompanyId) throw new UnauthorizedError();
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  const document = await documentsFilesService.getDocument(documentId, userCompanyId);
+  await documentsFilesService.logAccess(documentId, userId, 'view', req.ip);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.sendFile(path.resolve(document.filePath));
+}));
 
-router.get('/:id/download', async (req: Request, res: Response) => {
-  try {
-    const userId = req.session?.userId;
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userId || !userCompanyId) throw new UnauthorizedError();
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
-    const document = await documentsFilesService.getDocument(documentId, userCompanyId);
-    await documentsFilesService.logAccess(documentId, userId, 'download', req.ip);
-    res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
-    res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
-    res.sendFile(path.resolve(document.filePath));
-  } catch (error) { sendError(res, error); }
-});
+router.get('/:id/download', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userId || !userCompanyId) throw new UnauthorizedError();
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  const document = await documentsFilesService.getDocument(documentId, userCompanyId);
+  await documentsFilesService.logAccess(documentId, userId, 'download', req.ip);
+  res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.sendFile(path.resolve(document.filePath));
+}));
 
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userCompanyId) throw new UnauthorizedError();
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
-    const document = await documentsFilesService.updateDocument(documentId, userCompanyId, {
-      documentName: req.body.document_name,
-      documentCategory: req.body.document_category,
-      description: req.body.description,
-      isConfidential: req.body.is_confidential,
-    });
-    sendSuccess(res, { success: true, document });
-  } catch (error) { sendError(res, error); }
-});
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  const document = await documentsFilesService.updateDocument(documentId, userCompanyId, {
+    documentName: req.body.document_name,
+    documentCategory: req.body.document_category,
+    description: req.body.description,
+    isConfidential: req.body.is_confidential,
+  });
+  sendSuccess(res, { success: true, document });
+}));
 
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const userCompanyId = req.session?.userCompanyId;
-    if (!userCompanyId) throw new UnauthorizedError();
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
-    await documentsFilesService.deleteDocument(documentId, userCompanyId);
-    sendSuccess(res, { success: true });
-  } catch (error) { sendError(res, error); }
-});
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  await documentsFilesService.deleteDocument(documentId, userCompanyId);
+  sendSuccess(res, { success: true });
+}));
 
 export default router;
 
 export const publicDocumentRoutes = Router();
 
-publicDocumentRoutes.get('/:id/download', async (req: Request, res: Response) => {
-  try {
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
-    const document = await documentsFilesService.getDocumentPublic(documentId);
-    res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
-    res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
-    res.sendFile(path.resolve(document.filePath));
-  } catch (error) { sendError(res, error); }
-});
+publicDocumentRoutes.get('/:id/download', asyncHandler(async (req: Request, res: Response) => {
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
+  const document = await documentsFilesService.getDocumentPublic(documentId);
+  res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.sendFile(path.resolve(document.filePath));
+}));
 
-publicDocumentRoutes.get('/:id/view', async (req: Request, res: Response) => {
-  try {
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
-    const document = await documentsFilesService.getDocumentPublic(documentId);
-    res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
-    res.setHeader('Cache-Control', 'private, max-age=3600');
-    res.sendFile(path.resolve(document.filePath));
-  } catch (error) { sendError(res, error); }
-});
+publicDocumentRoutes.get('/:id/view', asyncHandler(async (req: Request, res: Response) => {
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
+  const document = await documentsFilesService.getDocumentPublic(documentId);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.sendFile(path.resolve(document.filePath));
+}));

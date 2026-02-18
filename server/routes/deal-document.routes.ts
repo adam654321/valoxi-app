@@ -1,179 +1,149 @@
 import { Router } from 'express';
 import { dealDocumentService } from '../services/deal-document.service';
 import { z } from 'zod';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 const publicRouter = Router();
 
-router.get('/company/:targetCompanyId', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    const docs = await dealDocumentService.getDocumentsForCompany(targetCompanyId);
-    res.json(docs);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+router.get('/company/:targetCompanyId', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  const docs = await dealDocumentService.getDocumentsForCompany(targetCompanyId);
+  res.json(docs);
+}));
+
+router.get('/company/:targetCompanyId/:documentType', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  const documentType = req.params.documentType;
+  const history = await dealDocumentService.getVersionHistory(targetCompanyId, documentType);
+  res.json(history);
+}));
+
+router.get('/download/:id', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const doc = await dealDocumentService.getDocumentById(id);
+  if (!doc || !doc.generatedFileUrl) {
+    return res.status(404).json({ message: 'Document file not found' });
   }
-});
 
-router.get('/company/:targetCompanyId/:documentType', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    const documentType = req.params.documentType;
-    const history = await dealDocumentService.getVersionHistory(targetCompanyId, documentType);
-    res.json(history);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const buffer = await fs.readFile(doc.generatedFileUrl);
+  const filename = path.basename(doc.generatedFileUrl);
+
+  const isPdf = filename.endsWith('.pdf');
+  res.setHeader('Content-Type', isPdf
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buffer);
+}));
+
+router.post('/generate-hot', asyncHandler(async (req, res) => {
+  const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId;
+  if (!userId || !userCompanyId) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-});
 
-router.get('/download/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const doc = await dealDocumentService.getDocumentById(id);
-    if (!doc || !doc.generatedFileUrl) {
-      return res.status(404).json({ message: 'Document file not found' });
-    }
+  const schema = z.object({
+    targetCompanyId: z.number(),
+    hotTerms: z.object({
+      exclusivityPeriodDays: z.number().optional().default(90),
+      nonCompetePeriodYears: z.number().optional().default(2),
+      nonSolicitPeriodYears: z.number().optional().default(2),
+      warrantyClaimPeriodMonths: z.number().optional().default(18),
+      warrantyMinClaim: z.number().optional().default(5000),
+      additionalConditions: z.string().optional(),
+      targetCompletionWeeks: z.number().optional().default(12),
+    }).optional().default({}),
+  });
 
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const buffer = await fs.readFile(doc.generatedFileUrl);
-    const filename = path.basename(doc.generatedFileUrl);
+  const validated = schema.parse(req.body);
 
-    const isPdf = filename.endsWith('.pdf');
-    res.setHeader('Content-Type', isPdf
-      ? 'application/pdf'
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(buffer);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const doc = await dealDocumentService.createHoTFromAcceptedOffer({
+    targetCompanyId: validated.targetCompanyId,
+    userCompanyId,
+    createdBy: userId,
+    hotTerms: validated.hotTerms,
+  });
+
+  res.status(201).json(doc);
+}));
+
+router.post('/send-offer', asyncHandler(async (req, res) => {
+  const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId;
+  if (!userId || !userCompanyId) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-});
 
-router.post('/generate-hot', async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const userCompanyId = req.session.userCompanyId;
-    if (!userId || !userCompanyId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+  const { targetCompanyId, dealModelId, portalTokenId } = req.body;
 
-    const schema = z.object({
-      targetCompanyId: z.number(),
-      hotTerms: z.object({
-        exclusivityPeriodDays: z.number().optional().default(90),
-        nonCompetePeriodYears: z.number().optional().default(2),
-        nonSolicitPeriodYears: z.number().optional().default(2),
-        warrantyClaimPeriodMonths: z.number().optional().default(18),
-        warrantyMinClaim: z.number().optional().default(5000),
-        additionalConditions: z.string().optional(),
-        targetCompletionWeeks: z.number().optional().default(12),
-      }).optional().default({}),
-    });
-
-    const validated = schema.parse(req.body);
-
-    const doc = await dealDocumentService.createHoTFromAcceptedOffer({
-      targetCompanyId: validated.targetCompanyId,
-      userCompanyId,
-      createdBy: userId,
-      hotTerms: validated.hotTerms,
-    });
-
-    res.status(201).json(doc);
-  } catch (error: any) {
-    console.error('[DEAL_DOCS] Generate HoT error:', error);
-    res.status(error.message?.includes('Cannot generate') ? 400 : 500).json({ message: error.message });
+  if (!targetCompanyId || !dealModelId) {
+    return res.status(400).json({ message: 'targetCompanyId and dealModelId are required' });
   }
-});
 
-router.post('/send-offer', async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const userCompanyId = req.session.userCompanyId;
-    if (!userId || !userCompanyId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+  let resolvedPortalTokenId = portalTokenId;
+  if (!resolvedPortalTokenId) {
+    const { portalRepository } = await import('../repositories/portal.repository');
+    const activeToken = await portalRepository.getActiveTokenForCompany(targetCompanyId);
+    if (!activeToken) {
+      return res.status(400).json({
+        message: 'No active portal found for this company. Please create a portal first.'
+      });
     }
-
-    const { targetCompanyId, dealModelId, portalTokenId } = req.body;
-
-    if (!targetCompanyId || !dealModelId) {
-      return res.status(400).json({ message: 'targetCompanyId and dealModelId are required' });
-    }
-
-    let resolvedPortalTokenId = portalTokenId;
-    if (!resolvedPortalTokenId) {
-      const { portalRepository } = await import('../repositories/portal.repository');
-      const activeToken = await portalRepository.getActiveTokenForCompany(targetCompanyId);
-      if (!activeToken) {
-        return res.status(400).json({
-          message: 'No active portal found for this company. Please create a portal first.'
-        });
-      }
-      resolvedPortalTokenId = activeToken.id;
-    }
-
-    const doc = await dealDocumentService.createOfferFromDealModel({
-      targetCompanyId,
-      userCompanyId,
-      dealModelId,
-      portalTokenId: resolvedPortalTokenId,
-      createdBy: userId,
-    });
-
-    const sent = await dealDocumentService.sendDocument(doc.id);
-
-    res.status(201).json(sent);
-  } catch (error: any) {
-    console.error('[DEAL_DOCS] Send offer error:', error);
-    res.status(500).json({ message: error.message });
+    resolvedPortalTokenId = activeToken.id;
   }
-});
 
-router.get('/:id/html', async (req, res) => {
-  try {
-    const documentId = parseInt(req.params.id);
-    if (isNaN(documentId)) {
-      return res.status(400).json({ message: 'Invalid document ID' });
-    }
+  const doc = await dealDocumentService.createOfferFromDealModel({
+    targetCompanyId,
+    userCompanyId,
+    dealModelId,
+    portalTokenId: resolvedPortalTokenId,
+    createdBy: userId,
+  });
 
-    const doc = await dealDocumentService.getDocumentById(documentId);
-    if (!doc) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-    if (!doc.generatedFileUrl) {
-      return res.status(404).json({ message: 'Document file not generated' });
-    }
+  const sent = await dealDocumentService.sendDocument(doc.id);
 
-    let html: string;
+  res.status(201).json(sent);
+}));
 
-    if (doc.documentType === 'offer_letter' && doc.documentData) {
-      html = buildOfferLetterHtml(doc.documentData as any);
-    } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
-      html = buildHoTHtml(doc.documentData as any);
-    } else {
-      const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
-      html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
-    }
-
-    res.json({ html, documentData: doc.documentData });
-  } catch (error: any) {
-    console.error('[DEAL_DOCS] HTML preview error:', error);
-    res.status(500).json({ message: error.message });
+router.get('/:id/html', asyncHandler(async (req, res) => {
+  const documentId = parseInt(req.params.id);
+  if (isNaN(documentId)) {
+    return res.status(400).json({ message: 'Invalid document ID' });
   }
-});
 
-router.get('/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const doc = await dealDocumentService.getDocumentById(id);
-    if (!doc) return res.status(404).json({ message: 'Document not found' });
-    const responses = await dealDocumentService.getDocumentResponses(id);
-    res.json({ ...doc, responses });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const doc = await dealDocumentService.getDocumentById(documentId);
+  if (!doc) {
+    return res.status(404).json({ message: 'Document not found' });
   }
-});
+  if (!doc.generatedFileUrl) {
+    return res.status(404).json({ message: 'Document file not generated' });
+  }
+
+  let html: string;
+
+  if (doc.documentType === 'offer_letter' && doc.documentData) {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
+    html = buildHoTHtml(doc.documentData as any);
+  } else {
+    const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
+    html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+  }
+
+  res.json({ html, documentData: doc.documentData });
+}));
+
+router.get('/:id', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const doc = await dealDocumentService.getDocumentById(id);
+  if (!doc) return res.status(404).json({ message: 'Document not found' });
+  const responses = await dealDocumentService.getDocumentResponses(id);
+  res.json({ ...doc, responses });
+}));
 
 const createDocumentSchema = z.object({
   targetCompanyId: z.number(),
@@ -185,99 +155,72 @@ const createDocumentSchema = z.object({
   documentData: z.any().optional(),
 });
 
-router.post('/', async (req, res) => {
-  try {
-    const validated = createDocumentSchema.parse(req.body);
-    const userId = req.session.userId;
-    const userCompanyId = req.session.userCompanyId;
-    if (!userId || !userCompanyId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const doc = await dealDocumentService.createDocument({
-      ...validated,
-      userCompanyId,
-      createdBy: userId,
-    });
-
-    res.status(201).json(doc);
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return res.status(400).json({ message: 'Validation error', errors: error.errors });
-    }
-    res.status(500).json({ message: error.message });
+router.post('/', asyncHandler(async (req, res) => {
+  const validated = createDocumentSchema.parse(req.body);
+  const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId;
+  if (!userId || !userCompanyId) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-});
 
-router.post('/:id/generate', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const dataOverrides = req.body.dataOverrides || {};
-    const result = await dealDocumentService.generateDocumentFile(id, dataOverrides);
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const doc = await dealDocumentService.createDocument({
+    ...validated,
+    userCompanyId,
+    createdBy: userId,
+  });
+
+  res.status(201).json(doc);
+}));
+
+router.post('/:id/generate', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const dataOverrides = req.body.dataOverrides || {};
+  const result = await dealDocumentService.generateDocumentFile(id, dataOverrides);
+  res.json(result);
+}));
+
+router.post('/:id/send', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const doc = await dealDocumentService.sendDocument(id);
+  res.json(doc);
+}));
+
+router.post('/:id/withdraw', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const doc = await dealDocumentService.withdrawDocument(id);
+  res.json(doc);
+}));
+
+router.post('/:id/new-version', asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id);
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const doc = await dealDocumentService.createNewVersion(id, userId, req.body);
+  res.status(201).json(doc);
+}));
+
+publicRouter.get('/:token', asyncHandler(async (req, res) => {
+  const token = req.params.token;
+
+  const { portalService } = await import('../services/portal.service');
+  const portalData = await portalService.getTokenData(token);
+  if (!portalData) {
+    return res.status(404).json({ message: 'Invalid or expired portal link' });
   }
-});
 
-router.post('/:id/send', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const doc = await dealDocumentService.sendDocument(id);
-    res.json(doc);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-});
+  const docs = await dealDocumentService.getDocumentsForPortal(portalData.tokenId);
+  const ndaAccepted = await dealDocumentService.isNdaAccepted(portalData.tokenId);
 
-router.post('/:id/withdraw', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const doc = await dealDocumentService.withdrawDocument(id);
-    res.json(doc);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-});
+  const docsWithResponses = await Promise.all(
+    docs.map(async (doc) => {
+      const responses = await dealDocumentService.getDocumentResponses(doc.id);
+      return { ...doc, responses };
+    })
+  );
 
-router.post('/:id/new-version', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const userId = req.session.userId;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
-    const doc = await dealDocumentService.createNewVersion(id, userId, req.body);
-    res.status(201).json(doc);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-publicRouter.get('/:token', async (req, res) => {
-  try {
-    const token = req.params.token;
-
-    const { portalService } = await import('../services/portal.service');
-    const portalData = await portalService.getTokenData(token);
-    if (!portalData) {
-      return res.status(404).json({ message: 'Invalid or expired portal link' });
-    }
-
-    const docs = await dealDocumentService.getDocumentsForPortal(portalData.tokenId);
-    const ndaAccepted = await dealDocumentService.isNdaAccepted(portalData.tokenId);
-
-    const docsWithResponses = await Promise.all(
-      docs.map(async (doc) => {
-        const responses = await dealDocumentService.getDocumentResponses(doc.id);
-        return { ...doc, responses };
-      })
-    );
-
-    res.json({ documents: docsWithResponses, ndaAccepted });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-});
+  res.json({ documents: docsWithResponses, ndaAccepted });
+}));
 
 const respondSchema = z.object({
   responseType: z.enum(['accepted', 'rejected', 'countered']),
@@ -286,88 +229,77 @@ const respondSchema = z.object({
   respondentEmail: z.string().email().nullable().optional(),
 });
 
-publicRouter.post('/:token/:documentId/respond', async (req, res) => {
-  try {
-    const token = req.params.token;
-    const documentId = parseInt(req.params.documentId);
+publicRouter.post('/:token/:documentId/respond', asyncHandler(async (req, res) => {
+  const token = req.params.token;
+  const documentId = parseInt(req.params.documentId);
 
-    const { portalService } = await import('../services/portal.service');
-    const portalData = await portalService.getTokenData(token);
-    if (!portalData) {
-      return res.status(404).json({ message: 'Invalid or expired portal link' });
-    }
-
-    const doc = await dealDocumentService.getDocumentById(documentId);
-    if (!doc || doc.portalTokenId !== portalData.tokenId) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-
-    const validated = respondSchema.parse(req.body);
-
-    const response = await dealDocumentService.recordResponse({
-      documentId,
-      responseType: validated.responseType,
-      comments: validated.comments || undefined,
-      respondentName: validated.respondentName,
-      respondentEmail: validated.respondentEmail || undefined,
-      respondentIp: req.ip || req.socket.remoteAddress,
-      respondentUserAgent: req.headers['user-agent'],
-    });
-
-    await dealDocumentService.markViewed(documentId);
-
-    res.json(response);
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return res.status(400).json({ message: 'Validation error', errors: error.errors });
-    }
-    res.status(400).json({ message: error.message });
+  const { portalService } = await import('../services/portal.service');
+  const portalData = await portalService.getTokenData(token);
+  if (!portalData) {
+    return res.status(404).json({ message: 'Invalid or expired portal link' });
   }
-});
 
-publicRouter.get('/:token/:documentId/html', async (req, res) => {
-  try {
-    const token = req.params.token;
-    const documentId = parseInt(req.params.documentId);
-
-    const { portalService } = await import('../services/portal.service');
-    const portalData = await portalService.getTokenData(token);
-    if (!portalData) {
-      return res.status(404).json({ message: 'Invalid or expired portal link' });
-    }
-
-    const doc = await dealDocumentService.getDocumentById(documentId);
-    if (!doc || doc.portalTokenId !== portalData.tokenId) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-    if (!doc.generatedFileUrl) {
-      return res.status(404).json({ message: 'Document file not generated' });
-    }
-
-    await dealDocumentService.markViewed(documentId);
-
-    let html: string;
-
-    if (doc.documentType === 'offer_letter' && doc.documentData) {
-      html = buildOfferLetterHtml(doc.documentData as any);
-    } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
-      html = buildHoTHtml(doc.documentData as any);
-    } else {
-      const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
-      html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
-    }
-
-    if (['nda', 'offer_letter', 'heads_of_terms'].includes(doc.documentType)) {
-      const responses = await dealDocumentService.getDocumentResponses(documentId);
-      const docData = doc.documentData as any;
-      html += buildSignatureBlock(doc.documentType, docData, responses, doc.respondedAt);
-    }
-
-    res.json({ html, documentData: doc.documentData });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const doc = await dealDocumentService.getDocumentById(documentId);
+  if (!doc || doc.portalTokenId !== portalData.tokenId) {
+    return res.status(404).json({ message: 'Document not found' });
   }
-});
+
+  const validated = respondSchema.parse(req.body);
+
+  const response = await dealDocumentService.recordResponse({
+    documentId,
+    responseType: validated.responseType,
+    comments: validated.comments || undefined,
+    respondentName: validated.respondentName,
+    respondentEmail: validated.respondentEmail || undefined,
+    respondentIp: req.ip || req.socket.remoteAddress,
+    respondentUserAgent: req.headers['user-agent'],
+  });
+
+  await dealDocumentService.markViewed(documentId);
+
+  res.json(response);
+}));
+
+publicRouter.get('/:token/:documentId/html', asyncHandler(async (req, res) => {
+  const token = req.params.token;
+  const documentId = parseInt(req.params.documentId);
+
+  const { portalService } = await import('../services/portal.service');
+  const portalData = await portalService.getTokenData(token);
+  if (!portalData) {
+    return res.status(404).json({ message: 'Invalid or expired portal link' });
+  }
+
+  const doc = await dealDocumentService.getDocumentById(documentId);
+  if (!doc || doc.portalTokenId !== portalData.tokenId) {
+    return res.status(404).json({ message: 'Document not found' });
+  }
+  if (!doc.generatedFileUrl) {
+    return res.status(404).json({ message: 'Document file not generated' });
+  }
+
+  await dealDocumentService.markViewed(documentId);
+
+  let html: string;
+
+  if (doc.documentType === 'offer_letter' && doc.documentData) {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
+    html = buildHoTHtml(doc.documentData as any);
+  } else {
+    const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
+    html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
+  }
+
+  if (['nda', 'offer_letter', 'heads_of_terms'].includes(doc.documentType)) {
+    const responses = await dealDocumentService.getDocumentResponses(documentId);
+    const docData = doc.documentData as any;
+    html += buildSignatureBlock(doc.documentType, docData, responses, doc.respondedAt);
+  }
+
+  res.json({ html, documentData: doc.documentData });
+}));
 
 function buildSignatureBlock(documentType: string, docData: any, responses: any[], respondedAt: Date | null): string {
   const sellerResponse = responses.length > 0 ? responses[0] : null;
@@ -632,42 +564,38 @@ function buildHoTHtml(data: any): string {
   `;
 }
 
-publicRouter.get('/:token/:documentId/download', async (req, res) => {
-  try {
-    const token = req.params.token;
-    const documentId = parseInt(req.params.documentId);
+publicRouter.get('/:token/:documentId/download', asyncHandler(async (req, res) => {
+  const token = req.params.token;
+  const documentId = parseInt(req.params.documentId);
 
-    const { portalService } = await import('../services/portal.service');
-    const portalData = await portalService.getTokenData(token);
-    if (!portalData) {
-      return res.status(404).json({ message: 'Invalid or expired portal link' });
-    }
-
-    const doc = await dealDocumentService.getDocumentById(documentId);
-    if (!doc || doc.portalTokenId !== portalData.tokenId) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
-    if (!doc.generatedFileUrl) {
-      return res.status(404).json({ message: 'Document file not found' });
-    }
-
-    await dealDocumentService.markViewed(documentId);
-
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const buffer = await fs.readFile(doc.generatedFileUrl);
-    const filename = path.basename(doc.generatedFileUrl);
-
-    const isPdf = filename.endsWith('.pdf');
-    res.setHeader('Content-Type', isPdf
-      ? 'application/pdf'
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(buffer);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const { portalService } = await import('../services/portal.service');
+  const portalData = await portalService.getTokenData(token);
+  if (!portalData) {
+    return res.status(404).json({ message: 'Invalid or expired portal link' });
   }
-});
+
+  const doc = await dealDocumentService.getDocumentById(documentId);
+  if (!doc || doc.portalTokenId !== portalData.tokenId) {
+    return res.status(404).json({ message: 'Document not found' });
+  }
+  if (!doc.generatedFileUrl) {
+    return res.status(404).json({ message: 'Document file not found' });
+  }
+
+  await dealDocumentService.markViewed(documentId);
+
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const buffer = await fs.readFile(doc.generatedFileUrl);
+  const filename = path.basename(doc.generatedFileUrl);
+
+  const isPdf = filename.endsWith('.pdf');
+  res.setHeader('Content-Type', isPdf
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buffer);
+}));
 
 export { publicRouter as publicDealDocumentRoutes };
 export default router;

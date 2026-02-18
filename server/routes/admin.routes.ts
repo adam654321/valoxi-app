@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { adminService } from '../services/admin.service';
-import { sendSuccess, sendError } from '../utils/response';
+import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();

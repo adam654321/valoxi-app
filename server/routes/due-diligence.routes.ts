@@ -1,55 +1,34 @@
 import { Router } from 'express';
 import { dueDiligenceService } from '../services/due-diligence.service';
 import { z } from 'zod';
-import { AppError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
 
-router.get('/categories', async (req, res) => {
-  try {
-    const categories = await dueDiligenceService.getAllCategories();
-    res.json(categories);
-  } catch (error: any) {
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
+router.get('/categories', asyncHandler(async (req, res) => {
+  const categories = await dueDiligenceService.getAllCategories();
+  res.json(categories);
+}));
+
+router.get('/company/:targetCompanyId/status', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  if (isNaN(targetCompanyId)) {
+    return res.status(400).json({ message: 'Invalid targetCompanyId' });
   }
-});
 
-router.get('/company/:targetCompanyId/status', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    if (isNaN(targetCompanyId)) {
-      return res.status(400).json({ message: 'Invalid targetCompanyId' });
-    }
+  const status = await dueDiligenceService.getDdStatusForCompany(targetCompanyId);
+  res.json(status);
+}));
 
-    const status = await dueDiligenceService.getDdStatusForCompany(targetCompanyId);
-    res.json(status);
-  } catch (error: any) {
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
+router.get('/company/:targetCompanyId/summary', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  if (isNaN(targetCompanyId)) {
+    return res.status(400).json({ message: 'Invalid targetCompanyId' });
   }
-});
 
-router.get('/company/:targetCompanyId/summary', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    if (isNaN(targetCompanyId)) {
-      return res.status(400).json({ message: 'Invalid targetCompanyId' });
-    }
-
-    const summary = await dueDiligenceService.getCompletionSummary(targetCompanyId);
-    res.json(summary);
-  } catch (error: any) {
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
-  }
-});
+  const summary = await dueDiligenceService.getCompletionSummary(targetCompanyId);
+  res.json(summary);
+}));
 
 const updateStatusSchema = z.object({
   status: z.enum(['not_submitted', 'submitted', 'approved', 'rejected', 'na']),
@@ -58,106 +37,80 @@ const updateStatusSchema = z.object({
   externalSubmissionId: z.number().optional(),
 });
 
-router.put('/company/:targetCompanyId/requirement/:requirementId/status', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    const requirementId = parseInt(req.params.requirementId);
+router.put('/company/:targetCompanyId/requirement/:requirementId/status', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  const requirementId = parseInt(req.params.requirementId);
 
-    if (isNaN(targetCompanyId)) {
-      return res.status(400).json({ message: 'Invalid targetCompanyId' });
-    }
-    if (isNaN(requirementId)) {
-      return res.status(400).json({ message: 'Invalid requirementId' });
-    }
-
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const validated = updateStatusSchema.parse(req.body);
-
-    const result = await dueDiligenceService.updateRequirementStatus({
-      requirementId,
-      targetCompanyId,
-      status: validated.status,
-      notes: validated.notes,
-      documentId: validated.documentId,
-      externalSubmissionId: validated.externalSubmissionId,
-      updatedBy: userId,
-    });
-
-    res.json(result);
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return res.status(400).json({ message: 'Validation error', errors: error.errors });
-    }
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    res.status(500).json({ message: error.message });
+  if (isNaN(targetCompanyId)) {
+    return res.status(400).json({ message: 'Invalid targetCompanyId' });
   }
-});
-
-router.get('/company/:targetCompanyId/requirement/:requirementId/documents', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    const requirementId = parseInt(req.params.requirementId);
-    const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId);
-    res.json(docs);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  if (isNaN(requirementId)) {
+    return res.status(400).json({ message: 'Invalid requirementId' });
   }
-});
 
-router.post('/company/:targetCompanyId/requirement/:requirementId/documents', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    const requirementId = parseInt(req.params.requirementId);
-    const userId = req.session.userId;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
-    const { documentId, notes } = req.body;
-    if (!documentId) return res.status(400).json({ message: 'documentId is required' });
-
-    const result = await dueDiligenceService.linkDocumentToRequirement({
-      requirementId, targetCompanyId, documentId, notes, addedBy: userId,
-    });
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const userId = req.session.userId;
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-});
 
-router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', async (req, res) => {
-  try {
-    const docLinkId = parseInt(req.params.docLinkId);
-    await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId);
-    res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  const validated = updateStatusSchema.parse(req.body);
+
+  const result = await dueDiligenceService.updateRequirementStatus({
+    requirementId,
+    targetCompanyId,
+    status: validated.status,
+    notes: validated.notes,
+    documentId: validated.documentId,
+    externalSubmissionId: validated.externalSubmissionId,
+    updatedBy: userId,
+  });
+
+  res.json(result);
+}));
+
+router.get('/company/:targetCompanyId/requirement/:requirementId/documents', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  const requirementId = parseInt(req.params.requirementId);
+  const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId);
+  res.json(docs);
+}));
+
+router.post('/company/:targetCompanyId/requirement/:requirementId/documents', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  const requirementId = parseInt(req.params.requirementId);
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const { documentId, notes } = req.body;
+  if (!documentId) return res.status(400).json({ message: 'documentId is required' });
+
+  const result = await dueDiligenceService.linkDocumentToRequirement({
+    requirementId, targetCompanyId, documentId, notes, addedBy: userId,
+  });
+  res.json(result);
+}));
+
+router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', asyncHandler(async (req, res) => {
+  const docLinkId = parseInt(req.params.docLinkId);
+  await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId);
+  res.json({ success: true });
+}));
+
+router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review', asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  const requirementId = parseInt(req.params.requirementId);
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const { reviewStatus, notes } = req.body;
+  if (!['satisfied', 'more_needed'].includes(reviewStatus)) {
+    return res.status(400).json({ message: 'reviewStatus must be satisfied or more_needed' });
   }
-});
 
-router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review', async (req, res) => {
-  try {
-    const targetCompanyId = parseInt(req.params.targetCompanyId);
-    const requirementId = parseInt(req.params.requirementId);
-    const userId = req.session.userId;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
-    const { reviewStatus, notes } = req.body;
-    if (!['satisfied', 'more_needed'].includes(reviewStatus)) {
-      return res.status(400).json({ message: 'reviewStatus must be satisfied or more_needed' });
-    }
-
-    const result = await dueDiligenceService.setBuyerReview({
-      requirementId, targetCompanyId, reviewStatus, notes, reviewedBy: userId,
-    });
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-});
+  const result = await dueDiligenceService.setBuyerReview({
+    requirementId, targetCompanyId, reviewStatus, notes, reviewedBy: userId,
+  });
+  res.json(result);
+}));
 
 export default router;
