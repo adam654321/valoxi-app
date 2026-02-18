@@ -7,6 +7,7 @@ import { insertUserSchema } from '@shared/schema';
 import { isAuthenticated } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
 import { rolesService } from '../services/roles.service';
+import { passwordResetService } from '../services/password-reset.service';
 
 const router = Router();
 
@@ -100,5 +101,37 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
 router.get('/csrf', isAuthenticated, (req: Request, res: Response) => {
   sendSuccess(res, { csrfToken: req.session.csrfToken });
 });
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email format'),
+});
+
+router.post('/forgot-password', asyncHandler(async (req: Request, res: Response) => {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  await passwordResetService.requestReset(email, baseUrl);
+  sendSuccess(res, { message: 'If an account exists with that email, a password reset link has been sent.' });
+}));
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+router.post('/reset-password', asyncHandler(async (req: Request, res: Response) => {
+  const { token, password } = resetPasswordSchema.parse(req.body);
+  await passwordResetService.resetPassword(token, password);
+  sendSuccess(res, { message: 'Password has been reset successfully.' });
+}));
+
+router.get('/reset-password/validate', asyncHandler(async (req: Request, res: Response) => {
+  const token = req.query.token as string;
+  if (!token) {
+    sendSuccess(res, { valid: false });
+    return;
+  }
+  const result = await passwordResetService.validateToken(token);
+  sendSuccess(res, { valid: result.valid });
+}));
 
 export default router;

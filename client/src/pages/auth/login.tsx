@@ -114,6 +114,16 @@ export default function Login() {
                   />
                 </div>
 
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setLocation("/forgot-password")}
+                    className="text-sm font-medium text-primary hover:text-blue-500 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
                 <Button
                   type="submit"
                   className="w-full py-3 bg-primary hover:bg-blue-700"

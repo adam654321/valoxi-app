@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminService } from '../services/admin.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
+import { passwordResetService } from '../services/password-reset.service';
 
 const router = Router();
 
@@ -99,6 +100,17 @@ router.get('/webhook-events', asyncHandler(async (req: Request, res: Response) =
     limit: Math.min(100, Math.max(1, parseInt(limit as string, 10) || 50)),
   });
   sendSuccess(res, data);
+}));
+
+const adminResetPasswordSchema = z.object({
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: Response) => {
+  const userId = Number(req.params.id);
+  const { newPassword } = adminResetPasswordSchema.parse(req.body);
+  await passwordResetService.adminResetPassword(userId, newPassword);
+  sendSuccess(res, { message: 'Password has been reset successfully.' });
 }));
 
 export default router;

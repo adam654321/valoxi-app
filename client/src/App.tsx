@@ -11,6 +11,8 @@ import AdminLayout from "@/components/admin-layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
+import ForgotPassword from "@/pages/auth/forgot-password";
+import ResetPassword from "@/pages/auth/reset-password";
 import Dashboard from "@/pages/dashboard";
 import EnhancedTargetCompanies from "@/pages/enhanced-target-companies";
 import TargetCompanyDetail from "@/pages/target-company-detail";
@@ -62,6 +64,8 @@ function Router() {
         <Route path="/" component={Login} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/accept-invitation" component={AcceptInvitation} />
         <Route component={NotFound} />
       </Switch>
