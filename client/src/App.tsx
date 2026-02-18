@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { lazy, Suspense } from "react";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,10 +22,11 @@ import Reports from "@/pages/reports";
 import { NotificationsPage } from "@/components/notifications";
 import PortalPage from "@/pages/PortalPage";
 import PortalManagement from "@/pages/PortalManagement";
-import EmailTest from "@/pages/EmailTest";
-import WebhookTest from "@/pages/webhook-test";
-import FileUploadTest from "@/pages/file-upload-test";
 import CompanyAccounts from "@/pages/company-accounts";
+
+const EmailTest = lazy(() => import("@/pages/EmailTest"));
+const WebhookTest = lazy(() => import("@/pages/webhook-test"));
+const FileUploadTest = lazy(() => import("@/pages/file-upload-test"));
 import AdminOverview from "@/pages/admin/index";
 import AdminTokenUsage from "@/pages/admin/token-usage";
 import AdminCosts from "@/pages/admin/costs";
@@ -35,7 +37,7 @@ import AdminWebhookEvents from "@/pages/admin/webhook-events";
 
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isSystemAdmin } = useAuth();
 
   if (isLoading) {
     return (
@@ -115,9 +117,33 @@ function Router() {
             <Route path="/reports" component={Reports} />
             <Route path="/notifications" component={NotificationsPage} />
             <Route path="/portal-management" component={PortalManagement} />
-            <Route path="/email-test" component={EmailTest} />
-            <Route path="/webhook-test" component={WebhookTest} />
-            <Route path="/file-upload-test" component={FileUploadTest} />
+            <Route path="/email-test">
+              {isSystemAdmin ? (
+                <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                  <EmailTest />
+                </Suspense>
+              ) : (
+                <Redirect to="/" />
+              )}
+            </Route>
+            <Route path="/webhook-test">
+              {isSystemAdmin ? (
+                <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                  <WebhookTest />
+                </Suspense>
+              ) : (
+                <Redirect to="/" />
+              )}
+            </Route>
+            <Route path="/file-upload-test">
+              {isSystemAdmin ? (
+                <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                  <FileUploadTest />
+                </Suspense>
+              ) : (
+                <Redirect to="/" />
+              )}
+            </Route>
             <Route path="/company-accounts" component={CompanyAccounts} />
             <Route component={NotFound} />
           </Switch>
