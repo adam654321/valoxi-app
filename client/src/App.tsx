@@ -74,20 +74,31 @@ function Router() {
       
       {/* Admin routes */}
       <Route path="/admin/:rest*">
-        <AdminRoute>
-          <AdminLayout>
-            <Switch>
-              <Route path="/admin" component={AdminOverview} />
-              <Route path="/admin/token-usage" component={AdminTokenUsage} />
-              <Route path="/admin/costs" component={AdminCosts} />
-              <Route path="/admin/companies/:id" component={AdminCompanyDetail} />
-              <Route path="/admin/companies" component={AdminCompanies} />
-              <Route path="/admin/users" component={AdminUsers} />
-              <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
-              <Route component={NotFound} />
-            </Switch>
-          </AdminLayout>
-        </AdminRoute>
+        {() => (
+          <AdminRoute>
+            <AdminLayout>
+              <Switch>
+                <Route path="/admin" component={AdminOverview} />
+                <Route path="/admin/token-usage" component={AdminTokenUsage} />
+                <Route path="/admin/costs" component={AdminCosts} />
+                <Route path="/admin/companies/:id" component={AdminCompanyDetail} />
+                <Route path="/admin/companies" component={AdminCompanies} />
+                <Route path="/admin/users" component={AdminUsers} />
+                <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
+                <Route component={NotFound} />
+              </Switch>
+            </AdminLayout>
+          </AdminRoute>
+        )}
+      </Route>
+      <Route path="/admin">
+        {() => (
+          <AdminRoute>
+            <AdminLayout>
+              <AdminOverview />
+            </AdminLayout>
+          </AdminRoute>
+        )}
       </Route>
 
       {/* Authenticated routes */}
