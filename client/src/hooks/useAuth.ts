@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
+  isSystemAdmin?: boolean;
   company?: {
     id: number;
     companyName: string;
@@ -24,6 +25,7 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isSystemAdmin: !!user?.isSystemAdmin,
     error,
   };
 }
