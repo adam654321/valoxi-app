@@ -63,8 +63,14 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
     initializeChaseUpCron();
+    try {
+      const { analysisQueue } = await import('./services/analysis-queue.service');
+      await analysisQueue.recoverStuckEvents();
+    } catch (err) {
+      console.error('[STARTUP] Analysis queue recovery failed:', err);
+    }
   });
 })();

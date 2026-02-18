@@ -206,6 +206,40 @@ class AnalysisQueue {
     }
   }
 
+  async recoverStuckEvents(): Promise<void> {
+    try {
+      const { documentsRepository } = await import('../repositories/documents.repository');
+      const stuckStatuses = ['processing', 'classification_complete', 'pending'];
+      const allEvents = await documentsRepository.getAllFileUploadEvents();
+      const stuckEvents = allEvents.filter((e: any) => stuckStatuses.includes(e.webhookStatus));
+
+      if (stuckEvents.length === 0) {
+        console.log(`[ANALYSIS_QUEUE] Startup recovery: No stuck events found`);
+        return;
+      }
+
+      console.log(`[ANALYSIS_QUEUE] Startup recovery: Found ${stuckEvents.length} stuck event(s), re-queuing...`);
+
+      for (const event of stuckEvents) {
+        if (event.webhookStatus === 'processing') {
+          await documentsRepository.updateFileUploadEventWebhookStatus(event.id, 'pending', undefined, undefined);
+        }
+        if (event.webhookStatus === 'classification_complete') {
+          await documentsRepository.updateFileUploadEventWebhookStatus(event.id, 'pending', undefined, undefined);
+        }
+        this.enqueue({
+          eventId: event.id,
+          targetCompanyId: event.targetCompanyId,
+          isRetrigger: true,
+        });
+      }
+
+      console.log(`[ANALYSIS_QUEUE] Startup recovery: Re-queued ${stuckEvents.length} event(s)`);
+    } catch (error) {
+      console.error(`[ANALYSIS_QUEUE] Startup recovery failed:`, error);
+    }
+  }
+
   getStats(): QueueStats {
     const perCompany: QueueStats['perCompany'] = [];
     this.companyQueues.forEach((queue, companyId) => {
