@@ -15,9 +15,13 @@ Preferred communication style: Simple, everyday language.
 - **Build**: Vite.
 - **UI/UX Decisions**: Features a professional, modern design with tabbed interfaces, dashboard-style metrics, color-coded financial data, responsive layouts, and consistent iconography.
 - **Layout Architecture**: Modern collapsible sidebar navigation system (`client/src/components/layout/`):
-  - `AppSidebar.tsx`: Main sidebar with grouped navigation (Core, Relationships, Intelligence sections)
+  - `AppSidebar.tsx`: Main sidebar with grouped navigation (Core, Relationships, Intelligence sections). Shows "Admin" link for system admins.
   - `NavUser.tsx`: User profile dropdown in sidebar footer
   - `PageHeader.tsx`: Thin top bar with breadcrumbs, notifications, and actions
+- **Admin Section** (`client/src/pages/admin/`): System admin dashboard with its own layout and route guard:
+  - `AdminRoute` component (`client/src/components/admin-route.tsx`): Auth + isSystemAdmin guard
+  - `AdminLayout` component (`client/src/components/admin-layout.tsx`): Dedicated sidebar with admin navigation
+  - Pages: Overview (metrics + charts), Token Usage (by company/deal/service with date filtering), Platform Costs (CRUD + summary cards), Companies (list + detail drill-down), Users (list with roles/status), Webhook Events (log viewer)
   - Sidebar collapses to icon-only mode with tooltips, mobile-responsive drawer on small screens, keyboard shortcut Ctrl+B to toggle
 
 ## Backend Architecture
