@@ -3,24 +3,43 @@ import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
 function getMimeTypeForFile(fileType: string): string {
   const mimeMap: Record<string, string> = {
-    "application/pdf": "application/pdf",
     "pdf": "application/pdf",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.ms-excel": "application/vnd.ms-excel",
-    "xls": "application/vnd.ms-excel",
-    "text/csv": "text/csv",
-    "csv": "text/csv",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc": "application/msword",
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "image/png": "image/png",
-    "png": "image/png",
-    "image/jpeg": "image/jpeg",
+    "xls": "application/vnd.ms-excel",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xlsm": "application/vnd.ms-excel.sheet.macroEnabled.12",
+    "ppt": "application/vnd.ms-powerpoint",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "csv": "text/csv",
+    "tsv": "text/tab-separated-values",
+    "txt": "text/plain",
+    "rtf": "application/rtf",
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "bmp": "image/bmp",
+    "tiff": "image/tiff",
+    "tif": "image/tiff",
+    "webp": "image/webp",
+    "numbers": "application/vnd.apple.numbers",
+    "pages": "application/vnd.apple.pages",
+    "key": "application/vnd.apple.keynote",
+    "odt": "application/vnd.oasis.opendocument.text",
+    "ods": "application/vnd.oasis.opendocument.spreadsheet",
+    "odp": "application/vnd.oasis.opendocument.presentation",
+    "application/pdf": "application/pdf",
+    "application/msword": "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel": "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv": "text/csv",
+    "image/png": "image/png",
+    "image/jpeg": "image/jpeg",
   };
   const normalized = fileType.toLowerCase();
-  return mimeMap[normalized] || fileType;
+  return mimeMap[normalized] || "application/octet-stream";
 }
 import { classifyDocumentWithGemini } from "./gemini-document-classification-service";
 import { runStep2AnalysisForTypes } from "./gemini-step2-analysis-service";
