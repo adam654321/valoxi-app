@@ -1,0 +1,37 @@
+Create the admin API routes. All routes live under /api/v2/admin and require both isAuthenticated and isSystemAdmin middleware.
+
+1. Create server/repositories/admin.repository.ts with these methods:
+- getPlatformOverview(): returns total tokens this month, total estimated cost this month, total manual platform costs this month, count of active user companies, count of active users
+- getTokenUsage(filters: { companyId?, dealId?, service?, from?, to?, page, limit }): paginated rows from token_usage joined to users and userCompanies
+- getTokenUsageByCompany(from?, to?): grouped sum of tokens and cost per userCompany, ordered by cost desc
+- getTokenUsageByDeal(from?, to?): grouped sum of tokens and cost per dealId (targetCompany name), ordered by cost desc  
+- getTokenUsageByService(from?, to?): grouped sum of tokens and cost per service, ordered by cost desc
+- getPlatformCosts(filters: { costType?, from?, to? }): all platform_costs rows
+- createPlatformCost(data): inserts a new platform_costs row
+- getAllCompanies(): all userCompanies with user count, deal count (targetCompanies), total token cost to date
+- getAllUsers(): all users across all tenants with their company name, role, isSystemAdmin, lastLogin
+- getWebhookEvents(filters: { status?, source?, page, limit }): paginated webhook_events
+
+2. Create server/services/admin.service.ts that wraps the repository and formats data for the API responses. Keep it thin — just call repository methods and return results.
+
+3. Create server/routes/admin.routes.ts with these endpoints:
+- GET /overview → admin service getPlatformOverview
+- GET /token-usage → accepts query params: companyId, dealId, service, from, to, page (default 1), limit (default 50)
+- GET /token-usage/by-company → accepts from, to query params
+- GET /token-usage/by-deal → accepts from, to query params
+- GET /token-usage/by-service → accepts from, to query params
+- GET /costs → accepts costType, from, to query params
+- POST /costs → body: { costType, provider, description, periodStart, periodEnd, amountUsd, notes? } — validates with Zod, sets createdBy from session userId
+- GET /companies → all tenants overview
+- GET /companies/:id → single tenant with their token usage summary
+- GET /users → all users
+- GET /webhook-events → accepts status, source, page, limit query params
+
+Use asyncHandler wrapper on all route handlers (import from server/utils/async-handler.ts).
+Use sendSuccess/sendError from server/utils/response.ts.
+
+4. Register the admin routes in server/routes/index.ts:
+import adminRoutes from './admin.routes'
+import { isSystemAdmin } from '../middleware/auth'
+
+app.use('/api/v2/admin', isAuthenticated, isSystemAdmin, adminRoutes)

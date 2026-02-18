@@ -28,6 +28,8 @@ import dealModelRoutes from './deal-model.routes';
 import dealDocumentRoutes, { publicDealDocumentRoutes } from './deal-document.routes';
 import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
+import adminRoutes from './admin.routes';
+import { isSystemAdmin } from '../middleware/auth';
 import { authLimiter, portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any) {
@@ -66,4 +68,5 @@ export function registerModularRoutes(app: Express, isAuthenticated: any) {
   app.use('/api/v2/public/deal-documents', portalLimiter, publicDealDocumentRoutes);
   app.use('/api/v2/due-diligence', isAuthenticated, dueDiligenceRoutes);
   app.use('/api/v2/value-creation', isAuthenticated, valueCreationRoutes);
+  app.use('/api/v2/admin', isAuthenticated, isSystemAdmin, adminRoutes);
 }
