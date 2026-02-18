@@ -8,7 +8,9 @@ import {
   FileText,
   Globe,
   ChevronRight,
+  Shield,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -51,6 +53,7 @@ const navGroups = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [location] = useLocation();
+  const { isSystemAdmin } = useAuth();
 
   const isActiveRoute = (path: string) => {
     if (path === "/dashboard" && location === "/") return true;
@@ -109,6 +112,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      {isSystemAdmin && (
+        <SidebarGroup>
+          <SidebarGroupLabel>System</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.startsWith("/admin")} tooltip="Admin">
+                  <Link href="/admin">
+                    <Shield />
+                    <span>Admin</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>

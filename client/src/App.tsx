@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Layout from "@/components/layout";
+import AdminRoute from "@/components/admin-route";
+import AdminLayout from "@/components/admin-layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
@@ -23,6 +25,13 @@ import EmailTest from "@/pages/EmailTest";
 import WebhookTest from "@/pages/webhook-test";
 import FileUploadTest from "@/pages/file-upload-test";
 import CompanyAccounts from "@/pages/company-accounts";
+import AdminOverview from "@/pages/admin/index";
+import AdminTokenUsage from "@/pages/admin/token-usage";
+import AdminCosts from "@/pages/admin/costs";
+import AdminCompanies from "@/pages/admin/companies";
+import AdminCompanyDetail from "@/pages/admin/companies/[id]";
+import AdminUsers from "@/pages/admin/users";
+import AdminWebhookEvents from "@/pages/admin/webhook-events";
 
 
 function Router() {
@@ -63,6 +72,24 @@ function Router() {
       <Route path="/portal/:token" component={PortalPage} />
       <Route path="/invite/:token" component={AcceptInvitation} />
       
+      {/* Admin routes */}
+      <Route path="/admin/:rest*">
+        <AdminRoute>
+          <AdminLayout>
+            <Switch>
+              <Route path="/admin" component={AdminOverview} />
+              <Route path="/admin/token-usage" component={AdminTokenUsage} />
+              <Route path="/admin/costs" component={AdminCosts} />
+              <Route path="/admin/companies/:id" component={AdminCompanyDetail} />
+              <Route path="/admin/companies" component={AdminCompanies} />
+              <Route path="/admin/users" component={AdminUsers} />
+              <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
+              <Route component={NotFound} />
+            </Switch>
+          </AdminLayout>
+        </AdminRoute>
+      </Route>
+
       {/* Authenticated routes */}
       <Route>
         <Layout>
