@@ -29,7 +29,7 @@ import dealDocumentRoutes, { publicDealDocumentRoutes } from './deal-document.ro
 import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
-import { isSystemAdmin } from '../middleware/auth';
+import { isSystemAdmin, requirePermission } from '../middleware/auth';
 import { authLimiter, portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any, validateCsrfToken: any) {
@@ -44,9 +44,9 @@ export function registerModularRoutes(app: Express, isAuthenticated: any, valida
   app.use('/api/v2/notes', isAuthenticated, validateCsrfToken, notesRoutes);
   app.use('/api/v2/dashboard', isAuthenticated, validateCsrfToken, dashboardRoutes);
   app.use('/api/v2/team', publicTeamRoutes);
-  app.use('/api/v2/team', isAuthenticated, validateCsrfToken, teamRoutes);
+  app.use('/api/v2/team', isAuthenticated, validateCsrfToken, requirePermission('canManageUsers'), teamRoutes);
   app.use('/api/v2/deals', isAuthenticated, validateCsrfToken, assignmentsRoutes);
-  app.use('/api/v2/reports', isAuthenticated, validateCsrfToken, reportsRoutes);
+  app.use('/api/v2/reports', isAuthenticated, validateCsrfToken, requirePermission('canAccessAnalytics'), reportsRoutes);
   app.use('/api/v2/portal', portalLimiter, portalRoutes);
   app.use('/api/v2/files', isAuthenticated, validateCsrfToken, documentsFilesRoutes);
   app.use('/api/v2/public/documents', publicDocumentRoutes);
@@ -59,9 +59,9 @@ export function registerModularRoutes(app: Express, isAuthenticated: any, valida
   if (process.env.NODE_ENV !== 'production') {
     app.use('/api/v2/debug', isAuthenticated, validateCsrfToken, debugRoutes);
   }
-  app.use('/api/v2/financial-data', isAuthenticated, validateCsrfToken, financialDataRoutes);
+  app.use('/api/v2/financial-data', isAuthenticated, validateCsrfToken, requirePermission('canViewFinancials'), financialDataRoutes);
   app.use('/api/v2/chase-up', isAuthenticated, validateCsrfToken, chaseUpRoutes);
-  app.use('/api/v2/expert-analysis', isAuthenticated, validateCsrfToken, analysisTriggerLimiter, expertAnalysisRoutes);
+  app.use('/api/v2/expert-analysis', isAuthenticated, validateCsrfToken, requirePermission('canViewFinancials'), analysisTriggerLimiter, expertAnalysisRoutes);
   app.use('/api/v2/user/companies', isAuthenticated, validateCsrfToken, userCompaniesRoutes);
   app.use('/api/v2/deal-models', isAuthenticated, validateCsrfToken, dealModelRoutes);
   app.use('/api/v2/deal-documents', isAuthenticated, validateCsrfToken, dealDocumentRoutes);

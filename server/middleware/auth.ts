@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import type { UserRole } from '@shared/schema';
+import { rolesService } from '../services/roles.service';
 
 export async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
@@ -27,4 +29,29 @@ export async function isSystemAdmin(req: Request, res: Response, next: NextFunct
 
   (req as any).isSystemAdminVerified = true;
   next();
+}
+
+export function requirePermission(permission: keyof UserRole) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const [user] = await db.select({ isSystemAdmin: users.isSystemAdmin }).from(users).where(eq(users.id, userId));
+    if (user?.isSystemAdmin) {
+      return next();
+    }
+
+    const hasPermission = await rolesService.checkPermission(userId, permission);
+    if (hasPermission) {
+      return next();
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'You do not have permission to perform this action',
+      code: 'FORBIDDEN',
+    });
+  };
 }
