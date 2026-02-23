@@ -326,10 +326,6 @@ export class DealModelService {
     const name = newName || `Deal Model v${nextVersion}`;
     const newModel = await dealModelRepository.duplicate(id, name, model.createdBy, nextVersion);
 
-    if (!model.isLocked) {
-      await dealModelRepository.lock(id, true);
-    }
-
     const fullModel = await dealModelRepository.getByIdWithDetails(newModel.id);
     if (!fullModel) throw new NotFoundError('Duplicated deal model not found');
 

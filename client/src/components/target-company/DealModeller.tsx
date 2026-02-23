@@ -233,7 +233,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const newModel = response?.data || response;
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
       if (newModel?.id) setSelectedModelId(newModel.id);
-      toast({ title: 'New version created', description: `${newModel?.name || 'Deal model'} has been created as a new version. The previous version has been locked.` });
+      toast({ title: 'New version created', description: `${newModel?.name || 'Deal model'} has been created as a new version.` });
     },
     onError: (error: Error) => {
       toast({ title: 'Could not create new version', description: error.message, variant: 'destructive' });
