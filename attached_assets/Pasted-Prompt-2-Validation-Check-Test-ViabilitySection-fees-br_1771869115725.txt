@@ -1,0 +1,29 @@
+Prompt 2 (Validation Check): Test ViabilitySection fees breakdown inputs
+Paste this into Replit:
+
+Before making any changes, I need you to review client/src/components/deal-modeller/ViabilitySection.tsx and check whether the following input bugs still exist. Do NOT modify any code yet — just report your findings.
+Check 1: Does handleBlur still use a setTimeout to delay unsetting isEditingRef?
+Look for:
+jsconst handleBlur = useCallback(() => {
+  setTimeout(() => { isEditingRef.current = false; }, 300);
+}, []);
+If this pattern is still present, it's a bug. Report: "STILL BUGGED — handleBlur uses setTimeout"
+If it's been simplified to just set isEditingRef.current = false directly, report: "FIXED — handleBlur is clean"
+Check 2: Does the server sync useEffect watch [model] (entire object reference) or something more specific?
+Look for:
+jsuseEffect(() => {
+  if (!isEditingRef.current && model) {
+    setFeeValues(initFeeValues(model));
+  }
+}, [model]);
+If it watches [model] as the entire object, it fires on every reference change from TanStack Query, which races with saves. Report: "STILL BUGGED — useEffect watches [model]"
+If it watches specific fields like [model?.id, model?.updatedAt] or uses a lastSyncedAt guard, report: "FIXED — useEffect has proper guards"
+Check 3: Does the fee type toggle (% ↔ £) use debounceSave or does it save immediately?
+Look at handleFeeTypeToggle. If it calls debounceSave(typeField, newType), that means toggling the type waits 600ms and could be lost. Report: "STILL BUGGED — type toggle is debounced"
+If it calls updateMutation.mutate() directly or flushes pending saves first, report: "FIXED — type toggle saves immediately"
+Check 4: Is there an unmount cleanup that flushes pending saves?
+Look for a useEffect cleanup that checks pendingRef.current and calls updateMutation.mutate() if there are pending unsaved changes. Report: "MISSING — no unmount flush" or "PRESENT — unmount flushes pending saves"
+Check 5: Do the fee value <input> elements allow free typing?
+Look at the onChange handler for the fee inputs. If it does parseFloat on every keystroke and rejects NaN (blocking empty fields), report: "STILL BUGGED — blocks free typing"
+If it stores the raw string and only parses on blur/save, report: "FIXED — allows free typing"
+Please report each check as a numbered list with the status (FIXED / STILL BUGGED / MISSING) and a brief explanation of what you found in the current code.
