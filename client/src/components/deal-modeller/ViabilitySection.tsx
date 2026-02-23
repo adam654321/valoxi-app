@@ -114,14 +114,22 @@ export default function ViabilitySection({ modelId, model, calculations, funding
   const [feeValues, setFeeValues] = useState<FeeLocalValues>(() => initFeeValues(model));
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const isEditingRef = useRef(false);
+  const savePendingRef = useRef(false);
   const pendingRef = useRef<Record<string, any>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevModelIdRef = useRef(model?.id);
 
   useEffect(() => {
-    if (!isEditingRef.current && model) {
+    if (!model) return;
+    if (model.id !== prevModelIdRef.current) {
+      prevModelIdRef.current = model.id;
+      setFeeValues(initFeeValues(model));
+      return;
+    }
+    if (!isEditingRef.current && !savePendingRef.current) {
       setFeeValues(initFeeValues(model));
     }
-  }, [model]);
+  }, [model?.id, model?.updatedAt]);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
@@ -130,12 +138,17 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     onSuccess: () => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 1500);
+      savePendingRef.current = false;
       onDataChange();
+    },
+    onError: () => {
+      savePendingRef.current = false;
     },
   });
 
   const debounceSave = useCallback((field: string, value: any) => {
     pendingRef.current[field] = value;
+    savePendingRef.current = true;
     setSaveStatus('saving');
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -148,8 +161,13 @@ export default function ViabilitySection({ modelId, model, calculations, funding
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (Object.keys(pendingRef.current).length > 0) {
+        const updates = { ...pendingRef.current };
+        pendingRef.current = {};
+        apiRequest('PUT', `/api/v2/deal-models/${modelId}`, updates).catch(() => {});
+      }
     };
-  }, []);
+  }, [modelId]);
 
   const handleFeeValueChange = (field: string, value: string) => {
     setFeeValues(prev => ({ ...prev, [field]: value }));
@@ -160,12 +178,17 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     const currentType = feeValues[typeField] || 'percent';
     const newType = currentType === 'percent' ? 'fixed' : 'percent';
     setFeeValues(prev => ({ ...prev, [typeField]: newType }));
-    debounceSave(typeField, newType);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const allUpdates = { ...pendingRef.current, [typeField]: newType };
+    pendingRef.current = {};
+    savePendingRef.current = true;
+    setSaveStatus('saving');
+    updateMutation.mutate(allUpdates);
   };
 
   const handleFocus = useCallback(() => { isEditingRef.current = true; }, []);
   const handleBlur = useCallback(() => {
-    setTimeout(() => { isEditingRef.current = false; }, 300);
+    isEditingRef.current = false;
   }, []);
 
   const debtServiceBreakdown = useMemo(() => {
