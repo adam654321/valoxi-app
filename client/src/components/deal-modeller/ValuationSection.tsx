@@ -138,7 +138,7 @@ export default function ValuationSection({
   const pendingRef = useRef<Partial<Record<string, any>> | null>(null);
   const isEditingRef = useRef(false);
   const prevModelIdRef = useRef(model.id);
-  const lastSyncedAtRef = useRef<string | null>(model.updatedAt as string | null);
+  const savePendingRef = useRef(false);
 
   const syncDisplayFromLocal = useCallback((values: LocalValues) => {
     setDisplayValues({
@@ -158,15 +158,12 @@ export default function ValuationSection({
       const init = initLocal(model);
       setLocal(init);
       syncDisplayFromLocal(init);
-      lastSyncedAtRef.current = model.updatedAt as string | null;
       return;
     }
-    const updatedAt = model.updatedAt as string | null;
-    if (!isEditingRef.current && updatedAt !== lastSyncedAtRef.current) {
+    if (!isEditingRef.current && !savePendingRef.current) {
       const init = initLocal(model);
       setLocal(init);
       syncDisplayFromLocal(init);
-      lastSyncedAtRef.current = updatedAt;
     }
   }, [model.id, model.updatedAt, syncDisplayFromLocal]);
 
@@ -214,22 +211,24 @@ export default function ValuationSection({
       const res = await apiRequest('PUT', `/api/v2/deal-models/${modelId}`, updates);
       return res.json();
     },
-    onSuccess: (_data: any, _variables: any) => {
+    onSuccess: () => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 1500);
-      lastSyncedAtRef.current = new Date().toISOString();
+      savePendingRef.current = false;
       if (!isEditingRef.current) {
         onDataChange();
       }
     },
     onError: (error: Error) => {
       setSaveStatus('idle');
+      savePendingRef.current = false;
       toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     },
   });
 
   const debounceSave = useCallback((updates: Record<string, any>) => {
     pendingRef.current = { ...(pendingRef.current || {}), ...updates };
+    savePendingRef.current = true;
     setSaveStatus('saving');
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
