@@ -39,8 +39,8 @@ For each vehicle:
 • net_book_value – Current NBV
 • market_value – Estimated market value (if stated)
 
-5. INDIVIDUAL ASSET ITEMS:
-For each significant asset:
+5. INDIVIDUAL ASSET ITEMS (top 15 by value only):
+For the 15 highest-value assets by net book value:
 • description – Asset description
 • category – Asset category
 • purchase_date – Date of purchase
@@ -66,6 +66,7 @@ OUTPUT FORMAT (JSON):
   "document": "asset_register",
   "report_date": "2024-01-31",
   "summary": {
+    "total_asset_count": null,
     "total_gross_book_value": null,
     "total_accumulated_depreciation": null,
     "total_net_book_value": null,

@@ -43,10 +43,10 @@ export interface GenerateContentOptions {
 const DEFAULT_MODEL = "gemini-3-flash-preview";
 
 const DEFAULT_RETRY: Required<Pick<GeminiClientConfig, "maxRetries" | "baseDelayMs" | "maxDelayMs" | "timeoutMs">> = {
-  maxRetries: 3,
-  baseDelayMs: 45000,
-  maxDelayMs: 120000,
-  timeoutMs: 180000,
+  maxRetries: 2,
+  baseDelayMs: 15000,
+  maxDelayMs: 45000,
+  timeoutMs: 90000,
 };
 
 /**

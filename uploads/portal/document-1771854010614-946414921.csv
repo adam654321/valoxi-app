@@ -1,0 +1,17 @@
+Customer ID,Customer Name,Current,1-30 Days,31-60 Days,61-90 Days,Over 90 Days,Total Outstanding
+"CUS-001","Suffolk County Council",182000,95000,48000,22000,15000,362000
+"CUS-002","Adnams PLC",145000,78000,35000,0,0,258000
+"CUS-003","Ipswich Town Football Club",215000,0,0,0,0,215000
+"CUS-004","Travis Perkins Trading Co Ltd",98000,125000,67000,42000,28000,360000
+"CUS-005","Greene King Retail Ltd",165000,88000,0,0,0,253000
+"CUS-006","BT Group PLC",285000,142000,95000,58000,75000,655000
+"CUS-007","Ipswich Hospital NHS Trust",175000,92000,48000,0,0,315000
+"CUS-008","East of England Co-op",125000,68000,35000,18000,12000,258000
+"CUS-009","Fisons Pharmaceuticals",95000,52000,0,0,0,147000
+"CUS-010","Willis Towers Watson",112000,65000,42000,28000,38000,285000
+"CUS-011","University of Suffolk",155000,85000,0,0,0,240000
+"CUS-012","Bosch UK",88000,45000,28000,15000,0,176000
+"CUS-013","Various SME clients (aggregated)",245000,165000,125000,85000,96000,716000
+"CUS-014","Retail customers (aggregated)",95000,48000,22000,12000,8000,185000
+
+,Total Outstanding:,,,,,4085000

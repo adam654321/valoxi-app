@@ -285,62 +285,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       timestamp: new Date(),
     });
 
-    // === AUTO-TRIGGER LOGIC: Stage 1 when all 10 documents uploaded AND analysed ===
-    try {
-      const { documentAnalysisService } = await import('./document-analysis.service');
-      const { expertAnalysisService } = await import('./expert-analysis.service');
-
-      const completionStatus = await documentAnalysisService.calculateCompletionStatusInternal(event.targetCompanyId);
-      console.log(`[FILE_ANALYSIS] Document completion for company ${event.targetCompanyId}: ${completionStatus.completedCount}/${completionStatus.totalCount}`);
-
-      if (!completionStatus.isComplete) {
-        console.log(`[FILE_ANALYSIS] Only ${completionStatus.completedCount}/10 document types present for company ${event.targetCompanyId} — waiting for all documents before triggering expert analysis`);
-      } else {
-        const documentsMissingAnalysis = await documentAnalysisService.getDocumentsMissingAnalysis(event.targetCompanyId);
-
-        if (documentsMissingAnalysis.length > 0) {
-          console.log(`[FILE_ANALYSIS] All 10 document types present but ${documentsMissingAnalysis.length} document(s) missing analysis — re-triggering analysis for document IDs: ${documentsMissingAnalysis.join(', ')}`);
-
-          for (const docId of documentsMissingAnalysis) {
-            try {
-              const uploadEvent = await documentsRepository.getFileUploadEventByDocumentId(docId);
-              if (uploadEvent) {
-                console.log(`[FILE_ANALYSIS] Re-triggering analysis for document ${docId} (event ${uploadEvent.id})`);
-                await documentsRepository.updateFileUploadEventWebhookStatus(uploadEvent.id, 'pending', undefined, undefined);
-                analyzeUploadedFileWithGemini(uploadEvent.id).catch(err => {
-                  console.error(`[FILE_ANALYSIS] Re-trigger failed for document ${docId}:`, err.message);
-                });
-              } else {
-                console.warn(`[FILE_ANALYSIS] No upload event found for document ${docId} — cannot re-trigger analysis`);
-              }
-            } catch (retriggerError) {
-              console.error(`[FILE_ANALYSIS] Error re-triggering analysis for document ${docId}:`, retriggerError);
-            }
-          }
-        } else {
-          const existingExpertResults = await expertAnalysisService.getExpertResults(event.targetCompanyId);
-          const hasRunningExperts = existingExpertResults.some(
-            (r: any) => r.status === 'processing' || r.status === 'pending'
-          );
-          const hasCompletedScreening = existingExpertResults.some(
-            (r: any) => r.expertType === 'screening' && r.status === 'success'
-          );
-
-          if (hasRunningExperts) {
-            console.log(`[FILE_ANALYSIS] All 10 documents complete and analysed for company ${event.targetCompanyId}, but experts already running — skipping auto-trigger`);
-          } else if (hasCompletedScreening) {
-            console.log(`[FILE_ANALYSIS] All 10 documents complete and analysed for company ${event.targetCompanyId}, but screening already completed — skipping auto-trigger`);
-          } else {
-            console.log(`[FILE_ANALYSIS] ✅ All 10 documents uploaded and analysed for company ${event.targetCompanyId} — auto-triggering Stage 1 (Data Quality + Screening)`);
-            expertAnalysisService.triggerNewStage1Pipeline(event.targetCompanyId, event.uploadedBy).catch(err => {
-              console.error(`[FILE_ANALYSIS] Stage 1 auto-trigger failed for company ${event.targetCompanyId}:`, err.message);
-            });
-          }
-        }
-      }
-    } catch (expertError) {
-      console.error(`[FILE_ANALYSIS] Error in expert auto-trigger check:`, expertError);
-    }
+    await runDocumentCompletionCheck(event.targetCompanyId, event.uploadedBy);
 
   } catch (error) {
     console.error(`[FILE_ANALYSIS] Failed to analyze file for event ${eventId}:`, error);
@@ -351,6 +296,86 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
       new Date()
     );
+
+    try {
+      const event = await documentsRepository.getFileUploadEvent(eventId);
+      if (event) {
+        await runDocumentCompletionCheck(event.targetCompanyId, event.uploadedBy);
+      }
+    } catch (checkError) {
+      console.error(`[FILE_ANALYSIS] Post-failure completion check failed:`, checkError);
+    }
+  }
+}
+
+export async function runDocumentCompletionCheck(targetCompanyId: number, uploadedBy?: number | null): Promise<void> {
+  try {
+    const { documentAnalysisService } = await import('./document-analysis.service');
+    const { expertAnalysisService } = await import('./expert-analysis.service');
+    const { analysisQueue } = await import('./analysis-queue.service');
+
+    const completionStatus = await documentAnalysisService.calculateCompletionStatusInternal(targetCompanyId);
+    console.log(`[FILE_ANALYSIS] Document completion for company ${targetCompanyId}: ${completionStatus.completedCount}/${completionStatus.totalCount}`);
+
+    if (!completionStatus.isComplete) {
+      console.log(`[FILE_ANALYSIS] Only ${completionStatus.completedCount}/10 document types present for company ${targetCompanyId} — waiting for all documents before triggering expert analysis`);
+      return;
+    }
+
+    const documentsMissingAnalysis = await documentAnalysisService.getDocumentsMissingAnalysis(targetCompanyId);
+
+    if (documentsMissingAnalysis.length > 0) {
+      const queueStats = analysisQueue.getStats();
+      const companyQueue = queueStats.perCompany.find(c => c.targetCompanyId === targetCompanyId);
+      const isAlreadyProcessing = companyQueue && (companyQueue.processing || companyQueue.pending > 0);
+
+      if (isAlreadyProcessing) {
+        console.log(`[FILE_ANALYSIS] All 10 document types present but ${documentsMissingAnalysis.length} missing analysis — queue already active for company ${targetCompanyId}, skipping retrigger`);
+        return;
+      }
+
+      console.log(`[FILE_ANALYSIS] All 10 document types present but ${documentsMissingAnalysis.length} document(s) missing analysis — re-queuing for document IDs: ${documentsMissingAnalysis.join(', ')}`);
+
+      for (const docId of documentsMissingAnalysis) {
+        try {
+          const uploadEvent = await documentsRepository.getFileUploadEventByDocumentId(docId);
+          if (uploadEvent) {
+            console.log(`[FILE_ANALYSIS] Re-queuing analysis for document ${docId} (event ${uploadEvent.id})`);
+            await documentsRepository.updateFileUploadEventWebhookStatus(uploadEvent.id, 'pending', undefined, undefined);
+            analysisQueue.enqueue({
+              eventId: uploadEvent.id,
+              targetCompanyId: targetCompanyId,
+              isRetrigger: true,
+            });
+          } else {
+            console.warn(`[FILE_ANALYSIS] No upload event found for document ${docId} — cannot re-trigger analysis`);
+          }
+        } catch (retriggerError) {
+          console.error(`[FILE_ANALYSIS] Error re-queuing analysis for document ${docId}:`, retriggerError);
+        }
+      }
+    } else {
+      const existingExpertResults = await expertAnalysisService.getExpertResults(targetCompanyId);
+      const hasRunningExperts = existingExpertResults.some(
+        (r: any) => r.status === 'processing' || r.status === 'pending'
+      );
+      const hasCompletedScreening = existingExpertResults.some(
+        (r: any) => r.expertType === 'screening' && r.status === 'success'
+      );
+
+      if (hasRunningExperts) {
+        console.log(`[FILE_ANALYSIS] All 10 documents complete and analysed for company ${targetCompanyId}, but experts already running — skipping auto-trigger`);
+      } else if (hasCompletedScreening) {
+        console.log(`[FILE_ANALYSIS] All 10 documents complete and analysed for company ${targetCompanyId}, but screening already completed — skipping auto-trigger`);
+      } else {
+        console.log(`[FILE_ANALYSIS] All 10 documents uploaded and analysed for company ${targetCompanyId} — auto-triggering Stage 1 (Data Quality + Screening)`);
+        expertAnalysisService.triggerNewStage1Pipeline(targetCompanyId, uploadedBy ?? undefined).catch(err => {
+          console.error(`[FILE_ANALYSIS] Stage 1 auto-trigger failed for company ${targetCompanyId}:`, err.message);
+        });
+      }
+    }
+  } catch (expertError) {
+    console.error(`[FILE_ANALYSIS] Error in completion check for company ${targetCompanyId}:`, expertError);
   }
 }
 
@@ -388,4 +413,5 @@ export const fileAnalysisService = {
   analyzeUploadedFileWithGemini,
   sendFileUploadWebhook,
   retriggerAnalysisForDocument,
+  runDocumentCompletionCheck,
 };

@@ -47,6 +47,25 @@ function getPromptForDocumentType(documentType: DocumentType): string {
   }
 }
 
+async function fetchTextContent(fileUrl: string): Promise<string | null> {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) return null;
+    const text = await response.text();
+    const maxChars = 50000;
+    if (text.length > maxChars) {
+      console.log(`[GEMINI_STEP2] Text content truncated from ${text.length} to ${maxChars} chars`);
+      return text.substring(0, maxChars);
+    }
+    return text;
+  } catch (error) {
+    console.warn(`[GEMINI_STEP2] Failed to fetch text content:`, error);
+    return null;
+  }
+}
+
+const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
+
 export async function analyzeDocumentWithGemini(
   request: Step2AnalysisRequest
 ): Promise<Step2AnalysisResult> {
@@ -56,18 +75,31 @@ export async function analyzeDocumentWithGemini(
     console.log(`[GEMINI_STEP2] Starting ${request.documentType} analysis for ${request.fileName}`);
     console.log(`[GEMINI_STEP2] File URL: ${request.fileUrl.substring(0, 80)}...`);
 
-    const prompt = getPromptForDocumentType(request.documentType);
+    let prompt = getPromptForDocumentType(request.documentType);
+    let fileData: { fileUri: string; mimeType: string } | undefined;
 
-    console.log(`[GEMINI_STEP2] Sending request to Gemini API for ${request.documentType}`);
+    const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
+
+    if (isTextFile) {
+      const textContent = await fetchTextContent(request.fileUrl);
+      if (textContent) {
+        prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
+        console.log(`[GEMINI_STEP2] Embedded ${textContent.length} chars of text content inline for ${request.fileName}`);
+      } else {
+        fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+        console.log(`[GEMINI_STEP2] Falling back to file attachment for ${request.fileName}`);
+      }
+    } else {
+      fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+    }
+
+    console.log(`[GEMINI_STEP2] Sending request to Gemini API for ${request.documentType}${isTextFile && !fileData ? ' (inline text)' : ' (file attachment)'}`);
 
     const response = await geminiClient.generateContent({
       prompt,
       temperature: 0,
       responseMimeType: "application/json",
-      fileData: {
-        fileUri: request.fileUrl,
-        mimeType: request.mimeType,
-      },
+      ...(fileData ? { fileData } : {}),
     });
 
     const processingTime = Date.now() - startTime;

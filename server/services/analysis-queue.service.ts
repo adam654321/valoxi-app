@@ -20,7 +20,6 @@ interface QueueStats {
 const MAX_RETRIES = 2;
 const INTER_JOB_DELAY_MS = 200;
 const MAX_QUEUE_SIZE_PER_COMPANY = 20;
-const MAX_COMPLETION_RETRIGGERS = 1;
 
 /**
  * Per-company analysis queue. Each company's uploads are processed sequentially
@@ -36,7 +35,6 @@ class AnalysisQueue {
   private companyQueues: Map<number, AnalysisJob[]> = new Map();
   private processingCompanies: Set<number> = new Set();
   private activeEventIds: Set<number> = new Set();
-  private completionRetriggerCounts: Map<number, number> = new Map();
   private totalProcessed = 0;
   private totalFailed = 0;
 
@@ -128,91 +126,11 @@ class AnalysisQueue {
 
   private async runCompletionCheck(companyId: number): Promise<void> {
     try {
-      const { portalSubmissionsRepository } = await import('../repositories/portal-submissions.repository');
-      const completionStatus = await portalSubmissionsRepository.getAnalysisCompletionStatus(companyId);
-
-      console.log(`[ANALYSIS_QUEUE] Completion check for company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} (${completionStatus.completionPercentage}%)`);
-
-      if (completionStatus.isComplete) {
-        console.log(`[ANALYSIS_QUEUE] All ${completionStatus.totalCount} documents analysed for company ${companyId}. Checking expert pipeline...`);
-        this.completionRetriggerCounts.delete(companyId);
-        await this.triggerExpertPipelineIfReady(companyId);
-        return;
-      }
-
-      const retriggerCount = this.completionRetriggerCounts.get(companyId) || 0;
-
-      if (retriggerCount >= MAX_COMPLETION_RETRIGGERS) {
-        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} complete. Already retriggered ${retriggerCount} time(s), not retrying again. Use manual trigger if needed.`);
-        if (completionStatus.missingTypes && completionStatus.missingTypes.length > 0) {
-          console.log(`[ANALYSIS_QUEUE] Missing types: ${completionStatus.missingTypes.join(', ')}`);
-        }
-        this.completionRetriggerCounts.delete(companyId);
-        return;
-      }
-
-      const { documentsRepository } = await import('../repositories/documents.repository');
-      const { documentAnalysisRepository } = await import('../repositories/document-analysis.repository');
-
-      const allEvents = await documentsRepository.getFileUploadEventsForCompany(companyId);
-      const allResults = await documentAnalysisRepository.getAllAnalysisResultsForCompany(companyId);
-
-      const documentIdsWithResults = new Set(allResults.map((r: any) => r.documentId));
-      const failedEvents = allEvents.filter((e: any) => !documentIdsWithResults.has(e.documentId));
-
-      if (failedEvents.length > 0) {
-        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: Found ${failedEvents.length} document(s) without analysis results. Re-queuing...`);
-        this.completionRetriggerCounts.set(companyId, retriggerCount + 1);
-
-        for (const event of failedEvents) {
-          this.enqueue({
-            eventId: event.id,
-            targetCompanyId: companyId,
-            isRetrigger: true,
-          });
-        }
-      } else {
-        console.log(`[ANALYSIS_QUEUE] Company ${companyId}: ${completionStatus.completedCount}/${completionStatus.totalCount} documents analysed. No failed events to retrigger. Waiting for more uploads.`);
-        this.completionRetriggerCounts.delete(companyId);
-      }
-
+      const { runDocumentCompletionCheck } = await import('./file-analysis.service');
+      console.log(`[ANALYSIS_QUEUE] Delegating completion check for company ${companyId} to file-analysis service`);
+      await runDocumentCompletionCheck(companyId);
     } catch (error) {
       console.error(`[ANALYSIS_QUEUE] Completion check failed for company ${companyId}:`, error);
-    }
-  }
-
-  private async triggerExpertPipelineIfReady(companyId: number): Promise<void> {
-    try {
-      const { expertAnalysisService } = await import('./expert-analysis.service');
-      const existingResults = await expertAnalysisService.getExpertResults(companyId);
-
-      const hasRunningExperts = existingResults.some(
-        (r: any) => r.status === 'processing' || r.status === 'pending'
-      );
-      const hasCompletedScreening = existingResults.some(
-        (r: any) => r.expertType === 'screening' && r.status === 'success'
-      );
-
-      if (hasRunningExperts) {
-        console.log(`[ANALYSIS_QUEUE] Expert pipeline already running for company ${companyId}, skipping auto-trigger`);
-        return;
-      }
-
-      if (hasCompletedScreening) {
-        console.log(`[ANALYSIS_QUEUE] Expert screening already completed for company ${companyId}, skipping auto-trigger`);
-        return;
-      }
-
-      const { documentsRepository } = await import('../repositories/documents.repository');
-      const events = await documentsRepository.getFileUploadEventsForCompany(companyId);
-      const triggeredBy = events.length > 0 ? events[events.length - 1].uploadedBy : 1;
-
-      console.log(`[ANALYSIS_QUEUE] All 10 documents analysed. Auto-triggering Expert Phase 1 for company ${companyId}`);
-      await expertAnalysisService.triggerNewStage1Pipeline(companyId, triggeredBy);
-      console.log(`[ANALYSIS_QUEUE] Expert Phase 1 triggered successfully for company ${companyId}`);
-
-    } catch (error) {
-      console.error(`[ANALYSIS_QUEUE] Expert pipeline auto-trigger failed for company ${companyId}:`, error);
     }
   }
 
