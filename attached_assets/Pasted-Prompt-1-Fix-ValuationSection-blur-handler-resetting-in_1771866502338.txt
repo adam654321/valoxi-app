@@ -1,0 +1,68 @@
+Prompt 1: Fix ValuationSection blur handler resetting inputs and convert to string-based local state
+Paste this into Replit:
+
+I need to fix a critical input bug in client/src/components/deal-modeller/ValuationSection.tsx. The EV-to-Equity Bridge inputs (Excess Cash, Property Value, Primary Debt, Other Debt, Corporation Tax Due) and the EBITDA Multiple input all behave erratically — values revert, disappear, or change to something different from what was typed.
+There are 3 root causes in this file that all need fixing together:
+Bug 1: The handleBlur callback resets local state to old server values before the debounced save fires.
+Currently handleBlur does:
+jsconst handleBlur = useCallback(() => {
+  isEditingRef.current = false;
+  setTimeout(() => {
+    if (!isEditingRef.current) {
+      setLocal(initLocal(model)); // resets to old server values after 100ms
+    }
+  }, 100);
+}, [model]);
+But the debounced save fires after 600ms. So the user's input is visually overwritten 500ms before the save even fires.
+Fix: Remove the setTimeout + setLocal(initLocal(model)) from handleBlur entirely. handleBlur should only set isEditingRef.current = false. The server sync useEffect already handles updating from server data when the query refetches after a successful save.
+Bug 2: All numeric inputs are bound directly to number state, so you can't type decimals or clear fields.
+value={val || ''} treats 0 as falsy (shows empty for zero values). parseFloat on every keystroke eats decimal points (parseFloat("1.") returns 1). You can't clear a field to type a new number.
+Fix: Add a separate displayValues state object of type Record<string, string> alongside the existing numeric local state. The <Input> elements bind to displayValues[field] instead of local[field]. On onChange, update only displayValues (free typing, no parsing). On onBlur, parse the display string to a number, update the numeric local state, and trigger the debounced save. On focus, do nothing special (remove handleFocus).
+Bug 3: The EBITDA multiple input aggressively rounds with Math.round(v * 10) / 10 on every keystroke, so you can't type values like "3.25" — it immediately becomes "3.3".
+Fix: Apply the same string-based display pattern. Only validate/round on blur, not on every keystroke. On blur, round to 1 decimal place and clamp between 1-10.
+Bug 4: The server sync useEffect fires too broadly.
+Currently:
+jsuseEffect(() => {
+  if (!isEditingRef.current) {
+    setLocal(initLocal(model));
+  }
+}, [model.id, model.updatedAt]);
+This can race with saves because TanStack Query refetches can change model.updatedAt even during editing.
+Fix: Track a lastSyncedAt ref. In the useEffect, only sync if model.updatedAt is different from lastSyncedAt.current. Update lastSyncedAt both in the useEffect (after syncing) and in the save onSuccess. Also sync displayValues whenever local is synced from server.
+Implementation requirements:
+
+The localCalcs useMemo must still use the numeric local state (not the display strings) for all calculations, so calculations update in real-time as the user types — wait, no. Since we only parse on blur now, calculations will update on blur. That's acceptable.
+Actually, for better UX on the bridge items, parse the display value to a number on every keystroke IF it's a valid number, and update local state too — but don't reset the display string. This way calculations update live. Only on blur do we "clean up" the display string (e.g. removing trailing dots, resetting empty to "0").
+The Slider for EBITDA multiple should still update both local and displayValues immediately (sliders don't have the typing problem).
+Keep the working capital slider logic as-is (it doesn't use text input for the slider path).
+For the working capital manual override text input, apply the same string display pattern.
+
+Do NOT change:
+
+The debounce timing (keep at 600ms)
+The save mutation logic
+The updateLocal function signature (but you may need to adapt how it's called)
+Any calculation logic
+The component's props interface
+
+After making changes, verify:
+
+You can type "150000" digit by digit into Excess Cash without it reverting
+You can type "1.5" into the EBITDA multiple input and see "1.5" stay
+You can clear a bridge field, type a new value, click away, and see it save correctly
+You can enter 0 into a bridge field and it displays "0" not empty
+The Slider for EBITDA multiple still works and syncs with the text input
+Calculations (Enterprise Value, Offer Price) update as you type valid numbers
+The save indicator shows "Saving..." then "Saved" after editing
+
+
+Expected completion output from Replit:
+I need Replit to confirm:
+
+ValuationSection.tsx has been modified
+The handleBlur no longer resets state via setLocal(initLocal(model))
+A displayValues string state has been added for text inputs
+Inputs bind to display strings, parse on blur
+The EBITDA multiple input no longer rounds on every keystroke
+The server sync useEffect uses a lastSyncedAt ref guard
+No TypeScript errors
