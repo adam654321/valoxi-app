@@ -80,6 +80,27 @@ function NumericStepper({
   disabled?: boolean;
 }) {
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v * 100) / 100));
+  const [display, setDisplay] = useState(String(value));
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    if (value !== prevValueRef.current) {
+      setDisplay(String(value));
+      prevValueRef.current = value;
+    }
+  }, [value]);
+
+  const commitValue = () => {
+    const v = parseFloat(display);
+    if (!isNaN(v)) {
+      const clamped = clamp(v);
+      onChange(clamped);
+      setDisplay(String(clamped));
+      prevValueRef.current = clamped;
+    } else {
+      setDisplay(String(value));
+    }
+  };
 
   return (
     <div className="flex items-center gap-0.5">
@@ -87,22 +108,26 @@ function NumericStepper({
         variant="outline"
         size="icon"
         className="h-7 w-7 shrink-0"
-        onClick={() => onChange(clamp(value - step))}
+        onClick={() => {
+          const clamped = clamp(value - step);
+          onChange(clamped);
+          setDisplay(String(clamped));
+          prevValueRef.current = clamped;
+        }}
         disabled={disabled || value <= min}
       >
         <span className="text-sm">&minus;</span>
       </Button>
       <div className="relative w-16">
         <Input
-          type="number"
-          value={value}
-          onChange={e => {
-            const v = parseFloat(e.target.value);
-            if (!isNaN(v)) onChange(clamp(v));
-          }}
+          type="text"
+          inputMode="decimal"
+          value={display}
+          onChange={e => setDisplay(e.target.value)}
+          onBlur={commitValue}
+          onKeyDown={e => { if (e.key === 'Enter') commitValue(); }}
           disabled={disabled}
-          className="h-7 text-xs text-center pr-5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          step={step}
+          className="h-7 text-xs text-center pr-5"
         />
         <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
           {unit}
@@ -112,7 +137,12 @@ function NumericStepper({
         variant="outline"
         size="icon"
         className="h-7 w-7 shrink-0"
-        onClick={() => onChange(clamp(value + step))}
+        onClick={() => {
+          const clamped = clamp(value + step);
+          onChange(clamped);
+          setDisplay(String(clamped));
+          prevValueRef.current = clamped;
+        }}
         disabled={disabled || value >= max}
       >
         <span className="text-sm">+</span>
@@ -137,6 +167,27 @@ function CurrencyStepper({
   disabled?: boolean;
 }) {
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v)));
+  const [display, setDisplay] = useState(String(value));
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    if (value !== prevValueRef.current) {
+      setDisplay(String(value));
+      prevValueRef.current = value;
+    }
+  }, [value]);
+
+  const commitValue = () => {
+    const v = parseFloat(display);
+    if (!isNaN(v)) {
+      const clamped = clamp(v);
+      onChange(clamped);
+      setDisplay(String(clamped));
+      prevValueRef.current = clamped;
+    } else {
+      setDisplay(String(value));
+    }
+  };
 
   return (
     <div className="flex items-center gap-0.5">
@@ -144,7 +195,12 @@ function CurrencyStepper({
         variant="outline"
         size="icon"
         className="h-7 w-7 shrink-0"
-        onClick={() => onChange(clamp(value - step))}
+        onClick={() => {
+          const clamped = clamp(value - step);
+          onChange(clamped);
+          setDisplay(String(clamped));
+          prevValueRef.current = clamped;
+        }}
         disabled={disabled || value <= min}
       >
         <span className="text-sm">&minus;</span>
@@ -154,22 +210,26 @@ function CurrencyStepper({
           &pound;
         </span>
         <Input
-          type="number"
-          value={value}
-          onChange={e => {
-            const v = parseFloat(e.target.value);
-            if (!isNaN(v)) onChange(clamp(v));
-          }}
+          type="text"
+          inputMode="decimal"
+          value={display}
+          onChange={e => setDisplay(e.target.value)}
+          onBlur={commitValue}
+          onKeyDown={e => { if (e.key === 'Enter') commitValue(); }}
           disabled={disabled}
-          className="h-7 text-xs text-center pl-5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          step={step}
+          className="h-7 text-xs text-center pl-5"
         />
       </div>
       <Button
         variant="outline"
         size="icon"
         className="h-7 w-7 shrink-0"
-        onClick={() => onChange(clamp(value + step))}
+        onClick={() => {
+          const clamped = clamp(value + step);
+          onChange(clamped);
+          setDisplay(String(clamped));
+          prevValueRef.current = clamped;
+        }}
         disabled={disabled || value >= max}
       >
         <span className="text-sm">+</span>
@@ -241,7 +301,8 @@ function SynergyCard({
         <div className="relative w-24">
           <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">£</span>
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             className="h-7 text-xs text-right font-mono pl-4 pr-1.5"
             value={localImplCost}
             onChange={e => setLocalImplCost(e.target.value)}
@@ -263,7 +324,8 @@ function SynergyCard({
               <div key={y} className="text-center">
                 <p className="text-[9px] text-muted-foreground mb-0.5">Y{y}</p>
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className="h-6 text-[11px] text-center p-0 font-mono"
                   value={localRealisations[key]}
                   onChange={e => setLocalRealisations(prev => ({ ...prev, [key]: e.target.value }))}
@@ -353,6 +415,9 @@ export default function AssumptionsPanel({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAssumptionUpdates = useRef<Map<number, Record<string, any>>>(new Map());
   const pendingExitUpdates = useRef<Record<string, any> | null>(null);
+  const lastAssumptionSyncRef = useRef<string>('');
+  const lastExitSyncRef = useRef<string>('');
+  const savePendingRef = useRef(false);
 
   const sorted = useMemo(() =>
     [...assumptions].sort((a, b) => a.year - b.year),
@@ -367,29 +432,37 @@ export default function AssumptionsPanel({
   } | null>(null);
 
   useEffect(() => {
-    const map: Record<number, Record<string, number>> = {};
-    for (const a of sorted) {
-      map[a.id] = {
-        revenueGrowthPercent: toNum(a.revenueGrowthPercent),
-        costOfSalesGrowthPercent: toNum(a.costOfSalesGrowthPercent),
-        adminCostGrowthPercent: toNum(a.adminCostGrowthPercent),
-        staffCostGrowthPercent: toNum(a.staffCostGrowthPercent),
-        depreciationGrowthPercent: toNum(a.depreciationGrowthPercent),
-        capexPerYear: toNum(a.capexPerYear),
-        workingCapitalPercent: toNum(a.workingCapitalPercent),
-        taxRatePercent: toNum(a.taxRatePercent),
-      };
+    const syncKey = sorted.map(a => `${a.id}:${a.updatedAt}`).join(',');
+    if (syncKey !== lastAssumptionSyncRef.current && !savePendingRef.current) {
+      const map: Record<number, Record<string, number>> = {};
+      for (const a of sorted) {
+        map[a.id] = {
+          revenueGrowthPercent: toNum(a.revenueGrowthPercent),
+          costOfSalesGrowthPercent: toNum(a.costOfSalesGrowthPercent),
+          adminCostGrowthPercent: toNum(a.adminCostGrowthPercent),
+          staffCostGrowthPercent: toNum(a.staffCostGrowthPercent),
+          depreciationGrowthPercent: toNum(a.depreciationGrowthPercent),
+          capexPerYear: toNum(a.capexPerYear),
+          workingCapitalPercent: toNum(a.workingCapitalPercent),
+          taxRatePercent: toNum(a.taxRatePercent),
+        };
+      }
+      setLocalAssumptions(map);
+      lastAssumptionSyncRef.current = syncKey;
     }
-    setLocalAssumptions(map);
   }, [sorted]);
 
   useEffect(() => {
     if (exitAssumptions) {
-      setLocalExit({
-        exitMultiple: toNum(exitAssumptions.exitMultiple),
-        holdPeriodYears: exitAssumptions.holdPeriodYears ?? 5,
-        exitCostPercent: toNum(exitAssumptions.exitCostPercent),
-      });
+      const exitSyncKey = `${exitAssumptions.id}:${exitAssumptions.updatedAt}`;
+      if (exitSyncKey !== lastExitSyncRef.current && !savePendingRef.current) {
+        setLocalExit({
+          exitMultiple: toNum(exitAssumptions.exitMultiple),
+          holdPeriodYears: exitAssumptions.holdPeriodYears ?? 5,
+          exitCostPercent: toNum(exitAssumptions.exitCostPercent),
+        });
+        lastExitSyncRef.current = exitSyncKey;
+      }
     }
   }, [exitAssumptions]);
 
@@ -400,10 +473,13 @@ export default function AssumptionsPanel({
     onSuccess: () => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 1500);
+      savePendingRef.current = false;
+      lastAssumptionSyncRef.current = '';
       onDataChange();
     },
     onError: (error: Error) => {
       setSaveStatus('idle');
+      savePendingRef.current = false;
       toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     },
   });
@@ -415,10 +491,13 @@ export default function AssumptionsPanel({
     onSuccess: () => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 1500);
+      savePendingRef.current = false;
+      lastExitSyncRef.current = '';
       onDataChange();
     },
     onError: (error: Error) => {
       setSaveStatus('idle');
+      savePendingRef.current = false;
       toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     },
   });
@@ -489,6 +568,7 @@ export default function AssumptionsPanel({
   }, [bulkUpdateMutation, exitUpdateMutation]);
 
   const scheduleSave = useCallback(() => {
+    savePendingRef.current = true;
     setSaveStatus('saving');
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(flushSave, 800);
@@ -497,8 +577,19 @@ export default function AssumptionsPanel({
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      const assumptionUpdates = Array.from(pendingAssumptionUpdates.current.entries()).map(
+        ([id, data]) => ({ id, data })
+      );
+      if (assumptionUpdates.length > 0) {
+        apiRequest('PUT', '/api/v2/value-creation/assumptions/bulk', { updates: assumptionUpdates }).catch(() => {});
+        pendingAssumptionUpdates.current.clear();
+      }
+      if (pendingExitUpdates.current) {
+        apiRequest('PUT', `/api/v2/value-creation/exit/${dealModelId}`, pendingExitUpdates.current).catch(() => {});
+        pendingExitUpdates.current = null;
+      }
     };
-  }, []);
+  }, [dealModelId]);
 
   const updateAssumption = useCallback((assumptionId: number, field: string, value: number) => {
     setLocalAssumptions(prev => {
