@@ -153,8 +153,8 @@ export async function runStep2AnalysisForTypes(
     }
     
     if (i > 0) {
-      console.log(`[GEMINI_STEP2] Waiting 1s before next analysis...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`[GEMINI_STEP2] Waiting 300ms before next analysis...`);
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
     const result = await analyzeDocumentWithGemini({

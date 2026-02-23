@@ -18,7 +18,7 @@ interface QueueStats {
 }
 
 const MAX_RETRIES = 2;
-const INTER_JOB_DELAY_MS = 500;
+const INTER_JOB_DELAY_MS = 200;
 const MAX_QUEUE_SIZE_PER_COMPANY = 20;
 const MAX_COMPLETION_RETRIGGERS = 1;
 
