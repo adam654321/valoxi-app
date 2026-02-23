@@ -704,8 +704,8 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                     returnMetrics.irr >= 0.10 ? 'text-amber-700 dark:text-amber-400' :
                     'text-red-700 dark:text-red-400'
                   }`}>
-                    {isFinite(returnMetrics.irr) && !isNaN(returnMetrics.irr) && returnMetrics.irr <= 10
-                      ? `${(returnMetrics.irr * 100).toFixed(1)}%`
+                    {isFinite(returnMetrics.irr) && !isNaN(returnMetrics.irr)
+                      ? returnMetrics.irr > 10 ? `>${Math.floor(returnMetrics.irr * 100)}%` : `${(returnMetrics.irr * 100).toFixed(1)}%`
                       : '∞'}
                   </p>
                 </CardContent>

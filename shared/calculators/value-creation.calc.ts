@@ -626,33 +626,56 @@ export function calculateSensitivity(
   };
 }
 
-export function calculateIRR(cashFlows: number[], guess: number = 0.1, maxIterations: number = 100, tolerance: number = 0.00001): number {
+export function calculateIRR(cashFlows: number[], guess: number = 0.1, maxIterations: number = 200, tolerance: number = 0.00001): number {
   if (cashFlows.length < 2) return 0;
-  
-  let rate = guess;
-  
-  for (let i = 0; i < maxIterations; i++) {
-    let npv = 0;
-    let dnpv = 0;
-    
-    for (let t = 0; t < cashFlows.length; t++) {
-      const denominator = Math.pow(1 + rate, t);
-      npv += cashFlows[t] / denominator;
-      dnpv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
+
+  const totalInflow = cashFlows.slice(1).reduce((s, v) => s + Math.max(0, v), 0);
+  const initialOutflow = Math.abs(cashFlows[0]);
+  if (initialOutflow === 0) return totalInflow > 0 ? Infinity : 0;
+
+  const moic = totalInflow / initialOutflow;
+  const n = cashFlows.length - 1;
+  const roughIRR = n > 0 ? Math.pow(moic, 1 / n) - 1 : guess;
+
+  const guesses = [guess, roughIRR, 0.5, 1.0, 2.0, 5.0, 10.0];
+
+  for (const initialGuess of guesses) {
+    let rate = initialGuess;
+    let converged = false;
+
+    for (let i = 0; i < maxIterations; i++) {
+      let npv = 0;
+      let dnpv = 0;
+
+      for (let t = 0; t < cashFlows.length; t++) {
+        const denominator = Math.pow(1 + rate, t);
+        if (!isFinite(denominator) || denominator === 0) break;
+        npv += cashFlows[t] / denominator;
+        dnpv -= t * cashFlows[t] / Math.pow(1 + rate, t + 1);
+      }
+
+      if (Math.abs(dnpv) < 1e-10) break;
+
+      const newRate = rate - npv / dnpv;
+
+      if (!isFinite(newRate) || newRate < -1) break;
+
+      if (Math.abs(newRate - rate) < tolerance) {
+        converged = true;
+        rate = newRate;
+        break;
+      }
+
+      rate = newRate;
     }
-    
-    if (Math.abs(dnpv) < 1e-10) break;
-    
-    const newRate = rate - npv / dnpv;
-    
-    if (Math.abs(newRate - rate) < tolerance) {
-      return newRate;
+
+    if (converged && isFinite(rate) && rate > -1) {
+      return rate;
     }
-    
-    rate = newRate;
   }
-  
-  return rate;
+
+  if (moic > 1) return roughIRR;
+  return guess;
 }
 
 function findBreakEven(start: number, end: number, step: number, condition: (value: number) => boolean): number {

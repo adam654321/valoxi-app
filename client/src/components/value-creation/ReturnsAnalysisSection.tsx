@@ -77,9 +77,11 @@ export default function ReturnsAnalysisSection({ metrics, projections, exitAssum
 
   const irrDisplay = metrics.irr === Infinity
     ? '∞'
-    : isNaN(metrics.irr) || !isFinite(metrics.irr) || metrics.irr > 10
+    : isNaN(metrics.irr) || !isFinite(metrics.irr)
       ? 'N/A'
-      : `${(metrics.irr * 100).toFixed(1)}%`;
+      : metrics.irr > 10
+        ? `>${Math.floor(metrics.irr * 100)}%`
+        : `${(metrics.irr * 100).toFixed(1)}%`;
 
   const moicDisplay = metrics.moic === Infinity
     ? '∞'
