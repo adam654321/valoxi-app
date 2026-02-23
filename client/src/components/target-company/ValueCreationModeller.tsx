@@ -96,6 +96,11 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
   const [localAssumptionOverrides, setLocalAssumptionOverrides] = useState<Record<number, Record<string, number>> | null>(null);
   const [localExitOverrides, setLocalExitOverrides] = useState<{ exitMultiple: number; holdPeriodYears: number; exitCostPercent: number } | null>(null);
 
+  useEffect(() => {
+    setLocalAssumptionOverrides(null);
+    setLocalExitOverrides(null);
+  }, [activeScenarioType, selectedModelId]);
+
   const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
     queryKey: ['/api/v2/deal-models/company', companyId],
     select: (response: any) => response?.data || response || [],
@@ -153,6 +158,8 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     if (mode === 'linked') {
       setActiveScenarioType('base');
     }
+    setLocalAssumptionOverrides(null);
+    setLocalExitOverrides(null);
   }, [updateModeMutation]);
 
   const handleRangeChange = useCallback((range: number) => {
