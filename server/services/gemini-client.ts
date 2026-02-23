@@ -33,6 +33,7 @@ export interface GenerateContentOptions {
   temperature?: number;
   responseMimeType?: string;
   fileData?: { fileUri: string; mimeType: string };
+  thinkingBudget?: number;
   userId?: number;
   userCompanyId?: number;
   dealId?: number;
@@ -121,6 +122,7 @@ export class GeminiClient {
           config: {
             temperature,
             ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
+            ...(options.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: options.thinkingBudget } } : {}),
             abortSignal: controller.signal,
           },
         });

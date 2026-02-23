@@ -97,6 +97,7 @@ export async function analyzeDocumentWithGemini(
 
     const response = await geminiClient.generateContent({
       prompt,
+      model: "gemini-2.0-flash",
       temperature: 0,
       responseMimeType: "application/json",
       ...(fileData ? { fileData } : {}),
