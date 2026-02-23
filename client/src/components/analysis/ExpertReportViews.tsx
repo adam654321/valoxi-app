@@ -1289,7 +1289,8 @@ export function GenericReportView({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-export function getReportViewForExpert(expertType: string, data: Record<string, unknown>) {
+export function getReportViewForExpert(expertType: string, rawData: Record<string, unknown>) {
+  const data = (Array.isArray(rawData) ? rawData[0] : rawData) as Record<string, unknown>;
   switch (expertType) {
     case "data_quality": return <DataQualityReportView data={data} />;
     case "screening": return <ScreeningReportView data={data} />;

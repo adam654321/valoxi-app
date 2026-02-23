@@ -308,7 +308,8 @@ export class ExpertAnalysisService {
       const result = await this.gemini.generateExpertAnalysis(expertType, prompt);
       const processingTime = Date.now() - startTime;
 
-      const analysisData = result.params as Record<string, unknown>;
+      const rawData = result.params as Record<string, unknown>;
+      const analysisData = Array.isArray(rawData) ? rawData[0] as Record<string, unknown> : rawData;
       const score =
         typeof analysisData.score === 'number' ? analysisData.score : null;
       const confidence =
@@ -322,7 +323,7 @@ export class ExpertAnalysisService {
 
       await this.updateExpertRecord(record.id, {
         status: 'success',
-        analysisData: result.params,
+        analysisData,
         score: score ?? overallScore ?? undefined,
         confidence: confidence ?? (analysisData.confidence_for_analysis as string) ?? undefined,
         processingTime,
