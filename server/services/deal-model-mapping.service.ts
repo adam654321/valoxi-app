@@ -83,12 +83,23 @@ export class DealModelMappingService {
     try { dealStructureData = expertsByType['deal_structure'] ? (expertsByType['deal_structure'].analysisData as Record<string, any>) || {} : {}; } catch { dealStructureData = {}; }
     try { financialData = expertsByType['financial'] ? (expertsByType['financial'].analysisData as Record<string, any>) || {} : {}; } catch { financialData = {}; }
 
+    const existingModels = await db
+      .select({ version: dealModels.version })
+      .from(dealModels)
+      .where(eq(dealModels.targetCompanyId, targetCompanyId))
+      .orderBy(desc(dealModels.version))
+      .limit(1);
+
+    const nextVersion = existingModels.length > 0 && existingModels[0].version
+      ? existingModels[0].version + 1
+      : 1;
+
     const modelValues: Partial<InsertDealModel> & Pick<InsertDealModel, 'targetCompanyId' | 'createdBy' | 'name'> = {
       targetCompanyId,
       createdBy,
-      name: modelName || `Deal Model v1`,
+      name: modelName || `Deal Model v${nextVersion}`,
       status: 'draft',
-      version: 1,
+      version: nextVersion,
       isLocked: false,
       averagingYears: 3,
     };

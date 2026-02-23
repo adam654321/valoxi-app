@@ -224,6 +224,22 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/v2/deal-models/${selectedModelId}/duplicate`);
+      return res.json();
+    },
+    onSuccess: (response: any) => {
+      const newModel = response?.data || response;
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
+      if (newModel?.id) setSelectedModelId(newModel.id);
+      toast({ title: 'New version created', description: `${newModel?.name || 'Deal model'} has been created as a new version. The previous version has been locked.` });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Could not create new version', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const sendOfferMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
@@ -355,15 +371,15 @@ export default function DealModeller({ companyId }: DealModellerProps) {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => createMutation.mutate()}
-                disabled={createMutation.isPending}
+                onClick={() => duplicateMutation.mutate()}
+                disabled={duplicateMutation.isPending || !selectedModelId}
               >
-                {createMutation.isPending ? (
+                {duplicateMutation.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4 mr-2" />
                 )}
-                New Model
+                New Version
               </Button>
             </div>
           </div>

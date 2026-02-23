@@ -319,8 +319,16 @@ export class DealModelService {
     if (!model) throw new NotFoundError('Deal model not found');
     await verifyOwnership(model.targetCompanyId, userCompanyId);
 
-    const name = newName || `${model.name} (Copy)`;
-    const newModel = await dealModelRepository.duplicate(id, name, model.createdBy);
+    const allModels = await dealModelRepository.listByCompany(model.targetCompanyId);
+    const maxVersion = Math.max(...allModels.map(m => m.version ?? 1), 0);
+    const nextVersion = maxVersion + 1;
+
+    const name = newName || `Deal Model v${nextVersion}`;
+    const newModel = await dealModelRepository.duplicate(id, name, model.createdBy, nextVersion);
+
+    if (!model.isLocked) {
+      await dealModelRepository.lock(id, true);
+    }
 
     const fullModel = await dealModelRepository.getByIdWithDetails(newModel.id);
     if (!fullModel) throw new NotFoundError('Duplicated deal model not found');

@@ -68,7 +68,7 @@ export class DealModelRepository {
     });
   }
 
-  async duplicate(id: number, newName: string, userId: number): Promise<DealModel> {
+  async duplicate(id: number, newName: string, userId: number, version?: number): Promise<DealModel> {
     const source = await this.getByIdWithDetails(id);
     if (!source) throw new Error('Deal model not found');
 
@@ -81,7 +81,7 @@ export class DealModelRepository {
         name: newName,
         createdBy: userId,
         parentModelId: id,
-        version: (source.version ?? 1) + 1,
+        version: version ?? (source.version ?? 1) + 1,
         status: 'draft',
         isLocked: false,
       })
@@ -106,10 +106,14 @@ export class DealModelRepository {
     return newModel;
   }
 
-  async lock(id: number): Promise<DealModel> {
+  async lock(id: number, preserveStatus: boolean = false): Promise<DealModel> {
+    const setData: Record<string, any> = { isLocked: true, updatedAt: new Date() };
+    if (!preserveStatus) {
+      setData.status = 'sent';
+    }
     const [record] = await db
       .update(dealModels)
-      .set({ isLocked: true, status: 'sent', updatedAt: new Date() })
+      .set(setData)
       .where(eq(dealModels.id, id))
       .returning();
     return record;

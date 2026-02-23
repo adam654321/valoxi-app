@@ -1,0 +1,220 @@
+Right, I've traced through everything. Here's what's happening:
+The "New Model" button always calls createDealModelFromExperts() — which builds a brand new model from the raw expert analysis data every time, with version: 1 hardcoded. It doesn't copy the current model's user-entered adjustments, fee settings, funding lines, or any other values you've customised. So every "new" model wipes your work.
+The duplicate() method in the repository already exists and does the right thing — it copies all adjustments and funding lines, increments the version number, and sets parentModelId. But the frontend never calls it.
+No auto-lock — when creating a new version, the old one should be locked so it's preserved as a snapshot.
+Here's the prompt:
+
+Prompt 5: Fix deal model versioning — preserve data, increment versions, auto-lock
+Paste this into Replit:
+
+I need to fix deal model versioning in both the backend and frontend. Currently, clicking "New Model" creates a brand new model from expert analysis data every time, wiping all user-entered add-backs, deductions, fees, and funding lines. It also hardcodes version: 1 so every model shows as v1.
+There are 3 problems to fix:
+Problem 1: "New Model" button creates from scratch instead of duplicating the current model
+In client/src/components/target-company/DealModeller.tsx, the "New Model" button and the "Create Deal Model" button both call the same createMutation:
+jsconst createMutation = useMutation({
+  mutationFn: async () => {
+    const res = await apiRequest('POST', `/api/v2/deal-models/create/${companyId}`);
+    return res.json();
+  },
+  ...
+});
+This hits POST /api/v2/deal-models/create/:companyId which calls dealModelMappingService.createDealModelFromExperts() — building a fresh model from raw expert data, ignoring everything the user has entered.
+Fix: Split the behaviour:
+
+The "Create Deal Model" button (shown when !hasModels, i.e. no models exist yet) should continue calling the create endpoint. This is correct for the first model.
+The "New Model" button (shown when models already exist) should call the duplicate endpoint instead: POST /api/v2/deal-models/:id/duplicate. This copies the currently selected model with all its adjustments, funding lines, fees, and user-entered values.
+
+Change the frontend to have TWO mutations:
+js// For creating the first model from expert data (existing behaviour)
+const createMutation = useMutation({
+  mutationFn: async () => {
+    const res = await apiRequest('POST', `/api/v2/deal-models/create/${companyId}`);
+    return res.json();
+  },
+  onSuccess: (response: any) => {
+    const newModel = response?.data || response;
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
+    if (newModel?.id) setSelectedModelId(newModel.id);
+    toast({ title: 'Deal model created', description: 'Your deal model has been generated from expert analysis data.' });
+  },
+  onError: (error: Error) => {
+    toast({
+      title: 'Could not create deal model',
+      description: error.message.includes('Expert analysis')
+        ? 'Expert analysis must be completed before creating a deal model. Run the analysis first.'
+        : error.message,
+      variant: 'destructive',
+    });
+  },
+});
+
+// For creating new versions by duplicating the current model
+const duplicateMutation = useMutation({
+  mutationFn: async () => {
+    const res = await apiRequest('POST', `/api/v2/deal-models/${selectedModelId}/duplicate`);
+    return res.json();
+  },
+  onSuccess: (response: any) => {
+    const newModel = response?.data || response;
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
+    if (newModel?.id) setSelectedModelId(newModel.id);
+    toast({ title: 'New version created', description: `${newModel?.name || 'Deal model'} has been created as a new version. The previous version has been locked.` });
+  },
+  onError: (error: Error) => {
+    toast({ title: 'Could not create new version', description: error.message, variant: 'destructive' });
+  },
+});
+Then update the "New Model" button (near the bottom of the toolbar, shown when hasModels) to use duplicateMutation:
+jsx<Button
+  variant="secondary"
+  size="sm"
+  onClick={() => duplicateMutation.mutate()}
+  disabled={duplicateMutation.isPending || !selectedModelId}
+>
+  {duplicateMutation.isPending ? (
+    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+  ) : (
+    <Plus className="h-4 w-4 mr-2" />
+  )}
+  New Version
+</Button>
+Note: Change the label from "New Model" to "New Version" to make it clear this preserves data.
+The "Create Deal Model" button (shown in the empty state when !hasModels) keeps using createMutation — no change needed there.
+Problem 2: Version numbering is wrong when creating from expert data
+In server/services/deal-model-mapping.service.ts, the createDealModelFromExperts method hardcodes:
+jsname: modelName || `Deal Model v1`,
+version: 1,
+This means if someone does manage to create a second model from experts (e.g. if all models were deleted and they start fresh), it still says v1 even if other models exist.
+Fix: Before creating the model, query the existing models for this company to determine the next version number:
+js// At the start of createDealModelFromExperts, after verifyOwnership equivalent
+const existingModels = await db
+  .select({ version: dealModels.version })
+  .from(dealModels)
+  .where(eq(dealModels.targetCompanyId, targetCompanyId))
+  .orderBy(desc(dealModels.version))
+  .limit(1);
+
+const nextVersion = existingModels.length > 0 && existingModels[0].version
+  ? existingModels[0].version + 1
+  : 1;
+Then use it:
+jsname: modelName || `Deal Model v${nextVersion}`,
+version: nextVersion,
+You'll need to import dealModels from @shared/schema if it's not already imported in this file (check — it may already be there).
+Problem 3: The source model should be auto-locked when duplicating
+In server/services/deal-model.service.ts, the duplicateModel method creates a copy but doesn't lock the source model. The user's previous version should be automatically locked to prevent accidental changes.
+Fix: In the duplicateModel method, after creating the duplicate, lock the source model:
+jsasync duplicateModel(
+  id: number,
+  userCompanyId: number,
+  newName?: string
+): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+  const model = await dealModelRepository.getById(id);
+  if (!model) throw new NotFoundError('Deal model not found');
+  await verifyOwnership(model.targetCompanyId, userCompanyId);
+
+  // Determine next version number
+  const allModels = await dealModelRepository.listByCompany(model.targetCompanyId);
+  const maxVersion = Math.max(...allModels.map(m => m.version ?? 1), 0);
+  const nextVersion = maxVersion + 1;
+
+  const name = newName || `Deal Model v${nextVersion}`;
+  const newModel = await dealModelRepository.duplicate(id, name, model.createdBy);
+
+  // Auto-lock the source model so previous version is preserved
+  if (!model.isLocked) {
+    await dealModelRepository.lock(id);
+    // Invalidation will happen client-side via queryClient
+  }
+
+  const fullModel = await dealModelRepository.getByIdWithDetails(newModel.id);
+  if (!fullModel) throw new NotFoundError('Duplicated deal model not found');
+
+  const calculations = await this.recalculate(fullModel);
+
+  return { ...fullModel, calculations };
+}
+Problem 4: The repository duplicate method uses its own version increment but should accept the version from the service
+Currently in server/repositories/deal-model.repository.ts:
+jsasync duplicate(id: number, newName: string, userId: number): Promise<DealModel> {
+  ...
+  version: (source.version ?? 1) + 1,
+  ...
+}
+This is fine as a fallback, but the service layer now calculates the correct version from all models. To keep it simple, just pass the version through.
+Fix: Update the duplicate method signature to accept an optional version override:
+jsasync duplicate(id: number, newName: string, userId: number, version?: number): Promise<DealModel> {
+  const source = await this.getByIdWithDetails(id);
+  if (!source) throw new Error('Deal model not found');
+
+  const { id: _id, createdAt, updatedAt, adjustments, fundingLines, ...modelData } = source;
+
+  const [newModel] = await db
+    .insert(dealModels)
+    .values({
+      ...modelData,
+      name: newName,
+      createdBy: userId,
+      parentModelId: id,
+      version: version ?? (source.version ?? 1) + 1,
+      status: 'draft',
+      isLocked: false,
+    })
+    .returning();
+
+  // ... rest stays the same (copy adjustments, copy funding lines)
+Then in the service, pass the version:
+jsconst newModel = await dealModelRepository.duplicate(id, name, model.createdBy, nextVersion);
+Problem 5: The lock method in the repository sets status to 'sent'
+Currently:
+jsasync lock(id: number): Promise<DealModel> {
+  const [record] = await db
+    .update(dealModels)
+    .set({ isLocked: true, status: 'sent', updatedAt: new Date() })
+    .where(eq(dealModels.id, id))
+    .returning();
+  return record;
+}
+When auto-locking due to creating a new version, the status should NOT change to 'sent' — that status should only apply when the offer is actually sent to the seller. The auto-lock should preserve the current status.
+Fix: Add a separate lockOnly method or add a parameter:
+jsasync lock(id: number, preserveStatus: boolean = false): Promise<DealModel> {
+  const setData: Record<string, any> = { isLocked: true, updatedAt: new Date() };
+  if (!preserveStatus) {
+    setData.status = 'sent';
+  }
+  const [record] = await db
+    .update(dealModels)
+    .set(setData)
+    .where(eq(dealModels.id, id))
+    .returning();
+  return record;
+}
+Then in duplicateModel, call with preserveStatus: true:
+jsawait dealModelRepository.lock(id, true);
+The existing lockModel service method (used when sending offers) keeps calling lock(id) without the flag, which defaults to false and still sets status to 'sent'. No change needed there.
+Summary of files to modify:
+
+client/src/components/target-company/DealModeller.tsx — split create/duplicate mutations, rename button to "New Version"
+server/services/deal-model-mapping.service.ts — fix version numbering in createDealModelFromExperts
+server/services/deal-model.service.ts — auto-lock source model in duplicateModel, calculate correct version
+server/repositories/deal-model.repository.ts — accept version parameter in duplicate, add preserveStatus flag to lock
+
+Do NOT change:
+
+The expert analysis data mapping logic
+The adjustment or funding line schemas
+The calculation engine
+The lock/send offer flow (other than the preserveStatus parameter)
+The model selector dropdown UI
+
+After making changes, verify:
+
+First "Create Deal Model" creates v1 from expert data (unchanged behaviour)
+Clicking "New Version" duplicates the current model with all adjustments, fees, and funding lines preserved
+The new model gets the correct version number (v2, v3, etc.)
+The previous model is automatically locked (shows lock icon and "Locked" badge)
+A locked model's inputs are disabled and cannot be edited
+The model name in the dropdown shows the correct version (e.g. "Deal Model v2 (v2)")
+The new model starts as status "draft" and is NOT locked
+The "Send Offer" flow still works and still locks + sets status to "sent"
+No TypeScript errors, app runs cleanly
