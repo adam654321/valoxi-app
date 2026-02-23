@@ -573,7 +573,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
           </SelectContent>
         </Select>
 
-        {activeTab !== 'dashboard' && scenarioMode === 'custom' && (
+        {scenarioMode === 'custom' && (
           <Tabs value={activeScenarioType} onValueChange={setActiveScenarioType}>
             <TabsList className="h-9">
               <TabsTrigger value="bear" className="text-xs px-3 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/30 dark:data-[state=active]:text-red-300">
@@ -589,7 +589,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
           </Tabs>
         )}
 
-        {activeTab !== 'dashboard' && scenarioMode === 'linked' && (
+        {scenarioMode === 'linked' && (
           <Badge variant="outline" className="text-xs text-muted-foreground">
             Linked mode ({rangePercent}%)
           </Badge>
