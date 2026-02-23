@@ -73,9 +73,20 @@ export class AuthService {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const userCompany = user.userCompanyId 
+    let userCompany = user.userCompanyId 
       ? await usersRepository.getUserCompany(user.userCompanyId)
       : null;
+
+    if (!userCompany) {
+      const memberships = await usersRepository.getUserCompanies(user.id);
+      const activeMembership = memberships.find((m: any) => m.isActive);
+      if (activeMembership) {
+        userCompany = await usersRepository.getUserCompany(activeMembership.userCompanyId) ?? null;
+        if (userCompany) {
+          await usersRepository.update(user.id, { userCompanyId: userCompany.id });
+        }
+      }
+    }
 
     return {
       user: {
