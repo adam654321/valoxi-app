@@ -37,7 +37,7 @@ export default function Login() {
     },
     onSuccess: async () => {
       await refreshCsrfToken();
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/v2/auth/me"] });
       setLocation("/dashboard");
       toast({
         title: "Success",

@@ -107,6 +107,10 @@ function Router() {
         )}
       </Route>
 
+      {/* Redirect auth pages to dashboard when already authenticated */}
+      <Route path="/login">{() => <Redirect to="/" />}</Route>
+      <Route path="/register">{() => <Redirect to="/" />}</Route>
+
       {/* Authenticated routes */}
       <Route>
         <Layout>
