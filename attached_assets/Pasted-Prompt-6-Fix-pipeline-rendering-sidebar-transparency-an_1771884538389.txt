@@ -1,0 +1,91 @@
+Prompt 6: Fix pipeline rendering — sidebar transparency and horizontal scroll
+Paste this into Replit:
+
+There are two rendering bugs on the Pipeline page. The kanban board columns go under the left sidebar (which is transparent — content is visible through it), and the horizontal scroll doesn't reach all the columns on the right.
+Bug 1: Sidebar has no background colour — CSS variable name mismatch
+File: client/src/index.css
+The Tailwind config (tailwind.config.ts) maps sidebar.DEFAULT to var(--sidebar-background):
+jssidebar: {
+  DEFAULT: "var(--sidebar-background)",
+But the CSS variables in index.css define it as --sidebar (no -background suffix):
+css--sidebar: hsl(0, 0%, 100%);
+So bg-sidebar resolves to an undefined variable and the sidebar renders with no background.
+Fix: In client/src/index.css, rename --sidebar to --sidebar-background in BOTH the :root (light mode) and .dark blocks:
+In :root:
+css/* Change this: */
+--sidebar: hsl(0, 0%, 100%);
+/* To this: */
+--sidebar-background: hsl(0, 0%, 100%);
+In .dark:
+css/* Change this: */
+--sidebar: hsl(222, 84%, 5%);
+/* To this: */
+--sidebar-background: hsl(222, 84%, 5%);
+That's it for the transparency. The Tailwind class bg-sidebar will now resolve correctly and the sidebar will be opaque white (light) or dark blue (dark mode).
+Bug 2: Pipeline horizontal scroll doesn't reach all columns
+The problem is a missing min-width: 0 in the flex chain. In CSS flexbox, a flex child's minimum width defaults to min-content. The kanban board's columns (each flex-shrink-0 w-72 = 288px) push the entire page wider instead of triggering the overflow-x-auto scrollbar on the kanban container.
+The fix needs to break the min-width chain at two points:
+Fix 2a: File: client/src/components/ui/sidebar.tsx
+In the SidebarInset component, add min-w-0 to the className so it can shrink below its content width:
+tsxconst SidebarInset = React.forwardRef
+  HTMLDivElement,
+  React.ComponentProps<"main">
+>(({ className, ...props }, ref) => {
+  return (
+    <main
+      ref={ref}
+      className={cn(
+        "relative flex min-w-0 w-full flex-1 flex-col bg-background",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+        className
+      )}
+      {...props}
+    />
+  )
+})
+The only change is adding min-w-0 to the first line of classes (after relative flex).
+Fix 2b: File: client/src/components/layout.tsx
+Add min-w-0 to the <main> element so it also participates in flex shrinking:
+tsxexport default function Layout({ children }: LayoutProps) {
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <PageHeader />
+        <main className="flex-1 min-w-0 overflow-auto bg-gray-50">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+The only change is adding min-w-0 to the <main> className.
+Fix 2c: File: client/src/components/pipeline-kanban-board.tsx
+The outer wrapper div.p-6 also needs min-w-0 and overflow-hidden so the kanban container's overflow-x-auto activates properly. Change the outer wrapper in the return statement:
+Find this (near the end of the component, in the return):
+tsx<div className="p-6">
+Change to:
+tsx<div className="p-6 min-w-0 overflow-hidden">
+This ensures the overflow-x-auto on the inner flex container actually creates a scrollbar instead of pushing the page wider.
+Summary of changes:
+
+client/src/index.css — rename --sidebar to --sidebar-background in both :root and .dark blocks
+client/src/components/ui/sidebar.tsx — add min-w-0 to SidebarInset className
+client/src/components/layout.tsx — add min-w-0 to <main> className
+client/src/components/pipeline-kanban-board.tsx — add min-w-0 overflow-hidden to outer div.p-6
+
+Do NOT change:
+
+The sidebar component structure or z-index
+The kanban board drag-and-drop logic
+The column widths or card layout
+Any of the drag-and-drop CSS overrides in index.css
+
+After making changes, verify:
+
+Sidebar is opaque white (light mode) — pipeline content is NOT visible through it
+All pipeline columns are reachable by horizontal scrolling
+The first column starts at the right edge of the sidebar, not underneath it
+Drag and drop still works correctly between columns
+Sidebar collapse/expand still works
+No layout shift on other pages (dashboard, target companies, etc.)

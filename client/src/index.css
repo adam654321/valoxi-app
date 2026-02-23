@@ -28,7 +28,7 @@
   --chart-3: hsl(43, 74%, 66%);
   --chart-4: hsl(27, 87%, 67%);
   --chart-5: hsl(12, 76%, 61%);
-  --sidebar: hsl(0, 0%, 100%);
+  --sidebar-background: hsl(0, 0%, 100%);
   --sidebar-foreground: hsl(212, 25%, 7.8%);
   --sidebar-primary: hsl(210, 77%, 46%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
@@ -175,7 +175,7 @@ body.dragging [data-rbd-droppable-id] {
   --chart-3: hsl(30, 80%, 55%);
   --chart-4: hsl(280, 65%, 60%);
   --chart-5: hsl(340, 75%, 55%);
-  --sidebar: hsl(222, 84%, 5%);
+  --sidebar-background: hsl(222, 84%, 5%);
   --sidebar-foreground: hsl(210, 40%, 98%);
   --sidebar-primary: hsl(210, 77%, 46%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
