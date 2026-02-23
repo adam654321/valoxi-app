@@ -27,6 +27,7 @@ export class GeminiExpertService {
         model,
         temperature: 0,
         responseMimeType: "application/json",
+        thinkingLevel: "LOW",
       });
 
       const processingTime = Date.now() - startTime;
