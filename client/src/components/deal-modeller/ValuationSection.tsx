@@ -121,22 +121,54 @@ export default function ValuationSection({
 }: ValuationSectionProps) {
   const { toast } = useToast();
   const [local, setLocal] = useState<LocalValues>(() => initLocal(model));
+  const [displayValues, setDisplayValues] = useState<Record<string, string>>(() => {
+    const init = initLocal(model);
+    return {
+      ebitdaMultiple: String(init.ebitdaMultiple),
+      plusExcessCash: String(init.plusExcessCash),
+      plusPropertyValue: String(init.plusPropertyValue),
+      minusPrimaryDebt: String(init.minusPrimaryDebt),
+      minusOtherDebt: String(init.minusOtherDebt),
+      minusCorpTaxDue: String(init.minusCorpTaxDue),
+      minusWorkingCapitalAdj: String(init.minusWorkingCapitalAdj),
+    };
+  });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<Partial<Record<string, any>> | null>(null);
   const isEditingRef = useRef(false);
   const prevModelIdRef = useRef(model.id);
+  const lastSyncedAtRef = useRef<string | null>(model.updatedAt as string | null);
+
+  const syncDisplayFromLocal = useCallback((values: LocalValues) => {
+    setDisplayValues({
+      ebitdaMultiple: String(values.ebitdaMultiple),
+      plusExcessCash: String(values.plusExcessCash),
+      plusPropertyValue: String(values.plusPropertyValue),
+      minusPrimaryDebt: String(values.minusPrimaryDebt),
+      minusOtherDebt: String(values.minusOtherDebt),
+      minusCorpTaxDue: String(values.minusCorpTaxDue),
+      minusWorkingCapitalAdj: String(values.minusWorkingCapitalAdj),
+    });
+  }, []);
 
   useEffect(() => {
     if (model.id !== prevModelIdRef.current) {
       prevModelIdRef.current = model.id;
-      setLocal(initLocal(model));
+      const init = initLocal(model);
+      setLocal(init);
+      syncDisplayFromLocal(init);
+      lastSyncedAtRef.current = model.updatedAt as string | null;
       return;
     }
-    if (!isEditingRef.current) {
-      setLocal(initLocal(model));
+    const updatedAt = model.updatedAt as string | null;
+    if (!isEditingRef.current && updatedAt !== lastSyncedAtRef.current) {
+      const init = initLocal(model);
+      setLocal(init);
+      syncDisplayFromLocal(init);
+      lastSyncedAtRef.current = updatedAt;
     }
-  }, [model.id, model.updatedAt]);
+  }, [model.id, model.updatedAt, syncDisplayFromLocal]);
 
   const handleFocus = useCallback(() => {
     isEditingRef.current = true;
@@ -144,12 +176,7 @@ export default function ValuationSection({
 
   const handleBlur = useCallback(() => {
     isEditingRef.current = false;
-    setTimeout(() => {
-      if (!isEditingRef.current) {
-        setLocal(initLocal(model));
-      }
-    }, 100);
-  }, [model]);
+  }, []);
 
   const adjustmentInputs: AdjustmentInput[] = useMemo(() =>
     (model.adjustments || []).map(a => ({
@@ -187,9 +214,10 @@ export default function ValuationSection({
       const res = await apiRequest('PUT', `/api/v2/deal-models/${modelId}`, updates);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data: any, _variables: any) => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 1500);
+      lastSyncedAtRef.current = new Date().toISOString();
       if (!isEditingRef.current) {
         onDataChange();
       }
@@ -370,7 +398,11 @@ export default function ValuationSection({
             <div className="flex-1">
               <Slider
                 value={[local.ebitdaMultiple]}
-                onValueChange={([v]) => updateLocal('ebitdaMultiple', Math.round(v * 10) / 10, 'ebitdaMultiple')}
+                onValueChange={([v]) => {
+                  const rounded = Math.round(v * 10) / 10;
+                  updateLocal('ebitdaMultiple', rounded, 'ebitdaMultiple');
+                  setDisplayValues(prev => ({ ...prev, ebitdaMultiple: String(rounded) }));
+                }}
                 min={1}
                 max={10}
                 step={0.1}
@@ -384,17 +416,27 @@ export default function ValuationSection({
             </div>
             <div className="w-24">
               <Input
-                type="number"
-                step="0.1"
-                min="1"
-                max="10"
-                value={local.ebitdaMultiple}
+                type="text"
+                inputMode="decimal"
+                value={displayValues.ebitdaMultiple}
                 onFocus={handleFocus}
-                onBlur={handleBlur}
+                onBlur={() => {
+                  handleBlur();
+                  const parsed = parseFloat(displayValues.ebitdaMultiple);
+                  if (isNaN(parsed) || displayValues.ebitdaMultiple.trim() === '') {
+                    setDisplayValues(prev => ({ ...prev, ebitdaMultiple: String(local.ebitdaMultiple) }));
+                  } else {
+                    const clamped = Math.max(1, Math.min(10, Math.round(parsed * 10) / 10));
+                    setDisplayValues(prev => ({ ...prev, ebitdaMultiple: String(clamped) }));
+                    updateLocal('ebitdaMultiple', clamped, 'ebitdaMultiple');
+                  }
+                }}
                 onChange={e => {
-                  const v = parseFloat(e.target.value);
-                  if (!isNaN(v) && v >= 0.1 && v <= 20) {
-                    updateLocal('ebitdaMultiple', Math.round(v * 10) / 10, 'ebitdaMultiple');
+                  const raw = e.target.value;
+                  setDisplayValues(prev => ({ ...prev, ebitdaMultiple: raw }));
+                  const parsed = parseFloat(raw);
+                  if (!isNaN(parsed)) {
+                    setLocal(prev => ({ ...prev, ebitdaMultiple: parsed }));
                   }
                 }}
                 disabled={isLocked}
@@ -423,7 +465,7 @@ export default function ValuationSection({
             </div>
 
             {bridgeItems.map((item) => {
-              const val = local[item.field];
+              const val = local[item.field] as number;
               const expertVal = getExpertValue(snapshot, item.expertField || '');
               const isPlus = item.direction === '+';
               const hasExpert = expertVal !== null;
@@ -456,13 +498,30 @@ export default function ValuationSection({
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
                       <Input
-                        type="number"
-                        value={val || ''}
+                        type="text"
+                        inputMode="numeric"
+                        value={displayValues[item.field] ?? String(val)}
                         onFocus={handleFocus}
-                        onBlur={handleBlur}
+                        onBlur={() => {
+                          handleBlur();
+                          const raw = displayValues[item.field] ?? '';
+                          const parsed = parseFloat(raw);
+                          if (isNaN(parsed) || raw.trim() === '') {
+                            const numVal = raw.trim() === '' ? 0 : val;
+                            setDisplayValues(prev => ({ ...prev, [item.field]: String(numVal) }));
+                            updateLocal(item.field, numVal, item.dbField);
+                          } else {
+                            setDisplayValues(prev => ({ ...prev, [item.field]: String(parsed) }));
+                            updateLocal(item.field, parsed, item.dbField);
+                          }
+                        }}
                         onChange={e => {
-                          const v = parseFloat(e.target.value);
-                          updateLocal(item.field, isNaN(v) ? 0 : v, item.dbField);
+                          const raw = e.target.value;
+                          setDisplayValues(prev => ({ ...prev, [item.field]: raw }));
+                          const parsed = parseFloat(raw);
+                          if (!isNaN(parsed)) {
+                            setLocal(prev => ({ ...prev, [item.field]: parsed }));
+                          }
                         }}
                         disabled={isLocked}
                         className="pl-7 text-right text-base h-9"
@@ -491,13 +550,30 @@ export default function ValuationSection({
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
                         <Input
-                          type="number"
-                          value={local.minusWorkingCapitalAdj || ''}
+                          type="text"
+                          inputMode="numeric"
+                          value={displayValues.minusWorkingCapitalAdj ?? String(local.minusWorkingCapitalAdj)}
                           onFocus={handleFocus}
-                          onBlur={handleBlur}
+                          onBlur={() => {
+                            handleBlur();
+                            const raw = displayValues.minusWorkingCapitalAdj ?? '';
+                            const parsed = parseFloat(raw);
+                            if (isNaN(parsed) || raw.trim() === '') {
+                              const numVal = raw.trim() === '' ? 0 : local.minusWorkingCapitalAdj;
+                              setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: String(numVal) }));
+                              updateLocal('minusWorkingCapitalAdj', numVal, 'minusWorkingCapitalAdj');
+                            } else {
+                              setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: String(parsed) }));
+                              updateLocal('minusWorkingCapitalAdj', parsed, 'minusWorkingCapitalAdj');
+                            }
+                          }}
                           onChange={e => {
-                            const v = parseFloat(e.target.value);
-                            updateLocal('minusWorkingCapitalAdj', isNaN(v) ? 0 : v, 'minusWorkingCapitalAdj');
+                            const raw = e.target.value;
+                            setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: raw }));
+                            const parsed = parseFloat(raw);
+                            if (!isNaN(parsed)) {
+                              setLocal(prev => ({ ...prev, minusWorkingCapitalAdj: parsed }));
+                            }
                           }}
                           disabled={isLocked}
                           className="pl-7 text-right text-base h-9"
@@ -544,6 +620,7 @@ export default function ValuationSection({
                                   workingCapitalMonths: months,
                                   minusWorkingCapitalAdj: newTotal,
                                 }));
+                                setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: String(newTotal) }));
                                 if (!isLocked) {
                                   debounceSave({
                                     workingCapitalMonths: String(months),
@@ -589,13 +666,30 @@ export default function ValuationSection({
                           <div className="relative flex-1">
                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
                             <Input
-                              type="number"
-                              value={local.minusWorkingCapitalAdj || ''}
+                              type="text"
+                              inputMode="numeric"
+                              value={displayValues.minusWorkingCapitalAdj ?? String(local.minusWorkingCapitalAdj)}
                               onFocus={handleFocus}
-                              onBlur={handleBlur}
+                              onBlur={() => {
+                                handleBlur();
+                                const raw = displayValues.minusWorkingCapitalAdj ?? '';
+                                const parsed = parseFloat(raw);
+                                if (isNaN(parsed) || raw.trim() === '') {
+                                  const numVal = raw.trim() === '' ? 0 : local.minusWorkingCapitalAdj;
+                                  setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: String(numVal) }));
+                                  updateLocal('minusWorkingCapitalAdj', numVal, 'minusWorkingCapitalAdj');
+                                } else {
+                                  setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: String(parsed) }));
+                                  updateLocal('minusWorkingCapitalAdj', parsed, 'minusWorkingCapitalAdj');
+                                }
+                              }}
                               onChange={e => {
-                                const v = parseFloat(e.target.value);
-                                updateLocal('minusWorkingCapitalAdj', isNaN(v) ? 0 : v, 'minusWorkingCapitalAdj');
+                                const raw = e.target.value;
+                                setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: raw }));
+                                const parsed = parseFloat(raw);
+                                if (!isNaN(parsed)) {
+                                  setLocal(prev => ({ ...prev, minusWorkingCapitalAdj: parsed }));
+                                }
                               }}
                               disabled={isLocked}
                               className="pl-7 text-right text-base h-9"
@@ -612,6 +706,7 @@ export default function ValuationSection({
                                 workingCapitalOverride: false,
                                 minusWorkingCapitalAdj: newTotal,
                               }));
+                              setDisplayValues(prev => ({ ...prev, minusWorkingCapitalAdj: String(newTotal) }));
                               if (!isLocked) {
                                 if (debounceRef.current) {
                                   clearTimeout(debounceRef.current);
