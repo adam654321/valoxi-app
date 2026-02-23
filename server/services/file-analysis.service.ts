@@ -1,6 +1,9 @@
 import { documentAnalysisRepository } from "../repositories/document-analysis.repository";
 import { documentsRepository } from "../repositories/documents.repository";
 import { targetCompaniesRepository } from "../repositories/target-companies.repository";
+
+const retriggerCounts = new Map<number, number>();
+
 function getMimeTypeForFile(fileType: string): string {
   const mimeMap: Record<string, string> = {
     "pdf": "application/pdf",
@@ -334,13 +337,30 @@ export async function runDocumentCompletionCheck(targetCompanyId: number, upload
         return;
       }
 
-      console.log(`[FILE_ANALYSIS] All 10 document types present but ${documentsMissingAnalysis.length} document(s) missing analysis — re-queuing for document IDs: ${documentsMissingAnalysis.join(', ')}`);
-
+      const MAX_RETRIGGERS = 3;
+      const docsToRetrigger: number[] = [];
       for (const docId of documentsMissingAnalysis) {
+        const count = retriggerCounts.get(docId) || 0;
+        if (count >= MAX_RETRIGGERS) {
+          console.warn(`[FILE_ANALYSIS] Document ${docId} has been retriggered ${count} times already — skipping (max ${MAX_RETRIGGERS})`);
+        } else {
+          retriggerCounts.set(docId, count + 1);
+          docsToRetrigger.push(docId);
+        }
+      }
+
+      if (docsToRetrigger.length === 0) {
+        console.warn(`[FILE_ANALYSIS] All ${documentsMissingAnalysis.length} documents with missing analysis have exceeded retrigger limit for company ${targetCompanyId}`);
+        return;
+      }
+
+      console.log(`[FILE_ANALYSIS] All 10 document types present but ${docsToRetrigger.length} document(s) missing analysis — re-queuing for document IDs: ${docsToRetrigger.join(', ')}`);
+
+      for (const docId of docsToRetrigger) {
         try {
           const uploadEvent = await documentsRepository.getFileUploadEventByDocumentId(docId);
           if (uploadEvent) {
-            console.log(`[FILE_ANALYSIS] Re-queuing analysis for document ${docId} (event ${uploadEvent.id})`);
+            console.log(`[FILE_ANALYSIS] Re-queuing analysis for document ${docId} (event ${uploadEvent.id}) [attempt ${retriggerCounts.get(docId)}/${MAX_RETRIGGERS}]`);
             await documentsRepository.updateFileUploadEventWebhookStatus(uploadEvent.id, 'pending', undefined, undefined);
             analysisQueue.enqueue({
               eventId: uploadEvent.id,

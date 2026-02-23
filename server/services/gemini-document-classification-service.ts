@@ -1,6 +1,23 @@
 import { buildDocumentClassificationPrompt } from "../prompts/document-classification-prompt";
 import { geminiClient } from "./gemini-client";
 
+const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
+
+async function fetchTextContent(fileUrl: string): Promise<string | null> {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) return null;
+    const text = await response.text();
+    const maxChars = 50000;
+    if (text.length > maxChars) {
+      return text.substring(0, maxChars);
+    }
+    return text;
+  } catch {
+    return null;
+  }
+}
+
 export interface DocumentClassificationRequest {
   fileUrl: string;
   mimeType: string;
@@ -32,19 +49,30 @@ export async function classifyDocumentWithGemini(
     console.log(`[GEMINI_CLASSIFICATION] Starting classification for ${request.fileName}`);
     console.log(`[GEMINI_CLASSIFICATION] File URL: ${request.fileUrl.substring(0, 80)}...`);
 
-    const prompt = buildDocumentClassificationPrompt();
+    let prompt = buildDocumentClassificationPrompt();
+    let fileData: { fileUri: string; mimeType: string } | undefined;
+    const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
 
-    console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API`);
+    if (isTextFile) {
+      const textContent = await fetchTextContent(request.fileUrl);
+      if (textContent) {
+        prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
+        console.log(`[GEMINI_CLASSIFICATION] Embedded ${textContent.length} chars inline`);
+      } else {
+        fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+      }
+    } else {
+      fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+    }
+
+    console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API${isTextFile && !fileData ? ' (inline text)' : ' (file attachment)'}`);
 
     const response = await geminiClient.generateContent({
       prompt,
-      model: "gemini-2.0-flash",
       temperature: 0,
       responseMimeType: "application/json",
-      fileData: {
-        fileUri: request.fileUrl,
-        mimeType: request.mimeType,
-      },
+      thinkingLevel: "MINIMAL",
+      ...(fileData ? { fileData } : {}),
     });
 
     const processingTime = Date.now() - startTime;

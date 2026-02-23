@@ -27,13 +27,15 @@ export interface GeminiResponse {
   } | null;
 }
 
+export type ThinkingLevel = "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
+
 export interface GenerateContentOptions {
   prompt: string;
   model?: string;
   temperature?: number;
   responseMimeType?: string;
   fileData?: { fileUri: string; mimeType: string };
-  thinkingBudget?: number;
+  thinkingLevel?: ThinkingLevel;
   userId?: number;
   userCompanyId?: number;
   dealId?: number;
@@ -122,7 +124,7 @@ export class GeminiClient {
           config: {
             temperature,
             ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
-            ...(options.thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget: options.thinkingBudget } } : {}),
+            ...(options.thinkingLevel ? { thinkingConfig: { thinkingBudget: options.thinkingLevel === "MINIMAL" ? 128 : options.thinkingLevel === "LOW" ? 1024 : options.thinkingLevel === "MEDIUM" ? 4096 : 8192 } } : {}),
             abortSignal: controller.signal,
           },
         });
