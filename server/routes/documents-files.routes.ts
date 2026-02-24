@@ -6,6 +6,7 @@ import { documentsFilesService } from '../services/documents-files.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
+import { sanitizeFilename, sharedFileFilter } from '../utils/upload';
 
 import { uploadLimiter } from '../middleware/rate-limit';
 
@@ -27,44 +28,7 @@ const uploadStorage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req: any, file: any, cb: any) => {
-  const allowedTypes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel.sheet.macroEnabled.12',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'text/plain',
-    'text/csv',
-    'text/tab-separated-values',
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/bmp',
-    'image/tiff',
-    'image/webp',
-    'application/vnd.apple.numbers',
-    'application/vnd.apple.pages',
-    'application/vnd.apple.keynote',
-    'application/vnd.oasis.opendocument.text',
-    'application/vnd.oasis.opendocument.spreadsheet',
-    'application/vnd.oasis.opendocument.presentation',
-    'application/rtf',
-    'application/octet-stream',
-  ];
-  const ext = file.originalname?.toLowerCase()?.split('.').pop();
-  const allowedExts = [
-    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx',
-    'txt', 'csv', 'tsv', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp',
-    'numbers', 'pages', 'key', 'odt', 'ods', 'odp', 'rtf',
-  ];
-  cb(null, allowedTypes.includes(file.mimetype) || allowedExts.includes(ext));
-};
-
-const upload = multer({ storage: uploadStorage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: uploadStorage, fileFilter: sharedFileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 router.delete('/clear-all', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
@@ -104,7 +68,7 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
       if (!req.file) throw new BadRequestError('No file uploaded');
       await documentsFilesService.verifyCompanyAccess(targetCompanyId, userCompanyId);
       const documentCategory = req.body.document_category || 'Company Accounts';
-      const originalFilename = req.file.originalname;
+      const originalFilename = sanitizeFilename(req.file.originalname);
       const document = await documentsFilesService.createDocument({
         targetCompanyId,
         uploadedBy: userId,
@@ -164,7 +128,7 @@ router.get('/:id/view', asyncHandler(async (req: Request, res: Response) => {
   const document = await documentsFilesService.getDocument(documentId, userCompanyId);
   await documentsFilesService.logAccess(documentId, userId, 'view', req.ip);
   res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
-  res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+  res.setHeader('Content-Disposition', `inline; filename="${sanitizeFilename(document.originalFilename)}"`);
   res.setHeader('Cache-Control', 'private, max-age=3600');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.sendFile(path.resolve(document.filePath));
@@ -178,7 +142,7 @@ router.get('/:id/download', asyncHandler(async (req: Request, res: Response) => 
   if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
   const document = await documentsFilesService.getDocument(documentId, userCompanyId);
   await documentsFilesService.logAccess(documentId, userId, 'download', req.ip);
-  res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(document.originalFilename)}"`);
   res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
   res.sendFile(path.resolve(document.filePath));
 }));
@@ -214,7 +178,7 @@ publicDocumentRoutes.get('/:id/download', asyncHandler(async (req: Request, res:
   const documentId = parseInt(req.params.id);
   if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
   const document = await documentsFilesService.getDocumentPublic(documentId);
-  res.setHeader('Content-Disposition', `attachment; filename="${document.originalFilename}"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(document.originalFilename)}"`);
   res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
   res.sendFile(path.resolve(document.filePath));
 }));
@@ -224,7 +188,7 @@ publicDocumentRoutes.get('/:id/view', asyncHandler(async (req: Request, res: Res
   if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
   const document = await documentsFilesService.getDocumentPublic(documentId);
   res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
-  res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
+  res.setHeader('Content-Disposition', `inline; filename="${sanitizeFilename(document.originalFilename)}"`);
   res.setHeader('Cache-Control', 'private, max-age=3600');
   res.sendFile(path.resolve(document.filePath));
 }));

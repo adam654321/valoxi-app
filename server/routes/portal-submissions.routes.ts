@@ -10,6 +10,7 @@ import { BadRequestError } from '../utils/errors';
 import { db } from '../db';
 import { ddRequirementStatus } from '@shared/schema/due-diligence';
 import { and, eq } from 'drizzle-orm';
+import { sharedFileFilter } from '../utils/upload';
 
 const router = Router();
 
@@ -27,11 +28,7 @@ const portalUpload = multer({
       cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
   }),
-  fileFilter: (req, file, cb) => {
-    const allowedExtensions = /\.(pdf|doc|docx|xls|xlsx|xlsm|ppt|pptx|txt|csv|tsv|jpg|jpeg|png|gif|bmp|tiff|tif|webp|numbers|pages|key|odt|ods|odp|rtf)$/i;
-    if (allowedExtensions.test(file.originalname)) cb(null, true);
-    else cb(new Error('Only PDF, Office documents, text files and images are allowed'));
-  },
+  fileFilter: sharedFileFilter,
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 

@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
 import { dueDiligenceService } from './due-diligence.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+import { sanitizeFilename } from '../utils/upload';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
 
 import { db } from '../db';
@@ -45,7 +46,7 @@ export class PortalSubmissionsService {
     }
     const submittedType = body.documentType || body.document_category || 'general';
     const mappedCategory = PORTAL_CATEGORY_MAP[submittedType] || 'Company Accounts';
-    const originalFilename = file.originalname;
+    const originalFilename = sanitizeFilename(file.originalname);
     const submission = await portalSubmissionsRepository.createSubmission({
       portalTokenId: token.id, targetCompanyId: token.targetCompanyId, targetContactId: token.targetContactId,
       originalFilename: originalFilename, storedFilename: file.filename, filePath: file.path,
