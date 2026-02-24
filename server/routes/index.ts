@@ -29,10 +29,11 @@ import dealDocumentRoutes, { publicDealDocumentRoutes } from './deal-document.ro
 import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
-import { isSystemAdmin, requirePermission } from '../middleware/auth';
+import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
+import { validateCsrfToken } from '../middleware/csrf';
 import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 
-export function registerModularRoutes(app: Express, isAuthenticated: any, validateCsrfToken: any) {
+export function registerModularRoutes(app: Express) {
   app.use('/api/v2/pipeline', isAuthenticated, validateCsrfToken, pipelineRoutes);
   app.use('/api/v2/roles', isAuthenticated, validateCsrfToken, rolesRoutes);
   app.use('/api/v2/contacts', isAuthenticated, validateCsrfToken, contactsRoutes);
