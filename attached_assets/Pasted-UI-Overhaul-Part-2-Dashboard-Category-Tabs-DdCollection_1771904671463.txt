@@ -1,0 +1,118 @@
+UI Overhaul Part 2 — Dashboard + Category Tabs (DdCollection.tsx)
+Context
+File to modify: client/src/components/portal/DdCollection.tsx
+
+This component was just redesigned with separate category cards, better typography, and status-tinted requirement rows. However, with 15 categories and 121 requirements, the page is still a very long scrollable list. We now need to restructure it as:
+
+A dashboard summary section at the top — key metrics, per-category summary table
+Tabbed navigation — one tab per category so you only see one category's requirements at a time
+This component is used for both the portal (seller) and internal (buyer) Stage 2 DD views.
+
+Please first read the current contents of client/src/components/portal/DdCollection.tsx to see the latest code after the previous UI overhaul. Use that as your starting point.
+
+Also check what tab components are available by reading:
+
+client/src/components/ui/tabs.tsx (shadcn/ui Tabs component — should have Tabs, TabsList, TabsTrigger, TabsContent)
+Task
+Restructure the component into two main sections: a Dashboard and Tabbed Categories.
+
+1. Dashboard Summary Section (always visible at top)
+Replace the current summary card with a richer dashboard:
+
+Key Metrics Row — A row of 4-5 stat cards side by side using a grid (grid grid-cols-2 md:grid-cols-4 gap-4):
+
+Total Requirements: big number showing totalRequirements, label underneath
+Verified: big number in green showing verifiedCount, with small "of {total}" text
+Pending Review: big number in blue showing pendingReviewCount
+Needs Attention: big number in amber showing count of more_needed requirements (calculate this: categories.reduce(...) where buyerReviewStatus === 'more_needed')
+Each stat card: <Card className="p-4 text-center"> with the number as text-2xl font-bold and label as text-sm text-muted-foreground
+Overall Progress Bar — Below the stat cards:
+
+Keep the existing progress bar but make it h-3
+Show "X of Y requirements verified — Z%" text
+Category Summary Table — Below the progress bar, a compact table/grid showing each category at a glance:
+
+Use a simple grid or table layout, one row per category
+Columns: Category Name (left-aligned), Status indicators (how many verified / total), mini progress bar or percentage, a "Go to" button or make the row clickable to jump to that category tab
+Colour-code the row subtly: green-tinted if all requirements verified, amber-tinted if any more_needed, default otherwise
+When a category row is clicked, it should switch to that category's tab (set the active tab to that category's id)
+Keep this compact — each row should be a single line, no more than py-2
+2. Tabbed Category View (below the dashboard)
+Replace the list of separate category cards with a tabbed interface:
+
+Tab Structure using shadcn/ui Tabs:
+
+<Tabs defaultValue={String(categories[0]?.id)} value={activeTab} onValueChange={setActiveTab}>
+  <TabsList className="...">
+    {categories.map(cat => (
+      <TabsTrigger key={cat.id} value={String(cat.id)}>
+        {cat.categoryName}
+        <Badge ...>{catVerified}/{cat.totalCount}</Badge>
+      </TabsTrigger>
+    ))}
+  </TabsList>
+  {categories.map(cat => (
+    <TabsContent key={cat.id} value={String(cat.id)}>
+      {/* Category header + requirement rows from current design */}
+    </TabsContent>
+  ))}
+</Tabs>
+
+Tab List Styling:
+
+With 15 categories, the tab list will overflow horizontally — make it scrollable: <TabsList className="w-full h-auto flex flex-wrap gap-1 bg-transparent p-1"> or use horizontal scroll with overflow-x-auto
+Actually, given 15 categories, use a flex-wrap layout so tabs wrap to multiple rows rather than horizontal scrolling which hides tabs
+Each tab trigger should show: short category name + a small completion badge (e.g., "3/13")
+Active tab: standard shadcn active styling
+Tabs with all requirements verified: add a small green dot or checkmark indicator
+Tabs with any more_needed: add an amber dot indicator
+Tab Content:
+
+Each tab shows that category's requirements using the existing mini-card design from the previous overhaul
+Keep the category header at the top of each tab content showing: full category name, "X of Y requirements verified", progress bar
+Keep ALL the existing requirement rendering logic: status-tinted backgrounds, document lists, upload forms, mark-complete buttons, buyer feedback alerts, DocumentViewer integration
+3. New State
+Add one new state variable:
+
+const [activeTab, setActiveTab] = useState<string>('');
+
+Set the default tab to the first category when data loads:
+
+// After categories are computed:
+const effectiveTab = activeTab || String(categories[0]?.id || '');
+
+Add a needsAttentionCount computed value:
+
+const needsAttentionCount = categories.reduce((sum, cat) => {
+  return sum + cat.requirements.filter((r: any) => r.buyerReviewStatus === 'more_needed').length;
+}, 0);
+
+4. Dashboard-to-Tab Navigation
+When a user clicks a category row in the dashboard summary table, update activeTab to that category's ID string. This makes the tabbed section below switch to show that category's requirements. Optionally scroll into view using:
+
+document.getElementById('dd-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
+
+Important Constraints
+DO NOT change any API calls, query keys, mutation handlers, or business logic
+DO NOT change the DocumentViewer integration — keep everything exactly as-is
+DO NOT change upload, mark-complete, unmark-complete, or remove-document flows
+DO NOT add any new npm dependencies — only use already-imported libraries + shadcn/ui Tabs
+Add the Tabs imports: import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+Keep all existing interfaces (DdCollectionProps, LinkedDocument, DdRequirement, DdCategoryData, DdSummary) unchanged
+Keep all existing helper functions (getDisplayStatus, priorityBadge, formatFileSize) unchanged
+Keep the component props interface unchanged: { token: string; onDocumentUploaded: () => void }
+The DocumentViewer component must remain at the bottom outside the tabs, rendering once (not per-tab)
+Validation Criteria
+✅ Page loads without errors, no TypeScript errors, no console errors
+✅ Dashboard shows 4 stat cards with correct numbers (Total, Verified, Pending Review, Needs Attention)
+✅ Overall progress bar displays below stat cards
+✅ Category summary table shows all 15 categories with their completion status
+✅ Clicking a category row in the dashboard switches to that category's tab
+✅ Tab list shows all 15 categories and wraps properly (no hidden tabs)
+✅ Each tab shows only that category's requirements
+✅ Tabs with all requirements verified have a visual indicator
+✅ Tabs with more_needed requirements have an amber indicator
+✅ All existing functionality preserved: upload, view, mark complete, remove document, buyer feedback
+✅ DocumentViewer still opens correctly from any tab
+✅ Active tab persists when data refreshes (e.g., after upload invalidates query)
+✅ Dark mode compatibility maintained

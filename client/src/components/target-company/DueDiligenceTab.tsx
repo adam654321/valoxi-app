@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -707,6 +708,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const categories = statusQuery.data || [];
 
   const [ddFilter, setDdFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<string>('');
 
   const handleUploadAndLink = async (requirementId: number, file: File, docName: string) => {
     const formData = new FormData();
@@ -933,6 +935,25 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="p-4 text-center">
+              <div className="text-2xl font-bold">{clientStats.total}</div>
+              <div className="text-sm text-muted-foreground">Total Requirements</div>
+            </Card>
+            <Card className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{clientStats.verified}</div>
+              <div className="text-sm text-muted-foreground">Verified</div>
+            </Card>
+            <Card className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{clientStats.toReview}</div>
+              <div className="text-sm text-muted-foreground">Pending Review</div>
+            </Card>
+            <Card className="p-4 text-center">
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{clientStats.moreNeeded}</div>
+              <div className="text-sm text-muted-foreground">Needs Attention</div>
+            </Card>
+          </div>
+
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm font-medium">Verification Progress</span>
@@ -963,6 +984,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               {clientStats.mandatoryOutstanding} mandatory requirement{clientStats.mandatoryOutstanding !== 1 ? 's' : ''} still outstanding
             </div>
           )}
+
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30">
               <div className="text-lg font-bold text-red-700 dark:text-red-400">
@@ -983,6 +1005,40 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               <div className="text-sm text-blue-600 dark:text-blue-500">Adds Value</div>
             </div>
           </div>
+
+          {filteredCategories.length > 0 && (
+            <div className="border rounded-lg overflow-hidden">
+              <div className="px-3 py-2 bg-muted/50 border-b">
+                <span className="text-sm font-medium">Category Summary</span>
+              </div>
+              {filteredCategories.map((item) => {
+                const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
+                const verifiedCount = activeReqs.filter(r => {
+                  const br = (r.status as any)?.buyerReviewStatus || 'not_reviewed';
+                  return br === 'satisfied' || (r.status?.status || "not_submitted") === "approved";
+                }).length;
+                const allVerified = verifiedCount === activeReqs.length && activeReqs.length > 0;
+                const hasMoreNeeded = activeReqs.some(r => ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'more_needed');
+                const pct = activeReqs.length > 0 ? Math.round((verifiedCount / activeReqs.length) * 100) : 0;
+                return (
+                  <button
+                    key={item.category.id}
+                    className={`w-full flex items-center justify-between py-2 px-3 text-left hover:bg-muted/30 transition-colors border-b last:border-b-0 ${allVerified ? 'bg-green-50 dark:bg-green-950/20' : hasMoreNeeded ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}
+                    onClick={() => {
+                      setActiveTab(String(item.category.id));
+                      document.getElementById('dd-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <span className="text-sm font-medium">{item.category.categoryName}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">{verifiedCount}/{activeReqs.length}</span>
+                      <span className="text-sm text-muted-foreground w-10 text-right">{pct}%</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1011,19 +1067,43 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
           </CardContent>
         </Card>
       ) : (
-        filteredCategories.map((item) => (
-          <CategoryCard
-            key={item.category.id}
-            item={item}
-            targetCompanyId={targetCompanyId}
-            companyDocuments={companyDocuments}
-            linkedDocMap={linkedDocMap}
-            onUploadAndLink={handleUploadAndLink}
-            onBuyerReview={handleBuyerReview}
-            onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
-            onViewDocument={handleViewDocument}
-          />
-        ))
+        <div id="dd-tabs-section">
+          <Tabs value={activeTab || String(filteredCategories[0]?.category.id || '')} onValueChange={setActiveTab}>
+            <TabsList className="w-full h-auto flex flex-wrap gap-1 bg-transparent p-1">
+              {filteredCategories.map(item => {
+                const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
+                const verifiedCount = activeReqs.filter(r => {
+                  const br = (r.status as any)?.buyerReviewStatus || 'not_reviewed';
+                  return br === 'satisfied' || (r.status?.status || "not_submitted") === "approved";
+                }).length;
+                const allVerified = verifiedCount === activeReqs.length && activeReqs.length > 0;
+                const hasMoreNeeded = activeReqs.some(r => ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'more_needed');
+                return (
+                  <TabsTrigger key={item.category.id} value={String(item.category.id)} className="flex items-center gap-1.5 text-sm">
+                    {allVerified && <span className="h-2 w-2 rounded-full bg-green-500" />}
+                    {!allVerified && hasMoreNeeded && <span className="h-2 w-2 rounded-full bg-amber-500" />}
+                    {item.category.categoryName}
+                    <Badge variant="secondary" className="text-xs ml-1">{verifiedCount}/{activeReqs.length}</Badge>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            {filteredCategories.map(item => (
+              <TabsContent key={item.category.id} value={String(item.category.id)}>
+                <CategoryCard
+                  item={item}
+                  targetCompanyId={targetCompanyId}
+                  companyDocuments={companyDocuments}
+                  linkedDocMap={linkedDocMap}
+                  onUploadAndLink={handleUploadAndLink}
+                  onBuyerReview={handleBuyerReview}
+                  onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
+                  onViewDocument={handleViewDocument}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
       )}
 
       <Dialog open={rejectingRequirementId !== null} onOpenChange={(open) => {
