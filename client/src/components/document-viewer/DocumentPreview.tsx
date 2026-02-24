@@ -68,8 +68,8 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
         setDocxHtml(result.value);
         setDocxLoading(false);
       })
-      .catch(err => {
-        setDocxError(err.message || 'Failed to render document');
+      .catch(() => {
+        setDocxError('This document format could not be rendered inline. It may be saved in an older format. Please download to view.');
         setDocxLoading(false);
       });
   }, [document.id, isDocx, downloadUrl]);
@@ -238,9 +238,9 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
     if (docxError) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
-          <AlertCircle className="w-16 h-16 text-destructive mb-4" />
-          <h3 className="text-lg font-medium mb-2">Unable to Render Document</h3>
-          <p className="text-muted-foreground mb-6">{docxError}</p>
+          <FileText className="w-16 h-16 text-amber-500 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Inline Preview Unavailable</h3>
+          <p className="text-muted-foreground mb-6 max-w-md">{docxError}</p>
           <Button onClick={() => onDownload(document.id, document.originalFilename)}>
             <Download className="w-4 h-4 mr-2" />
             Download to View
