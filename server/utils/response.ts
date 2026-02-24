@@ -55,9 +55,18 @@ export function sendError(res: Response, error: unknown): void {
   }
 
   console.error('Unexpected error:', error);
+
+  const isProd = process.env.NODE_ENV === 'production';
+
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
-    code: 'INTERNAL_ERROR'
+    message: isProd ? 'Internal server error' : (error instanceof Error ? error.message : String(error)),
+    code: 'INTERNAL_ERROR',
+    ...(!isProd && error instanceof Error && {
+      debug: {
+        name: error.name,
+        stack: error.stack,
+      }
+    }),
   });
 }
