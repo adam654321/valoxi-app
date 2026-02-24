@@ -2,10 +2,14 @@ import rateLimit from 'express-rate-limit';
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,
+  max: 150,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  keyGenerator: (req) => {
+    const userId = (req.session as any)?.userId;
+    return userId ? `user-${userId}` : req.ip ?? 'unknown';
+  },
   message: { message: 'Too many requests, please try again later.' },
 });
 
@@ -34,6 +38,10 @@ export const analysisTriggerLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   skip: (req) => req.method === 'GET',
+  keyGenerator: (req) => {
+    const userId = (req.session as any)?.userId;
+    return userId ? `user-${userId}` : req.ip ?? 'unknown';
+  },
   message: { message: 'Too many analysis requests, please try again later.' },
 });
 
@@ -43,5 +51,9 @@ export const uploadLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  keyGenerator: (req) => {
+    const userId = (req.session as any)?.userId;
+    return userId ? `user-${userId}` : req.ip ?? 'unknown';
+  },
   message: { message: 'Too many uploads, please try again later.' },
 });

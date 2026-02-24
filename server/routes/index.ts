@@ -30,7 +30,7 @@ import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
 import { isSystemAdmin, requirePermission } from '../middleware/auth';
-import { authLimiter, portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
+import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 
 export function registerModularRoutes(app: Express, isAuthenticated: any, validateCsrfToken: any) {
   app.use('/api/v2/pipeline', isAuthenticated, validateCsrfToken, pipelineRoutes);
@@ -40,7 +40,7 @@ export function registerModularRoutes(app: Express, isAuthenticated: any, valida
   app.use('/api/v2/notifications', isAuthenticated, validateCsrfToken, notificationsRoutes);
   app.use('/api/v2/documents', isAuthenticated, validateCsrfToken, documentsRoutes);
   app.use('/api/v2/target-companies', isAuthenticated, validateCsrfToken, targetCompaniesRoutes);
-  app.use('/api/v2/auth', authLimiter, authRoutes);
+  app.use('/api/v2/auth', authRoutes);
   app.use('/api/v2/notes', isAuthenticated, validateCsrfToken, notesRoutes);
   app.use('/api/v2/dashboard', isAuthenticated, validateCsrfToken, dashboardRoutes);
   app.use('/api/v2/team', publicTeamRoutes);

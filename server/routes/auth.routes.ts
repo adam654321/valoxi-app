@@ -8,6 +8,7 @@ import { isAuthenticated } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
 import { rolesService } from '../services/roles.service';
 import { passwordResetService } from '../services/password-reset.service';
+import { authLimiter } from '../middleware/rate-limit';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-router.post('/register', asyncHandler(async (req: Request, res: Response) => {
+router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const validatedData = registerSchema.parse(req.body);
   
   const result = await authService.register({
@@ -46,7 +47,7 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
   });
 }));
 
-router.post('/login', asyncHandler(async (req: Request, res: Response) => {
+router.post('/login', authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = loginSchema.parse(req.body);
   
   const result = await authService.login({ email, password });
@@ -106,7 +107,7 @@ const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email format'),
 });
 
-router.post('/forgot-password', asyncHandler(async (req: Request, res: Response) => {
+router.post('/forgot-password', authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email } = forgotPasswordSchema.parse(req.body);
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   await passwordResetService.requestReset(email, baseUrl);
@@ -118,7 +119,7 @@ const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-router.post('/reset-password', asyncHandler(async (req: Request, res: Response) => {
+router.post('/reset-password', authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { token, password } = resetPasswordSchema.parse(req.body);
   await passwordResetService.resetPassword(token, password);
   sendSuccess(res, { message: 'Password has been reset successfully.' });
