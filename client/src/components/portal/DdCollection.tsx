@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   FileText,
   Upload,
@@ -19,6 +18,8 @@ import {
   ClipboardList,
   MinusCircle,
   Eye,
+  ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
@@ -122,7 +123,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
   const [isUploading, setIsUploading] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<any | null>(null);
   const [showViewer, setShowViewer] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -321,6 +322,303 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
   if (!categories.length) return null;
 
+  const selectedCategory = selectedCategoryId !== null
+    ? categories.find(c => c.id === selectedCategoryId)
+    : null;
+
+  if (selectedCategory) {
+    const catVerified = selectedCategory.requirements.filter(r => r.buyerReviewStatus === 'satisfied').length;
+    const catProgress = selectedCategory.totalCount > 0 ? Math.round((catVerified / selectedCategory.totalCount) * 100) : 0;
+
+    return (
+      <>
+        <div className="mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sm gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setSelectedCategoryId(null);
+              setUploadingRequirementId(null);
+              setSelectedFile(null);
+              setSubmissionNotes('');
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to overview
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">{selectedCategory.categoryName}</CardTitle>
+              <Badge
+                variant={catVerified === selectedCategory.totalCount ? 'default' : 'outline'}
+                className="text-sm"
+              >
+                {catVerified} / {selectedCategory.totalCount}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <Progress value={catProgress} className="h-2 flex-1" />
+              <span className="text-sm text-muted-foreground shrink-0">{catProgress}%</span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {selectedCategory.requirements.map(req => {
+              const displayStatus = getDisplayStatus(req);
+              const tintClass = getRequirementTint(req);
+              const buyerDocs = (req.linkedDocuments || []).filter(d => d.source === 'buyer_linked');
+              const sellerDocs = (req.linkedDocuments || []).filter(d => d.source === 'seller_uploaded');
+              const allDocs = req.linkedDocuments || [];
+
+              return (
+                <div key={req.id} className={`rounded-lg border p-4 mb-3 ${tintClass}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-mono text-muted-foreground">{req.refNumber}</span>
+                        <span className="text-sm font-medium">{req.documentName}</span>
+                        {priorityBadge(req.priority)}
+                      </div>
+                      {req.description && <p className="text-sm text-muted-foreground mt-1">{req.description}</p>}
+                    </div>
+                    <Badge className={`text-sm px-3 py-1 flex items-center gap-1.5 shrink-0 ${displayStatus.color}`}>
+                      {displayStatus.icon}
+                      {displayStatus.label}
+                    </Badge>
+                  </div>
+
+                  {req.buyerReviewStatus === 'more_needed' && (
+                    <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Additional documents requested</p>
+                          {req.buyerReviewNotes && (
+                            <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">{req.buyerReviewNotes}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {req.buyerReviewStatus === 'satisfied' && (
+                    <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700 dark:text-green-300 font-medium">Verified by buyer</span>
+                    </div>
+                  )}
+
+                  {allDocs.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {buyerDocs.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-1">
+                            <FileText className="h-4 w-4" /> Already held
+                          </p>
+                          {buyerDocs.map(doc => (
+                            <div key={doc.id} className="flex items-center gap-2 ml-4 py-2">
+                              <Paperclip className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              <button
+                                onClick={() => handleViewDocument(doc)}
+                                className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 hover:underline cursor-pointer"
+                              >
+                                {doc.filename}
+                              </button>
+                              {doc.fileSize && <span className="text-sm text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                              <button
+                                onClick={() => handleViewDocument(doc)}
+                                className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+                                title="View document"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {sellerDocs.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1 flex items-center gap-1">
+                            <Upload className="h-4 w-4" /> Your uploads
+                          </p>
+                          {sellerDocs.map(doc => (
+                            <div key={doc.id} className="flex items-center gap-2 ml-4 py-2">
+                              <FileText className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              <button
+                                onClick={() => handleViewDocument(doc)}
+                                className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 hover:underline cursor-pointer"
+                              >
+                                {doc.filename}
+                              </button>
+                              {doc.fileSize && <span className="text-sm text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                              <button
+                                onClick={() => handleViewDocument(doc)}
+                                className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+                                title="View document"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              {req.buyerReviewStatus !== 'satisfied' && (
+                                <button
+                                  onClick={() => handleRemoveDocument(req.id, doc.id)}
+                                  className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                                  title="Remove"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {req.buyerReviewStatus !== 'satisfied' && (
+                    <div className="mt-3">
+                      {uploadingRequirementId === req.id ? (
+                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Upload for: {req.refNumber} — {req.documentName}
+                            </span>
+                            <Button variant="ghost" size="sm" onClick={handleCancelUpload} className="h-6 text-xs">
+                              Done
+                            </Button>
+                          </div>
+
+                          <div>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.csv,.tsv,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.webp,.numbers,.pages,.key,.odt,.ods,.odp,.rtf"
+                              onChange={handleFileSelect}
+                              className="hidden"
+                            />
+                            {selectedFile ? (
+                              <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-blue-500" />
+                                  <div>
+                                    <span className="text-sm font-medium">{selectedFile.name}</span>
+                                    <span className="text-xs text-gray-500 ml-2">{formatFileSize(selectedFile.size)}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                  className="h-6 text-xs"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full border-dashed"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Select file to upload
+                              </Button>
+                            )}
+                          </div>
+
+                          <Textarea
+                            value={submissionNotes}
+                            onChange={(e) => setSubmissionNotes(e.target.value)}
+                            placeholder="Optional notes about this document..."
+                            rows={2}
+                            className="text-sm"
+                          />
+
+                          <Button
+                            onClick={handleUploadSubmit}
+                            disabled={!selectedFile || isUploading}
+                            size="sm"
+                            className="w-full"
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4 mr-2" />
+                                Submit Document
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-sm h-8"
+                          onClick={() => handleStartUpload(req.id)}
+                        >
+                          <Upload className="h-4 w-4 mr-1" />
+                          Add document
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {req.buyerReviewStatus !== 'satisfied' && allDocs.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      {req.sellerMarkedComplete ? (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-sm">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Marked as complete
+                          </Badge>
+                          <button
+                            onClick={() => handleUnmarkComplete(req.id)}
+                            className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                          >
+                            Undo
+                          </button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-sm h-8 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                          onClick={() => handleMarkComplete(req.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark as complete
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <DocumentViewer
+          document={viewingDocument}
+          isOpen={showViewer}
+          onClose={() => { setShowViewer(false); setViewingDocument(null); }}
+          onDownload={(docId, filename) => {
+            window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
+          }}
+          publicFileBaseUrl="/api/v2/public/documents"
+          hideAnalysis={true}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Card className="mb-6">
@@ -337,7 +635,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold">{totalRequirements}</div>
-              <div className="text-sm text-muted-foreground">Total Requirements</div>
+              <div className="text-sm text-muted-foreground">Total</div>
             </Card>
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">{verifiedCount}</div>
@@ -361,61 +659,61 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
               <span className="font-medium text-gray-900 dark:text-gray-100">{progressPercent}%</span>
             </div>
             <Progress value={progressPercent} className="h-3" />
-
-            <div className="flex gap-4 text-sm text-gray-500 dark:text-gray-400 mt-2">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
-                <span className="text-green-600 dark:text-green-400">{verifiedCount} verified</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
-                <span className="text-blue-600 dark:text-blue-400">{pendingReviewCount} pending review</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-gray-400 inline-block" />
-                <span className="text-gray-600 dark:text-gray-400">{inProgressCount} in progress</span>
-              </span>
-            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="border rounded-lg overflow-hidden dark:border-gray-700">
-            <div className="bg-gray-50 dark:bg-gray-800 py-2 px-3 border-b dark:border-gray-700">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Category Overview</span>
-            </div>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Categories</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y dark:divide-gray-800">
             {categories.map((cat) => {
               const catVerified = cat.requirements.filter(r => r.buyerReviewStatus === 'satisfied').length;
-              const allVerified = catVerified === cat.totalCount;
+              const allVerified = catVerified === cat.totalCount && cat.totalCount > 0;
               const hasMoreNeeded = cat.requirements.some(r => r.buyerReviewStatus === 'more_needed');
+              const hasPendingReview = cat.requirements.some(r => r.sellerMarkedComplete && r.buyerReviewStatus !== 'satisfied' && r.buyerReviewStatus !== 'more_needed');
               const catProgress = cat.totalCount > 0 ? Math.round((catVerified / cat.totalCount) * 100) : 0;
               const rowBg = allVerified
-                ? 'bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-950/50'
+                ? 'bg-green-50/50 dark:bg-green-950/20'
                 : hasMoreNeeded
-                  ? 'bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800';
+                  ? 'bg-amber-50/50 dark:bg-amber-950/20'
+                  : '';
+
               return (
                 <button
                   key={cat.id}
-                  className={`w-full flex items-center py-2 px-3 border-b last:border-b-0 dark:border-gray-700 cursor-pointer transition-colors ${rowBg}`}
-                  onClick={() => {
-                    setActiveTab(String(cat.id));
-                    document.getElementById('dd-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
+                  className={`w-full flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors text-left ${rowBg}`}
+                  onClick={() => setSelectedCategoryId(cat.id)}
                 >
-                  <div className="flex-1 text-left text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    {allVerified && <span className="h-2 w-2 rounded-full bg-green-500 inline-block flex-shrink-0" />}
-                    {!allVerified && hasMoreNeeded && <span className="h-2 w-2 rounded-full bg-amber-500 inline-block flex-shrink-0" />}
-                    {!allVerified && !hasMoreNeeded && <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600 inline-block flex-shrink-0" />}
-                    {cat.categoryName}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{cat.categoryName}</span>
+                      {allVerified && (
+                        <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                      )}
+                      {hasMoreNeeded && (
+                        <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 shrink-0">
+                          <AlertCircle className="h-3 w-3 mr-0.5" /> Action needed
+                        </Badge>
+                      )}
+                      {!hasMoreNeeded && hasPendingReview && (
+                        <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 shrink-0">
+                          <Eye className="h-3 w-3 mr-0.5" /> To review
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">{catVerified}/{cat.totalCount}</span>
-                    <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="w-24 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-green-500 rounded-full transition-all"
+                        className={`h-full rounded-full transition-all ${allVerified ? 'bg-green-500' : 'bg-blue-500'}`}
                         style={{ width: `${catProgress}%` }}
                       />
                     </div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-10 text-right">{catProgress}%</span>
+                    <span className="text-sm text-muted-foreground w-12 text-right">{catVerified}/{cat.totalCount}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </button>
               );
@@ -423,283 +721,6 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
           </div>
         </CardContent>
       </Card>
-
-      <div id="dd-tabs-section">
-        <Tabs value={activeTab || String(categories[0]?.id || '')} onValueChange={setActiveTab}>
-          <TabsList className="w-full h-auto flex flex-wrap gap-1 bg-transparent p-1">
-            {categories.map(cat => {
-              const catVerified = cat.requirements.filter(r => r.buyerReviewStatus === 'satisfied').length;
-              const allVerified = catVerified === cat.totalCount;
-              const hasMoreNeeded = cat.requirements.some(r => r.buyerReviewStatus === 'more_needed');
-              return (
-                <TabsTrigger key={cat.id} value={String(cat.id)} className="flex items-center gap-1.5 text-sm px-3 py-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm rounded-md border border-transparent data-[state=active]:border-gray-200 dark:data-[state=active]:border-gray-700">
-                  {allVerified && <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />}
-                  {!allVerified && hasMoreNeeded && <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />}
-                  {cat.categoryName}
-                  <Badge variant="secondary" className="text-xs ml-1">{catVerified}/{cat.totalCount}</Badge>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-          {categories.map(cat => {
-            const catVerified = cat.requirements.filter(r => r.buyerReviewStatus === 'satisfied').length;
-            const catProgress = cat.totalCount > 0 ? Math.round((catVerified / cat.totalCount) * 100) : 0;
-            return (
-              <TabsContent key={cat.id} value={String(cat.id)}>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold">{cat.categoryName}</CardTitle>
-                      <Badge variant={catVerified === cat.totalCount ? 'default' : 'outline'} className="text-sm">
-                        {catVerified} / {cat.totalCount}
-                      </Badge>
-                    </div>
-                    <Progress value={catProgress} className="h-1.5 mt-2" />
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {cat.requirements.map(req => {
-                      const displayStatus = getDisplayStatus(req);
-                      const tintClass = getRequirementTint(req);
-                      const buyerDocs = (req.linkedDocuments || []).filter(d => d.source === 'buyer_linked');
-                      const sellerDocs = (req.linkedDocuments || []).filter(d => d.source === 'seller_uploaded');
-                      const allDocs = req.linkedDocuments || [];
-
-                      return (
-                        <div key={req.id} className={`rounded-lg border p-4 mb-3 ${tintClass}`}>
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-mono text-muted-foreground">{req.refNumber}</span>
-                                <span className="text-sm font-medium">{req.documentName}</span>
-                                {priorityBadge(req.priority)}
-                              </div>
-                              {req.description && <p className="text-sm text-muted-foreground mt-1">{req.description}</p>}
-                            </div>
-                            <Badge className={`text-sm px-3 py-1 flex items-center gap-1.5 shrink-0 ${displayStatus.color}`}>
-                              {displayStatus.icon}
-                              {displayStatus.label}
-                            </Badge>
-                          </div>
-
-                          {req.buyerReviewStatus === 'more_needed' && (
-                            <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
-                              <div className="flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Additional documents requested</p>
-                                  {req.buyerReviewNotes && (
-                                    <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">{req.buyerReviewNotes}</p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {req.buyerReviewStatus === 'satisfied' && (
-                            <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              <span className="text-sm text-green-700 dark:text-green-300 font-medium">Verified by buyer</span>
-                            </div>
-                          )}
-
-                          {allDocs.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                              {buyerDocs.length > 0 && (
-                                <div>
-                                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-1">
-                                    <FileText className="h-4 w-4" /> Already held
-                                  </p>
-                                  {buyerDocs.map(doc => (
-                                    <div key={doc.id} className="flex items-center gap-2 ml-4 py-2">
-                                      <Paperclip className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                                      <button
-                                        onClick={() => handleViewDocument(doc)}
-                                        className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 hover:underline cursor-pointer"
-                                      >
-                                        {doc.filename}
-                                      </button>
-                                      {doc.fileSize && <span className="text-sm text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
-                                      <button
-                                        onClick={() => handleViewDocument(doc)}
-                                        className="text-gray-400 hover:text-blue-600 flex-shrink-0"
-                                        title="View document"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {sellerDocs.length > 0 && (
-                                <div>
-                                  <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1 flex items-center gap-1">
-                                    <Upload className="h-4 w-4" /> Your uploads
-                                  </p>
-                                  {sellerDocs.map(doc => (
-                                    <div key={doc.id} className="flex items-center gap-2 ml-4 py-2">
-                                      <FileText className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                      <button
-                                        onClick={() => handleViewDocument(doc)}
-                                        className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 hover:underline cursor-pointer"
-                                      >
-                                        {doc.filename}
-                                      </button>
-                                      {doc.fileSize && <span className="text-sm text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
-                                      <button
-                                        onClick={() => handleViewDocument(doc)}
-                                        className="text-gray-400 hover:text-blue-600 flex-shrink-0"
-                                        title="View document"
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </button>
-                                      {req.buyerReviewStatus !== 'satisfied' && (
-                                        <button
-                                          onClick={() => handleRemoveDocument(req.id, doc.id)}
-                                          className="text-gray-400 hover:text-red-500 flex-shrink-0"
-                                          title="Remove"
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {req.buyerReviewStatus !== 'satisfied' && (
-                            <div className="mt-3">
-                              {uploadingRequirementId === req.id ? (
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                      Upload for: {req.refNumber} — {req.documentName}
-                                    </span>
-                                    <Button variant="ghost" size="sm" onClick={handleCancelUpload} className="h-6 text-xs">
-                                      Done
-                                    </Button>
-                                  </div>
-
-                                  <div>
-                                    <input
-                                      ref={fileInputRef}
-                                      type="file"
-                                      accept=".pdf,.doc,.docx,.xls,.xlsx,.xlsm,.csv,.tsv,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.tif,.webp,.numbers,.pages,.key,.odt,.ods,.odp,.rtf"
-                                      onChange={handleFileSelect}
-                                      className="hidden"
-                                    />
-                                    {selectedFile ? (
-                                      <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border">
-                                        <div className="flex items-center gap-2">
-                                          <FileText className="h-4 w-4 text-blue-500" />
-                                          <div>
-                                            <span className="text-sm font-medium">{selectedFile.name}</span>
-                                            <span className="text-xs text-gray-500 ml-2">{formatFileSize(selectedFile.size)}</span>
-                                          </div>
-                                        </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                          className="h-6 text-xs"
-                                        >
-                                          Remove
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="w-full border-dashed"
-                                      >
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Select file to upload
-                                      </Button>
-                                    )}
-                                  </div>
-
-                                  <Textarea
-                                    value={submissionNotes}
-                                    onChange={(e) => setSubmissionNotes(e.target.value)}
-                                    placeholder="Optional notes about this document..."
-                                    rows={2}
-                                    className="text-sm"
-                                  />
-
-                                  <Button
-                                    onClick={handleUploadSubmit}
-                                    disabled={!selectedFile || isUploading}
-                                    size="sm"
-                                    className="w-full"
-                                  >
-                                    {isUploading ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        Uploading...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Submit Document
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-sm h-8"
-                                  onClick={() => handleStartUpload(req.id)}
-                                >
-                                  <Upload className="h-4 w-4 mr-1" />
-                                  Add document
-                                </Button>
-                              )}
-                            </div>
-                          )}
-
-                          {req.buyerReviewStatus !== 'satisfied' && allDocs.length > 0 && (
-                            <div className="mt-3 pt-3 border-t">
-                              {req.sellerMarkedComplete ? (
-                                <div className="flex items-center gap-2">
-                                  <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-sm">
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Marked as complete
-                                  </Badge>
-                                  <button
-                                    onClick={() => handleUnmarkComplete(req.id)}
-                                    className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
-                                  >
-                                    Undo
-                                  </button>
-                                </div>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-sm h-8 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950"
-                                  onClick={() => handleMarkComplete(req.id)}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Mark as complete
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      </div>
 
       <DocumentViewer
         document={viewingDocument}

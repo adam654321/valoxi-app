@@ -10,8 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
+import { FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock, ArrowLeft, ChevronRight } from "lucide-react";
 import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentViewer } from '@/components/document-viewer';
@@ -568,7 +567,7 @@ function RequirementRow({
   );
 }
 
-function CategoryCard({
+function CategoryDetail({
   item,
   targetCompanyId,
   companyDocuments,
@@ -613,25 +612,13 @@ function CategoryCard({
     return br === 'satisfied' || (r.status?.status || "not_submitted") === "approved";
   }).length;
 
-  const toReviewCount = activeReqs.filter(r => {
-    return r.status?.sellerMarkedComplete && (r.status?.buyerReviewStatus || 'not_reviewed') === 'not_reviewed';
-  }).length;
-
   const catProgress = activeTotal > 0 ? Math.round((verifiedCount / activeTotal) * 100) : 0;
 
   return (
-    <Card className="mb-4">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-base font-semibold">{item.category.categoryName}</CardTitle>
-            {toReviewCount > 0 && (
-              <Badge className="text-sm px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
-                <Eye className="h-3.5 w-3.5 mr-1" />
-                {toReviewCount} to review
-              </Badge>
-            )}
-          </div>
+          <CardTitle className="text-base font-semibold">{item.category.categoryName}</CardTitle>
           <Badge
             variant={verifiedCount === activeTotal ? 'default' : 'outline'}
             className="text-sm"
@@ -639,7 +626,10 @@ function CategoryCard({
             {verifiedCount} / {activeTotal}
           </Badge>
         </div>
-        <Progress value={catProgress} className="h-1.5 mt-2" />
+        <div className="flex items-center gap-3 mt-2">
+          <Progress value={catProgress} className="h-2 flex-1" />
+          <span className="text-sm text-muted-foreground shrink-0">{catProgress}%</span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {item.requirements.map((req) => (
@@ -708,7 +698,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const categories = statusQuery.data || [];
 
   const [ddFilter, setDdFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   const handleUploadAndLink = async (requirementId: number, file: File, docName: string) => {
     const formData = new FormData();
@@ -918,9 +908,142 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     );
   }
 
+  const selectedCategory = selectedCategoryId !== null
+    ? filteredCategories.find(c => c.category.id === selectedCategoryId)
+    : null;
+
+  if (selectedCategory) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-sm gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setSelectedCategoryId(null)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to overview
+          </Button>
+        </div>
+
+        <CategoryDetail
+          item={selectedCategory}
+          targetCompanyId={targetCompanyId}
+          companyDocuments={companyDocuments}
+          linkedDocMap={linkedDocMap}
+          onUploadAndLink={handleUploadAndLink}
+          onBuyerReview={handleBuyerReview}
+          onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
+          onViewDocument={handleViewDocument}
+        />
+
+        <Dialog open={rejectingRequirementId !== null} onOpenChange={(open) => {
+          if (!open) { setRejectingRequirementId(null); setRejectionReason(''); }
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Reject Document</DialogTitle>
+              <DialogDescription>
+                Please provide a reason for rejection. This will be shared with the seller so they can upload a corrected document.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Reason for rejection..."
+                className="min-h-[80px]"
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setRejectingRequirementId(null); setRejectionReason(''); }}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={!rejectionReason.trim() || rejecting}
+                  onClick={async () => {
+                    setRejecting(true);
+                    try {
+                      await apiRequest('PUT', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${rejectingRequirementId}/status`, { status: 'rejected', notes: rejectionReason.trim() });
+                      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
+                      setRejectingRequirementId(null);
+                      setRejectionReason('');
+                    } catch (err) {
+                      console.error('Reject failed:', err);
+                    } finally {
+                      setRejecting(false);
+                    }
+                  }}
+                >
+                  {rejecting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                  Reject
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={moreNeededRequirementId !== null} onOpenChange={(open) => {
+          if (!open) { setMoreNeededRequirementId(null); setMoreNeededNotes(''); }
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Request Additional Documents</DialogTitle>
+              <DialogDescription>
+                Let the seller know what additional documents are needed. They'll see this note in their portal.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Textarea
+                value={moreNeededNotes}
+                onChange={(e) => setMoreNeededNotes(e.target.value)}
+                placeholder="Please provide details about what additional documents are required..."
+                rows={3}
+                className="text-sm"
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setMoreNeededRequirementId(null); setMoreNeededNotes(''); }}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700"
+                  disabled={!moreNeededNotes.trim() || submittingMoreNeeded}
+                  onClick={async () => {
+                    setSubmittingMoreNeeded(true);
+                    await handleBuyerReview(moreNeededRequirementId!, 'more_needed', moreNeededNotes.trim());
+                    setMoreNeededRequirementId(null);
+                    setMoreNeededNotes('');
+                    setSubmittingMoreNeeded(false);
+                  }}
+                >
+                  {submittingMoreNeeded ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                  Send Request
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <DocumentViewer
+          document={viewingDocument}
+          isOpen={showViewer}
+          onClose={() => { setShowViewer(false); setViewingDocument(null); }}
+          onDownload={(docId, filename) => {
+            window.open(`/api/v2/files/${docId}/download`, '_blank');
+          }}
+          hideAnalysis={true}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <Card className="mb-6">
+      <Card className="mb-2">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -938,7 +1061,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold">{clientStats.total}</div>
-              <div className="text-sm text-muted-foreground">Total Requirements</div>
+              <div className="text-sm text-muted-foreground">Total</div>
             </Card>
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">{clientStats.verified}</div>
@@ -964,27 +1087,11 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
             <Progress value={clientStats.total > 0 ? Math.round((clientStats.verified / clientStats.total) * 100) : 0} className="h-3" />
           </div>
 
-          <div className="flex gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
-              <span className="text-green-600 dark:text-green-400">{clientStats.verified} verified</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
-              <span className="text-blue-600 dark:text-blue-400">{clientStats.toReview} pending review</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />
-              <span className="text-amber-600 dark:text-amber-400">{clientStats.moreNeeded} more needed</span>
-            </span>
-          </div>
-
           {clientStats.mandatoryOutstanding > 0 && (
             <div className="text-sm text-red-600 dark:text-red-400 font-medium">
               {clientStats.mandatoryOutstanding} mandatory requirement{clientStats.mandatoryOutstanding !== 1 ? 's' : ''} still outstanding
             </div>
           )}
-
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30">
               <div className="text-lg font-bold text-red-700 dark:text-red-400">
@@ -1005,40 +1112,6 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               <div className="text-sm text-blue-600 dark:text-blue-500">Adds Value</div>
             </div>
           </div>
-
-          {filteredCategories.length > 0 && (
-            <div className="border rounded-lg overflow-hidden">
-              <div className="px-3 py-2 bg-muted/50 border-b">
-                <span className="text-sm font-medium">Category Summary</span>
-              </div>
-              {filteredCategories.map((item) => {
-                const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
-                const verifiedCount = activeReqs.filter(r => {
-                  const br = (r.status as any)?.buyerReviewStatus || 'not_reviewed';
-                  return br === 'satisfied' || (r.status?.status || "not_submitted") === "approved";
-                }).length;
-                const allVerified = verifiedCount === activeReqs.length && activeReqs.length > 0;
-                const hasMoreNeeded = activeReqs.some(r => ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'more_needed');
-                const pct = activeReqs.length > 0 ? Math.round((verifiedCount / activeReqs.length) * 100) : 0;
-                return (
-                  <button
-                    key={item.category.id}
-                    className={`w-full flex items-center justify-between py-2 px-3 text-left hover:bg-muted/30 transition-colors border-b last:border-b-0 ${allVerified ? 'bg-green-50 dark:bg-green-950/20' : hasMoreNeeded ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}
-                    onClick={() => {
-                      setActiveTab(String(item.category.id));
-                      document.getElementById('dd-tabs-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                  >
-                    <span className="text-sm font-medium">{item.category.categoryName}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">{verifiedCount}/{activeReqs.length}</span>
-                      <span className="text-sm text-muted-foreground w-10 text-right">{pct}%</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -1057,20 +1130,19 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
         </Select>
       </div>
 
-      {filteredCategories.length === 0 ? (
-        <Card>
-          <CardContent className="p-2">
-            <div className="text-center py-8 text-muted-foreground">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Categories</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {filteredCategories.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground px-4">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">{ddFilter === 'all' ? 'No DD categories found' : 'No matching requirements'}</p>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div id="dd-tabs-section">
-          <Tabs value={activeTab || String(filteredCategories[0]?.category.id || '')} onValueChange={setActiveTab}>
-            <TabsList className="w-full h-auto flex flex-wrap gap-1 bg-transparent p-1">
-              {filteredCategories.map(item => {
+          ) : (
+            <div className="divide-y dark:divide-gray-800">
+              {filteredCategories.map((item) => {
                 const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
                 const verifiedCount = activeReqs.filter(r => {
                   const br = (r.status as any)?.buyerReviewStatus || 'not_reviewed';
@@ -1078,123 +1150,57 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                 }).length;
                 const allVerified = verifiedCount === activeReqs.length && activeReqs.length > 0;
                 const hasMoreNeeded = activeReqs.some(r => ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'more_needed');
+                const toReviewCount = activeReqs.filter(r => {
+                  return (r.status as any)?.sellerMarkedComplete && ((r.status as any)?.buyerReviewStatus || 'not_reviewed') === 'not_reviewed';
+                }).length;
+                const pct = activeReqs.length > 0 ? Math.round((verifiedCount / activeReqs.length) * 100) : 0;
+                const rowBg = allVerified
+                  ? 'bg-green-50/50 dark:bg-green-950/20'
+                  : hasMoreNeeded
+                    ? 'bg-amber-50/50 dark:bg-amber-950/20'
+                    : '';
+
                 return (
-                  <TabsTrigger key={item.category.id} value={String(item.category.id)} className="flex items-center gap-1.5 text-sm">
-                    {allVerified && <span className="h-2 w-2 rounded-full bg-green-500" />}
-                    {!allVerified && hasMoreNeeded && <span className="h-2 w-2 rounded-full bg-amber-500" />}
-                    {item.category.categoryName}
-                    <Badge variant="secondary" className="text-xs ml-1">{verifiedCount}/{activeReqs.length}</Badge>
-                  </TabsTrigger>
+                  <button
+                    key={item.category.id}
+                    className={`w-full flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors text-left ${rowBg}`}
+                    onClick={() => setSelectedCategoryId(item.category.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.category.categoryName}</span>
+                        {allVerified && (
+                          <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                        )}
+                        {hasMoreNeeded && (
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 shrink-0">
+                            <AlertCircle className="h-3 w-3 mr-0.5" /> Action needed
+                          </Badge>
+                        )}
+                        {!hasMoreNeeded && toReviewCount > 0 && (
+                          <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 shrink-0">
+                            <Eye className="h-3 w-3 mr-0.5" /> {toReviewCount} to review
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="w-24 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${allVerified ? 'bg-green-500' : 'bg-blue-500'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-12 text-right">{verifiedCount}/{activeReqs.length}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </button>
                 );
               })}
-            </TabsList>
-            {filteredCategories.map(item => (
-              <TabsContent key={item.category.id} value={String(item.category.id)}>
-                <CategoryCard
-                  item={item}
-                  targetCompanyId={targetCompanyId}
-                  companyDocuments={companyDocuments}
-                  linkedDocMap={linkedDocMap}
-                  onUploadAndLink={handleUploadAndLink}
-                  onBuyerReview={handleBuyerReview}
-                  onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
-                  onViewDocument={handleViewDocument}
-                />
-              </TabsContent>
-            ))}
-          </Tabs>
-        </div>
-      )}
-
-      <Dialog open={rejectingRequirementId !== null} onOpenChange={(open) => {
-        if (!open) { setRejectingRequirementId(null); setRejectionReason(''); }
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reject Document</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejection. This will be shared with the seller so they can upload a corrected document.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Reason for rejection..."
-              className="min-h-[80px]"
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => { setRejectingRequirementId(null); setRejectionReason(''); }}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={!rejectionReason.trim() || rejecting}
-                onClick={async () => {
-                  setRejecting(true);
-                  try {
-                    await apiRequest('PUT', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${rejectingRequirementId}/status`, { status: 'rejected', notes: rejectionReason.trim() });
-                    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
-                    queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
-                    setRejectingRequirementId(null);
-                    setRejectionReason('');
-                  } catch (err) {
-                    console.error('Reject failed:', err);
-                  } finally {
-                    setRejecting(false);
-                  }
-                }}
-              >
-                {rejecting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                Reject
-              </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={moreNeededRequirementId !== null} onOpenChange={(open) => {
-        if (!open) { setMoreNeededRequirementId(null); setMoreNeededNotes(''); }
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Request Additional Documents</DialogTitle>
-            <DialogDescription>
-              Let the seller know what additional documents are needed. They'll see this note in their portal.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Textarea
-              value={moreNeededNotes}
-              onChange={(e) => setMoreNeededNotes(e.target.value)}
-              placeholder="Please provide details about what additional documents are required..."
-              rows={3}
-              className="text-sm"
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => { setMoreNeededRequirementId(null); setMoreNeededNotes(''); }}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                className="bg-amber-600 hover:bg-amber-700"
-                disabled={!moreNeededNotes.trim() || submittingMoreNeeded}
-                onClick={async () => {
-                  setSubmittingMoreNeeded(true);
-                  await handleBuyerReview(moreNeededRequirementId!, 'more_needed', moreNeededNotes.trim());
-                  setMoreNeededRequirementId(null);
-                  setMoreNeededNotes('');
-                  setSubmittingMoreNeeded(false);
-                }}
-              >
-                {submittingMoreNeeded ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                Send Request
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </CardContent>
+      </Card>
 
       <DocumentViewer
         document={viewingDocument}
