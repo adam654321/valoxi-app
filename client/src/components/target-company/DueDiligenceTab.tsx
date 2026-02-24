@@ -377,12 +377,7 @@ function RequirementRow({
 
   const handleLinkDoc = async (docId: number) => {
     try {
-      await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId: docId }),
-      });
+      await apiRequest('POST', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents`, { documentId: docId });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
@@ -393,10 +388,7 @@ function RequirementRow({
 
   const handleUnlinkDoc = async (docLinkId: number) => {
     try {
-      await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents/${docLinkId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      await apiRequest('DELETE', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${req.id}/documents/${docLinkId}`);
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
@@ -697,12 +689,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     const docId = result?.data?.document?.id || result?.data?.id || result?.id;
     if (!docId) throw new Error('No document ID returned');
 
-    await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/documents`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: docId }),
-    });
+    await apiRequest('POST', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/documents`, { documentId: docId });
 
     queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "status"] });
     queryClient.invalidateQueries({ queryKey: ["/api/v2/due-diligence/company", targetCompanyId, "summary"] });
@@ -712,12 +699,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
 
   const handleBuyerReview = async (requirementId: number, reviewStatus: string, notes?: string) => {
     try {
-      await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/buyer-review`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewStatus, notes }),
-      });
+      await apiRequest('POST', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${requirementId}/buyer-review`, { reviewStatus, notes });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs'] });
@@ -993,12 +975,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                 onClick={async () => {
                   setRejecting(true);
                   try {
-                    await fetch(`/api/v2/due-diligence/company/${targetCompanyId}/requirement/${rejectingRequirementId}/status`, {
-                      method: 'PUT',
-                      credentials: 'include',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ status: 'rejected', notes: rejectionReason.trim() }),
-                    });
+                    await apiRequest('PUT', `/api/v2/due-diligence/company/${targetCompanyId}/requirement/${rejectingRequirementId}/status`, { status: 'rejected', notes: rejectionReason.trim() });
                     queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'status'] });
                     queryClient.invalidateQueries({ queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'summary'] });
                     setRejectingRequirementId(null);
