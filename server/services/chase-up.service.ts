@@ -4,6 +4,9 @@ import { emailRepository } from '../repositories/email.repository';
 import { emailApiService } from './email.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import type { ChaseUpSchedule, InsertChaseUpSchedule } from '@shared/schema';
+import { portalAccessTokens } from '@shared/schema';
+import { db } from '../db';
+import { eq } from 'drizzle-orm';
 
 const EMAIL_TYPES = {
   1: { type: 'gentle', label: 'Gentle Reminder', subject: 'Friendly Reminder: Document Submission' },
@@ -41,9 +44,23 @@ export class ChaseUpService {
     return schedule;
   }
 
-  async extendTimeframe(portalTokenId: number, additionalDays: number, userId: number): Promise<ChaseUpSchedule> {
+  async extendTimeframe(portalTokenId: number, additionalDays: number, userId: number): Promise<ChaseUpSchedule | { extended: true; newExpiresAt: string }> {
     const schedule = await chaseUpRepository.getScheduleByTokenId(portalTokenId);
-    if (!schedule) throw new NotFoundError('Chase-up schedule not found');
+
+    if (!schedule) {
+      const [token] = await db.select().from(portalAccessTokens).where(eq(portalAccessTokens.id, portalTokenId));
+      if (!token) throw new NotFoundError('Portal token not found');
+
+      const currentExpiry = token.expiresAt ? new Date(token.expiresAt) : new Date();
+      currentExpiry.setDate(currentExpiry.getDate() + additionalDays);
+
+      await db.update(portalAccessTokens).set({
+        expiresAt: currentExpiry,
+        submissionDeadline: currentExpiry.toISOString().split('T')[0],
+      }).where(eq(portalAccessTokens.id, portalTokenId));
+
+      return { extended: true, newExpiresAt: currentExpiry.toISOString() };
+    }
 
     const currentDeadline = new Date(schedule.submissionDeadline);
     currentDeadline.setDate(currentDeadline.getDate() + additionalDays);
