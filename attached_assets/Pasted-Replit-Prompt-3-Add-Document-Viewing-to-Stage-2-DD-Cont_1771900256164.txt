@@ -1,0 +1,126 @@
+Replit Prompt 3: Add Document Viewing to Stage 2 DD
+## Context
+
+In the Stage 2 Due Diligence document collection feature, documents that are linked (by the buyer) or uploaded (by the seller) against DD requirements cannot be viewed. Both the external portal component (`client/src/components/portal/DdCollection.tsx`) and the internal buyer component (`client/src/components/target-company/DueDiligenceTab.tsx`) only show filenames as plain text — there is no way to click through and view the actual document content.
+
+The codebase already has a `DocumentViewer` component at `client/src/components/document-viewer/DocumentViewer.tsx` that handles multi-format document viewing (PDF, images, Office documents). It is already used in the Stage 1 portal view (`enhanced-portal-display.tsx`) and in the internal document management view.
+
+## Task
+
+### 1. Portal Side — `client/src/components/portal/DdCollection.tsx`
+
+**Add document viewing capability to linked/uploaded documents in the DD requirements list.**
+
+a) **Import the DocumentViewer component:**
+```typescript
+import { DocumentViewer } from '@/components/document-viewer';
+
+b) Add state for the document viewer:
+
+const [viewingDocument, setViewingDocument] = useState<any | null>(null);
+const [showViewer, setShowViewer] = useState(false);
+
+c) Make document filenames clickable:
+
+In the "Already held" section (buyer_linked documents, around lines 390-397), and the "Your uploads" section (seller_uploaded documents, around lines 405-420), make each document filename a clickable button/link that opens the document viewer.
+
+For buyer_linked documents, the LinkedDocument has a documentId field. Use this to construct a document object that the DocumentViewer can accept. The viewer needs at minimum: { id, originalFilename, fileType, fileSize }.
+
+For seller_uploaded documents, the LinkedDocument has an externalSubmissionId field. The document was also created in the documents table when submitted, so there should be a documentId on the linked doc record as well. Use whichever ID is available.
+
+d) Add a View button or make the filename clickable:
+
+Change the filename <span> elements to clickable elements (either <button> with appropriate styling, or add a small Eye icon button next to each filename)
+On click, set the viewing document and open the viewer
+Style the filename with cursor-pointer hover:underline hover:text-blue-600 or similar to indicate it's clickable
+e) Render the DocumentViewer at the bottom of the component (before the closing </Card>):
+
+<DocumentViewer
+  document={viewingDocument}
+  isOpen={showViewer}
+  onClose={() => { setShowViewer(false); setViewingDocument(null); }}
+  onDownload={(docId, filename) => {
+    window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
+  }}
+  publicFileBaseUrl="/api/v2/public/documents"
+  hideAnalysis={true}
+/>
+
+Note: Pass hideAnalysis={true} since this is the portal view (same as we did for Stage 1).
+
+2. Internal Side — client/src/components/target-company/DueDiligenceTab.tsx
+Add document viewing capability to the RequirementRow component.
+
+a) Import the DocumentViewer component:
+
+import { DocumentViewer } from '@/components/document-viewer';
+
+b) Add viewer state to the DueDiligenceTab parent component (not RequirementRow, since the dialog should be at the top level):
+
+const [viewingDocument, setViewingDocument] = useState<any | null>(null);
+const [showViewer, setShowViewer] = useState(false);
+
+c) Pass a view handler down to RequirementRow:
+Add an onViewDocument prop to RequirementRow and CategoryAccordion:
+
+onViewDocument: (doc: LinkedDoc) => void;
+
+d) In RequirementRow, make filenames clickable:
+For both buyer_linked and seller_uploaded documents in the linked documents section (lines 439-459), add a clickable Eye icon or make the filename a button:
+
+<button
+  onClick={() => onViewDocument(doc)}
+  className="flex items-center gap-1.5 hover:text-blue-600 transition-colors group"
+>
+  <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+  <span className="text-xs truncate group-hover:underline">{doc.filename}</span>
+</button>
+
+Also add a small Eye icon button for explicit "View" action:
+
+<Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => onViewDocument(doc)}>
+  <Eye className="h-3 w-3" />
+</Button>
+
+e) In the DueDiligenceTab parent, handle the view action:
+When onViewDocument is called with a LinkedDoc, construct a document object for the viewer:
+
+const handleViewDocument = (doc: LinkedDoc) => {
+  setViewingDocument({
+    id: doc.documentId || doc.externalSubmissionId,
+    originalFilename: doc.filename,
+    fileType: doc.fileType,
+    fileSize: doc.fileSize,
+    documentCategory: 'Due Diligence',
+    uploadDate: doc.addedAt,
+    createdAt: doc.addedAt,
+  });
+  setShowViewer(true);
+};
+
+f) Render the DocumentViewer at the bottom of the DueDiligenceTab return, after the dialogs:
+
+<DocumentViewer
+  document={viewingDocument}
+  isOpen={showViewer}
+  onClose={() => { setShowViewer(false); setViewingDocument(null); }}
+  onDownload={(docId, filename) => {
+    window.open(`/api/v2/files/${docId}/download`, '_blank');
+  }}
+/>
+
+Note: Do NOT pass hideAnalysis here — the internal view should show analysis tabs.
+
+Important
+The DocumentViewer component accepts a document prop with the Document interface from client/src/components/document-viewer/types.ts. Make sure the constructed document object includes at minimum: id, originalFilename, fileType. Other fields can be null/undefined.
+For portal documents, use publicFileBaseUrl="/api/v2/public/documents" so the viewer can access files without authentication.
+For internal documents, do NOT pass publicFileBaseUrl — it will use the default authenticated endpoints.
+Do NOT change any backend code.
+Do NOT change the DocumentViewer component itself.
+Preserve all existing functionality (upload, delete, mark complete, etc.).
+Validation
+Portal view (DdCollection): Clicking a document filename in a DD requirement opens the DocumentViewer dialog showing the document content. Only the "Document" tab is visible (no Analysis/Webhook tabs).
+Internal view (DueDiligenceTab): Clicking a document filename in a DD requirement opens the DocumentViewer dialog with all tabs (Document, Analysis, Webhook JSON).
+Both buyer_linked and seller_uploaded documents are viewable in both views.
+No regressions — upload, delete, mark complete, buyer review, and all other DD functionality still works.
+No TypeScript errors.

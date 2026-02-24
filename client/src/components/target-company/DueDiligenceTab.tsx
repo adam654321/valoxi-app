@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentViewer } from '@/components/document-viewer';
 
 interface DueDiligenceTabProps {
   targetCompanyId: number;
@@ -345,6 +346,7 @@ function RequirementRow({
   onUploadAndLink,
   onBuyerReview,
   onOpenMoreNeeded,
+  onViewDocument,
 }: {
   req: DdRequirementWithStatus;
   targetCompanyId: number;
@@ -354,6 +356,7 @@ function RequirementRow({
   onUploadAndLink: (file: File, docName: string) => Promise<void>;
   onBuyerReview: (requirementId: number, reviewStatus: string, notes?: string) => Promise<void>;
   onOpenMoreNeeded: (requirementId: number) => void;
+  onViewDocument: (doc: LinkedDoc) => void;
 }) {
   const { toast } = useToast();
   const currentStatus = req.status?.status || "not_submitted";
@@ -430,9 +433,17 @@ function RequirementRow({
           <div className="mt-2 space-y-1.5">
             {buyerDocs.map(doc => (
               <div key={doc.id} className="flex items-center gap-2 ml-1">
-                <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-                <span className="text-xs truncate">{doc.filename}</span>
+                <button
+                  onClick={() => onViewDocument(doc)}
+                  className="flex items-center gap-1.5 hover:text-blue-600 transition-colors group"
+                >
+                  <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                  <span className="text-xs truncate group-hover:underline">{doc.filename}</span>
+                </button>
                 <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-blue-300 text-blue-600">Held</Badge>
+                <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => onViewDocument(doc)}>
+                  <Eye className="h-3 w-3" />
+                </Button>
                 {!isVerified && (
                   <button onClick={() => handleUnlinkDoc(doc.id)} className="text-gray-400 hover:text-red-500">
                     <X className="h-3 w-3" />
@@ -442,11 +453,19 @@ function RequirementRow({
             ))}
             {sellerDocs.map(doc => (
               <div key={doc.id} className="flex items-center gap-2 ml-1">
-                <FileText className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                <span className="text-xs truncate">{doc.filename}</span>
+                <button
+                  onClick={() => onViewDocument(doc)}
+                  className="flex items-center gap-1.5 hover:text-blue-600 transition-colors group"
+                >
+                  <FileText className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs truncate group-hover:underline">{doc.filename}</span>
+                </button>
                 <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-indigo-300 text-indigo-600">
                   <Globe className="h-2.5 w-2.5 mr-0.5" /> Portal
                 </Badge>
+                <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => onViewDocument(doc)}>
+                  <Eye className="h-3 w-3" />
+                </Button>
               </div>
             ))}
           </div>
@@ -530,6 +549,7 @@ function CategoryAccordion({
   onUploadAndLink,
   onBuyerReview,
   onOpenMoreNeeded,
+  onViewDocument,
 }: {
   item: DdCategoryWithStatus;
   targetCompanyId: number;
@@ -538,6 +558,7 @@ function CategoryAccordion({
   onUploadAndLink: (requirementId: number, file: File, docName: string) => Promise<void>;
   onBuyerReview: (requirementId: number, reviewStatus: string, notes?: string) => Promise<void>;
   onOpenMoreNeeded: (requirementId: number) => void;
+  onViewDocument: (doc: LinkedDoc) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -612,6 +633,7 @@ function CategoryAccordion({
               }}
               onBuyerReview={onBuyerReview}
               onOpenMoreNeeded={onOpenMoreNeeded}
+              onViewDocument={onViewDocument}
             />
           ))}
         </div>
@@ -727,6 +749,22 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const [moreNeededRequirementId, setMoreNeededRequirementId] = useState<number | null>(null);
   const [moreNeededNotes, setMoreNeededNotes] = useState('');
   const [submittingMoreNeeded, setSubmittingMoreNeeded] = useState(false);
+
+  const [viewingDocument, setViewingDocument] = useState<any | null>(null);
+  const [showViewer, setShowViewer] = useState(false);
+
+  const handleViewDocument = (doc: LinkedDoc) => {
+    setViewingDocument({
+      id: doc.documentId || doc.externalSubmissionId,
+      originalFilename: doc.filename,
+      fileType: doc.fileType,
+      fileSize: doc.fileSize,
+      documentCategory: 'Due Diligence',
+      uploadDate: doc.addedAt,
+      createdAt: doc.addedAt,
+    });
+    setShowViewer(true);
+  };
 
   const clientStats = useMemo(() => {
     const allReqs = categories.flatMap(c => c.requirements);
@@ -940,6 +978,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                   onUploadAndLink={handleUploadAndLink}
                   onBuyerReview={handleBuyerReview}
                   onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
+                  onViewDocument={handleViewDocument}
                 />
               ))}
             </div>
@@ -1036,6 +1075,15 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DocumentViewer
+        document={viewingDocument}
+        isOpen={showViewer}
+        onClose={() => { setShowViewer(false); setViewingDocument(null); }}
+        onDownload={(docId, filename) => {
+          window.open(`/api/v2/files/${docId}/download`, '_blank');
+        }}
+      />
     </div>
   );
 }

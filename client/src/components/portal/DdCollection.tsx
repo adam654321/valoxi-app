@@ -19,9 +19,11 @@ import {
   XCircle,
   ClipboardList,
   MinusCircle,
+  Eye,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import { DocumentViewer } from '@/components/document-viewer';
 
 interface DdCollectionProps {
   token: string;
@@ -101,6 +103,8 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submissionNotes, setSubmissionNotes] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<any | null>(null);
+  const [showViewer, setShowViewer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -390,7 +394,23 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                                 {buyerDocs.map(doc => (
                                   <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
                                     <Paperclip className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                                    <span className="text-xs text-gray-700 truncate">{doc.filename}</span>
+                                    <button
+                                      onClick={() => {
+                                        setViewingDocument({
+                                          id: doc.documentId || doc.externalSubmissionId,
+                                          originalFilename: doc.filename,
+                                          fileType: doc.fileType,
+                                          fileSize: doc.fileSize,
+                                          documentCategory: 'Due Diligence',
+                                          uploadDate: doc.addedAt,
+                                          createdAt: doc.addedAt,
+                                        });
+                                        setShowViewer(true);
+                                      }}
+                                      className="text-xs text-gray-700 truncate cursor-pointer hover:underline hover:text-blue-600 transition-colors"
+                                    >
+                                      {doc.filename}
+                                    </button>
                                     {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
                                   </div>
                                 ))}
@@ -405,7 +425,23 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                                 {sellerDocs.map(doc => (
                                   <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
                                     <FileText className="h-3 w-3 text-green-500 flex-shrink-0" />
-                                    <span className="text-xs text-gray-700 truncate">{doc.filename}</span>
+                                    <button
+                                      onClick={() => {
+                                        setViewingDocument({
+                                          id: doc.documentId || doc.externalSubmissionId,
+                                          originalFilename: doc.filename,
+                                          fileType: doc.fileType,
+                                          fileSize: doc.fileSize,
+                                          documentCategory: 'Due Diligence',
+                                          uploadDate: doc.addedAt,
+                                          createdAt: doc.addedAt,
+                                        });
+                                        setShowViewer(true);
+                                      }}
+                                      className="text-xs text-gray-700 truncate cursor-pointer hover:underline hover:text-blue-600 transition-colors"
+                                    >
+                                      {doc.filename}
+                                    </button>
                                     {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
                                     {req.buyerReviewStatus !== 'satisfied' && (
                                       <button
@@ -553,6 +589,16 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
           );
         })}
       </CardContent>
+      <DocumentViewer
+        document={viewingDocument}
+        isOpen={showViewer}
+        onClose={() => { setShowViewer(false); setViewingDocument(null); }}
+        onDownload={(docId, filename) => {
+          window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
+        }}
+        publicFileBaseUrl="/api/v2/public/documents"
+        hideAnalysis={true}
+      />
     </Card>
   );
 }
