@@ -5,21 +5,28 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 
-const router = Router();
+const publicRouter = Router();
 
-router.get('/validate/:token', asyncHandler(async (req: Request, res: Response) => {
+publicRouter.get('/validate/:token', asyncHandler(async (req: Request, res: Response) => {
   const data = await portalService.getTokenData(req.params.token, req.ip, req.get('User-Agent'));
   sendSuccess(res, data);
 }));
 
-router.get('/tokens', asyncHandler(async (req: Request, res: Response) => {
+publicRouter.get('/:token/submissions', asyncHandler(async (req: Request, res: Response) => {
+  const submissions = await portalService.getSubmissionsByToken(req.params.token);
+  sendSuccess(res, submissions);
+}));
+
+const authenticatedRouter = Router();
+
+authenticatedRouter.get('/tokens', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokens = await portalService.getTokensForCompany(userCompanyId);
   sendSuccess(res, tokens);
 }));
 
-router.post('/tokens', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/tokens', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -37,7 +44,7 @@ router.post('/tokens', asyncHandler(async (req: Request, res: Response) => {
   sendCreated(res, token);
 }));
 
-router.delete('/tokens/:id', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.delete('/tokens/:id', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
@@ -46,7 +53,7 @@ router.delete('/tokens/:id', asyncHandler(async (req: Request, res: Response) =>
   sendSuccess(res, { message: 'Portal link removed successfully. Document history has been preserved.' });
 }));
 
-router.post('/tokens/:id/reinstate', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/tokens/:id/reinstate', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
@@ -56,7 +63,7 @@ router.post('/tokens/:id/reinstate', asyncHandler(async (req: Request, res: Resp
   sendSuccess(res, { message: 'Portal link reinstated and access email sent.' });
 }));
 
-router.post('/tokens/:id/resend-email', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/tokens/:id/resend-email', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
@@ -66,12 +73,7 @@ router.post('/tokens/:id/resend-email', asyncHandler(async (req: Request, res: R
   sendSuccess(res, { message: 'Portal access email sent successfully.' });
 }));
 
-router.get('/:token/submissions', asyncHandler(async (req: Request, res: Response) => {
-  const submissions = await portalService.getSubmissionsByToken(req.params.token);
-  sendSuccess(res, submissions);
-}));
-
-router.post('/review/:submissionId', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/review/:submissionId', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   if (!userId) throw new UnauthorizedError();
   const submissionId = parseInt(req.params.submissionId);
@@ -81,7 +83,7 @@ router.post('/review/:submissionId', asyncHandler(async (req: Request, res: Resp
   sendSuccess(res, updated);
 }));
 
-router.get('/company/:companyId/tokens', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.get('/company/:companyId/tokens', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const targetCompanyId = parseInt(req.params.companyId);
@@ -90,4 +92,5 @@ router.get('/company/:companyId/tokens', asyncHandler(async (req: Request, res: 
   sendSuccess(res, { tokens });
 }));
 
-export default router;
+export { publicRouter as portalPublicRoutes };
+export default authenticatedRouter;

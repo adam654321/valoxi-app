@@ -12,7 +12,7 @@ import dashboardRoutes from './dashboard.routes';
 import teamRoutes, { publicTeamRoutes } from './team.routes';
 import assignmentsRoutes from './assignments.routes';
 import reportsRoutes from './reports.routes';
-import portalRoutes from './portal.routes';
+import portalRoutes, { portalPublicRoutes } from './portal.routes';
 import documentsFilesRoutes, { publicDocumentRoutes } from './documents-files.routes';
 import portalSubmissionsRoutes from './portal-submissions.routes';
 import documentAnalysisRoutes from './document-analysis.routes';
@@ -47,7 +47,8 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/team', isAuthenticated, validateCsrfToken, requirePermission('canManageUsers'), teamRoutes);
   app.use('/api/v2/deals', isAuthenticated, validateCsrfToken, assignmentsRoutes);
   app.use('/api/v2/reports', isAuthenticated, validateCsrfToken, requirePermission('canAccessAnalytics'), reportsRoutes);
-  app.use('/api/v2/portal', portalLimiter, portalRoutes);
+  app.use('/api/v2/portal', portalLimiter, portalPublicRoutes);
+  app.use('/api/v2/portal', isAuthenticated, validateCsrfToken, portalRoutes);
   app.use('/api/v2/files', isAuthenticated, validateCsrfToken, documentsFilesRoutes);
   app.use('/api/v2/public/documents', publicDocumentRoutes);
   app.use('/api/v2/portal-submit', portalLimiter, portalSubmissionsRoutes);
