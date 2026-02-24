@@ -385,6 +385,114 @@ export default function ViabilitySection({ modelId, model, calculations, funding
           </div>
         )}
 
+        {hasDebtService && calculations && calculations.averageAdjustedEbitda > 0 && (() => {
+          const debtBurdenPct = (calculations.totalAnnualDebtService / calculations.averageAdjustedEbitda) * 100;
+          const residualCash = calculations.averageAdjustedEbitda - calculations.totalAnnualDebtService;
+          
+          let burdenColor: string;
+          let burdenBg: string;
+          let burdenBorder: string;
+          let burdenLabel: string;
+          let burdenDescription: string;
+          
+          if (debtBurdenPct <= 40) {
+            burdenColor = 'text-green-700';
+            burdenBg = 'bg-green-50';
+            burdenBorder = 'border-green-200';
+            burdenLabel = 'Comfortable';
+            burdenDescription = 'Low debt burden — significant cash flow remains for operations, reinvestment, and absorbing downturns.';
+          } else if (debtBurdenPct <= 60) {
+            burdenColor = 'text-blue-700';
+            burdenBg = 'bg-blue-50';
+            burdenBorder = 'border-blue-200';
+            burdenLabel = 'Moderate';
+            burdenDescription = 'Manageable debt burden — adequate cash flow for operations but limited room for unexpected costs or revenue dips.';
+          } else if (debtBurdenPct <= 80) {
+            burdenColor = 'text-amber-700';
+            burdenBg = 'bg-amber-50';
+            burdenBorder = 'border-amber-200';
+            burdenLabel = 'Heavy';
+            burdenDescription = 'High debt burden — most cash flow consumed by debt servicing. Minimal headroom for operational issues or investment.';
+          } else {
+            burdenColor = 'text-red-700';
+            burdenBg = 'bg-red-50';
+            burdenBorder = 'border-red-200';
+            burdenLabel = 'Unsustainable';
+            burdenDescription = debtBurdenPct >= 100 
+              ? 'Debt service exceeds EBITDA — the business cannot cover repayments from operating cash flow.'
+              : 'Near-total EBITDA consumed by debt — virtually no cash remains for operations.';
+          }
+
+          return (
+            <div className={`rounded-lg border p-4 mt-4 ${burdenBorder} ${burdenBg}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  EBITDA Debt Burden
+                </h4>
+                <Badge variant="outline" className={`${burdenColor} ${burdenBorder}`}>
+                  {burdenLabel}
+                </Badge>
+              </div>
+              
+              <div className="flex items-baseline gap-3 mb-3">
+                <span className={`text-2xl font-bold ${burdenColor}`}>
+                  {debtBurdenPct.toFixed(1)}%
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  of EBITDA used for debt service
+                </span>
+              </div>
+
+              <div className="mb-3">
+                <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
+                  <div className="absolute inset-y-0 left-0 flex w-full">
+                    <div className="bg-green-400 h-full" style={{ width: '40%' }} />
+                    <div className="bg-blue-400 h-full" style={{ width: '20%' }} />
+                    <div className="bg-amber-400 h-full" style={{ width: '20%' }} />
+                    <div className="bg-red-400 h-full" style={{ width: '20%' }} />
+                  </div>
+                  <div
+                    className="absolute top-[-2px] bottom-[-2px] w-1 bg-slate-900 rounded-full shadow-sm"
+                    style={{ left: `${Math.min(debtBurdenPct, 100)}%` }}
+                  />
+                </div>
+                <div className="relative flex text-[10px] text-muted-foreground mt-0.5" style={{ height: '14px' }}>
+                  <span className="absolute text-green-600 font-medium" style={{ left: '0%' }}>0%</span>
+                  <span className="absolute text-green-600 font-medium" style={{ left: '40%', transform: 'translateX(-50%)' }}>40%</span>
+                  <span className="absolute text-blue-600 font-medium" style={{ left: '60%', transform: 'translateX(-50%)' }}>60%</span>
+                  <span className="absolute text-amber-600 font-medium" style={{ left: '80%', transform: 'translateX(-50%)' }}>80%</span>
+                  <span className="absolute text-red-600 font-medium" style={{ right: '0%' }}>100%</span>
+                </div>
+              </div>
+
+              <div className="bg-white/60 rounded border p-3 mb-3">
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Adjusted EBITDA</p>
+                    <p className="font-semibold tabular-nums">{formatCurrency(calculations.averageAdjustedEbitda)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Annual Debt Service</p>
+                    <p className="font-semibold tabular-nums text-red-700">−{formatCurrency(calculations.totalAnnualDebtService)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Residual Cash Flow</p>
+                    <p className={`font-semibold tabular-nums ${residualCash >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {formatCurrency(residualCash)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Monthly residual: {formatCurrency(residualCash / 12)} available for operations, reinvestment, and contingency.
+                </p>
+              </div>
+
+              <p className="text-sm text-muted-foreground">{burdenDescription}</p>
+            </div>
+          );
+        })()}
+
         {hasDebtService && (
           <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
             <div className="flex items-start gap-2 mb-2">
