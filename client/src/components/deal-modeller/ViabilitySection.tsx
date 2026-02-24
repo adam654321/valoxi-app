@@ -47,23 +47,31 @@ const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: str
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
     icon: ShieldCheck,
-    description: 'Excellent debt serviceability. The business comfortably covers all debt repayments with significant headroom.',
+    description: 'Excellent debt serviceability. Lenders compete for this deal — strong covenant headroom even in a downturn.',
   },
-  adequate: {
-    label: 'Adequate',
+  fundable: {
+    label: 'Fundable',
     color: 'text-blue-700',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
     icon: CheckCircle,
-    description: 'Acceptable debt serviceability. The business can cover debt repayments with reasonable headroom.',
+    description: 'Meets standard lending thresholds. Most cash flow lenders are comfortable at this level with reasonable headroom for fluctuations.',
   },
-  tight: {
-    label: 'Tight',
+  challenging: {
+    label: 'Challenging',
     color: 'text-amber-700',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
     icon: AlertTriangle,
-    description: 'Marginal debt serviceability. The business can cover debt repayments but with limited headroom. Any downturn could be problematic.',
+    description: 'Below the 1.5x threshold most mainstream lenders require. Specialist or alternative lenders may consider, but expect tighter covenants and higher rates.',
+  },
+  critical: {
+    label: 'Critical',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
+    icon: AlertTriangle,
+    description: 'Technically covers debt service but with virtually no headroom. One bad month risks default. Very few lenders will fund at this level.',
   },
   unfundable: {
     label: 'Unfundable',
@@ -71,7 +79,7 @@ const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: str
     bgColor: 'bg-red-50',
     borderColor: 'border-red-200',
     icon: XCircle,
-    description: 'Insufficient cash flow to cover debt repayments. The deal structure needs to be revised.',
+    description: 'Cash flow does not cover debt repayments. The deal structure must be revised — reduce debt, extend terms, or increase equity.',
   },
   no_debt: {
     label: 'No Debt Service',
@@ -222,13 +230,15 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     }
 
     if (calculations.paymentCoverRating === 'unfundable') {
-      issues.push('Debt service exceeds available cash flow');
-    } else if (calculations.paymentCoverRating === 'tight') {
-      issues.push('Debt service coverage is tight with limited headroom');
+      issues.push('Debt service exceeds available cash flow — deal structure must be revised');
+    } else if (calculations.paymentCoverRating === 'critical') {
+      issues.push('Debt service coverage is critical with virtually no headroom — very few lenders will fund at this level');
+    } else if (calculations.paymentCoverRating === 'challenging') {
+      issues.push('Below the 1.5x threshold most lenders require — specialist lenders may consider but expect tighter terms');
+    } else if (calculations.paymentCoverRating === 'fundable') {
+      positives.push('Meets standard lending thresholds with reasonable headroom');
     } else if (calculations.paymentCoverRating === 'strong') {
-      positives.push('Strong debt service coverage');
-    } else if (calculations.paymentCoverRating === 'adequate') {
-      positives.push('Adequate debt service coverage');
+      positives.push('Strong debt service coverage — excellent covenant headroom');
     }
 
     if (calculations.totalFees > calculations.offerPrice * 0.15) {
@@ -290,19 +300,21 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               )}
 
               <div className="mb-3">
-                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span>0x</span>
-                  <span>1.0x</span>
-                  <span>1.4x</span>
-                  <span>1.8x</span>
-                  <span>4x+</span>
+                <div className="flex text-xs text-muted-foreground mb-1" style={{ paddingLeft: '0%' }}>
+                  <span style={{ width: '16.67%' }}>0x</span>
+                  <span style={{ width: '16.67%', textAlign: 'center' }}>1.0x</span>
+                  <span style={{ width: '16.67%', textAlign: 'center' }}>1.25x</span>
+                  <span style={{ width: '16.67%', textAlign: 'center' }}>1.5x</span>
+                  <span style={{ width: '16.67%', textAlign: 'center' }}>2.0x</span>
+                  <span style={{ width: '16.67%', textAlign: 'right' }}>4x+</span>
                 </div>
                 <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
                   <div className="absolute inset-y-0 left-0 flex w-full">
-                    <div className="bg-red-400 h-full" style={{ width: '25%' }} />
-                    <div className="bg-amber-400 h-full" style={{ width: '10%' }} />
-                    <div className="bg-blue-400 h-full" style={{ width: '10%' }} />
-                    <div className="bg-green-400 h-full" style={{ width: '55%' }} />
+                    <div className="bg-red-500 h-full" style={{ width: '25%' }} />
+                    <div className="bg-orange-400 h-full" style={{ width: '6.25%' }} />
+                    <div className="bg-amber-400 h-full" style={{ width: '6.25%' }} />
+                    <div className="bg-blue-400 h-full" style={{ width: '12.5%' }} />
+                    <div className="bg-green-400 h-full" style={{ width: '50%' }} />
                   </div>
                   {calculations?.paymentCoverRatio != null && (
                     <div
@@ -311,11 +323,12 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                     />
                   )}
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-                  <span className="text-red-600">Unfundable</span>
-                  <span className="text-amber-600">Tight</span>
-                  <span className="text-blue-600">Adequate</span>
-                  <span className="text-green-600">Strong</span>
+                <div className="flex text-[10px] text-muted-foreground mt-0.5">
+                  <span className="text-red-600" style={{ width: '25%' }}>Unfundable</span>
+                  <span className="text-orange-600" style={{ width: '6.25%', textAlign: 'center', fontSize: '9px' }}>Critical</span>
+                  <span className="text-amber-600" style={{ width: '6.25%', textAlign: 'center', fontSize: '9px' }}>Challenging</span>
+                  <span className="text-blue-600" style={{ width: '12.5%', textAlign: 'center' }}>Fundable</span>
+                  <span className="text-green-600" style={{ width: '50%', textAlign: 'right' }}>Strong</span>
                 </div>
               </div>
 
@@ -368,9 +381,10 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               <h4 className="text-sm font-medium text-slate-700">Lender Context</h4>
             </div>
             <ul className="space-y-1.5 text-xs text-slate-600 ml-6">
-              <li>Most lenders require a minimum DSCR of 1.25x–1.40x for senior debt.</li>
-              <li>A DSCR above 1.8x provides comfortable headroom for covenant compliance.</li>
-              <li>DSCR below 1.0x means the business cannot service its debt from operating cash flow.</li>
+              <li><strong>1.5x is the key threshold</strong> — most mainstream cash flow lenders require a minimum DSCR of 1.5x for senior debt facilities.</li>
+              <li>Below 1.25x, even specialist lenders are reluctant. The deal needs restructuring (less debt, longer terms, or more equity).</li>
+              <li>Above 2.0x provides strong covenant headroom — the business can absorb a significant revenue downturn and still service its debt.</li>
+              <li>DSCR below 1.0x means the business cannot service its debt from operating cash flow at all.</li>
             </ul>
           </div>
         )}

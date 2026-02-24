@@ -75,7 +75,7 @@ export interface CalculationResult {
 
   totalAnnualDebtService: number;
   paymentCoverRatio: number | null;
-  paymentCoverRating: 'strong' | 'adequate' | 'tight' | 'unfundable' | 'no_debt';
+  paymentCoverRating: 'strong' | 'fundable' | 'challenging' | 'critical' | 'unfundable' | 'no_debt';
 }
 
 export function toNum(value: string | number | null | undefined): number {
@@ -266,7 +266,7 @@ export function calculatePaymentCover(
   totalAnnualDebtService: number
 ): {
   paymentCoverRatio: number | null;
-  paymentCoverRating: 'strong' | 'adequate' | 'tight' | 'unfundable' | 'no_debt';
+  paymentCoverRating: 'strong' | 'fundable' | 'challenging' | 'critical' | 'unfundable' | 'no_debt';
 } {
   if (totalAnnualDebtService <= 0) {
     return { paymentCoverRatio: null, paymentCoverRating: 'no_debt' };
@@ -274,13 +274,15 @@ export function calculatePaymentCover(
 
   const paymentCoverRatio = averageAdjustedEbitda / totalAnnualDebtService;
 
-  let paymentCoverRating: 'strong' | 'adequate' | 'tight' | 'unfundable';
-  if (paymentCoverRatio > 1.8) {
+  let paymentCoverRating: 'strong' | 'fundable' | 'challenging' | 'critical' | 'unfundable';
+  if (paymentCoverRatio >= 2.0) {
     paymentCoverRating = 'strong';
-  } else if (paymentCoverRatio >= 1.4) {
-    paymentCoverRating = 'adequate';
+  } else if (paymentCoverRatio >= 1.5) {
+    paymentCoverRating = 'fundable';
+  } else if (paymentCoverRatio >= 1.25) {
+    paymentCoverRating = 'challenging';
   } else if (paymentCoverRatio >= 1.0) {
-    paymentCoverRating = 'tight';
+    paymentCoverRating = 'critical';
   } else {
     paymentCoverRating = 'unfundable';
   }
