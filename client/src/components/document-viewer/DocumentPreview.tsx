@@ -18,15 +18,33 @@ interface DocumentPreviewProps {
 export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: DocumentPreviewProps) {
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
+  const [officeViewerAttempted, setOfficeViewerAttempted] = useState(false);
 
   const isPDF = document.fileType === 'application/pdf';
   const isImage = document.fileType.startsWith('image/');
   const isText = document.fileType === 'text/plain';
-  const isViewable = isPDF || isImage || isText;
+  const officeTypes = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ];
+  const isOffice = officeTypes.includes(document.fileType);
+  const isViewable = isPDF || isImage || isText || isOffice;
 
   const viewerUrl = publicFileBaseUrl
     ? `${publicFileBaseUrl}/${document.id}/view`
     : `/api/v2/files/${document.id}/view`;
+
+  const downloadUrl = publicFileBaseUrl
+    ? `${publicFileBaseUrl}/${document.id}/download`
+    : `/api/v2/files/${document.id}/download`;
+
+  const fullDownloadUrl = downloadUrl.startsWith('http')
+    ? downloadUrl
+    : `${window.location.origin}${downloadUrl}`;
 
   const handleViewerLoad = () => {
     setViewerError(false);
@@ -174,6 +192,78 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
           onLoad={handleViewerLoad}
           onError={handleViewerError}
         />
+      </div>
+    );
+  }
+
+  if (isOffice) {
+    const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullDownloadUrl)}`;
+    const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullDownloadUrl)}&embedded=true`;
+
+    const fileExt = document.originalFilename?.split('.').pop()?.toUpperCase() || 'Office';
+
+    return (
+      <div className="h-full w-full rounded-lg overflow-hidden">
+        {!officeViewerAttempted ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <FileText className="w-16 h-16 text-blue-500 mb-4" />
+            <h3 className="text-lg font-medium mb-2">{fileExt} Document Ready</h3>
+            <p className="text-muted-foreground mb-6">
+              This document is ready to view. Choose your preferred viewing method below.
+            </p>
+            <div className="flex flex-col gap-3 w-full max-w-sm">
+              <Button onClick={() => setOfficeViewerAttempted(true)} className="w-full">
+                <Eye className="w-4 h-4 mr-2" />
+                View Document
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open(officeViewerUrl, '_blank')}
+                className="w-full"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open in New Tab
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onDownload(document.id, document.originalFilename)}
+                className="w-full"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download {fileExt}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <iframe
+            src={officeViewerUrl}
+            className="w-full h-full border-0"
+            title={document.documentName}
+            onLoad={handleViewerLoad}
+            onError={handleViewerError}
+          >
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+              <AlertCircle className="w-16 h-16 text-amber-500 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Viewer Unavailable</h3>
+              <p className="text-muted-foreground mb-4">
+                The inline viewer could not load this document.
+              </p>
+              <div className="flex gap-2">
+                <Button onClick={() => window.open(googleViewerUrl, '_blank')}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Try Google Viewer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onDownload(document.id, document.originalFilename)}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </iframe>
+        )}
       </div>
     );
   }
