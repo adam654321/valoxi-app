@@ -253,18 +253,7 @@ export default function PortalManagement() {
       customMessage?: string;
       timeframeDays?: number;
     }) => {
-      const response = await fetch('/api/v2/portal/tokens', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create portal token');
-      }
+      const response = await apiRequest('POST', '/api/v2/portal/tokens', data);
       return response.json();
     },
     onSuccess: () => {
@@ -295,13 +284,7 @@ export default function PortalManagement() {
   // Remove/expire portal token mutation
   const removePortalToken = useMutation({
     mutationFn: async (tokenId: number) => {
-      const response = await fetch(`/api/v2/portal/tokens/${tokenId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to remove portal token');
-      }
+      const response = await apiRequest('DELETE', `/api/v2/portal/tokens/${tokenId}`);
       return response.json();
     },
     onSuccess: () => {
@@ -323,14 +306,7 @@ export default function PortalManagement() {
   // Reinstate portal token mutation
   const reinstatePortalToken = useMutation({
     mutationFn: async (tokenId: number) => {
-      const response = await fetch(`/api/v2/portal/tokens/${tokenId}/reinstate`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to reinstate portal token');
-      }
+      const response = await apiRequest('POST', `/api/v2/portal/tokens/${tokenId}/reinstate`);
       return response.json();
     },
     onSuccess: () => {
@@ -352,14 +328,7 @@ export default function PortalManagement() {
   // Resend portal email mutation
   const resendPortalEmail = useMutation({
     mutationFn: async (tokenId: number) => {
-      const response = await fetch(`/api/v2/portal/tokens/${tokenId}/resend-email`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to resend portal email');
-      }
+      const response = await apiRequest('POST', `/api/v2/portal/tokens/${tokenId}/resend-email`);
       return response.json();
     },
     onSuccess: () => {
@@ -380,16 +349,7 @@ export default function PortalManagement() {
   // Extend deadline mutation
   const extendDeadline = useMutation({
     mutationFn: async ({ tokenId, additionalDays }: { tokenId: number; additionalDays: number }) => {
-      const response = await fetch(`/api/v2/chase-up/tokens/${tokenId}/extend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ additionalDays }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to extend deadline');
-      }
+      const response = await apiRequest('POST', `/api/v2/chase-up/tokens/${tokenId}/extend`, { additionalDays });
       return response.json();
     },
     onSuccess: () => {
@@ -412,16 +372,7 @@ export default function PortalManagement() {
   // Stop chase-up mutation
   const stopChaseUp = useMutation({
     mutationFn: async (tokenId: number) => {
-      const response = await fetch(`/api/v2/chase-up/tokens/${tokenId}/stop`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ reason: 'manual_stop' }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to stop chase-up');
-      }
+      const response = await apiRequest('POST', `/api/v2/chase-up/tokens/${tokenId}/stop`, { reason: 'manual_stop' });
       return response.json();
     },
     onSuccess: () => {
