@@ -93,9 +93,19 @@ const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: str
 
 function getRatioBarWidth(ratio: number | null): number {
   if (ratio === null) return 0;
-  if (ratio <= 0) return 2;
-  if (ratio >= 4) return 100;
-  return (ratio / 4) * 100;
+  if (ratio <= 0) return 1;
+  if (ratio <= 1.0) {
+    return (ratio / 1.0) * 20;
+  } else if (ratio <= 1.25) {
+    return 20 + ((ratio - 1.0) / 0.25) * 12;
+  } else if (ratio <= 1.5) {
+    return 32 + ((ratio - 1.25) / 0.25) * 13;
+  } else if (ratio <= 2.0) {
+    return 45 + ((ratio - 1.5) / 0.5) * 25;
+  } else {
+    const pct = 70 + ((Math.min(ratio, 4.0) - 2.0) / 2.0) * 30;
+    return Math.min(pct, 100);
+  }
 }
 
 export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange }: ViabilitySectionProps) {
@@ -300,21 +310,13 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               )}
 
               <div className="mb-3">
-                <div className="flex text-xs text-muted-foreground mb-1" style={{ paddingLeft: '0%' }}>
-                  <span style={{ width: '16.67%' }}>0x</span>
-                  <span style={{ width: '16.67%', textAlign: 'center' }}>1.0x</span>
-                  <span style={{ width: '16.67%', textAlign: 'center' }}>1.25x</span>
-                  <span style={{ width: '16.67%', textAlign: 'center' }}>1.5x</span>
-                  <span style={{ width: '16.67%', textAlign: 'center' }}>2.0x</span>
-                  <span style={{ width: '16.67%', textAlign: 'right' }}>4x+</span>
-                </div>
                 <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
                   <div className="absolute inset-y-0 left-0 flex w-full">
-                    <div className="bg-red-500 h-full" style={{ width: '25%' }} />
-                    <div className="bg-orange-400 h-full" style={{ width: '6.25%' }} />
-                    <div className="bg-amber-400 h-full" style={{ width: '6.25%' }} />
-                    <div className="bg-blue-400 h-full" style={{ width: '12.5%' }} />
-                    <div className="bg-green-400 h-full" style={{ width: '50%' }} />
+                    <div className="bg-red-500 h-full" style={{ width: '20%' }} />
+                    <div className="bg-orange-400 h-full" style={{ width: '12%' }} />
+                    <div className="bg-amber-400 h-full" style={{ width: '13%' }} />
+                    <div className="bg-blue-400 h-full" style={{ width: '25%' }} />
+                    <div className="bg-green-400 h-full" style={{ width: '30%' }} />
                   </div>
                   {calculations?.paymentCoverRatio != null && (
                     <div
@@ -323,12 +325,20 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                     />
                   )}
                 </div>
-                <div className="flex text-[10px] text-muted-foreground mt-0.5">
-                  <span className="text-red-600" style={{ width: '25%' }}>Unfundable</span>
-                  <span className="text-orange-600" style={{ width: '6.25%', textAlign: 'center', fontSize: '9px' }}>Critical</span>
-                  <span className="text-amber-600" style={{ width: '6.25%', textAlign: 'center', fontSize: '9px' }}>Challenging</span>
-                  <span className="text-blue-600" style={{ width: '12.5%', textAlign: 'center' }}>Fundable</span>
-                  <span className="text-green-600" style={{ width: '50%', textAlign: 'right' }}>Strong</span>
+                <div className="relative flex text-[10px] text-muted-foreground mt-1" style={{ height: '14px' }}>
+                  <span className="absolute text-red-600 font-medium" style={{ left: '0%' }}>Unfundable</span>
+                  <span className="absolute text-orange-600 font-medium" style={{ left: '20%' }}>Critical</span>
+                  <span className="absolute text-amber-600 font-medium" style={{ left: '32%' }}>Challenging</span>
+                  <span className="absolute text-blue-600 font-medium" style={{ left: '45%' }}>Fundable</span>
+                  <span className="absolute text-green-600 font-medium" style={{ right: '0%' }}>Strong</span>
+                </div>
+                <div className="relative flex text-[9px] text-muted-foreground mt-0.5" style={{ height: '12px' }}>
+                  <span className="absolute" style={{ left: '0%' }}>0x</span>
+                  <span className="absolute" style={{ left: '20%', transform: 'translateX(-50%)' }}>1.0x</span>
+                  <span className="absolute" style={{ left: '32%', transform: 'translateX(-50%)' }}>1.25x</span>
+                  <span className="absolute" style={{ left: '45%', transform: 'translateX(-50%)' }}>1.5x</span>
+                  <span className="absolute" style={{ left: '70%', transform: 'translateX(-50%)' }}>2.0x</span>
+                  <span className="absolute" style={{ right: '0%' }}>4x+</span>
                 </div>
               </div>
 
