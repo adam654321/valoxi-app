@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
+import { FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentViewer } from '@/components/document-viewer';
@@ -98,41 +98,34 @@ interface LinkedDoc {
   notes: string | null;
 }
 
-function ProgressBar({ value, max, className = "" }: { value: number; max: number; className?: string }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div className={`h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden ${className}`}>
-      <div
-        className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-300"
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
 function PriorityBadge({ priority }: { priority: string }) {
   if (priority === "Mandatory") {
-    return <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5 font-medium">Mandatory</Badge>;
+    return <Badge variant="destructive" className="text-sm">Mandatory</Badge>;
   }
   if (priority === "Advisory") {
-    return <Badge className="text-[10px] px-1.5 py-0 h-5 font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100">Advisory</Badge>;
+    return <Badge className="text-sm bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100">Advisory</Badge>;
   }
-  return <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">Adds Value</Badge>;
+  return <Badge variant="outline" className="text-sm text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">Adds Value</Badge>;
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string }> = {
-    not_submitted: { label: "Not Submitted", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
-    submitted: { label: "Submitted", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-    approved: { label: "Approved", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
-    rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
-    na: { label: "N/A", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500" },
-    satisfied: { label: "Verified", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
-    more_needed: { label: "More Needed", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-    pending_review: { label: "Pending Review", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+  const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
+    not_submitted: { label: "Not Submitted", className: "bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500", icon: <AlertCircle className="h-4 w-4 text-gray-300" /> },
+    submitted: { label: "Submitted", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", icon: <Clock className="h-4 w-4 text-amber-500" /> },
+    approved: { label: "Approved", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
+    rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300", icon: <XCircle className="h-4 w-4 text-red-500" /> },
+    na: { label: "N/A", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400", icon: <AlertCircle className="h-4 w-4 text-gray-400" /> },
+    satisfied: { label: "Verified", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
+    more_needed: { label: "More Needed", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", icon: <AlertCircle className="h-4 w-4 text-amber-500" /> },
+    pending_review: { label: "Pending Review", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", icon: <Clock className="h-4 w-4 text-blue-500" /> },
   };
   const c = config[status] || config.not_submitted;
-  return <Badge className={`text-[10px] px-1.5 py-0 h-5 font-medium hover:opacity-90 ${c.className}`}>{c.label}</Badge>;
+  return (
+    <Badge className={`text-sm px-3 py-1 flex items-center gap-1.5 shrink-0 hover:opacity-90 ${c.className}`}>
+      {c.icon}
+      {c.label}
+    </Badge>
+  );
 }
 
 function getComputedDisplayStatus(req: DdRequirementWithStatus): string {
@@ -141,6 +134,27 @@ function getComputedDisplayStatus(req: DdRequirementWithStatus): string {
   if (buyerReview === 'more_needed') return 'more_needed';
   if (req.status?.sellerMarkedComplete && buyerReview === 'not_reviewed') return 'pending_review';
   return req.status?.status || 'not_submitted';
+}
+
+function getRequirementTint(req: DdRequirementWithStatus): string {
+  const displayStatus = getComputedDisplayStatus(req);
+  switch (displayStatus) {
+    case 'satisfied':
+    case 'approved':
+      return 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900';
+    case 'more_needed':
+      return 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-900';
+    case 'pending_review':
+      return 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900';
+    case 'submitted':
+      return 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+    case 'na':
+      return 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800';
+    case 'rejected':
+      return 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900';
+    default:
+      return 'bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800';
+  }
 }
 
 function DocumentLinkPicker({
@@ -216,8 +230,8 @@ function DocumentLinkPicker({
       }
     }}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground gap-1 px-1.5">
-          <Upload className="h-3 w-3" />
+        <Button variant="outline" size="sm" className="h-8 text-sm gap-1.5">
+          <Upload className="h-4 w-4" />
           Upload / Link
         </Button>
       </PopoverTrigger>
@@ -362,6 +376,7 @@ function RequirementRow({
   const currentStatus = req.status?.status || "not_submitted";
   const displayStatus = getComputedDisplayStatus(req);
   const isVerified = displayStatus === 'satisfied';
+  const tintClass = getRequirementTint(req);
   const buyerDocs = linkedDocuments.filter(d => d.source === 'buyer_linked');
   const sellerDocs = linkedDocuments.filter(d => d.source === 'seller_uploaded');
   const hasLinkedDocs = linkedDocuments.length > 0;
@@ -401,155 +416,158 @@ function RequirementRow({
   };
 
   return (
-    <div className="flex items-start gap-3 py-2.5 px-3 border-b last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-      <span className="text-xs text-muted-foreground font-mono w-8 shrink-0 pt-0.5">{req.refNumber}</span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{req.documentName}</span>
-          <PriorityBadge priority={req.priority} />
+    <div className={`rounded-lg border p-4 mb-3 ${tintClass}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-muted-foreground font-mono">{req.refNumber}</span>
+            <span className="text-sm font-medium">{req.documentName}</span>
+            <PriorityBadge priority={req.priority} />
+          </div>
+          {req.guidance && (
+            <p className="text-sm text-muted-foreground italic mt-1 leading-relaxed">{req.guidance}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {!isVerified && !hasLinkedDocs && (
+            <Select
+              value={currentStatus}
+              onValueChange={(val) => statusMutation.mutate(val)}
+              disabled={statusMutation.isPending}
+            >
+              <SelectTrigger className="w-[130px] h-8 text-sm shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not_submitted">Not Submitted</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="na">N/A</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <StatusBadge status={displayStatus} />
         </div>
-        {req.guidance && (
-          <p className="text-xs text-muted-foreground italic mt-1 leading-relaxed">{req.guidance}</p>
-        )}
-
-        {req.status?.sellerMarkedComplete && req.status?.buyerReviewStatus !== 'satisfied' && (
-          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-blue-600" />
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Seller marked complete — review required</span>
-          </div>
-        )}
-
-        {req.status?.buyerReviewStatus === 'more_needed' && req.status?.buyerReviewNotes && (
-          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-3.5 w-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-amber-700 dark:text-amber-300">More needed: {req.status.buyerReviewNotes}</span>
-            </div>
-          </div>
-        )}
-
-        {hasLinkedDocs && (
-          <div className="mt-2 space-y-1.5">
-            {buyerDocs.map(doc => (
-              <div key={doc.id} className="flex items-center gap-2 ml-1">
-                <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-                <button
-                  onClick={() => onViewDocument(doc)}
-                  className="text-xs truncate hover:text-blue-600 hover:underline cursor-pointer"
-                >
-                  {doc.filename}
-                </button>
-                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-blue-300 text-blue-600">Held</Badge>
-                <button
-                  onClick={() => onViewDocument(doc)}
-                  className="text-gray-400 hover:text-blue-600"
-                  title="View document"
-                >
-                  <Eye className="h-3 w-3" />
-                </button>
-                {!isVerified && (
-                  <button onClick={() => handleUnlinkDoc(doc.id)} className="text-gray-400 hover:text-red-500">
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            ))}
-            {sellerDocs.map(doc => (
-              <div key={doc.id} className="flex items-center gap-2 ml-1">
-                <FileText className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                <button
-                  onClick={() => onViewDocument(doc)}
-                  className="text-xs truncate hover:text-blue-600 hover:underline cursor-pointer"
-                >
-                  {doc.filename}
-                </button>
-                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-indigo-300 text-indigo-600">
-                  <Globe className="h-2.5 w-2.5 mr-0.5" /> Portal
-                </Badge>
-                <button
-                  onClick={() => onViewDocument(doc)}
-                  className="text-gray-400 hover:text-blue-600"
-                  title="View document"
-                >
-                  <Eye className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!isVerified && (
-          <div className="mt-1.5">
-            <DocumentLinkPicker
-              targetCompanyId={targetCompanyId}
-              companyDocuments={companyDocuments}
-              linkedDocMap={linkedDocMap}
-              onSelect={handleLinkDoc}
-              onUploadAndLink={onUploadAndLink}
-            />
-          </div>
-        )}
-
-        {currentStatus === 'rejected' && req.status?.notes && (
-          <div className="mt-1 flex items-start gap-1.5">
-            <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-            <span className="text-xs text-red-600">Rejected: {req.status.notes}</span>
-          </div>
-        )}
-
-        {hasLinkedDocs && !isVerified && (
-          <div className="flex items-center gap-2 mt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 gap-1"
-              onClick={() => onBuyerReview(req.id, 'satisfied')}
-            >
-              <CheckCircle className="h-3.5 w-3.5" />
-              Mark Verified
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1"
-              onClick={() => onOpenMoreNeeded(req.id)}
-            >
-              <AlertCircle className="h-3.5 w-3.5" />
-              Request More
-            </Button>
-          </div>
-        )}
-
-        {isVerified && (
-          <div className="mt-2">
-            <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-              <CheckCircle className="h-3 w-3 mr-0.5" /> Verified
-            </Badge>
-          </div>
-        )}
       </div>
-      {!isVerified && !hasLinkedDocs && (
-        <Select
-          value={currentStatus}
-          onValueChange={(val) => statusMutation.mutate(val)}
-          disabled={statusMutation.isPending}
-        >
-          <SelectTrigger className="w-[130px] h-7 text-xs shrink-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="not_submitted">Not Submitted</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="na">N/A</SelectItem>
-          </SelectContent>
-        </Select>
+
+      {req.status?.sellerMarkedComplete && req.status?.buyerReviewStatus !== 'satisfied' && (
+        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-blue-600" />
+          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Seller marked complete — review required</span>
+        </div>
+      )}
+
+      {req.status?.buyerReviewStatus === 'more_needed' && req.status?.buyerReviewNotes && (
+        <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-amber-700 dark:text-amber-300">More needed: {req.status.buyerReviewNotes}</span>
+          </div>
+        </div>
+      )}
+
+      {hasLinkedDocs && (
+        <div className="mt-3 space-y-2">
+          {buyerDocs.map(doc => (
+            <div key={doc.id} className="flex items-center gap-2 ml-1 py-2">
+              <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              <button
+                onClick={() => onViewDocument(doc)}
+                className="text-sm truncate hover:text-blue-600 hover:underline cursor-pointer"
+              >
+                {doc.filename}
+              </button>
+              <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-blue-300 text-blue-600">Held</Badge>
+              <button
+                onClick={() => onViewDocument(doc)}
+                className="text-gray-400 hover:text-blue-600"
+                title="View document"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+              {!isVerified && (
+                <button onClick={() => handleUnlinkDoc(doc.id)} className="text-gray-400 hover:text-red-500">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          {sellerDocs.map(doc => (
+            <div key={doc.id} className="flex items-center gap-2 ml-1 py-2">
+              <FileText className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <button
+                onClick={() => onViewDocument(doc)}
+                className="text-sm truncate hover:text-blue-600 hover:underline cursor-pointer"
+              >
+                {doc.filename}
+              </button>
+              <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-indigo-300 text-indigo-600">
+                <Globe className="h-3 w-3 mr-0.5" /> Portal
+              </Badge>
+              <button
+                onClick={() => onViewDocument(doc)}
+                className="text-gray-400 hover:text-blue-600"
+                title="View document"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isVerified && (
+        <div className="mt-3">
+          <DocumentLinkPicker
+            targetCompanyId={targetCompanyId}
+            companyDocuments={companyDocuments}
+            linkedDocMap={linkedDocMap}
+            onSelect={handleLinkDoc}
+            onUploadAndLink={onUploadAndLink}
+          />
+        </div>
+      )}
+
+      {currentStatus === 'rejected' && req.status?.notes && (
+        <div className="mt-3 flex items-start gap-1.5">
+          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-red-600">Rejected: {req.status.notes}</span>
+        </div>
+      )}
+
+      {hasLinkedDocs && !isVerified && (
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 gap-1.5"
+            onClick={() => onBuyerReview(req.id, 'satisfied')}
+          >
+            <CheckCircle className="h-4 w-4" />
+            Mark Verified
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-sm text-amber-600 hover:text-amber-700 hover:bg-amber-50 gap-1.5"
+            onClick={() => onOpenMoreNeeded(req.id)}
+          >
+            <AlertCircle className="h-4 w-4" />
+            Request More
+          </Button>
+        </div>
+      )}
+
+      {isVerified && (
+        <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-700 dark:text-green-300 font-medium">Verified</span>
+        </div>
       )}
     </div>
   );
 }
 
-function CategoryAccordion({
+function CategoryCard({
   item,
   targetCompanyId,
   companyDocuments,
@@ -568,8 +586,6 @@ function CategoryAccordion({
   onOpenMoreNeeded: (requirementId: number) => void;
   onViewDocument: (doc: LinkedDoc) => void;
 }) {
-  const [open, setOpen] = useState(false);
-
   const { data: categoryDocs } = useQuery<Record<number, LinkedDoc[]>>({
     queryKey: ['/api/v2/due-diligence/company', targetCompanyId, 'category-docs', item.category.id],
     queryFn: async () => {
@@ -586,7 +602,6 @@ function CategoryAccordion({
       );
       return docsByReq;
     },
-    enabled: open,
   });
 
   const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
@@ -601,52 +616,49 @@ function CategoryAccordion({
     return r.status?.sellerMarkedComplete && (r.status?.buyerReviewStatus || 'not_reviewed') === 'not_reviewed';
   }).length;
 
-  const pct = activeTotal > 0 ? Math.round((verifiedCount / activeTotal) * 100) : 0;
+  const catProgress = activeTotal > 0 ? Math.round((verifiedCount / activeTotal) * 100) : 0;
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full">
-        <div className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
-          {open ? <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />}
-          <div className="flex-1 text-left">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">{item.category.categoryName}</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
-                {verifiedCount} of {activeTotal}
+    <Card className="mb-4">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base font-semibold">{item.category.categoryName}</CardTitle>
+            {toReviewCount > 0 && (
+              <Badge className="text-sm px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
+                <Eye className="h-3.5 w-3.5 mr-1" />
+                {toReviewCount} to review
               </Badge>
-              {toReviewCount > 0 && (
-                <Badge className="text-[10px] px-1.5 py-0 h-5 font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
-                  <Eye className="h-3 w-3 mr-0.5" />
-                  {toReviewCount} to review
-                </Badge>
-              )}
-            </div>
-            <ProgressBar value={verifiedCount} max={activeTotal} className="mt-1.5" />
+            )}
           </div>
-          <span className="text-xs text-muted-foreground shrink-0">{pct}%</span>
+          <Badge
+            variant={verifiedCount === activeTotal ? 'default' : 'outline'}
+            className="text-sm"
+          >
+            {verifiedCount} / {activeTotal}
+          </Badge>
         </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="ml-7 border-l border-gray-200 dark:border-gray-700 mt-1 mb-2">
-          {item.requirements.map((req) => (
-            <RequirementRow
-              key={req.id}
-              req={req}
-              targetCompanyId={targetCompanyId}
-              companyDocuments={companyDocuments}
-              linkedDocMap={linkedDocMap}
-              linkedDocuments={categoryDocs?.[req.id] || []}
-              onUploadAndLink={async (file, name) => {
-                await onUploadAndLink(req.id, file, name);
-              }}
-              onBuyerReview={onBuyerReview}
-              onOpenMoreNeeded={onOpenMoreNeeded}
-              onViewDocument={onViewDocument}
-            />
-          ))}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+        <Progress value={catProgress} className="h-1.5 mt-2" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {item.requirements.map((req) => (
+          <RequirementRow
+            key={req.id}
+            req={req}
+            targetCompanyId={targetCompanyId}
+            companyDocuments={companyDocuments}
+            linkedDocMap={linkedDocMap}
+            linkedDocuments={categoryDocs?.[req.id] || []}
+            onUploadAndLink={async (file, name) => {
+              await onUploadAndLink(req.id, file, name);
+            }}
+            onBuyerReview={onBuyerReview}
+            onOpenMoreNeeded={onOpenMoreNeeded}
+            onViewDocument={onViewDocument}
+          />
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -906,13 +918,13 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="mb-6">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CardTitle className="text-base">Due Diligence Progress</CardTitle>
               {clientStats.toReview > 0 && (
-                <Badge className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
+                <Badge className="text-sm px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100">
                   <Eye className="h-3.5 w-3.5 mr-1" />
                   {clientStats.toReview} pending review
                 </Badge>
@@ -928,17 +940,26 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                 {clientStats.verified} of {clientStats.total} verified
               </span>
             </div>
-            <ProgressBar value={clientStats.verified} max={clientStats.total} />
+            <Progress value={clientStats.total > 0 ? Math.round((clientStats.verified / clientStats.total) * 100) : 0} className="h-3" />
           </div>
 
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <span className="text-green-600 dark:text-green-400">{clientStats.verified} verified</span>
-            <span className="text-blue-600 dark:text-blue-400">{clientStats.toReview} pending review</span>
-            <span className="text-amber-600 dark:text-amber-400">{clientStats.moreNeeded} more needed</span>
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
+              <span className="text-green-600 dark:text-green-400">{clientStats.verified} verified</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
+              <span className="text-blue-600 dark:text-blue-400">{clientStats.toReview} pending review</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />
+              <span className="text-amber-600 dark:text-amber-400">{clientStats.moreNeeded} more needed</span>
+            </span>
           </div>
 
           {clientStats.mandatoryOutstanding > 0 && (
-            <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+            <div className="text-sm text-red-600 dark:text-red-400 font-medium">
               {clientStats.mandatoryOutstanding} mandatory requirement{clientStats.mandatoryOutstanding !== 1 ? 's' : ''} still outstanding
             </div>
           )}
@@ -947,19 +968,19 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               <div className="text-lg font-bold text-red-700 dark:text-red-400">
                 {clientStats.mandatorySubmitted}/{clientStats.mandatoryTotal}
               </div>
-              <div className="text-xs text-red-600 dark:text-red-500">Mandatory</div>
+              <div className="text-sm text-red-600 dark:text-red-500">Mandatory</div>
             </div>
             <div className="text-center p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-100 dark:border-amber-900/30">
               <div className="text-lg font-bold text-amber-700 dark:text-amber-400">
                 {clientStats.advisorySubmitted}/{clientStats.advisoryTotal}
               </div>
-              <div className="text-xs text-amber-600 dark:text-amber-500">Advisory</div>
+              <div className="text-sm text-amber-600 dark:text-amber-500">Advisory</div>
             </div>
             <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900/30">
               <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
                 {clientStats.addsValueSubmitted}/{clientStats.addsValueTotal}
               </div>
-              <div className="text-xs text-blue-600 dark:text-blue-500">Adds Value</div>
+              <div className="text-sm text-blue-600 dark:text-blue-500">Adds Value</div>
             </div>
           </div>
         </CardContent>
@@ -967,7 +988,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
 
       <div className="flex items-center justify-between">
         <Select value={ddFilter} onValueChange={setDdFilter}>
-          <SelectTrigger className="w-[200px] h-8 text-xs">
+          <SelectTrigger className="w-[200px] h-8 text-sm">
             <SelectValue placeholder="Filter requirements" />
           </SelectTrigger>
           <SelectContent>
@@ -980,32 +1001,30 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
         </Select>
       </div>
 
-      <Card>
-        <CardContent className="p-2">
-          {filteredCategories.length === 0 ? (
+      {filteredCategories.length === 0 ? (
+        <Card>
+          <CardContent className="p-2">
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">{ddFilter === 'all' ? 'No DD categories found' : 'No matching requirements'}</p>
             </div>
-          ) : (
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {filteredCategories.map((item) => (
-                <CategoryAccordion
-                  key={item.category.id}
-                  item={item}
-                  targetCompanyId={targetCompanyId}
-                  companyDocuments={companyDocuments}
-                  linkedDocMap={linkedDocMap}
-                  onUploadAndLink={handleUploadAndLink}
-                  onBuyerReview={handleBuyerReview}
-                  onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
-                  onViewDocument={handleViewDocument}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        filteredCategories.map((item) => (
+          <CategoryCard
+            key={item.category.id}
+            item={item}
+            targetCompanyId={targetCompanyId}
+            companyDocuments={companyDocuments}
+            linkedDocMap={linkedDocMap}
+            onUploadAndLink={handleUploadAndLink}
+            onBuyerReview={handleBuyerReview}
+            onOpenMoreNeeded={(reqId) => setMoreNeededRequirementId(reqId)}
+            onViewDocument={handleViewDocument}
+          />
+        ))
+      )}
 
       <Dialog open={rejectingRequirementId !== null} onOpenChange={(open) => {
         if (!open) { setRejectingRequirementId(null); setRejectionReason(''); }
