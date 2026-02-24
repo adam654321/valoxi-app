@@ -38,6 +38,7 @@ const FUNDING_TYPE_LABELS: Record<string, string> = {
   cash_equity: 'Cash Equity',
   investor_equity: 'Investor Equity',
   mezzanine: 'Mezzanine',
+  cashflow_loan: 'Cashflow Loan',
 };
 
 const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: typeof CheckCircle; description: string }> = {

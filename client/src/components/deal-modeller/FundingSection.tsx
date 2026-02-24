@@ -51,11 +51,12 @@ const FUNDING_TYPE_CONFIG: Record<string, { label: string; icon: typeof CreditCa
   cash_equity: { label: 'Cash Equity', icon: Wallet },
   investor_equity: { label: 'Investor Equity', icon: Users },
   mezzanine: { label: 'Mezzanine Finance', icon: TrendingUp },
+  cashflow_loan: { label: 'Cashflow Loan', icon: Landmark },
 };
 
 const ASSET_BACKED_TYPES = ['receivables_finance', 'asset_finance', 'property_finance'];
 
-const DEBT_DEFAULT_TYPES = ['receivables_finance', 'asset_finance', 'property_finance', 'new_senior_debt', 'mezzanine', 'seller_financing'];
+const DEBT_DEFAULT_TYPES = ['receivables_finance', 'asset_finance', 'property_finance', 'new_senior_debt', 'mezzanine', 'seller_financing', 'cashflow_loan'];
 
 function getDefaultIsDebt(fundingType: string): boolean {
   return DEBT_DEFAULT_TYPES.includes(fundingType);
