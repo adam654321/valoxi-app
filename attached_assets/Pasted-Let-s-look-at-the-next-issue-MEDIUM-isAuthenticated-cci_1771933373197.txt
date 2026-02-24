@@ -1,0 +1,23 @@
+Let's look at the next issue: "MEDIUM — [isAuthenticated](cci:1://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/middleware/auth.ts:7:0-12:1) Is Passed as `any` Type".
+
+Currently, in [server/routes/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/routes/index.ts:0:0-0:0), our main route export looks like this:
+
+\`\`\`typescript
+export function registerModularRoutes(app: Express, isAuthenticated: any, validateCsrfToken: any) {
+  // route registrations
+}
+\`\`\`
+
+**Context & The Problem:**
+Passing middleware as arguments, especially typed as `any`, bypasses TypeScript's safety mechanisms entirely. More importantly, it creates unnecessary prop-drilling from [server/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/index.ts:0:0-0:0) down to [server/routes/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/routes/index.ts:0:0-0:0). 
+
+In other files (like [auth.routes.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/routes/auth.routes.ts:0:0-0:0) or `admin.routes.ts`), we already simply import the middleware directly from `../middleware/auth`.
+
+**Proposed Idea:**
+I believe we should refactor [server/routes/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/routes/index.ts:0:0-0:0) to strictly import [isAuthenticated](cci:1://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/middleware/auth.ts:7:0-12:1) and `validateCsrfToken` directly at the top of the file, rather than passing them in as arguments to [registerModularRoutes](cci:1://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/routes/index.ts:34:0-71:1). This also means updating [server/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/index.ts:0:0-0:0) to no longer pass them into the function call.
+
+**Your Task:**
+1. Do you agree with this assessment? Is there any specific architectural reason (like mocking for tests, or breaking dependency cycles) that these were historically passed as arguments instead of being imported?
+2. If we just directly import them in [server/routes/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/routes/index.ts:0:0-0:0) and update [server/index.ts](cci:7://file:///c:/Users/AdamAuty/Downloads/MandA-Internal-Google-Brain%20%287%29/MandA-Internal-Google-Brain/server/index.ts:0:0-0:0) to only pass `app`, are there any edge cases or initialization order problems this will cause?
+
+Please perform an assessment ONLY and provide your answer. Do not write the code to fix it yet; I just want your validation on the approach first.
