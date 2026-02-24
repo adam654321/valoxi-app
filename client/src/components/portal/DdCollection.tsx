@@ -108,6 +108,30 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const handleViewDocument = (doc: LinkedDocument) => {
+    const docId = doc.documentId || doc.externalSubmissionId;
+    if (!docId) return;
+    setViewingDocument({
+      id: docId,
+      documentName: doc.filename,
+      originalFilename: doc.filename,
+      fileType: doc.fileType || 'application/octet-stream',
+      fileSize: doc.fileSize || 0,
+      documentCategory: 'Due Diligence',
+      uploadDate: doc.addedAt,
+      createdAt: doc.addedAt,
+      description: doc.notes || '',
+      isConfidential: false,
+      targetCompanyId: 0,
+      uploadedBy: 0,
+      filePath: '',
+      lastAccessed: null,
+      accessCount: 0,
+      uploadedByName: doc.source === 'buyer_linked' ? 'Buyer' : 'Portal',
+    });
+    setShowViewer(true);
+  };
+
   const { data: ddData, isLoading } = useQuery<{ data: { categories: DdCategoryData[]; summary: DdSummary } }>({
     queryKey: ['portal-dd-requirements', token],
     queryFn: async () => {
@@ -395,23 +419,19 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                                   <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
                                     <Paperclip className="h-3 w-3 text-blue-500 flex-shrink-0" />
                                     <button
-                                      onClick={() => {
-                                        setViewingDocument({
-                                          id: doc.documentId || doc.externalSubmissionId,
-                                          originalFilename: doc.filename,
-                                          fileType: doc.fileType,
-                                          fileSize: doc.fileSize,
-                                          documentCategory: 'Due Diligence',
-                                          uploadDate: doc.addedAt,
-                                          createdAt: doc.addedAt,
-                                        });
-                                        setShowViewer(true);
-                                      }}
-                                      className="text-xs text-gray-700 truncate cursor-pointer hover:underline hover:text-blue-600 transition-colors"
+                                      onClick={() => handleViewDocument(doc)}
+                                      className="text-xs text-gray-700 truncate hover:text-blue-600 hover:underline cursor-pointer"
                                     >
                                       {doc.filename}
                                     </button>
                                     {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                                    <button
+                                      onClick={() => handleViewDocument(doc)}
+                                      className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+                                      title="View document"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </button>
                                   </div>
                                 ))}
                               </div>
@@ -426,23 +446,19 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                                   <div key={doc.id} className="flex items-center gap-2 ml-4 py-1">
                                     <FileText className="h-3 w-3 text-green-500 flex-shrink-0" />
                                     <button
-                                      onClick={() => {
-                                        setViewingDocument({
-                                          id: doc.documentId || doc.externalSubmissionId,
-                                          originalFilename: doc.filename,
-                                          fileType: doc.fileType,
-                                          fileSize: doc.fileSize,
-                                          documentCategory: 'Due Diligence',
-                                          uploadDate: doc.addedAt,
-                                          createdAt: doc.addedAt,
-                                        });
-                                        setShowViewer(true);
-                                      }}
-                                      className="text-xs text-gray-700 truncate cursor-pointer hover:underline hover:text-blue-600 transition-colors"
+                                      onClick={() => handleViewDocument(doc)}
+                                      className="text-xs text-gray-700 truncate hover:text-blue-600 hover:underline cursor-pointer"
                                     >
                                       {doc.filename}
                                     </button>
                                     {doc.fileSize && <span className="text-xs text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                                    <button
+                                      onClick={() => handleViewDocument(doc)}
+                                      className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+                                      title="View document"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </button>
                                     {req.buyerReviewStatus !== 'satisfied' && (
                                       <button
                                         onClick={() => handleRemoveDocument(req.id, doc.id)}

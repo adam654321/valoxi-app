@@ -433,17 +433,21 @@ function RequirementRow({
           <div className="mt-2 space-y-1.5">
             {buyerDocs.map(doc => (
               <div key={doc.id} className="flex items-center gap-2 ml-1">
+                <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
                 <button
                   onClick={() => onViewDocument(doc)}
-                  className="flex items-center gap-1.5 hover:text-blue-600 transition-colors group"
+                  className="text-xs truncate hover:text-blue-600 hover:underline cursor-pointer"
                 >
-                  <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-                  <span className="text-xs truncate group-hover:underline">{doc.filename}</span>
+                  {doc.filename}
                 </button>
                 <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-blue-300 text-blue-600">Held</Badge>
-                <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => onViewDocument(doc)}>
+                <button
+                  onClick={() => onViewDocument(doc)}
+                  className="text-gray-400 hover:text-blue-600"
+                  title="View document"
+                >
                   <Eye className="h-3 w-3" />
-                </Button>
+                </button>
                 {!isVerified && (
                   <button onClick={() => handleUnlinkDoc(doc.id)} className="text-gray-400 hover:text-red-500">
                     <X className="h-3 w-3" />
@@ -453,19 +457,23 @@ function RequirementRow({
             ))}
             {sellerDocs.map(doc => (
               <div key={doc.id} className="flex items-center gap-2 ml-1">
+                <FileText className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
                 <button
                   onClick={() => onViewDocument(doc)}
-                  className="flex items-center gap-1.5 hover:text-blue-600 transition-colors group"
+                  className="text-xs truncate hover:text-blue-600 hover:underline cursor-pointer"
                 >
-                  <FileText className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                  <span className="text-xs truncate group-hover:underline">{doc.filename}</span>
+                  {doc.filename}
                 </button>
                 <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-indigo-300 text-indigo-600">
                   <Globe className="h-2.5 w-2.5 mr-0.5" /> Portal
                 </Badge>
-                <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => onViewDocument(doc)}>
+                <button
+                  onClick={() => onViewDocument(doc)}
+                  className="text-gray-400 hover:text-blue-600"
+                  title="View document"
+                >
                   <Eye className="h-3 w-3" />
-                </Button>
+                </button>
               </div>
             ))}
           </div>
@@ -756,14 +764,25 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const [showViewer, setShowViewer] = useState(false);
 
   const handleViewDocument = (doc: LinkedDoc) => {
+    const docId = doc.documentId || doc.externalSubmissionId;
+    if (!docId) return;
     setViewingDocument({
-      id: doc.documentId || doc.externalSubmissionId,
+      id: docId,
+      documentName: doc.filename,
       originalFilename: doc.filename,
-      fileType: doc.fileType,
-      fileSize: doc.fileSize,
+      fileType: doc.fileType || 'application/octet-stream',
+      fileSize: doc.fileSize || 0,
       documentCategory: 'Due Diligence',
       uploadDate: doc.addedAt,
       createdAt: doc.addedAt,
+      description: doc.notes || '',
+      isConfidential: false,
+      targetCompanyId: targetCompanyId,
+      uploadedBy: 0,
+      filePath: '',
+      lastAccessed: null,
+      accessCount: 0,
+      uploadedByName: doc.source === 'buyer_linked' ? 'Internal' : 'Portal',
     });
     setShowViewer(true);
   };
@@ -1085,6 +1104,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
         onDownload={(docId, filename) => {
           window.open(`/api/v2/files/${docId}/download`, '_blank');
         }}
+        hideAnalysis={true}
       />
     </div>
   );
