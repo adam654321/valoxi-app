@@ -16,7 +16,7 @@ import {
   Users
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 interface FileUploadEvent {
   id: number;
@@ -69,11 +69,7 @@ export default function FileUploadTest() {
   // Send webhook for file upload event
   const sendWebhookMutation = useMutation({
     mutationFn: async (eventId: number) => {
-      const response = await fetch(`/api/file-upload-events/${eventId}/send-webhook`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("Failed to send webhook");
+      const response = await apiRequest("POST", `/api/file-upload-events/${eventId}/send-webhook`);
       return response.json();
     },
     onSuccess: (data) => {

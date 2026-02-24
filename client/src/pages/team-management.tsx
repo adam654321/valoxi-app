@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,16 +78,7 @@ export default function TeamManagement() {
   // Mutations - using v2 endpoints
   const inviteMutation = useMutation({
     mutationFn: async (data: InviteFormValues) => {
-      const response = await fetch('/api/v2/team/invite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('POST', '/api/v2/team/invite', data);
       return response.json();
     },
     onSuccess: () => {
@@ -110,16 +101,7 @@ export default function TeamManagement() {
 
   const updateMemberMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: UpdateMemberFormValues }) => {
-      const response = await fetch(`/api/v2/team/members/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('PUT', `/api/v2/team/members/${id}`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -142,14 +124,7 @@ export default function TeamManagement() {
 
   const removeMemberMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/v2/team/members/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('DELETE', `/api/v2/team/members/${id}`);
       return response.json();
     },
     onSuccess: () => {
@@ -170,16 +145,7 @@ export default function TeamManagement() {
 
   const cancelInvitationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/v2/team/invitations/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ status: 'cancelled' }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('PUT', `/api/v2/team/invitations/${id}`, { status: 'cancelled' });
       return response.json();
     },
     onSuccess: () => {
@@ -200,16 +166,7 @@ export default function TeamManagement() {
 
   const resendInvitationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/v2/team/invitations/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ status: 'pending' }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('PUT', `/api/v2/team/invitations/${id}`, { status: 'pending' });
       return response.json();
     },
     onSuccess: () => {

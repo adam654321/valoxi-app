@@ -31,7 +31,8 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const headers: Record<string, string> = {};
-  if (data) {
+  const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+  if (data && !isFormData) {
     headers["Content-Type"] = "application/json";
   }
   if (method !== "GET" && csrfToken) {
@@ -41,7 +42,7 @@ export async function apiRequest(
   const res = await fetch(url, {
     method,
     headers,
-    body: data ? JSON.stringify(data) : undefined,
+    body: isFormData ? (data as FormData) : data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 

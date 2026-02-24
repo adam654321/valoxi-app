@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock, ArrowLeft, ChevronRight } from "lucide-react";
-import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentViewer } from '@/components/document-viewer';
 
@@ -708,19 +708,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     formData.append('description', '');
     formData.append('is_confidential', 'true');
 
-    const csrfToken = getCsrfToken();
-    const uploadRes = await fetch(`/api/v2/files/company/${targetCompanyId}/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
-      body: formData,
-    });
-
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      throw new Error(errText || 'Upload failed');
-    }
-
+    const uploadRes = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/upload`, formData);
     const result = await uploadRes.json();
     const docId = result?.data?.document?.id || result?.data?.id || result?.id;
     if (!docId) throw new Error('No document ID returned');

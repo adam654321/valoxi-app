@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Download, 
   X, 
@@ -142,11 +142,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
     });
     
     try {
-      const response = await fetch(`/api/v2/document-analysis/document/${document.id}/retry`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
+      const response = await apiRequest('POST', `/api/v2/document-analysis/document/${document.id}/retry`);
       
       if (response.ok) {
         toast({

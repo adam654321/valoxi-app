@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Copy, Send, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 interface WebhookLog {
   id: number;
@@ -44,12 +44,7 @@ export default function WebhookTest() {
   // Send test webhook
   const testWebhookMutation = useMutation({
     mutationFn: async (data: { website: string; webhookUrl?: string }) => {
-      const response = await fetch("/api/webhook/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to send test webhook");
+      const response = await apiRequest("POST", "/api/webhook/test", data);
       return response.json();
     },
     onSuccess: () => {
@@ -69,12 +64,7 @@ export default function WebhookTest() {
   // Simulate webhook response
   const simulateResponseMutation = useMutation({
     mutationFn: async (data: { targetCompanyId: number; output: string }) => {
-      const response = await fetch("/api/webhook/website-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to simulate webhook response");
+      const response = await apiRequest("POST", "/api/webhook/website-analysis", data);
       return response.json();
     },
     onSuccess: () => {

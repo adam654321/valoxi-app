@@ -104,17 +104,7 @@ export function DocumentRequirements({ targetCompanyId, companyName }: DocumentR
   // Initialize standardized requirements mutation
   const initializeRequirements = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/companies/${targetCompanyId}/requirements/initialize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to initialize requirements');
-      }
-      
+      const response = await apiRequest('POST', `/api/companies/${targetCompanyId}/requirements/initialize`);
       return response.json();
     },
     onSuccess: () => {

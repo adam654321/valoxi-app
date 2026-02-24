@@ -670,23 +670,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
       formData.append('description', data.description || '');
       formData.append('is_confidential', data.is_confidential.toString());
 
-      const { getCsrfToken } = await import('@/lib/queryClient');
-      const headers: Record<string, string> = {};
-      const token = getCsrfToken();
-      if (token) headers['x-csrf-token'] = token;
-
-      const response = await fetch(`/api/v2/files/company/${targetCompanyId}/upload`, {
-        method: 'POST',
-        headers,
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
-      }
-
+      const response = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/upload`, formData);
       return response.json();
     },
     onSuccess: (data) => {

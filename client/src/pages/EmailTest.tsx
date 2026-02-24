@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function EmailTest() {
   const [testing, setTesting] = useState(false);
@@ -14,13 +15,7 @@ export default function EmailTest() {
     setTestResult(null);
     
     try {
-      const response = await fetch('/api/email/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const response = await apiRequest('POST', '/api/email/test');
       const result = await response.json();
       setTestResult(result);
       

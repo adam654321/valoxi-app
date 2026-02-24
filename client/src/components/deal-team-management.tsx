@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -111,16 +111,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
   // Mutations
   const assignMemberMutation = useMutation({
     mutationFn: async (data: AssignMemberFormValues) => {
-      const response = await fetch(`/api/v2/deals/${targetCompanyId}/assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('POST', `/api/v2/deals/${targetCompanyId}/assign`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -143,16 +134,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async ({ userId, data }: { userId: number; data: UpdatePermissionsFormValues }) => {
-      const response = await fetch(`/api/v2/deals/${targetCompanyId}/team/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('PUT', `/api/v2/deals/${targetCompanyId}/team/${userId}`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -174,14 +156,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
 
   const removeMemberMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/v2/deals/${targetCompanyId}/assign/${userId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('DELETE', `/api/v2/deals/${targetCompanyId}/assign/${userId}`);
       return response.json();
     },
     onSuccess: () => {

@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Bell, Check, CheckCheck, Users, Building2, UserPlus, UserCheck } from "lucide-react";
 
 interface Notification {
@@ -67,14 +67,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
   // Mark single notification as read
   const markReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      const response = await fetch(`/api/v2/notifications/${notificationId}/read`, {
-        method: 'PUT',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('PUT', `/api/v2/notifications/${notificationId}/read`);
       return response.json();
     },
     onSuccess: () => {
@@ -92,14 +85,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
   // Mark all notifications as read
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/v2/notifications/mark-all-read', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
+      const response = await apiRequest('POST', '/api/v2/notifications/mark-all-read');
       return response.json();
     },
     onSuccess: (data) => {
