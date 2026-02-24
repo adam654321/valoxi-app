@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -8,7 +8,7 @@ export const generalLimiter = rateLimit({
   skipSuccessfulRequests: false,
   keyGenerator: (req) => {
     const userId = (req.session as any)?.userId;
-    return userId ? `user-${userId}` : req.ip ?? 'unknown';
+    return userId ? `user-${userId}` : ipKeyGenerator(req.ip ?? '0.0.0.0');
   },
   message: { message: 'Too many requests, please try again later.' },
 });
@@ -40,7 +40,7 @@ export const analysisTriggerLimiter = rateLimit({
   skip: (req) => req.method === 'GET',
   keyGenerator: (req) => {
     const userId = (req.session as any)?.userId;
-    return userId ? `user-${userId}` : req.ip ?? 'unknown';
+    return userId ? `user-${userId}` : ipKeyGenerator(req.ip ?? '0.0.0.0');
   },
   message: { message: 'Too many analysis requests, please try again later.' },
 });
@@ -53,7 +53,7 @@ export const uploadLimiter = rateLimit({
   skipSuccessfulRequests: false,
   keyGenerator: (req) => {
     const userId = (req.session as any)?.userId;
-    return userId ? `user-${userId}` : req.ip ?? 'unknown';
+    return userId ? `user-${userId}` : ipKeyGenerator(req.ip ?? '0.0.0.0');
   },
   message: { message: 'Too many uploads, please try again later.' },
 });

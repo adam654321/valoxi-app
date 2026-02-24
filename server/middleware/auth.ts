@@ -5,6 +5,46 @@ import { eq } from 'drizzle-orm';
 import type { UserRole } from '@shared/schema';
 import { rolesService } from '../services/roles.service';
 
+const PERMISSIONS_TTL_MS = 5 * 60 * 1000;
+
+export async function refreshSessionPermissions(req: Request): Promise<void> {
+  const userId = req.session.userId;
+  if (!userId) return;
+
+  try {
+    const [user] = await db
+      .select({ isSystemAdmin: users.isSystemAdmin })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    req.session.isSystemAdmin = user?.isSystemAdmin ?? false;
+
+    const userWithPerms = await rolesService.getUserWithPermissions(userId);
+    const perms = userWithPerms?.permissions;
+    if (perms) {
+      const permMap: Record<string, boolean | null> = {};
+      for (const [key, value] of Object.entries(perms)) {
+        if (typeof value === 'boolean' || value === null) {
+          permMap[key] = value;
+        }
+      }
+      req.session.permissions = permMap;
+    } else {
+      req.session.permissions = {};
+    }
+
+    req.session.permissionsCachedAt = Date.now();
+  } catch (error) {
+    console.error('Error refreshing session permissions:', error);
+  }
+}
+
+function isPermissionsCacheValid(req: Request): boolean {
+  const cachedAt = req.session.permissionsCachedAt;
+  if (!cachedAt) return false;
+  return (Date.now() - cachedAt) < PERMISSIONS_TTL_MS;
+}
+
 export async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -29,13 +69,11 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
 }
 
 export async function isSystemAdmin(req: Request, res: Response, next: NextFunction) {
-  if ((req as any).isSystemAdminVerified) {
-    return next();
+  if (!isPermissionsCacheValid(req)) {
+    await refreshSessionPermissions(req);
   }
 
-  const [user] = await db.select({ isSystemAdmin: users.isSystemAdmin }).from(users).where(eq(users.id, req.session.userId!));
-
-  if (!user || !user.isSystemAdmin) {
+  if (!req.session.isSystemAdmin) {
     return res.status(403).json({
       success: false,
       message: 'Access denied. System administrator privileges required.',
@@ -43,7 +81,6 @@ export async function isSystemAdmin(req: Request, res: Response, next: NextFunct
     });
   }
 
-  (req as any).isSystemAdminVerified = true;
   next();
 }
 
@@ -54,13 +91,15 @@ export function requirePermission(permission: keyof UserRole) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const [user] = await db.select({ isSystemAdmin: users.isSystemAdmin }).from(users).where(eq(users.id, userId));
-    if (user?.isSystemAdmin) {
+    if (!isPermissionsCacheValid(req)) {
+      await refreshSessionPermissions(req);
+    }
+
+    if (req.session.isSystemAdmin) {
       return next();
     }
 
-    const hasPermission = await rolesService.checkPermission(userId, permission);
-    if (hasPermission) {
+    if (req.session.permissions && req.session.permissions[permission]) {
       return next();
     }
 

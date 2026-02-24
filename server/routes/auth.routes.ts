@@ -4,9 +4,8 @@ import { authService } from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { insertUserSchema } from '@shared/schema';
-import { isAuthenticated } from '../middleware/auth';
+import { isAuthenticated, refreshSessionPermissions } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
-import { rolesService } from '../services/roles.service';
 import { passwordResetService } from '../services/password-reset.service';
 import { authLimiter } from '../middleware/rate-limit';
 
@@ -39,6 +38,7 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
 
   req.session.userId = result.user.id;
   req.session.userCompanyId = result.company?.id;
+  await refreshSessionPermissions(req);
 
   sendCreated(res, {
     message: 'User created successfully',
@@ -54,6 +54,7 @@ router.post('/login', authLimiter, asyncHandler(async (req: Request, res: Respon
 
   req.session.userId = result.user.id;
   req.session.userCompanyId = result.company?.id;
+  await refreshSessionPermissions(req);
 
   sendSuccess(res, {
     message: 'Login successful',
@@ -80,12 +81,8 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.getCurrentUser(userId);
 
-  let permissions = null;
-  try {
-    const userWithPerms = await rolesService.getUserWithPermissions(userId);
-    permissions = userWithPerms.permissions ?? null;
-  } catch {
-    permissions = null;
+  if (!req.session.permissionsCachedAt) {
+    await refreshSessionPermissions(req);
   }
 
   sendSuccess(res, {
@@ -95,7 +92,7 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
     lastName: result.user.lastName,
     isSystemAdmin: result.user.isSystemAdmin ?? false,
     company: result.company,
-    permissions,
+    permissions: req.session.permissions ?? null,
   });
 }));
 

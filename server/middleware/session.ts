@@ -6,6 +6,9 @@ declare module 'express-session' {
     userId?: number;
     userCompanyId?: number;
     csrfToken?: string;
+    isSystemAdmin?: boolean;
+    permissions?: Record<string, boolean | null>;
+    permissionsCachedAt?: number;
   }
 }
 
