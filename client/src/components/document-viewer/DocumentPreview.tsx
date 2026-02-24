@@ -21,7 +21,9 @@ interface DocumentPreviewProps {
 
 export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: DocumentPreviewProps) {
   const [viewerError, setViewerError] = useState(false);
-  const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfLoadFailed, setPdfLoadFailed] = useState(false);
   const [docxStage, setDocxStage] = useState<DocxStage>('office');
   const [docxHtml, setDocxHtml] = useState<string | null>(null);
   const [docxLoading, setDocxLoading] = useState(false);
@@ -84,11 +86,50 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
     setDocxStage('office');
     setDocxHtml(null);
     setDocxLoading(false);
+    setPdfBlobUrl(null);
+    setPdfLoading(false);
+    setPdfLoadFailed(false);
     if (officeTimerRef.current) {
       clearTimeout(officeTimerRef.current);
       officeTimerRef.current = null;
     }
   }, [document.id]);
+
+  useEffect(() => {
+    if (!isPDF) return;
+    let revoked = false;
+    setPdfLoading(true);
+    setPdfLoadFailed(false);
+
+    const fetchUrl = publicFileBaseUrl
+      ? `${publicFileBaseUrl}/${document.id}/view`
+      : `/api/v2/files/${document.id}/view`;
+
+    fetch(fetchUrl, { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to fetch PDF: ${res.status}`);
+        return res.blob();
+      })
+      .then(blob => {
+        if (revoked) return;
+        const url = URL.createObjectURL(blob);
+        setPdfBlobUrl(url);
+        setPdfLoading(false);
+      })
+      .catch(() => {
+        if (revoked) return;
+        setPdfLoading(false);
+        setPdfLoadFailed(true);
+      });
+
+    return () => {
+      revoked = true;
+      setPdfBlobUrl(prev => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    };
+  }, [document.id, isPDF, publicFileBaseUrl]);
 
   useEffect(() => {
     return () => {
@@ -186,71 +227,48 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
   }
 
   if (isPDF) {
+    if (pdfLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+          <h3 className="text-lg font-medium mb-2">Loading PDF...</h3>
+          <p className="text-muted-foreground">Preparing document for viewing</p>
+        </div>
+      );
+    }
+
+    if (pdfLoadFailed || !pdfBlobUrl) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <AlertCircle className="w-16 h-16 text-amber-500 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Unable to Load PDF</h3>
+          <p className="text-muted-foreground mb-6">
+            The PDF could not be loaded for inline viewing.
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={openInNewTab}>
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open in New Tab
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onDownload(document.id, document.originalFilename)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="h-full w-full rounded-lg overflow-hidden">
-        {!pdfLoadAttempted ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <FileText className="w-16 h-16 text-blue-500 mb-4" />
-            <h3 className="text-lg font-medium mb-2">PDF Document Ready</h3>
-            <p className="text-muted-foreground mb-6">
-              This PDF document is ready to view. Choose your preferred viewing method below.
-            </p>
-            <div className="flex flex-col gap-3 w-full max-w-sm">
-              <Button onClick={openInNewTab} className="w-full">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open in New Tab (Recommended)
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setPdfLoadAttempted(true)}
-                className="w-full"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Try Inline Viewer
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => onDownload(document.id, document.originalFilename)}
-                className="w-full"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download PDF
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              Some browsers may block inline PDF viewing for security reasons
-            </p>
-          </div>
-        ) : (
-          <object
-            data={`${viewerUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
-            type="application/pdf"
-            className="w-full h-full"
-            onLoad={handleViewerLoad}
-            onError={handleViewerError}
-          >
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <AlertCircle className="w-16 h-16 text-amber-500 mb-4" />
-              <h3 className="text-lg font-medium mb-2">PDF Viewer Blocked</h3>
-              <p className="text-muted-foreground mb-4">
-                Your browser is blocking the inline PDF viewer for security reasons.
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={openInNewTab}>
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open in New Tab
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onDownload(document.id, document.originalFilename)}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-            </div>
-          </object>
-        )}
+        <iframe
+          src={`${pdfBlobUrl}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
+          className="w-full h-full border-0"
+          title={document.documentName}
+        />
       </div>
     );
   }
