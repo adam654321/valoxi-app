@@ -19,7 +19,6 @@ import documentAnalysisRoutes from './document-analysis.routes';
 import portalRequirementsRoutes, { portalRequirementsPublicRoutes } from './portal-requirements.routes';
 import emailRoutes from './email.routes';
 import websiteAnalysisRoutes from './website-analysis.routes';
-import debugRoutes from './debug.routes';
 import financialDataRoutes from './financial-data.routes';
 import chaseUpRoutes from './chase-up.routes';
 import expertAnalysisRoutes from './expert-analysis.routes';
@@ -57,9 +56,6 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/public/portal', portalLimiter, portalRequirementsPublicRoutes);
   app.use('/api/v2/email', isAuthenticated, validateCsrfToken, emailRoutes);
   app.use('/api/v2/website-analysis', isAuthenticated, validateCsrfToken, analysisTriggerLimiter, websiteAnalysisRoutes);
-  if (process.env.NODE_ENV !== 'production') {
-    app.use('/api/v2/debug', isAuthenticated, validateCsrfToken, debugRoutes);
-  }
   app.use('/api/v2/financial-data', isAuthenticated, validateCsrfToken, requirePermission('canViewFinancials'), financialDataRoutes);
   app.use('/api/v2/chase-up', isAuthenticated, validateCsrfToken, chaseUpRoutes);
   app.use('/api/v2/expert-analysis', isAuthenticated, validateCsrfToken, requirePermission('canViewFinancials'), analysisTriggerLimiter, expertAnalysisRoutes);
