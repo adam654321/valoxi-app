@@ -87,7 +87,7 @@ function formatFileSize(bytes: number) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFileBaseUrl }: DocumentViewerProps) {
+export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFileBaseUrl, hideAnalysis }: DocumentViewerProps) {
   const { toast } = useToast();
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
   
@@ -234,47 +234,53 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
 
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="document" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${hideAnalysis ? 'grid-cols-1' : 'grid-cols-3'}`}>
               <TabsTrigger value="document" className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
                 Document
               </TabsTrigger>
-              <TabsTrigger value="analysis" className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                Analysis
-                {analysisResults.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {analysisResults.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="webhook-json" className="flex items-center gap-2">
-                <Code className="w-4 h-4" />
-                Webhook JSON
-                {analysisResults.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {analysisResults.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
+              {!hideAnalysis && (
+                <TabsTrigger value="analysis" className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Analysis
+                  {analysisResults.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-xs">
+                      {analysisResults.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
+              {!hideAnalysis && (
+                <TabsTrigger value="webhook-json" className="flex items-center gap-2">
+                  <Code className="w-4 h-4" />
+                  Webhook JSON
+                  {analysisResults.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-xs">
+                      {analysisResults.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="document" className="flex-1 overflow-hidden">
               <DocumentPreview document={document} onDownload={onDownload} publicFileBaseUrl={publicFileBaseUrl} />
             </TabsContent>
             
-            <TabsContent value="analysis" className="flex-1 overflow-auto p-4">
-              <AnalysisDisplay 
-                results={analysisResults}
-                isLoading={analysisLoading}
-                isRetryingAnalysis={isRetryingAnalysis}
-                onRetryAnalysis={handleRetryWebhook}
-                documentUploadedAt={document.createdAt}
-                isPendingAnalysis={isRecentUpload && analysisResults.length === 0}
-              />
-            </TabsContent>
+            {!hideAnalysis && (
+              <TabsContent value="analysis" className="flex-1 overflow-auto p-4">
+                <AnalysisDisplay 
+                  results={analysisResults}
+                  isLoading={analysisLoading}
+                  isRetryingAnalysis={isRetryingAnalysis}
+                  onRetryAnalysis={handleRetryWebhook}
+                  documentUploadedAt={document.createdAt}
+                  isPendingAnalysis={isRecentUpload && analysisResults.length === 0}
+                />
+              </TabsContent>
+            )}
             
-            <TabsContent value="webhook-json" className="flex-1 overflow-auto p-4">
+            {!hideAnalysis && (<TabsContent value="webhook-json" className="flex-1 overflow-auto p-4">
               {analysisLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -341,7 +347,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
                   </p>
                 </div>
               )}
-            </TabsContent>
+            </TabsContent>)}
           </Tabs>
         </div>
       </DialogContent>

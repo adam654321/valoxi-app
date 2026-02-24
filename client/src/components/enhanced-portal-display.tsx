@@ -431,23 +431,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     select: (response: any) => response.data,
   });
 
-  // Get analysis completion status
-  const { data: analysisCompletion } = useQuery<{
-    completedTypes: string[];
-    missingTypes: string[];
-    isComplete: boolean;
-    completionPercentage: number;
-    completedCount: number;
-    totalCount: number;
-  }>({
-    queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`],
-    refetchInterval: 10000,
-    refetchIntervalInBackground: false,
-    staleTime: 30000,
-    enabled: !!token,
-    select: (response: any) => response.data,
-  });
-
   // Fetch deal documents (NDA status)
   const { data: dealDocsData, refetch: refetchDealDocs } = useQuery<{ documents: any[]; ndaAccepted: boolean }>({
     queryKey: ['/api/v2/public/deal-documents', token],
@@ -490,7 +473,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           console.log(`[PORTAL SSE] Invalidating portal caches for token: ${token.substring(0, 8)}...`);
           // Invalidate all portal queries
           queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-          queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
           queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
         }
       } catch (error) {
@@ -551,7 +533,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       
       // Refresh all portal data
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
     },
     onError: (error: Error) => {
@@ -574,7 +555,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       });
       // Refresh all portal data
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
     },
     onError: (error: any) => {
@@ -695,7 +675,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   }, {} as Record<string, Document[]>);
 
   const totalDocuments = documents.length;
-  const isCompleted = (analysisCompletion?.completionPercentage ?? 0) >= 100;
+  const isCompleted = (portalData?.progress_percentage ?? 0) >= 100;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -757,7 +737,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                 </div>
               </CardHeader>
               <CardContent>
-                <PortalAnalysisCompletionIndicator targetCompanyId={portalData.targetCompanyId || portalData.company?.id || 0} token={token} />
                 
                 {totalDocuments === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
@@ -810,7 +789,6 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                                       )}
                                     </div>
                                     
-                                    <PortalDocumentAnalysisBadges documentId={document.id} documentCategory={document.documentCategory} />
                                   </div>
                                 </div>
                                 
@@ -893,38 +871,11 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                         <SelectValue placeholder="Select document type to upload" />
                       </SelectTrigger>
                       <SelectContent>
-                        {DOCUMENT_TYPES
-                          .filter(type => {
-                            if (!analysisCompletion || !analysisCompletion.completedTypes) return true;
-                            
-                            const completedTypes = analysisCompletion.completedTypes || [];
-                            
-                            switch (type.value) {
-                              case 'company_accounts':
-                                const companyAccountsCompleted = completedTypes.filter(t => 
-                                  t.startsWith('company_accounts')
-                                ).length;
-                                return companyAccountsCompleted < 5;
-                              case 'asset_register':
-                                return !completedTypes.includes('asset_register');
-                              case 'balance_sheet':
-                                return !completedTypes.includes('balance_sheet');
-                              case 'profit_and_loss':
-                                return !completedTypes.includes('profit_and_loss');
-                              case 'sales_ledger':
-                                return !completedTypes.includes('sales_ledger');
-                              case 'staff_matrix':
-                                return !completedTypes.includes('staff_matrix');
-                              default:
-                                return true;
-                            }
-                          })
-                          .map(type => (
-                            <SelectItem key={type.value} value={type.value} data-testid={`option-${type.value}`}>
-                              {type.label}
-                            </SelectItem>
-                          ))
-                        }
+                        {DOCUMENT_TYPES.map(type => (
+                          <SelectItem key={type.value} value={type.value} data-testid={`option-${type.value}`}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1212,6 +1163,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
         }}
         publicFileBaseUrl="/api/v2/public/documents"
+        hideAnalysis={true}
       />
     </div>
   );

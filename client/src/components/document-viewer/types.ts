@@ -41,4 +41,5 @@ export interface DocumentViewerProps {
   onClose: () => void;
   onDownload: (documentId: number, filename: string) => void;
   publicFileBaseUrl?: string;
+  hideAnalysis?: boolean;
 }
