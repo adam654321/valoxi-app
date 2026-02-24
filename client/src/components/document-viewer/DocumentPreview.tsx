@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Download, 
   FileText,
   AlertCircle,
   ExternalLink,
-  Eye
+  Eye,
+  Loader2
 } from "lucide-react";
 import type { Document } from "./types";
+import mammoth from "mammoth";
 
 interface DocumentPreviewProps {
   document: Document;
@@ -18,21 +20,28 @@ interface DocumentPreviewProps {
 export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: DocumentPreviewProps) {
   const [viewerError, setViewerError] = useState(false);
   const [pdfLoadAttempted, setPdfLoadAttempted] = useState(false);
-  const [officeViewerAttempted, setOfficeViewerAttempted] = useState(false);
+  const [docxHtml, setDocxHtml] = useState<string | null>(null);
+  const [docxLoading, setDocxLoading] = useState(false);
+  const [docxError, setDocxError] = useState<string | null>(null);
 
   const isPDF = document.fileType === 'application/pdf';
   const isImage = document.fileType.startsWith('image/');
   const isText = document.fileType === 'text/plain';
-  const officeTypes = [
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  const isDocx = document.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    || document.fileType === 'application/msword'
+    || document.originalFilename?.toLowerCase().endsWith('.docx')
+    || document.originalFilename?.toLowerCase().endsWith('.doc');
+  const officeSpreadsheetTypes = [
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ];
+  const officePresentationTypes = [
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ];
-  const isOffice = officeTypes.includes(document.fileType);
-  const isViewable = isPDF || isImage || isText || isOffice;
+  const isOtherOffice = officeSpreadsheetTypes.includes(document.fileType)
+    || officePresentationTypes.includes(document.fileType);
+  const isViewable = isPDF || isImage || isText || isDocx || isOtherOffice;
 
   const viewerUrl = publicFileBaseUrl
     ? `${publicFileBaseUrl}/${document.id}/view`
@@ -42,9 +51,28 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
     ? `${publicFileBaseUrl}/${document.id}/download`
     : `/api/v2/files/${document.id}/download`;
 
-  const fullDownloadUrl = downloadUrl.startsWith('http')
-    ? downloadUrl
-    : `${window.location.origin}${downloadUrl}`;
+  useEffect(() => {
+    if (!isDocx) return;
+
+    setDocxLoading(true);
+    setDocxError(null);
+    setDocxHtml(null);
+
+    fetch(downloadUrl, { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to fetch document: ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then(arrayBuffer => mammoth.convertToHtml({ arrayBuffer }))
+      .then(result => {
+        setDocxHtml(result.value);
+        setDocxLoading(false);
+      })
+      .catch(err => {
+        setDocxError(err.message || 'Failed to render document');
+        setDocxLoading(false);
+      });
+  }, [document.id, isDocx, downloadUrl]);
 
   const handleViewerLoad = () => {
     setViewerError(false);
@@ -196,74 +224,56 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
     );
   }
 
-  if (isOffice) {
-    const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullDownloadUrl)}`;
-    const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullDownloadUrl)}&embedded=true`;
+  if (isDocx) {
+    if (docxLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+          <h3 className="text-lg font-medium mb-2">Loading Document...</h3>
+          <p className="text-muted-foreground">Rendering document content</p>
+        </div>
+      );
+    }
 
+    if (docxError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <AlertCircle className="w-16 h-16 text-destructive mb-4" />
+          <h3 className="text-lg font-medium mb-2">Unable to Render Document</h3>
+          <p className="text-muted-foreground mb-6">{docxError}</p>
+          <Button onClick={() => onDownload(document.id, document.originalFilename)}>
+            <Download className="w-4 h-4 mr-2" />
+            Download to View
+          </Button>
+        </div>
+      );
+    }
+
+    if (docxHtml) {
+      return (
+        <div className="h-full w-full bg-white dark:bg-gray-900 rounded-lg overflow-auto">
+          <div
+            className="p-8 max-w-4xl mx-auto prose prose-sm dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: docxHtml }}
+          />
+        </div>
+      );
+    }
+  }
+
+  if (isOtherOffice) {
     const fileExt = document.originalFilename?.split('.').pop()?.toUpperCase() || 'Office';
-
     return (
-      <div className="h-full w-full rounded-lg overflow-hidden">
-        {!officeViewerAttempted ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <FileText className="w-16 h-16 text-blue-500 mb-4" />
-            <h3 className="text-lg font-medium mb-2">{fileExt} Document Ready</h3>
-            <p className="text-muted-foreground mb-6">
-              This document is ready to view. Choose your preferred viewing method below.
-            </p>
-            <div className="flex flex-col gap-3 w-full max-w-sm">
-              <Button onClick={() => setOfficeViewerAttempted(true)} className="w-full">
-                <Eye className="w-4 h-4 mr-2" />
-                View Document
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => window.open(officeViewerUrl, '_blank')}
-                className="w-full"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open in New Tab
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => onDownload(document.id, document.originalFilename)}
-                className="w-full"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download {fileExt}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <iframe
-            src={officeViewerUrl}
-            className="w-full h-full border-0"
-            title={document.documentName}
-            onLoad={handleViewerLoad}
-            onError={handleViewerError}
-          >
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <AlertCircle className="w-16 h-16 text-amber-500 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Viewer Unavailable</h3>
-              <p className="text-muted-foreground mb-4">
-                The inline viewer could not load this document.
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={() => window.open(googleViewerUrl, '_blank')}>
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Try Google Viewer
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onDownload(document.id, document.originalFilename)}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-            </div>
-          </iframe>
-        )}
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <FileText className="w-16 h-16 text-blue-500 mb-4" />
+        <h3 className="text-lg font-medium mb-2">{fileExt} Document</h3>
+        <p className="text-muted-foreground mb-6">
+          This file type cannot be previewed inline. Please download to view.
+        </p>
+        <Button onClick={() => onDownload(document.id, document.originalFilename)}>
+          <Download className="w-4 h-4 mr-2" />
+          Download {fileExt}
+        </Button>
       </div>
     );
   }
