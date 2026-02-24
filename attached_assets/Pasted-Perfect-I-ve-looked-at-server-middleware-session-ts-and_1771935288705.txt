@@ -1,0 +1,39 @@
+Perfect. I've looked at server/middleware/session.ts and can confirm the session cookie is currently relying on the default name (connect.sid) and is missing the __Host- prefix.
+
+__Host- is a special cookie prefix that tells the browser: "Only accept this cookie if it was set securely via HTTPS, and do not send it to any subdomains." It adds a strong layer of defense against cookie tossing attacks.
+
+However, because it explicitly requires HTTPS, we have to be careful not to break local development environments where you are likely accessing the app over simple http://localhost. The prefix should ONLY be added when process.env.NODE_ENV === 'production'.
+
+Here is the prompt for Replit to address this:
+
+Prompt for Replit:
+
+markdown
+Let's tackle the next issue: "MEDIUM — Session Cookie Missing `__Host-` Prefix Hardening".
+I've checked our `server/middleware/session.ts` file, and I can confirm that we are not setting a custom `name` for our session cookie. It's defaulting to `connect.sid`. 
+Adding the `__Host-` prefix to our session cookie name is a great hardening measure that prevents sub-domain cookie tossing attacks. Because `__Host-` cookies strictly require the `Secure` attribute (HTTPS) and a `Path=/`, it provides strong assertions to the browser.
+However, since `__Host-` cookies require HTTPS, setting this unconditionally will completely break local development on HTTP.
+**Proposed Implementation in `server/middleware/session.ts`:**
+We need to dynamically set the cookie name based on the environment.
+\`\`\`typescript
+const isProd = process.env.NODE_ENV === 'production';
+const cookieName = isProd ? '__Host-sid' : 'sid';
+return session({
+  name: cookieName,
+  store: new pgStore({ /* ... */ }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: sessionTtl,
+    secure: isProd,
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/', // explicitly required for __Host- prefix
+  },
+});
+\`\`\`
+**Your Task:**
+1. Do you agree that this dynamic naming approach is the best way to safely implement this hardening measure without breaking dev?
+2. Implement this change in `server/middleware/session.ts`. 
+3. Confirm that the application still boots properly in development mode.

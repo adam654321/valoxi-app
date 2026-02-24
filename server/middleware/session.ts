@@ -17,7 +17,10 @@ export function createSessionMiddleware() {
     throw new Error('SESSION_SECRET environment variable is required');
   }
 
+  const isProd = process.env.NODE_ENV === 'production';
+
   return session({
+    name: isProd ? '__Host-sid' : 'sid',
     store: new pgStore({
       conString: process.env.DATABASE_URL,
       createTableIfMissing: true,
@@ -28,9 +31,10 @@ export function createSessionMiddleware() {
     saveUninitialized: false,
     cookie: {
       maxAge: sessionTtl,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       httpOnly: true,
       sameSite: 'lax',
+      path: '/',
     },
   });
 }
