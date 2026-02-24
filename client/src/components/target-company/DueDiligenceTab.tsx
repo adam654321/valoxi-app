@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronRight, FileText, Paperclip, X, Search, Globe, Eye, Lock, FileCheck, Upload, Loader2, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentViewer } from '@/components/document-viewer';
 
@@ -696,9 +696,11 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
     formData.append('description', '');
     formData.append('is_confidential', 'true');
 
+    const csrfToken = getCsrfToken();
     const uploadRes = await fetch(`/api/v2/files/company/${targetCompanyId}/upload`, {
       method: 'POST',
       credentials: 'include',
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
       body: formData,
     });
 
