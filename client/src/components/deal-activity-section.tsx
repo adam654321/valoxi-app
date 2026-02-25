@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, User, Phone, Mail, MessageSquare, FileText, Plus, Edit, Trash2, Bell, StickyNote, Search } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -674,10 +675,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
             ))}
           </div>
         ) : sortedDates.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p>No activity yet. Add notes or log activities to track your deal progress.</p>
-          </div>
+          <EmptyState icon={Calendar} title="No activity yet" description="Add notes or log activities to track your deal progress." />
         ) : (
           <div className="space-y-6">
             {sortedDates.map((dateKey) => (

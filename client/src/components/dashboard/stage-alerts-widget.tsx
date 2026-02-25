@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, AlertTriangle, CheckCircle } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const StageAlertsWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<any>({
@@ -37,10 +38,7 @@ const StageAlertsWidget: React.FC = () => {
         ) : (
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {data?.stageAlerts?.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-300" />
-                <p className="text-sm">No stage alerts - all deals are progressing well!</p>
-              </div>
+              <EmptyState icon={CheckCircle} title="No stage alerts" description="All deals are progressing well" size="sm" />
             ) : (
               data?.stageAlerts?.map((alert: any) => (
                 <div key={alert.id} className="flex items-start space-x-3 p-3 border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg">

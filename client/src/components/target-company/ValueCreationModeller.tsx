@@ -878,7 +878,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                       <ValueCreationEmptyState
                         title="Returns Analysis"
                         message="Add active funding lines in the Deal Modeller tab to unlock returns analysis. The returns calculation needs at least one funding line to determine the investment structure."
-                        icon={<TrendingUp className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+                        icon={TrendingUp}
                       />
                     )}
                     {scenarioComparison ? (
@@ -895,7 +895,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                       <ValueCreationEmptyState
                         title="Exit Modelling & Scenario Comparison"
                         message="Configure scenarios and ensure active funding lines exist to see exit modelling and scenario comparisons."
-                        icon={<LogOut className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+                        icon={LogOut}
                       />
                     )}
                   </>
@@ -913,7 +913,7 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
                       <ValueCreationEmptyState
                         title="Sensitivity & Risk Analysis"
                         message="Add active funding lines in the Deal Modeller tab to unlock sensitivity analysis. This module stress-tests your assumptions across revenue growth, exit multiples, cost inflation, and interest rates."
-                        icon={<Shield className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />}
+                        icon={Shield}
                       />
                     )}
                   </>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { RefreshCw, Activity, Eye } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { RecentActivitiesData } from "./types";
 import { getActivityIcon } from "./utils";
 
@@ -44,10 +45,7 @@ const RecentActivitiesWidget: React.FC = () => {
         ) : (
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {data?.activities.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Activity className="w-12 h-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No recent activities</p>
-              </div>
+              <EmptyState icon={Activity} title="No recent activities" size="sm" />
             ) : (
               data?.activities.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-muted/50 rounded-lg">

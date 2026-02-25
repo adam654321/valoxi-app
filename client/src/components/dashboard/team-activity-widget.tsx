@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Users2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const TeamActivityWidget: React.FC = () => {
   const { data, isLoading, refetch } = useQuery<any>({
@@ -37,10 +38,7 @@ const TeamActivityWidget: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {data?.teamActivity?.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <Users2 className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm">No team activity</p>
-              </div>
+              <EmptyState icon={Users2} title="No team activity" size="sm" />
             ) : (
               data?.teamActivity?.map((member: any) => (
                 <div key={member.userName} className="flex items-center justify-between">

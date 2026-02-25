@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { TrendingUp, Clock, ArrowRight, Edit3, History, Activity } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface PipelineStage {
   id: number;
@@ -235,9 +236,7 @@ export function PipelineStageManagement({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No stage history available.
-                    </div>
+                    <EmptyState icon={History} title="No stage history available" />
                   )}
                 </div>
               </DialogContent>

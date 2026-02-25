@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshCw, Calendar } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getActivityIcon } from "./utils";
 
 const UpcomingRemindersWidget: React.FC = () => {
@@ -37,10 +38,7 @@ const UpcomingRemindersWidget: React.FC = () => {
         ) : (
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {data?.reminders?.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm">No upcoming reminders</p>
-              </div>
+              <EmptyState icon={Calendar} title="No upcoming reminders" size="sm" />
             ) : (
               data?.reminders?.map((reminder: any) => (
                 <div key={reminder.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">

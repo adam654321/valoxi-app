@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Flame, RefreshCw, Target } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { HotDealsData } from "./types";
 
 const HotDealsWidget: React.FC = () => {
@@ -34,10 +35,7 @@ const HotDealsWidget: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {data?.deals.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Target className="w-12 h-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-lg">No deals need immediate attention!</p>
-              </div>
+              <EmptyState icon={Target} title="No deals need immediate attention!" size="sm" />
             ) : (
               data?.deals.map((deal) => (
                 <Link key={deal.id} href={`/target-companies/${deal.id}`}>

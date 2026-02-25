@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Plus, Edit, Trash2, Mail, Phone } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { TargetContact } from "@shared/schema";
 
 interface TeamTabProps {
@@ -34,15 +35,18 @@ export function TeamTab({
       </CardHeader>
       <CardContent>
         {contacts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium mb-2">No contacts added yet</p>
-            <p className="text-sm mb-4">Add contacts to track key people at this company</p>
-            <Button onClick={onAddContact} data-testid="button-add-first-contact">
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Contact
-            </Button>
-          </div>
+          <EmptyState
+            icon={User}
+            title="No contacts added yet"
+            description="Add contacts to track key people at this company"
+            size="lg"
+            action={
+              <Button onClick={onAddContact} data-testid="button-add-first-contact">
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Contact
+              </Button>
+            }
+          />
         ) : (
           <div className="space-y-6">
             {/* Primary Contact Highlight */}

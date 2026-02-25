@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Building2, Users, DollarSign, Eye, ExternalLink, Phone, Clock, Loader2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Link } from "wouter";
 
 interface PipelineStage {
@@ -350,10 +351,7 @@ export function PipelineKanbanBoard() {
                       ))}
                       {provided.placeholder}
                       {column.companies.length === 0 && !snapshot.isDraggingOver && (
-                        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground/70">
-                          <Building2 className="h-8 w-8 mb-2 opacity-50" />
-                          <p className="text-sm">No companies</p>
-                        </div>
+                        <EmptyState icon={Building2} title="No companies" size="sm" />
                       )}
                     </div>
                   )}

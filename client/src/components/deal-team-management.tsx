@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { UserPlus, Edit, Trash2, Users, Shield, Eye, Upload, MessageCircle, Building2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface TeamMember {
   id: number;
@@ -605,12 +606,11 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
             </div>
           ))}
           {(!dealTeam || dealTeam.length === 0) && (
-            <div className="text-center py-8 text-muted-foreground">
-              No team members assigned to this deal yet.
-              {availableTeamMembers.length > 0 && (
-                <p className="mt-2">Click "Assign Member" to add team members to this deal.</p>
-              )}
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No team members assigned to this deal yet"
+              description={availableTeamMembers.length > 0 ? 'Click "Assign Member" to add team members to this deal.' : undefined}
+            />
           )}
         </div>
       </CardContent>
