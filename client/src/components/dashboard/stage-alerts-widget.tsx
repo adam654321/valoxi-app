@@ -16,7 +16,7 @@ const StageAlertsWidget: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold">Stage Alerts</CardTitle>
         <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={() => refetch()}>
+          <Button variant="ghost" size="sm" onClick={() => refetch()} aria-label="Refresh stage alerts">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>

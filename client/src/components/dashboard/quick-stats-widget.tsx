@@ -17,7 +17,7 @@ const QuickStatsWidget: React.FC = () => {
         <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">Last 30 days</span>
-          <Button variant="ghost" size="sm" onClick={() => refetch()}>
+          <Button variant="ghost" size="sm" onClick={() => refetch()} aria-label="Refresh quick stats">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>

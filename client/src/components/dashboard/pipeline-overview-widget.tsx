@@ -18,11 +18,11 @@ const PipelineOverviewWidget: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold">Pipeline Overview</CardTitle>
         <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={() => refetch()}>
+          <Button variant="ghost" size="sm" onClick={() => refetch()} aria-label="Refresh pipeline overview">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Link href="/pipeline">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" aria-label="View full pipeline">
               <Eye className="w-4 h-4" />
             </Button>
           </Link>
