@@ -1,0 +1,36 @@
+Let's fix "MEDIUM — Loading States Use animate-pulse But Colors Ignore Dark Mode" ahead of our planned dark mode implementation.
+
+**Context:**
+The Shadcn `<Skeleton>` component (`client/src/components/ui/skeleton.tsx`) already uses `bg-muted` and is dark-mode ready. However, many hand-rolled `animate-pulse` loading states across the codebase use `bg-gray-200` on their child placeholder divs, which will flash stark white/light gray in dark mode.
+
+**The Fix — Replace `bg-gray-200` with `bg-muted` on all animate-pulse child divs:**
+
+Target files (check each for `bg-gray-200` children inside `animate-pulse` wrappers):
+- `client/src/components/dashboard/hot-deals-widget.tsx` — line ~33: `h-16 bg-gray-200 rounded`
+- `client/src/components/dashboard/quick-stats-widget.tsx`
+- `client/src/components/dashboard/recent-activities-widget.tsx`
+- `client/src/components/dashboard/stage-alerts-widget.tsx`
+- `client/src/components/dashboard/team-activity-widget.tsx`
+- `client/src/components/dashboard/upcoming-reminders-widget.tsx`
+- `client/src/components/dashboard/pipeline-overview-widget.tsx`
+- `client/src/components/pipeline-stage-management.tsx`
+- `client/src/components/deal-team-management.tsx`
+- `client/src/components/activity-management.tsx`
+- `client/src/components/notifications.tsx`
+- `client/src/pages/team-management.tsx`
+- `client/src/pages/PortalManagement.tsx`
+- `client/src/pages/target-companies.tsx`
+- `client/src/pages/dashboard.tsx`
+- `client/src/pages/file-upload-test.tsx` (only confirmed `bg-gray-200` on animate-pulse)
+
+**The Mapping:**
+- `bg-gray-200` (skeleton fill) → `bg-muted`
+- `bg-gray-700` (dark skeleton fill, inside `dark:` prefixed class) → **remove entirely** (CSS variables handle this)
+- `bg-gray-300` (skeleton fill) → `bg-muted/70`
+- `rounded` on skeleton divs → keep as-is
+
+**Do NOT change:**
+- Any `animate-pulse` on `bg-blue-500` or other non-gray accent colors (e.g., the notification dot in `AnalysisDisplay.tsx`) — these are intentional status indicators
+- The `<Skeleton>` component itself — it's already correct
+
+After changes, run `npm run check` to confirm zero TypeScript errors.
