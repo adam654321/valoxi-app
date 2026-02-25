@@ -83,6 +83,12 @@ export class DocumentsFilesService {
     return document;
   }
 
+  async getDocumentByPublicToken(token: string): Promise<Document> {
+    const document = await documentsRepository.getDocumentByPublicToken(token);
+    if (!document) throw new NotFoundError('Document not found');
+    return document;
+  }
+
   async logAccess(documentId: number, userId: number, accessType: 'view' | 'download', ipAddress?: string): Promise<void> {
     await documentsRepository.logDocumentAccess(documentId, userId, accessType, ipAddress);
   }

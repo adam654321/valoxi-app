@@ -36,9 +36,14 @@ export class DocumentsRepository {
   }
 
   async createDocument(document: InsertDocument): Promise<Document> {
+    const { randomUUID } = await import('crypto');
+    const docWithToken = {
+      ...document,
+      publicToken: randomUUID(),
+    };
     const [createdDocument] = await db
       .insert(documents)
-      .values(document)
+      .values(docWithToken)
       .returning();
     return createdDocument;
   }
@@ -99,6 +104,14 @@ export class DocumentsRepository {
       .select()
       .from(documents)
       .where(eq(documents.id, documentId));
+    return document || undefined;
+  }
+
+  async getDocumentByPublicToken(token: string): Promise<Document | undefined> {
+    const [document] = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.publicToken, token));
     return document || undefined;
   }
 

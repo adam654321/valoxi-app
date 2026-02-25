@@ -68,7 +68,9 @@ export class PortalSubmissionsRepository {
   }
 
   async createDocument(doc: InsertDocument): Promise<Document> {
-    const [created] = await db.insert(documents).values(doc).returning();
+    const { randomUUID } = await import('crypto');
+    const docWithToken = { ...doc, publicToken: randomUUID() };
+    const [created] = await db.insert(documents).values(docWithToken).returning();
     return created;
   }
 

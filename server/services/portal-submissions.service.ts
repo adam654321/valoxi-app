@@ -63,7 +63,7 @@ export class PortalSubmissionsService {
     });
     const uploadEvent = await portalSubmissionsRepository.createFileUploadEvent({
       documentId: mainDocument.id, targetCompanyId: token.targetCompanyId, uploadedBy: 1,
-      fileName: originalFilename, fileUrl: `${baseUrl}/api/v2/public/documents/${mainDocument.id}/download`,
+      fileName: originalFilename, fileUrl: `${baseUrl}/api/v2/public/documents/${mainDocument.publicToken}/download`,
       webhookSent: false, webhookStatus: 'pending',
     });
     await portalSubmissionsRepository.reviewSubmission(submission.id, token.createdBy, 'approved', 'Auto-approved - unified upload process');

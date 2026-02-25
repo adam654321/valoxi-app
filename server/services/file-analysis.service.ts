@@ -49,7 +49,6 @@ import { runStep2AnalysisForTypes } from "./gemini-step2-analysis-service";
 import { eventBus, type DocumentUpdateEvent } from "./event-bus.service";
 import { financialDataService } from "./financial-data.service";
 
-import { config } from "../config";
 
 function emitDocumentUpdate(event: DocumentUpdateEvent): void {
   eventBus.emit('document:update', event);
@@ -146,9 +145,8 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
 
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
-    const baseUrl = config.baseUrl;
-    const fileUrl = `${baseUrl}/api/v2/public/documents/${event.documentId}/download`;
-    console.log(`[FILE_ANALYSIS] Using HTTPS URL: ${fileUrl}`);
+    const fileUrl = event.fileUrl;
+    console.log(`[FILE_ANALYSIS] Using stored URL: ${fileUrl}`);
 
     const fileExtension = event.fileName.split('.').pop()?.toLowerCase() || 'pdf';
     const mimeType = getMimeTypeForFile(fileExtension);

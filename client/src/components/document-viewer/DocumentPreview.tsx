@@ -48,12 +48,13 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
     || officePresentationTypes.includes(document.fileType);
   const isViewable = isPDF || isImage || isText || isDocx || isOtherOffice;
 
+  const publicIdentifier = (document as any).publicToken || document.id;
   const viewerUrl = publicFileBaseUrl
-    ? `${publicFileBaseUrl}/${document.id}/view`
+    ? `${publicFileBaseUrl}/${publicIdentifier}/view`
     : `/api/v2/files/${document.id}/view`;
 
   const downloadUrl = publicFileBaseUrl
-    ? `${publicFileBaseUrl}/${document.id}/download`
+    ? `${publicFileBaseUrl}/${publicIdentifier}/download`
     : `/api/v2/files/${document.id}/download`;
 
   const fullDownloadUrl = downloadUrl.startsWith('http')
@@ -102,7 +103,7 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
     setPdfLoadFailed(false);
 
     const fetchUrl = publicFileBaseUrl
-      ? `${publicFileBaseUrl}/${document.id}/view`
+      ? `${publicFileBaseUrl}/${publicIdentifier}/view`
       : `/api/v2/files/${document.id}/view`;
 
     fetch(fetchUrl, { credentials: 'include' })

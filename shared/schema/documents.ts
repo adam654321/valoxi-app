@@ -33,6 +33,7 @@ export const documents = pgTable("documents", {
   lastAccessed: timestamp("last_accessed"),
   accessCount: integer("access_count").default(0),
   externalSubmissionId: integer("external_submission_id").references(() => externalDocumentSubmissions.id),
+  publicToken: varchar("public_token", { length: 64 }).notNull().unique(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -40,7 +41,7 @@ export const documents = pgTable("documents", {
 export const documentAccessLog = pgTable("document_access_log", {
   id: serial("id").primaryKey(),
   documentId: integer("document_id").references(() => documents.id).notNull(),
-  accessedBy: integer("accessed_by").references(() => users.id).notNull(),
+  accessedBy: integer("accessed_by").references(() => users.id),
   accessType: varchar("access_type", { length: 50 }).notNull(),
   accessedAt: timestamp("accessed_at").defaultNow(),
   ipAddress: inet("ip_address"),
@@ -128,6 +129,7 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
   uploadDate: true,
   lastAccessed: true,
   accessCount: true,
+  publicToken: true,
 });
 
 export const insertDocumentAccessLogSchema = createInsertSchema(documentAccessLog).omit({

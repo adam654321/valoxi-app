@@ -48,7 +48,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/portal', portalLimiter, portalPublicRoutes);
   app.use('/api/v2/portal', isAuthenticated, validateCsrfToken, portalRoutes);
   app.use('/api/v2/files', isAuthenticated, validateCsrfToken, documentsFilesRoutes);
-  app.use('/api/v2/public/documents', publicDocumentRoutes);
+  app.use('/api/v2/public/documents', portalLimiter, publicDocumentRoutes);
   app.use('/api/v2/portal-submit', portalLimiter, portalSubmissionsRoutes);
   app.use('/api/v2/document-analysis', isAuthenticated, validateCsrfToken, documentAnalysisRoutes);
   app.use('/api/v2/requirements', isAuthenticated, validateCsrfToken, portalRequirementsRoutes);

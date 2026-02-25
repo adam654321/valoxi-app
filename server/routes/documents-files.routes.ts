@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
+import { documentsRepository } from '../repositories/documents.repository';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
@@ -87,7 +88,7 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         targetCompanyId,
         uploadedBy: userId,
         fileName: originalFilename,
-        fileUrl: `${baseUrl}/api/v2/public/documents/${document.id}/download`,
+        fileUrl: `${baseUrl}/api/v2/public/documents/${document.publicToken}/download`,
       });
       
       const { analysisQueue } = await import('../services/analysis-queue.service');
@@ -174,19 +175,23 @@ export default router;
 
 export const publicDocumentRoutes = Router();
 
-publicDocumentRoutes.get('/:id/download', asyncHandler(async (req: Request, res: Response) => {
-  const documentId = parseInt(req.params.id);
-  if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
-  const document = await documentsFilesService.getDocumentPublic(documentId);
+publicDocumentRoutes.get('/:token/download', asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.params;
+  if (!token || token.length < 10) return res.status(400).json({ error: 'Invalid token' });
+  const document = await documentsFilesService.getDocumentByPublicToken(token);
+  if (!document) return res.status(404).json({ error: 'Document not found' });
+  await documentsRepository.logDocumentAccess(document.id, null as any, 'public_download', req.ip);
   res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(document.originalFilename)}"`);
   res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
   res.sendFile(path.resolve(document.filePath));
 }));
 
-publicDocumentRoutes.get('/:id/view', asyncHandler(async (req: Request, res: Response) => {
-  const documentId = parseInt(req.params.id);
-  if (isNaN(documentId)) return res.status(400).json({ error: 'Invalid document ID' });
-  const document = await documentsFilesService.getDocumentPublic(documentId);
+publicDocumentRoutes.get('/:token/view', asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.params;
+  if (!token || token.length < 10) return res.status(400).json({ error: 'Invalid token' });
+  const document = await documentsFilesService.getDocumentByPublicToken(token);
+  if (!document) return res.status(404).json({ error: 'Document not found' });
+  await documentsRepository.logDocumentAccess(document.id, null as any, 'public_view', req.ip);
   res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
   res.setHeader('Content-Disposition', `inline; filename="${sanitizeFilename(document.originalFilename)}"`);
   res.setHeader('Cache-Control', 'private, max-age=3600');

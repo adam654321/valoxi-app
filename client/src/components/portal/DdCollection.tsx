@@ -610,7 +610,9 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
           isOpen={showViewer}
           onClose={() => { setShowViewer(false); setViewingDocument(null); }}
           onDownload={(docId, filename) => {
-            window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
+            if (viewingDocument?.publicToken) {
+              window.open(`/api/v2/public/documents/${viewingDocument.publicToken}/download`, '_blank');
+            }
           }}
           publicFileBaseUrl="/api/v2/public/documents"
           hideAnalysis={true}
@@ -727,7 +729,9 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
         isOpen={showViewer}
         onClose={() => { setShowViewer(false); setViewingDocument(null); }}
         onDownload={(docId, filename) => {
-          window.open(`/api/v2/public/documents/${docId}/download`, '_blank');
+          if (viewingDocument?.publicToken) {
+            window.open(`/api/v2/public/documents/${viewingDocument.publicToken}/download`, '_blank');
+          }
         }}
         publicFileBaseUrl="/api/v2/public/documents"
         hideAnalysis={true}

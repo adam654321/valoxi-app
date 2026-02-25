@@ -110,6 +110,7 @@ Preferred communication style: Simple, everyday language.
 - **Authorization**: Comprehensive role-based access control (RBAC) with company admin and role-specific permissions, and deal-specific team assignments.
 - **User Onboarding**: Invitation-based with secure token validation.
 - **Data Isolation**: Ensures data isolation by user company ID.
+- **Public Document Access**: Public document routes (`/api/v2/public/documents`) use UUID-based `publicToken` instead of sequential integer IDs, with rate limiting (`portalLimiter`) and audit logging to `document_access_log`. The `documents` table has a `public_token` column (varchar(64), unique, NOT NULL) auto-generated on document creation via `crypto.randomUUID()`.
 
 ## Data Flow Architecture
 - **Client-Server Communication**: JSON API with fetch-based requests.
