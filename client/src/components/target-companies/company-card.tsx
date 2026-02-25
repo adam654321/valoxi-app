@@ -108,12 +108,12 @@ const CompanyCard: React.FC<CompanyCardProps> = ({
               </div>
             )}
             <div className="flex items-center gap-1">
-              <Users className="h-3 w-3 text-gray-600" />
+              <Users className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-textSecondary">Contacts:</span>
               <span className="font-medium text-xs">
                 {company.contactCount}
                 {company.primaryContactName && (
-                  <span className="text-gray-500"> • {company.primaryContactName}</span>
+                  <span className="text-muted-foreground"> • {company.primaryContactName}</span>
                 )}
               </span>
             </div>

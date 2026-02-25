@@ -186,11 +186,11 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
         <CardContent className="space-y-4">
           {contentLoading ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-              <span className="ml-2 text-gray-500">Loading offer details...</span>
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/70" />
+              <span className="ml-2 text-muted-foreground">Loading offer details...</span>
             </div>
           ) : (
-            <div className="border rounded-lg p-6 bg-white">
+            <div className="border rounded-lg p-6 bg-card">
               <div
                 className="prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: contentData?.html || '<p>Unable to load offer content.</p>' }}
@@ -207,19 +207,19 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
 
           {offer.responses && offer.responses.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">Previous Responses</h4>
+              <h4 className="text-sm font-medium text-foreground">Previous Responses</h4>
               {offer.responses.map((r) => (
-                <div key={r.id} className="bg-gray-50 rounded p-3 text-sm">
+                <div key={r.id} className="bg-muted rounded p-3 text-sm">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant={r.responseType === 'accepted' ? 'default' : r.responseType === 'rejected' ? 'destructive' : 'secondary'} className="text-xs">
                       {r.responseType}
                     </Badge>
-                    <span className="text-gray-500">by {r.respondentName}</span>
-                    <span className="text-gray-400">
+                    <span className="text-muted-foreground">by {r.respondentName}</span>
+                    <span className="text-muted-foreground/70">
                       {new Date(r.createdAt).toLocaleDateString('en-GB')}
                     </span>
                   </div>
-                  {r.comments && <p className="text-gray-600 mt-1">{r.comments}</p>}
+                  {r.comments && <p className="text-muted-foreground mt-1">{r.comments}</p>}
                 </div>
               ))}
             </div>
@@ -325,14 +325,14 @@ function VersionHistory({ offers, token }: { offers: OfferDocument[]; token: str
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)} className="text-gray-500">
+      <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)} className="text-muted-foreground">
         {expanded ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />}
         {offers.length} previous version{offers.length > 1 ? 's' : ''}
       </Button>
       {expanded && (
-        <div className="space-y-2 mt-2 ml-4 border-l-2 border-gray-200 pl-4">
+        <div className="space-y-2 mt-2 ml-4 border-l-2 border-border pl-4">
           {offers.map(offer => (
-            <div key={offer.id} className="text-sm text-gray-500 py-2">
+            <div key={offer.id} className="text-sm text-muted-foreground py-2">
               <span className="font-medium">v{offer.version}</span>
               {' — '}
               <span>{offer.status}</span>

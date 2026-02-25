@@ -214,7 +214,7 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
 
   if (isImage) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded-lg">
+      <div className="h-full flex items-center justify-center bg-muted rounded-lg">
         <img
           src={viewerUrl}
           alt={document.documentName}
@@ -275,10 +275,10 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
 
   if (isText) {
     return (
-      <div className="h-full w-full bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+      <div className="h-full w-full bg-muted rounded-lg p-4 overflow-auto">
         <iframe
           src={viewerUrl}
-          className="w-full h-full border-0 bg-white dark:bg-gray-800 rounded"
+          className="w-full h-full border-0 bg-card rounded"
           title={document.documentName}
           onLoad={handleViewerLoad}
           onError={handleViewerError}
@@ -339,7 +339,7 @@ export function DocumentPreview({ document, onDownload, publicFileBaseUrl }: Doc
 
       if (docxHtml) {
         return (
-          <div className="h-full w-full bg-white dark:bg-gray-900 rounded-lg overflow-auto">
+          <div className="h-full w-full bg-card rounded-lg overflow-auto">
             <div
               className="p-8 max-w-4xl mx-auto prose prose-sm dark:prose-invert"
               dangerouslySetInnerHTML={{ __html: docxHtml }}

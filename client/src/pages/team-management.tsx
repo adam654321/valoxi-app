@@ -199,10 +199,10 @@ export default function TeamManagement() {
     return (
       <div className="container mx-auto py-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="grid gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div key={i} className="h-32 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -215,8 +215,8 @@ export default function TeamManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Team Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage team members, roles, and invitations</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Team Management</h1>
+          <p className="text-muted-foreground">Manage team members, roles, and invitations</p>
         </div>
         <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
           <DialogTrigger asChild>
@@ -318,16 +318,16 @@ export default function TeamManagement() {
         <CardContent>
           <div className="space-y-4">
             {teamMembers?.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-gray-800">
+              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
                 <div className="flex items-center space-x-4">
-                  <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <span className="text-sm font-medium text-foreground">
                       {member.firstName[0]}{member.lastName[0]}
                     </span>
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                      <h4 className="font-medium text-foreground">
                         {member.firstName} {member.lastName}
                       </h4>
                       {member.isCompanyAdmin && (
@@ -342,7 +342,7 @@ export default function TeamManagement() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
+                    <p className="text-sm text-muted-foreground">{member.email}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline" className="text-xs capitalize">
                         {member.userRole?.replace('_', ' ') || 'No Role'}
@@ -469,7 +469,7 @@ export default function TeamManagement() {
               </div>
             ))}
             {(!teamMembers || teamMembers.length === 0) && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-muted-foreground">
                 No team members found. Invite your first team member to get started.
               </div>
             )}
@@ -491,9 +491,9 @@ export default function TeamManagement() {
         <CardContent>
           <div className="space-y-4">
             {invitations?.filter(inv => inv.invitationStatus === 'pending').map((invitation) => (
-              <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-gray-800">
+              <div key={invitation.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
                 <div>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{invitation.email}</h4>
+                  <h4 className="font-medium text-foreground">{invitation.email}</h4>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">
                       {invitation.invitedRole}
@@ -502,11 +502,11 @@ export default function TeamManagement() {
                       {invitation.invitationStatus}
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Sent {invitation.sentAt ? new Date(invitation.sentAt).toLocaleDateString() : 'Unknown'} by {invitation.invitedBy}
                   </p>
                   {invitation.invitationMessage && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 italic">
+                    <p className="text-xs text-muted-foreground mt-1 italic">
                       "{invitation.invitationMessage}"
                     </p>
                   )}
@@ -532,7 +532,7 @@ export default function TeamManagement() {
               </div>
             ))}
             {(!invitations || invitations.filter(inv => inv.invitationStatus === 'pending').length === 0) && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-muted-foreground">
                 No pending invitations.
               </div>
             )}

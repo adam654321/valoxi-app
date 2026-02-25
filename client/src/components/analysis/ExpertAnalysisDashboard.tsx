@@ -98,7 +98,7 @@ function RagBadge({ rag }: { rag: string }) {
     rag === "GREEN" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
     : rag === "AMBER" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
     : rag === "RED" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-    : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
+    : "bg-muted text-foreground";
   return <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${color}`}>{rag}</span>;
 }
 

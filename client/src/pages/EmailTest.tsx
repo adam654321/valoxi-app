@@ -58,7 +58,7 @@ export default function EmailTest() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="text-sm text-gray-600 dark:text-gray-300">
+            <div className="text-sm text-muted-foreground">
               <p><strong>Configuration Status:</strong></p>
               <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-blue-800 dark:text-blue-200">
@@ -112,19 +112,19 @@ export default function EmailTest() {
             <div className="border-t pt-6">
               <h4 className="font-medium mb-3">Email Features Enabled:</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                   <Mail className="w-4 h-4 text-blue-600" />
                   <span className="text-sm">Team Invitations</span>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                   <Mail className="w-4 h-4 text-green-600" />
                   <span className="text-sm">Portal Access Links</span>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                   <Mail className="w-4 h-4 text-orange-600" />
                   <span className="text-sm">Document Notifications</span>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                   <Mail className="w-4 h-4 text-purple-600" />
                   <span className="text-sm">Deal Updates</span>
                 </div>

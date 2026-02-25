@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
       <AppSidebar />
       <SidebarInset>
         <PageHeader />
-        <main className="flex-1 min-w-0 overflow-auto bg-gray-50">
+        <main className="flex-1 min-w-0 overflow-auto bg-muted">
           {children}
         </main>
       </SidebarInset>

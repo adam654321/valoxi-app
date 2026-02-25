@@ -194,7 +194,7 @@ export function OverviewTab({
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                <div className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-muted-foreground" />

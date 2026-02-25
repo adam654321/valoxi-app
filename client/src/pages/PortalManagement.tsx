@@ -97,7 +97,7 @@ function TokenCompletionDisplay({ accessToken }: { accessToken: string }) {
   if (isLoading) {
     return (
       <div className="text-center">
-        <div className="text-xl font-bold text-gray-400">...</div>
+        <div className="text-xl font-bold text-muted-foreground/70">...</div>
         <div className="text-xs text-muted-foreground">Loading</div>
       </div>
     );
@@ -106,7 +106,7 @@ function TokenCompletionDisplay({ accessToken }: { accessToken: string }) {
   if (!completionData) {
     return (
       <div className="text-center">
-        <div className="text-xl font-bold text-gray-400">N/A</div>
+        <div className="text-xl font-bold text-muted-foreground/70">N/A</div>
         <div className="text-xs text-muted-foreground">No data</div>
       </div>
     );
@@ -134,7 +134,7 @@ function BusinessCompletionDisplay({ tokens }: { tokens: PortalToken[] }) {
   if (isLoading) {
     return (
       <div className="text-right">
-        <div className="text-2xl font-bold text-gray-400">...</div>
+        <div className="text-2xl font-bold text-muted-foreground/70">...</div>
         <div className="text-xs text-muted-foreground">Loading</div>
       </div>
     );
@@ -143,7 +143,7 @@ function BusinessCompletionDisplay({ tokens }: { tokens: PortalToken[] }) {
   if (completionData.length === 0) {
     return (
       <div className="text-right">
-        <div className="text-2xl font-bold text-gray-400">N/A</div>
+        <div className="text-2xl font-bold text-muted-foreground/70">N/A</div>
         <div className="text-xs text-muted-foreground">No data</div>
       </div>
     );
@@ -465,10 +465,10 @@ export default function PortalManagement() {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              <div key={i} className="h-32 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -619,7 +619,7 @@ export default function PortalManagement() {
                             id={`contact-${contact.id}`}
                             checked={selectedContactIds.includes(contact.id)}
                             onChange={() => handleContactToggle(contact.id)}
-                            className="rounded border-gray-300"
+                            className="rounded border-border"
                           />
                           <label htmlFor={`contact-${contact.id}`} className="text-sm">
                             {contact.firstName} {contact.lastName} ({contact.email})
@@ -708,7 +708,7 @@ export default function PortalManagement() {
                 {businessOverview.map((business) => (
                   <div 
                     key={business.companyId} 
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                     onClick={() => showCompanyDetail(business.companyId)}
                   >
                     <div className="flex-1">

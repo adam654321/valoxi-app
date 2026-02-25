@@ -26,10 +26,10 @@ const UpcomingRemindersWidget: React.FC = () => {
           <div className="animate-pulse space-y-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                <div className="w-8 h-8 bg-muted rounded"></div>
                 <div className="flex-1 space-y-1">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
               </div>
             ))}
@@ -37,19 +37,19 @@ const UpcomingRemindersWidget: React.FC = () => {
         ) : (
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {data?.reminders?.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-center py-4 text-muted-foreground">
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">No upcoming reminders</p>
               </div>
             ) : (
               data?.reminders?.map((reminder: any) => (
-                <div key={reminder.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg">
+                <div key={reminder.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
                   <div className="flex-shrink-0 p-1 bg-blue-50 rounded">
                     {getActivityIcon(reminder.activityType)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{reminder.title}</div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-muted-foreground">
                       <span>{reminder.companyName}</span>
                       <span className="mx-1">•</span>
                       <span>{new Date(reminder.activityDate).toLocaleDateString()}</span>

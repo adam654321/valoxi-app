@@ -159,7 +159,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-muted py-8 px-4">
       <style>{ndaStyles}</style>
       <div className="max-w-3xl mx-auto space-y-6">
         <Card>
@@ -181,8 +181,8 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                <span className="ml-3 text-gray-500">Loading agreement...</span>
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/70" />
+                <span className="ml-3 text-muted-foreground">Loading agreement...</span>
               </div>
             ) : (
               <div
@@ -227,7 +227,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
                 onCheckedChange={(checked) => setAgreed(checked === true)}
                 disabled={!hasScrolledToBottom}
               />
-              <label htmlFor="nda-agree" className={`text-sm leading-relaxed cursor-pointer ${!hasScrolledToBottom ? 'text-gray-400' : ''}`}>
+              <label htmlFor="nda-agree" className={`text-sm leading-relaxed cursor-pointer ${!hasScrolledToBottom ? 'text-muted-foreground/70' : ''}`}>
                 I have read and understood the Non-Disclosure Agreement. I agree to be bound by its terms
                 and confirm that I will treat all information shared through this portal as confidential.
               </label>
@@ -245,7 +245,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
                 className="text-base"
                 disabled={!hasScrolledToBottom}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 By typing your name and clicking Accept, you are electronically signing this agreement.
                 Your name, IP address, and timestamp will be recorded. A signed PDF copy will be available for download.
               </p>

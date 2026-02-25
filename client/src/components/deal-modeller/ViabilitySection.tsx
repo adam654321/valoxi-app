@@ -299,7 +299,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               </div>
 
               {hasDebtService && calculations && (
-                <div className="bg-white/60 rounded border p-3 mb-3">
+                <div className="bg-card/60 rounded border p-3 mb-3">
                   <p className="text-sm font-mono text-muted-foreground">
                     DSCR = {formatCurrency(calculations.averageAdjustedEbitda)}{' '}
                     <span className="text-xs">(Adjusted EBITDA)</span>{' '}
@@ -311,7 +311,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               )}
 
               <div className="mb-3">
-                <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
+                <div className="relative h-3 bg-card/80 rounded-full overflow-hidden border">
                   <div className="absolute inset-y-0 left-0 flex w-full">
                     <div className="bg-red-500 h-full" style={{ width: '20%' }} />
                     <div className="bg-orange-400 h-full" style={{ width: '12%' }} />
@@ -445,7 +445,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               </div>
 
               <div className="mb-3">
-                <div className="relative h-3 bg-white/80 rounded-full overflow-hidden border">
+                <div className="relative h-3 bg-card/80 rounded-full overflow-hidden border">
                   <div className="absolute inset-y-0 left-0 flex w-full">
                     <div className="bg-green-400 h-full" style={{ width: '40%' }} />
                     <div className="bg-blue-400 h-full" style={{ width: '20%' }} />
@@ -466,7 +466,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                 </div>
               </div>
 
-              <div className="bg-white/60 rounded border p-3 mb-3">
+              <div className="bg-card/60 rounded border p-3 mb-3">
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Adjusted EBITDA</p>

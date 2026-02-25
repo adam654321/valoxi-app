@@ -69,7 +69,7 @@ const priorityColors = {
 };
 
 const statusColors = {
-  pending: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
+  pending: 'bg-muted text-foreground',
   submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -262,12 +262,12 @@ export function DocumentRequirements({ targetCompanyId, companyName }: DocumentR
           )}
           
           {requirement.helpText && (
-            <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-md">
+            <div className="mb-3 p-3 bg-muted/20 rounded-md">
               <div className="flex items-center gap-2 mb-1">
-                <HelpCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Help:</p>
+                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Help:</p>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">{requirement.helpText}</p>
+              <p className="text-sm text-foreground">{requirement.helpText}</p>
             </div>
           )}
 
@@ -364,7 +364,7 @@ export function DocumentRequirements({ targetCompanyId, companyName }: DocumentR
               <Clock className="h-4 w-4 ml-2 text-blue-600" />
             )}
             {stageProgression?.stage2Status === 'locked' && (
-              <Shield className="h-4 w-4 ml-2 text-gray-400" />
+              <Shield className="h-4 w-4 ml-2 text-muted-foreground/70" />
             )}
           </TabsTrigger>
         </TabsList>

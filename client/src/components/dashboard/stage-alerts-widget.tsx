@@ -26,10 +26,10 @@ const StageAlertsWidget: React.FC = () => {
           <div className="animate-pulse space-y-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center space-x-3">
-                <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                <div className="w-4 h-4 bg-muted rounded"></div>
                 <div className="flex-1 space-y-1">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
               </div>
             ))}
@@ -37,7 +37,7 @@ const StageAlertsWidget: React.FC = () => {
         ) : (
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {data?.stageAlerts?.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
+              <div className="text-center py-4 text-muted-foreground">
                 <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-300" />
                 <p className="text-sm">No stage alerts - all deals are progressing well!</p>
               </div>
@@ -50,8 +50,8 @@ const StageAlertsWidget: React.FC = () => {
                   }`} />
                   <div className="flex-1">
                     <div className="font-medium text-sm">{alert.companyName}</div>
-                    <div className="text-xs text-gray-600">{alert.message}</div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-muted-foreground">{alert.message}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
                       Current stage: <span className="font-medium">{alert.stage}</span>
                     </div>
                   </div>

@@ -201,7 +201,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
         <CardContent>
           <div className="animate-pulse space-y-4">
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div key={i} className="h-16 bg-muted rounded"></div>
             ))}
           </div>
         </CardContent>
@@ -387,18 +387,18 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
       <CardContent>
         <div className="space-y-4">
           {dealTeam?.map((assignment) => (
-            <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-gray-800">
+            <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
               <div className="flex items-center space-x-4">
-                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-sm font-medium text-foreground">
                     {assignment.userName ? assignment.userName.split(' ').map(n => n[0]).join('') : '??'}
                   </span>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                  <h4 className="font-medium text-foreground">
                     {assignment.userName || 'Unknown User'}
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{assignment.userEmail}</p>
+                  <p className="text-sm text-muted-foreground">{assignment.userEmail}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">
                       {assignment.assignmentRole}
@@ -430,7 +430,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Assigned {new Date(assignment.assignedAt).toLocaleDateString()} by {assignment.assignedByName}
                   </p>
                 </div>
@@ -605,7 +605,7 @@ export function DealTeamManagement({ targetCompanyId, targetCompanyName }: DealT
             </div>
           ))}
           {(!dealTeam || dealTeam.length === 0) && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-8 text-muted-foreground">
               No team members assigned to this deal yet.
               {availableTeamMembers.length > 0 && (
                 <p className="mt-2">Click "Assign Member" to add team members to this deal.</p>

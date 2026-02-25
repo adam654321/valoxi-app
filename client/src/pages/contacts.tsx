@@ -274,13 +274,13 @@ export default function Contacts() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">All Contacts</h1>
-              <p className="mt-2 text-gray-600">
+              <h1 className="text-3xl font-bold text-foreground">All Contacts</h1>
+              <p className="mt-2 text-muted-foreground">
                 Manage contacts across all your target companies
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} found
               </div>
               <Button 
@@ -296,7 +296,7 @@ export default function Contacts() {
           {/* Search and Filters */}
           <div className="flex items-center gap-4">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/70 w-4 h-4" />
               <Input
                 placeholder="Search contacts and companies..."
                 value={searchTerm}
@@ -323,9 +323,9 @@ export default function Contacts() {
           {filteredContacts.length === 0 && !searchTerm && (
             <Card>
               <CardContent className="p-12 text-center">
-                <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts yet</h3>
-                <p className="text-gray-600 mb-4">
+                <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground/70" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No contacts yet</h3>
+                <p className="text-muted-foreground mb-4">
                   Add contacts to your target companies to track key people and decision makers.
                 </p>
                 <div className="flex justify-center gap-3">
@@ -347,9 +347,9 @@ export default function Contacts() {
           {filteredContacts.length === 0 && searchTerm && (
             <Card>
               <CardContent className="p-8 text-center">
-                <Search className="w-8 h-8 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
-                <p className="text-gray-600">
+                <Search className="w-8 h-8 mx-auto mb-4 text-muted-foreground/70" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No contacts found</h3>
+                <p className="text-muted-foreground">
                   Try adjusting your search terms or check a different spelling.
                 </p>
               </CardContent>
@@ -361,7 +361,7 @@ export default function Contacts() {
               {/* Primary Contacts */}
               {primaryContacts.length > 0 && !showPrimaryOnly && (
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                     <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
                     Primary Contacts ({primaryContacts.length})
                   </h2>
@@ -376,15 +376,15 @@ export default function Contacts() {
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-lg font-semibold text-gray-900">
+                                  <h3 className="text-lg font-semibold text-foreground">
                                     {contact.firstName} {contact.lastName}
                                   </h3>
                                   <Badge variant="default">Primary</Badge>
                                 </div>
                                 {contact.title && (
-                                  <p className="text-sm text-gray-600 mb-1">{contact.title}</p>
+                                  <p className="text-sm text-muted-foreground mb-1">{contact.title}</p>
                                 )}
-                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                                   <div className="flex items-center gap-1">
                                     <Building className="w-3 h-3" />
                                     <Link 
@@ -411,14 +411,14 @@ export default function Contacts() {
                                     </a>
                                   )}
                                   {contact.phone && (
-                                    <span className="text-gray-600 flex items-center gap-1">
+                                    <span className="text-muted-foreground flex items-center gap-1">
                                       <Phone className="w-3 h-3" />
                                       {contact.phone}
                                     </span>
                                   )}
                                 </div>
                                 {contact.notes && (
-                                  <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">
+                                  <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded">
                                     {contact.notes}
                                   </p>
                                 )}
@@ -462,8 +462,8 @@ export default function Contacts() {
               {/* Other Contacts - only show when not filtering for primary only */}
               {otherContacts.length > 0 && !showPrimaryOnly && (
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center">
+                    <span className="w-2 h-2 bg-muted rounded-full mr-2"></span>
                     Other Contacts ({otherContacts.length})
                   </h2>
                   <div className="grid gap-4">
@@ -472,17 +472,17 @@ export default function Contacts() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-4">
-                              <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
-                                <User className="w-6 h-6 text-gray-600" />
+                              <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center">
+                                <User className="w-6 h-6 text-muted-foreground" />
                               </div>
                               <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                <h3 className="text-lg font-semibold text-foreground mb-1">
                                   {contact.firstName} {contact.lastName}
                                 </h3>
                                 {contact.title && (
-                                  <p className="text-sm text-gray-600 mb-1">{contact.title}</p>
+                                  <p className="text-sm text-muted-foreground mb-1">{contact.title}</p>
                                 )}
-                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                                   <div className="flex items-center gap-1">
                                     <Building className="w-3 h-3" />
                                     <Link 
@@ -509,14 +509,14 @@ export default function Contacts() {
                                     </a>
                                   )}
                                   {contact.phone && (
-                                    <span className="text-gray-600 flex items-center gap-1">
+                                    <span className="text-muted-foreground flex items-center gap-1">
                                       <Phone className="w-3 h-3" />
                                       {contact.phone}
                                     </span>
                                   )}
                                 </div>
                                 {contact.notes && (
-                                  <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">
+                                  <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded">
                                     {contact.notes}
                                   </p>
                                 )}
@@ -560,7 +560,7 @@ export default function Contacts() {
               {/* When showing primary only, display all filtered contacts without grouping */}
               {showPrimaryOnly && (
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                     <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
                     Primary Contacts ({filteredContacts.length})
                   </h2>
@@ -575,15 +575,15 @@ export default function Contacts() {
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-lg font-semibold text-gray-900">
+                                  <h3 className="text-lg font-semibold text-foreground">
                                     {contact.firstName} {contact.lastName}
                                   </h3>
                                   <Badge variant="default">Primary</Badge>
                                 </div>
                                 {contact.title && (
-                                  <p className="text-sm text-gray-600 mb-1">{contact.title}</p>
+                                  <p className="text-sm text-muted-foreground mb-1">{contact.title}</p>
                                 )}
-                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                                   <div className="flex items-center gap-1">
                                     <Building className="w-3 h-3" />
                                     <Link 
@@ -610,14 +610,14 @@ export default function Contacts() {
                                     </a>
                                   )}
                                   {contact.phone && (
-                                    <span className="text-gray-600 flex items-center gap-1">
+                                    <span className="text-muted-foreground flex items-center gap-1">
                                       <Phone className="w-3 h-3" />
                                       {contact.phone}
                                     </span>
                                   )}
                                 </div>
                                 {contact.notes && (
-                                  <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">
+                                  <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded">
                                     {contact.notes}
                                   </p>
                                 )}

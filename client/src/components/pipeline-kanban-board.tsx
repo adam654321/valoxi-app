@@ -200,8 +200,8 @@ export function PipelineKanbanBoard() {
   return (
     <div className="p-6 min-w-0 overflow-hidden">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">M&A Pipeline Board</h1>
-        <p className="text-gray-600 dark:text-gray-400">Drag and drop companies between stages</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">M&A Pipeline Board</h1>
+        <p className="text-muted-foreground">Drag and drop companies between stages</p>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -219,14 +219,14 @@ export function PipelineKanbanBoard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${colors.accent}`} />
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{column.stageName}</h3>
+                      <h3 className="font-semibold text-foreground">{column.stageName}</h3>
                     </div>
                     <Badge variant="secondary" className={colors.text}>
                       {column.companies.length}
                     </Badge>
                   </div>
                   {column.description && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-5">{column.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1 ml-5">{column.description}</p>
                   )}
                 </div>
 
@@ -238,7 +238,7 @@ export function PipelineKanbanBoard() {
                       className={`min-h-[500px] rounded-lg p-2 transition-colors ${
                         snapshot.isDraggingOver
                           ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-dashed border-blue-400'
-                          : 'bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent'
+                          : 'bg-muted/50 border-2 border-transparent'
                       }`}
                       data-testid={`droppable-${column.stageName.toLowerCase().replace(/\s+/g, '-')}`}
                     >
@@ -328,7 +328,7 @@ export function PipelineKanbanBoard() {
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t">
+                                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
                                     <div className="flex items-center gap-1">
                                       <Phone className="h-3 w-3" />
                                       <span>{company.totalContacts} contacts</span>
@@ -350,7 +350,7 @@ export function PipelineKanbanBoard() {
                       ))}
                       {provided.placeholder}
                       {column.companies.length === 0 && !snapshot.isDraggingOver && (
-                        <div className="flex flex-col items-center justify-center h-32 text-gray-400 dark:text-gray-600">
+                        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground/70">
                           <Building2 className="h-8 w-8 mb-2 opacity-50" />
                           <p className="text-sm">No companies</p>
                         </div>

@@ -36,7 +36,7 @@ const getNotificationIcon = (type: string) => {
     case 'deal_assigned':
       return <Building2 className="h-4 w-4 text-purple-500" />;
     default:
-      return <Bell className="h-4 w-4 text-gray-500" />;
+      return <Bell className="h-4 w-4 text-muted-foreground" />;
   }
 };
 
@@ -113,7 +113,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className="text-lg font-semibold text-foreground">
           Notifications
         </h3>
         {unreadCount > 0 && (
@@ -137,8 +137,8 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="p-3 border rounded-lg animate-pulse">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -150,7 +150,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
                 className={`p-3 border rounded-lg transition-colors ${
                   !notification.isRead 
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                    : 'bg-white dark:bg-gray-800'
+                    : 'bg-card'
                 }`}
               >
                 <div className="flex items-start space-x-3">
@@ -159,7 +159,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <h4 className="text-sm font-medium text-foreground">
                         {notification.notificationTitle}
                       </h4>
                       {!notification.isRead && (
@@ -173,7 +173,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
                         </Button>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {notification.notificationMessage}
                     </p>
                     <div className="flex items-center justify-between mt-2">
@@ -190,7 +190,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
                           </Badge>
                         )}
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(notification.createdAt).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -200,7 +200,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
                       </span>
                     </div>
                     {notification.fromUserName && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         From: {notification.fromUserName}
                       </p>
                     )}
@@ -211,9 +211,9 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
           </div>
         ) : (
           <div className="text-center py-8">
-            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No notifications yet</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            <Bell className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
+            <p className="text-muted-foreground">No notifications yet</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">
               You'll see team updates and activity here
             </p>
           </div>
@@ -272,8 +272,8 @@ export function NotificationsPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Notifications</h1>
-          <p className="text-gray-600 dark:text-gray-400">Stay updated with team activity and important updates</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Notifications</h1>
+          <p className="text-muted-foreground">Stay updated with team activity and important updates</p>
         </div>
       </div>
 

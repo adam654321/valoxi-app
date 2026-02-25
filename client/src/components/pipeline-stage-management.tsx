@@ -195,10 +195,10 @@ export function PipelineStageManagement({
                     <div className="space-y-4">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <div key={i} className="flex items-center space-x-4 animate-pulse">
-                          <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                          <div className="h-10 w-10 bg-muted rounded-full"></div>
                           <div className="flex-1">
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-muted rounded w-1/2"></div>
                           </div>
                         </div>
                       ))}
@@ -217,16 +217,16 @@ export function PipelineStageManagement({
                               {entry.fromStage && (
                                 <>
                                   <Badge variant="outline">{entry.fromStage}</Badge>
-                                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                                  <ArrowRight className="h-4 w-4 text-muted-foreground/70" />
                                 </>
                               )}
                               <Badge variant={getStageVariant(entry.toStage)}>{entry.toStage}</Badge>
                             </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-muted-foreground">
                               {formatDateTime(entry.changedAt)}
                             </p>
                             {entry.notes && (
-                              <p className="text-sm text-gray-900 dark:text-gray-100 mt-2">
+                              <p className="text-sm text-foreground mt-2">
                                 {entry.notes}
                               </p>
                             )}
@@ -235,7 +235,7 @@ export function PipelineStageManagement({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <div className="text-center py-8 text-muted-foreground">
                       No stage history available.
                     </div>
                   )}
@@ -275,7 +275,7 @@ export function PipelineStageManagement({
                                 <SelectItem key={stage.id} value={stage.stageName}>
                                   {stage.stageName}
                                   {stage.description && (
-                                    <span className="text-sm text-gray-500 block">
+                                    <span className="text-sm text-muted-foreground block">
                                       {stage.description}
                                     </span>
                                   )}
@@ -322,18 +322,18 @@ export function PipelineStageManagement({
       <CardContent>
         <div className="space-y-6">
           {/* Current Stage Display */}
-          <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-muted">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Badge variant={getStageVariant(currentStage)} className="text-sm">
                   {currentStage}
                 </Badge>
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center text-sm text-muted-foreground">
                   <Clock className="mr-1 h-4 w-4" />
                   {daysInStage} days in stage
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Last updated: {formatDate(stageUpdatedAt)}
               </p>
             </div>
@@ -341,7 +341,7 @@ export function PipelineStageManagement({
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {getStageProgress(currentStage)}%
               </div>
-              <p className="text-xs text-gray-500">Pipeline Progress</p>
+              <p className="text-xs text-muted-foreground">Pipeline Progress</p>
             </div>
           </div>
 
@@ -349,9 +349,9 @@ export function PipelineStageManagement({
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">Pipeline Progress</span>
-              <span className="text-sm text-gray-500">{getStageProgress(currentStage)}% Complete</span>
+              <span className="text-sm text-muted-foreground">{getStageProgress(currentStage)}% Complete</span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-muted rounded-full h-2">
               <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${getStageProgress(currentStage)}%` }}

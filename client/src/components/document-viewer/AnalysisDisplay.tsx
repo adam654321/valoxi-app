@@ -82,7 +82,7 @@ export function getDocumentTypeColor(documentType: string, analysisData?: any) {
     'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
     'balance_sheet': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
   };
-  return colorMap[documentType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  return colorMap[documentType] || 'bg-muted text-foreground';
 }
 
 function getInvoiceStatusColor(status: string) {
@@ -94,7 +94,7 @@ function getInvoiceStatusColor(status: string) {
   } else if (statusLower === 'unpaid') {
     return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
   }
-  return 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700';
+  return 'bg-muted border-border';
 }
 
 function renderStaffMatrixAnalysis(analysisData: any) {
@@ -482,7 +482,7 @@ function renderProfitAndLossAnalysis(analysisData: any) {
                   </div>
                   <div className="space-y-2">
                     <div className="text-sm text-muted-foreground">Tax</div>
-                    <div className="text-xl font-bold text-gray-600">
+                    <div className="text-xl font-bold text-muted-foreground">
                       £{yearData.profit_and_loss?.tax?.toLocaleString() || 0}
                     </div>
                   </div>

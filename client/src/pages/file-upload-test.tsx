@@ -156,7 +156,7 @@ export default function FileUploadTest() {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -206,10 +206,10 @@ export default function FileUploadTest() {
     return (
       <div className="container mx-auto p-6">
         <div className="space-y-4">
-          <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-8 bg-muted rounded animate-pulse"></div>
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded animate-pulse"></div>
+              <div key={i} className="h-20 bg-muted rounded animate-pulse"></div>
             ))}
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function FileUploadTest() {
           <h1 className="text-2xl font-bold" data-testid="text-page-title">
             File Upload Webhook Test
           </h1>
-          <p className="text-gray-600 mt-1" data-testid="text-page-description">
+          <p className="text-muted-foreground mt-1" data-testid="text-page-description">
             Monitor file uploads and test webhook responses for target company documents
           </p>
         </div>
@@ -242,11 +242,11 @@ export default function FileUploadTest() {
         {fileUploadEvents.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <FileText className="w-12 h-12 text-muted-foreground/70 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 No file uploads yet
               </h3>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Upload some documents to target companies to see them appear here for webhook testing.
               </p>
             </CardContent>
@@ -263,7 +263,7 @@ export default function FileUploadTest() {
                         {event.fileName}
                       </span>
                     </CardTitle>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                       <span data-testid={`text-company-${event.id}`}>
                         Company: {event.targetCompanyName || `ID ${event.targetCompanyId}`}
                       </span>
@@ -290,9 +290,9 @@ export default function FileUploadTest() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-1">File URL:</p>
+                    <p className="text-sm text-muted-foreground mb-1">File URL:</p>
                     <div className="flex items-center gap-2">
-                      <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono flex-1 truncate"
+                      <code className="bg-muted px-2 py-1 rounded text-xs font-mono flex-1 truncate"
                             data-testid={`text-file-url-${event.id}`}>
                         {event.fileUrl}
                       </code>
@@ -312,7 +312,7 @@ export default function FileUploadTest() {
                   <div className="flex items-center gap-4">
                     {event.webhookSentAt && (
                       <div>
-                        <p className="text-xs text-gray-500">Webhook sent at:</p>
+                        <p className="text-xs text-muted-foreground">Webhook sent at:</p>
                         <p className="text-sm font-medium" data-testid={`text-webhook-sent-at-${event.id}`}>
                           {formatDate(event.webhookSentAt)}
                         </p>
@@ -366,8 +366,8 @@ export default function FileUploadTest() {
                           {expandedResponse === event.id ? "Collapse" : "Expand"}
                         </Button>
                       </div>
-                      <div className={`bg-gray-50 p-3 rounded-md ${expandedResponse === event.id ? '' : 'max-h-24 overflow-hidden'}`}>
-                        <pre className="text-xs text-gray-700 whitespace-pre-wrap break-all"
+                      <div className={`bg-muted p-3 rounded-md ${expandedResponse === event.id ? '' : 'max-h-24 overflow-hidden'}`}>
+                        <pre className="text-xs text-foreground whitespace-pre-wrap break-all"
                              data-testid={`text-webhook-response-${event.id}`}>
                           {event.webhookResponse}
                         </pre>
@@ -403,7 +403,7 @@ export default function FileUploadTest() {
                     <FileText className="w-5 h-5" />
                     Analysis Result #{result.id}
                   </CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span data-testid={`text-doc-type-${result.id}`}>
                       Type: {result.documentType}
                     </span>
@@ -425,8 +425,8 @@ export default function FileUploadTest() {
                   <div className="space-y-4">
                     <div>
                       <h4 className="text-sm font-medium mb-2">Analysis Data</h4>
-                      <div className="bg-gray-50 p-4 rounded-md">
-                        <pre className="text-xs text-gray-700 whitespace-pre-wrap"
+                      <div className="bg-muted p-4 rounded-md">
+                        <pre className="text-xs text-foreground whitespace-pre-wrap"
                              data-testid={`text-analysis-data-${result.id}`}>
                           {JSON.stringify(result.analysisData, null, 2)}
                         </pre>

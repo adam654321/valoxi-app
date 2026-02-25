@@ -113,15 +113,15 @@ export default function Reports() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-muted">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-3xl font-bold text-foreground">
               Reports & Analytics
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-muted-foreground mt-2">
               Comprehensive insights into your M&A pipeline performance
             </p>
           </div>
@@ -168,8 +168,8 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Deals</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-muted-foreground">Total Deals</p>
+                      <p className="text-2xl font-bold text-foreground">
                         {performanceData?.total_deals || 0}
                       </p>
                     </div>
@@ -184,8 +184,8 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Deals</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
+                      <p className="text-2xl font-bold text-foreground">
                         {performanceData?.active_deals || 0}
                       </p>
                     </div>
@@ -200,8 +200,8 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completed Deals</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-muted-foreground">Completed Deals</p>
+                      <p className="text-2xl font-bold text-foreground">
                         {performanceData?.completed_deals || 0}
                       </p>
                     </div>
@@ -216,8 +216,8 @@ export default function Reports() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Success Rate</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
+                      <p className="text-2xl font-bold text-foreground">
                         {performanceData?.success_rate || 0}%
                       </p>
                     </div>

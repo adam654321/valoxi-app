@@ -299,7 +299,7 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
 
   if (isLoading || !completionStatus) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+      <div className="bg-muted border border-border rounded-lg p-4 mb-4">
         <Skeleton className="h-6 w-48 mb-3" />
         <Skeleton className="h-3 w-full mb-3" />
         <div className="flex gap-2">
@@ -620,11 +620,11 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   if (isPortalLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-muted p-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading portal...</p>
+            <p className="mt-4 text-muted-foreground">Loading portal...</p>
           </div>
         </div>
       </div>
@@ -633,7 +633,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   if (!portalData) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-muted p-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <p className="text-red-600">Invalid or expired portal link</p>
@@ -678,7 +678,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const isCompleted = (portalData?.progress_percentage ?? 0) >= 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-muted p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <Card>
@@ -686,7 +686,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
             <CardTitle className="text-2xl text-center" data-testid="text-portal-title">
               Document Submission Portal
             </CardTitle>
-            <p className="text-center text-gray-600" data-testid="text-company-name">
+            <p className="text-center text-muted-foreground" data-testid="text-company-name">
               {portalData.company_name || portalData.company?.name}
             </p>
             {portalData.token?.expiresAt && (
@@ -748,7 +748,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   <div className="space-y-6">
                     {Object.entries(documentsByCategory).map(([category, categoryDocuments]) => (
                       <div key={category} className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                        <div className="flex items-center justify-between border-b border-border pb-2">
                           <h3 className="text-lg font-semibold flex items-center gap-2" data-testid={`text-category-${category.replace(/\s+/g, '-').toLowerCase()}`}>
                             <FileText className="w-5 h-5" />
                             {category}
@@ -760,7 +760,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                         
                         <div className="grid gap-3">
                           {categoryDocuments.map((document) => (
-                            <div key={document.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors" data-testid={`card-document-${document.id}`}>
+                            <div key={document.id} className="border border-border rounded-lg p-4 hover:border-border transition-colors" data-testid={`card-document-${document.id}`}>
                               <div className="flex items-start justify-between">
                                 <div className="flex items-start space-x-3 flex-1">
                                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -768,11 +768,11 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                                   </div>
                                   
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium text-gray-900 truncate" data-testid={`text-filename-${document.id}`}>
+                                    <h4 className="font-medium text-foreground truncate" data-testid={`text-filename-${document.id}`}>
                                       {document.originalFilename}
                                     </h4>
                                     
-                                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                                       <span className="flex items-center gap-1" data-testid={`text-upload-date-${document.id}`}>
                                         <Calendar className="w-3 h-3" />
                                         {formatDate(document.uploadDate)}
@@ -882,7 +882,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Select File</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-border transition-colors">
                       <input
                         type="file"
                         id="document-file"
@@ -892,22 +892,22 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                         data-testid="input-file-upload"
                       />
                       <label htmlFor="document-file" className="cursor-pointer block">
-                        <FileUp className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                        <div className="text-lg font-medium text-gray-700">
+                        <FileUp className="h-8 w-8 mx-auto text-muted-foreground/70 mb-2" />
+                        <div className="text-lg font-medium text-foreground">
                           Click to upload document
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-muted-foreground mt-1">
                           Supported formats: PDF, Word, Excel
                         </div>
                       </label>
                     </div>
                     
                     {selectedFile && (
-                      <div className="bg-gray-50 rounded-lg p-3" data-testid="selected-file-preview">
+                      <div className="bg-muted rounded-lg p-3" data-testid="selected-file-preview">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-medium text-gray-900" data-testid="text-selected-filename">{selectedFile.name}</div>
-                            <div className="text-sm text-gray-500" data-testid="text-selected-filesize">{formatFileSize(selectedFile.size)}</div>
+                            <div className="font-medium text-foreground" data-testid="text-selected-filename">{selectedFile.name}</div>
+                            <div className="text-sm text-muted-foreground" data-testid="text-selected-filesize">{formatFileSize(selectedFile.size)}</div>
                           </div>
                           <Button
                             variant="ghost"
@@ -961,7 +961,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                     <h3 className="text-xl font-semibold text-green-800" data-testid="text-completion-title">
                       All Documents Submitted!
                     </h3>
-                    <p className="text-gray-600" data-testid="text-completion-message">
+                    <p className="text-muted-foreground" data-testid="text-completion-message">
                       Thank you for submitting all required documents. Our team will review them and be in touch soon.
                     </p>
                   </div>
@@ -1021,7 +1021,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                           </div>
                         )}
                         {ndaHtml && (
-                          <div className="p-4 bg-white dark:bg-gray-900 border rounded-lg max-h-96 overflow-y-auto text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: ndaHtml }} />
+                          <div className="p-4 bg-card border rounded-lg max-h-96 overflow-y-auto text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: ndaHtml }} />
                         )}
                         {!ndaHtml && !ndaHtmlLoading && (
                           <p className="text-sm text-muted-foreground">NDA Version {ndaDocument.version} — signed and in effect.</p>

@@ -101,7 +101,7 @@ const getActivityColor = (type: string) => {
     case "Document": return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
     case "Follow-up": return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300";
     case "Research": return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300";
-    default: return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+    default: return "bg-muted text-foreground";
   }
 };
 
@@ -418,8 +418,8 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
+                <div className="h-3 bg-muted rounded w-3/4"></div>
               </CardContent>
             </Card>
           ))}
@@ -427,8 +427,8 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
       ) : sortedDates.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center">
-            <Calendar className="h-8 w-8 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-600 dark:text-gray-400">
+            <Calendar className="h-8 w-8 mx-auto mb-4 text-muted-foreground/70" />
+            <p className="text-muted-foreground">
               No activities logged yet. Click "Log Activity" to get started.
             </p>
           </CardContent>
@@ -437,7 +437,7 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
         <div className="space-y-6">
           {sortedDates.map((date) => (
             <div key={date} className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 sticky top-0 bg-background py-2">
+              <h4 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2">
                 {format(new Date(date), "EEEE, MMMM d, yyyy")}
               </h4>
               <div className="space-y-3">
@@ -456,7 +456,7 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
                                 {activity.activityType}
                               </Badge>
                             </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            <div className="text-sm text-muted-foreground space-y-1">
                               <div className="flex items-center gap-4">
                                 <span className="flex items-center gap-1">
                                   <User className="h-3 w-3" />

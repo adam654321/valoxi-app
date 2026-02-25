@@ -57,7 +57,7 @@ function RagBadge({ rag, size = "sm" }: { rag: string; size?: "sm" | "lg" }) {
   };
   const sizing = size === "lg" ? "px-4 py-1.5 text-sm" : "px-2.5 py-0.5 text-xs";
   return (
-    <span className={`inline-flex items-center rounded-full font-bold tracking-wide ${colors[rag] || "bg-gray-100 text-gray-600"} ${sizing}`}>
+    <span className={`inline-flex items-center rounded-full font-bold tracking-wide ${colors[rag] || "bg-muted text-muted-foreground"} ${sizing}`}>
       {rag}
     </span>
   );
@@ -174,7 +174,7 @@ function RiskLevelBadge({ level }: { level: string }) {
     high: "bg-red-500/10 text-red-700 dark:text-red-400 ring-1 ring-red-500/20",
     critical: "bg-red-600/15 text-red-800 dark:text-red-300 ring-1 ring-red-600/30",
   };
-  return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold capitalize tracking-wide ${colors[level] || "bg-gray-100 text-gray-600"}`}>{level}</span>;
+  return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold capitalize tracking-wide ${colors[level] || "bg-muted text-muted-foreground"}`}>{level}</span>;
 }
 
 function BulletList({ items, variant }: { items: string[]; variant?: "strength" | "concern" | "info" | "question" }) {

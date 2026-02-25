@@ -49,13 +49,13 @@ interface DealDocumentsSummaryProps {
 }
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' | 'secondary'; icon: any; bgColour: string }> = {
-  draft: { label: 'Draft', variant: 'outline', icon: FileText, bgColour: 'bg-gray-50' },
+  draft: { label: 'Draft', variant: 'outline', icon: FileText, bgColour: 'bg-muted' },
   sent: { label: 'Sent — Awaiting Response', variant: 'outline', icon: Clock, bgColour: 'bg-blue-50' },
   viewed: { label: 'Viewed — Awaiting Response', variant: 'outline', icon: Eye, bgColour: 'bg-blue-50' },
   accepted: { label: 'Accepted', variant: 'default', icon: CheckCircle, bgColour: 'bg-green-50' },
   rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle, bgColour: 'bg-red-50' },
-  withdrawn: { label: 'Withdrawn', variant: 'outline', icon: AlertCircle, bgColour: 'bg-gray-50' },
-  superseded: { label: 'Superseded', variant: 'outline', icon: Clock, bgColour: 'bg-gray-50' },
+  withdrawn: { label: 'Withdrawn', variant: 'outline', icon: AlertCircle, bgColour: 'bg-muted' },
+  superseded: { label: 'Superseded', variant: 'outline', icon: Clock, bgColour: 'bg-muted' },
 };
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
@@ -123,13 +123,13 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
         })}
 
         {showGenerateHotButton && (
-          <div className="rounded-lg border border-dashed border-gray-300 p-3 bg-gray-50/50">
+          <div className="rounded-lg border border-dashed border-border p-3 bg-muted/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <FileCheck className="h-5 w-5 text-gray-400" />
+                <FileCheck className="h-5 w-5 text-muted-foreground/70" />
                 <div>
-                  <p className="font-medium text-sm text-gray-600">Heads of Terms</p>
-                  <p className="text-xs text-gray-400">Offer accepted — ready to generate HoT</p>
+                  <p className="font-medium text-sm text-muted-foreground">Heads of Terms</p>
+                  <p className="text-xs text-muted-foreground/70">Offer accepted — ready to generate HoT</p>
                 </div>
               </div>
               <Button size="sm" onClick={() => setShowHotDialog(true)}>
@@ -308,13 +308,13 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
       <div className={`rounded-lg border p-3 ${status.bgColour}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon className="h-5 w-5 text-gray-500" />
+            <Icon className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="font-medium text-sm">
                 {label}
-                {latest.version > 1 && <span className="text-gray-400 ml-1">v{latest.version}</span>}
+                {latest.version > 1 && <span className="text-muted-foreground/70 ml-1">v{latest.version}</span>}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {latest.sentAt 
                   ? `Sent ${new Date(latest.sentAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
                   : `Created ${new Date(latest.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
@@ -347,19 +347,19 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                   <span className="font-medium text-sm capitalize">{latestResponse.responseType}</span>
                 </div>
                 <div className="text-sm space-y-1">
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-3 w-3" />
                     <span>{latestResponse.respondentName}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     <span>{new Date(latestResponse.createdAt).toLocaleDateString('en-GB', { 
                       day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
                     })}</span>
                   </div>
                   {latestResponse.comments && (
-                    <div className="mt-2 p-2 bg-white rounded text-gray-700">
-                      <p className="text-xs font-medium text-gray-500 mb-1">Comments:</p>
+                    <div className="mt-2 p-2 bg-card rounded text-foreground">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Comments:</p>
                       <p className="text-sm whitespace-pre-wrap">{latestResponse.comments}</p>
                     </div>
                   )}
@@ -367,7 +367,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
               </div>
             )}
 
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-xs text-muted-foreground space-y-1">
               {latest.sentAt && (
                 <div className="flex items-center gap-2">
                   <Send className="h-3 w-3" /> Sent: {new Date(latest.sentAt).toLocaleString('en-GB')}
@@ -418,7 +418,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
             </div>
 
             {documents.length > 1 && (
-              <div className="text-xs text-gray-400 pt-2 border-t">
+              <div className="text-xs text-muted-foreground/70 pt-2 border-t">
                 {documents.length} version{documents.length > 1 ? 's' : ''} — latest is v{latest.version}
               </div>
             )}
@@ -458,7 +458,7 @@ function DocumentViewerDialog({ document, onClose }: { document: DealDocument | 
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
-            <div className="flex items-center justify-center py-10 text-gray-400">Loading document...</div>
+            <div className="flex items-center justify-center py-10 text-muted-foreground/70">Loading document...</div>
           ) : (
             <div 
               className="prose prose-sm max-w-none"

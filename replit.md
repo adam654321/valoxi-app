@@ -129,6 +129,16 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS**: Utility-first CSS framework.
 - **Lucide React**: Icon library.
 
+## Design System & Theming
+- **Color tokens**: All colors use CSS custom properties via shadcn/Tailwind theme tokens. No hardcoded gray-* Tailwind classes.
+  - Text: `text-foreground` (primary), `text-muted-foreground` (secondary), `text-muted-foreground/70` (tertiary)
+  - Backgrounds: `bg-card` (surfaces), `bg-muted` (subtle), `bg-background` (page)
+  - Borders: `border-border`, `divide-border`
+  - Dark mode handled automatically via CSS variables in `:root` and `.dark` — no `dark:*-gray-*` classes needed
+- **Error Boundary**: `client/src/components/error-boundary.tsx` wraps router in App.tsx
+- **Code Splitting**: 22 pages use `React.lazy()` with strategic Suspense boundaries
+- **Component Extraction**: Dashboard (7 widgets) and Target Companies (4 components) extracted into dedicated `client/src/components/` subdirectories
+
 ## Development and Build Tools
 - **Vite**: Fast build tool.
 - **Drizzle Kit**: Database migration and schema management.

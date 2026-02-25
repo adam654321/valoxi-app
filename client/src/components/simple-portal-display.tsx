@@ -170,11 +170,11 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-muted p-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading portal...</p>
+            <p className="mt-4 text-muted-foreground">Loading portal...</p>
           </div>
         </div>
       </div>
@@ -183,7 +183,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
 
   if (!portalData) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-muted p-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <p className="text-red-600">Invalid or expired portal link</p>
@@ -240,7 +240,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-muted p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <Card>
@@ -248,7 +248,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
             <CardTitle className="text-2xl text-center">
               Document Submission Portal
             </CardTitle>
-            <p className="text-center text-gray-600">
+            <p className="text-center text-muted-foreground">
               {portalData.company_name}
             </p>
           </CardHeader>
@@ -262,7 +262,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                 <span className="text-sm font-medium">
                   Analysis Progress: {analysisProgress.completedCount} of {analysisProgress.totalCount} types analyzed
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {Math.round(analysisProgress.completionPercentage)}% Complete
                 </span>
               </div>
@@ -287,21 +287,21 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                     : completionData;  // Individual docs: use analysis completion
                   
                   return (
-                <div key={doc.type} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                <div key={doc.type} className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-border transition-colors">
                   <div className="flex items-center space-x-3">
                     {isComplete ? (
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                     ) : (
-                      <Clock className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      <Clock className="h-5 w-5 text-muted-foreground/70 flex-shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 text-sm">{doc.label}</p>
+                      <p className="font-medium text-foreground text-sm">{doc.label}</p>
                       {doc.isGroup ? (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {typeof completionData === 'number' ? completionData : 0} of 5 files
                         </p>
                       ) : doc.submission ? (
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                           {doc.submission.filename}
                         </p>
                       ) : null}
@@ -320,7 +320,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                       <Badge variant="outline" className={`${
                         isComplete 
                           ? 'text-green-700 border-green-300 bg-green-50' 
-                          : 'text-gray-500'
+                          : 'text-muted-foreground'
                       }`}>
                         {isComplete ? 'Done' : 'Required'}
                       </Badge>
@@ -330,7 +330,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                   )
                 })
               ) : (
-                <div className="col-span-full text-center py-8 text-gray-500">
+                <div className="col-span-full text-center py-8 text-muted-foreground">
                   No document requirements found
                 </div>
               )}
@@ -401,7 +401,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
               {/* File Upload */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Select File</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-border transition-colors">
                   <input
                     type="file"
                     id="document-file"
@@ -410,22 +410,22 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                     className="hidden"
                   />
                   <label htmlFor="document-file" className="cursor-pointer block">
-                    <FileUp className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <div className="text-lg font-medium text-gray-700">
+                    <FileUp className="h-8 w-8 mx-auto text-muted-foreground/70 mb-2" />
+                    <div className="text-lg font-medium text-foreground">
                       Click to upload document
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                       Supported formats: PDF, Word, Excel
                     </div>
                   </label>
                 </div>
                 
                 {selectedFile && (
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-muted rounded-lg p-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium text-gray-900">{selectedFile.name}</div>
-                        <div className="text-sm text-gray-500">{formatFileSize(selectedFile.size)}</div>
+                        <div className="font-medium text-foreground">{selectedFile.name}</div>
+                        <div className="text-sm text-muted-foreground">{formatFileSize(selectedFile.size)}</div>
                       </div>
                       <Button
                         variant="ghost"
@@ -479,7 +479,7 @@ export function SimplePortalDisplay({ token }: SimplePortalDisplayProps) {
                 <h3 className="text-xl font-semibold text-green-800">
                   All Documents Submitted!
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Thank you for submitting all required documents. Our team will review them and be in touch soon.
                 </p>
               </div>

@@ -312,7 +312,7 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
+                        <div className="bg-muted rounded-lg p-4 overflow-auto max-h-96">
                           <pre className="text-sm whitespace-pre-wrap break-words">
                             <code>
                               {JSON.stringify(enhanceDisplayData(result.analysisData, result.documentType), null, 2)}

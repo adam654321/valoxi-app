@@ -121,7 +121,7 @@ export default function AdminCompanyDetail() {
                     <TableCell className="font-medium">{u.firstName} {u.lastName}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.userRole ?? u.role}</TableCell>
-                    <TableCell>{u.isActive ? <span className="text-green-600 text-sm font-medium">Active</span> : <span className="text-gray-400 text-sm">Inactive</span>}</TableCell>
+                    <TableCell>{u.isActive ? <span className="text-green-600 text-sm font-medium">Active</span> : <span className="text-muted-foreground/70 text-sm">Inactive</span>}</TableCell>
                   </TableRow>
                 ))
               )}

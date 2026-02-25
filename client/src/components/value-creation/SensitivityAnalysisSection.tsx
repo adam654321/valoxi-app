@@ -275,7 +275,7 @@ export default function SensitivityAnalysisSection({ data, baseAssumptions, exit
                             <TooltipProvider delayDuration={100}>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="cursor-default text-gray-800 dark:text-gray-900">
+                                  <span className="cursor-default text-foreground">
                                     {Math.abs(cellValue) >= 1000000
                                       ? `\u00A3${(cellValue / 1000000).toFixed(1)}M`
                                       : `\u00A3${(cellValue / 1000).toFixed(0)}K`}

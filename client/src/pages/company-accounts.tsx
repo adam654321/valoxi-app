@@ -119,7 +119,7 @@ export default function CompanyAccounts() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-border"></div>
         </div>
       </div>
     );
@@ -131,7 +131,7 @@ export default function CompanyAccounts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Company Accounts</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Manage your company accounts. You can have up to 5 companies.
           </p>
         </div>
@@ -248,10 +248,10 @@ export default function CompanyAccounts() {
               <div>
                 <h3 className="font-semibold text-lg">{currentCompany.companyName}</h3>
                 {currentCompany.email && (
-                  <p className="text-sm text-gray-600">{currentCompany.email}</p>
+                  <p className="text-sm text-muted-foreground">{currentCompany.email}</p>
                 )}
                 {currentCompany.phone && (
-                  <p className="text-sm text-gray-600">{currentCompany.phone}</p>
+                  <p className="text-sm text-muted-foreground">{currentCompany.phone}</p>
                 )}
               </div>
               <div className="flex items-center justify-end gap-2">
@@ -286,16 +286,16 @@ export default function CompanyAccounts() {
                   <CardContent>
                     <div className="space-y-2 mb-4">
                       {company.email && (
-                        <p className="text-sm text-gray-600">{company.email}</p>
+                        <p className="text-sm text-muted-foreground">{company.email}</p>
                       )}
                       {company.phone && (
-                        <p className="text-sm text-gray-600">{company.phone}</p>
+                        <p className="text-sm text-muted-foreground">{company.phone}</p>
                       )}
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">
                           {company.isAdmin ? "Admin" : company.role}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           Joined {new Date(company.joinedAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -319,9 +319,9 @@ export default function CompanyAccounts() {
       {companies.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <Building2 className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Company Accounts</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               Create your first company account to get started with the M&A CRM platform.
             </p>
             <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>

@@ -113,7 +113,7 @@ const getActivityColor = (type: string) => {
     case "Document": return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
     case "Follow-up": return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300";
     case "Research": return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300";
-    default: return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+    default: return "bg-muted text-foreground";
   }
 };
 

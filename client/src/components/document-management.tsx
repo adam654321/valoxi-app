@@ -815,7 +815,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
     if (fileType.includes('excel') || fileType.includes('spreadsheet')) return <FileText className="w-4 h-4 text-green-500" />;
     if (fileType.includes('powerpoint') || fileType.includes('presentation')) return <FileText className="w-4 h-4 text-orange-500" />;
     if (fileType.includes('image')) return <FileText className="w-4 h-4 text-purple-500" />;
-    return <File className="w-4 h-4 text-gray-500" />;
+    return <File className="w-4 h-4 text-muted-foreground" />;
   };
 
   const totalDocuments = Object.values(groupedDocuments).flat().length;

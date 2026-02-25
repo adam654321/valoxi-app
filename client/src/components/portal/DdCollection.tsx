@@ -89,12 +89,12 @@ function getDisplayStatus(req: DdRequirement): { label: string; color: string; i
     return { label: 'Pending review', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', icon: <Clock className="h-4 w-4 text-blue-500" /> };
   }
   if (req.linkedDocuments && req.linkedDocuments.length > 0) {
-    return { label: 'In progress', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300', icon: <Clock className="h-4 w-4 text-gray-400" /> };
+    return { label: 'In progress', color: 'bg-muted text-muted-foreground', icon: <Clock className="h-4 w-4 text-muted-foreground/70" /> };
   }
   if (req.status === 'na') {
-    return { label: 'N/A', color: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400', icon: <MinusCircle className="h-4 w-4 text-gray-400" /> };
+    return { label: 'N/A', color: 'bg-muted text-muted-foreground', icon: <MinusCircle className="h-4 w-4 text-muted-foreground/70" /> };
   }
-  return { label: 'Awaiting', color: 'bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500', icon: <AlertCircle className="h-4 w-4 text-gray-300" /> };
+  return { label: 'Awaiting', color: 'bg-muted text-muted-foreground/70', icon: <AlertCircle className="h-4 w-4 text-muted-foreground/50" /> };
 }
 
 function getRequirementTint(req: DdRequirement): string {
@@ -111,9 +111,9 @@ function getRequirementTint(req: DdRequirement): string {
     return 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
   }
   if (req.status === 'na') {
-    return 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800';
+    return 'bg-muted border-border';
   }
-  return 'bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800';
+  return 'bg-card border-border';
 }
 
 export default function DdCollection({ token, onDocumentUploaded }: DdCollectionProps) {
@@ -312,8 +312,8 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
       <Card>
         <CardContent className="py-8">
           <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-            <span className="ml-2 text-gray-500">Loading due diligence requirements...</span>
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/70" />
+            <span className="ml-2 text-muted-foreground">Loading due diligence requirements...</span>
           </div>
         </CardContent>
       </Card>
@@ -423,14 +423,14 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                               <Paperclip className="h-4 w-4 text-blue-500 flex-shrink-0" />
                               <button
                                 onClick={() => handleViewDocument(doc)}
-                                className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 hover:underline cursor-pointer"
+                                className="text-sm text-foreground truncate hover:text-blue-600 hover:underline cursor-pointer"
                               >
                                 {doc.filename}
                               </button>
-                              {doc.fileSize && <span className="text-sm text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                              {doc.fileSize && <span className="text-sm text-muted-foreground/70 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
                               <button
                                 onClick={() => handleViewDocument(doc)}
-                                className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+                                className="text-muted-foreground/70 hover:text-blue-600 flex-shrink-0"
                                 title="View document"
                               >
                                 <Eye className="h-4 w-4" />
@@ -450,14 +450,14 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                               <FileText className="h-4 w-4 text-green-500 flex-shrink-0" />
                               <button
                                 onClick={() => handleViewDocument(doc)}
-                                className="text-sm text-gray-700 dark:text-gray-300 truncate hover:text-blue-600 hover:underline cursor-pointer"
+                                className="text-sm text-foreground truncate hover:text-blue-600 hover:underline cursor-pointer"
                               >
                                 {doc.filename}
                               </button>
-                              {doc.fileSize && <span className="text-sm text-gray-400 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
+                              {doc.fileSize && <span className="text-sm text-muted-foreground/70 flex-shrink-0">{formatFileSize(doc.fileSize)}</span>}
                               <button
                                 onClick={() => handleViewDocument(doc)}
-                                className="text-gray-400 hover:text-blue-600 flex-shrink-0"
+                                className="text-muted-foreground/70 hover:text-blue-600 flex-shrink-0"
                                 title="View document"
                               >
                                 <Eye className="h-4 w-4" />
@@ -465,7 +465,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                               {req.buyerReviewStatus !== 'satisfied' && (
                                 <button
                                   onClick={() => handleRemoveDocument(req.id, doc.id)}
-                                  className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                                  className="text-muted-foreground/70 hover:text-red-500 flex-shrink-0"
                                   title="Remove"
                                 >
                                   <X className="h-4 w-4" />
@@ -481,9 +481,9 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                   {req.buyerReviewStatus !== 'satisfied' && (
                     <div className="mt-3">
                       {uploadingRequirementId === req.id ? (
-                        <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-3">
+                        <div className="p-3 bg-muted rounded-lg border space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <span className="text-sm font-medium text-foreground">
                               Upload for: {req.refNumber} — {req.documentName}
                             </span>
                             <Button variant="ghost" size="sm" onClick={handleCancelUpload} className="h-6 text-xs">
@@ -500,12 +500,12 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                               className="hidden"
                             />
                             {selectedFile ? (
-                              <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border">
+                              <div className="flex items-center justify-between bg-card p-2 rounded border">
                                 <div className="flex items-center gap-2">
                                   <FileText className="h-4 w-4 text-blue-500" />
                                   <div>
                                     <span className="text-sm font-medium">{selectedFile.name}</span>
-                                    <span className="text-xs text-gray-500 ml-2">{formatFileSize(selectedFile.size)}</span>
+                                    <span className="text-xs text-muted-foreground ml-2">{formatFileSize(selectedFile.size)}</span>
                                   </div>
                                 </div>
                                 <Button
@@ -581,7 +581,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                           </Badge>
                           <button
                             onClick={() => handleUnmarkComplete(req.id)}
-                            className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                            className="text-sm text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground/50 underline"
                           >
                             Undo
                           </button>
@@ -653,10 +653,10 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">
+              <span className="text-muted-foreground">
                 {verifiedCount} of {totalRequirements} requirements verified
               </span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{progressPercent}%</span>
+              <span className="font-medium text-foreground">{progressPercent}%</span>
             </div>
             <Progress value={progressPercent} className="h-3" />
           </div>
@@ -668,7 +668,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
           <CardTitle className="text-base">Categories</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y dark:divide-gray-800">
+          <div className="divide-y">
             {categories.map((cat) => {
               const catVerified = cat.requirements.filter(r => r.buyerReviewStatus === 'satisfied').length;
               const allVerified = catVerified === cat.totalCount && cat.totalCount > 0;
@@ -684,12 +684,12 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
               return (
                 <button
                   key={cat.id}
-                  className={`w-full flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors text-left ${rowBg}`}
+                  className={`w-full flex items-center gap-3 py-3 px-4 hover:bg-muted/50 cursor-pointer transition-colors text-left ${rowBg}`}
                   onClick={() => setSelectedCategoryId(cat.id)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{cat.categoryName}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{cat.categoryName}</span>
                       {allVerified && (
                         <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                       )}
@@ -706,7 +706,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-24 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${allVerified ? 'bg-green-500' : 'bg-blue-500'}`}
                         style={{ width: `${catProgress}%` }}

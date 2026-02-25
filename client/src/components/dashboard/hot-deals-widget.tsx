@@ -18,7 +18,7 @@ const HotDealsWidget: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold flex items-center">
           🔥 Hot Deals
-          <span className="ml-2 text-sm text-gray-600 font-normal">Deals needing attention</span>
+          <span className="ml-2 text-sm text-muted-foreground font-normal">Deals needing attention</span>
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={() => refetch()}>
           <RefreshCw className="w-4 h-4" />
@@ -28,24 +28,24 @@ const HotDealsWidget: React.FC = () => {
         {isLoading ? (
           <div className="animate-pulse space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className="h-16 bg-muted rounded"></div>
             ))}
           </div>
         ) : (
           <div className="space-y-3">
             {data?.deals.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Target className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Target className="w-12 h-12 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-lg">🎉 No deals need immediate attention!</p>
               </div>
             ) : (
               data?.deals.map((deal) => (
                 <Link key={deal.id} href={`/target-companies/${deal.id}`}>
-                  <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <div className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-semibold">{deal.companyName}</h4>
-                        <div className="text-sm text-gray-600">{deal.stage}</div>
+                        <div className="text-sm text-muted-foreground">{deal.stage}</div>
                       </div>
                       <div className="text-right space-y-1">
                         {deal.daysInStage > 21 && (

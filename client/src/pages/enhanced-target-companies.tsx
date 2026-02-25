@@ -261,10 +261,10 @@ export default function EnhancedTargetCompanies() {
             <Card key={i}>
               <CardContent className="p-6">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mb-4"></div>
+                  <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
                 </div>
               </CardContent>
             </Card>
@@ -274,9 +274,9 @@ export default function EnhancedTargetCompanies() {
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
-              <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No companies found</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <Building2 className="mx-auto h-12 w-12 text-muted-foreground/70" />
+              <h3 className="mt-2 text-sm font-medium text-foreground">No companies found</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {activeFiltersCount > 0
                   ? "Try adjusting your search filters or add your first target company."
                   : "Get started by adding your first potential acquisition target."

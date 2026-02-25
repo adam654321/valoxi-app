@@ -110,11 +110,11 @@ function PriorityBadge({ priority }: { priority: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-    not_submitted: { label: "Not Submitted", className: "bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500", icon: <AlertCircle className="h-4 w-4 text-gray-300" /> },
+    not_submitted: { label: "Not Submitted", className: "bg-muted text-muted-foreground/70", icon: <AlertCircle className="h-4 w-4 text-muted-foreground/50" /> },
     submitted: { label: "Submitted", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", icon: <Clock className="h-4 w-4 text-amber-500" /> },
     approved: { label: "Approved", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
     rejected: { label: "Rejected", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300", icon: <XCircle className="h-4 w-4 text-red-500" /> },
-    na: { label: "N/A", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400", icon: <AlertCircle className="h-4 w-4 text-gray-400" /> },
+    na: { label: "N/A", className: "bg-muted text-muted-foreground", icon: <AlertCircle className="h-4 w-4 text-muted-foreground/70" /> },
     satisfied: { label: "Verified", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
     more_needed: { label: "More Needed", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", icon: <AlertCircle className="h-4 w-4 text-amber-500" /> },
     pending_review: { label: "Pending Review", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", icon: <Clock className="h-4 w-4 text-blue-500" /> },
@@ -149,11 +149,11 @@ function getRequirementTint(req: DdRequirementWithStatus): string {
     case 'submitted':
       return 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
     case 'na':
-      return 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800';
+      return 'bg-muted border-border';
     case 'rejected':
       return 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900';
     default:
-      return 'bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800';
+      return 'bg-card border-border';
   }
 }
 
@@ -311,7 +311,7 @@ function DocumentLinkPicker({
               ) : (
                 Object.entries(grouped).map(([cat, docs]) => (
                   <div key={cat}>
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 sticky top-0">
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/50 sticky top-0">
                       {cat}
                     </div>
                     {docs.map((doc) => {
@@ -319,7 +319,7 @@ function DocumentLinkPicker({
                       return (
                         <button
                           key={doc.id}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-start gap-2"
+                          className="w-full text-left px-3 py-2 hover:bg-muted transition-colors flex items-start gap-2"
                           onClick={() => {
                             onSelect(doc.id);
                             setOpen(false);
@@ -479,13 +479,13 @@ function RequirementRow({
               <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-blue-300 text-blue-600">Held</Badge>
               <button
                 onClick={() => onViewDocument(doc)}
-                className="text-gray-400 hover:text-blue-600"
+                className="text-muted-foreground/70 hover:text-blue-600"
                 title="View document"
               >
                 <Eye className="h-4 w-4" />
               </button>
               {!isVerified && (
-                <button onClick={() => handleUnlinkDoc(doc.id)} className="text-gray-400 hover:text-red-500">
+                <button onClick={() => handleUnlinkDoc(doc.id)} className="text-muted-foreground/70 hover:text-red-500">
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -505,7 +505,7 @@ function RequirementRow({
               </Badge>
               <button
                 onClick={() => onViewDocument(doc)}
-                className="text-gray-400 hover:text-blue-600"
+                className="text-muted-foreground/70 hover:text-blue-600"
                 title="View document"
               >
                 <Eye className="h-4 w-4" />
@@ -881,14 +881,14 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   if (!hotAccepted) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-full p-6 mb-6">
-          <Lock className="h-12 w-12 text-gray-400" />
+        <div className="bg-muted/50 rounded-full p-6 mb-6">
+          <Lock className="h-12 w-12 text-muted-foreground/70" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Due Diligence Locked</h3>
-        <p className="text-gray-500 text-center max-w-md mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-2">Due Diligence Locked</h3>
+        <p className="text-muted-foreground text-center max-w-md mb-4">
           The Due Diligence stage will unlock once the Heads of Terms document has been accepted by the seller.
         </p>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
           <FileCheck className="h-4 w-4" />
           <span>Awaiting Heads of Terms acceptance</span>
         </div>
@@ -1129,7 +1129,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
               <p className="text-sm">{ddFilter === 'all' ? 'No DD categories found' : 'No matching requirements'}</p>
             </div>
           ) : (
-            <div className="divide-y dark:divide-gray-800">
+            <div className="divide-y">
               {filteredCategories.map((item) => {
                 const activeReqs = item.requirements.filter(r => (r.status?.status || "not_submitted") !== "na");
                 const verifiedCount = activeReqs.filter(r => {
@@ -1151,12 +1151,12 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                 return (
                   <button
                     key={item.category.id}
-                    className={`w-full flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors text-left ${rowBg}`}
+                    className={`w-full flex items-center gap-3 py-3 px-4 hover:bg-muted/50 cursor-pointer transition-colors text-left ${rowBg}`}
                     onClick={() => setSelectedCategoryId(item.category.id)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.category.categoryName}</span>
+                        <span className="text-sm font-medium text-foreground truncate">{item.category.categoryName}</span>
                         {allVerified && (
                           <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                         )}
@@ -1173,7 +1173,7 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <div className="w-24 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${allVerified ? 'bg-green-500' : 'bg-blue-500'}`}
                           style={{ width: `${pct}%` }}

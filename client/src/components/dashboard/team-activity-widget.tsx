@@ -27,18 +27,18 @@ const TeamActivityWidget: React.FC = () => {
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
-                  <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  <div className="w-6 h-6 bg-muted rounded-full"></div>
+                  <div className="h-4 bg-muted rounded w-20"></div>
                 </div>
-                <div className="h-4 bg-gray-200 rounded w-8"></div>
+                <div className="h-4 bg-muted rounded w-8"></div>
               </div>
             ))}
           </div>
         ) : (
           <div className="space-y-3">
             {data?.teamActivity?.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                <Users2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-center py-4 text-muted-foreground">
+                <Users2 className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
                 <p className="text-sm">No team activity</p>
               </div>
             ) : (

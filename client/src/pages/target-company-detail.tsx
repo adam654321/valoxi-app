@@ -101,7 +101,7 @@ function DealStatusStrip({ targetCompanyId }: { targetCompanyId: number }) {
   };
 
   const statusDisplay: Record<string, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
+    draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
     sent: { label: "Sent", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
     viewed: { label: "Viewed", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
     accepted: { label: "Accepted", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
@@ -353,8 +353,8 @@ export default function TargetCompanyDetail() {
   // Loading state
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50">
-        <div className="bg-white dark:bg-gray-900 border-b">
+      <div className="min-h-screen bg-muted/50/50">
+        <div className="bg-card border-b">
           <div className="container mx-auto px-6 py-4">
             <Skeleton className="h-8 w-64" />
           </div>
@@ -381,10 +381,10 @@ export default function TargetCompanyDetail() {
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted/50/50 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="p-6 text-center">
-            <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/70" />
             <h2 className="text-xl font-semibold mb-2">Company Not Found</h2>
             <p className="text-muted-foreground mb-4">
               The requested company could not be found or you don't have access to it.
@@ -399,9 +399,9 @@ export default function TargetCompanyDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50">
+    <div className="min-h-screen bg-muted/50/50">
       {/* Modern Header */}
-      <div className="bg-white dark:bg-gray-900 border-b sticky top-0 z-40">
+      <div className="bg-card border-b sticky top-0 z-40">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -417,7 +417,7 @@ export default function TargetCompanyDetail() {
                   <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-company-name">
+                  <h1 className="text-2xl font-bold text-foreground" data-testid="text-company-name">
                     {company.companyName}
                   </h1>
                   <div className="flex items-center gap-2 mt-1">
@@ -678,7 +678,7 @@ export default function TargetCompanyDetail() {
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                      <div className="bg-muted rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Globe className="w-4 h-4 text-muted-foreground" />
@@ -860,7 +860,7 @@ export default function TargetCompanyDetail() {
                             </div>
                             
                             {primaryContact.notes && (
-                              <p className="text-sm text-muted-foreground bg-white dark:bg-gray-800 p-3 rounded border" data-testid="primary-contact-notes">
+                              <p className="text-sm text-muted-foreground bg-card p-3 rounded border" data-testid="primary-contact-notes">
                                 {primaryContact.notes}
                               </p>
                             )}

@@ -68,10 +68,10 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               M&A Dashboard
             </h1>
-            <p className="mt-1 text-gray-600">
+            <p className="mt-1 text-muted-foreground">
               Welcome back, {user.firstName} • {user.company?.companyName}
             </p>
           </div>
@@ -81,7 +81,7 @@ export default function Dashboard() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Last updated: {lastRefresh.toLocaleTimeString()}
             </div>
           </div>
@@ -95,9 +95,9 @@ export default function Dashboard() {
             <Card key={i}>
               <CardContent className="p-6">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
+                  <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
                 </div>
               </CardContent>
             </Card>
@@ -109,8 +109,8 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Target Companies</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.targetCompanies || 0}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Target Companies</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.targetCompanies || 0}</p>
                 </div>
                 <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
                   <Building2 className="w-6 h-6 text-blue-600" />
@@ -126,8 +126,8 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Deals</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.activeDeals || 0}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.activeDeals || 0}</p>
                 </div>
                 <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-green-600" />
@@ -143,8 +143,8 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Contacts</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.totalContacts || 0}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Contacts</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.totalContacts || 0}</p>
                 </div>
                 <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center">
                   <Users className="w-6 h-6 text-purple-600" />
@@ -160,8 +160,8 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Deal Value</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.dealValue || '$0'}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Deal Value</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.dealValue || '$0'}</p>
                 </div>
                 <div className="h-12 w-12 bg-yellow-50 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-yellow-600" />
@@ -201,7 +201,7 @@ export default function Dashboard() {
                 <Building2 className="w-6 h-6 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Add Target Company</h3>
-              <p className="text-gray-600 mb-4">Create a new acquisition target to track</p>
+              <p className="text-muted-foreground mb-4">Create a new acquisition target to track</p>
               <Link href="/target-companies/new">
                 <Button className="w-full">
                   Add Company
@@ -218,7 +218,7 @@ export default function Dashboard() {
                 <Activity className="w-6 h-6 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">View Pipeline</h3>
-              <p className="text-gray-600 mb-4">Manage your acquisition pipeline</p>
+              <p className="text-muted-foreground mb-4">Manage your acquisition pipeline</p>
               <Link href="/pipeline">
                 <Button variant="outline" className="w-full">
                   View Pipeline
@@ -235,7 +235,7 @@ export default function Dashboard() {
                 <Users className="w-6 h-6 text-purple-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Team Management</h3>
-              <p className="text-gray-600 mb-4">Manage team members and roles</p>
+              <p className="text-muted-foreground mb-4">Manage team members and roles</p>
               <Link href="/team">
                 <Button variant="outline" className="w-full">
                   Manage Team

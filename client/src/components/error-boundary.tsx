@@ -27,19 +27,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-8 text-center">
+        <div className="min-h-screen flex items-center justify-center bg-muted p-4">
+          <div className="bg-card rounded-lg shadow-lg max-w-md w-full p-8 text-center">
             <div className="flex justify-center mb-4">
               <AlertTriangle className="h-12 w-12 text-destructive" />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h1 className="text-xl font-semibold text-foreground mb-2">
               Something went wrong
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               An unexpected error occurred. You can try reloading the page or returning to the dashboard.
             </p>
             {this.state.errorMessage && (
-              <pre className="text-xs text-muted-foreground bg-gray-100 dark:bg-gray-700 rounded p-3 mb-6 overflow-auto max-h-32 text-left">
+              <pre className="text-xs text-muted-foreground bg-muted rounded p-3 mb-6 overflow-auto max-h-32 text-left">
                 {this.state.errorMessage}
               </pre>
             )}

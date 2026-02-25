@@ -217,7 +217,7 @@ export default function TargetCompanies() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -230,16 +230,16 @@ export default function TargetCompanies() {
                 <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
               </div>
               <div className="hidden md:ml-10 md:flex md:space-x-8">
-                <Link href="/dashboard" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
+                <Link href="/dashboard" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-border px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Dashboard
                 </Link>
                 <Link href="/target-companies" className="text-primary border-b-2 border-primary px-1 pt-1 pb-4 text-sm font-medium">
                   Target Companies
                 </Link>
-                <Link href="/contacts" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
+                <Link href="/contacts" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-border px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Contacts
                 </Link>
-                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-gray-300 px-1 pt-1 pb-4 text-sm font-medium transition-colors">
+                <a href="#" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-border px-1 pt-1 pb-4 text-sm font-medium transition-colors">
                   Reports
                 </a>
               </div>
@@ -252,7 +252,7 @@ export default function TargetCompanies() {
                 Add Target Company
               </Button>
               <div className="relative">
-                <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <div className="h-8 w-8 bg-muted rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -279,10 +279,10 @@ export default function TargetCompanies() {
               <Card key={i}>
                 <CardContent className="p-6">
                   <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/2 mb-4"></div>
+                    <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-2/3"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -292,9 +292,9 @@ export default function TargetCompanies() {
           <Card>
             <CardContent className="py-12">
               <div className="text-center">
-                <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No target companies yet</h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <Building2 className="mx-auto h-12 w-12 text-muted-foreground/70" />
+                <h3 className="mt-2 text-sm font-medium text-foreground">No target companies yet</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Get started by adding your first potential acquisition target.
                 </p>
                 <div className="mt-6">

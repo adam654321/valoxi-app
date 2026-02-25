@@ -86,7 +86,7 @@ export function TeamTab({
                     </div>
                     
                     {primaryContact.notes && (
-                      <p className="text-sm text-muted-foreground bg-white dark:bg-gray-800 p-3 rounded border" data-testid="primary-contact-notes">
+                      <p className="text-sm text-muted-foreground bg-card p-3 rounded border" data-testid="primary-contact-notes">
                         {primaryContact.notes}
                       </p>
                     )}
