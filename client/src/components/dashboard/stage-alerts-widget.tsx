@@ -43,7 +43,7 @@ const StageAlertsWidget: React.FC = () => {
               </div>
             ) : (
               data?.stageAlerts?.map((alert: any) => (
-                <div key={alert.id} className="flex items-start space-x-3 p-3 border-l-4 border-amber-400 bg-amber-50 rounded-lg">
+                <div key={alert.id} className="flex items-start space-x-3 p-3 border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                   <AlertTriangle className={`w-4 h-4 mt-0.5 ${
                     alert.alertType === 'critical' ? 'text-red-500' : 
                     alert.alertType === 'warning' ? 'text-amber-500' : 'text-blue-500'
