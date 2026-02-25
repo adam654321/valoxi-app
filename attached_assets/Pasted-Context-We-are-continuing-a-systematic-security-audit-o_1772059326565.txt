@@ -1,0 +1,58 @@
+Context: We are continuing a systematic security audit of this multi-tenant M&A CRM application. Each tenant is identified by a userCompanyId stored in the user's session. We have already fixed server/routes/financial-data.routes.ts using a consistent ownership verification pattern. We are now applying the same fix to the expert analysis routes.
+The problem: server/routes/expert-analysis.routes.ts contains 6 endpoints that only verify userId exists in the session. None of them check userCompanyId. This means any authenticated user can trigger AI pipelines, retry experts, cancel analyses, and read AI results for companies belonging to other tenants by providing any integer companyId in the URL.
+The fix required: Apply the same tenant isolation pattern used in server/routes/financial-data.routes.ts to every endpoint in expert-analysis.routes.ts. The approach is:
+
+Extract both userId and userCompanyId from the session at the top of each handler
+Throw UnauthorizedError if either is missing
+Parse and validate the companyId URL parameter
+Call targetCompaniesRepository.getById(companyId, userCompanyId) to verify the company belongs to this tenant
+Throw NotFoundError if ownership cannot be confirmed
+Only then proceed to call the service method
+
+Specific instructions:
+In server/routes/expert-analysis.routes.ts:
+
+Replace the current error import line with:
+typescriptimport { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
+
+Add this import after the existing imports:
+typescriptimport { targetCompaniesRepository } from '../repositories/target-companies.repository';
+
+Update all 6 route handlers to follow this pattern (using trigger-stage1 as the template):
+typescriptrouter.post('/trigger-stage1/:id', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userId || !userCompanyId) throw new UnauthorizedError();
+
+  const companyId = parseInt(req.params.id, 10);
+  if (isNaN(companyId)) throw new BadRequestError('Invalid company ID');
+
+  const company = await targetCompaniesRepository.getById(companyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
+  expertAnalysisService.triggerNewStage1Pipeline(companyId, userId).catch(err => {
+    console.error(`[EXPERT_ANALYSIS_ROUTE] Stage 1 pipeline failed for company ${companyId}:`, err.message);
+  });
+
+  sendSuccess(res, { message: 'Screening pipeline started' });
+}));
+
+Apply this same pattern to all remaining 5 endpoints: trigger-pipeline, retry, resume, cancel, and results. Note:
+
+The retry endpoint also has an expertType param — that is unaffected, only the ownership check is being added
+The resume endpoint currently only checks userId — it must now also extract and check userCompanyId
+The cancel endpoint currently only checks userId — same as above
+The results GET endpoint currently only checks userId — same pattern applies
+
+
+The ownership check must appear in every handler before any call to expertAnalysisService
+
+Do not modify expert-analysis.service.ts or any other file. The fix lives entirely in the routes file.
+
+When complete, please confirm the following — respond to each point explicitly:
+
+Confirm that all 6 endpoints now extract both userId and userCompanyId from req.session at the start of each handler
+Confirm that all 6 endpoints throw UnauthorizedError if either userId or userCompanyId is missing
+Confirm that all 6 endpoints call targetCompaniesRepository.getById(companyId, userCompanyId) and throw NotFoundError if the result is undefined — before any call to expertAnalysisService
+Show me the complete updated contents of server/routes/expert-analysis.routes.ts so I can verify the changes
+Confirm no other files were modified (git diff --name-only should show only server/routes/expert-analysis.routes.ts)
