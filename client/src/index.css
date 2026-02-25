@@ -44,35 +44,6 @@
   --textSecondary: hsl(215, 16%, 47%);
 }
 
-/* Drag and drop improvements - cursor tracking fix */
-div[data-rbd-draggable-id] {
-  position: relative;
-}
-
-/* Prevent body scroll during drag */
-body.dragging {
-  overflow: hidden;
-}
-
-/* Force all containers to allow overflow during drag */
-body.dragging * {
-  overflow: visible !important;
-}
-
-/* Critical fix: Proper cursor tracking for dragged elements */
-[data-rbd-draggable-id][style*="transform"] {
-  z-index: 999999 !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
-  border: 2px solid #3b82f6 !important;
-  pointer-events: none !important;
-  transform-origin: 0 0 !important;
-}
-
-/* Ensure consistent positioning for all dragged elements */
-[data-rbd-draggable-id][style*="position: fixed"] {
-  transform-origin: 0 0 !important;
-}
-
 /* Custom subtle background colors for balance sheet */
 .bg-green-25 {
   background-color: rgb(240 253 244);
@@ -85,69 +56,6 @@ body.dragging * {
 }
 .dark .bg-blue-25 {
   background-color: rgb(30 58 138 / 0.3);
-}
-
-/* Override any React Beautiful DND transform offsets */
-body [data-rbd-draggable-id][style*="transform"] {
-  transform-origin: 0 0 !important;
-}
-
-/* Specific targeting for portal elements */
-body > div[data-rbd-draggable-id] {
-  transform-origin: 0 0 !important;
-}
-
-/* Ensure dragged elements from all columns work */
-body.dragging [data-rbd-droppable-id],
-body.dragging .flex-shrink-0,
-body.dragging .w-80,
-body.dragging .min-h-\[580px\],
-body.dragging .min-h-\[700px\] {
-  overflow: visible !important;
-}
-
-/* Additional selector for React Beautiful DND portal */
-body > div[data-react-beautiful-dnd-drag-handle] {
-  z-index: 999999 !important;
-}
-
-/* Target all pipeline columns specifically */
-.pipeline-column,
-.pipeline-column-inner,
-body.dragging .pipeline-column,
-body.dragging .pipeline-column-inner,
-body.dragging .pipeline-column *,
-body.dragging .pipeline-column-inner * {
-  overflow: visible !important;
-  position: static !important;
-  z-index: auto !important;
-}
-
-/* Force overflow visible on ALL columns */
-body.dragging [data-column-index] {
-  overflow: visible !important;
-  position: static !important;
-}
-
-/* Restore positioning only for drag elements */
-body.dragging [data-rbd-draggable-id],
-body.dragging [data-rbd-droppable-id] {
-  position: relative !important;
-}
-
-/* Ultimate dragged element styling */
-[data-rbd-draggable-id][style*="position: fixed"],
-[data-rbd-draggable-id][style*="transform"] {
-  z-index: 999999 !important;
-  position: fixed !important;
-  pointer-events: none !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
-  border: 2px solid #3b82f6 !important;
-}
-
-/* Touch/mobile drag improvements */
-.react-beautiful-dnd-drag-handle {
-  touch-action: manipulation;
 }
 
 .dark {
