@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import {
   documents,
@@ -102,23 +102,39 @@ export class DocumentsRepository {
     return document || undefined;
   }
 
-  async updateDocument(documentId: number, document: Partial<InsertDocument>): Promise<Document | undefined> {
+  async updateDocument(documentId: number, document: Partial<InsertDocument>, userCompanyId: number): Promise<Document | undefined> {
     const [updatedDocument] = await db
       .update(documents)
       .set(document)
-      .where(eq(documents.id, documentId))
+      .where(and(
+        eq(documents.id, documentId),
+        inArray(
+          documents.targetCompanyId,
+          db.select({ id: targetCompanies.id })
+            .from(targetCompanies)
+            .where(eq(targetCompanies.userCompanyId, userCompanyId))
+        )
+      ))
       .returning();
-    return updatedDocument;
+    return updatedDocument || undefined;
   }
 
-  async deleteDocument(documentId: number): Promise<boolean> {
+  async deleteDocument(documentId: number, userCompanyId: number): Promise<boolean> {
     await db.delete(documentAnalysisResults).where(eq(documentAnalysisResults.documentId, documentId));
     await db.delete(fileUploadEvents).where(eq(fileUploadEvents.documentId, documentId));
     await db.delete(documentAccessLog).where(eq(documentAccessLog.documentId, documentId));
 
     const [deletedDocument] = await db
       .delete(documents)
-      .where(eq(documents.id, documentId))
+      .where(and(
+        eq(documents.id, documentId),
+        inArray(
+          documents.targetCompanyId,
+          db.select({ id: targetCompanies.id })
+            .from(targetCompanies)
+            .where(eq(targetCompanies.userCompanyId, userCompanyId))
+        )
+      ))
       .returning();
     return !!deletedDocument;
   }

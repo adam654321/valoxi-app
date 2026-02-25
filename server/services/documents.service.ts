@@ -86,7 +86,7 @@ export class DocumentsService {
       throw new NotFoundError('Document not found or access denied');
     }
 
-    const updated = await documentsRepository.updateDocument(documentId, updateData);
+    const updated = await documentsRepository.updateDocument(documentId, updateData, userCompanyId);
     if (!updated) {
       throw new NotFoundError('Document not found');
     }
@@ -104,7 +104,7 @@ export class DocumentsService {
       throw new NotFoundError('Document not found or access denied');
     }
 
-    return await documentsRepository.deleteDocument(documentId);
+    return await documentsRepository.deleteDocument(documentId, userCompanyId);
   }
 
   async logDocumentAccess(

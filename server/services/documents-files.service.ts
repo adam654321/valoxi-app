@@ -95,7 +95,7 @@ export class DocumentsFilesService {
   }): Promise<Document> {
     const document = await documentsRepository.getDocument(documentId, userCompanyId);
     if (!document) throw new NotFoundError('Document not found or access denied');
-    const updated = await documentsRepository.updateDocument(documentId, updates);
+    const updated = await documentsRepository.updateDocument(documentId, updates, userCompanyId);
     if (!updated) throw new NotFoundError('Failed to update document');
     return updated;
   }
@@ -117,7 +117,7 @@ export class DocumentsFilesService {
         console.error(`[DELETE_DOCUMENT] Error deleting analysis results for document ${documentId}:`, error);
       }
       
-      const success = await documentsRepository.deleteDocument(documentId);
+      const success = await documentsRepository.deleteDocument(documentId, userCompanyId);
       if (!success) throw new Error('Failed to delete document');
       if (document.externalSubmissionId) {
         try {
