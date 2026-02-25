@@ -151,6 +151,20 @@ Preferred communication style: Simple, everyday language.
 - **express-session**: Session management middleware.
 - **wouter**: Lightweight routing library for React.
 
+# Testing
+
+## Framework
+- **Vitest** (`npx vitest run` to execute, `npx vitest` for watch mode)
+- Config: `vitest.config.ts` (node environment, `@shared` alias)
+
+## Test Files (55 tests)
+- `shared/calculators/__tests__/deal-model.calc.test.ts` — 28 tests covering `toNum`, `calculateAdjustedEbitda`, `calculateOfferPrice`, `calculateFees`, `calculateFundingStack`, `calculatePaymentCover`, `calculateFullDealModel`
+- `shared/calculators/__tests__/value-creation.calc.test.ts` — 16 tests covering `calculateProjections`, `calculateIRR`, `calculateReturns`, `calculateLinkedScenarios`
+- `server/services/__tests__/parseDecimal.test.ts` — 11 tests covering currency/number string parsing (£, $, commas, whitespace, edge cases)
+
+## Strategy
+Targeted tests on pure financial calculation engines only. No UI/component tests. No API route tests.
+
 # Required Secrets
 
 Configure these in the Replit **Secrets** panel (padlock icon). Variables marked Replit-provided are injected automatically — do not add them manually.
