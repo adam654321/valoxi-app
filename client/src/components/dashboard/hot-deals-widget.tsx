@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { RefreshCw, Target } from "lucide-react";
+import { Flame, RefreshCw, Target } from "lucide-react";
 import type { HotDealsData } from "./types";
 
 const HotDealsWidget: React.FC = () => {
@@ -17,7 +17,7 @@ const HotDealsWidget: React.FC = () => {
     <Card className="col-span-2">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-semibold flex items-center">
-          🔥 Hot Deals
+          <Flame className="w-5 h-5 mr-2 text-orange-500" /> Hot Deals
           <span className="ml-2 text-sm text-muted-foreground font-normal">Deals needing attention</span>
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={() => refetch()}>
@@ -36,7 +36,7 @@ const HotDealsWidget: React.FC = () => {
             {data?.deals.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Target className="w-12 h-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-lg">🎉 No deals need immediate attention!</p>
+                <p className="text-lg">No deals need immediate attention!</p>
               </div>
             ) : (
               data?.deals.map((deal) => (

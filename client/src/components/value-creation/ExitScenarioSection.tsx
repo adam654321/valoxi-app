@@ -215,9 +215,9 @@ export default function ExitScenarioSection({
                 <TableBody>
                   <TableRow>
                     <TableCell className="w-[200px] min-w-[160px]" />
-                    <TableCell className="text-right text-sm font-semibold text-red-600">🐻 Bear</TableCell>
-                    <TableCell className="text-right text-sm font-semibold text-blue-600 bg-blue-50/50 dark:bg-blue-950/20">📊 Base</TableCell>
-                    <TableCell className="text-right text-sm font-semibold text-green-600">🐂 Bull</TableCell>
+                    <TableCell className="text-right text-sm font-semibold text-red-600">Bear</TableCell>
+                    <TableCell className="text-right text-sm font-semibold text-blue-600 bg-blue-50/50 dark:bg-blue-950/20">Base</TableCell>
+                    <TableCell className="text-right text-sm font-semibold text-green-600">Bull</TableCell>
                   </TableRow>
 
                   <TableRow className="bg-muted/30">
@@ -436,12 +436,11 @@ export default function ExitScenarioSection({
                 if (!ev) return null;
                 const borderColor = scenario === 'bear' ? 'border-l-red-500' : scenario === 'base' ? 'border-l-blue-500' : 'border-l-green-500';
                 const textColor = scenario === 'bear' ? 'text-red-600' : scenario === 'base' ? 'text-blue-600' : 'text-green-600';
-                const emoji = scenario === 'bear' ? '🐻' : scenario === 'base' ? '📊' : '🐂';
                 const label = scenario.charAt(0).toUpperCase() + scenario.slice(1);
 
                 return (
                   <div key={scenario} className={`rounded-lg border border-l-4 ${borderColor} p-4 space-y-3`}>
-                    <p className={`text-sm font-semibold ${textColor}`}>{emoji} {label} Case</p>
+                    <p className={`text-sm font-semibold ${textColor}`}>{label} Case</p>
                     <table className="w-full text-xs">
                       <tbody>
                         <tr>

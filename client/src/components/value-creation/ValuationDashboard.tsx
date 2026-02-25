@@ -440,7 +440,7 @@ export default function ValuationDashboard({
                 {miniScenarios.map(s => {
                   const borderColor = s.scenario === 'bear' ? 'border-l-red-500' : s.scenario === 'base' ? 'border-l-blue-500' : 'border-l-green-500';
                   const textColor = s.scenario === 'bear' ? 'text-red-600' : s.scenario === 'base' ? 'text-blue-600' : 'text-green-600';
-                  const label = s.scenario === 'bear' ? '🐻 Bear' : s.scenario === 'base' ? '📊 Base' : '🐂 Bull';
+                  const label = s.scenario === 'bear' ? 'Bear' : s.scenario === 'base' ? 'Base' : 'Bull';
 
                   return (
                     <div key={s.scenario} className={`rounded-lg border border-l-4 ${borderColor} p-3 space-y-2`}>

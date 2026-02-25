@@ -55,7 +55,8 @@ import {
   Shield,
   FileCheck,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  ClipboardList,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DocumentViewer } from '@/components/document-viewer';
@@ -345,7 +346,7 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">✅ Analyzed:</div>
+          <div className="flex items-center gap-1 text-sm font-medium text-blue-700 dark:text-blue-300 mb-2"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Analyzed:</div>
           <div className="flex flex-wrap gap-1">
             {(() => {
               // Group company accounts together and handle other types
@@ -370,7 +371,7 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
         
         {missingTypes.length > 0 && (
         <div>
-          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">📋 Remaining:</div>
+          <div className="flex items-center gap-1 text-sm font-medium text-blue-700 dark:text-blue-300 mb-2"><ClipboardList className="w-3.5 h-3.5" /> Remaining:</div>
           <div className="flex flex-wrap gap-1">
             {missingTypes.map(type => (
               <Badge key={type} variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400" data-testid={`badge-remaining-${type}`}>

@@ -79,6 +79,8 @@ import {
   AlertTriangle,
   Play,
   RefreshCw,
+  CheckCircle2,
+  ClipboardList,
 } from "lucide-react";
 
 // Helper function to invalidate all caches (document library + portal)
@@ -328,7 +330,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
 
       {completedCount > 0 && (
         <div className="mb-3">
-          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">✅ Analyzed:</div>
+          <div className="flex items-center gap-1 text-sm font-medium text-blue-700 dark:text-blue-300 mb-2"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Analyzed:</div>
           <div className="flex flex-wrap gap-1">
             {(() => {
               // Normalize and deduplicate types for display
@@ -353,7 +355,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
 
       {missingTypes.length > 0 && (
         <div>
-          <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">📋 Remaining:</div>
+          <div className="flex items-center gap-1 text-sm font-medium text-blue-700 dark:text-blue-300 mb-2"><ClipboardList className="w-3.5 h-3.5" /> Remaining:</div>
           <div className="flex flex-wrap gap-1">
             {missingTypes.map(type => (
               <Badge key={type} variant="outline" className="text-xs border-blue-300 text-blue-600 dark:border-blue-600 dark:text-blue-400">
