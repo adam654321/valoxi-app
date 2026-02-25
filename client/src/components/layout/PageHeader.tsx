@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Notifications } from "@/components/notifications";
 import { AddTargetCompanyButton } from "@/components/AddTargetCompanyButton";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const routeLabels: Record<string, string> = {
   "/": "Dashboard",
@@ -66,6 +67,7 @@ export function PageHeader() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         <Notifications />
         <AddTargetCompanyButton />
       </div>

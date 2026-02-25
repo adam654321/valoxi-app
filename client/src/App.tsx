@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/error-boundary";
+import { ThemeProvider } from "@/components/theme-provider";
 import Layout from "@/components/layout";
 import AdminRoute from "@/components/admin-route";
 import AdminLayout from "@/components/admin-layout";
@@ -143,14 +144,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <ErrorBoundary>
-          <Router />
-        </ErrorBoundary>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <ErrorBoundary>
+            <Router />
+          </ErrorBoundary>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
