@@ -90,11 +90,7 @@ export class TargetCompaniesRepository {
     const [company] = await db
       .select()
       .from(targetCompanies)
-      .where(
-        userCompanyId === 0 
-          ? eq(targetCompanies.id, id)
-          : and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId))
-      );
+      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)));
     return company || undefined;
   }
 
