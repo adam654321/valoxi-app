@@ -3,80 +3,113 @@ import { financialDataRepository } from '../repositories/financial-data.reposito
 import { financialDataService } from '../services/financial-data.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
-import { BadRequestError } from '../utils/errors';
+import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
+import { targetCompaniesRepository } from '../repositories/target-companies.repository';
 
 const router = Router();
 
 router.get('/company/:companyId/periods', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const periods = await financialDataRepository.getFinancialPeriodsByCompany(targetCompanyId);
   sendSuccess(res, periods);
 }));
 
 router.get('/company/:companyId/income-statements', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const statements = await financialDataRepository.getIncomeStatementsByCompany(targetCompanyId);
   sendSuccess(res, statements);
 }));
 
 router.get('/company/:companyId/balance-sheets', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const sheets = await financialDataRepository.getBalanceSheetsByCompany(targetCompanyId);
   sendSuccess(res, sheets);
 }));
 
 router.get('/company/:companyId/staff-data', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const data = await financialDataRepository.getStaffDataByCompany(targetCompanyId);
   sendSuccess(res, data);
 }));
 
 router.get('/company/:companyId/aged-debtors', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const debtors = await financialDataRepository.getAgedDebtorsByCompany(targetCompanyId);
   sendSuccess(res, debtors);
 }));
 
 router.get('/company/:companyId/fixed-assets', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const assets = await financialDataRepository.getFixedAssetsRegisterByCompany(targetCompanyId);
   sendSuccess(res, assets);
 }));
 
 router.get('/company/:companyId/loans', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const loans = await financialDataRepository.getLoanFacilitiesByCompany(targetCompanyId);
   sendSuccess(res, loans);
 }));
 
 router.get('/company/:companyId/summary', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const summary = await financialDataService.getFinancialSummary(targetCompanyId);
-  
+
   const calculatedMetrics: any = {};
-  
+
   if (summary.incomeStatements.length > 0) {
     const latestPL = summary.incomeStatements[0];
     calculatedMetrics.latestEBITDA = financialDataService.calculateEBITDA(latestPL);
     calculatedMetrics.latestGrossMargin = financialDataService.calculateGrossMargin(latestPL);
     calculatedMetrics.latestNetMargin = financialDataService.calculateNetMargin(latestPL);
-    
+
     if (summary.incomeStatements.length >= 3) {
       const last3Revenues = summary.incomeStatements.slice(0, 3).map(s => s.revenue);
       const last3NetProfits = summary.incomeStatements.slice(0, 3).map(s => s.netProfit);
@@ -84,7 +117,7 @@ router.get('/company/:companyId/summary', asyncHandler(async (req: Request, res:
       calculatedMetrics.threeYearAverageNetProfit = financialDataService.calculate3YearAverage(last3NetProfits);
     }
   }
-  
+
   sendSuccess(res, {
     ...summary,
     calculatedMetrics,
@@ -92,24 +125,28 @@ router.get('/company/:companyId/summary', asyncHandler(async (req: Request, res:
 }));
 
 router.get('/company/:companyId/financials', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const periods = await financialDataRepository.getFinancialPeriodsByCompany(targetCompanyId);
   const incomeStatements = await financialDataRepository.getIncomeStatementsByCompany(targetCompanyId);
   const balanceSheets = await financialDataRepository.getBalanceSheetsByCompany(targetCompanyId);
   const staffData = await financialDataRepository.getStaffDataByCompany(targetCompanyId);
   const loans = await financialDataRepository.getLoanFacilitiesByCompany(targetCompanyId);
   const agedDebtors = await financialDataRepository.getAgedDebtorsByCompany(targetCompanyId);
-  
+
   const adjustments = await financialDataRepository.getAdjustmentsByCompany(targetCompanyId);
-  
+
   const periodsWithMeta = periods.map(p => ({
     ...p,
     readOnly: p.periodType === 'statutory' || p.periodType === 'historic',
     isHistoric: p.periodType === 'statutory' || p.periodType === 'historic',
   }));
-  
+
   sendSuccess(res, {
     periods: periodsWithMeta,
     incomeStatements,
@@ -122,11 +159,15 @@ router.get('/company/:companyId/financials', asyncHandler(async (req: Request, r
 }));
 
 router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
   const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-  
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
   const summary = await financialDataService.getFinancialSummary(targetCompanyId);
-  
+
   const dealSheet: any = {
     company_id: targetCompanyId,
     generated_at: new Date().toISOString(),
@@ -142,7 +183,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
     fixed_assets_summary: null,
     calculated_metrics: {},
   };
-  
+
   for (const statement of summary.incomeStatements) {
     const period = summary.periods.find(p => p.id === statement.financialPeriodId);
     const year = period?.fiscalYear || 'unknown';
@@ -160,7 +201,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
       net_profit: statement.netProfit,
     };
   }
-  
+
   for (const sheet of summary.balanceSheets) {
     const period = summary.periods.find(p => p.id === sheet.financialPeriodId);
     const year = period?.fiscalYear || 'unknown';
@@ -207,7 +248,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
       },
     };
   }
-  
+
   if (summary.staffData.length > 0) {
     const latestStaff = summary.staffData[0];
     dealSheet.staff_summary = {
@@ -218,7 +259,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
       employee_count: latestStaff.employeeCount,
     };
   }
-  
+
   if (summary.agedDebtors.length > 0) {
     const latestDebtors = summary.agedDebtors[0];
     dealSheet.aged_debtors_summary = {
@@ -231,7 +272,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
       debtor_days: latestDebtors.debtorDays,
     };
   }
-  
+
   if (summary.fixedAssets.length > 0) {
     const latestAssets = summary.fixedAssets[0];
     dealSheet.fixed_assets_summary = {
@@ -245,7 +286,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
       it_equipment_nbv: latestAssets.itEquipmentNetBookValue,
     };
   }
-  
+
   if (summary.incomeStatements.length > 0) {
     const latestPL = summary.incomeStatements[0];
     dealSheet.calculated_metrics = {
@@ -253,7 +294,7 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
       gross_margin_percent: financialDataService.calculateGrossMargin(latestPL),
       net_margin_percent: financialDataService.calculateNetMargin(latestPL),
     };
-    
+
     if (summary.incomeStatements.length >= 3) {
       const last3Revenues = summary.incomeStatements.slice(0, 3).map(s => s.revenue);
       const last3NetProfits = summary.incomeStatements.slice(0, 3).map(s => s.netProfit);
@@ -261,13 +302,13 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
         const ebitda = financialDataService.calculateEBITDA(s);
         return ebitda !== null ? ebitda.toString() : null;
       });
-      
+
       dealSheet.calculated_metrics.three_year_average_revenue = financialDataService.calculate3YearAverage(last3Revenues);
       dealSheet.calculated_metrics.three_year_average_net_profit = financialDataService.calculate3YearAverage(last3NetProfits);
       dealSheet.calculated_metrics.three_year_average_ebitda = financialDataService.calculate3YearAverage(last3EBITDA);
     }
   }
-  
+
   sendSuccess(res, dealSheet);
 }));
 
