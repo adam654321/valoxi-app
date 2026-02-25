@@ -208,7 +208,7 @@ export function PipelineStageManagement({
                       {stageHistory.map((entry, index) => (
                         <div key={entry.id} className="flex items-start space-x-4 pb-4 border-b last:border-b-0">
                           <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
                               <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             </div>
                           </div>
@@ -361,7 +361,7 @@ export function PipelineStageManagement({
 
           {/* Stage Description */}
           {stages && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/60">
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 <strong>Current Stage:</strong>{' '}
                 {stages.find(s => s.stageName === currentStage)?.description || currentStage}

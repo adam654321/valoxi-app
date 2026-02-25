@@ -52,16 +52,16 @@ const stageMoveSchema = z.object({
 type StageMoveFormValues = z.infer<typeof stageMoveSchema>;
 
 const STAGE_COLORS = [
-  { bg: "bg-blue-50 dark:bg-blue-950", border: "border-blue-200 dark:border-blue-800", accent: "bg-blue-500", text: "text-blue-600 dark:text-blue-400" },
-  { bg: "bg-amber-50 dark:bg-amber-950", border: "border-amber-200 dark:border-amber-800", accent: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" },
-  { bg: "bg-orange-50 dark:bg-orange-950", border: "border-orange-200 dark:border-orange-800", accent: "bg-orange-500", text: "text-orange-600 dark:text-orange-400" },
-  { bg: "bg-purple-50 dark:bg-purple-950", border: "border-purple-200 dark:border-purple-800", accent: "bg-purple-500", text: "text-purple-600 dark:text-purple-400" },
-  { bg: "bg-pink-50 dark:bg-pink-950", border: "border-pink-200 dark:border-pink-800", accent: "bg-pink-500", text: "text-pink-600 dark:text-pink-400" },
-  { bg: "bg-indigo-50 dark:bg-indigo-950", border: "border-indigo-200 dark:border-indigo-800", accent: "bg-indigo-500", text: "text-indigo-600 dark:text-indigo-400" },
-  { bg: "bg-green-50 dark:bg-green-950", border: "border-green-200 dark:border-green-800", accent: "bg-green-500", text: "text-green-600 dark:text-green-400" },
-  { bg: "bg-red-50 dark:bg-red-950", border: "border-red-200 dark:border-red-800", accent: "bg-red-500", text: "text-red-600 dark:text-red-400" },
-  { bg: "bg-teal-50 dark:bg-teal-950", border: "border-teal-200 dark:border-teal-800", accent: "bg-teal-500", text: "text-teal-600 dark:text-teal-400" },
-  { bg: "bg-emerald-50 dark:bg-emerald-950", border: "border-emerald-200 dark:border-emerald-800", accent: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+  { bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800/60", accent: "bg-blue-500", text: "text-blue-600 dark:text-blue-400" },
+  { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800/60", accent: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" },
+  { bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800/60", accent: "bg-orange-500", text: "text-orange-600 dark:text-orange-400" },
+  { bg: "bg-purple-50 dark:bg-purple-950/30", border: "border-purple-200 dark:border-purple-800/60", accent: "bg-purple-500", text: "text-purple-600 dark:text-purple-400" },
+  { bg: "bg-pink-50 dark:bg-pink-950/30", border: "border-pink-200 dark:border-pink-800/60", accent: "bg-pink-500", text: "text-pink-600 dark:text-pink-400" },
+  { bg: "bg-indigo-50 dark:bg-indigo-950/30", border: "border-indigo-200 dark:border-indigo-800/60", accent: "bg-indigo-500", text: "text-indigo-600 dark:text-indigo-400" },
+  { bg: "bg-green-50 dark:bg-green-950/30", border: "border-green-200 dark:border-green-800/60", accent: "bg-green-500", text: "text-green-600 dark:text-green-400" },
+  { bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800/60", accent: "bg-red-500", text: "text-red-600 dark:text-red-400" },
+  { bg: "bg-teal-50 dark:bg-teal-950/30", border: "border-teal-200 dark:border-teal-800/60", accent: "bg-teal-500", text: "text-teal-600 dark:text-teal-400" },
+  { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800/60", accent: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
 ];
 
 export function PipelineKanbanBoard() {
@@ -309,7 +309,7 @@ export function PipelineKanbanBoard() {
                                 </CardHeader>
                                 <CardContent className="pt-0 pb-3 px-3">
                                   <div className="grid grid-cols-2 gap-2 mb-2">
-                                    <div className="bg-green-50 dark:bg-green-950 rounded p-2">
+                                    <div className="bg-green-50 dark:bg-green-950/30 rounded p-2">
                                       <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                                         <DollarSign className="h-3 w-3" />
                                         <span className="text-xs">Revenue</span>
@@ -318,7 +318,7 @@ export function PipelineKanbanBoard() {
                                         {formatCurrency(company.annualRevenue)}
                                       </p>
                                     </div>
-                                    <div className="bg-blue-50 dark:bg-blue-950 rounded p-2">
+                                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded p-2">
                                       <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
                                         <Users className="h-3 w-3" />
                                         <span className="text-xs">Staff</span>

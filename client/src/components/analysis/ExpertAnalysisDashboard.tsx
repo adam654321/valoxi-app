@@ -564,7 +564,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
         )}
 
         {!hasScreeningPassed && !hasDeepDiveStarted && (
-          <Card className="border-dashed border-amber-200 dark:border-amber-800">
+          <Card className="border-dashed border-amber-200 dark:border-amber-800/60">
             <CardContent className="py-8 text-center text-muted-foreground">
               <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-amber-500 opacity-70" />
               <p className="text-sm font-medium mb-1">Screening Not Complete</p>

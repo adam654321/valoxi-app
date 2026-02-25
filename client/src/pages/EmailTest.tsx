@@ -60,7 +60,7 @@ export default function EmailTest() {
           <CardContent className="space-y-6">
             <div className="text-sm text-muted-foreground">
               <p><strong>Configuration Status:</strong></p>
-              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/60">
                 <p className="text-blue-800 dark:text-blue-200">
                   SMTP configuration is managed securely on the server. Use the test button below to verify your email settings are working correctly.
                 </p>
@@ -89,8 +89,8 @@ export default function EmailTest() {
               {testResult && (
                 <div className={`flex items-center gap-2 p-4 rounded-lg border w-full ${
                   testResult.success 
-                    ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
-                    : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+                    ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800/60 dark:text-green-200'
+                    : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800/60 dark:text-red-200'
                 }`}>
                   {testResult.success ? (
                     <CheckCircle className="w-5 h-5" />
@@ -131,7 +131,7 @@ export default function EmailTest() {
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800/60">
               <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
                 Troubleshooting Tips:
               </h4>

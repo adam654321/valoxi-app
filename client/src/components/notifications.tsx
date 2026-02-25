@@ -149,7 +149,7 @@ export function Notifications({ trigger, showAsDialog = false }: NotificationsPr
                 key={notification.id}
                 className={`p-3 border rounded-lg transition-colors ${
                   !notification.isRead 
-                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/60' 
                     : 'bg-card'
                 }`}
               >

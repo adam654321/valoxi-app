@@ -26,15 +26,15 @@ export const formatDocumentType = (type: string): string => {
 export const getDocumentTypeColor = (type: string): string => {
   // Handle company accounts files (company_accounts_1, company_accounts_2, etc.)
   if (type.startsWith('company_accounts')) {
-    return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
+    return 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300';
   }
   
   switch (type) {
-    case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-    case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-    case 'staff_matrix': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    case 'profit_and_loss': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
-    case 'balance_sheet': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+    case 'asset_register': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300';
+    case 'sales_ledger': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+    case 'staff_matrix': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
+    case 'profit_and_loss': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300';
+    case 'balance_sheet': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300';
     default: return 'bg-muted text-foreground';
   }
 };

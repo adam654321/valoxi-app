@@ -413,7 +413,7 @@ export default function TargetCompanyDetail() {
               </Link>
               <Separator orientation="vertical" className="h-6" />
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
                   <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -452,7 +452,7 @@ export default function TargetCompanyDetail() {
       <div className="container mx-auto px-6 py-6 max-w-7xl">
         {/* Key Metrics Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -466,7 +466,7 @@ export default function TargetCompanyDetail() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800">
+          <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -480,7 +480,7 @@ export default function TargetCompanyDetail() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
+          <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -494,7 +494,7 @@ export default function TargetCompanyDetail() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -821,7 +821,7 @@ export default function TargetCompanyDetail() {
                   <div className="space-y-6">
                     {/* Primary Contact Highlight */}
                     {primaryContact && (
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/60 rounded-lg p-6">
                         <h3 className="font-semibold text-lg mb-4 text-blue-900 dark:text-blue-100">Primary Contact</h3>
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                           <div className="space-y-3">

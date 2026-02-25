@@ -186,7 +186,7 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
     return (
       <div className="flex flex-wrap gap-1 mt-2">
         <Badge 
-          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200"
           data-testid="analysis-badge-company-accounts"
         >
           Company Accounts
@@ -206,7 +206,7 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
     return (
       <div className="flex flex-wrap gap-1 mt-2">
         <Badge 
-          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200"
           data-testid="analysis-badge-company-accounts"
         >
           Company Accounts
@@ -297,13 +297,13 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
   const { completedTypes, missingTypes, isComplete, completionPercentage, completedCount } = completionStatus;
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h3 className="font-semibold text-blue-900 dark:text-blue-100">Document Analysis Progress</h3>
           {isComplete && (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-300 dark:border-green-800/50" data-testid="badge-analysis-complete">
               <CheckCircle className="w-3 h-3 mr-1" />
               Complete
             </Badge>
@@ -320,7 +320,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
           <span className="text-blue-700 dark:text-blue-300">Analysis Coverage</span>
           <span className="text-blue-600 dark:text-blue-400">{completedCount} of 10 completed</span>
         </div>
-        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+        <div className="w-full bg-blue-200 dark:bg-blue-800/40 rounded-full h-2">
           <div 
             className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${completionPercentage}%` }}
@@ -367,7 +367,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
       )}
 
       {isComplete && (
-        <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded">
+        <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 rounded">
           <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <TrendingUp className="w-4 h-4" />
             <span className="text-sm font-medium">
@@ -468,7 +468,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
       )}
 
       {hasCompletedScreening && (
-        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 rounded">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
               <RefreshCw className="w-4 h-4" />

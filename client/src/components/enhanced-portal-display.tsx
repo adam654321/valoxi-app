@@ -234,7 +234,7 @@ function PortalDocumentAnalysisBadges({ documentId, documentCategory }: { docume
     return (
       <div className="flex flex-wrap gap-1 mt-2">
         <Badge 
-          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200"
           data-testid="portal-analysis-badge-company-accounts"
         >
           Company Accounts
@@ -254,7 +254,7 @@ function PortalDocumentAnalysisBadges({ documentId, documentCategory }: { docume
     return (
       <div className="flex flex-wrap gap-1 mt-2">
         <Badge 
-          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+          className="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200"
           data-testid="portal-analysis-badge-company-accounts"
         >
           Company Accounts
@@ -314,13 +314,13 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
   const { completedTypes, missingTypes, isComplete, completionPercentage, completedCount, totalCount } = completionStatus;
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4" data-testid="analysis-progress-section">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4 mb-4" data-testid="analysis-progress-section">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h3 className="font-semibold text-blue-900 dark:text-blue-100" data-testid="text-analysis-progress-title">Document Analysis Progress</h3>
           {isComplete && (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-300" data-testid="badge-analysis-complete">
+            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-300 dark:border-green-800/50" data-testid="badge-analysis-complete">
               <CheckCircle className="w-3 h-3 mr-1" />
               Complete
             </Badge>
@@ -334,7 +334,7 @@ function PortalAnalysisCompletionIndicator({ targetCompanyId, token }: { targetC
       
       <div className="mb-4">
         <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Analysis Coverage</div>
-        <div className="w-full bg-blue-200 rounded-full h-3 dark:bg-blue-800">
+        <div className="w-full bg-blue-200 rounded-full h-3 dark:bg-blue-800/40">
           <div 
             className="bg-blue-600 h-3 rounded-full dark:bg-blue-400" 
             style={{ width: `${completionPercentage}%` }}

@@ -72,15 +72,15 @@ export function formatDocumentType(documentType: string, analysisData?: any) {
 
 export function getDocumentTypeColor(documentType: string, analysisData?: any) {
   if (analysisData && analysisData.document === 'company_accounts') {
-    return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
+    return 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200';
   }
   
   const colorMap: Record<string, string> = {
-    'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-    'balance_sheet': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+    'sales_ledger': 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
+    'staff_matrix': 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
+    'asset_register': 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200',
+    'profit_and_loss': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200',
+    'balance_sheet': 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200'
   };
   return colorMap[documentType] || 'bg-muted text-foreground';
 }
@@ -88,11 +88,11 @@ export function getDocumentTypeColor(documentType: string, analysisData?: any) {
 function getInvoiceStatusColor(status: string) {
   const statusLower = status.toLowerCase();
   if (statusLower === 'paid') {
-    return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800';
+    return 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800/60';
   } else if (statusLower === 'part paid') {
-    return 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800';
+    return 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/60';
   } else if (statusLower === 'unpaid') {
-    return 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800';
+    return 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800/60';
   }
   return 'bg-muted border-border';
 }
@@ -320,19 +320,19 @@ function renderSalesLedgerAnalysis(analysisData: any) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className={`text-center p-4 border rounded-lg bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800`}>
+              <div className={`text-center p-4 border rounded-lg bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800/60`}>
                 <div className="text-2xl font-semibold text-green-600">£{(aging.current_0_to_30 || 0).toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">Current (0-30 days)</div>
               </div>
-              <div className={`text-center p-4 border rounded-lg bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800`}>
+              <div className={`text-center p-4 border rounded-lg bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800/60`}>
                 <div className="text-2xl font-semibold text-yellow-600">£{(aging.days_31_to_60 || 0).toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">31-60 days</div>
               </div>
-              <div className={`text-center p-4 border rounded-lg bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800`}>
+              <div className={`text-center p-4 border rounded-lg bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/60`}>
                 <div className="text-2xl font-semibold text-orange-600">£{(aging.days_61_to_90 || 0).toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">61-90 days</div>
               </div>
-              <div className={`text-center p-4 border rounded-lg bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800`}>
+              <div className={`text-center p-4 border rounded-lg bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800/60`}>
                 <div className="text-2xl font-semibold text-red-600">£{(aging.days_90_plus || 0).toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">90+ days</div>
               </div>
@@ -530,7 +530,7 @@ function renderProfitAndLossAnalysis(analysisData: any) {
                 <div key={year} className="space-y-4">
                   <h4 className="text-lg font-semibold text-muted-foreground">{year}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800/60">
                       <div className="text-sm text-blue-700 dark:text-blue-300 font-medium">Gross Margin %</div>
                       <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">
                         {yearData.profit_and_loss?.revenue && yearData.profit_and_loss?.gross_profit
@@ -543,7 +543,7 @@ function renderProfitAndLossAnalysis(analysisData: any) {
                       </div>
                     </div>
 
-                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-800/60">
                       <div className="text-sm text-green-700 dark:text-green-300 font-medium">Net Margin %</div>
                       <div className="text-2xl font-bold text-green-800 dark:text-green-200">
                         {yearData.profit_and_loss?.revenue && yearData.profit_and_loss?.net_profit
@@ -556,7 +556,7 @@ function renderProfitAndLossAnalysis(analysisData: any) {
                       </div>
                     </div>
 
-                    <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg border border-purple-200 dark:border-purple-800/60">
                       <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Interest Coverage</div>
                       <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">
                         {yearData.profit_and_loss?.operating_profit && yearData.profit_and_loss?.interest_payable
@@ -779,7 +779,7 @@ function renderBalanceSheetAnalysis(analysisData: any) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <div className="bg-orange-100 dark:bg-orange-900 px-4 py-2 rounded-full">
+        <div className="bg-orange-100 dark:bg-orange-900/40 px-4 py-2 rounded-full">
           <span className="text-orange-800 dark:text-orange-200 font-semibold text-base">Balance Sheet</span>
         </div>
         <span className="text-muted-foreground text-sm">Financial Position Analysis</span>
@@ -815,7 +815,7 @@ function renderBalanceSheetAnalysis(analysisData: any) {
             <div className="space-y-12">
               {Object.entries(analysisData.years).map(([year, yearData]: [string, any]) => (
                 <div key={year} className="space-y-4">
-                  <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 border-b border-orange-200 dark:border-orange-800 pb-2">
+                  <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 border-b border-orange-200 dark:border-orange-800/60 pb-2">
                     {year}
                   </h3>
                   
@@ -839,7 +839,7 @@ function renderBalanceSheetAnalysis(analysisData: any) {
                           <div className="space-y-4">
                             <h4 className="text-lg font-semibold text-green-700 dark:text-green-300">Assets</h4>
                             
-                            <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                            <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg">
                               <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Fixed Assets</div>
                               <div className="text-2xl font-bold text-green-900 dark:text-green-100">
                                 £{totalFixedAssets ? totalFixedAssets.toLocaleString() : 'N/A'}
@@ -867,7 +867,7 @@ function renderBalanceSheetAnalysis(analysisData: any) {
                                   <span className="text-sm">Cash at Bank</span>
                                   <span className="font-medium">£{currentAssets?.cash_at_bank?.toLocaleString() || 'N/A'}</span>
                                 </div>
-                                <div className="flex justify-between items-center bg-green-100 dark:bg-green-900 p-2 rounded border-t border-green-200 dark:border-green-800">
+                                <div className="flex justify-between items-center bg-green-100 dark:bg-green-900/40 p-2 rounded border-t border-green-200 dark:border-green-800/60">
                                   <span className="text-sm font-medium">Total Current Assets</span>
                                   <span className="font-bold">£{currentAssets?.total?.toLocaleString() || 'N/A'}</span>
                                 </div>
@@ -878,14 +878,14 @@ function renderBalanceSheetAnalysis(analysisData: any) {
                           <div className="space-y-4">
                             <h4 className="text-lg font-semibold text-red-700 dark:text-red-300">Liabilities & Equity</h4>
                             
-                            <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                            <div className="bg-red-50 dark:bg-red-950/30 p-4 rounded-lg">
                               <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (Within One Year)</div>
                               <div className="text-2xl font-bold text-red-900 dark:text-red-100">
                                 £{currentLiabilities?.total?.toLocaleString() || 'N/A'}
                               </div>
                             </div>
 
-                            <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                            <div className="bg-red-50 dark:bg-red-950/30 p-4 rounded-lg">
                               <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Creditors (After One Year)</div>
                               <div className="text-2xl font-bold text-red-900 dark:text-red-100">
                                 £{longTermLiabilities?.total?.toLocaleString() || 'N/A'}
@@ -903,7 +903,7 @@ function renderBalanceSheetAnalysis(analysisData: any) {
                                   <span className="text-sm">Retained Earnings</span>
                                   <span className="font-medium">£{equity?.retained_earnings?.toLocaleString() || 'N/A'}</span>
                                 </div>
-                                <div className="flex justify-between items-center bg-blue-100 dark:bg-blue-900 p-2 rounded border-t border-blue-200 dark:border-blue-800">
+                                <div className="flex justify-between items-center bg-blue-100 dark:bg-blue-900/40 p-2 rounded border-t border-blue-200 dark:border-blue-800/60">
                                   <span className="text-sm font-medium">Net Assets</span>
                                   <span className="font-bold">£{equity?.total?.toLocaleString() || 'N/A'}</span>
                                 </div>
@@ -913,19 +913,19 @@ function renderBalanceSheetAnalysis(analysisData: any) {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                          <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg border border-purple-200 dark:border-purple-800/60">
                             <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Net Current Assets</div>
                             <div className="text-xl font-bold text-purple-800 dark:text-purple-200">
                               £{netCurrentAssets ? netCurrentAssets.toLocaleString() : 'N/A'}
                             </div>
                           </div>
-                          <div className="bg-indigo-50 dark:bg-indigo-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                          <div className="bg-indigo-50 dark:bg-indigo-950/30 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800/60">
                             <div className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Total Assets Less Current Liabilities</div>
                             <div className="text-xl font-bold text-indigo-800 dark:text-indigo-200">
                               £{totalAssetsLessCurrentLiabilities ? totalAssetsLessCurrentLiabilities.toLocaleString() : 'N/A'}
                             </div>
                           </div>
-                          <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                          <div className="bg-orange-50 dark:bg-orange-950/30 p-4 rounded-lg border border-orange-200 dark:border-orange-800/60">
                             <div className="text-sm text-orange-700 dark:text-orange-300 font-medium">Current Ratio</div>
                             <div className="text-xl font-bold text-orange-800 dark:text-orange-200">
                               {ratios?.current_ratio?.toFixed(2) || (currentAssets?.total && currentLiabilities?.total
@@ -972,7 +972,7 @@ function renderCompanyAccountsAnalysis(analysisData: any) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <div className="bg-teal-100 dark:bg-teal-900 px-4 py-2 rounded-full">
+        <div className="bg-teal-100 dark:bg-teal-900/40 px-4 py-2 rounded-full">
           <span className="text-teal-800 dark:text-teal-200 font-semibold text-base">Company Accounts</span>
         </div>
         <span className="text-muted-foreground text-sm">Financial Records Analysis</span>

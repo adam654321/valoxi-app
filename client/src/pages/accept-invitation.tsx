@@ -229,7 +229,7 @@ export default function AcceptInvitation() {
 
         <CardContent className="space-y-6">
           {/* Invitation Details */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800/60">
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-blue-600" />

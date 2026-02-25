@@ -141,17 +141,17 @@ function getRequirementTint(req: DdRequirementWithStatus): string {
   switch (displayStatus) {
     case 'satisfied':
     case 'approved':
-      return 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900';
+      return 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900';
     case 'more_needed':
-      return 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-900';
+      return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900';
     case 'pending_review':
-      return 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900';
+      return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900';
     case 'submitted':
-      return 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+      return 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800/60';
     case 'na':
       return 'bg-muted border-border';
     case 'rejected':
-      return 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900';
+      return 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900';
     default:
       return 'bg-card border-border';
   }
@@ -450,14 +450,14 @@ function RequirementRow({
       </div>
 
       {req.status?.sellerMarkedComplete && req.status?.buyerReviewStatus !== 'satisfied' && (
-        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
+        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/60 rounded-md flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-blue-600" />
           <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Seller marked complete — review required</span>
         </div>
       )}
 
       {req.status?.buyerReviewStatus === 'more_needed' && req.status?.buyerReviewNotes && (
-        <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+        <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 rounded-md">
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
             <span className="text-sm text-amber-700 dark:text-amber-300">More needed: {req.status.buyerReviewNotes}</span>
@@ -558,7 +558,7 @@ function RequirementRow({
       )}
 
       {isVerified && (
-        <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+        <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/60 rounded-lg flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <span className="text-sm text-green-700 dark:text-green-300 font-medium">Verified</span>
         </div>
@@ -1161,12 +1161,12 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
                           <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                         )}
                         {hasMoreNeeded && (
-                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 shrink-0">
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 shrink-0">
                             <AlertCircle className="h-3 w-3 mr-0.5" /> Action needed
                           </Badge>
                         )}
                         {!hasMoreNeeded && toReviewCount > 0 && (
-                          <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 shrink-0">
+                          <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 shrink-0">
                             <Eye className="h-3 w-3 mr-0.5" /> {toReviewCount} to review
                           </Badge>
                         )}

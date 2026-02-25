@@ -94,13 +94,13 @@ const getActivityIcon = (type: string) => {
 
 const getActivityColor = (type: string) => {
   switch (type) {
-    case "Phone Call": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-    case "Email": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case "Meeting": return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-    case "Note": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-    case "Document": return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-    case "Follow-up": return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300";
-    case "Research": return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300";
+    case "Phone Call": return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
+    case "Email": return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
+    case "Meeting": return "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300";
+    case "Note": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300";
+    case "Document": return "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300";
+    case "Follow-up": return "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300";
+    case "Research": return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300";
     default: return "bg-muted text-foreground";
   }
 };
@@ -446,7 +446,7 @@ export function ActivityManagement({ targetCompanyId, companyName, contacts }: A
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40">
                             {getActivityIcon(activity.activityType)}
                           </div>
                           <div className="flex-1">

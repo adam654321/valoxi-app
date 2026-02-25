@@ -80,13 +80,13 @@ interface DdSummary {
 
 function getDisplayStatus(req: DdRequirement): { label: string; color: string; icon: React.ReactNode } {
   if (req.buyerReviewStatus === 'satisfied') {
-    return { label: 'Verified', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', icon: <CheckCircle className="h-4 w-4 text-green-500" /> };
+    return { label: 'Verified', color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300', icon: <CheckCircle className="h-4 w-4 text-green-500" /> };
   }
   if (req.buyerReviewStatus === 'more_needed') {
-    return { label: 'More needed', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300', icon: <AlertCircle className="h-4 w-4 text-amber-500" /> };
+    return { label: 'More needed', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300', icon: <AlertCircle className="h-4 w-4 text-amber-500" /> };
   }
   if (req.sellerMarkedComplete) {
-    return { label: 'Pending review', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', icon: <Clock className="h-4 w-4 text-blue-500" /> };
+    return { label: 'Pending review', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', icon: <Clock className="h-4 w-4 text-blue-500" /> };
   }
   if (req.linkedDocuments && req.linkedDocuments.length > 0) {
     return { label: 'In progress', color: 'bg-muted text-muted-foreground', icon: <Clock className="h-4 w-4 text-muted-foreground/70" /> };
@@ -99,16 +99,16 @@ function getDisplayStatus(req: DdRequirement): { label: string; color: string; i
 
 function getRequirementTint(req: DdRequirement): string {
   if (req.buyerReviewStatus === 'satisfied') {
-    return 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900';
+    return 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900';
   }
   if (req.buyerReviewStatus === 'more_needed') {
-    return 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-900';
+    return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900';
   }
   if (req.sellerMarkedComplete) {
-    return 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900';
+    return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900';
   }
   if (req.linkedDocuments && req.linkedDocuments.length > 0) {
-    return 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+    return 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800/60';
   }
   if (req.status === 'na') {
     return 'bg-muted border-border';
@@ -391,7 +391,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                   </div>
 
                   {req.buyerReviewStatus === 'more_needed' && (
-                    <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-lg">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                         <div>
@@ -405,7 +405,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                   )}
 
                   {req.buyerReviewStatus === 'satisfied' && (
-                    <div className="mt-3 p-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+                    <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/60 rounded-lg flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <span className="text-sm text-green-700 dark:text-green-300 font-medium">Verified by buyer</span>
                     </div>
@@ -575,7 +575,7 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                     <div className="mt-3 pt-3 border-t">
                       {req.sellerMarkedComplete ? (
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-sm">
+                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-sm">
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Marked as complete
                           </Badge>
@@ -694,12 +694,12 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
                         <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                       )}
                       {hasMoreNeeded && (
-                        <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 shrink-0">
+                        <Badge variant="outline" className="text-xs border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 shrink-0">
                           <AlertCircle className="h-3 w-3 mr-0.5" /> Action needed
                         </Badge>
                       )}
                       {!hasMoreNeeded && hasPendingReview && (
-                        <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 shrink-0">
+                        <Badge variant="outline" className="text-xs border-blue-300 text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 shrink-0">
                           <Eye className="h-3 w-3 mr-0.5" /> To review
                         </Badge>
                       )}
