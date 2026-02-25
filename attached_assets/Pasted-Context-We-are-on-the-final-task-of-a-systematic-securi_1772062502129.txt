@@ -1,0 +1,18 @@
+Context: We are on the final task of a systematic security audit of this multi-tenant M&A CRM. All other vulnerabilities have been fixed. We are now assessing the public document download routes.
+The concern: At the bottom of server/routes/documents-files.routes.ts, there are two public routes (publicDocumentRoutes) for downloading and viewing documents that have no authentication whatsoever — just a documentId integer in the URL:
+typescriptpublicDocumentRoutes.get('/:id/download', asyncHandler(async (req, res) => {
+  const documentId = parseInt(req.params.id);
+  const document = await documentsFilesService.getDocumentPublic(documentId);
+  // Serves file with no auth check
+}));
+If documentId is a sequential integer and these routes are publicly reachable, any person on the internet could enumerate through IDs and download confidential M&A documents belonging to any tenant.
+Before we decide on the fix, please answer the following:
+
+Show me exactly where publicDocumentRoutes is registered in server/routes/index.ts — what is the full URL path these routes are mounted at, and is there any middleware (rate limiting, IP restriction, token check) applied at the mount point?
+Show me documentsFilesService.getDocumentPublic() — what does it do, and does it apply any access restriction beyond fetching by ID?
+How are documents uploaded to the system via the external portal? Specifically — when a seller submits documents through the portal, is a secure access token generated and stored alongside the document record? Look at the externalDocumentSubmissions table schema and the portal submission flow to understand whether there is already a token-based access mechanism we should be using instead of raw integer IDs
+Look at the documents table schema — is there any accessToken, publicToken, or similar column that could be used as an unguessable identifier for public access?
+Who actually uses these public routes in practice? Search for all frontend or external references to the /public/documents/ URL pattern — are they called from the seller portal frontend, from email links sent to sellers, from internal code, or somewhere else? We need to understand whether changing the access mechanism would break existing portal functionality
+What does getDocumentPublic log or record when a document is accessed — is there any audit trail for public accesses?
+
+Do not make any changes yet. Information gathering only. Please respond to all 6 questions.
