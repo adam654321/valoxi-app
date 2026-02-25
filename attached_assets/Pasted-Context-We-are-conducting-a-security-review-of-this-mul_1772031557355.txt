@@ -1,0 +1,12 @@
+Context: We are conducting a security review of this multi-tenant M&A CRM application. The application serves multiple acquiring organisations (tenants), each identified by a userCompanyId stored in the user's session. It is critical that no tenant can access another tenant's data under any circumstances.
+The issue we've identified: The file server/routes/financial-data.routes.ts contains approximately 10 GET endpoints (periods, income statements, balance sheets, staff data, aged debtors, fixed assets, loans, summary, financials, and deal-sheet). Every one of these endpoints accepts a targetCompanyId from the URL parameter and queries the database directly — but none of them verify that the requesting user's userCompanyId (from their session) actually has ownership of that targetCompanyId before returning data.
+This means any authenticated user can call, for example, GET /api/financial-data/company/5/income-statements and receive full financial data belonging to a completely different tenant just by guessing or iterating integer IDs.
+Before we build the fix, please answer the following so we understand the current state:
+
+Show me the current full contents of server/routes/financial-data.routes.ts
+Show me the current full contents of server/repositories/financial-data.repository.ts
+Show me how other routes in this codebase correctly enforce tenant isolation — specifically look at server/routes/target-companies.routes.ts and server/repositories/target-companies.repository.ts as the reference pattern we want to follow
+Explain what method is currently available to verify that a given targetCompanyId belongs to a given userCompanyId — does this already exist in the target companies repository, or does it need to be created?
+Confirm how userCompanyId is stored and retrieved from the session — where is this set during login/authentication?
+
+Do not make any changes yet. This is an information-gathering step only. Please respond with the file contents and your answers to each question above.
