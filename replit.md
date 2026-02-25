@@ -80,7 +80,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Database Design
 - **Primary Database**: PostgreSQL via Neon serverless.
-- **Schema Management**: Drizzle Kit.
+- **Schema Management**: Drizzle Kit — using `db:push` as the active sync strategy (`npm run db:push`). `db:generate` is also available to snapshot schema changes into versioned SQL files in `migrations/` if needed for review or rollback reference. The 3 existing migration files (`0000`, `0001`, `0002`) are historical artifacts — `push` is the source of truth for the live database. Do not mix `push` and `migrate` strategies.
 - **Schema Architecture**: Modular domain-driven structure under `shared/schema/`:
   - `core.ts` — Users, companies, sessions, roles, invitations, memberships (6 tables)
   - `deals.ts` — Target companies, contacts, pipeline stages, activities, deal notes (9 tables)
