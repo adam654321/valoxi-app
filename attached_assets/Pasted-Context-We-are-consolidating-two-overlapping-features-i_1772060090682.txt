@@ -1,0 +1,17 @@
+Context: We are consolidating two overlapping features in this M&A CRM — the Notes system and the Activity Logger — into a single unified Activity Logger. The Notes feature will be retired. The Activity Logger is the better UI and has the right data structure, but its type picklist is missing several types that currently exist in Notes. We need to add those missing types and ensure the pipeline automation is preserved correctly.
+Current state:
+Notes picklist: Initial Discussion, Broker Discussion, Follow-up Call, Meeting Notes, Due Diligence, Heads of Terms, General
+Activities picklist: Document, Email, Follow-up, Meeting, Note, Phone Call, Research
+Missing from Activities (need adding): Initial Discussion, Broker Discussion, Meeting Notes, Due Diligence, Heads of Terms
+Mappings that already exist: "Follow-up Call" → "Follow-up", "General" → "Note"
+Critical concern — pipeline automation: When a user currently creates a note with type "Initial Discussion", it triggers an automatic pipeline stage move from "New Target" to "Initial Contact" on the target company. This automation must be preserved when "Initial Discussion" is added as an activity type. We need to understand exactly how this automation currently works before we touch anything.
+Please answer the following — do not make any changes yet:
+
+Show me the current full contents of server/routes/notes.routes.ts and server/services/notes.service.ts — specifically how the "Initial Discussion" note type triggers the pipeline stage change. Where exactly in the code does this happen? Is it in the service, a separate handler, or a database trigger?
+Show me where the activity types are currently defined. Are they hardcoded in the frontend, stored in the activity_types database table, defined in a shared schema/constants file, or some combination? Show me all locations where the list of valid activity types is defined or validated.
+When a new activity is created via POST /activities/company/:companyId, does the activities service or route currently check the activityType value and do anything conditional based on it — for example triggering a pipeline update? Show me the relevant parts of server/services/activities.service.ts.
+Show me the activities table schema from shared/schema/deals.ts — specifically what columns exist, and confirm whether it already has fields equivalent to the note-specific fields: reminderDate, reminderCompleted, and a long-form content field (the notes system has a content field separate from description).
+What UI components currently render the Notes tab and the Activity Logger? List the relevant files in the client/ directory so we know what frontend changes will be needed to remove the Notes tab and ensure the expanded Activity Logger is the single entry point.
+Are there any other parts of the codebase — cron jobs, other services, report generators, the dashboard — that currently read from the deal_notes table or call the notes service/routes? We need to know everything that will break or need updating when notes is retired.
+
+Do not make any changes. Information gathering only. Please respond to all 6 questions.
