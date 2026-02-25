@@ -150,3 +150,36 @@ Preferred communication style: Simple, everyday language.
 - **bcrypt**: Password hashing library.
 - **express-session**: Session management middleware.
 - **wouter**: Lightweight routing library for React.
+
+# Required Secrets
+
+Configure these in the Replit **Secrets** panel (padlock icon). Variables marked Replit-provided are injected automatically — do not add them manually.
+
+## Auto-Provided by Replit
+| Variable | Description |
+|----------|-------------|
+| `PORT` | Server port (default 5000) |
+| `NODE_ENV` | Runtime environment |
+| `REPL_ID` | Unique Repl identifier |
+| `REPL_SLUG` | Repl name slug |
+| `REPL_OWNER` | Repl owner username |
+| `REPLIT_DEV_DOMAIN` | Public dev domain (used for portal URLs and email links) |
+
+## Managed by Replit Integrations
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Neon PostgreSQL connection string (provisioned via Database integration) |
+| `AI_INTEGRATIONS_GEMINI_API_KEY` | Gemini key for Replit AI chat/image integrations |
+| `AI_INTEGRATIONS_GEMINI_BASE_URL` | Base URL for Replit AI integrations |
+
+## Required — Set Manually
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SESSION_SECRET` | ✅ Yes | Random 32-byte hex string. Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `GOOGLE_GEMINI_API_KEY` | ✅ Yes | Gemini API key for document analysis and website analysis |
+| `SMTP_HOST` | ⚠️ Email only | SMTP server hostname (e.g. `smtp.gmail.com`) |
+| `SMTP_PORT` | ⚠️ Email only | SMTP port (default `587`) |
+| `SMTP_USER` | ⚠️ Email only | SMTP username / email address |
+| `SMTP_PASS` | ⚠️ Email only | SMTP password or app password |
+| `SMTP_FROM_EMAIL` | ⚠️ Email only | Sender address for outbound emails |
+| `SMTP_SECURE` | ⚠️ Email only | `true` for TLS/465, `false` for STARTTLS/587 |
