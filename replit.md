@@ -183,3 +183,42 @@ Configure these in the Replit **Secrets** panel (padlock icon). Variables marked
 | `SMTP_PASS` | ⚠️ Email only | SMTP password or app password |
 | `SMTP_FROM_EMAIL` | ⚠️ Email only | Sender address for outbound emails |
 | `SMTP_SECURE` | ⚠️ Email only | `true` for TLS/465, `false` for STARTTLS/587 |
+
+# API Reference
+
+All endpoints are prefixed `/api/v2/`. The API is consumed exclusively by the internal React frontend — no external consumers. For the full route map, see `server/routes/index.ts`.
+
+| Base Path | Auth | Description |
+|-----------|------|-------------|
+| `/api/v2/auth` | 🔑 Rate limited | Login, logout, register, session check, CSRF token, password reset |
+| `/api/v2/target-companies` | 🔒 | CRUD for acquisition target companies |
+| `/api/v2/contacts` | 🔒 | Contacts linked to target companies |
+| `/api/v2/activities` | 🔒 | Activity log (calls, emails, meetings) per company |
+| `/api/v2/notes` | 🔒 | Deal notes and annotations |
+| `/api/v2/pipeline` | 🔒 | Pipeline stages, company stage movement, stage history |
+| `/api/v2/deals` | 🔒 | Deal team assignments and permissions |
+| `/api/v2/deal-models` | 🔒 | Deal modeller (financial model assumptions) |
+| `/api/v2/deal-documents` | 🔒 | Offer letters, HoT, withdrawal letters (HTML generation + sending) |
+| `/api/v2/public/deal-documents` | 🌐 Rate limited | Public access to deal documents for portal users |
+| `/api/v2/documents` | 🔒 | Document metadata CRUD |
+| `/api/v2/files` | 🔒 | Document file uploads and downloads |
+| `/api/v2/public/documents` | 🌐 | Public document access for portal submissions |
+| `/api/v2/document-analysis` | 🔒 | AI document parsing, categorisation, and analysis results |
+| `/api/v2/due-diligence` | 🔒 | Due diligence checklist and requirement status |
+| `/api/v2/requirements` | 🔒 | Portal document requirements management |
+| `/api/v2/portal` | 🌐 Rate limited | Portal token creation and management |
+| `/api/v2/portal-submit` | 🌐 Rate limited | External portal: document uploads, NDA/offer/HoT submissions |
+| `/api/v2/public/portal` | 🌐 Rate limited | Public DD requirements and portal status |
+| `/api/v2/chase-up` | 🔒 | Automated chase-up campaign dashboard, alerts, extend/stop controls |
+| `/api/v2/financial-data` | 📊 | P&L, balance sheets, EBITDA adjustments, valuations |
+| `/api/v2/value-creation` | 🔒 | Post-acquisition value creation scenarios and modelling |
+| `/api/v2/expert-analysis` | 📊 Rate limited | Gemini AI expert analysis pipeline (triggers AI processing) |
+| `/api/v2/website-analysis` | 🔒 Rate limited | Gemini AI website analysis (triggers on company creation) |
+| `/api/v2/dashboard` | 🔒 | Dashboard widgets, metrics, and preferences |
+| `/api/v2/reports` | 📊 | Analytics and reporting |
+| `/api/v2/notifications` | 🔒 | User notifications |
+| `/api/v2/email` | 🔒 | Manual email sending |
+| `/api/v2/team` | 👥 | Team member management (public: invitation acceptance) |
+| `/api/v2/roles` | 🔒 | Role assignment |
+| `/api/v2/user/companies` | 🔒 | User–company membership |
+| `/api/v2/admin` | ⚙️ | System admin: users, companies, costs, token usage, webhook events |
