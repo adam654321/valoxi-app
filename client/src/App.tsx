@@ -11,154 +11,133 @@ import AdminRoute from "@/components/admin-route";
 import AdminLayout from "@/components/admin-layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
-import Register from "@/pages/auth/register";
-import ForgotPassword from "@/pages/auth/forgot-password";
-import ResetPassword from "@/pages/auth/reset-password";
-import Dashboard from "@/pages/dashboard";
-import EnhancedTargetCompanies from "@/pages/enhanced-target-companies";
-import TargetCompanyDetail from "@/pages/target-company-detail";
-import Contacts from "@/pages/contacts";
-import TeamManagement from "@/pages/team-management";
 import AcceptInvitation from "@/pages/accept-invitation";
-import Pipeline from "@/pages/pipeline";
-import Reports from "@/pages/reports";
-import { NotificationsPage } from "@/components/notifications";
-import PortalPage from "@/pages/PortalPage";
-import PortalManagement from "@/pages/PortalManagement";
-import CompanyAccounts from "@/pages/company-accounts";
 
+const Register = lazy(() => import("@/pages/auth/register"));
+const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const EnhancedTargetCompanies = lazy(() => import("@/pages/enhanced-target-companies"));
+const TargetCompanyDetail = lazy(() => import("@/pages/target-company-detail"));
+const Contacts = lazy(() => import("@/pages/contacts"));
+const TeamManagement = lazy(() => import("@/pages/team-management"));
+const Pipeline = lazy(() => import("@/pages/pipeline"));
+const Reports = lazy(() => import("@/pages/reports"));
+const NotificationsPage = lazy(() => import("@/components/notifications").then(m => ({ default: m.NotificationsPage })));
+const PortalPage = lazy(() => import("@/pages/PortalPage"));
+const PortalManagement = lazy(() => import("@/pages/PortalManagement"));
+const CompanyAccounts = lazy(() => import("@/pages/company-accounts"));
 const EmailTest = lazy(() => import("@/pages/EmailTest"));
 const WebhookTest = lazy(() => import("@/pages/webhook-test"));
 const FileUploadTest = lazy(() => import("@/pages/file-upload-test"));
-import AdminOverview from "@/pages/admin/index";
-import AdminTokenUsage from "@/pages/admin/token-usage";
-import AdminCosts from "@/pages/admin/costs";
-import AdminCompanies from "@/pages/admin/companies";
-import AdminCompanyDetail from "@/pages/admin/companies/[id]";
-import AdminUsers from "@/pages/admin/users";
-import AdminWebhookEvents from "@/pages/admin/webhook-events";
+const AdminOverview = lazy(() => import("@/pages/admin/index"));
+const AdminTokenUsage = lazy(() => import("@/pages/admin/token-usage"));
+const AdminCosts = lazy(() => import("@/pages/admin/costs"));
+const AdminCompanies = lazy(() => import("@/pages/admin/companies"));
+const AdminCompanyDetail = lazy(() => import("@/pages/admin/companies/[id]"));
+const AdminUsers = lazy(() => import("@/pages/admin/users"));
+const AdminWebhookEvents = lazy(() => import("@/pages/admin/webhook-events"));
 
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+      <p className="mt-2 text-sm text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
 
 function Router() {
   const { isAuthenticated, isLoading, isSystemAdmin } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!isAuthenticated) {
     return (
-      <Switch>
-        {/* Public portal route - accessible without authentication */}
-        <Route path="/portal/:token" component={PortalPage} />
-        
-        {/* Public invitation route - accessible without authentication */}
-        <Route path="/invite/:token" component={AcceptInvitation} />
-        
-        <Route path="/" component={Login} />
-        <Route path="/login" component={Login} />
-        <Route path="/register" component={Register} />
-        <Route path="/forgot-password" component={ForgotPassword} />
-        <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/accept-invitation" component={AcceptInvitation} />
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Switch>
+          <Route path="/portal/:token" component={PortalPage} />
+          <Route path="/invite/:token" component={AcceptInvitation} />
+          <Route path="/" component={Login} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/accept-invitation" component={AcceptInvitation} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     );
   }
 
   return (
-    <Switch>
-      {/* Public routes accessible even when authenticated */}
-      <Route path="/portal/:token" component={PortalPage} />
-      <Route path="/invite/:token" component={AcceptInvitation} />
-      
-      {/* Admin routes */}
-      <Route path="/admin/:rest*">
-        {() => (
-          <AdminRoute>
-            <AdminLayout>
-              <Switch>
-                <Route path="/admin" component={AdminOverview} />
-                <Route path="/admin/token-usage" component={AdminTokenUsage} />
-                <Route path="/admin/costs" component={AdminCosts} />
-                <Route path="/admin/companies/:id" component={AdminCompanyDetail} />
-                <Route path="/admin/companies" component={AdminCompanies} />
-                <Route path="/admin/users" component={AdminUsers} />
-                <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
-                <Route component={NotFound} />
-              </Switch>
-            </AdminLayout>
-          </AdminRoute>
-        )}
-      </Route>
-      <Route path="/admin">
-        {() => (
-          <AdminRoute>
-            <AdminLayout>
-              <AdminOverview />
-            </AdminLayout>
-          </AdminRoute>
-        )}
-      </Route>
+    <Suspense fallback={<LoadingSpinner />}>
+      <Switch>
+        <Route path="/portal/:token" component={PortalPage} />
+        <Route path="/invite/:token" component={AcceptInvitation} />
 
-      {/* Redirect auth pages to dashboard when already authenticated */}
-      <Route path="/login">{() => <Redirect to="/" />}</Route>
-      <Route path="/register">{() => <Redirect to="/" />}</Route>
+        <Route path="/admin/:rest*">
+          {() => (
+            <AdminRoute>
+              <AdminLayout>
+                <Switch>
+                  <Route path="/admin" component={AdminOverview} />
+                  <Route path="/admin/token-usage" component={AdminTokenUsage} />
+                  <Route path="/admin/costs" component={AdminCosts} />
+                  <Route path="/admin/companies/:id" component={AdminCompanyDetail} />
+                  <Route path="/admin/companies" component={AdminCompanies} />
+                  <Route path="/admin/users" component={AdminUsers} />
+                  <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
+                  <Route component={NotFound} />
+                </Switch>
+              </AdminLayout>
+            </AdminRoute>
+          )}
+        </Route>
+        <Route path="/admin">
+          {() => (
+            <AdminRoute>
+              <AdminLayout>
+                <AdminOverview />
+              </AdminLayout>
+            </AdminRoute>
+          )}
+        </Route>
 
-      {/* Authenticated routes */}
-      <Route>
-        <Layout>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/pipeline" component={Pipeline} />
-            <Route path="/target-companies" component={EnhancedTargetCompanies} />
-            <Route path="/target-companies/:id" component={TargetCompanyDetail} />
-            <Route path="/contacts" component={Contacts} />
-            <Route path="/team" component={TeamManagement} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/notifications" component={NotificationsPage} />
-            <Route path="/portal-management" component={PortalManagement} />
-            <Route path="/email-test">
-              {isSystemAdmin ? (
-                <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <EmailTest />
-                </Suspense>
-              ) : (
-                <Redirect to="/" />
-              )}
-            </Route>
-            <Route path="/webhook-test">
-              {isSystemAdmin ? (
-                <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <WebhookTest />
-                </Suspense>
-              ) : (
-                <Redirect to="/" />
-              )}
-            </Route>
-            <Route path="/file-upload-test">
-              {isSystemAdmin ? (
-                <Suspense fallback={<div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <FileUploadTest />
-                </Suspense>
-              ) : (
-                <Redirect to="/" />
-              )}
-            </Route>
-            <Route path="/company-accounts" component={CompanyAccounts} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
-      </Route>
-    </Switch>
+        <Route path="/login">{() => <Redirect to="/" />}</Route>
+        <Route path="/register">{() => <Redirect to="/" />}</Route>
+
+        <Route>
+          <Layout>
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/pipeline" component={Pipeline} />
+              <Route path="/target-companies" component={EnhancedTargetCompanies} />
+              <Route path="/target-companies/:id" component={TargetCompanyDetail} />
+              <Route path="/contacts" component={Contacts} />
+              <Route path="/team" component={TeamManagement} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/notifications" component={NotificationsPage} />
+              <Route path="/portal-management" component={PortalManagement} />
+              <Route path="/email-test">
+                {isSystemAdmin ? <EmailTest /> : <Redirect to="/" />}
+              </Route>
+              <Route path="/webhook-test">
+                {isSystemAdmin ? <WebhookTest /> : <Redirect to="/" />}
+              </Route>
+              <Route path="/file-upload-test">
+                {isSystemAdmin ? <FileUploadTest /> : <Redirect to="/" />}
+              </Route>
+              <Route path="/company-accounts" component={CompanyAccounts} />
+              <Route component={NotFound} />
+            </Switch>
+          </Layout>
+        </Route>
+      </Switch>
+    </Suspense>
   );
 }
 
