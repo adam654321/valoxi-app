@@ -7,7 +7,6 @@ import {
   targetContacts, 
   activities, 
   documents, 
-  dealNotes, 
   stageHistory,
   portalAccessTokens,
   portalActivityLog,
@@ -148,9 +147,6 @@ export class TargetCompaniesService {
     
     // Delete stage history
     await db.delete(stageHistory).where(eq(stageHistory.targetCompanyId, id));
-    
-    // Delete deal notes
-    await db.delete(dealNotes).where(eq(dealNotes.targetCompanyId, id));
     
     // Delete activities
     await db.delete(activities).where(eq(activities.targetCompanyId, id));

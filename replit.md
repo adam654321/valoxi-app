@@ -59,7 +59,7 @@ Preferred communication style: Simple, everyday language.
     - **Contact Management**: Full CRUD operations, primary contact designation, integrated with target company details.
     - **Search & Filtering**: Real-time search with debounce, advanced filtering, and sorting capabilities.
     - **Team Management**: Includes user roles, permissions, invitation workflows, and deal-specific team assignments.
-    - **Activity Management**: Logs various activity types (calls, emails, meetings, notes) linked to contacts and displayed in a timeline.
+    - **Activity Management**: Unified activity logger covering all deal interactions (calls, emails, meetings, broker discussions, due diligence, heads of terms, meeting notes, etc.) linked to contacts and displayed in a timeline. Notes feature has been retired and consolidated into activities.
     - **Document Management**: Advanced viewer supporting various file types (PDF, images, Office documents) with secure handling.
     - **External Document Portal**: Provides a secure portal for collecting documents from target companies, integrating submissions automatically into the main document system, and triggering analysis.
     - **Chase-Up System**: Automated timeframe-based reminder system for portal document submissions. Features include:
@@ -83,7 +83,7 @@ Preferred communication style: Simple, everyday language.
 - **Schema Management**: Drizzle Kit — using `db:push` as the active sync strategy (`npm run db:push`). `db:generate` is also available to snapshot schema changes into versioned SQL files in `migrations/` if needed for review or rollback reference. The 3 existing migration files (`0000`, `0001`, `0002`) are historical artifacts — `push` is the source of truth for the live database. Do not mix `push` and `migrate` strategies.
 - **Schema Architecture**: Modular domain-driven structure under `shared/schema/`:
   - `core.ts` — Users, companies, sessions, roles, invitations, memberships (6 tables)
-  - `deals.ts` — Target companies, contacts, pipeline stages, activities, deal notes (9 tables)
+  - `deals.ts` — Target companies, contacts, pipeline stages, activities, deal notes [retired] (9 tables)
   - `documents.ts` — Document storage, categories, access log, upload events, AI analysis (7 tables)
   - `portal.ts` — External portal tokens, submissions, chase-ups, campaigns, analytics (13 tables)
   - `financials.ts` — P&L, balance sheets, staff data, assets, loans, EBITDA adjustments, valuations (9 tables)
@@ -208,7 +208,6 @@ All endpoints are prefixed `/api/v2/`. The API is consumed exclusively by the in
 | `/api/v2/target-companies` | 🔒 | CRUD for acquisition target companies |
 | `/api/v2/contacts` | 🔒 | Contacts linked to target companies |
 | `/api/v2/activities` | 🔒 | Activity log (calls, emails, meetings) per company |
-| `/api/v2/notes` | 🔒 | Deal notes and annotations |
 | `/api/v2/pipeline` | 🔒 | Pipeline stages, company stage movement, stage history |
 | `/api/v2/deals` | 🔒 | Deal team assignments and permissions |
 | `/api/v2/deal-models` | 🔒 | Deal modeller (financial model assumptions) |

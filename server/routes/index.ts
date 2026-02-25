@@ -7,7 +7,6 @@ import notificationsRoutes from './notifications.routes';
 import documentsRoutes from './documents.routes';
 import targetCompaniesRoutes from './target-companies.routes';
 import authRoutes from './auth.routes';
-import notesRoutes from './notes.routes';
 import dashboardRoutes from './dashboard.routes';
 import teamRoutes, { publicTeamRoutes } from './team.routes';
 import assignmentsRoutes from './assignments.routes';
@@ -41,7 +40,6 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/documents', isAuthenticated, validateCsrfToken, documentsRoutes);
   app.use('/api/v2/target-companies', isAuthenticated, validateCsrfToken, targetCompaniesRoutes);
   app.use('/api/v2/auth', authRoutes);
-  app.use('/api/v2/notes', isAuthenticated, validateCsrfToken, notesRoutes);
   app.use('/api/v2/dashboard', isAuthenticated, validateCsrfToken, dashboardRoutes);
   app.use('/api/v2/team', publicTeamRoutes);
   app.use('/api/v2/team', isAuthenticated, validateCsrfToken, requirePermission('canManageUsers'), teamRoutes);
