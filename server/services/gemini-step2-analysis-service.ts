@@ -9,6 +9,7 @@ export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss
 
 export interface Step2AnalysisRequest {
   fileUrl: string;
+  filePath: string;
   mimeType: string;
   fileName: string;
   documentType: DocumentType;
@@ -47,19 +48,18 @@ function getPromptForDocumentType(documentType: DocumentType): string {
   }
 }
 
-async function fetchTextContent(fileUrl: string): Promise<string | null> {
+async function readFileContent(filePath: string): Promise<string | null> {
   try {
-    const response = await fetch(fileUrl);
-    if (!response.ok) return null;
-    const text = await response.text();
+    const fs = await import('fs/promises');
+    const content = await fs.readFile(filePath, 'utf-8');
     const maxChars = 50000;
-    if (text.length > maxChars) {
-      console.log(`[GEMINI_STEP2] Text content truncated from ${text.length} to ${maxChars} chars`);
-      return text.substring(0, maxChars);
+    if (content.length > maxChars) {
+      console.log(`[GEMINI_STEP2] Text content truncated from ${content.length} to ${maxChars} chars`);
+      return content.substring(0, maxChars);
     }
-    return text;
+    return content.trim() || null;
   } catch (error) {
-    console.warn(`[GEMINI_STEP2] Failed to fetch text content:`, error);
+    console.error(`[GEMINI_STEP2] Failed to read file from disk: ${filePath}`, error);
     return null;
   }
 }
@@ -73,7 +73,7 @@ export async function analyzeDocumentWithGemini(
 
   try {
     console.log(`[GEMINI_STEP2] Starting ${request.documentType} analysis for ${request.fileName}`);
-    console.log(`[GEMINI_STEP2] File URL: ${request.fileUrl.substring(0, 80)}...`);
+    console.log(`[GEMINI_STEP2] File path: ${request.filePath}`);
 
     let prompt = getPromptForDocumentType(request.documentType);
     let fileData: { fileUri: string; mimeType: string } | undefined;
@@ -81,10 +81,10 @@ export async function analyzeDocumentWithGemini(
     const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
 
     if (isTextFile) {
-      const textContent = await fetchTextContent(request.fileUrl);
+      const textContent = await readFileContent(request.filePath);
       if (textContent) {
         prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
-        console.log(`[GEMINI_STEP2] Embedded ${textContent.length} chars of text content inline for ${request.fileName}`);
+        console.log(`[GEMINI_STEP2] Embedded ${textContent.length} chars of text content inline for ${request.fileName} (read from disk)`);
       } else {
         fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
         console.log(`[GEMINI_STEP2] Falling back to file attachment for ${request.fileName}`);
@@ -145,6 +145,7 @@ export async function analyzeDocumentWithGemini(
 
 export async function runStep2AnalysisForTypes(
   fileUrl: string,
+  filePath: string,
   mimeType: string,
   fileName: string,
   documentTypes: string[],
@@ -192,6 +193,7 @@ export async function runStep2AnalysisForTypes(
     
     const result = await analyzeDocumentWithGemini({
       fileUrl,
+      filePath,
       mimeType,
       fileName,
       documentType: docType,

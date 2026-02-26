@@ -3,23 +3,24 @@ import { geminiClient } from "./gemini-client";
 
 const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
 
-async function fetchTextContent(fileUrl: string): Promise<string | null> {
+async function readFileContent(filePath: string): Promise<string | null> {
   try {
-    const response = await fetch(fileUrl);
-    if (!response.ok) return null;
-    const text = await response.text();
+    const fs = await import('fs/promises');
+    const content = await fs.readFile(filePath, 'utf-8');
     const maxChars = 50000;
-    if (text.length > maxChars) {
-      return text.substring(0, maxChars);
+    if (content.length > maxChars) {
+      return content.substring(0, maxChars);
     }
-    return text;
-  } catch {
+    return content.trim() || null;
+  } catch (error) {
+    console.error(`[GEMINI_CLASSIFICATION] Failed to read file from disk: ${filePath}`, error);
     return null;
   }
 }
 
 export interface DocumentClassificationRequest {
   fileUrl: string;
+  filePath: string;
   mimeType: string;
   fileName: string;
 }
@@ -47,17 +48,17 @@ export async function classifyDocumentWithGemini(
 
   try {
     console.log(`[GEMINI_CLASSIFICATION] Starting classification for ${request.fileName}`);
-    console.log(`[GEMINI_CLASSIFICATION] File URL: ${request.fileUrl.substring(0, 80)}...`);
+    console.log(`[GEMINI_CLASSIFICATION] File path: ${request.filePath}`);
 
     let prompt = buildDocumentClassificationPrompt();
     let fileData: { fileUri: string; mimeType: string } | undefined;
     const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
 
     if (isTextFile) {
-      const textContent = await fetchTextContent(request.fileUrl);
+      const textContent = await readFileContent(request.filePath);
       if (textContent) {
         prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
-        console.log(`[GEMINI_CLASSIFICATION] Embedded ${textContent.length} chars inline`);
+        console.log(`[GEMINI_CLASSIFICATION] Embedded ${textContent.length} chars inline (read from disk)`);
       } else {
         fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
       }

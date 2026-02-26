@@ -1,11 +1,17 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
+const isLocalhost = (req: any): boolean => {
+  const ip = req.ip || req.socket?.remoteAddress || '';
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+};
+
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 150,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  skip: isLocalhost,
   keyGenerator: (req) => {
     const userId = (req.session as any)?.userId;
     return userId ? `user-${userId}` : ipKeyGenerator(req.ip ?? '0.0.0.0');
@@ -28,6 +34,7 @@ export const portalLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  skip: isLocalhost,
   message: { message: 'Too many requests to the portal, please try again later.' },
 });
 

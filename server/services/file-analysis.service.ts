@@ -146,7 +146,13 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     console.log(`[FILE_ANALYSIS] Starting Gemini analysis for event ${eventId}, file: ${event.fileName}`);
 
     const fileUrl = event.fileUrl;
-    console.log(`[FILE_ANALYSIS] Using stored URL: ${fileUrl}`);
+    const document = await documentsRepository.getDocumentByIdPublic(event.documentId);
+    if (!document) {
+      console.error(`[FILE_ANALYSIS] Document ${event.documentId} not found for event ${eventId}`);
+      return;
+    }
+    const filePath = document.filePath;
+    console.log(`[FILE_ANALYSIS] Using file path: ${filePath} (URL: ${fileUrl})`);
 
     const fileExtension = event.fileName.split('.').pop()?.toLowerCase() || 'pdf';
     const mimeType = getMimeTypeForFile(fileExtension);
@@ -154,6 +160,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     
     const classificationResult = await classifyDocumentWithGemini({
       fileUrl: fileUrl,
+      filePath: filePath,
       mimeType: mimeType,
       fileName: event.fileName,
     });
@@ -204,6 +211,7 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     
     const step2Results = await runStep2AnalysisForTypes(
       fileUrl,
+      filePath,
       mimeType,
       event.fileName,
       classificationResult.documentTypes,
