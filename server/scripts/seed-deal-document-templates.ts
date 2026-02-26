@@ -145,11 +145,13 @@ async function seedTemplates() {
   console.log('Template seeding complete.');
 }
 
-seedTemplates()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('Seed failed:', err);
-    process.exit(1);
-  });
+if (require.main === module || process.argv[1]?.includes('seed-deal-document-templates')) {
+  seedTemplates()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Seed failed:', err);
+      process.exit(1);
+    });
+}
 
 export { seedTemplates };

@@ -77,6 +77,29 @@ app.use((req, res, next) => {
       console.error('[STARTUP] Analysis queue recovery failed:', err);
     }
 
+    try {
+      const { db } = await import('./db');
+      const { dealDocumentTemplates } = await import('@shared/schema/deal-documents');
+      const { ddCategories } = await import('@shared/schema/due-diligence');
+      const { count } = await import('drizzle-orm');
+
+      const [templateCount] = await db.select({ count: count() }).from(dealDocumentTemplates);
+      if (templateCount.count === 0) {
+        log('Seeding deal document templates...');
+        const { seedTemplates } = await import('./scripts/seed-deal-document-templates');
+        await seedTemplates();
+      }
+
+      const [ddCount] = await db.select({ count: count() }).from(ddCategories);
+      if (ddCount.count === 0) {
+        log('Seeding DD requirements...');
+        const { seedDdRequirements } = await import('./scripts/seed-dd-requirements');
+        await seedDdRequirements();
+      }
+    } catch (err) {
+      console.error('[STARTUP] Seed check failed:', err);
+    }
+
     if (app.get("env") === "development") {
       const lazyPages = [
         '/src/pages/auth/register.tsx',

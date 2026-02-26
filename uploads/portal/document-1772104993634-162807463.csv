@@ -1,0 +1,18 @@
+Customer ID,Customer Name,Total Invoiced,Total Paid,Current,1-30 Days,31-60 Days,61-90 Days,Over 90 Days,Total Outstanding
+"CUST-001","Liverpool City Council",385000,385000,0,0,0,0,0,0
+"CUST-002","Mersey Property Management Ltd",298000,298000,0,0,0,0,0,0
+"CUST-003","Redrow Homes North West",520000,365000,125000,30000,0,0,0,155000
+"CUST-004","NHS Merseyside Facilities",412000,412000,0,0,0,0,0,0
+"CUST-005","Knowsley Housing Trust",267000,267000,0,0,0,0,0,0
+"CUST-006","Bruntwood Property Group",195000,98000,72000,25000,0,0,0,97000
+"CUST-007","Tesco Stores Ltd",324000,324000,0,0,0,0,0,0
+"CUST-008","Unite Students Liverpool",445000,445000,0,0,0,0,0,0
+"CUST-009","Peel Land & Property",358000,245000,85000,28000,0,0,0,113000
+"CUST-010","David Wilson Homes",287000,287000,0,0,0,0,0,0
+"CUST-011","Morrisons Supermarkets",178000,178000,0,0,0,0,0,0
+"CUST-012","Langtree Group",415000,185000,165000,45000,20000,0,0,230000
+"CUST-013","Liverpool John Lennon Airport",225000,225000,0,0,0,0,0,0
+"CUST-014","AO World Facilities",156000,156000,0,0,0,0,0,0
+"CUST-015","Countryside Properties",345000,205000,95000,30000,15000,0,0,140000
+
+,TOTALS:,,,,,,,735000

@@ -323,11 +323,13 @@ async function seedDdRequirements() {
   console.log(`  Total requirements in data: ${DD_DATA.reduce((sum, c) => sum + c.requirements.length, 0)}`);
 }
 
-seedDdRequirements()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('Seed failed:', err);
-    process.exit(1);
-  });
+if (require.main === module || process.argv[1]?.includes('seed-dd-requirements')) {
+  seedDdRequirements()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Seed failed:', err);
+      process.exit(1);
+    });
+}
 
 export { seedDdRequirements };

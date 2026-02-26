@@ -138,8 +138,9 @@ Preferred communication style: Simple, everyday language.
   - Borders: `border-border`, `divide-border`
   - Dark mode: `ThemeProvider` (`client/src/components/theme-provider.tsx`) manages light/dark/system preference via `localStorage` key `ma-crm-theme`, toggles `dark` class on `<html>`. Toggle button in `PageHeader.tsx` via `ThemeToggle` component. CSS variables in `:root` and `.dark` handle all color switching — no `dark:*-gray-*` classes needed
 - **Error Boundary**: `client/src/components/error-boundary.tsx` wraps router in App.tsx
-- **Code Splitting**: 22 pages use `React.lazy()` with strategic Suspense boundaries
+- **Code Splitting**: 22 pages use `React.lazy()` with strategic Suspense boundaries (all pre-warmed at startup)
 - **Component Extraction**: Dashboard (7 widgets) and Target Companies (4 components) extracted into dedicated `client/src/components/` subdirectories
+- **Auto-Seeding**: Server startup checks `deal_document_templates`, `dd_categories` tables and auto-seeds if empty (prevents missing template errors after DB resets)
 
 ## Development and Build Tools
 - **Vite**: Fast build tool.
