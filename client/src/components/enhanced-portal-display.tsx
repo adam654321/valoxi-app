@@ -185,6 +185,7 @@ interface Document {
   lastAccessed: string | null;
   accessCount: number;
   createdAt: string;
+  publicToken: string;
   uploadedByName: string;
   categoryDescription?: string;
 }

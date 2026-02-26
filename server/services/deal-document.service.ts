@@ -450,6 +450,7 @@ export class DealDocumentService {
         ? `Signed NDA - ${sellerCompanyName}`
         : `Signed NDA - ${sellerName}`;
 
+      const { randomUUID } = await import('crypto');
       await db.insert(documents).values({
         targetCompanyId: doc.targetCompanyId,
         uploadedBy: doc.createdBy,
@@ -461,6 +462,7 @@ export class DealDocumentService {
         documentCategory: 'Deal Documents',
         description: `Signed NDA accepted by ${sellerName} on ${signedDate}. Electronic acceptance with IP address and timestamp recorded.`,
         isConfidential: true,
+        publicToken: randomUUID(),
       });
       console.log(`[DEAL_DOCS] Signed NDA saved to Document Library for target company ${doc.targetCompanyId}`);
     } catch (libErr) {

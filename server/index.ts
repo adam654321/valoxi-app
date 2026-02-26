@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeChaseUpCron } from "./cron/chase-up.cron";
 import { sendError } from "./utils/response";
 
+
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));

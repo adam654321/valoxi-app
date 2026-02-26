@@ -68,6 +68,7 @@ export class DocumentsRepository {
         accessCount: documents.accessCount,
         createdAt: documents.createdAt,
         externalSubmissionId: documents.externalSubmissionId,
+        publicToken: documents.publicToken,
         uploadedByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
         categoryDescription: sql<string | undefined>`${documentCategories.description}`,
       })
