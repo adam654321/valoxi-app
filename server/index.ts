@@ -4,13 +4,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeChaseUpCron } from "./cron/chase-up.cron";
 import { sendError } from "./utils/response";
 
-process.on('SIGTERM', () => console.log('[PROCESS] SIGTERM received'));
-process.on('SIGINT', () => console.log('[PROCESS] SIGINT received'));
-process.on('SIGHUP', () => console.log('[PROCESS] SIGHUP received'));
-process.on('uncaughtException', (err) => console.error('[PROCESS] Uncaught exception:', err));
-process.on('unhandledRejection', (reason) => console.error('[PROCESS] Unhandled rejection:', reason));
-process.on('beforeExit', (code) => console.log('[PROCESS] beforeExit with code:', code));
-process.on('exit', (code) => console.log('[PROCESS] exit with code:', code));
+process.on('SIGHUP', () => {
+  console.log('[PROCESS] SIGHUP received — ignoring to preserve esbuild');
+});
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -79,6 +75,43 @@ app.use((req, res, next) => {
       await analysisQueue.recoverStuckEvents();
     } catch (err) {
       console.error('[STARTUP] Analysis queue recovery failed:', err);
+    }
+
+    if (app.get("env") === "development") {
+      const lazyPages = [
+        '/src/pages/auth/register.tsx',
+        '/src/pages/auth/forgot-password.tsx',
+        '/src/pages/auth/reset-password.tsx',
+        '/src/pages/dashboard.tsx',
+        '/src/pages/enhanced-target-companies.tsx',
+        '/src/pages/target-company-detail.tsx',
+        '/src/pages/contacts.tsx',
+        '/src/pages/team-management.tsx',
+        '/src/pages/pipeline.tsx',
+        '/src/pages/reports.tsx',
+        '/src/components/notifications.tsx',
+        '/src/pages/PortalPage.tsx',
+        '/src/pages/PortalManagement.tsx',
+        '/src/pages/company-accounts.tsx',
+        '/src/pages/EmailTest.tsx',
+        '/src/pages/webhook-test.tsx',
+        '/src/pages/file-upload-test.tsx',
+        '/src/pages/admin/index.tsx',
+        '/src/pages/admin/token-usage.tsx',
+        '/src/pages/admin/costs.tsx',
+        '/src/pages/admin/companies.tsx',
+        '/src/pages/admin/companies/[id].tsx',
+        '/src/pages/admin/users.tsx',
+        '/src/pages/admin/webhook-events.tsx',
+      ];
+      log(`Pre-warming ${lazyPages.length} lazy-loaded pages...`);
+      const warmupStart = Date.now();
+      await Promise.allSettled(
+        lazyPages.map(page =>
+          fetch(`http://127.0.0.1:${port}${page}`).catch(() => {})
+        )
+      );
+      log(`Pre-warming complete in ${Date.now() - warmupStart}ms — all pages compiled by esbuild`);
     }
   });
 })();
