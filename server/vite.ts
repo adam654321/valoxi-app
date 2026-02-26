@@ -33,9 +33,6 @@ export async function setupVite(app: Express, server: Server) {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        if (msg.includes('The service is no longer running')) {
-          return;
-        }
         process.exit(1);
       },
     },
