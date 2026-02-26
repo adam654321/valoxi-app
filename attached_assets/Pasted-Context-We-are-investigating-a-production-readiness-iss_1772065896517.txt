@@ -1,0 +1,21 @@
+Context: We are investigating a production-readiness issue with the rate limiting system. When a user submits multiple documents via the external seller portal, the automated backend processing pipeline (save → categorise → AI analysis stage 1 → AI analysis stage 2) is hitting rate limits and failing silently — documents are saved but never submitted for analysis. This cannot happen in production.
+We need to fully understand how the rate limiting system currently works before designing a fix. Please answer all of the following — do not make any changes yet.
+1. Show the full contents of server/middleware/rate-limit.ts — every limiter defined, its window, max requests, key function (what it keys on — IP, session, user ID etc.), and its error response.
+2. Show exactly where each limiter is applied in server/routes/index.ts — list every app.use() call that includes a rate limiter, the path it's mounted on, and which limiter is used.
+3. Trace the full document processing pipeline for a single document uploaded via the portal. Starting from the portal submission endpoint, list every HTTP request or internal service call that gets made in sequence — including the document save, the categorisation call, the analysis queue enqueue, and each stage of AI analysis. For each step, indicate:
+
+Whether it goes through an HTTP route (and if so, which one and which rate limiter applies)
+Or whether it's a direct service-to-service call that bypasses routing entirely
+
+4. Show the full contents of server/services/analysis-queue.service.ts — how does the queue work, does it process items sequentially or in parallel, is there any built-in delay or backoff between items?
+5. For the categorisation step specifically — what endpoint or service method is called to categorise a document after upload? Show the relevant code. Is this an HTTP call back to the same server, a direct service call, or an external API call?
+6. What happens when a rate limit is hit during the pipeline? Is the error caught and retried, caught and logged silently, or does it throw uncaught and terminate the pipeline? Show the error handling code in the analysis pipeline.
+7. Are there separate rate limiters for:
+
+Authenticated internal API calls (logged-in users)
+Portal public routes (unauthenticated external submissions)
+Server-to-server or background job calls
+
+If there is only one limiter applied to all three, that is likely the root cause.
+8. What is the current portalLimiter configuration specifically — window duration, max requests, and what it keys on. If 3-4 documents trigger the pipeline described in question 3, calculate approximately how many requests that generates against the portal limiter within a single processing window.
+Do not make any changes. Information gathering only. Please answer all 8 questions in full.
