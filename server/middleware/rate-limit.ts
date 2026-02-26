@@ -7,7 +7,7 @@ const isLocalhost = (req: any): boolean => {
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150,
+  max: 1000,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
@@ -30,7 +30,7 @@ export const authLimiter = rateLimit({
 
 export const portalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 500,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: false,
