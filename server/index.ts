@@ -4,6 +4,13 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeChaseUpCron } from "./cron/chase-up.cron";
 import { sendError } from "./utils/response";
 
+process.on('SIGTERM', () => console.log('[PROCESS] SIGTERM received'));
+process.on('SIGINT', () => console.log('[PROCESS] SIGINT received'));
+process.on('SIGHUP', () => console.log('[PROCESS] SIGHUP received'));
+process.on('uncaughtException', (err) => console.error('[PROCESS] Uncaught exception:', err));
+process.on('unhandledRejection', (reason) => console.error('[PROCESS] Unhandled rejection:', reason));
+process.on('beforeExit', (code) => console.log('[PROCESS] beforeExit with code:', code));
+process.on('exit', (code) => console.log('[PROCESS] exit with code:', code));
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));

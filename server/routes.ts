@@ -13,6 +13,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/', generalLimiter);
   registerModularRoutes(app);
 
+  app.get('/api/document-updates/stream/:companyId', (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+    res.write('data: {"type":"connected"}\n\n');
+    const keepAlive = setInterval(() => { res.write(':\n\n'); }, 30000);
+    req.on('close', () => { clearInterval(keepAlive); });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
