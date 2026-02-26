@@ -101,6 +101,11 @@ app.use((req, res, next) => {
     }
 
     if (app.get("env") === "development") {
+      // Probe esbuild health before warming up. On Replit hibernation wake,
+      // esbuild's child process may still be restarting. We wait until a single
+      // probe page compiles successfully before firing all 24 warmup requests.
+      // This prevents the pre-warmup from racing against esbuild restart and
+      // triggering the Vite error logger on a dead esbuild instance.
       const lazyPages = [
         '/src/pages/auth/register.tsx',
         '/src/pages/auth/forgot-password.tsx',
@@ -127,14 +132,35 @@ app.use((req, res, next) => {
         '/src/pages/admin/users.tsx',
         '/src/pages/admin/webhook-events.tsx',
       ];
-      log(`Pre-warming ${lazyPages.length} lazy-loaded pages...`);
-      const warmupStart = Date.now();
-      await Promise.allSettled(
-        lazyPages.map(page =>
-          fetch(`http://127.0.0.1:${port}${page}`).catch(() => {})
-        )
-      );
-      log(`Pre-warming complete in ${Date.now() - warmupStart}ms — all pages compiled by esbuild`);
+
+      // Wait for esbuild to be ready before warming — retry probe up to 10 times
+      let esbuildReady = false;
+      for (let attempt = 1; attempt <= 10; attempt++) {
+        try {
+          const probe = await fetch(`http://127.0.0.1:${port}/src/pages/dashboard.tsx`);
+          if (probe.status < 500) {
+            esbuildReady = true;
+            log(`esbuild ready (probe attempt ${attempt}) — starting pre-warmup`);
+            break;
+          }
+        } catch {
+          // esbuild not ready yet
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      if (esbuildReady) {
+        log(`Pre-warming ${lazyPages.length} lazy-loaded pages...`);
+        const warmupStart = Date.now();
+        await Promise.allSettled(
+          lazyPages.map(page =>
+            fetch(`http://127.0.0.1:${port}${page}`).catch(() => {})
+          )
+        );
+        log(`Pre-warming complete in ${Date.now() - warmupStart}ms — all pages compiled by esbuild`);
+      } else {
+        log(`Pre-warmup skipped — esbuild did not become ready within 5 seconds`);
+      }
     }
   });
 })();
