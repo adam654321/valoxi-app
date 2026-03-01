@@ -1,0 +1,47 @@
+My count in the prompt was wrong — I miscounted across the groups when I wrote "38 fields." All 44 fields are correct and match exactly what was in the spec. Replit didn't add anything, I just gave it a bad count to validate against.
+All good. Move on to Step 3.
+
+Send this to Replit:
+
+We are continuing to build the billing layer for the M&A platform. Stage 1, Step 3: the billing repository — the data access layer for all subscription reads and writes.
+Context:
+
+shared/schema/billing.ts contains the subscriptions, subscriptionEvents, and addonPurchases tables
+shared/entitlements.ts contains TIER_LIMITS, TIER_FEATURES, and the four helper functions
+The existing codebase uses a repository pattern — all DB access goes through server/repositories/*.repository.ts files. Services call repositories, never the DB directly.
+The DB client is at server/db.ts
+Look at an existing repository such as server/repositories/usersRepository.ts for the correct import and pattern conventions to follow
+
+What to build:
+Create server/repositories/billing.repository.ts with the following methods. All methods are async and return typed results using the inferred Drizzle types from the billing schema.
+Subscription reads:
+getByCompanyId(userCompanyId: number): Promise<Subscription | null> — fetch the subscription row for a tenant. Returns null if none exists.
+getWithCompany(userCompanyId: number): Promise<(Subscription & { userCompany: UserCompany }) | null> — fetch subscription joined with the user_companies row.
+Subscription writes:
+create(data: InsertSubscription): Promise<Subscription> — insert a new subscription row and return it.
+updateByCompanyId(userCompanyId: number, data: Partial<InsertSubscription>): Promise<Subscription | null> — update a subscription by tenant ID, always set updatedAt to new Date(), return the updated row or null if not found.
+upsertByCompanyId(data: InsertSubscription): Promise<Subscription> — insert or update (on conflict on user_company_id), always update updatedAt on conflict. Return the resulting row.
+Subscription event writes:
+logEvent(data: InsertSubscriptionEvent): Promise<SubscriptionEvent> — insert an event row and return it.
+Subscription event reads:
+getEventsByCompanyId(userCompanyId: number, limit?: number): Promise<SubscriptionEvent[]> — fetch events for a tenant ordered by processedAt descending. Default limit 50.
+getEventByStripeId(stripeEventId: string): Promise<SubscriptionEvent | null> — fetch by Stripe event ID for deduplication checks.
+Add-on purchase writes:
+createAddonPurchase(data: InsertAddonPurchase): Promise<AddonPurchase> — insert a purchase record and return it.
+Add-on purchase reads:
+getAddonPurchasesByCompanyId(userCompanyId: number): Promise<AddonPurchase[]> — fetch all add-on purchases for a tenant ordered by purchasedAt descending.
+Admin helpers:
+getAllSubscriptions(filters?: { status?: SubscriptionStatus, planKey?: PlanKey }): Promise<Subscription[]> — fetch all subscriptions, optionally filtered by status and/or planKey. Used by the admin panel.
+getSubscriptionsExpiringBefore(date: Date): Promise<Subscription[]> — fetch all active or trialing subscriptions where current_period_end or trial_end is before the given date. Used by the cron job.
+Import PlanKey, SubscriptionStatus, Subscription, InsertSubscription, SubscriptionEvent, InsertSubscriptionEvent, AddonPurchase, InsertAddonPurchase from shared/schema/billing (not from the barrel — direct import to keep it explicit).
+Export a single billingRepository object containing all the above methods.
+Do not create any routes or services yet.
+
+Validation — Replit must output all of the following:
+
+Confirm server/repositories/billing.repository.ts created and exports a billingRepository object
+List all method names on the exported object (should be 12)
+Confirm the file imports the DB client from server/db.ts using the same pattern as existing repositories
+Confirm upsertByCompanyId uses onConflictDoUpdate and always sets updatedAt
+Confirm getEventByStripeId returns null (not throws) when no row is found
+Run npx tsc --noEmit and confirm zero new TypeScript errors
