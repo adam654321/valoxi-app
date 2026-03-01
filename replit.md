@@ -94,6 +94,7 @@ Preferred communication style: Simple, everyday language.
   - `index.ts` — Barrel re-export of all modules
   - `shared/schema.ts` — Top-level re-export (`export * from './schema/index'`) so all existing imports continue to work unchanged
 - **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, standardized document requirements, `chase_up_schedules`, `chase_up_emails`, and value creation modelling tables.
+- **Entitlements Layer**: `shared/entitlements.ts` — single source of truth for tier-based feature gating and limits. Exports `TIER_LIMITS` (Record<PlanKey, TierLimits>), `TIER_FEATURES` (Record<PlanKey, TierFeatures> with 44 fields), and 4 helper functions (`getEffectiveLimits`, `hasFeature`, `getMaxActiveTargets`, `getMaxSeats`). Enterprise overrides applied via `enterpriseOverrides` jsonb on subscription row.
 - **Value Creation Modeller**: Post-acquisition financial modelling feature:
     - Pure TypeScript calculation engine at `shared/calculators/value-creation.calc.ts` (5-year P&L projections, debt schedules, waterfall, returns/IRR/MOIC, sensitivity analysis)
     - Service at `server/services/value-creation.service.ts`, routes at `server/routes/value-creation.routes.ts`

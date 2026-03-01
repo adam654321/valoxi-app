@@ -1,0 +1,144 @@
+We are building the entitlements layer for the four-tier billing system. This is Stage 1, Step 2: a single constants module that defines what every tier can access. All server-side enforcement and all UI gating will read from this one file — never scattered checks throughout the codebase.
+Context:
+
+Four tiers: CORE, PROFESSIONAL, EXPERT, ENTERPRISE
+The PlanKey type already exists in shared/schema/billing.ts
+This file lives in shared/ so both server and client can import it
+ENTERPRISE limits are null meaning "admin-configured per tenant" — the enterpriseOverrides jsonb on the subscription row overrides them at runtime
+
+What to build:
+Create shared/entitlements.ts with the following structure:
+Section 1 — Limits
+Define an interface TierLimits:
+typescriptinterface TierLimits {
+  maxActiveTargets: number | null;      // null = custom (Enterprise)
+  maxSeats: number | null;              // null = custom (Enterprise)
+  maxStorageGb: number | null;          // null = custom (Enterprise)
+  maxDealModelVersions: number | null;  // null = custom (Enterprise)
+  versionHistoryRetentionDays: number | null; // null = custom (Enterprise)
+}
+Define TIER_LIMITS as a Record<PlanKey, TierLimits>:
+
+CORE: maxActiveTargets 3, maxSeats 1, maxStorageGb 1, maxDealModelVersions 1, versionHistoryRetentionDays 0
+PROFESSIONAL: maxActiveTargets 20, maxSeats 1, maxStorageGb 10, maxDealModelVersions 5, versionHistoryRetentionDays 90
+EXPERT: maxActiveTargets 100, maxSeats 1, maxStorageGb 25, maxDealModelVersions 20, versionHistoryRetentionDays 180
+ENTERPRISE: all null
+
+Note: maxSeats is the number of included seats. Additional seats are purchased separately and stored on the subscription row — the runtime check is includedSeats + additionalSeats.
+Section 2 — Features
+Define an interface TierFeatures with the following boolean fields (all features, in groups):
+Pipeline & Targets:
+
+pipelineKanban
+targetArchiving
+companiesHouseImport
+pipelineCustomisation
+dealComparisonDashboard
+activityAuditTrail
+
+Document & Analysis:
+
+documentUpload
+aiDocumentExtraction
+expertAnalysisSummary
+expertAnalysisFullDetail
+
+Deal Modeller:
+
+simplifiedDealModeller
+fullDealModeller
+dscrFiveZoneIndicator
+dscrLenderContextPanel
+modelVersioning
+dealStructureAiAgent
+savedFeeFundingTemplates
+
+Value Creation:
+
+valueCreationModule
+linkedCustomScenarios
+debtAmortisationSchedule
+returnsWaterfallAnalysis
+sensitivityHeatMaps
+
+Offer Letters & HoT:
+
+aiOfferLetter
+hotStandardTemplate
+hotBuilder
+
+Seller Portal & DD:
+
+sellerPortal
+portalWhiteLabelling — use a union type: false | 'logo' | 'full' (not boolean)
+ddDataRoom
+multiDocumentUploads
+documentReviewWorkflow
+requestMoreInformation
+thirdPartyDdAccess
+ddZipExport
+
+Team & Collaboration:
+
+additionalSeatPurchasing
+roleBasedAccessControl
+teamActivityDashboard
+ssoSaml
+
+Access & Export:
+
+exportToPdfExcel
+apiAccess
+
+Support & Onboarding:
+
+emailSupport
+prioritySupport
+dedicatedPrioritySupport
+onboardingCall
+guidedDealChecklist
+
+Define TIER_FEATURES as a Record<PlanKey, TierFeatures> matching the feature matrix exactly:
+CORE: pipelineKanban ✓, targetArchiving ✓, companiesHouseImport ✓, pipelineCustomisation ✗, dealComparisonDashboard ✗, activityAuditTrail ✗, documentUpload ✓, aiDocumentExtraction ✓, expertAnalysisSummary ✓, expertAnalysisFullDetail ✗, simplifiedDealModeller ✓, fullDealModeller ✗, dscrFiveZoneIndicator ✓, dscrLenderContextPanel ✗, modelVersioning ✗, dealStructureAiAgent ✗, savedFeeFundingTemplates ✗, valueCreationModule ✗, linkedCustomScenarios ✗, debtAmortisationSchedule ✗, returnsWaterfallAnalysis ✗, sensitivityHeatMaps ✗, aiOfferLetter ✓, hotStandardTemplate ✓, hotBuilder ✗, sellerPortal ✓, portalWhiteLabelling false, ddDataRoom ✗, multiDocumentUploads ✗, documentReviewWorkflow ✗, requestMoreInformation ✗, thirdPartyDdAccess ✗, ddZipExport ✗, additionalSeatPurchasing ✗, roleBasedAccessControl ✗, teamActivityDashboard ✗, ssoSaml ✗, exportToPdfExcel ✓, apiAccess ✗, emailSupport ✓, prioritySupport ✗, dedicatedPrioritySupport ✗, onboardingCall ✗, guidedDealChecklist ✓
+PROFESSIONAL: everything CORE has, plus — pipelineCustomisation ✓, expertAnalysisFullDetail ✓, fullDealModeller ✓, dscrLenderContextPanel ✓, modelVersioning ✓, dealStructureAiAgent ✓, ddDataRoom ✓, multiDocumentUploads ✓, documentReviewWorkflow ✓, requestMoreInformation ✓, ddZipExport ✓, additionalSeatPurchasing ✓, portalWhiteLabelling 'logo', onboardingCall ✓, guidedDealChecklist ✗. Everything else false.
+EXPERT: everything PROFESSIONAL has, plus — dealComparisonDashboard ✓, valueCreationModule ✓, linkedCustomScenarios ✓, debtAmortisationSchedule ✓, returnsWaterfallAnalysis ✓, sensitivityHeatMaps ✓, hotBuilder ✓, portalWhiteLabelling 'full', thirdPartyDdAccess ✓, roleBasedAccessControl ✓, apiAccess ✓, prioritySupport ✓
+ENTERPRISE: everything EXPERT has, plus — activityAuditTrail ✓, savedFeeFundingTemplates ✓, teamActivityDashboard ✓, ssoSaml ✓, dedicatedPrioritySupport ✓
+Section 3 — Helper functions
+Export the following functions:
+typescript// Returns the resolved limits for a tenant, applying Enterprise overrides if present
+function getEffectiveLimits(
+  planKey: PlanKey,
+  enterpriseOverrides?: Record<string, unknown> | null
+): TierLimits
+
+// Returns true if the tenant's plan includes the given feature
+function hasFeature(
+  planKey: PlanKey,
+  feature: keyof TierFeatures
+): boolean
+
+// Returns the effective max active targets for a tenant, including add-on slots
+function getMaxActiveTargets(
+  planKey: PlanKey,
+  addOnCompanySlots: number,
+  enterpriseOverrides?: Record<string, unknown> | null
+): number | null  // null = unlimited (custom Enterprise with no override set)
+
+// Returns the effective max seats for a tenant, including purchased additional seats
+function getMaxSeats(
+  planKey: PlanKey,
+  additionalSeats: number,
+  enterpriseOverrides?: Record<string, unknown> | null
+): number | null
+All four functions must be exported. getEffectiveLimits should merge TIER_LIMITS[planKey] with any valid numeric overrides found in the enterpriseOverrides object (keys: maxTargets, maxSeats, maxStorageGb). If the plan is not ENTERPRISE, enterpriseOverrides is ignored.
+Do not create any routes, middleware, or services yet. Constants and helpers only.
+
+Validation — Replit must output all of the following:
+
+Confirm shared/entitlements.ts created
+List all keys present in TierFeatures interface (count should be 38 fields — 37 boolean + 1 union)
+Confirm TIER_LIMITS and TIER_FEATURES are both exported as Record<PlanKey, ...>
+Confirm all four helper functions are exported with correct signatures
+Run npx tsc --noEmit and confirm zero new TypeScript errors
+Spot-check: confirm CORE has guidedDealChecklist: true and PROFESSIONAL has guidedDealChecklist: false
+Spot-check: confirm ENTERPRISE has activityAuditTrail: true and CORE has activityAuditTrail: false
