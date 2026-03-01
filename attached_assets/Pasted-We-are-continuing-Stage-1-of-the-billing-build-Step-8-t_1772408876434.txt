@@ -1,0 +1,48 @@
+We are continuing Stage 1 of the billing build. Step 8: the authenticated billing API routes — the endpoints the frontend calls to initiate payments, check subscription status, and manage billing.
+Context:
+
+server/routes/billing.routes.ts already exists with the Stripe webhook endpoint at POST /webhook/stripe
+server/services/billing.service.ts exports billingService
+server/middleware/subscription.ts exports requireActiveSubscription, requireFeature, requirePlan
+server/middleware/auth.ts exports isAuthenticated
+server/middleware/csrf.ts exports validateCsrfToken
+The Stripe secret key is available via server/config.ts as config.stripe.secretKey
+All authenticated routes in this project use both isAuthenticated and validateCsrfToken middleware — follow the same pattern
+req.session.userCompanyId gives the current tenant ID
+req.session.userId gives the current user ID
+Stripe price lookup keys follow the pattern ma_core_monthly, ma_core_annual, ma_professional_monthly, ma_professional_annual, ma_expert_monthly, ma_expert_annual — these must be created in the Stripe dashboard separately, but the code references them by these lookup keys
+The app's base URL for redirects should come from server/config.ts — check how the existing codebase handles the app base URL (look at portal token generation or email links) and follow the same approach
+
+Add the following authenticated endpoints to server/routes/billing.routes.ts:
+GET /subscription — isAuthenticated only (no CSRF needed for GET)
+Returns the current tenant's subscription and entitlements. Calls billingService.getEntitlements(userCompanyId). If no subscription exists returns { subscription: null, limits: null, features: null } with 200 (not 404 — the frontend needs a clean response to show the upgrade prompt). Response shape: { subscription, limits, features }.
+POST /checkout — isAuthenticated, validateCsrfToken
+Creates a Stripe Checkout Session for a new subscription. Request body: { planKey: PlanKey, billingInterval: 'month' | 'year' }. Validates planKey is one of CORE, PROFESSIONAL, EXPERT (not ENTERPRISE — Enterprise is invoice-only). Creates or retrieves a Stripe customer for the tenant. Creates a Stripe Checkout Session with:
+
+mode: 'subscription'
+The correct price looked up by lookup key (e.g. ma_core_monthly)
+success_url and cancel_url pointing back to the app's billing page
+metadata: { userCompanyId, planKey, billingInterval } — the webhook handler reads these
+allow_promotion_codes: true — for 5D community discount codes
+Returns { checkoutUrl: session.url }.
+
+POST /portal — isAuthenticated, validateCsrfToken
+Creates a Stripe Customer Portal session so users can manage their billing, update payment methods, and cancel. Requires the tenant to have a stripeCustomerId on their subscription — if not, return 400 with { error: 'no_stripe_customer', message: 'No billing account found. Please subscribe first.' }. Returns { portalUrl: session.url }.
+POST /addon — isAuthenticated, validateCsrfToken
+Purchase additional company slots or seats. Request body: { addonType: 'company_slot' | 'seat', quantity: number }. Validates quantity is between 1 and 20. Creates a Stripe Payment Intent for the add-on purchase (unit price: company_slot = 800 pence, seat = price TBD so use 1000 pence as placeholder — add a TODO comment). On success calls billingService.purchaseAddonSlots. Returns { clientSecret: paymentIntent.client_secret, purchase } — the frontend uses the client secret to confirm payment.
+POST /admin/comp — isAuthenticated, validateCsrfToken, plus a check that req.session.isSystemAdmin === true (return 403 if not)
+Grant comped access to a tenant. Request body: { userCompanyId: number, planKey: PlanKey, notes?: string }. Calls billingService.grantAdminComp. Returns the updated subscription. Used for Cohort 1 testers and 5D free months.
+GET /admin/subscriptions — isAuthenticated, plus system admin check
+Returns all subscriptions with optional query params ?status= and ?planKey= for filtering. Calls billingRepository.getAllSubscriptions. Used by the admin panel.
+
+Validation — Replit must output all of the following:
+
+Confirm all 6 new endpoints are added to billing.routes.ts with correct HTTP methods and paths
+Confirm GET /subscription and GET /admin/subscriptions use isAuthenticated only (no CSRF — GET requests)
+Confirm all POST endpoints use both isAuthenticated and validateCsrfToken
+Confirm both admin endpoints check req.session.isSystemAdmin and return 403 if false
+Confirm POST /checkout validates that planKey is not ENTERPRISE
+Confirm POST /addon has a TODO comment on the seat unit price placeholder
+Confirm POST /checkout passes metadata: { userCompanyId, planKey, billingInterval } to Stripe
+Run npx tsc --noEmit and confirm zero new TypeScript errors
+

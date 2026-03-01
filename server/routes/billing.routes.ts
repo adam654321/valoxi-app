@@ -5,7 +5,9 @@ import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
 import { db } from '../db';
 import { webhookEvents } from '@shared/schema/core';
-import type { PlanKey, BillingInterval } from '@shared/schema/billing';
+import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
+import { isAuthenticated } from '../middleware/auth';
+import { validateCsrfToken } from '../middleware/csrf';
 
 const router = Router();
 
@@ -235,6 +237,246 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
     console.error(`[Billing] Error processing ${event.type}:`, err);
     await logWebhookEvent(event.type, event.data.object, 'error', err.message);
     return res.status(200).json({ received: true });
+  }
+});
+
+const VALID_PLAN_KEYS: PlanKey[] = ['CORE', 'PROFESSIONAL', 'EXPERT'];
+const LOOKUP_KEY_MAP: Record<string, string> = {
+  'CORE_month': 'ma_core_monthly',
+  'CORE_year': 'ma_core_annual',
+  'PROFESSIONAL_month': 'ma_professional_monthly',
+  'PROFESSIONAL_year': 'ma_professional_annual',
+  'EXPERT_month': 'ma_expert_monthly',
+  'EXPERT_year': 'ma_expert_annual',
+};
+
+router.get('/subscription', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    const result = await billingService.getEntitlements(userCompanyId);
+    if (!result) {
+      return res.status(200).json({ subscription: null, limits: null, features: null });
+    }
+
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error('[Billing] Error fetching subscription:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscription.' });
+  }
+});
+
+router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ error: 'stripe_not_configured' });
+    }
+
+    const { planKey, billingInterval } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year' };
+
+    if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
+      return res.status(400).json({ error: 'invalid_plan', message: 'Plan must be CORE, PROFESSIONAL, or EXPERT. Enterprise plans are invoice-only.' });
+    }
+
+    if (!billingInterval || !['month', 'year'].includes(billingInterval)) {
+      return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
+    }
+
+    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    if (!lookupKey) {
+      return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+    let customerId = existingSub?.stripeCustomerId;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+    if (!prices.data.length) {
+      return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: prices.data[0].id, quantity: 1 }],
+      success_url: `${baseUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/billing?canceled=true`,
+      allow_promotion_codes: true,
+      metadata: {
+        userCompanyId: String(userCompanyId),
+        planKey,
+        billingInterval,
+      },
+    });
+
+    return res.status(200).json({ checkoutUrl: session.url });
+  } catch (err: any) {
+    console.error('[Billing] Error creating checkout session:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to create checkout session.' });
+  }
+});
+
+router.post('/portal', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ error: 'stripe_not_configured' });
+    }
+
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription?.stripeCustomerId) {
+      return res.status(400).json({ error: 'no_stripe_customer', message: 'No billing account found. Please subscribe first.' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: subscription.stripeCustomerId,
+      return_url: `${baseUrl}/billing`,
+    });
+
+    return res.status(200).json({ portalUrl: session.url });
+  } catch (err: any) {
+    console.error('[Billing] Error creating portal session:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to create portal session.' });
+  }
+});
+
+const ADDON_PRICES: Record<string, number> = {
+  company_slot: 800,
+  // TODO: Seat unit price is a placeholder (1000 pence) — confirm final pricing before launch.
+  seat: 1000,
+};
+
+router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ error: 'stripe_not_configured' });
+    }
+
+    const { addonType, quantity } = req.body as { addonType: 'company_slot' | 'seat'; quantity: number };
+
+    if (!addonType || !['company_slot', 'seat'].includes(addonType)) {
+      return res.status(400).json({ error: 'invalid_addon_type', message: 'Addon type must be company_slot or seat.' });
+    }
+
+    if (!quantity || typeof quantity !== 'number' || quantity < 1 || quantity > 20) {
+      return res.status(400).json({ error: 'invalid_quantity', message: 'Quantity must be between 1 and 20.' });
+    }
+
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription?.stripeCustomerId) {
+      return res.status(400).json({ error: 'no_stripe_customer', message: 'No billing account found. Please subscribe first.' });
+    }
+
+    const unitPrice = ADDON_PRICES[addonType];
+    const totalAmount = unitPrice * quantity;
+
+    const stripe = new Stripe(config.stripe.secretKey);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalAmount,
+      currency: 'gbp',
+      customer: subscription.stripeCustomerId,
+      metadata: {
+        userCompanyId: String(userCompanyId),
+        addonType,
+        quantity: String(quantity),
+      },
+    });
+
+    const result = await billingService.purchaseAddonSlots(
+      userCompanyId,
+      addonType,
+      quantity,
+      unitPrice,
+      'gbp',
+      paymentIntent.id
+    );
+
+    return res.status(200).json({ clientSecret: paymentIntent.client_secret, purchase: result.purchase });
+  } catch (err: any) {
+    console.error('[Billing] Error processing addon purchase:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to process addon purchase.' });
+  }
+});
+
+router.post('/admin/comp', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    if (!req.session.isSystemAdmin) {
+      return res.status(403).json({ error: 'forbidden', message: 'System admin access required.' });
+    }
+
+    const { userCompanyId, planKey, notes } = req.body as { userCompanyId: number; planKey: PlanKey; notes?: string };
+
+    if (!userCompanyId || typeof userCompanyId !== 'number') {
+      return res.status(400).json({ error: 'invalid_company', message: 'A valid userCompanyId is required.' });
+    }
+
+    if (!planKey || !['CORE', 'PROFESSIONAL', 'EXPERT', 'ENTERPRISE'].includes(planKey)) {
+      return res.status(400).json({ error: 'invalid_plan', message: 'A valid planKey is required.' });
+    }
+
+    const adminUserId = req.session.userId!;
+    const subscription = await billingService.grantAdminComp(userCompanyId, planKey, adminUserId, notes);
+
+    return res.status(200).json({ subscription });
+  } catch (err: any) {
+    console.error('[Billing] Error granting admin comp:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to grant comped access.' });
+  }
+});
+
+router.get('/admin/subscriptions', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    if (!req.session.isSystemAdmin) {
+      return res.status(403).json({ error: 'forbidden', message: 'System admin access required.' });
+    }
+
+    const filters: { status?: SubscriptionStatus; planKey?: PlanKey } = {};
+    if (req.query.status) {
+      filters.status = req.query.status as SubscriptionStatus;
+    }
+    if (req.query.planKey) {
+      filters.planKey = req.query.planKey as PlanKey;
+    }
+
+    const subscriptions = await billingRepository.getAllSubscriptions(
+      Object.keys(filters).length > 0 ? filters : undefined
+    );
+
+    return res.status(200).json({ subscriptions });
+  } catch (err: any) {
+    console.error('[Billing] Error fetching all subscriptions:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscriptions.' });
   }
 });
 
