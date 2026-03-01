@@ -1,0 +1,42 @@
+We are continuing to build the billing layer. Stage 1, Step 4: the billing service — the business logic layer that sits between the Stripe webhook handler and the repository.
+Context:
+
+server/repositories/billing.repository.ts exports billingRepository with 12 methods
+shared/schema/billing.ts has all types and enums
+shared/entitlements.ts has getEffectiveLimits, hasFeature, getMaxActiveTargets, getMaxSeats
+The existing codebase has a server/services/event-bus.service.ts — a typed EventEmitter singleton. Look at how existing services use it and follow the same pattern.
+Do not use Stripe SDK yet — that comes in a later step. This service works with plain data objects that the webhook handler will pass in.
+
+What to build:
+Create server/services/billing.service.ts exporting a billingService singleton with the following methods:
+getSubscription(userCompanyId: number): Promise<Subscription | null>
+Thin pass-through to billingRepository.getByCompanyId. Used by middleware for fast access checks.
+getEntitlements(userCompanyId: number): Promise<{ subscription: Subscription; limits: TierLimits; features: TierFeatures } | null>
+Fetch the subscription, then call getEffectiveLimits and return the resolved limits and features together. Returns null if no subscription exists. This is the primary method the rest of the app will call to answer "what can this tenant do."
+createTrialSubscription(userCompanyId: number, trialDays: number): Promise<Subscription>
+Create a new subscription row for a fresh tenant. Sets: planKey: 'CORE', status: 'trialing', trialStart: now, trialEnd: now + trialDays, no Stripe IDs yet. Logs a subscription_events row with eventType: 'trial.started'. Returns the created subscription.
+activateSubscription(userCompanyId: number, data: { stripeCustomerId: string; stripeSubscriptionId: string; planKey: PlanKey; billingInterval: BillingInterval; currentPeriodStart: Date; currentPeriodEnd: Date }): Promise<Subscription>
+Called when a Stripe checkout.session.completed or customer.subscription.created webhook confirms payment. Upserts the subscription with status: 'active' and all provided Stripe data. Logs a subscription_events row with eventType: 'subscription.activated', capturing previous status/planKey and new status/planKey. Returns the updated subscription.
+updateSubscriptionStatus(userCompanyId: number, data: { status: SubscriptionStatus; planKey?: PlanKey; currentPeriodStart?: Date; currentPeriodEnd?: Date; cancelAtPeriodEnd?: boolean }, stripeEventId?: string): Promise<Subscription | null>
+General-purpose status updater called by webhook handlers for customer.subscription.updated, invoice.payment_failed, customer.subscription.deleted. Checks billingRepository.getEventByStripeId first — if the Stripe event ID has already been processed, return the existing subscription without writing (idempotency). Updates the subscription row, logs a subscription_events row with the appropriate eventType derived from the new status, and returns the updated row.
+grantAdminComp(userCompanyId: number, planKey: PlanKey, adminUserId: number, notes?: string): Promise<Subscription>
+Manually grant access without a Stripe subscription. Sets status: 'admin_comped', planKey as provided, clears Stripe IDs, sets adminNotes if provided. Logs event with eventType: 'admin.comp_granted' and adminUserId. Used for Cohort 1 testers and 5D community free months.
+expireTrial(userCompanyId: number): Promise<Subscription | null>
+Called by the cron job when a trial has passed its trialEnd date. Sets status: 'canceled', logs event eventType: 'trial.expired'. Returns updated row or null if not found.
+purchaseAddonSlots(userCompanyId: number, addonType: 'company_slot' | 'seat', quantity: number, unitPriceMinorUnit: number, currency: string, stripePaymentRef?: string): Promise<{ subscription: Subscription; purchase: AddonPurchase }>
+Records an add-on purchase. Inserts an addon_purchases row, then increments addOnCompanySlots (if addonType === 'company_slot') or additionalSeats (if addonType === 'seat') on the subscription row. Returns both the updated subscription and the purchase record.
+canAddTarget(userCompanyId: number, currentActiveCount: number): Promise<boolean>
+Returns true if the tenant is allowed to add another active target company. Fetches subscription, calls getMaxActiveTargets, compares against currentActiveCount. Returns false if subscription is null, canceled, or limit is reached.
+canAddSeat(userCompanyId: number, currentSeatCount: number): Promise<boolean>
+Same pattern as canAddTarget but for seats using getMaxSeats.
+Import TierLimits and TierFeatures from shared/entitlements. Import BillingInterval and all needed types from shared/schema/billing. Do not emit any EventBus events in this step — that comes later.
+Do not create any routes yet.
+
+Validation — Replit must output all of the following:
+
+Confirm server/services/billing.service.ts created and exports a billingService singleton
+List all 10 method names on the exported object
+Confirm updateSubscriptionStatus checks for duplicate Stripe event IDs before writing (idempotency check)
+Confirm purchaseAddonSlots increments the correct field based on addonType (addOnCompanySlots vs additionalSeats)
+Confirm getEntitlements returns both limits and features (not just limits)
+Run npx tsc --noEmit and confirm zero new TypeScript errors
