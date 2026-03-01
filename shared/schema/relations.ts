@@ -24,11 +24,17 @@ import { dashboardPreferences, dashboardAlerts } from './dashboard';
 // Due Diligence
 import { ddCategories, ddRequirements, ddRequirementStatus } from './due-diligence';
 
-export const userCompaniesRelations = relations(userCompanies, ({ many }) => ({
+// Billing
+import { subscriptions, subscriptionEvents, addonPurchases } from './billing';
+
+export const userCompaniesRelations = relations(userCompanies, ({ one, many }) => ({
   users: many(users),
   targetCompanies: many(targetCompanies),
   invitations: many(userInvitations),
   notifications: many(teamNotifications),
+  subscription: one(subscriptions),
+  subscriptionEvents: many(subscriptionEvents),
+  addonPurchases: many(addonPurchases),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -514,5 +520,26 @@ export const ddRequirementStatusRelations = relations(ddRequirementStatus, ({ on
     fields: [ddRequirementStatus.reviewedBy],
     references: [users.id],
     relationName: "ddReviewedBy",
+  }),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  userCompany: one(userCompanies, {
+    fields: [subscriptions.userCompanyId],
+    references: [userCompanies.id],
+  }),
+}));
+
+export const subscriptionEventsRelations = relations(subscriptionEvents, ({ one }) => ({
+  userCompany: one(userCompanies, {
+    fields: [subscriptionEvents.userCompanyId],
+    references: [userCompanies.id],
+  }),
+}));
+
+export const addonPurchasesRelations = relations(addonPurchases, ({ one }) => ({
+  userCompany: one(userCompanies, {
+    fields: [addonPurchases.userCompanyId],
+    references: [userCompanies.id],
   }),
 }));

@@ -1,4 +1,5 @@
 // Domain modules
+export * from './billing';
 export * from './core';
 export * from './deals';
 export * from './documents';
