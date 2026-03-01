@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeChaseUpCron } from "./cron/chase-up.cron";
+import { initializeBillingCron } from "./cron/billing.cron";
 import { sendError } from "./utils/response";
 
 process.on('SIGHUP', () => {
@@ -71,6 +72,7 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     initializeChaseUpCron();
+    initializeBillingCron();
     try {
       const { analysisQueue } = await import('./services/analysis-queue.service');
       await analysisQueue.recoverStuckEvents();

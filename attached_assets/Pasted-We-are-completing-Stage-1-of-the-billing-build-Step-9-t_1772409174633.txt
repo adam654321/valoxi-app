@@ -1,0 +1,38 @@
+We are completing Stage 1 of the billing build. Step 9: the trial expiry cron job — the background task that automatically expires free trials when they pass their end date and fires the subscription cron for community free month decrements.
+Context:
+
+server/services/billing.service.ts exports billingService with expireTrial
+server/repositories/billing.repository.ts exports billingRepository with getSubscriptionsExpiringBefore
+The project already uses node-cron — look at server/cron/ to see existing cron jobs and follow the exact same pattern for registration and scheduling
+The existing cron infrastructure runs on UK time (Europe/London timezone) — confirm this from the existing cron files and use the same timezone setting
+
+What to build:
+Create server/cron/billing.cron.ts with two scheduled jobs:
+Job 1: Trial expiry — runs daily at 09:05 UK time
+
+Calls billingRepository.getSubscriptionsExpiringBefore(new Date()) to find all trialing subscriptions whose trialEnd has passed
+For each, calls billingService.expireTrial(subscription.userCompanyId)
+Logs how many trials were expired: console.log(\[billing-cron] Expired ${count} trial(s)`)`
+Catches and logs errors per-subscription without stopping the loop — one failure should not prevent others from being processed
+Wraps the entire job in try/catch and logs any top-level error
+
+Job 2: Community free month decrement — runs on the 1st of each month at 09:10 UK time
+
+Fetches all subscriptions where isCommunityMember = true and communityFreeMonthsRemaining > 0
+For each, decrements communityFreeMonthsRemaining by 1 via billingRepository.updateByCompanyId
+If communityFreeMonthsRemaining reaches 0, logs that normal billing should resume for that tenant (console.log only — no automatic billing change, this is a manual step until Stripe integration is fully confirmed)
+Logs total processed count
+Same per-item error isolation pattern as Job 1
+
+Register the cron:
+In whichever file registers existing cron jobs (check server/cron/ and server/index.ts), import and register the billing cron following the exact same pattern used for existing jobs.
+Do not create any frontend components yet.
+
+Validation — Replit must output all of the following:
+
+Confirm server/cron/billing.cron.ts created with both jobs
+Confirm Job 1 schedule (daily 09:05 UK time) and Job 2 schedule (1st of month 09:10 UK time) — show the cron expression used for each
+Confirm both jobs have per-item error isolation (one failure does not stop the loop)
+Confirm the cron is registered in the correct place matching the existing pattern
+Confirm Job 2 logs a message when communityFreeMonthsRemaining reaches 0 but does NOT automatically change the subscription status
+Run npx tsc --noEmit and confirm zero new TypeScript errors
