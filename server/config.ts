@@ -47,6 +47,11 @@ export const config = {
     secret: process.env.SESSION_SECRET || '',
   },
 
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  },
+
   geminiPricing: {
     'gemini-3-flash-preview': { inputCostPerMillionTokens: 0.075, outputCostPerMillionTokens: 0.30 },
     'gemini-3-pro-preview': { inputCostPerMillionTokens: 1.25, outputCostPerMillionTokens: 5.00 },

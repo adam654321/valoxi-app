@@ -240,3 +240,4 @@ All endpoints are prefixed `/api/v2/`. The API is consumed exclusively by the in
 | `/api/v2/roles` | 🔒 | Role assignment |
 | `/api/v2/user/companies` | 🔒 | User–company membership |
 | `/api/v2/admin` | ⚙️ | System admin: users, companies, costs, token usage, webhook events |
+| `/api/v2/billing` | 🌐 | Stripe webhook endpoint (POST /webhook/stripe) — no auth, raw body parsing |

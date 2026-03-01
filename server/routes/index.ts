@@ -27,6 +27,7 @@ import dealDocumentRoutes, { publicDealDocumentRoutes } from './deal-document.ro
 import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
+import billingRoutes from './billing.routes';
 import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
@@ -65,4 +66,5 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/due-diligence', isAuthenticated, validateCsrfToken, dueDiligenceRoutes);
   app.use('/api/v2/value-creation', isAuthenticated, validateCsrfToken, valueCreationRoutes);
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
+  app.use('/api/v2/billing', billingRoutes);
 }
