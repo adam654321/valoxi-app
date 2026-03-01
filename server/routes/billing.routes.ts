@@ -94,6 +94,8 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        // TODO: Stripe v20 type cast — revisit when billing layer is stable.
+        // current_period_start/end moved to SubscriptionItem in v20; cast from raw webhook payload.
         const subData = event.data.object as any;
         const lookupKey = subscription.items.data[0]?.price?.lookup_key ?? '';
         const planKey = derivePlanKeyFromLookupKey(lookupKey);
@@ -160,6 +162,8 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
       case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice;
+        // TODO: Stripe v20 type cast — revisit when billing layer is stable.
+        // Invoice.subscription restructured into parent.subscription_details in v20; cast from raw webhook payload.
         const invoiceData = event.data.object as any;
         const subscriptionId: string | undefined =
           typeof invoiceData.subscription === 'string'
@@ -195,6 +199,8 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
+        // TODO: Stripe v20 type cast — revisit when billing layer is stable.
+        // Invoice.subscription restructured into parent.subscription_details in v20; cast from raw webhook payload.
         const invoiceData = event.data.object as any;
         const subscriptionId: string | undefined =
           typeof invoiceData.subscription === 'string'
