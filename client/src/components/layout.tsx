@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ReportIssueButton } from "@/components/layout/ReportIssueButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </SidebarInset>
+      <ReportIssueButton />
     </SidebarProvider>
   );
 }

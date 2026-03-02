@@ -4,6 +4,28 @@ import { z } from 'zod';
 import { userCompanies, users, type User } from './core';
 import { targetCompanies } from './deals';
 
+export const issueReports = pgTable("issue_reports", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id),
+  pageUrl: varchar("page_url", { length: 500 }),
+  userAgent: varchar("user_agent", { length: 500 }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  severity: varchar("severity", { length: 20 }).default("medium"),
+  status: varchar("status", { length: 20 }).default("open"),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertIssueReportSchema = createInsertSchema(issueReports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type IssueReport = typeof issueReports.$inferSelect;
+export type InsertIssueReport = z.infer<typeof insertIssueReportSchema>;
+
 // Dashboard preferences table
 export const dashboardPreferences = pgTable("dashboard_preferences", {
   id: serial("id").primaryKey(),
