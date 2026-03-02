@@ -40,6 +40,7 @@ const AdminCompanies = lazy(() => import("@/pages/admin/companies"));
 const AdminCompanyDetail = lazy(() => import("@/pages/admin/companies/[id]"));
 const AdminUsers = lazy(() => import("@/pages/admin/users"));
 const AdminWebhookEvents = lazy(() => import("@/pages/admin/webhook-events"));
+const AdminSubscriptions = lazy(() => import("@/pages/admin/subscriptions"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -93,6 +94,7 @@ function Router() {
                   <Route path="/admin/companies" component={AdminCompanies} />
                   <Route path="/admin/users" component={AdminUsers} />
                   <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
+                  <Route path="/admin/subscriptions" component={AdminSubscriptions} />
                   <Route component={NotFound} />
                 </Switch>
               </AdminLayout>

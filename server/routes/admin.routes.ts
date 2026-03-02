@@ -1,5 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import { eq, and, sql, count } from 'drizzle-orm';
+import { db } from '../db';
+import { subscriptions } from '@shared/schema/billing';
+import { userCompanies } from '@shared/schema/core';
+import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
 import { adminService } from '../services/admin.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
@@ -111,6 +116,85 @@ router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: 
   const { newPassword } = adminResetPasswordSchema.parse(req.body);
   await passwordResetService.adminResetPassword(userId, newPassword);
   sendSuccess(res, { message: 'Password has been reset successfully.' });
+}));
+
+router.get('/subscriptions', asyncHandler(async (req: Request, res: Response) => {
+  const conditions = [];
+  if (req.query.status) {
+    conditions.push(eq(subscriptions.status, req.query.status as SubscriptionStatus));
+  }
+  if (req.query.planKey) {
+    conditions.push(eq(subscriptions.planKey, req.query.planKey as PlanKey));
+  }
+
+  const rows = await db
+    .select({
+      subscription: subscriptions,
+      companyName: userCompanies.companyName,
+    })
+    .from(subscriptions)
+    .innerJoin(userCompanies, eq(subscriptions.userCompanyId, userCompanies.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+  sendSuccess(res, rows);
+}));
+
+router.get('/subscriptions/summary', asyncHandler(async (req: Request, res: Response) => {
+  const [totalRow] = await db
+    .select({ total: count() })
+    .from(subscriptions);
+
+  const statusRows = await db
+    .select({
+      status: subscriptions.status,
+      count: count(),
+    })
+    .from(subscriptions)
+    .groupBy(subscriptions.status);
+
+  const planRows = await db
+    .select({
+      planKey: subscriptions.planKey,
+      count: count(),
+    })
+    .from(subscriptions)
+    .groupBy(subscriptions.planKey);
+
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+  const [trialsExpiring] = await db
+    .select({ count: count() })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, 'trialing'),
+        sql`${subscriptions.trialEnd} <= ${sevenDaysFromNow}`
+      )
+    );
+
+  const [pastDueRow] = await db
+    .select({ count: count() })
+    .from(subscriptions)
+    .where(eq(subscriptions.status, 'past_due'));
+
+  const byStatus: Record<string, number> = {};
+  for (const r of statusRows) {
+    byStatus[r.status] = r.count;
+  }
+
+  const byPlan: Record<string, number> = {};
+  for (const r of planRows) {
+    byPlan[r.planKey] = r.count;
+  }
+
+  sendSuccess(res, {
+    total: totalRow.total,
+    byStatus,
+    byPlan,
+    trialsExpiringSoon: trialsExpiring.count,
+    pastDue: pastDueRow.count,
+  });
 }));
 
 export default router;
