@@ -54,6 +54,11 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
     console.error('[REGISTRATION] Failed to send welcome email:', err)
   );
 
+  if (result.company?.id) {
+    const { track } = await import('../services/funnel.service');
+    track(result.company.id, result.user.id, 'user.registered', { sector: validatedData.companyName });
+  }
+
   sendCreated(res, {
     message: 'User created successfully',
     user: result.user,

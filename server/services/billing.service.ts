@@ -60,6 +60,9 @@ class BillingService {
       payload: { trialDays },
     });
 
+    const { track } = await import('./funnel.service');
+    track(userCompanyId, null, 'trial.started', { planKey: 'CORE', trialDays });
+
     return subscription;
   }
 
@@ -102,6 +105,9 @@ class BillingService {
         billingInterval: data.billingInterval,
       },
     });
+
+    const { track } = await import('./funnel.service');
+    track(userCompanyId, null, 'subscription.activated', { planKey: data.planKey, billingInterval: data.billingInterval });
 
     return subscription;
   }

@@ -358,6 +358,10 @@ export class ExpertAnalysisService {
     console.log(`[EXPERT_ORCHESTRATOR] Starting Stage 1 pipeline for company ${companyId}`);
 
     const company = await this.getTargetCompany(companyId);
+
+    const { track } = await import('./funnel.service');
+    track(company.userCompanyId, triggeredBy ?? null, 'analysis.triggered', { targetCompanyId: companyId });
+
     const extractedData = await this.getExtractedData(companyId);
 
     const dqRecord = await this.createExpertRecord(companyId, 'data_quality', [], triggeredBy);
@@ -685,11 +689,16 @@ export class ExpertAnalysisService {
           dealStructure: getDataOrFallback(dealStructureResult, 'Deal Structure'),
         });
 
+        const synthesisStartTime = Date.now();
         await this.runExpert(synthesisRecord, prompt, 'synthesis');
+        const synthesisDurationMs = Date.now() - synthesisStartTime;
 
         captureAnalysisSnapshot(companyId, company.userCompanyId).catch(err =>
           console.error('[METRICS_SNAPSHOT] Silent failure on analysis completion:', err)
         );
+
+        const { track } = await import('./funnel.service');
+        track(company.userCompanyId, null, 'analysis.completed', { targetCompanyId: companyId, durationMs: synthesisDurationMs });
       }
     }
 

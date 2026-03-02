@@ -97,6 +97,9 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         targetCompanyId: parseInt(req.params.id),
       });
       
+      const { track } = await import('../services/funnel.service');
+      track(userCompanyId, userId, 'document.uploaded', { documentType: documentCategory, fileSize: req.file.size });
+
       sendCreated(res, { success: true, document, uploadEventId: uploadEvent.id, message: 'Document uploaded successfully' });
     } catch (error) { sendError(res, error); }
   });

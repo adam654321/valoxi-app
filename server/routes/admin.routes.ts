@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { eq, and, sql, count, desc } from 'drizzle-orm';
+import { eq, and, sql, count, desc, gte } from 'drizzle-orm';
 import { db } from '../db';
 import { subscriptions } from '@shared/schema/billing';
 import { userCompanies, users } from '@shared/schema/core';
-import { issueReports } from '@shared/schema/dashboard';
+import { issueReports, funnelEvents } from '@shared/schema/dashboard';
 import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
 import { adminService } from '../services/admin.service';
 import { sendSuccess } from '../utils/response';
@@ -247,6 +247,64 @@ router.patch('/issue-reports/:id', asyncHandler(async (req: Request, res: Respon
   }
 
   sendSuccess(res, updated);
+}));
+
+router.get('/funnel', asyncHandler(async (req: Request, res: Response) => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const eventNames = [
+    'user.registered',
+    'trial.started',
+    'target.created',
+    'document.uploaded',
+    'analysis.completed',
+    'deal_model.saved',
+    'document.generated',
+    'subscription.activated',
+    'onboarding.completed',
+  ] as const;
+
+  const counts: Record<string, number> = {};
+  for (const eventName of eventNames) {
+    const [result] = await db
+      .select({ count: count() })
+      .from(funnelEvents)
+      .where(
+        and(
+          eq(funnelEvents.event, eventName),
+          gte(funnelEvents.createdAt, thirtyDaysAgo)
+        )
+      );
+    counts[eventName] = result?.count ?? 0;
+  }
+
+  const pct = (numerator: number, denominator: number): string => {
+    if (denominator === 0) return '0%';
+    return Math.round((numerator / denominator) * 100) + '%';
+  };
+
+  const last30Days = {
+    registered: counts['user.registered'],
+    trialStarted: counts['trial.started'],
+    targetCreated: counts['target.created'],
+    documentUploaded: counts['document.uploaded'],
+    analysisCompleted: counts['analysis.completed'],
+    dealModelSaved: counts['deal_model.saved'],
+    documentGenerated: counts['document.generated'],
+    subscriptionActivated: counts['subscription.activated'],
+    onboardingCompleted: counts['onboarding.completed'],
+  };
+
+  const conversionRates = {
+    registeredToTrial: pct(last30Days.trialStarted, last30Days.registered),
+    trialToTargetCreated: pct(last30Days.targetCreated, last30Days.trialStarted),
+    targetToAnalysis: pct(last30Days.analysisCompleted, last30Days.targetCreated),
+    analysisToModelSaved: pct(last30Days.dealModelSaved, last30Days.analysisCompleted),
+    modelToDocumentGenerated: pct(last30Days.documentGenerated, last30Days.dealModelSaved),
+  };
+
+  sendSuccess(res, { last30Days, conversionRates });
 }));
 
 export default router;

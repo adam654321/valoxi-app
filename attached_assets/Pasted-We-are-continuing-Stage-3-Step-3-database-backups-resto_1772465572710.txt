@@ -1,0 +1,85 @@
+We are continuing Stage 3. Step 3: database backups, restore procedure, and funnel instrumentation.
+Task 1 — Automated database backups:
+Create server/cron/backup.cron.ts with a single scheduled job that runs daily at 02:00 UK time (Europe/London).
+The job should:
+
+Use pg_dump via Node's child_process.exec to dump the Neon PostgreSQL database to a compressed file
+The DATABASE_URL is available via the existing config — use config.databaseUrl or however it is accessed in the codebase
+Output file: /tmp/backup-{YYYY-MM-DD}.sql.gz — use a dated filename
+After a successful dump, log the file size and confirm success: console.log('[backup-cron] Backup complete: backup-{date}.sql.gz ({size}kb)')
+Keep only the last 7 backup files in /tmp — delete any backup files older than 7 days
+Wrap the entire job in try/catch and log failures clearly
+Register the cron in server/index.ts alongside the other crons following the exact same pattern
+
+Task 2 — Written restore procedure:
+Create a markdown file at docs/restore-procedure.md with a clear, step-by-step restore procedure that a developer could follow without prior context. It should cover:
+
+Prerequisites (what tools and access are needed)
+How to locate the backup file
+The exact pg_restore or psql command to restore from the .sql.gz file
+How to verify the restore was successful (row counts, spot checks)
+What to do if the restore fails
+A note on Neon-specific considerations (branching as an alternative to restore)
+
+Keep it practical — this is a runbook, not documentation prose.
+Task 3 — Funnel instrumentation:
+Create server/services/funnel.service.ts that records key funnel events to a new funnelEvents table. This is lightweight server-side instrumentation — no third-party analytics, no client-side tracking.
+First, add a funnelEvents table to shared/schema/dashboard.ts:
+
+id serial PK
+userCompanyId integer FK → user_companies.id NOT NULL
+userId integer FK → users.id, nullable
+event varchar(100) NOT NULL — the event name
+properties jsonb, nullable — any additional data
+createdAt timestamp defaultNow NOT NULL
+
+Run db:push after adding the table.
+The funnel service should export a single track(userCompanyId: number, userId: number | null, event: string, properties?: Record<string, unknown>): void function — fire-and-forget, never throws, always catches and logs errors silently.
+Hook track calls into the following server-side events — find the correct service or route handler for each and add the call fire-and-forget:
+
+user.registered — in auth registration handler, properties: { sector: string }
+trial.started — in billingService.createTrialSubscription, properties: { planKey, trialDays }
+target.created — in target companies service/route when a new target is created, properties: { sector }
+document.uploaded — in document upload handler, properties: { documentType, fileSize }
+analysis.triggered — in expert analysis service when pipeline is triggered, properties: { targetCompanyId }
+analysis.completed — in expert analysis service when synthesis completes, properties: { targetCompanyId, durationMs }
+deal_model.saved — in deal model service when a model is saved, properties: { hasMultipleFundingLines: boolean }
+document.generated — in deal document service when an offer/HoT is generated, properties: { documentType }
+subscription.activated — in billingService.activateSubscription, properties: { planKey, billingInterval }
+onboarding.completed — in the onboarding complete endpoint, properties: {}
+
+Task 4 — Funnel admin view:
+Add GET /api/v2/admin/funnel to server/routes/admin.routes.ts — system admin only. Returns:
+typescript{
+  last30Days: {
+    registered: number,
+    trialStarted: number,
+    targetCreated: number,
+    documentUploaded: number,
+    analysisCompleted: number,
+    dealModelSaved: number,
+    documentGenerated: number,
+    subscriptionActivated: number,
+    onboardingCompleted: number
+  },
+  conversionRates: {
+    registeredToTrial: string,      // e.g. "87%"
+    trialToTargetCreated: string,
+    targetToAnalysis: string,
+    analysisToModelSaved: string,
+    modelToDocumentGenerated: string
+  }
+}
+Compute counts using Drizzle DB-level queries with where(gte(funnelEvents.createdAt, thirtyDaysAgo)) and eq(funnelEvents.event, 'event.name'). Conversion rates are computed in JavaScript from the counts.
+Add a "Funnel" nav item to the admin sidebar after "Issue Reports", using the TrendingUp icon from lucide-react. Create client/src/pages/admin/funnel.tsx — a simple page showing the last 30 days numbers in a clean table or set of cards, plus the conversion rates. Follow the exact same admin page conventions as the subscriptions and issue reports pages.
+
+Validation — Replit must output all of the following:
+
+Confirm backup.cron.ts created with daily 02:00 UK schedule — confirm it is registered in server/index.ts
+Confirm docs/restore-procedure.md created — paste the first 5 lines
+Confirm funnelEvents table created and db:push run — no destructive operations
+Confirm funnel.service.ts exports a track function that is fire-and-forget and never throws
+List all 10 event hook locations — file name and event name for each
+Confirm GET /api/v2/admin/funnel returns both last30Days counts and conversionRates
+Confirm funnel admin page created and nav item added with TrendingUp icon
+Run npx tsc --noEmit and confirm zero new TypeScript errors

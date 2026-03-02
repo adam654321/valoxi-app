@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { userCompanies, users, type User } from './core';
@@ -109,3 +109,20 @@ export type UserWithRole = User & {
     canExportData?: boolean;
   };
 };
+
+export const funnelEvents = pgTable("funnel_events", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  event: varchar("event", { length: 100 }).notNull(),
+  properties: jsonb("properties"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertFunnelEventSchema = createInsertSchema(funnelEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FunnelEvent = typeof funnelEvents.$inferSelect;
+export type InsertFunnelEvent = z.infer<typeof insertFunnelEventSchema>;

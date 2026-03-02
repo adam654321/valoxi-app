@@ -8,6 +8,7 @@ import {
   Webhook,
   CreditCard,
   Flag,
+  TrendingUp,
   ArrowLeft,
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ const adminNav = [
   { title: "Token Usage", url: "/admin/token-usage", icon: Coins },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
   { title: "Issue Reports", url: "/admin/issue-reports", icon: Flag },
+  { title: "Funnel", url: "/admin/funnel", icon: TrendingUp },
   { title: "Platform Costs", url: "/admin/costs", icon: DollarSign },
   { title: "Companies", url: "/admin/companies", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },

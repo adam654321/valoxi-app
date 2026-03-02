@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeChaseUpCron } from "./cron/chase-up.cron";
 import { initializeBillingCron } from "./cron/billing.cron";
+import { initializeBackupCron } from "./cron/backup.cron";
 import { sendError } from "./utils/response";
 
 process.on('SIGHUP', () => {
@@ -73,6 +74,7 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     initializeChaseUpCron();
     initializeBillingCron();
+    initializeBackupCron();
     try {
       const { analysisQueue } = await import('./services/analysis-queue.service');
       await analysisQueue.recoverStuckEvents();

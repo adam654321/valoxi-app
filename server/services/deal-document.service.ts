@@ -660,6 +660,9 @@ export class DealDocumentService {
 
     await this.generateDocumentFile(doc.id, offerData);
 
+    const { track } = await import('./funnel.service');
+    track(params.userCompanyId, params.createdBy, 'document.generated', { documentType: 'offer_letter' });
+
     return doc;
   }
 
@@ -962,6 +965,9 @@ export class DealDocumentService {
     };
 
     await this.generateDocumentFile(doc.id, documentData as Partial<DocumentDataContext>);
+
+    const { track } = await import('./funnel.service');
+    track(params.userCompanyId, params.createdBy, 'document.generated', { documentType: 'heads_of_terms' });
 
     return doc;
   }

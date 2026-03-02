@@ -65,10 +65,12 @@ export class TargetCompaniesService {
 
     const company = await targetCompaniesRepository.create(processedData as InsertTargetCompany);
 
-    // Trigger website analysis if company has a website
     if (company.website) {
       websiteAnalysisService.triggerAnalysisIfNeeded(company.id, company.website);
     }
+
+    const { track } = await import('./funnel.service');
+    track(userCompanyId, userId, 'target.created', { sector: company.industry });
 
     return company;
   }

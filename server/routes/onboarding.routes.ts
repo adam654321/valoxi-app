@@ -113,6 +113,12 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
     })
     .where(eq(users.id, userId));
 
+  const userCompanyId = req.session?.userCompanyId;
+  if (userCompanyId) {
+    const { track } = await import('../services/funnel.service');
+    track(userCompanyId, userId, 'onboarding.completed', {});
+  }
+
   sendSuccess(res, { message: 'Onboarding marked as complete' });
 }));
 

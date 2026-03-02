@@ -193,6 +193,14 @@ export class DealModelService {
       console.error('[METRICS_SNAPSHOT] Silent failure on model save:', err)
     );
 
+    const { track } = await import('./funnel.service');
+    const targetCompany = await db.select().from(targetCompanies).where(eq(targetCompanies.id, fullModel.targetCompanyId)).limit(1);
+    if (targetCompany[0]) {
+      track(targetCompany[0].userCompanyId, fullModel.createdBy, 'deal_model.saved', {
+        hasMultipleFundingLines: (fullModel.fundingLines?.length ?? 0) > 1,
+      });
+    }
+
     return { ...fullModel, calculations };
   }
 
