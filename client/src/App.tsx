@@ -29,6 +29,7 @@ const NotificationsPage = lazy(() => import("@/components/notifications").then(m
 const PortalPage = lazy(() => import("@/pages/PortalPage"));
 const PortalManagement = lazy(() => import("@/pages/PortalManagement"));
 const CompanyAccounts = lazy(() => import("@/pages/company-accounts"));
+const Billing = lazy(() => import("@/pages/billing"));
 const EmailTest = lazy(() => import("@/pages/EmailTest"));
 const WebhookTest = lazy(() => import("@/pages/webhook-test"));
 const FileUploadTest = lazy(() => import("@/pages/file-upload-test"));
@@ -134,6 +135,7 @@ function Router() {
                 {isSystemAdmin ? <FileUploadTest /> : <Redirect to="/" />}
               </Route>
               <Route path="/company-accounts" component={CompanyAccounts} />
+              <Route path="/billing" component={Billing} />
               <Route component={NotFound} />
             </Switch>
           </Layout>
