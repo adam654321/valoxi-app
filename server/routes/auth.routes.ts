@@ -90,7 +90,7 @@ async function seedDefaultPipelineStages(userCompanyId: number) {
 async function sendWelcomeEmail(email: string, firstName: string) {
   const appUrl = process.env.REPLIT_DEV_DOMAIN
     ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : process.env.APP_URL || 'https://app.rubicon.deals';
+    : process.env.APP_URL || 'https://app.dealflow.ai';
 
   const html = `
     <!DOCTYPE html>
@@ -98,7 +98,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to Rubicon</title>
+        <title>Welcome to DealFlow AI</title>
         <style>
           .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
           .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
@@ -113,7 +113,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to Rubicon</h1>
+            <h1>Welcome to DealFlow AI</h1>
           </div>
           <div class="content">
             <p>Hi ${firstName},</p>
@@ -127,12 +127,12 @@ async function sendWelcomeEmail(email: string, firstName: string) {
               </ol>
             </div>
             <p style="text-align: center;">
-              <a href="${appUrl}" class="button">Open Rubicon</a>
+              <a href="${appUrl}" class="button">Open DealFlow AI</a>
             </p>
-            <p>Best regards,<br>The Rubicon Team</p>
+            <p>Best regards,<br>The DealFlow AI Team</p>
           </div>
           <div class="footer">
-            <p>Rubicon — Acquire Smarter, Faster.</p>
+            <p>DealFlow AI — Acquire Smarter, Faster.</p>
           </div>
         </div>
       </body>
@@ -141,7 +141,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
 
   await emailService.sendEmail({
     to: email,
-    subject: "Welcome to Rubicon — let's run your first deal",
+    subject: "Welcome to DealFlow AI — let's run your first deal",
     html,
   });
   console.log(`[REGISTRATION] Welcome email sent to ${email}`);
