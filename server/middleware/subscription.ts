@@ -42,6 +42,7 @@ export async function requireActiveSubscription(
   res: Response,
   next: NextFunction
 ) {
+  if (req.session?.isSystemAdmin === true) return next();
   const subscription = await loadAndCheckSubscription(req, res);
   if (!subscription) return;
   next();
@@ -49,6 +50,7 @@ export async function requireActiveSubscription(
 
 export function requireFeature(feature: keyof TierFeatures) {
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (req.session?.isSystemAdmin === true) return next();
     const subscription = await loadAndCheckSubscription(req, res);
     if (!subscription) return;
 
@@ -66,6 +68,7 @@ export function requireFeature(feature: keyof TierFeatures) {
 
 export function requirePlan(...plans: PlanKey[]) {
   return async (req: Request, res: Response, next: NextFunction) => {
+    if (req.session?.isSystemAdmin === true) return next();
     const subscription = await loadAndCheckSubscription(req, res);
     if (!subscription) return;
 
