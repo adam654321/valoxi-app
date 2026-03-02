@@ -44,6 +44,7 @@ import {
   Loader2,
   Send,
 } from 'lucide-react';
+import { UpgradePrompt } from '@/components/billing';
 
 interface DealModellerProps {
   companyId: number;
@@ -368,19 +369,26 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                 </AlertDialog>
               )}
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => duplicateMutation.mutate()}
-                disabled={duplicateMutation.isPending || !selectedModelId}
+              <UpgradePrompt
+                feature="fullDealModeller"
+                requiredPlan="PROFESSIONAL"
+                title="Version History"
+                description="Create and compare multiple deal model versions to refine your offer."
               >
-                {duplicateMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-                )}
-                New Version
-              </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => duplicateMutation.mutate()}
+                  disabled={duplicateMutation.isPending || !selectedModelId}
+                >
+                  {duplicateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  New Version
+                </Button>
+              </UpgradePrompt>
             </div>
           </div>
 

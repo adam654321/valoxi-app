@@ -3,6 +3,7 @@ import { DocumentManagement } from "@/components/document-management";
 import DealDocumentsSummary from "@/components/deal-documents/DealDocumentsSummary";
 import { DueDiligenceTab } from "@/components/target-company/DueDiligenceTab";
 import { FileCheck, FileText, Shield } from "lucide-react";
+import { UpgradePrompt } from "@/components/billing";
 
 interface DocumentsTabProps {
   companyId: string;
@@ -33,7 +34,14 @@ export function DocumentsTab({ companyId, targetCompanyId, companyName }: Docume
       </TabsContent>
 
       <TabsContent value="stage2">
-        <DueDiligenceTab targetCompanyId={targetCompanyId} />
+        <UpgradePrompt
+          feature="ddDataRoom"
+          requiredPlan="PROFESSIONAL"
+          title="Due Diligence Data Room"
+          description="Access the full due diligence data room with document requests, tracking, and collaboration tools."
+        >
+          <DueDiligenceTab targetCompanyId={targetCompanyId} />
+        </UpgradePrompt>
       </TabsContent>
 
       <TabsContent value="deal-documents">

@@ -101,6 +101,30 @@ Preferred communication style: Simple, everyday language.
     - V2 API endpoints: `/api/v2/value-creation/*` for scenarios, assumptions, synergies, exit assumptions
     - Auto-creates bear/base/bull scenarios with 5-year assumptions on first access per deal model
 
+## Billing & Subscription Enforcement
+- **Entitlements**: `shared/entitlements.ts` — single source of truth for plan-based feature gating
+- **Server-side Middleware** (`server/middleware/subscription.ts`):
+  - `requireActiveSubscription`: Applied to 16 route groups in `server/routes/index.ts` — blocks all API access without an active subscription (returns 402)
+  - `requireFeature(featureKey)`: Applied to specific routes that need feature-level gating:
+    - `value-creation.routes.ts` → `valueCreationModule`
+    - `deal-model.routes.ts` → `fullDealModeller` (funding-lines & duplicate endpoints)
+    - `document-analysis.routes.ts` → `expertAnalysisFullDetail` (detail endpoints)
+    - `due-diligence.routes.ts` → `ddDataRoom`
+    - `expert-analysis.routes.ts` → `expertAnalysisFullDetail` (trigger-pipeline/retry/resume/results)
+- **Intentionally NOT subscription-gated**: Auth, team (public), notifications, email, portal/portal-submit, public/*, admin, billing, user/companies, assignments/deals
+- **Client-side Enforcement**:
+  - `client/src/context/subscription-context.tsx`: `SubscriptionProvider` wraps app in `App.tsx`, exports `useHasFeature`, `usePlanKey`, `useSubscriptionContext`
+  - `client/src/hooks/use-subscription.ts`: React Query hook for `GET /api/v2/billing/subscription`
+  - `client/src/components/billing/UpgradePrompt.tsx`: Blur+lock overlay with upgrade CTA, used as wrapper around gated UI sections
+  - `client/src/components/billing/FeatureGate.tsx`: Conditional render (show/hide children based on feature access)
+- **Frontend Feature Gates Applied**:
+  - Value Creation tab (`target-company-detail.tsx`) → `valueCreationModule` (EXPERT)
+  - Deal Modeller "New Version" button (`DealModeller.tsx`) → `fullDealModeller` (PROFESSIONAL)
+  - Deal Modeller "Add Funding Source" when lines exist (`FundingSection.tsx`) → `fullDealModeller` (PROFESSIONAL)
+  - Expert Analysis Phase 2 deep dive section (`ExpertAnalysisDashboard.tsx`) → `expertAnalysisFullDetail` (PROFESSIONAL)
+  - Due Diligence Data Room tab (`DocumentsTab.tsx`) → `ddDataRoom` (PROFESSIONAL)
+  - Heads of Terms builder (`DealDocumentsSummary.tsx`) → `hotBuilder` (PROFESSIONAL)
+
 ## Authentication & Security
 - **Session Management**: PostgreSQL-backed sessions.
 - **Password Security**: bcrypt hashing.

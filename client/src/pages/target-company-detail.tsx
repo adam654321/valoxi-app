@@ -49,6 +49,7 @@ import { DocumentsTab } from "@/components/target-company/DocumentsTab";
 import DealModeller from "@/components/target-company/DealModeller";
 import ValueCreationModeller from "@/components/target-company/ValueCreationModeller";
 import { useTargetCompany } from "@/hooks/useTargetCompany";
+import { UpgradePrompt } from "@/components/billing";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -982,7 +983,14 @@ export default function TargetCompanyDetail() {
           </TabsContent>
 
           <TabsContent value="value-creation" className="space-y-6">
-            <ValueCreationModeller companyId={company.id} />
+            <UpgradePrompt
+              feature="valueCreationModule"
+              requiredPlan="EXPERT"
+              title="Value Creation Modeller"
+              description="Model post-acquisition value creation with 5-year projections, bear/base/bull scenarios, IRR, and sensitivity analysis."
+            >
+              <ValueCreationModeller companyId={company.id} />
+            </UpgradePrompt>
           </TabsContent>
 
           <TabsContent value="pipeline" className="space-y-6">

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { UpgradePrompt } from '@/components/billing';
 import { 
   FileText, Shield, Send, FileCheck, 
   CheckCircle, XCircle, Clock, AlertCircle,
@@ -123,20 +124,27 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
         })}
 
         {showGenerateHotButton && (
-          <div className="rounded-lg border border-dashed border-border p-3 bg-muted/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileCheck className="h-5 w-5 text-muted-foreground/70" />
-                <div>
-                  <p className="font-medium text-sm text-muted-foreground">Heads of Terms</p>
-                  <p className="text-xs text-muted-foreground/70">Offer accepted — ready to generate HoT</p>
+          <UpgradePrompt
+            feature="hotBuilder"
+            requiredPlan="PROFESSIONAL"
+            title="Heads of Terms Builder"
+            description="Generate customised Heads of Terms documents with configurable sections, conditions, and deal terms."
+          >
+            <div className="rounded-lg border border-dashed border-border p-3 bg-muted/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileCheck className="h-5 w-5 text-muted-foreground/70" />
+                  <div>
+                    <p className="font-medium text-sm text-muted-foreground">Heads of Terms</p>
+                    <p className="text-xs text-muted-foreground/70">Offer accepted — ready to generate HoT</p>
+                  </div>
                 </div>
+                <Button size="sm" onClick={() => setShowHotDialog(true)}>
+                  Generate HoT
+                </Button>
               </div>
-              <Button size="sm" onClick={() => setShowHotDialog(true)}>
-                Generate HoT
-              </Button>
             </div>
-          </div>
+          </UpgradePrompt>
         )}
       </CardContent>
 
