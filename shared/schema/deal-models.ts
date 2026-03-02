@@ -1,7 +1,7 @@
-import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, json } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, json, jsonb } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { users } from './core';
+import { users, userCompanies } from './core';
 import { targetCompanies } from './deals';
 import { expertAnalysisResults } from './documents';
 
@@ -102,6 +102,17 @@ export const dealModelFundingLines = pgTable("deal_model_funding_lines", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const dealMetricsSnapshots = pgTable("deal_metrics_snapshots", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  dealModelId: integer("deal_model_id").references(() => dealModels.id),
+  triggerEvent: varchar("trigger_event", { length: 50 }).notNull(),
+  schemaVersion: integer("schema_version").notNull().default(1),
+  metrics: jsonb("metrics").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertDealModelSchema = createInsertSchema(dealModels).omit({
   id: true,
   createdAt: true,
@@ -120,9 +131,16 @@ export const insertDealModelFundingLineSchema = createInsertSchema(dealModelFund
   updatedAt: true,
 });
 
+export const insertDealMetricsSnapshotSchema = createInsertSchema(dealMetricsSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type DealModel = typeof dealModels.$inferSelect;
 export type InsertDealModel = z.infer<typeof insertDealModelSchema>;
 export type DealModelAdjustment = typeof dealModelAdjustments.$inferSelect;
 export type InsertDealModelAdjustment = z.infer<typeof insertDealModelAdjustmentSchema>;
 export type DealModelFundingLine = typeof dealModelFundingLines.$inferSelect;
 export type InsertDealModelFundingLine = z.infer<typeof insertDealModelFundingLineSchema>;
+export type DealMetricsSnapshot = typeof dealMetricsSnapshots.$inferSelect;
+export type InsertDealMetricsSnapshot = z.infer<typeof insertDealMetricsSnapshotSchema>;

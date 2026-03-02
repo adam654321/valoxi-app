@@ -23,10 +23,18 @@ import {
   Loader2,
   Info,
 } from 'lucide-react';
+import ExplainButton from '@/components/analysis/ExplainButton';
 
 interface DealModelWithDetails extends DealModel {
   adjustments: DealModelAdjustment[];
   fundingLines: DealModelFundingLine[];
+}
+
+interface ExplainContext {
+  companyName: string;
+  sector: string;
+  revenue?: number;
+  adjustedEbitda?: number;
 }
 
 interface ValuationSectionProps {
@@ -36,6 +44,7 @@ interface ValuationSectionProps {
   isLocked: boolean;
   reportedEbitdaByYear: Record<string, number>;
   onDataChange: () => void;
+  explainContext?: ExplainContext;
 }
 
 interface LocalValues {
@@ -118,6 +127,7 @@ export default function ValuationSection({
   isLocked,
   reportedEbitdaByYear,
   onDataChange,
+  explainContext,
 }: ValuationSectionProps) {
   const { toast } = useToast();
   const [local, setLocal] = useState<LocalValues>(() => initLocal(model));
@@ -314,7 +324,10 @@ export default function ValuationSection({
           <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">EBITDA Basis</h4>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Average Adjusted EBITDA</p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                Average Adjusted EBITDA
+                {explainContext && <ExplainButton metricKey="Average Adjusted EBITDA" metricValue={formatCurrency(avgEbitda)} context={explainContext} />}
+              </p>
               <p className="text-2xl font-bold">{formatCurrency(avgEbitda)}</p>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -345,7 +358,10 @@ export default function ValuationSection({
         <Separator />
 
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Valuation Multiple</h4>
+          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+            EBITDA Multiple
+            {explainContext && <ExplainButton metricKey="EBITDA Multiple" metricValue={`${local.ebitdaMultiple.toFixed(1)}x`} context={explainContext} />}
+          </h4>
 
           {hasRange && (
             <div className="space-y-2">

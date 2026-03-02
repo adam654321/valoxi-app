@@ -85,9 +85,22 @@ const STATUS_COLOURS: Record<string, string> = {
 };
 
 
+export interface ExplainContext {
+  companyName: string;
+  sector: string;
+  revenue?: number;
+  adjustedEbitda?: number;
+}
+
 export default function DealModeller({ companyId }: DealModellerProps) {
   const { toast } = useToast();
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
+
+  const { data: targetCompany } = useQuery<any>({
+    queryKey: ['/api/v2/target-companies', companyId],
+    select: (response: any) => response?.data || response,
+    enabled: !!companyId,
+  });
 
   const { data: models = [], isLoading: modelsLoading } = useQuery<DealModel[]>({
     queryKey: ['/api/v2/deal-models/company', companyId],
@@ -488,6 +501,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                     }}
+                    explainContext={targetCompany ? {
+                      companyName: targetCompany.companyName || 'Unknown',
+                      sector: targetCompany.industry || targetCompany.subSector || 'Unknown',
+                      revenue: toNum(targetCompany.annualRevenue) || undefined,
+                      adjustedEbitda: calculations?.averageAdjustedEbitda || undefined,
+                    } : undefined}
                   />
                 )}
 
@@ -513,6 +532,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   onDataChange={() => {
                     queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                   }}
+                  explainContext={targetCompany ? {
+                    companyName: targetCompany.companyName || 'Unknown',
+                    sector: targetCompany.industry || targetCompany.subSector || 'Unknown',
+                    revenue: toNum(targetCompany.annualRevenue) || undefined,
+                    adjustedEbitda: calculations?.averageAdjustedEbitda || undefined,
+                  } : undefined}
                 />
               </div>
             </>

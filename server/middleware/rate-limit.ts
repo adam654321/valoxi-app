@@ -52,6 +52,19 @@ export const analysisTriggerLimiter = rateLimit({
   message: { message: 'Too many analysis requests, please try again later.' },
 });
 
+export const explainLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  keyGenerator: (req) => {
+    const userId = (req.session as any)?.userId;
+    return userId ? `user-${userId}` : ipKeyGenerator(req.ip ?? '0.0.0.0');
+  },
+  message: { message: 'Too many explanation requests, please try again later.' },
+});
+
 export const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 50,

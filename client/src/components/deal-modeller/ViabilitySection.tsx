@@ -18,6 +18,14 @@ import {
   Gauge,
   Info,
 } from 'lucide-react';
+import ExplainButton from '@/components/analysis/ExplainButton';
+
+interface ExplainContext {
+  companyName: string;
+  sector: string;
+  revenue?: number;
+  adjustedEbitda?: number;
+}
 
 interface ViabilitySectionProps {
   modelId: number | null;
@@ -26,6 +34,7 @@ interface ViabilitySectionProps {
   fundingLines: DealModelFundingLine[];
   isLocked: boolean;
   onDataChange: () => void;
+  explainContext?: ExplainContext;
 }
 
 const FUNDING_TYPE_LABELS: Record<string, string> = {
@@ -109,7 +118,7 @@ function getRatioBarWidth(ratio: number | null): number {
   }
 }
 
-export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange }: ViabilitySectionProps) {
+export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange, explainContext }: ViabilitySectionProps) {
   const FEE_FIELDS = [
     { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdPercent', typeField: 'feeLegalDdType' },
     { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdPercent', typeField: 'feeAccountingDdType' },
@@ -283,6 +292,13 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Gauge className="h-4 w-4 text-muted-foreground" />
                   Debt Service Coverage Ratio (DSCR)
+                  {explainContext && calculations?.paymentCoverRatio != null && (
+                    <ExplainButton
+                      metricKey="Debt Service Coverage Ratio (DSCR)"
+                      metricValue={`${calculations.paymentCoverRatio.toFixed(2)}x`}
+                      context={explainContext}
+                    />
+                  )}
                 </h3>
                 <Badge variant="outline" className={`${rating.color} ${rating.borderColor}`}>
                   {rating.label}

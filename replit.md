@@ -60,6 +60,8 @@ Preferred communication style: Simple, everyday language.
     - **Search & Filtering**: Real-time search with debounce, advanced filtering, and sorting capabilities.
     - **Team Management**: Includes user roles, permissions, invitation workflows, and deal-specific team assignments.
     - **Activity Management**: Unified activity logger covering all deal interactions (calls, emails, meetings, broker discussions, due diligence, heads of terms, meeting notes, etc.) linked to contacts and displayed in a timeline. Notes feature has been retired and consolidated into activities.
+    - **AI Explain Feature**: Inline "What does this mean?" buttons (ExplainButton component) next to key financial metrics. Calls `POST /api/v2/explain/metric` with Gemini, rate limited to 20/user/hour. Deployed on DSCR, Adjusted EBITDA, EBITDA Multiple, Implied Valuation Range, and Gross Margin.
+    - **Deal Metrics Snapshots**: Point-in-time JSONB records in `deal_metrics_snapshots` table. Captured automatically on model save (`captureMetricsSnapshot`) and analysis completion (`captureAnalysisSnapshot`). Silent failures — never blocks the parent operation.
     - **Document Management**: Advanced viewer supporting various file types (PDF, images, Office documents) with secure handling.
     - **External Document Portal**: Provides a secure portal for collecting documents from target companies, integrating submissions automatically into the main document system, and triggering analysis.
     - **Chase-Up System**: Automated timeframe-based reminder system for portal document submissions. Features include:
@@ -88,9 +90,10 @@ Preferred communication style: Simple, everyday language.
   - `portal.ts` — External portal tokens, submissions, chase-ups, campaigns, analytics (13 tables)
   - `financials.ts` — P&L, balance sheets, staff data, assets, loans, EBITDA adjustments, valuations (9 tables)
   - `dashboard.ts` — Dashboard preferences, alerts, composite types (2 tables)
+  - `deal-models.ts` — Deal models, adjustments, funding lines, deal metrics snapshots (4 tables)
   - `value-creation.ts` — Value creation scenarios, assumptions, synergies, exit assumptions (4 tables)
   - `billing.ts` — Subscription billing: subscriptions, subscription_events, addon_purchases (3 tables, 3 enums: plan_key, subscription_status, billing_interval)
-  - `relations.ts` — All 36 Drizzle relation definitions (centralized to avoid circular deps)
+  - `relations.ts` — All Drizzle relation definitions (centralized to avoid circular deps)
   - `index.ts` — Barrel re-export of all modules
   - `shared/schema.ts` — Top-level re-export (`export * from './schema/index'`) so all existing imports continue to work unchanged
 - **Key Entities**: Includes `user_companies`, `users`, `user_roles`, `target_companies`, `target_contacts`, activity logs, document management, external document portals, standardized document requirements, `chase_up_schedules`, `chase_up_emails`, and value creation modelling tables.

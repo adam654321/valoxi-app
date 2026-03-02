@@ -33,6 +33,7 @@ import {
   Minus,
   type LucideIcon,
 } from "lucide-react";
+import ExplainButton from '@/components/analysis/ExplainButton';
 
 function formatLabel(key: string): string {
   return key
@@ -434,7 +435,16 @@ export function FinancialReportView({ data }: { data: Record<string, unknown> })
       {latestYear && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricCard label="Revenue" value={formatCurrency(latestData.revenue)} subtext={latestYear} color={colorForValue(latestData.revenue)} />
-          <MetricCard label="Gross Margin" value={formatPercent(latestData.gross_margin_percent)} subtext={latestYear} />
+          <div className="relative">
+            <MetricCard label="Gross Margin" value={formatPercent(latestData.gross_margin_percent)} subtext={latestYear} />
+            <div className="absolute top-2 right-2">
+              <ExplainButton
+                metricKey="Gross Margin %"
+                metricValue={formatPercent(latestData.gross_margin_percent)}
+                context={{ companyName: d.company_name || 'This company', sector: d.sector || 'Unknown', revenue: latestData.revenue }}
+              />
+            </div>
+          </div>
           <MetricCard label="EBITDA" value={formatCurrency(latestData.ebitda)} subtext={latestYear} color={colorForValue(latestData.ebitda)} />
           <MetricCard label="Net Margin" value={formatPercent(latestData.net_margin_percent)} subtext={latestYear} />
         </div>
@@ -1041,18 +1051,28 @@ export function ValuationReportView({ data }: { data: Record<string, unknown> })
               )}
             </div>
             {ebitdaVal.enterprise_value_range && (
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { k: "conservative", l: "Conservative", color: "" },
-                  { k: "base", l: "Base Case", color: "border-primary bg-primary/5 ring-1 ring-primary/20" },
-                  { k: "optimistic", l: "Optimistic", color: "" },
-                ].map(({ k, l, color }) => (
-                  <div key={k} className={`border rounded-xl p-5 text-center ${color}`}>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{l}</p>
-                    <p className="text-2xl font-bold tracking-tight">{formatCurrency(ebitdaVal.enterprise_value_range[k])}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Enterprise Value</p>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  Implied Valuation Range
+                  <ExplainButton
+                    metricKey="Implied Valuation Range"
+                    metricValue={`${formatCurrency(ebitdaVal.enterprise_value_range.conservative)} – ${formatCurrency(ebitdaVal.enterprise_value_range.optimistic)}`}
+                    context={{ companyName: d.company_name || 'This company', sector: d.sector || 'Unknown', adjustedEbitda: ebitdaVal.adjusted_ebitda_base }}
+                  />
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { k: "conservative", l: "Conservative", color: "" },
+                    { k: "base", l: "Base Case", color: "border-primary bg-primary/5 ring-1 ring-primary/20" },
+                    { k: "optimistic", l: "Optimistic", color: "" },
+                  ].map(({ k, l, color }) => (
+                    <div key={k} className={`border rounded-xl p-5 text-center ${color}`}>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{l}</p>
+                      <p className="text-2xl font-bold tracking-tight">{formatCurrency(ebitdaVal.enterprise_value_range[k])}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Enterprise Value</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             {ebitdaVal.multiple_justification && <NarrativeBlock text={ebitdaVal.multiple_justification} />}

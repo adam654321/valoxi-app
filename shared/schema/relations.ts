@@ -16,7 +16,7 @@ import { portalAccessTokens, externalDocumentSubmissions, portalDocumentRequirem
 import { financialPeriods, incomeStatements, balanceSheets, staffData, agedDebtors, fixedAssetsRegister, loanFacilities, ebitdaAdjustments, valuations } from './financials';
 
 // Deal Models
-import { dealModels, dealModelAdjustments, dealModelFundingLines } from './deal-models';
+import { dealModels, dealModelAdjustments, dealModelFundingLines, dealMetricsSnapshots } from './deal-models';
 
 // Dashboard
 import { dashboardPreferences, dashboardAlerts } from './dashboard';
@@ -472,6 +472,21 @@ export const dealModelAdjustmentsRelations = relations(dealModelAdjustments, ({ 
 export const dealModelFundingLinesRelations = relations(dealModelFundingLines, ({ one }) => ({
   dealModel: one(dealModels, {
     fields: [dealModelFundingLines.dealModelId],
+    references: [dealModels.id],
+  }),
+}));
+
+export const dealMetricsSnapshotsRelations = relations(dealMetricsSnapshots, ({ one }) => ({
+  userCompany: one(userCompanies, {
+    fields: [dealMetricsSnapshots.userCompanyId],
+    references: [userCompanies.id],
+  }),
+  targetCompany: one(targetCompanies, {
+    fields: [dealMetricsSnapshots.targetCompanyId],
+    references: [targetCompanies.id],
+  }),
+  dealModel: one(dealModels, {
+    fields: [dealMetricsSnapshots.dealModelId],
     references: [dealModels.id],
   }),
 }));

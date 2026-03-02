@@ -16,6 +16,7 @@ import {
   type CalculationResult,
 } from '../../shared/calculators/deal-model.calc';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
+import { captureMetricsSnapshot } from './metrics-snapshot.service';
 import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
 
 async function verifyOwnership(targetCompanyId: number, userCompanyId: number): Promise<void> {
@@ -187,6 +188,10 @@ export class DealModelService {
     if (!fullModel) throw new NotFoundError('Deal model not found after update');
 
     const calculations = await this.recalculate(fullModel);
+
+    captureMetricsSnapshot(id, fullModel.createdBy).catch(err =>
+      console.error('[METRICS_SNAPSHOT] Silent failure on model save:', err)
+    );
 
     return { ...fullModel, calculations };
   }
