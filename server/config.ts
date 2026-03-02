@@ -53,10 +53,10 @@ export const config = {
   },
 
   geminiPricing: {
-    'gemini-3-flash-preview': { inputCostPerMillionTokens: 0.075, outputCostPerMillionTokens: 0.30 },
-    'gemini-3-pro-preview': { inputCostPerMillionTokens: 1.25, outputCostPerMillionTokens: 5.00 },
-    'gemini-2.0-flash': { inputCostPerMillionTokens: 0.075, outputCostPerMillionTokens: 0.30 },
-    'default': { inputCostPerMillionTokens: 0.075, outputCostPerMillionTokens: 0.30 },
+    'gemini-3-flash-preview': { inputCostPerMillionTokens: 0.50, outputCostPerMillionTokens: 3.00 },
+    'gemini-3-pro-preview': { inputCostPerMillionTokens: 1.25, outputCostPerMillionTokens: 10.00 },
+    'gemini-2.0-flash': { inputCostPerMillionTokens: 0.50, outputCostPerMillionTokens: 3.00 },
+    'default': { inputCostPerMillionTokens: 0.50, outputCostPerMillionTokens: 3.00 },
   } as Record<string, { inputCostPerMillionTokens: number; outputCostPerMillionTokens: number }>,
 } as const;
 

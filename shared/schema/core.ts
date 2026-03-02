@@ -153,6 +153,8 @@ export const tokenUsage = pgTable("token_usage", {
   candidateTokens: integer("candidate_tokens").notNull().default(0),
   totalTokens: integer("total_tokens").notNull().default(0),
   estimatedCostUsd: numeric("estimated_cost_usd", { precision: 10, scale: 6 }).notNull().default("0"),
+  inputCostUsd: numeric("input_cost_usd", { precision: 10, scale: 6 }).notNull().default("0"),
+  outputCostUsd: numeric("output_cost_usd", { precision: 10, scale: 6 }).notNull().default("0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -155,7 +155,7 @@ export class GeminiClient {
     if (usage && resolvedUserId) {
       try {
         const resolvedService = options.service ?? this.service ?? 'gemini-unknown';
-        const estimatedCostUsd = calculateTokenCost(model, usage.promptTokens, usage.candidateTokens);
+        const costBreakdown = calculateTokenCost(model, usage.promptTokens, usage.candidateTokens);
         await db.insert(tokenUsage).values({
           userId: resolvedUserId,
           userCompanyId: options.userCompanyId ?? this.userCompanyId ?? null,
@@ -166,7 +166,9 @@ export class GeminiClient {
           promptTokens: usage.promptTokens,
           candidateTokens: usage.candidateTokens,
           totalTokens: usage.totalTokens,
-          estimatedCostUsd: estimatedCostUsd.toFixed(6),
+          estimatedCostUsd: costBreakdown.totalCostUsd.toFixed(6),
+          inputCostUsd: costBreakdown.inputCostUsd.toFixed(6),
+          outputCostUsd: costBreakdown.outputCostUsd.toFixed(6),
         });
       } catch (err) {
         console.warn('[GEMINI_CLIENT] Failed to persist token usage:', err);

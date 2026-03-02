@@ -95,7 +95,11 @@ export class AdminRepository {
       .select({
         userCompanyId: tokenUsage.userCompanyId,
         companyName: sql<string>`COALESCE(${userCompanies.companyName}, 'No Company')`,
+        promptTokens: sql<number>`SUM(${tokenUsage.promptTokens})::int`,
+        candidateTokens: sql<number>`SUM(${tokenUsage.candidateTokens})::int`,
         totalTokens: sql<number>`SUM(${tokenUsage.totalTokens})::int`,
+        inputCost: sql<string>`SUM(${tokenUsage.inputCostUsd})::numeric(10,6)`,
+        outputCost: sql<string>`SUM(${tokenUsage.outputCostUsd})::numeric(10,6)`,
         totalCost: sql<string>`SUM(${tokenUsage.estimatedCostUsd})::numeric(10,6)`,
       })
       .from(tokenUsage)
@@ -115,7 +119,11 @@ export class AdminRepository {
       .select({
         dealId: tokenUsage.dealId,
         dealName: sql<string>`COALESCE(${targetCompanies.companyName}, 'Unknown Deal')`,
+        promptTokens: sql<number>`SUM(${tokenUsage.promptTokens})::int`,
+        candidateTokens: sql<number>`SUM(${tokenUsage.candidateTokens})::int`,
         totalTokens: sql<number>`SUM(${tokenUsage.totalTokens})::int`,
+        inputCost: sql<string>`SUM(${tokenUsage.inputCostUsd})::numeric(10,6)`,
+        outputCost: sql<string>`SUM(${tokenUsage.outputCostUsd})::numeric(10,6)`,
         totalCost: sql<string>`SUM(${tokenUsage.estimatedCostUsd})::numeric(10,6)`,
       })
       .from(tokenUsage)
@@ -134,7 +142,11 @@ export class AdminRepository {
     return await db
       .select({
         service: tokenUsage.service,
+        promptTokens: sql<number>`SUM(${tokenUsage.promptTokens})::int`,
+        candidateTokens: sql<number>`SUM(${tokenUsage.candidateTokens})::int`,
         totalTokens: sql<number>`SUM(${tokenUsage.totalTokens})::int`,
+        inputCost: sql<string>`SUM(${tokenUsage.inputCostUsd})::numeric(10,6)`,
+        outputCost: sql<string>`SUM(${tokenUsage.outputCostUsd})::numeric(10,6)`,
         totalCost: sql<string>`SUM(${tokenUsage.estimatedCostUsd})::numeric(10,6)`,
       })
       .from(tokenUsage)

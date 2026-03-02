@@ -15,16 +15,28 @@ function buildQs(from: string, to: string) {
   return qs ? `?${qs}` : "";
 }
 
+const NUMERIC_KEYS = ["promptTokens", "candidateTokens", "totalTokens"];
+const COST_KEYS = ["inputCost", "outputCost", "totalCost"];
+
 function TokenTable({ rows, columns }: { rows: any[]; columns: { key: string; label: string; align?: string }[] }) {
   const totals: Record<string, number> = {};
   columns.forEach((c) => {
-    if (["totalTokens", "promptTokens", "candidateTokens"].includes(c.key)) {
+    if (NUMERIC_KEYS.includes(c.key)) {
       totals[c.key] = rows.reduce((s, r) => s + Number(r[c.key] ?? 0), 0);
     }
-    if (c.key === "totalCost") {
+    if (COST_KEYS.includes(c.key)) {
       totals[c.key] = rows.reduce((s, r) => s + parseFloat(r[c.key] ?? 0), 0);
     }
   });
+
+  const isCostCol = (key: string) => COST_KEYS.includes(key);
+  const isNumCol = (key: string) => NUMERIC_KEYS.includes(key);
+
+  const formatCell = (key: string, value: any) => {
+    if (isCostCol(key)) return `$${parseFloat(value ?? 0).toFixed(4)}`;
+    if (isNumCol(key)) return Number(value ?? 0).toLocaleString();
+    return value;
+  };
 
   return (
     <Table>
@@ -44,7 +56,7 @@ function TokenTable({ rows, columns }: { rows: any[]; columns: { key: string; la
               <TableRow key={i}>
                 {columns.map((c) => (
                   <TableCell key={c.key} className={c.align === "right" ? "text-right font-mono" : ""}>
-                    {c.key === "totalCost" ? `$${parseFloat(r[c.key] ?? 0).toFixed(4)}` : (["totalTokens", "promptTokens", "candidateTokens"].includes(c.key) ? Number(r[c.key] ?? 0).toLocaleString() : r[c.key])}
+                    {formatCell(c.key, r[c.key])}
                   </TableCell>
                 ))}
               </TableRow>
@@ -52,7 +64,7 @@ function TokenTable({ rows, columns }: { rows: any[]; columns: { key: string; la
             <TableRow className="bg-muted/50 font-semibold">
               {columns.map((c, ci) => (
                 <TableCell key={c.key} className={c.align === "right" ? "text-right font-mono" : ""}>
-                  {ci === 0 ? "Total" : totals[c.key] !== undefined ? (c.key === "totalCost" ? `$${totals[c.key].toFixed(4)}` : totals[c.key].toLocaleString()) : ""}
+                  {ci === 0 ? "Total" : totals[c.key] !== undefined ? formatCell(c.key, totals[c.key]) : ""}
                 </TableCell>
               ))}
             </TableRow>
@@ -62,6 +74,14 @@ function TokenTable({ rows, columns }: { rows: any[]; columns: { key: string; la
     </Table>
   );
 }
+
+const SHARED_COLUMNS = [
+  { key: "promptTokens", label: "Input Tokens", align: "right" },
+  { key: "candidateTokens", label: "Output Tokens", align: "right" },
+  { key: "inputCost", label: "Input Cost", align: "right" },
+  { key: "outputCost", label: "Output Cost", align: "right" },
+  { key: "totalCost", label: "Total Cost", align: "right" },
+];
 
 export default function AdminTokenUsage() {
   const [from, setFrom] = useState("");
@@ -98,7 +118,10 @@ export default function AdminTokenUsage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Token Usage</h1>
+      <div>
+        <h1 className="text-2xl font-bold">Token Usage</h1>
+        <p className="text-sm text-muted-foreground mt-1">Gemini API paid tier: $0.50 / 1M input tokens, $3.00 / 1M output tokens</p>
+      </div>
 
       <Card>
         <CardHeader>
@@ -135,8 +158,7 @@ export default function AdminTokenUsage() {
                   rows={byCompany ?? []}
                   columns={[
                     { key: "companyName", label: "Company" },
-                    { key: "totalTokens", label: "Total Tokens", align: "right" },
-                    { key: "totalCost", label: "Estimated Cost", align: "right" },
+                    ...SHARED_COLUMNS,
                   ]}
                 />
               </CardContent>
@@ -150,8 +172,7 @@ export default function AdminTokenUsage() {
                   rows={byDeal ?? []}
                   columns={[
                     { key: "dealName", label: "Deal" },
-                    { key: "totalTokens", label: "Total Tokens", align: "right" },
-                    { key: "totalCost", label: "Estimated Cost", align: "right" },
+                    ...SHARED_COLUMNS,
                   ]}
                 />
               </CardContent>
@@ -165,8 +186,7 @@ export default function AdminTokenUsage() {
                   rows={byService ?? []}
                   columns={[
                     { key: "service", label: "Service" },
-                    { key: "totalTokens", label: "Total Tokens", align: "right" },
-                    { key: "totalCost", label: "Estimated Cost", align: "right" },
+                    ...SHARED_COLUMNS,
                   ]}
                 />
               </CardContent>
