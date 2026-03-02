@@ -3,10 +3,11 @@ import { valueCreationService } from '../services/value-creation.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
+import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
-router.get('/deal-model/:dealModelId', asyncHandler(async (req: Request, res: Response) => {
+router.get('/deal-model/:dealModelId', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -15,7 +16,7 @@ router.get('/deal-model/:dealModelId', asyncHandler(async (req: Request, res: Re
   sendSuccess(res, result);
 }));
 
-router.put('/assumptions/bulk', asyncHandler(async (req: Request, res: Response) => {
+router.put('/assumptions/bulk', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -24,7 +25,7 @@ router.put('/assumptions/bulk', asyncHandler(async (req: Request, res: Response)
   sendSuccess(res, result);
 }));
 
-router.put('/assumptions/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/assumptions/:id', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -33,7 +34,7 @@ router.put('/assumptions/:id', asyncHandler(async (req: Request, res: Response) 
   sendSuccess(res, result);
 }));
 
-router.put('/scenarios/deal-model/:dealModelId', asyncHandler(async (req: Request, res: Response) => {
+router.put('/scenarios/deal-model/:dealModelId', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -42,7 +43,7 @@ router.put('/scenarios/deal-model/:dealModelId', asyncHandler(async (req: Reques
   sendSuccess(res, result);
 }));
 
-router.put('/scenarios/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/scenarios/:id', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -51,7 +52,7 @@ router.put('/scenarios/:id', asyncHandler(async (req: Request, res: Response) =>
   sendSuccess(res, result);
 }));
 
-router.post('/synergies/:scenarioId', asyncHandler(async (req: Request, res: Response) => {
+router.post('/synergies/:scenarioId', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -60,7 +61,7 @@ router.post('/synergies/:scenarioId', asyncHandler(async (req: Request, res: Res
   sendCreated(res, result);
 }));
 
-router.put('/synergies/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/synergies/:id', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -69,7 +70,7 @@ router.put('/synergies/:id', asyncHandler(async (req: Request, res: Response) =>
   sendSuccess(res, result);
 }));
 
-router.delete('/synergies/:id', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/synergies/:id', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   
@@ -78,7 +79,7 @@ router.delete('/synergies/:id', asyncHandler(async (req: Request, res: Response)
   sendSuccess(res, result);
 }));
 
-router.put('/exit/:dealModelId', asyncHandler(async (req: Request, res: Response) => {
+router.put('/exit/:dealModelId', requireFeature('valueCreationModule'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   

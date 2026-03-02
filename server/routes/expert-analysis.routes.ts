@@ -4,6 +4,7 @@ import { sendSuccess } from '../utils/response';
 import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
 import { targetCompaniesRepository } from '../repositories/target-companies.repository';
+import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.post('/trigger-stage1/:id', asyncHandler(async (req: Request, res: Respon
   sendSuccess(res, { message: 'Screening pipeline started' });
 }));
 
-router.post('/trigger-pipeline/:id', asyncHandler(async (req: Request, res: Response) => {
+router.post('/trigger-pipeline/:id', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -43,7 +44,7 @@ router.post('/trigger-pipeline/:id', asyncHandler(async (req: Request, res: Resp
   sendSuccess(res, { message: 'Pipeline started' });
 }));
 
-router.post('/retry/:id/:expertType', asyncHandler(async (req: Request, res: Response) => {
+router.post('/retry/:id/:expertType', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -63,7 +64,7 @@ router.post('/retry/:id/:expertType', asyncHandler(async (req: Request, res: Res
   sendSuccess(res, { message: `${expertType} retry started` });
 }));
 
-router.post('/resume/:id', asyncHandler(async (req: Request, res: Response) => {
+router.post('/resume/:id', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -96,7 +97,7 @@ router.post('/cancel/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { message: 'Analysis cancelled' });
 }));
 
-router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/results/:id', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();

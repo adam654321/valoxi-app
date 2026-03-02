@@ -2,15 +2,16 @@ import { Router } from 'express';
 import { dueDiligenceService } from '../services/due-diligence.service';
 import { z } from 'zod';
 import { asyncHandler } from '../utils/async-handler';
+import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
-router.get('/categories', asyncHandler(async (req, res) => {
+router.get('/categories', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const categories = await dueDiligenceService.getAllCategories();
   res.json(categories);
 }));
 
-router.get('/company/:targetCompanyId/status', asyncHandler(async (req, res) => {
+router.get('/company/:targetCompanyId/status', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   if (isNaN(targetCompanyId)) {
     return res.status(400).json({ message: 'Invalid targetCompanyId' });
@@ -20,7 +21,7 @@ router.get('/company/:targetCompanyId/status', asyncHandler(async (req, res) => 
   res.json(status);
 }));
 
-router.get('/company/:targetCompanyId/summary', asyncHandler(async (req, res) => {
+router.get('/company/:targetCompanyId/summary', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   if (isNaN(targetCompanyId)) {
     return res.status(400).json({ message: 'Invalid targetCompanyId' });
@@ -37,7 +38,7 @@ const updateStatusSchema = z.object({
   externalSubmissionId: z.number().optional(),
 });
 
-router.put('/company/:targetCompanyId/requirement/:requirementId/status', asyncHandler(async (req, res) => {
+router.put('/company/:targetCompanyId/requirement/:requirementId/status', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
 
@@ -68,14 +69,14 @@ router.put('/company/:targetCompanyId/requirement/:requirementId/status', asyncH
   res.json(result);
 }));
 
-router.get('/company/:targetCompanyId/requirement/:requirementId/documents', asyncHandler(async (req, res) => {
+router.get('/company/:targetCompanyId/requirement/:requirementId/documents', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
   const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId);
   res.json(docs);
 }));
 
-router.post('/company/:targetCompanyId/requirement/:requirementId/documents', asyncHandler(async (req, res) => {
+router.post('/company/:targetCompanyId/requirement/:requirementId/documents', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
   const userId = req.session.userId;
@@ -90,13 +91,13 @@ router.post('/company/:targetCompanyId/requirement/:requirementId/documents', as
   res.json(result);
 }));
 
-router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', asyncHandler(async (req, res) => {
+router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const docLinkId = parseInt(req.params.docLinkId);
   await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId);
   res.json({ success: true });
 }));
 
-router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review', asyncHandler(async (req, res) => {
+router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
   const userId = req.session.userId;

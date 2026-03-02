@@ -3,6 +3,7 @@ import { dealModelService } from '../services/deal-model.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
+import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
@@ -84,7 +85,7 @@ router.delete('/:id/adjustments/:adjId', asyncHandler(async (req: Request, res: 
   sendSuccess(res, result);
 }));
 
-router.post('/:id/funding-lines', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/funding-lines', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -93,7 +94,7 @@ router.post('/:id/funding-lines', asyncHandler(async (req: Request, res: Respons
   sendCreated(res, result);
 }));
 
-router.put('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id/funding-lines/:lineId', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -103,7 +104,7 @@ router.put('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: 
   sendSuccess(res, result);
 }));
 
-router.delete('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id/funding-lines/:lineId', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -122,7 +123,7 @@ router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, result);
 }));
 
-router.post('/:id/duplicate', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/duplicate', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 

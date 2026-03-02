@@ -4,10 +4,11 @@ import { retriggerAnalysisForDocument } from '../services/file-analysis.service'
 import { sendSuccess } from '../utils/response';
 import { BadRequestError, UnauthorizedError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
+import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
-router.get('/document/:documentId', asyncHandler(async (req: Request, res: Response) => {
+router.get('/document/:documentId', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const documentId = parseInt(req.params.documentId);
   const userCompanyId = req.session.userCompanyId!;
   if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
@@ -15,7 +16,7 @@ router.get('/document/:documentId', asyncHandler(async (req: Request, res: Respo
   sendSuccess(res, results);
 }));
 
-router.get('/by-type/:documentType', asyncHandler(async (req: Request, res: Response) => {
+router.get('/by-type/:documentType', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const documentType = req.params.documentType;
   const userCompanyId = req.session.userCompanyId!;
   if (!documentType) throw new BadRequestError('Document type is required');
@@ -23,7 +24,7 @@ router.get('/by-type/:documentType', asyncHandler(async (req: Request, res: Resp
   sendSuccess(res, results);
 }));
 
-router.get('/company/:companyId', asyncHandler(async (req: Request, res: Response) => {
+router.get('/company/:companyId', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const targetCompanyId = parseInt(req.params.companyId);
   const userCompanyId = req.session.userCompanyId!;
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
@@ -31,7 +32,7 @@ router.get('/company/:companyId', asyncHandler(async (req: Request, res: Respons
   sendSuccess(res, results);
 }));
 
-router.get('/company/:companyId/by-type/:documentType', asyncHandler(async (req: Request, res: Response) => {
+router.get('/company/:companyId/by-type/:documentType', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
   const targetCompanyId = parseInt(req.params.companyId);
   const documentType = req.params.documentType;
   const userCompanyId = req.session.userCompanyId!;
