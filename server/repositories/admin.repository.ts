@@ -16,7 +16,11 @@ export class AdminRepository {
 
     const [tokenStats] = await db.select({
       totalTokens: sql<number>`COALESCE(SUM(${tokenUsage.totalTokens}), 0)::int`,
+      inputTokens: sql<number>`COALESCE(SUM(${tokenUsage.promptTokens}), 0)::int`,
+      outputTokens: sql<number>`COALESCE(SUM(${tokenUsage.candidateTokens}), 0)::int`,
       totalEstimatedCost: sql<string>`COALESCE(SUM(${tokenUsage.estimatedCostUsd}), 0)::numeric(10,6)`,
+      inputCost: sql<string>`COALESCE(SUM(${tokenUsage.inputCostUsd}), 0)::numeric(10,6)`,
+      outputCost: sql<string>`COALESCE(SUM(${tokenUsage.outputCostUsd}), 0)::numeric(10,6)`,
     }).from(tokenUsage).where(gte(tokenUsage.createdAt, monthStart));
 
     const [manualCosts] = await db.select({
@@ -28,7 +32,11 @@ export class AdminRepository {
 
     return {
       totalTokensThisMonth: tokenStats.totalTokens,
+      inputTokensThisMonth: tokenStats.inputTokens,
+      outputTokensThisMonth: tokenStats.outputTokens,
       totalEstimatedCostThisMonth: parseFloat(tokenStats.totalEstimatedCost),
+      inputCostThisMonth: parseFloat(tokenStats.inputCost),
+      outputCostThisMonth: parseFloat(tokenStats.outputCost),
       totalManualPlatformCostsThisMonth: parseFloat(manualCosts.totalManualCost),
       activeCompanies: companyCount.count,
       activeUsers: userCount.count,

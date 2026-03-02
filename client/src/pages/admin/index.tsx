@@ -25,11 +25,12 @@ export default function AdminOverview() {
 
   const totalCombined = (overview?.totalEstimatedCostThisMonth ?? 0) + (overview?.totalManualPlatformCostsThisMonth ?? 0);
   const costBreakdown = [
-    { name: "Google API (Estimated)", value: overview?.totalEstimatedCostThisMonth ?? 0 },
+    { name: "Input Cost (API)", value: overview?.inputCostThisMonth ?? 0 },
+    { name: "Output Cost (API)", value: overview?.outputCostThisMonth ?? 0 },
     { name: "Manual Entries", value: overview?.totalManualPlatformCostsThisMonth ?? 0 },
   ].filter((d) => d.value > 0);
 
-  const COLORS = ["#3b82f6", "#f59e0b"];
+  const COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
 
   const topCompanies = (byCompany ?? []).slice(0, 5);
 
@@ -45,15 +46,21 @@ export default function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalCombined.toFixed(2)}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              In: ${(overview?.inputCostThisMonth ?? 0).toFixed(4)} · Out: ${(overview?.outputCostThisMonth ?? 0).toFixed(4)}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Token Calls This Month</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Tokens This Month</CardTitle>
             <Cpu className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(overview?.totalTokensThisMonth ?? 0).toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              In: {(overview?.inputTokensThisMonth ?? 0).toLocaleString()} · Out: {(overview?.outputTokensThisMonth ?? 0).toLocaleString()}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -110,15 +117,21 @@ export default function AdminOverview() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Company</TableHead>
-                    <TableHead className="text-right">Tokens</TableHead>
-                    <TableHead className="text-right">Est. Cost</TableHead>
+                    <TableHead className="text-right">Input Tokens</TableHead>
+                    <TableHead className="text-right">Output Tokens</TableHead>
+                    <TableHead className="text-right">Input Cost</TableHead>
+                    <TableHead className="text-right">Output Cost</TableHead>
+                    <TableHead className="text-right">Total Cost</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {topCompanies.map((c: any, i: number) => (
                     <TableRow key={i}>
                       <TableCell className="font-medium">{c.companyName}</TableCell>
-                      <TableCell className="text-right">{Number(c.totalTokens).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{Number(c.promptTokens ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{Number(c.candidateTokens ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">${parseFloat(c.inputCost ?? 0).toFixed(4)}</TableCell>
+                      <TableCell className="text-right">${parseFloat(c.outputCost ?? 0).toFixed(4)}</TableCell>
                       <TableCell className="text-right">${parseFloat(c.totalCost).toFixed(4)}</TableCell>
                     </TableRow>
                   ))}
