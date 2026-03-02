@@ -78,6 +78,10 @@ export class TeamRepository {
       userCompanyId: users.userCompanyId, role: users.role, userRole: users.userRole, isCompanyAdmin: users.isCompanyAdmin,
       lastLogin: users.lastLogin, isActive: users.isActive, emailVerified: users.emailVerified, createdAt: users.createdAt,
       currentCompanyId: users.currentCompanyId,
+      isSystemAdmin: users.isSystemAdmin,
+      onboardingCompleted: users.onboardingCompleted,
+      onboardingStep: users.onboardingStep,
+      onboardingCompletedAt: users.onboardingCompletedAt,
       roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
       assignedDealsCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM ${userDealAssignments} WHERE ${userDealAssignments.userId} = ${users.id} AND ${userDealAssignments.isActive} = true), 0)`,
     }).from(users)

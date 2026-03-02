@@ -95,6 +95,7 @@ export async function batchProcess<T, R>(
             if (isRateLimitError(error)) {
               throw error;
             }
+            // @ts-expect-error Replit-generated integration file — AbortError may be a named export in some p-retry versions
             throw new pRetry.AbortError(
               error instanceof Error ? error : new Error(String(error))
             );
@@ -136,6 +137,7 @@ export async function batchProcessWithSSE<T, R>(
         factor: 2,
         onFailedAttempt: (error) => {
           if (!isRateLimitError(error)) {
+            // @ts-expect-error Replit-generated integration file — AbortError may be a named export in some p-retry versions
             throw new pRetry.AbortError(
               error instanceof Error ? error : new Error(String(error))
             );

@@ -176,7 +176,7 @@ High potential acquisition target with complementary technology stack.`;
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => copyToClipboard(webhookConfig.webhookUrl)}
+                  onClick={() => copyToClipboard(webhookConfig.webhookUrl!)}
                   data-testid="button-copy-webhook-url"
                 >
                   <Copy className="h-4 w-4" />
