@@ -10,7 +10,8 @@ const router = Router();
 router.post('/analyze', asyncHandler(async (req: Request, res: Response) => {
   const { websiteUrl } = req.body;
   if (!websiteUrl) throw new BadRequestError('Website URL is required');
-  const result = await websiteAnalysisService.analyzeWebsite(websiteUrl);
+  const tracking = { userId: req.session.userId, userCompanyId: req.session.userCompanyId };
+  const result = await websiteAnalysisService.analyzeWebsite(websiteUrl, tracking);
   sendSuccess(res, result);
 }));
 
@@ -21,7 +22,8 @@ router.post('/company/:companyId/analyze', asyncHandler(async (req: Request, res
   const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
   if (!company) throw new ForbiddenError('Company not found or access denied');
   if (!company.website) throw new BadRequestError('Company has no website URL');
-  const result = await websiteAnalysisService.analyzeAndUpdateCompany(targetCompanyId, company.website);
+  const tracking = { userId: req.session.userId, userCompanyId, dealId: targetCompanyId };
+  const result = await websiteAnalysisService.analyzeAndUpdateCompany(targetCompanyId, company.website, tracking);
   sendSuccess(res, result);
 }));
 

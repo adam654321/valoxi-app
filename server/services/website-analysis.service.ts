@@ -21,6 +21,12 @@ interface AnalysisResponse {
   processingTime?: number;
 }
 
+export interface WebsiteTrackingContext {
+  userId?: number;
+  userCompanyId?: number;
+  dealId?: number;
+}
+
 const WEBSITE_ANALYSIS_PROMPT = `You are a helpful assistant specialising in analysing information about a company based on their website. All of your output is in British English.
 
 Analyse the website at the provided URL. Using only the information you can find, provide the following breakdown information which a potential company buyer may find useful. If information is not available, indicate "Not available".
@@ -39,7 +45,7 @@ Please provide your response in the following JSON format:
 Respond ONLY with the JSON object, no additional text or markdown formatting.`;
 
 export class WebsiteAnalysisService {
-  async analyzeWebsite(websiteUrl: string): Promise<AnalysisResponse> {
+  async analyzeWebsite(websiteUrl: string, tracking?: WebsiteTrackingContext): Promise<AnalysisResponse> {
     const startTime = Date.now();
 
     try {
@@ -52,6 +58,10 @@ export class WebsiteAnalysisService {
         prompt,
         temperature: 0.2,
         responseMimeType: 'application/json',
+        service: 'website_analysis',
+        userId: tracking?.userId,
+        userCompanyId: tracking?.userCompanyId,
+        dealId: tracking?.dealId,
       });
 
       const processingTime = Date.now() - startTime;
@@ -123,8 +133,8 @@ export class WebsiteAnalysisService {
 **Legal Structure:** ${analysis.legalStructure || 'Not available'}`;
   }
 
-  async analyzeAndUpdateCompany(targetCompanyId: number, websiteUrl: string): Promise<AnalysisResponse> {
-    const result = await this.analyzeWebsite(websiteUrl);
+  async analyzeAndUpdateCompany(targetCompanyId: number, websiteUrl: string, tracking?: WebsiteTrackingContext): Promise<AnalysisResponse> {
+    const result = await this.analyzeWebsite(websiteUrl, tracking);
 
     if (result.success && result.rawMarkdown) {
       await db.update(targetCompanies)
@@ -136,12 +146,12 @@ export class WebsiteAnalysisService {
     return result;
   }
 
-  async triggerAnalysisIfNeeded(targetCompanyId: number, websiteUrl: string | null): Promise<void> {
+  async triggerAnalysisIfNeeded(targetCompanyId: number, websiteUrl: string | null, tracking?: WebsiteTrackingContext): Promise<void> {
     if (!websiteUrl) return;
 
     console.log(`[WEBSITE_ANALYSIS] Triggering async analysis for company ${targetCompanyId}`);
     setTimeout(() => {
-      this.analyzeAndUpdateCompany(targetCompanyId, websiteUrl).catch(err => {
+      this.analyzeAndUpdateCompany(targetCompanyId, websiteUrl, tracking).catch(err => {
         console.error(`[WEBSITE_ANALYSIS] Async analysis failed:`, err);
       });
     }, 100);

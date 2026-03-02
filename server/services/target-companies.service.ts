@@ -66,7 +66,7 @@ export class TargetCompaniesService {
     const company = await targetCompaniesRepository.create(processedData as InsertTargetCompany);
 
     if (company.website) {
-      websiteAnalysisService.triggerAnalysisIfNeeded(company.id, company.website);
+      websiteAnalysisService.triggerAnalysisIfNeeded(company.id, company.website, { userId, userCompanyId, dealId: company.id });
     }
 
     const { track } = await import('./funnel.service');

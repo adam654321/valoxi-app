@@ -118,16 +118,17 @@ export class ExpertAnalysisService {
     const company = await this.getTargetCompany(companyId);
     const extractedData = await this.getExtractedData(companyId);
     const sector = company.industry || 'Unknown';
+    const tracking = { userId: triggeredBy, userCompanyId: company.userCompanyId, dealId: companyId };
 
     const resetRecord = await this.getExpertResult(companyId, expertType);
     if (!resetRecord) throw new Error('Failed to retrieve reset record');
 
     if (['financial', 'operational', 'risk'].includes(expertType)) {
       const prompt = this.buildLayer1Prompt(expertType as ExpertType, company.companyName, sector, extractedData);
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     } else if (expertType === 'sector') {
       const prompt = this.buildSectorPrompt(company, extractedData);
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     } else if (expertType === 'qoe') {
       const financialResult = await this.getExpertResult(companyId, 'financial');
       const operationalResult = await this.getExpertResult(companyId, 'operational');
@@ -136,7 +137,7 @@ export class ExpertAnalysisService {
         financialResult?.analysisData ? JSON.stringify(financialResult.analysisData) : '{"error": "Financial analysis not available"}',
         operationalResult?.analysisData ? JSON.stringify(operationalResult.analysisData) : '{"error": "Operational analysis not available"}'
       ) + '\n\nDATA:\n' + JSON.stringify(extractedData, null, 2);
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     } else if (expertType === 'valuation') {
       const [fin, qoe, sec, risk, ops] = await Promise.all([
         this.getExpertResult(companyId, 'financial'),
@@ -153,7 +154,7 @@ export class ExpertAnalysisService {
         risk?.analysisData ? JSON.stringify(risk.analysisData) : '{"error": "Not available"}',
         ops?.analysisData ? JSON.stringify(ops.analysisData) : '{"error": "Not available"}'
       );
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     } else if (expertType === 'deal_structure') {
       const [val, risk, ops, qoe] = await Promise.all([
         this.getExpertResult(companyId, 'valuation'),
@@ -168,7 +169,7 @@ export class ExpertAnalysisService {
         ops?.analysisData ? JSON.stringify(ops.analysisData) : '{"error": "Not available"}',
         qoe?.analysisData ? JSON.stringify(qoe.analysisData) : '{"error": "Not available"}'
       );
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     } else if (expertType === 'synthesis') {
       const expertTypes: ExpertType[] = ['financial', 'operational', 'risk', 'qoe', 'sector', 'valuation', 'deal_structure'];
       const allResults = await Promise.all(
@@ -185,11 +186,11 @@ export class ExpertAnalysisService {
         valuation: getDataOrFallback(allResults[5], 'Valuation'),
         dealStructure: getDataOrFallback(allResults[6], 'Deal Structure'),
       });
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     } else if (expertType === 'data_quality') {
       const dqPrompt = buildStage0DataQualityPrompt(company.companyName) +
         '\n\nDATA:\n' + JSON.stringify(extractedData, null, 2);
-      await this.runExpert(resetRecord, dqPrompt, expertType);
+      await this.runExpert(resetRecord, dqPrompt, expertType, tracking);
     } else if (expertType === 'screening') {
       const dqResult = await this.getExpertResult(companyId, 'data_quality');
       const dqData = dqResult?.analysisData as Record<string, unknown> | null;
@@ -200,7 +201,7 @@ export class ExpertAnalysisService {
       );
       const prompt = systemPrompt + '\n\n' + userPrompt +
         '\n\nDATA:\n' + JSON.stringify(extractedData, null, 2);
-      await this.runExpert(resetRecord, prompt, expertType);
+      await this.runExpert(resetRecord, prompt, expertType, tracking);
     }
 
     await this.processNextSteps(companyId);
@@ -300,13 +301,14 @@ export class ExpertAnalysisService {
   private async runExpert(
     record: ExpertAnalysisResult,
     prompt: string,
-    expertType: string
+    expertType: string,
+    tracking?: { userId?: number; userCompanyId?: number; dealId?: number }
   ): Promise<void> {
     await this.updateExpertRecord(record.id, { status: 'processing' });
 
     const startTime = Date.now();
     try {
-      const result = await this.gemini.generateExpertAnalysis(expertType, prompt);
+      const result = await this.gemini.generateExpertAnalysis(expertType, prompt, undefined, tracking);
       const processingTime = Date.now() - startTime;
 
       const rawData = result.params as Record<string, unknown>;
@@ -358,6 +360,7 @@ export class ExpertAnalysisService {
     console.log(`[EXPERT_ORCHESTRATOR] Starting Stage 1 pipeline for company ${companyId}`);
 
     const company = await this.getTargetCompany(companyId);
+    const tracking = { userId: triggeredBy, userCompanyId: company.userCompanyId, dealId: companyId };
 
     const { track } = await import('./funnel.service');
     track(company.userCompanyId, triggeredBy ?? null, 'analysis.triggered', { targetCompanyId: companyId });
@@ -371,7 +374,7 @@ export class ExpertAnalysisService {
       '\n\nDATA:\n' +
       JSON.stringify(extractedData, null, 2);
 
-    await this.runExpert(dqRecord, dqPrompt, 'data_quality');
+    await this.runExpert(dqRecord, dqPrompt, 'data_quality', tracking);
 
     const updatedDq = await this.getExpertResult(companyId, 'data_quality');
     if (!updatedDq || updatedDq.status !== 'success') {
@@ -417,7 +420,7 @@ export class ExpertAnalysisService {
       '\n\nDATA:\n' +
       JSON.stringify(extractedData, null, 2);
 
-    await this.runExpert(screeningRecord, screeningPrompt, 'screening');
+    await this.runExpert(screeningRecord, screeningPrompt, 'screening', tracking);
 
     const updatedScreening = await this.getExpertResult(companyId, 'screening');
     return {
@@ -433,6 +436,7 @@ export class ExpertAnalysisService {
     console.log(`[EXPERT_ORCHESTRATOR] Starting Expert pipeline for company ${companyId}`);
 
     const company = await this.getTargetCompany(companyId);
+    const tracking = { userId: triggeredBy, userCompanyId: company.userCompanyId, dealId: companyId };
 
     const expertTypes: ExpertType[] = [
       'financial',
@@ -472,7 +476,7 @@ export class ExpertAnalysisService {
         sector,
         extractedData
       );
-      await this.runExpert(record, prompt, expertType);
+      await this.runExpert(record, prompt, expertType, tracking);
     });
 
     await Promise.all(layer1Promises);
@@ -488,6 +492,17 @@ export class ExpertAnalysisService {
     const company = await this.getTargetCompany(companyId);
     const extractedData = await this.getExtractedData(companyId);
     const sector = company.industry || 'Unknown';
+
+    const [anyRecord] = await db
+      .select({ triggeredBy: expertAnalysisResults.triggeredBy })
+      .from(expertAnalysisResults)
+      .where(eq(expertAnalysisResults.targetCompanyId, companyId))
+      .limit(1);
+    const tracking = {
+      userId: anyRecord?.triggeredBy ?? undefined,
+      userCompanyId: company.userCompanyId,
+      dealId: companyId,
+    };
 
     const getStatus = async (type: string): Promise<string> => {
       const result = await this.getExpertResult(companyId, type);
@@ -529,7 +544,7 @@ export class ExpertAnalysisService {
 
         if (sectorRecord && financialResult) {
           const sectorPrompt = this.buildSectorPrompt(company, extractedData);
-          await this.runExpert(sectorRecord, sectorPrompt, 'sector');
+          await this.runExpert(sectorRecord, sectorPrompt, 'sector', tracking);
           return this.processNextSteps(companyId);
         }
       } else {
@@ -537,7 +552,7 @@ export class ExpertAnalysisService {
         const sectorRecord = await this.getExpertResult(companyId, 'sector');
         if (sectorRecord) {
           const sectorPrompt = this.buildSectorPrompt(company, extractedData);
-          await this.runExpert(sectorRecord, sectorPrompt, 'sector');
+          await this.runExpert(sectorRecord, sectorPrompt, 'sector', tracking);
           return this.processNextSteps(companyId);
         }
       }
@@ -563,7 +578,7 @@ export class ExpertAnalysisService {
           '\n\nDATA:\n' +
           JSON.stringify(extractedData, null, 2);
 
-        await this.runExpert(qoeRecord, prompt, 'qoe');
+        await this.runExpert(qoeRecord, prompt, 'qoe', tracking);
         return this.processNextSteps(companyId);
       }
     }
@@ -599,7 +614,7 @@ export class ExpertAnalysisService {
           operationalResult?.analysisData ? JSON.stringify(operationalResult.analysisData) : '{"error": "Operational analysis not available"}'
         );
 
-        await this.runExpert(valuationRecord, prompt, 'valuation');
+        await this.runExpert(valuationRecord, prompt, 'valuation', tracking);
         return this.processNextSteps(companyId);
       }
     }
@@ -632,7 +647,7 @@ export class ExpertAnalysisService {
           qoeResult?.analysisData ? JSON.stringify(qoeResult.analysisData) : '{"error": "QoE analysis not available"}'
         );
 
-        await this.runExpert(dealRecord, prompt, 'deal_structure');
+        await this.runExpert(dealRecord, prompt, 'deal_structure', tracking);
         return this.processNextSteps(companyId);
       }
     }
@@ -690,7 +705,7 @@ export class ExpertAnalysisService {
         });
 
         const synthesisStartTime = Date.now();
-        await this.runExpert(synthesisRecord, prompt, 'synthesis');
+        await this.runExpert(synthesisRecord, prompt, 'synthesis', tracking);
         const synthesisDurationMs = Date.now() - synthesisStartTime;
 
         captureAnalysisSnapshot(companyId, company.userCompanyId).catch(err =>

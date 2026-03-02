@@ -1,0 +1,48 @@
+We are fixing token usage tracking. The audit identified that 4 of 5 Gemini callers don't pass userId, userCompanyId, dealId, or service to generateContent(), so the tracking guard silently skips all inserts. The fix is purely additive — pass the missing fields through each caller.
+Context from audit:
+
+Token tracking works correctly when userId is provided — the issue is purely missing caller context
+The four untracked callers are: gemini-expert-service.ts, gemini-document-classification-service.ts, gemini-step2-analysis-service.ts, website-analysis.service.ts
+Read each file carefully before making changes — understand how context flows into each service before adding fields
+
+Task 1 — Check what context each service already receives:
+Before making any changes, read all four service files and their callers to understand what userId, userCompanyId, and targetCompanyId are already available in scope (or available from the DB given what they already have). Report findings, then proceed with the fix.
+Task 2 — Fix gemini-expert-service.ts:
+The expert analysis pipeline runs 8 experts plus synthesis. Each generateContent() call should be updated to pass:
+
+userId — propagate from wherever the pipeline is triggered (look at how triggerAnalysisPipeline is called and trace the userId back)
+userCompanyId — same source
+dealId — use targetCompanyId as the deal identifier (this is what the "By Deal" admin tab joins on)
+service — use the expert type name, e.g. 'expert_analysis_financial', 'expert_analysis_commercial', 'expert_analysis_synthesis' etc. — one label per expert type so the admin can see cost breakdown by expert
+
+Task 3 — Fix gemini-document-classification-service.ts:
+Pass through:
+
+userId, userCompanyId — from the document upload or analysis trigger context
+service: 'document_classification'
+dealId — targetCompanyId if available in context
+
+Task 4 — Fix gemini-step2-analysis-service.ts:
+Pass through:
+
+userId, userCompanyId
+service: 'document_step2_analysis'
+dealId — targetCompanyId if available
+
+Task 5 — Fix website-analysis.service.ts:
+Pass through:
+
+userId, userCompanyId — from the request session context (this is called from a route, so session should be accessible)
+service: 'website_analysis'
+dealId — targetCompanyId if passed in the request
+
+Task 6 — Verify the fix:
+After making all changes, trigger a test expert analysis run on the demo company (userCompanyId: 2) and confirm that token_usage rows are written with correct service, userId, userCompanyId, and dealId values. Query the table directly: SELECT service, user_id, user_company_id, deal_id, total_tokens, estimated_cost_usd FROM token_usage ORDER BY created_at DESC LIMIT 20; and paste the output.
+
+Validation — Replit must output all of the following:
+
+For each of the 4 fixed callers, confirm what userId source was used and how it was propagated
+Confirm distinct service labels used for each expert type in the pipeline — list all service label strings
+Confirm dealId is now populated (not null) for expert analysis and document processing calls
+Paste the output of the token_usage query after a test run — confirm rows are being written
+Run npx tsc --noEmit and confirm zero new TypeScript errors

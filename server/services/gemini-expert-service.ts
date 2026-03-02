@@ -12,11 +12,18 @@ export interface ExpertAnalysisResult {
   usage: ExpertAnalysisUsage;
 }
 
+export interface ExpertTrackingContext {
+  userId?: number;
+  userCompanyId?: number;
+  dealId?: number;
+}
+
 export class GeminiExpertService {
   async generateExpertAnalysis(
     expertType: string,
     prompt: string,
-    model?: string
+    model?: string,
+    tracking?: ExpertTrackingContext
   ): Promise<ExpertAnalysisResult> {
     const startTime = Date.now();
     console.log(`[GEMINI_EXPERT] Starting ${expertType} analysis`);
@@ -28,6 +35,10 @@ export class GeminiExpertService {
         temperature: 0,
         responseMimeType: "application/json",
         thinkingLevel: "LOW",
+        service: `expert_analysis_${expertType}`,
+        userId: tracking?.userId,
+        userCompanyId: tracking?.userCompanyId,
+        dealId: tracking?.dealId,
       });
 
       const processingTime = Date.now() - startTime;

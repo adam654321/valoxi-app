@@ -25,6 +25,13 @@ export interface DocumentClassificationRequest {
   fileName: string;
 }
 
+export interface DocumentTrackingContext {
+  userId?: number;
+  userCompanyId?: number;
+  dealId?: number;
+  documentId?: number;
+}
+
 export interface DocumentClassificationResult {
   success: boolean;
   documentTypes: string[];
@@ -42,7 +49,8 @@ export interface DocumentClassificationResult {
 }
 
 export async function classifyDocumentWithGemini(
-  request: DocumentClassificationRequest
+  request: DocumentClassificationRequest,
+  tracking?: DocumentTrackingContext
 ): Promise<DocumentClassificationResult> {
   const startTime = Date.now();
 
@@ -74,6 +82,11 @@ export async function classifyDocumentWithGemini(
       responseMimeType: "application/json",
       thinkingLevel: "MINIMAL",
       ...(fileData ? { fileData } : {}),
+      service: 'document_classification',
+      userId: tracking?.userId,
+      userCompanyId: tracking?.userCompanyId,
+      dealId: tracking?.dealId,
+      documentId: tracking?.documentId,
     });
 
     const processingTime = Date.now() - startTime;

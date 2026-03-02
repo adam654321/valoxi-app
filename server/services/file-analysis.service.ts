@@ -157,13 +157,28 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     const fileExtension = event.fileName.split('.').pop()?.toLowerCase() || 'pdf';
     const mimeType = getMimeTypeForFile(fileExtension);
     console.log(`[FILE_ANALYSIS] File extension: ${fileExtension}, MIME type: ${mimeType}`);
+
+    let trackingUserCompanyId: number | undefined;
+    try {
+      const { db: trackingDb } = await import('../db');
+      const { targetCompanies: tcTable } = await import('@shared/schema');
+      const { eq: eqOp } = await import('drizzle-orm');
+      const [tc] = await trackingDb.select({ userCompanyId: tcTable.userCompanyId }).from(tcTable).where(eqOp(tcTable.id, event.targetCompanyId)).limit(1);
+      trackingUserCompanyId = tc?.userCompanyId ?? undefined;
+    } catch {}
+    const tracking = {
+      userId: event.uploadedBy ?? undefined,
+      userCompanyId: trackingUserCompanyId,
+      dealId: event.targetCompanyId,
+      documentId: event.documentId,
+    };
     
     const classificationResult = await classifyDocumentWithGemini({
       fileUrl: fileUrl,
       filePath: filePath,
       mimeType: mimeType,
       fileName: event.fileName,
-    });
+    }, tracking);
 
     if (!classificationResult.success) {
       console.error(`[FILE_ANALYSIS] Classification failed for event ${eventId}:`, classificationResult.error);
@@ -215,7 +230,8 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       mimeType,
       event.fileName,
       classificationResult.documentTypes,
-      event.documentId
+      event.documentId,
+      tracking
     );
 
     for (const result of step2Results) {

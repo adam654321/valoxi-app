@@ -4,6 +4,7 @@ import { buildProfitAndLossAnalysisPrompt } from "../prompts/step2-profit-and-lo
 import { buildSalesLedgerAnalysisPrompt } from "../prompts/step2-sales-ledger-prompt";
 import { buildStaffMatrixAnalysisPrompt } from "../prompts/step2-staff-matrix-prompt";
 import { geminiClient } from "./gemini-client";
+import type { DocumentTrackingContext } from "./gemini-document-classification-service";
 
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
 
@@ -67,7 +68,8 @@ async function readFileContent(filePath: string): Promise<string | null> {
 const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
 
 export async function analyzeDocumentWithGemini(
-  request: Step2AnalysisRequest
+  request: Step2AnalysisRequest,
+  tracking?: DocumentTrackingContext
 ): Promise<Step2AnalysisResult> {
   const startTime = Date.now();
 
@@ -101,6 +103,11 @@ export async function analyzeDocumentWithGemini(
       responseMimeType: "application/json",
       thinkingLevel: "MINIMAL",
       ...(fileData ? { fileData } : {}),
+      service: `document_step2_${request.documentType}`,
+      userId: tracking?.userId,
+      userCompanyId: tracking?.userCompanyId,
+      dealId: tracking?.dealId,
+      documentId: tracking?.documentId,
     });
 
     const processingTime = Date.now() - startTime;
@@ -149,7 +156,8 @@ export async function runStep2AnalysisForTypes(
   mimeType: string,
   fileName: string,
   documentTypes: string[],
-  documentId?: number
+  documentId?: number,
+  tracking?: DocumentTrackingContext
 ): Promise<Step2AnalysisResult[]> {
   const validTypes: DocumentType[] = ['asset_register', 'balance_sheet', 'profit_and_loss', 'sales_ledger', 'staff_matrix'];
   
@@ -197,7 +205,7 @@ export async function runStep2AnalysisForTypes(
       mimeType,
       fileName,
       documentType: docType,
-    });
+    }, tracking ? { ...tracking, documentId } : undefined);
     results.push(result);
   }
 
