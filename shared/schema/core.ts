@@ -29,6 +29,9 @@ export const users = pgTable("users", {
   lastLogin: timestamp("last_login"),
   isActive: boolean("is_active").default(true),
   emailVerified: boolean("email_verified").default(false),
+  onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
+  onboardingStep: varchar("onboarding_step", { length: 50 }).default("create_target"),
+  onboardingCompletedAt: timestamp("onboarding_completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

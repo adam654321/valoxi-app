@@ -22,6 +22,7 @@ import {
   TeamActivityWidget,
   StageAlertsWidget,
 } from "@/components/dashboard";
+import ActivationChecklist from "@/components/onboarding/ActivationChecklist";
 
 interface DashboardStats {
   targetCompanies: number;
@@ -87,6 +88,8 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {!user.onboardingCompleted && <ActivationChecklist />}
 
       {/* Key Metrics Cards */}
       {isLoading ? (

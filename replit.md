@@ -134,7 +134,7 @@ Preferred communication style: Simple, everyday language.
   - Applied to all authenticated route groups; excluded from public/portal routes and auth login/register endpoints.
   - Frontend fetches token via `GET /api/v2/auth/csrf` on auth check and after login/register, attaches it to all mutating `apiRequest` calls.
 - **Authorization**: Comprehensive role-based access control (RBAC) with company admin and role-specific permissions, and deal-specific team assignments.
-- **User Onboarding**: Invitation-based with secure token validation.
+- **User Onboarding**: Invitation-based with secure token validation. New user activation flow tracks 5 steps (create target, upload docs, generate analysis, save model, generate document) via `onboarding_completed`, `onboarding_step`, `onboarding_completed_at` columns on users table. ActivationChecklist component on dashboard. API: `/api/v2/onboarding/progress` (GET) and `/api/v2/onboarding/complete` (POST).
 - **Data Isolation**: Ensures data isolation by user company ID.
 - **Public Document Access**: Public document routes (`/api/v2/public/documents`) use UUID-based `publicToken` instead of sequential integer IDs, with rate limiting (`portalLimiter`) and audit logging to `document_access_log`. The `documents` table has a `public_token` column (varchar(64), unique, NOT NULL) auto-generated on document creation via `crypto.randomUUID()`.
 - **Rate Limiting**: `generalLimiter` and `portalLimiter` skip localhost requests (defence-in-depth). Analysis pipeline reads text files directly from disk via `fs.readFile(filePath)` — no loopback HTTP calls through the API. The `classifyDocumentWithGemini()` and `runStep2AnalysisForTypes()` functions accept both `fileUrl` (for Gemini file attachment) and `filePath` (for direct disk reads of text files).
@@ -264,4 +264,5 @@ All endpoints are prefixed `/api/v2/`. The API is consumed exclusively by the in
 | `/api/v2/roles` | 🔒 | Role assignment |
 | `/api/v2/user/companies` | 🔒 | User–company membership |
 | `/api/v2/admin` | ⚙️ | System admin: users, companies, costs, token usage, webhook events |
+| `/api/v2/onboarding` | 🔒 | Activation checklist progress and completion |
 | `/api/v2/billing` | 🌐 | Stripe webhook endpoint (POST /webhook/stripe) — no auth, raw body parsing |

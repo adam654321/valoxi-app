@@ -29,6 +29,7 @@ import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
 import billingRoutes from './billing.routes';
 import issueReportsRoutes from './issue-reports.routes';
+import onboardingRoutes from './onboarding.routes';
 import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
@@ -70,4 +71,5 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, issueReportsRoutes);
   app.use('/api/v2/billing', billingRoutes);
+  app.use('/api/v2/onboarding', isAuthenticated, onboardingRoutes);
 }

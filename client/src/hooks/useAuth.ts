@@ -8,6 +8,7 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   isSystemAdmin?: boolean;
+  onboardingCompleted?: boolean;
   company?: {
     id: number;
     companyName: string;
