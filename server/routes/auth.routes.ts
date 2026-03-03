@@ -4,7 +4,6 @@ import { eq, count } from 'drizzle-orm';
 import { authService } from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
-import { insertUserSchema } from '@shared/schema';
 import { isAuthenticated, refreshSessionPermissions } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
 import { passwordResetService } from '../services/password-reset.service';
@@ -15,10 +14,13 @@ import { emailService } from '../email';
 
 const router = Router();
 
-const registerSchema = insertUserSchema.extend({
-  companyName: z.string().min(1, 'Company name is required'),
+const registerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(8),
+  companyName: z.string().min(1, 'Company name is required'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
