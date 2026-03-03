@@ -15,8 +15,6 @@ import { apiRequest } from '@/lib/queryClient';
 import { formatCurrency } from '@/lib/format-utils';
 import { toNum, type CalculationResult, type FundingLineInput } from '@shared/calculators/deal-model.calc';
 import type { DealModelFundingLine } from '@shared/schema';
-import { useHasFeature } from '@/context/subscription-context';
-import { UpgradePrompt } from '@/components/billing';
 import {
   CreditCard,
   ChevronDown,
@@ -468,7 +466,6 @@ export default function FundingSection({
   onDataChange,
 }: FundingSectionProps) {
   const { toast } = useToast();
-  const hasFullDealModeller = useHasFeature('fullDealModeller');
   const [addOpen, setAddOpen] = useState(false);
   const [newType, setNewType] = useState('cash_equity');
   const [newLabel, setNewLabel] = useState('');
@@ -593,25 +590,12 @@ export default function FundingSection({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Funding Sources</h4>
+            {/* TODO Stage 4: Style funding section differently for Core vs Professional */}
             {!isLocked && (
-              sortedLines.length === 0 || hasFullDealModeller !== false ? (
-                <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Source
-                </Button>
-              ) : (
-                <UpgradePrompt
-                  feature="fullDealModeller"
-                  requiredPlan="PROFESSIONAL"
-                  title="Multiple Funding Sources"
-                  description="Add multiple funding sources to build a complete funding stack with debt, equity, and mezzanine layers."
-                >
-                  <Button variant="outline" size="sm" disabled>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Source
-                  </Button>
-                </UpgradePrompt>
-              )
+              <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Source
+              </Button>
             )}
           </div>
 

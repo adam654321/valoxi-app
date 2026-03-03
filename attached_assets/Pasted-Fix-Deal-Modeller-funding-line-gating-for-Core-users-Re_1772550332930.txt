@@ -1,0 +1,35 @@
+Fix Deal Modeller funding line gating for Core users. Read server/routes/deal-model.routes.ts and client/src/components/deal-modeller/FundingSection.tsx fully before making any changes.
+Fix 1 — Remove backend gates from funding line routes:
+In server/routes/deal-model.routes.ts, remove requireFeature('fullDealModeller') from these three routes only:
+
+POST /:id/funding-lines
+PUT /:id/funding-lines/:lineId
+DELETE /:id/funding-lines/:lineId
+
+Add comment above each: // TODO Stage 4: Display may differ by tier — data layer open for all
+Do NOT remove the gate from POST /:id/duplicate — model versioning remains Professional+ only.
+Fix 2 — Remove frontend gate from funding section:
+In client/src/components/deal-modeller/FundingSection.tsx:
+
+Remove the useHasFeature('fullDealModeller') check and the hasFullDealModeller variable
+Remove the <UpgradePrompt> wrapper around the "Add Source" button entirely
+Render the "Add Source" button for all tiers
+Add comment: // TODO Stage 4: Style funding section differently for Core vs Professional
+
+Fix 3 — Keep these gates unchanged:
+Confirm the following remain exactly as they are — do not touch:
+
+POST /:id/duplicate — stays gated behind requireFeature('fullDealModeller') (model versioning is Professional+)
+<UpgradePrompt feature="valueCreationModule"> in target-company-detail.tsx — stays gated (Value Creation is Expert+)
+The "New Version" button <UpgradePrompt> in DealModeller.tsx — stays gated (versioning is Professional+)
+
+
+Validation:
+
+Log in as Core user — open Deal Modeller on a company — confirm "Add Source" button is visible and clickable in the funding section
+Add a funding line as Core user — confirm it saves without a 403
+Edit and delete a funding line as Core user — confirm both work
+Confirm "New Version" button is still locked/blurred for Core user
+Confirm Value Creation tab is still locked for Core and Professional users
+Log in as Professional user — confirm funding lines and versioning both work
+Run npx tsc --noEmit — zero TypeScript errors

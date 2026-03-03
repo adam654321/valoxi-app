@@ -85,7 +85,8 @@ router.delete('/:id/adjustments/:adjId', asyncHandler(async (req: Request, res: 
   sendSuccess(res, result);
 }));
 
-router.post('/:id/funding-lines', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
+// TODO Stage 4: Display may differ by tier — data layer open for all
+router.post('/:id/funding-lines', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -94,7 +95,8 @@ router.post('/:id/funding-lines', requireFeature('fullDealModeller'), asyncHandl
   sendCreated(res, result);
 }));
 
-router.put('/:id/funding-lines/:lineId', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
+// TODO Stage 4: Display may differ by tier — data layer open for all
+router.put('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -104,7 +106,8 @@ router.put('/:id/funding-lines/:lineId', requireFeature('fullDealModeller'), asy
   sendSuccess(res, result);
 }));
 
-router.delete('/:id/funding-lines/:lineId', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
+// TODO Stage 4: Display may differ by tier — data layer open for all
+router.delete('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
