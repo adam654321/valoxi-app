@@ -1,0 +1,109 @@
+Rearchitect the registration flow to be invite/code-required only. Read all relevant files before making any changes.
+Context:
+The current open registration page is temporary scaffolding. The production flow will be Stripe checkout → webhook → account creation. Until that is built, registration must be gated by a valid promo code. No valid code = no access.
+Fix 1 — Add invite-only toggle to admin config:
+Create a system_config table:
+typescriptid: serial primary key
+key: varchar(100) not null unique
+value: text not null
+updatedAt: timestamp default now()
+updatedByUserId: integer nullable references users(id)
+Seed one row on db:push:
+sqlINSERT INTO system_config (key, value) VALUES ('registration_mode', 'invite_only');
+-- Options: 'invite_only' | 'open'
+Create server/services/system-config.service.ts:
+
+getConfig(key: string): Promise<string | null>
+setConfig(key: string, value: string, adminUserId: number): Promise<void>
+
+Fix 2 — Registration route enforcement:
+In server/routes/auth.routes.ts, at the start of the POST /register handler:
+
+Call systemConfigService.getConfig('registration_mode')
+If invite_only:
+
+If no promoCode provided in request body → return 403: { error: 'invite_required', message: 'Access to DealFlow AI is currently by invitation only. Please enter your promo code to continue.' }
+If promoCode provided → validate it via promoCodeService.validateCode(code) BEFORE creating the user
+If invalid → return 403: { error: 'invalid_code', message: 'This code is invalid. Please check and try again.' }
+If already used → return 403: { error: 'code_used', message: 'This code has already been used. Each code is single-use only.' }
+If expired → return 403: { error: 'code_expired', message: 'This code has expired.' }
+If valid → proceed with registration, then claim the code after account creation
+
+
+If open → proceed with registration as normal, promo code optional
+
+Fix 3 — Registration page UI:
+In the registration form (client/src/pages/register.tsx or equivalent):
+
+Move the promo code field to a prominent position — directly below the email field, before password
+Change label to: "Invitation Code" (not "Referral / Promo Code")
+Make it visually clear it is required during invite-only mode
+Add helper text below the field: "Don't have a code? DealFlow AI is currently in early access. Visit our website to join the waitlist."
+On submit, if server returns invite_required, invalid_code, code_used, or code_expired — show the error message inline below the code field, do not clear the form
+Do not show a generic error toast for these — show the specific message from the server inline
+
+Fix 4 — Promo code creates Core subscription:
+In server/services/promo-code.service.ts, in claimCode(), after successfully claiming:
+
+Check if a subscription row already exists for this userCompanyId
+If no subscription exists, create one directly:
+
+typescriptawait db.insert(subscriptions).values({
+  userCompanyId,
+  planKey: 'CORE',
+  status: 'active',
+  billingInterval: 'month',
+  freeMonthsTotal: campaign.freeMonthsTotal,
+  freeMonthsStartedAt: campaign.freeMonthsTotal > 0 ? new Date() : null,
+  referralSource: campaign.referralSource,
+  promoCodeId: claimedCode.id,
+  communityDiscountCouponId: campaign.freeMonthsTotal > 0 ? null : campaign.stripeCouponId,
+})
+
+If subscription already exists (billing page claim path) → just update referral fields and apply Stripe coupon, do not overwrite planKey or status
+
+Fix 5 — Admin toggle for registration mode:
+In client/src/pages/admin/settings.tsx (create if it doesn't exist):
+
+Simple settings page with a "Registration Mode" toggle:
+
+"Invite Only — users must have a valid invitation code to register"
+"Open — anyone can register (requires payment via Stripe)"
+
+
+Toggle calls POST /api/v2/admin/system-config with { key: 'registration_mode', value: 'invite_only' | 'open' }
+Shows current mode clearly
+Add "Settings" to admin sidebar with Settings/Cog icon
+
+Create POST /api/v2/admin/system-config (system admin only):
+
+Accepts { key: string, value: string }
+Validates key is in an allowed list: ['registration_mode']
+Calls systemConfigService.setConfig(key, value, req.session.userId)
+Returns { success: true }
+
+Create GET /api/v2/admin/system-config (system admin only):
+
+Returns all config rows as { key: string, value: string }[]
+
+Fix 6 — 5D Invoice page query fix:
+In GET /api/v2/admin/referral-invoice, fix the member query:
+
+Include subscriptions where freeMonthsTotal > 0 AND freeMonthsStartedAt IS NOT NULL AND referralSource = source param
+Active during selected month = freeMonthsStartedAt <= last day of selected month AND computed end date (freeMonthsStartedAt + freeMonthsTotal months) >= first day of selected month
+For each matching subscription, compute monthsElapsed = computeFreeMonthsElapsed(freeMonthsStartedAt) and monthsRemaining = freeMonthsTotal - monthsElapsed
+Invoice amount for this member this month = £50.25 (hardcoded for now)
+Fix the summary cards to correctly sum across all matching members
+
+
+Validation:
+
+Attempt to register with no code — confirm 403 with "invitation only" message shown inline
+Attempt to register with an invalid code — confirm specific error shown inline, form not cleared
+Attempt to register with an already-used code — confirm specific error shown inline
+Register with a valid unused 5DA- code — confirm: user created, subscription row created with CORE active, freeMonthsTotal 3, code marked as claimed
+Confirm the new user can immediately access the app as a Core user
+Go to /admin/settings — confirm registration mode toggle works, switching to "open" allows registration without a code
+Switch back to "invite only" — confirm code is required again
+Confirm 5D invoice page now shows test members with correct £50.25 calculation
+Run npx tsc --noEmit — zero TypeScript errors

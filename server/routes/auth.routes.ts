@@ -35,7 +35,43 @@ const loginSchema = z.object({
 
 router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const validatedData = registerSchema.parse(req.body);
-  
+
+  const { systemConfigService } = await import('../services/system-config.service');
+  const registrationMode = await systemConfigService.getConfig('registration_mode');
+  const isInviteOnly = registrationMode === 'invite_only';
+
+  if (isInviteOnly) {
+    const code = validatedData.promoCode?.trim();
+    if (!code) {
+      return res.status(403).json({
+        success: false,
+        error: 'invite_required',
+        message: 'Access to DealFlow AI is currently by invitation only. Please enter your invitation code to continue.',
+      });
+    }
+
+    const validation = await promoCodeService.validateCode(code);
+    if (!validation.valid) {
+      const reason = validation.reason || '';
+      let errorCode = 'invalid_code';
+      let errorMessage = 'This code is invalid. Please check and try again.';
+
+      if (reason.includes('already been used')) {
+        errorCode = 'code_used';
+        errorMessage = 'This code has already been used. Each code is single-use only.';
+      } else if (reason.includes('expired')) {
+        errorCode = 'code_expired';
+        errorMessage = 'This code has expired.';
+      }
+
+      return res.status(403).json({
+        success: false,
+        error: errorCode,
+        message: errorMessage,
+      });
+    }
+  }
+
   const result = await authService.register({
     email: validatedData.email,
     password: validatedData.password,

@@ -227,3 +227,13 @@ export type PlatformCost = typeof platformCosts.$inferSelect;
 
 export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
 export type WebhookEvent = typeof webhookEvents.$inferSelect;
+
+export const systemConfig = pgTable("system_config", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedByUserId: integer("updated_by_user_id").references(() => users.id),
+});
+
+export type SystemConfig = typeof systemConfig.$inferSelect;

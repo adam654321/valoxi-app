@@ -9,6 +9,7 @@ import { userCompanies, users } from '@shared/schema/core';
 import { issueReports, funnelEvents } from '@shared/schema/dashboard';
 import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
 import { adminService } from '../services/admin.service';
+import { systemConfigService } from '../services/system-config.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { passwordResetService } from '../services/password-reset.service';
@@ -435,6 +436,9 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
 
   const INVOICE_RATE = 50.25;
 
+  const firstDayOfMonth = targetMonth;
+  const lastDayOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+
   const members = subs
     .filter((s) => s.subscription.freeMonthsStartedAt !== null)
     .map((s) => {
@@ -444,6 +448,13 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
       const remaining = Math.max(0, total - elapsed);
       const isInFreePeriod = elapsed < total;
 
+      const endDate = new Date(startedAt);
+      endDate.setMonth(endDate.getMonth() + total);
+
+      const overlapsSelectedMonth = startedAt <= lastDayOfMonth && endDate >= firstDayOfMonth;
+
+      if (!overlapsSelectedMonth || !isInFreePeriod) return null;
+
       return {
         companyName: s.companyName,
         email: s.email,
@@ -451,10 +462,11 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
         freeMonthsStartedAt: startedAt.toISOString(),
         monthsElapsed: elapsed,
         monthsRemaining: remaining,
-        invoiceAmount: isInFreePeriod ? INVOICE_RATE : 0,
+        invoiceAmount: INVOICE_RATE,
         isInFreePeriod,
       };
-    });
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null);
 
   const activeMembers = members.filter((m) => m.isInFreePeriod);
   const totalInvoice = activeMembers.length * INVOICE_RATE;
@@ -540,6 +552,22 @@ router.get('/funnel', asyncHandler(async (req: Request, res: Response) => {
   };
 
   sendSuccess(res, { last30Days, conversionRates });
+}));
+
+router.get('/system-config', asyncHandler(async (req: Request, res: Response) => {
+  const configs = await systemConfigService.getAllConfig();
+  sendSuccess(res, configs);
+}));
+
+const setConfigSchema = z.object({
+  key: z.enum(['registration_mode']),
+  value: z.string().min(1),
+});
+
+router.post('/system-config', asyncHandler(async (req: Request, res: Response) => {
+  const { key, value } = setConfigSchema.parse(req.body);
+  await systemConfigService.setConfig(key, value, req.session.userId!);
+  sendSuccess(res, { success: true });
 }));
 
 export default router;

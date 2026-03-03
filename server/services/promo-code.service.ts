@@ -160,22 +160,34 @@ class PromoCodeService {
           })
           .where(eq(promoCodes.id, promoCode.id));
 
-        const subUpdate: Record<string, unknown> = {
-          referralSource: campaign.referralSource,
-          promoCodeId: promoCode.id,
-          updatedAt: new Date(),
-        };
-
-        if (campaign.freeMonthsTotal > 0) {
-          subUpdate.freeMonthsTotal = campaign.freeMonthsTotal;
-          subUpdate.freeMonthsStartedAt = new Date();
-        }
-
         if (existingSub) {
+          const subUpdate: Record<string, unknown> = {
+            referralSource: campaign.referralSource,
+            promoCodeId: promoCode.id,
+            updatedAt: new Date(),
+          };
+
+          if (campaign.freeMonthsTotal > 0) {
+            subUpdate.freeMonthsTotal = campaign.freeMonthsTotal;
+            subUpdate.freeMonthsStartedAt = new Date();
+          }
+
           await tx
             .update(subscriptions)
             .set(subUpdate)
             .where(eq(subscriptions.userCompanyId, userCompanyId));
+        } else {
+          await tx.insert(subscriptions).values({
+            userCompanyId,
+            planKey: 'CORE',
+            status: 'active',
+            billingInterval: 'month',
+            freeMonthsTotal: campaign.freeMonthsTotal,
+            freeMonthsStartedAt: campaign.freeMonthsTotal > 0 ? new Date() : null,
+            referralSource: campaign.referralSource,
+            promoCodeId: promoCode.id,
+            communityDiscountCouponId: campaign.freeMonthsTotal > 0 ? null : campaign.stripeCouponId,
+          });
         }
       });
 

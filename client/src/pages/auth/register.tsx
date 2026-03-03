@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient, refreshCsrfToken } from "@/lib/queryClient";
+import { queryClient, refreshCsrfToken, getCsrfToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +26,12 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
+const INVITE_ERROR_CODES = ['invite_required', 'invalid_code', 'code_used', 'code_expired'];
+
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -44,8 +48,30 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterForm) => {
-      const response = await apiRequest("POST", "/api/v2/auth/register", data);
-      return response.json();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      const token = getCsrfToken();
+      if (token) {
+        headers["x-csrf-token"] = token;
+      }
+
+      const res = await fetch("/api/v2/auth/register", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const jsonBody = await res.json().catch(() => null);
+        if (res.status === 403 && jsonBody) {
+          throw { ...jsonBody, _isInviteError: true };
+        }
+        throw new Error(jsonBody?.message || jsonBody?.error || `${res.status}: Registration failed`);
+      }
+
+      return res.json();
     },
     onSuccess: async (data: any) => {
       await refreshCsrfToken();
@@ -69,7 +95,15 @@ export default function Register() {
         });
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorCode = error?.error || error?.data?.error;
+      const errorMessage = error?.message || error?.data?.message;
+
+      if (errorCode && INVITE_ERROR_CODES.includes(errorCode)) {
+        setCodeError(errorMessage || "Invalid invitation code");
+        return;
+      }
+
       toast({
         title: "Error",
         description: error.message || "Registration failed",
@@ -169,6 +203,34 @@ export default function Register() {
 
                   <FormField
                     control={form.control}
+                    name="promoCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-textPrimary font-semibold">Invitation Code</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 5DA-X7K2M"
+                            className="px-4 py-3 border-primary/50 border-2"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              if (codeError) setCodeError(null);
+                            }}
+                          />
+                        </FormControl>
+                        {codeError && (
+                          <p className="text-sm text-red-600 dark:text-red-400 mt-1">{codeError}</p>
+                        )}
+                        <p className="text-xs text-textSecondary mt-1">
+                          Don't have a code? DealFlow AI is currently in early access. Visit our website to join the waitlist.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -196,24 +258,6 @@ export default function Register() {
                           <Input
                             type="password"
                             placeholder="Confirm your password"
-                            className="px-4 py-3"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="promoCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-textPrimary">Referral / Promo Code (optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. 5DA-X7K2M"
                             className="px-4 py-3"
                             {...field}
                           />
