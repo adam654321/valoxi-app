@@ -10,9 +10,12 @@ import { passwordResetService } from '../services/password-reset.service';
 import { authLimiter } from '../middleware/rate-limit';
 import { db } from '../db';
 import { pipelineStages } from '@shared/schema/deals';
+import { users } from '@shared/schema/core';
 import { emailService } from '../email';
 import { promoCodeService } from '../services/promo-code.service';
 import { billingService } from '../services/billing.service';
+import { magicLinkService } from '../services/magic-link.service';
+import { emailApiService } from '../services/email.service';
 
 const router = Router();
 
@@ -312,6 +315,86 @@ router.get('/reset-password/validate', asyncHandler(async (req: Request, res: Re
   }
   const result = await passwordResetService.validateToken(token);
   sendSuccess(res, { valid: result.valid });
+}));
+
+router.get('/magic', asyncHandler(async (req: Request, res: Response) => {
+  const token = req.query.token as string;
+  if (!token) {
+    return res.redirect('/login?error=invalid');
+  }
+
+  const result = await magicLinkService.consumeMagicLink(token);
+
+  if (result.valid) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, result.userId),
+    });
+
+    if (!user) {
+      return res.redirect('/auth/link-expired?reason=invalid');
+    }
+
+    req.session.userId = user.id;
+    req.session.userCompanyId = user.userCompanyId;
+    await refreshSessionPermissions(req);
+
+    if (user.onboardingCompleted === false) {
+      return res.redirect('/onboarding');
+    }
+    return res.redirect('/dashboard');
+  }
+
+  const reason = result.reason;
+  if (reason === 'expired') {
+    let emailParam = '';
+    try {
+      const { magicLinks } = await import('@shared/schema/core');
+      const [link] = await db.select().from(magicLinks).where(eq(magicLinks.token, token));
+      if (link) {
+        const linkUser = await db.query.users.findFirst({ where: eq(users.id, link.userId) });
+        if (linkUser?.email) {
+          emailParam = `&email=${encodeURIComponent(linkUser.email)}`;
+        }
+      }
+    } catch { /* ignore */ }
+    return res.redirect(`/auth/link-expired?reason=expired${emailParam}`);
+  }
+  if (reason === 'already_used') {
+    return res.redirect('/auth/link-expired?reason=used');
+  }
+  return res.redirect('/auth/link-expired?reason=invalid');
+}));
+
+router.post('/resend-magic-link', authLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body as { email?: string };
+
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ error: 'missing_email', message: 'Email is required.' });
+  }
+
+  const rateCheck = await magicLinkService.checkResendRateLimit(email);
+  if (!rateCheck.allowed) {
+    return res.status(429).json({ error: 'rate_limited', message: 'Too many requests. Please wait before trying again.' });
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email.toLowerCase().trim()),
+  });
+
+  if (!user) {
+    return res.status(200).json({ success: true, message: 'If an account exists for this email, a new link has been sent.' });
+  }
+
+  const magicLink = await magicLinkService.generateMagicLink(user.id, 'login');
+
+  await emailApiService.sendMagicLinkEmail({
+    to: user.email,
+    firstName: user.firstName || 'there',
+    magicLink,
+  });
+
+  console.log('[auth] Magic link resent to:', user.email);
+  return res.status(200).json({ success: true, message: 'If an account exists for this email, a new link has been sent.' });
 }));
 
 export default router;

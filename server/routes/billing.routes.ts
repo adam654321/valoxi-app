@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
-import { promoCodeService } from '../services/promo-code.service';
+import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
 import { magicLinkService } from '../services/magic-link.service';
 import { db } from '../db';
 import { webhookEvents, users, userCompanies } from '@shared/schema/core';
@@ -456,6 +456,16 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
       ? new Date(upcomingInvoice.period_end * 1000).toISOString()
       : new Date().toISOString();
 
+    let freePeriodCredit = 0;
+    let unusedFreeMonths = 0;
+
+    if (existingSub.freeMonthsTotal > 0 && existingSub.freeMonthsStartedAt && !existingSub.communityDiscountCouponId) {
+      const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
+      unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
+      const INVOICE_RATE_PENCE = 5025;
+      freePeriodCredit = unusedFreeMonths * INVOICE_RATE_PENCE;
+    }
+
     return res.status(200).json({
       currentPlan: existingSub.planKey,
       currentInterval: existingSub.billingInterval,
@@ -466,6 +476,8 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
       nextInvoiceDate: periodEnd,
       nextInvoiceAmount: recurringPrice,
       currency: 'gbp',
+      freePeriodCredit,
+      unusedFreeMonths,
     });
   } catch (err: any) {
     console.error('[Billing] Error fetching upgrade preview:', err);
@@ -704,7 +716,26 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       return res.status(400).json({ error: 'no_subscription_item', message: 'Could not find existing subscription item in Stripe.' });
     }
 
-    // TODO: Consider cancel_at_period_end for downgrades in Stage 5
+    if (existingSub.freeMonthsTotal > 0 && existingSub.freeMonthsStartedAt && !existingSub.communityDiscountCouponId) {
+      const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
+      const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
+      if (unusedFreeMonths > 0 && existingSub.stripeCustomerId) {
+        const INVOICE_RATE_PENCE = 5025;
+        const creditAmount = unusedFreeMonths * INVOICE_RATE_PENCE;
+        await stripe.customers.createBalanceTransaction(existingSub.stripeCustomerId, {
+          amount: -creditAmount,
+          currency: 'gbp',
+          description: `Pro-rata credit for ${unusedFreeMonths} unused free month(s) from community referral`,
+        });
+        console.log(`[billing] Applied £${(creditAmount / 100).toFixed(2)} free-period credit for company ${userCompanyId} (${unusedFreeMonths} months)`);
+
+        await billingRepository.updateByCompanyId(userCompanyId, {
+          freeMonthsTotal: elapsed,
+          communityDiscountCouponId: 'upgraded_early',
+        });
+      }
+    }
+
     await stripe.subscriptions.update(existingSub.stripeSubscriptionId, {
       items: [{ id: existingItemId, price: prices.data[0].id }],
       proration_behavior: 'always_invoice',

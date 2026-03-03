@@ -38,6 +38,7 @@ import {
   UserPlus,
   Tag,
   ChevronDown,
+  Gift,
 } from "lucide-react";
 import type { PlanKey } from "@shared/schema/billing";
 
@@ -53,6 +54,8 @@ interface UpgradePreview {
   nextInvoiceDate: string;
   nextInvoiceAmount: number;
   currency: string;
+  freePeriodCredit?: number;
+  unusedFreeMonths?: number;
 }
 
 const PLAN_ORDER: PlanKey[] = ["CORE", "PROFESSIONAL", "EXPERT"];
@@ -858,6 +861,15 @@ export default function BillingPage() {
                     </p>
                   </div>
                 </div>
+
+                {upgradePreview && (upgradePreview.freePeriodCredit ?? 0) > 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-md border border-green-200 dark:border-green-800">
+                    <Gift className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      Community referral credit: <span className="font-semibold">{formatGBP(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
+                    </p>
+                  </div>
+                )}
 
                 {upgradePreview && upgradePreview.creditAmount > 0 && (
                   <p className="text-sm">

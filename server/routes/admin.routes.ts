@@ -14,6 +14,8 @@ import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { passwordResetService } from '../services/password-reset.service';
 import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
+import { magicLinkService } from '../services/magic-link.service';
+import { emailApiService } from '../services/email.service';
 
 const router = Router();
 
@@ -136,6 +138,8 @@ router.get('/subscriptions', asyncHandler(async (req: Request, res: Response) =>
     .select({
       subscription: subscriptions,
       companyName: userCompanies.companyName,
+      ownerUserId: sql<number>`(SELECT u.id FROM users u WHERE u.user_company_id = ${subscriptions.userCompanyId} ORDER BY u.id LIMIT 1)`.as('ownerUserId'),
+      ownerEmail: sql<string>`(SELECT u.email FROM users u WHERE u.user_company_id = ${subscriptions.userCompanyId} ORDER BY u.id LIMIT 1)`.as('ownerEmail'),
     })
     .from(subscriptions)
     .innerJoin(userCompanies, eq(subscriptions.userCompanyId, userCompanies.id))
@@ -568,6 +572,31 @@ router.post('/system-config', asyncHandler(async (req: Request, res: Response) =
   const { key, value } = setConfigSchema.parse(req.body);
   await systemConfigService.setConfig(key, value, req.session.userId!);
   sendSuccess(res, { success: true });
+}));
+
+router.post('/resend-magic-link', asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.body as { userId?: number };
+
+  if (!userId || typeof userId !== 'number') {
+    return res.status(400).json({ success: false, message: 'userId is required.' });
+  }
+
+  const user = await db.select().from(users).where(eq(users.id, userId));
+  if (!user.length) {
+    return res.status(404).json({ success: false, message: 'User not found.' });
+  }
+
+  const targetUser = user[0];
+  const magicLink = await magicLinkService.generateMagicLink(targetUser.id, 'login');
+
+  await emailApiService.sendMagicLinkEmail({
+    to: targetUser.email,
+    firstName: targetUser.firstName || 'there',
+    magicLink,
+  });
+
+  console.log(`[admin] Resent magic link to user ${targetUser.id} (${targetUser.email}) by admin ${req.session.userId}`);
+  sendSuccess(res, { success: true, message: `Magic link sent to ${targetUser.email}` });
 }));
 
 export default router;

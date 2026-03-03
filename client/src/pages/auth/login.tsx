@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Loader2, CheckCircle } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -146,7 +147,97 @@ export default function Login() {
             </Form>
           </CardContent>
         </Card>
+
+        <ResendMagicLinkSection />
       </div>
     </div>
+  );
+}
+
+function ResendMagicLinkSection() {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleResend = async () => {
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+    setError("");
+    setSending(true);
+
+    try {
+      const res = await fetch("/api/v2/auth/resend-magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      if (res.status === 429) {
+        setError("Too many requests — please wait a few minutes.");
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.message || "Something went wrong.");
+        return;
+      }
+
+      setSent(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          Signed up but don't have a password? Resend your login link
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        {sent ? (
+          <div className="text-center space-y-2 py-2">
+            <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
+            <p className="text-sm font-medium text-foreground">Check your inbox for a new login link.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Enter your email and we'll send a new magic link.</p>
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleResend()}
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex gap-2">
+              <Button onClick={handleResend} disabled={sending} className="flex-1">
+                {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Send Login Link
+              </Button>
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

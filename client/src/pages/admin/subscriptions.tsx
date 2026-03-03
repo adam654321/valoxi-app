@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Users, CreditCard, AlertTriangle, Clock, Eye, Shield } from "lucide-react";
+import { Loader2, Users, CreditCard, AlertTriangle, Clock, Eye, Shield, Send } from "lucide-react";
 import type { Subscription, PlanKey, SubscriptionStatus } from "@shared/schema/billing";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -26,6 +26,8 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 interface SubscriptionRow {
   subscription: Subscription;
   companyName: string;
+  ownerUserId?: number;
+  ownerEmail?: string;
 }
 
 interface Summary {
@@ -86,6 +88,23 @@ export default function AdminSubscriptions() {
     onError: (error: any) => {
       toast({
         title: "Failed to grant comp access",
+        description: error.message || "Something went wrong.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resendMagicLinkMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("POST", "/api/v2/admin/resend-magic-link", { userId });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({ title: "Magic link sent", description: data?.data?.message || "Email sent successfully." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send magic link",
         description: error.message || "Something went wrong.",
         variant: "destructive",
       });
@@ -294,6 +313,17 @@ export default function AdminSubscriptions() {
                               >
                                 <Shield className="h-3.5 w-3.5" />
                               </Button>
+                              {row.ownerUserId && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title={`Resend magic link to ${row.ownerEmail || 'owner'}`}
+                                  disabled={resendMagicLinkMutation.isPending}
+                                  onClick={() => resendMagicLinkMutation.mutate(row.ownerUserId!)}
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

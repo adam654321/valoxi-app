@@ -18,6 +18,8 @@ import AcceptInvitation from "@/pages/accept-invitation";
 const Register = lazy(() => import("@/pages/auth/register"));
 const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
+const MagicLinkPage = lazy(() => import("@/pages/auth/magic-link"));
+const LinkExpiredPage = lazy(() => import("@/pages/auth/link-expired"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const EnhancedTargetCompanies = lazy(() => import("@/pages/enhanced-target-companies"));
 const TargetCompanyDetail = lazy(() => import("@/pages/target-company-detail"));
@@ -74,6 +76,8 @@ function Router() {
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/auth/magic" component={MagicLinkPage} />
+          <Route path="/auth/link-expired" component={LinkExpiredPage} />
           <Route path="/accept-invitation" component={AcceptInvitation} />
           <Route component={NotFound} />
         </Switch>
@@ -121,6 +125,8 @@ function Router() {
           )}
         </Route>
 
+        <Route path="/auth/magic" component={MagicLinkPage} />
+        <Route path="/auth/link-expired" component={LinkExpiredPage} />
         <Route path="/login">{() => <Redirect to="/" />}</Route>
         <Route path="/register">{() => <Redirect to="/" />}</Route>
 
