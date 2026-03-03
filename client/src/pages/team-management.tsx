@@ -1,27 +1,28 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useSubscriptionContext, useHasFeature, usePlanKey } from "@/context/subscription-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserPlus, Mail, Edit, Trash2, Crown, Shield, Users, Bell, RefreshCw, X } from "lucide-react";
+import { UserPlus, Mail, Edit, Trash2, Crown, Shield, Users, RefreshCw, X, ArrowRight, AlertTriangle } from "lucide-react";
+import { Link } from "wouter";
 
-import { UserInvitation, UserRole, TeamMember, insertUserInvitationSchema } from "@shared/schema";
+import type { UserInvitation, UserRole, TeamMember } from "@shared/schema";
 
-
-
-// Form schemas
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address"),
   role: z.string().min(1, "Role is required"),
@@ -40,8 +41,23 @@ export default function TeamManagement() {
   const { toast } = useToast();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [seatLimitDialog, setSeatLimitDialog] = useState<{ currentSeats: number; maxSeats: number; canPurchaseMore: boolean } | null>(null);
 
-  // Queries - using v2 endpoints with data unwrapping
+  const { effectiveMaxSeats, consumedSeats } = useSubscriptionContext();
+  const canPurchaseSeats = useHasFeature("additionalSeatPurchasing");
+  const currentPlan = usePlanKey();
+
+  const isAtSeatLimit = effectiveMaxSeats !== null && consumedSeats >= effectiveMaxSeats;
+  const seatUsagePercent = effectiveMaxSeats !== null && effectiveMaxSeats > 0
+    ? Math.min(100, Math.round((consumedSeats / effectiveMaxSeats) * 100))
+    : 0;
+
+  const seatBarColor = seatUsagePercent >= 100
+    ? "[&>div]:bg-red-500"
+    : seatUsagePercent >= 80
+    ? "[&>div]:bg-amber-500"
+    : "[&>div]:bg-green-500";
+
   const { data: teamMembers, isLoading: membersLoading } = useQuery<TeamMember[]>({
     queryKey: ['/api/v2/team/members'],
     select: (response: any) => response.data,
@@ -57,7 +73,6 @@ export default function TeamManagement() {
     select: (response: any) => response.data,
   });
 
-  // Forms
   const inviteForm = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
@@ -75,11 +90,17 @@ export default function TeamManagement() {
     },
   });
 
-  // Mutations - using v2 endpoints
   const inviteMutation = useMutation({
     mutationFn: async (data: InviteFormValues) => {
       const response = await apiRequest('POST', '/api/v2/team/invite', data);
-      return response.json();
+      const result = await response.json();
+      if (result.error === 'seat_limit_reached') {
+        throw { seatLimit: true, ...result };
+      }
+      if (!result.success && result.message) {
+        throw new Error(result.message);
+      }
+      return result;
     },
     onSuccess: () => {
       toast({
@@ -87,13 +108,23 @@ export default function TeamManagement() {
         description: "Team member invitation has been sent successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/team/invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/billing/subscription'] });
       setIsInviteDialogOpen(false);
       inviteForm.reset();
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      if (error.seatLimit) {
+        setIsInviteDialogOpen(false);
+        setSeatLimitDialog({
+          currentSeats: error.currentSeats,
+          maxSeats: error.maxSeats,
+          canPurchaseMore: error.canPurchaseMore,
+        });
+        return;
+      }
       toast({
         title: "Error sending invitation",
-        description: error.message,
+        description: error.message || "Failed to send invitation.",
         variant: "destructive",
       });
     },
@@ -133,6 +164,7 @@ export default function TeamManagement() {
         description: "Team member has been removed successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/team/members'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/billing/subscription'] });
     },
     onError: (error: Error) => {
       toast({
@@ -154,6 +186,7 @@ export default function TeamManagement() {
         description: "The invitation has been cancelled.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/team/invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/billing/subscription'] });
     },
     onError: (error: Error) => {
       toast({
@@ -212,99 +245,158 @@ export default function TeamManagement() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex justify-between items-start">
+        <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Team Management</h1>
           <p className="text-muted-foreground">Manage team members, roles, and invitations</p>
+
+          {effectiveMaxSeats !== null && (
+            <div className="space-y-1.5 max-w-xs pt-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Team: {consumedSeats} of {effectiveMaxSeats} seat{effectiveMaxSeats !== 1 ? "s" : ""} used
+                </span>
+                {isAtSeatLimit && (
+                  <Badge variant="destructive" className="text-xs">At limit</Badge>
+                )}
+              </div>
+              <Progress value={seatUsagePercent} className={`h-2 ${seatBarColor}`} />
+            </div>
+          )}
+
+          {isAtSeatLimit && canPurchaseSeats && (
+            <div className="flex items-center gap-2 pt-1">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <span className="text-sm text-muted-foreground">
+                You've used all available seats.{" "}
+                <Link href="/billing" className="text-primary underline hover:no-underline">
+                  Purchase a seat
+                  <ArrowRight className="inline h-3 w-3 ml-0.5" />
+                </Link>
+              </span>
+            </div>
+          )}
         </div>
-        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Invite Member
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Invite Team Member</DialogTitle>
-              <DialogDescription>
-                Send an invitation to add a new team member to your organization.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...inviteForm}>
-              <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
-                <FormField
-                  control={inviteForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="colleague@company.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={inviteForm.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+
+        {canPurchaseSeats === false && currentPlan === "CORE" ? (
+          <Card className="border-primary/20 bg-primary/5 max-w-sm">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                <p className="font-medium text-sm text-foreground">Want to collaborate?</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Upgrade to Professional to invite team members from £100/seat/month.
+              </p>
+              <Button size="sm" asChild>
+                <Link href="/billing">Upgrade to Professional</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <DialogTrigger asChild>
+              {isAtSeatLimit ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button disabled>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Invite Member
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Seat limit reached — purchase additional seats on the Billing page</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite Member
+                </Button>
+              )}
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Invite Team Member</DialogTitle>
+                <DialogDescription>
+                  Send an invitation to add a new team member to your organization.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...inviteForm}>
+                <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                  <FormField
+                    control={inviteForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
+                          <Input placeholder="colleague@company.com" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {roles?.map((role) => (
-                            <SelectItem key={role.roleName} value={role.roleName}>
-                              {role.roleName.replace('_', ' ').split(' ').map(word => 
-                                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                              ).join(' ')}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={inviteForm.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Personal Message (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Add a personal message to the invitation..."
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={inviteMutation.isPending}>
-                    {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={inviteForm.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {roles?.map((role) => (
+                              <SelectItem key={role.roleName} value={role.roleName}>
+                                {role.roleName.replace('_', ' ').split(' ').map(word => 
+                                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                ).join(' ')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={inviteForm.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Personal Message (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Add a personal message to the invitation..."
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={inviteMutation.isPending}>
+                      {inviteMutation.isPending ? "Sending..." : "Send Invitation"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
-      {/* Team Members */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -477,7 +569,6 @@ export default function TeamManagement() {
         </CardContent>
       </Card>
 
-      {/* Pending Invitations */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -539,6 +630,34 @@ export default function TeamManagement() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!seatLimitDialog} onOpenChange={(open) => { if (!open) setSeatLimitDialog(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Seat Limit Reached</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  You've used {seatLimitDialog?.currentSeats} of {seatLimitDialog?.maxSeats} available seat{(seatLimitDialog?.maxSeats ?? 0) !== 1 ? "s" : ""}.
+                </p>
+                {seatLimitDialog?.canPurchaseMore ? (
+                  <p>Purchase an additional seat on the Billing page to invite more team members.</p>
+                ) : (
+                  <p>Upgrade to Professional or higher to add more team members.</p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSeatLimitDialog(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Link href="/billing">
+                {seatLimitDialog?.canPurchaseMore ? "Go to Billing" : "Upgrade Plan"}
+              </Link>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

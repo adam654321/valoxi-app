@@ -264,7 +264,26 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
       return res.status(200).json({ subscription: null, limits: null, features: null });
     }
 
-    return res.status(200).json(result);
+    const { getMaxSeats } = await import('@shared/entitlements');
+    const effectiveMaxSeats = getMaxSeats(
+      result.subscription.planKey as PlanKey,
+      result.subscription.additionalSeats,
+      result.subscription.enterpriseOverrides as Record<string, unknown> | null
+    );
+
+    let consumedSeats = 0;
+    try {
+      const { teamRepository } = await import('../repositories/team.repository');
+      const members = await teamRepository.getTeamMembers(userCompanyId);
+      const invitations = await teamRepository.getInvitationsByCompany(userCompanyId);
+      const activeMembers = members.filter((m: any) => m.isActive).length;
+      const pendingInvitations = invitations.filter((inv: any) => inv.invitationStatus === 'pending').length;
+      consumedSeats = activeMembers + pendingInvitations;
+    } catch {
+      consumedSeats = 0;
+    }
+
+    return res.status(200).json({ ...result, effectiveMaxSeats, consumedSeats });
   } catch (err: any) {
     console.error('[Billing] Error fetching subscription:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscription.' });

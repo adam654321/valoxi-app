@@ -21,17 +21,27 @@ publicRouter.post('/invitation/:token/accept', asyncHandler(async (req: Request,
   sendSuccess(res, { message: 'Invitation accepted successfully', user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
 }));
 
-router.post('/invite', asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.session?.userId;
-  const userCompanyId = req.session?.userCompanyId;
-  if (!userId || !userCompanyId) throw new UnauthorizedError();
-  const schema = z.object({ email: z.string().email(), role: z.string().min(1), message: z.string().optional() });
-  const { email, role, message } = schema.parse(req.body);
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, usersRepository.getUserWithPermissions.bind(usersRepository), baseUrl);
-  const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
-  sendCreated(res, { message: 'Invitation sent successfully', invitation: { id: invitation.id, email: invitation.email, role: invitation.invitedRole, status: invitation.invitationStatus, sentAt: invitation.sentAt, inviteUrl } });
-}));
+router.post('/invite', async (req: Request, res: Response) => {
+  try {
+    const userId = req.session?.userId;
+    const userCompanyId = req.session?.userCompanyId;
+    if (!userId || !userCompanyId) throw new UnauthorizedError();
+    const schema = z.object({ email: z.string().email(), role: z.string().min(1), message: z.string().optional() });
+    const { email, role, message } = schema.parse(req.body);
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const invitation = await teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, usersRepository.getUserWithPermissions.bind(usersRepository), baseUrl);
+    const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
+    sendCreated(res, { message: 'Invitation sent successfully', invitation: { id: invitation.id, email: invitation.email, role: invitation.invitedRole, status: invitation.invitationStatus, sentAt: invitation.sentAt, inviteUrl } });
+  } catch (err: any) {
+    if (err.seatLimitData) {
+      return res.status(403).json({ success: false, ...err.seatLimitData });
+    }
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message, code: err.code });
+    }
+    return res.status(500).json({ success: false, message: 'Failed to send invitation.' });
+  }
+});
 
 router.get('/invitations', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;

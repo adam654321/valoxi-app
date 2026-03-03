@@ -1,0 +1,89 @@
+Clean investigation. All 6 gaps are clear. Send this to Replit:
+
+Fix the team management seat limit enforcement. All 6 gaps identified in the investigation need addressing. Read all relevant files before making any changes.
+Fix 1 — Backend seat limit enforcement on invite (Gap A + Gap B):
+In server/services/team.service.ts, update createInvitation():
+
+Before creating the invitation, query the count of active team members + pending invitations for this company:
+
+sqlSELECT 
+  (SELECT COUNT(*) FROM users WHERE user_company_id = $1 AND status = 'active') +
+  (SELECT COUNT(*) FROM team_invitations WHERE user_company_id = $1 AND status = 'pending')
+AS consumed_seats
+
+Get the subscription for this company via billingService.getSubscription(userCompanyId)
+Calculate effective limit: getMaxSeats(subscription.planKey, subscription.additionalSeats)
+If consumedSeats >= effectiveLimit, throw a 403 error with:
+
+json{ "error": "seat_limit_reached", "currentSeats": X, "maxSeats": Y, "canPurchaseMore": true/false }
+
+canPurchaseMore should be true for Professional and Expert, false for Core
+
+Fix 2 — Backend: return effectiveMaxSeats from subscription endpoint (Gap F):
+In GET /api/v2/billing/subscription, add effectiveMaxSeats to the response:
+
+Calculate as getMaxSeats(subscription.planKey, subscription.additionalSeats)
+Also add consumedSeats — count of active members + pending invitations
+Return alongside existing subscription data:
+
+json{
+  "subscription": { ... },
+  "limits": { ... },
+  "effectiveMaxSeats": 2,
+  "consumedSeats": 1
+}
+Fix 3 — Frontend: seat usage display on team page (Gap C):
+In client/src/pages/team-management.tsx:
+
+Fetch subscription data using useSubscriptionContext() to get effectiveMaxSeats and consumedSeats
+Add a seat usage indicator below the page title:
+
+Format: "Team: X of Y seats used"
+Show as a progress bar — green if below limit, amber if at 80%+, red if at limit
+For Core users show: "Upgrade to Professional to add team members"
+
+
+
+Fix 4 — Frontend: block invite button at limit (Gap D):
+In client/src/pages/team-management.tsx:
+
+If consumedSeats >= effectiveMaxSeats:
+
+Disable the "Invite Member" button
+Show a tooltip on hover: "Seat limit reached — purchase additional seats on the Billing page"
+Show a banner below the seat usage indicator: "You've used all your available seats. [Purchase a seat →] links to /billing"
+
+
+If canPurchaseMore is false (Core user): show upgrade message instead of purchase link
+
+Fix 5 — Frontend: Core upsell (Gap E):
+In client/src/pages/team-management.tsx:
+
+Check useHasFeature('additionalSeatPurchasing') — if false (Core user):
+
+Hide the "Invite Member" button entirely
+Show an upsell card in place of the invite button: "Want to collaborate? Upgrade to Professional to invite team members from £100/seat/month." with an "Upgrade to Professional" button linking to /billing
+
+
+
+Fix 6 — Handle seat_limit_reached error on frontend:
+In the invite mutation error handler in team-management.tsx:
+
+If error response contains error: 'seat_limit_reached':
+
+Do not show a generic error toast
+Show an AlertDialog: "Seat Limit Reached — You've used X of Y seats. Purchase an additional seat on the Billing page to invite more team members." with a "Go to Billing" button and a "Cancel" button
+
+
+
+
+Validation:
+
+Confirm POST /api/v2/team/invite returns 403 with seat_limit_reached when at limit
+Confirm pending invitations count toward the seat limit
+Confirm GET /api/v2/billing/subscription now returns effectiveMaxSeats and consumedSeats
+Confirm team page shows seat usage progress bar with correct counts
+Confirm invite button is disabled when at limit with correct tooltip
+Confirm Core users see the upsell card instead of the invite button
+Test: as Expert user with 1 base + 1 purchased seat (limit 2), send 2 invitations — confirm third invite is blocked with the correct error and dialog
+Run npx tsc --noEmit — zero TypeScript errors

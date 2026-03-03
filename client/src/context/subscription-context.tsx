@@ -7,6 +7,8 @@ interface SubscriptionContextValue {
   subscription: Subscription | null;
   limits: TierLimits | null;
   features: TierFeatures | null;
+  effectiveMaxSeats: number | null;
+  consumedSeats: number;
   isLoading: boolean;
   isError: boolean;
 }

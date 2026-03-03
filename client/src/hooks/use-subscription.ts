@@ -8,6 +8,8 @@ interface SubscriptionResponse {
   subscription: Subscription | null;
   limits: TierLimits | null;
   features: TierFeatures | null;
+  effectiveMaxSeats: number | null;
+  consumedSeats: number;
 }
 
 export function useSubscription() {
@@ -24,6 +26,8 @@ export function useSubscription() {
     subscription: data?.subscription ?? null,
     limits: data?.limits ?? null,
     features: data?.features ?? null,
+    effectiveMaxSeats: data?.effectiveMaxSeats ?? null,
+    consumedSeats: data?.consumedSeats ?? 0,
     isLoading,
     isError,
   };

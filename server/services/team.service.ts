@@ -3,6 +3,9 @@ import { randomUUID } from 'crypto';
 import { teamRepository, type InvitationWithDetails, type TeamMember } from '../repositories/team.repository';
 import { BadRequestError, NotFoundError, ForbiddenError, UnauthorizedError } from '../utils/errors';
 import { emailApiService } from './email.service';
+import { billingService } from './billing.service';
+import { getMaxSeats, hasFeature } from '@shared/entitlements';
+import type { PlanKey } from '@shared/schema/billing';
 import type { UserInvitation, UserRole, User } from '@shared/schema';
 
 interface UserWithPermissions {
@@ -30,6 +33,32 @@ export class TeamService {
     if (existingInvitations.find(inv => inv.email === email && inv.invitationStatus === 'pending')) {
       throw new BadRequestError('Invitation already sent to this email address');
     }
+
+    const subscription = await billingService.getSubscription(userCompanyId);
+    if (subscription) {
+      const planKey = subscription.planKey as PlanKey;
+      const effectiveMaxSeats = getMaxSeats(planKey, subscription.additionalSeats, subscription.enterpriseOverrides as Record<string, unknown> | null);
+
+      if (effectiveMaxSeats !== null) {
+        const members = await teamRepository.getTeamMembers(userCompanyId);
+        const activeMembers = members.filter(m => m.isActive).length;
+        const pendingInvitations = existingInvitations.filter(inv => inv.invitationStatus === 'pending').length;
+        const consumedSeats = activeMembers + pendingInvitations;
+
+        if (consumedSeats >= effectiveMaxSeats) {
+          const canPurchaseMore = hasFeature(planKey, 'additionalSeatPurchasing');
+          const error = new ForbiddenError('Seat limit reached');
+          (error as any).seatLimitData = {
+            error: 'seat_limit_reached',
+            currentSeats: consumedSeats,
+            maxSeats: effectiveMaxSeats,
+            canPurchaseMore,
+          };
+          throw error;
+        }
+      }
+    }
+
     const invitationToken = randomUUID();
     const invitation = await teamRepository.createInvitation({
       userCompanyId, email: email.toLowerCase(), invitedBy: userId, invitationToken,
