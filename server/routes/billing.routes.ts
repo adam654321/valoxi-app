@@ -505,6 +505,68 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
   }
 });
 
+router.post('/remove-slot', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    const { quantity } = req.body as { quantity: number };
+
+    if (!quantity || typeof quantity !== 'number' || quantity < 1) {
+      return res.status(400).json({ error: 'invalid_quantity', message: 'Quantity must be at least 1.' });
+    }
+
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription) {
+      return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
+    }
+
+    const currentSlots = subscription.addOnCompanySlots ?? 0;
+    if (quantity > currentSlots) {
+      return res.status(400).json({ error: 'exceeds_slots', message: `Cannot remove ${quantity} slot(s) — you only have ${currentSlots} additional slot(s).` });
+    }
+
+    const newSlotCount = currentSlots - quantity;
+
+    if (subscription.stripeSubscriptionId && config.stripe.secretKey) {
+      const stripe = new Stripe(config.stripe.secretKey);
+      const slotLookupKey = ADDON_LOOKUP_KEYS['company_slot'];
+      const items = await stripe.subscriptionItems.list({ subscription: subscription.stripeSubscriptionId });
+      const slotItem = items.data.find((item) => item.price.lookup_key === slotLookupKey);
+
+      if (slotItem) {
+        if (newSlotCount <= 0) {
+          await stripe.subscriptionItems.del(slotItem.id);
+        } else {
+          await stripe.subscriptionItems.update(slotItem.id, { quantity: newSlotCount });
+        }
+      }
+    }
+
+    const updated = await billingRepository.updateByCompanyId(userCompanyId, {
+      addOnCompanySlots: newSlotCount,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'addon.company_slot_removed',
+      previousPlanKey: subscription.planKey,
+      newPlanKey: subscription.planKey,
+      previousStatus: subscription.status,
+      newStatus: subscription.status,
+      payload: { quantity, previousSlots: currentSlots, newSlots: newSlotCount },
+    });
+
+    console.log(`[billing] Removed ${quantity} company slot(s) for company ${userCompanyId}, new count: ${newSlotCount}`);
+    return res.status(200).json({ success: true, removedQuantity: quantity, newTotal: newSlotCount });
+  } catch (err: any) {
+    console.error('[Billing] Error removing company slots:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to remove company slots.' });
+  }
+});
+
 router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;

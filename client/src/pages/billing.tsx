@@ -229,6 +229,24 @@ export default function BillingPage() {
     },
   });
 
+  const removeSlotMutation = useMutation({
+    mutationFn: async ({ quantity }: { quantity: number }) => {
+      const res = await apiRequest("POST", "/api/v2/billing/remove-slot", { quantity });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      toast({ title: "Slot removed", description: "Your company slot has been removed. Your next invoice will reflect the change." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove slot",
+        description: error.message || "Could not remove slot. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const [slotQuantity, setSlotQuantity] = useState("1");
   const [seatQuantity, setSeatQuantity] = useState("1");
 
@@ -239,6 +257,9 @@ export default function BillingPage() {
   const trialDays = status === "trialing" ? getTrialDaysRemaining(subscription?.trialEnd) : null;
   const showSeats = currentPlan === "PROFESSIONAL" || currentPlan === "EXPERT" || currentPlan === "ENTERPRISE";
   const currentSeats = subscription?.additionalSeats ?? 0;
+  const currentSlots = subscription?.addOnCompanySlots ?? 0;
+  const basePlanLimits = currentPlan ? { CORE: 3, PROFESSIONAL: 20, EXPERT: 100, ENTERPRISE: null }[currentPlan] : null;
+  const totalCompanyCapacity = basePlanLimits !== null ? (basePlanLimits ?? 0) + currentSlots : "Unlimited";
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
@@ -452,16 +473,18 @@ export default function BillingPage() {
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-base">Additional Company Slots</CardTitle>
+                        <CardTitle className="text-base">Company Slots</CardTitle>
                       </div>
                       <CardDescription>
-                        Add more target company slots to your plan. £9 per additional slot/month.
+                        {currentSlots > 0
+                          ? `You currently have ${currentSlots} additional slot${currentSlots !== 1 ? "s" : ""} — total capacity: ${totalCompanyCapacity} companies`
+                          : `Your plan includes ${basePlanLimits ?? "unlimited"} company slots. Add more at £9 per slot/month.`}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                       <div className="flex items-end gap-4">
                         <div className="space-y-1.5 flex-1">
-                          <Label className="text-sm">Quantity</Label>
+                          <Label className="text-sm">Add Slots</Label>
                           <Select value={slotQuantity} onValueChange={setSlotQuantity}>
                             <SelectTrigger>
                               <SelectValue />
@@ -484,9 +507,29 @@ export default function BillingPage() {
                           {addonMutation.isPending ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : null}
-                          Purchase
+                          Add Slots
                         </Button>
                       </div>
+                      {currentSlots > 0 && (
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="text-sm text-muted-foreground">
+                            {currentSlots} additional slot{currentSlots !== 1 ? "s" : ""} active
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeSlotMutation.mutate({ quantity: 1 })}
+                            disabled={removeSlotMutation.isPending}
+                          >
+                            {removeSlotMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Minus className="h-4 w-4 mr-2" />
+                            )}
+                            Remove a Slot
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
@@ -499,7 +542,7 @@ export default function BillingPage() {
                         </div>
                         <CardDescription>
                           {currentSeats > 0
-                            ? `${currentSeats} additional seat${currentSeats !== 1 ? "s" : ""} — £${currentSeats * 100}/month`
+                            ? `You currently have ${currentSeats} additional seat${currentSeats !== 1 ? "s" : ""} — total team size: ${1 + currentSeats}. Cost: £${currentSeats * 100}/month`
                             : "Add team members to collaborate on deals. £100 per seat/month."}
                         </CardDescription>
                       </CardHeader>
