@@ -39,10 +39,11 @@ class BillingService {
 
   async createTrialSubscription(
     userCompanyId: number,
-    trialDays: number
+    trialDays: number,
+    trialEndsAt?: Date
   ): Promise<Subscription> {
     const now = new Date();
-    const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+    const trialEnd = trialEndsAt ?? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
 
     const subscription = await billingRepository.create({
       userCompanyId,
@@ -50,6 +51,7 @@ class BillingService {
       status: 'trialing',
       trialStart: now,
       trialEnd,
+      trialEndsAt: trialEnd,
     });
 
     await billingRepository.logEvent({

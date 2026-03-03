@@ -526,7 +526,7 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const checkoutParams: any = {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: prices.data[0].id, quantity: 1 }],
@@ -538,7 +538,15 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
         planKey,
         billingInterval,
       },
-    });
+    };
+
+    if (existingSub?.trialEndsAt && !existingSub.promoCodeId && existingSub.status === 'trialing') {
+      const remainingMs = existingSub.trialEndsAt.getTime() - Date.now();
+      const remainingDays = Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+      checkoutParams.subscription_data = { trial_period_days: remainingDays };
+    }
+
+    const session = await stripe.checkout.sessions.create(checkoutParams);
 
     return res.status(200).json({ checkoutUrl: session.url });
   } catch (err: any) {

@@ -228,6 +228,34 @@ export type PlatformCost = typeof platformCosts.$inferSelect;
 export type InsertWebhookEvent = z.infer<typeof insertWebhookEventSchema>;
 export type WebhookEvent = typeof webhookEvents.$inferSelect;
 
+export const magicLinks = pgTable("magic_links", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  type: varchar("type", { length: 20 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  invalidatedAt: timestamp("invalidated_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMagicLinkSchema = createInsertSchema(magicLinks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type MagicLink = typeof magicLinks.$inferSelect;
+export type InsertMagicLink = z.infer<typeof insertMagicLinkSchema>;
+
+export const resendRateLimits = pgTable("resend_rate_limits", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  requestCount: integer("request_count").default(1),
+  windowStart: timestamp("window_start").defaultNow(),
+});
+
+export type ResendRateLimit = typeof resendRateLimits.$inferSelect;
+
 export const systemConfig = pgTable("system_config", {
   id: serial("id").primaryKey(),
   key: varchar("key", { length: 100 }).notNull().unique(),

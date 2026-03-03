@@ -32,6 +32,7 @@ export const subscriptions = pgTable("subscriptions", {
   freeMonthsStartedAt: timestamp("free_months_started_at"),
   communityDiscountCouponId: varchar("community_discount_coupon_id", { length: 50 }),
   freeMonthsWarningEmailSentAt: timestamp("free_months_warning_email_sent_at"),
+  trialEndsAt: timestamp("trial_ends_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -70,6 +71,7 @@ export const promoCodeCampaigns = pgTable("promo_code_campaigns", {
   codePrefix: varchar("code_prefix", { length: 10 }).notNull().default(''),
   maxUsesPerCode: integer("max_uses_per_code").notNull().default(1),
   expiresAt: timestamp("expires_at"),
+  postFreePeriodCouponId: varchar("post_free_period_coupon_id", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdByUserId: integer("created_by_user_id").references(() => users.id),
 });

@@ -12,6 +12,7 @@ import { db } from '../db';
 import { pipelineStages } from '@shared/schema/deals';
 import { emailService } from '../email';
 import { promoCodeService } from '../services/promo-code.service';
+import { billingService } from '../services/billing.service';
 
 const router = Router();
 
@@ -119,6 +120,15 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
     } catch (err) {
       console.error('[REGISTRATION] Promo code claim error:', err);
       promoError = 'Could not apply promo code';
+    }
+  }
+
+  if (!promoApplied && result.company?.id) {
+    try {
+      const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await billingService.createTrialSubscription(result.company.id, 7, trialEndsAt);
+    } catch (err) {
+      console.error('[REGISTRATION] Failed to create trial subscription:', err);
     }
   }
 

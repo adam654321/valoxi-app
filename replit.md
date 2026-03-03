@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 - **Admin Section** (`client/src/pages/admin/`): System admin dashboard with its own layout and route guard:
   - `AdminRoute` component (`client/src/components/admin-route.tsx`): Auth + isSystemAdmin guard
   - `AdminLayout` component (`client/src/components/admin-layout.tsx`): Dedicated sidebar with admin navigation
-  - Pages: Overview (metrics + charts), Token Usage (by company/deal/service with date filtering), Platform Costs (CRUD + summary cards), Companies (list + detail drill-down), Users (list with roles/status), Webhook Events (log viewer)
+  - Pages: Overview (metrics + charts), Token Usage (by company/deal/service with date filtering), Platform Costs (CRUD + summary cards), Companies (list + detail drill-down), Users (list with roles/status), Webhook Events (log viewer), Promo Codes (campaigns + codes + CSV export), 5D Invoice (referral invoice report), Settings (registration mode toggle)
   - Sidebar collapses to icon-only mode with tooltips, mobile-responsive drawer on small screens, keyboard shortcut Ctrl+B to toggle
 
 ## Backend Architecture
@@ -122,6 +122,8 @@ Preferred communication style: Simple, everyday language.
   - **Tables**: `promo_code_campaigns` (campaign config + Stripe coupon link), `promo_codes` (individual codes with usage tracking)
   - **Subscription columns**: `referralSource`, `promoCodeId`, `freeMonthsTotal`, `freeMonthsStartedAt`, `communityDiscountCouponId`, `freeMonthsWarningEmailSentAt`
   - **Service**: `server/services/promo-code.service.ts` — `generateCodes()`, `validateCode()`, `claimCode()`, `computeFreeMonthsElapsed()`, `isFreePeriodEndingSoon()`
+  - **Service**: `server/services/magic-link.service.ts` — `generateMagicLink()`, `consumeMagicLink()`, `checkResendRateLimit()`
+  - **Service**: `server/services/system-config.service.ts` — `getConfig()`, `setConfig()`, `getAllConfig()`
   - **Claim flow**: Registration form optional promo code field → `promoCodeService.claimCode()`. Also claimable from billing page via `POST /api/v2/billing/claim-promo`
   - **Free months cron**: Daily at 09:15 UK time — checks subscriptions with active free periods, sends warning email 1 month before expiry, transitions to ongoing discount coupon when free period ends
   - **Admin pages**: `/admin/promo-codes` (Stripe coupons viewer, campaign manager, code list with CSV export), `/admin/referral-invoice` (5D community invoice report with member table, CSV export, copy invoice text)

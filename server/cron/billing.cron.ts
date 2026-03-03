@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import Stripe from 'stripe';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
-import { eq, and, gt, isNull } from 'drizzle-orm';
+import { eq, and, gt, isNull, isNotNull, lt } from 'drizzle-orm';
 import { db } from '../db';
 import { subscriptions } from '@shared/schema/billing';
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
@@ -17,11 +17,52 @@ export function initializeBillingCron(): void {
     try {
       const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
       const trialing = expiring.filter((s) => s.status === 'trialing');
+
+      const trialEndsAtExpired = await db
+        .select()
+        .from(subscriptions)
+        .where(
+          and(
+            isNotNull(subscriptions.trialEndsAt),
+            lt(subscriptions.trialEndsAt, new Date()),
+            eq(subscriptions.status, 'active')
+          )
+        );
+
+      const allExpiring = [...trialing];
+      for (const sub of trialEndsAtExpired) {
+        if (!allExpiring.find(s => s.id === sub.id)) {
+          allExpiring.push(sub);
+        }
+      }
+
       let count = 0;
 
-      for (const sub of trialing) {
+      for (const sub of allExpiring) {
         try {
+          if (sub.stripeSubscriptionId) {
+            try {
+              const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+              if (stripeSub.status === 'active' || stripeSub.status === 'trialing') {
+                continue;
+              }
+            } catch (stripeErr) {
+              console.error(`[billing-cron] Failed to check Stripe sub for company ${sub.userCompanyId}:`, stripeErr);
+            }
+          }
+
           await billingService.expireTrial(sub.userCompanyId);
+
+          await billingRepository.logEvent({
+            userCompanyId: sub.userCompanyId,
+            eventType: 'subscription.trial_expired',
+            previousStatus: sub.status as any,
+            previousPlanKey: sub.planKey as any,
+            newStatus: 'canceled',
+            newPlanKey: sub.planKey as any,
+            payload: { trialEndsAt: sub.trialEndsAt, trialEnd: sub.trialEnd },
+          });
+
           count++;
         } catch (err) {
           console.error(`[billing-cron] Failed to expire trial for company ${sub.userCompanyId}:`, err);
