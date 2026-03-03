@@ -140,7 +140,7 @@ function Router() {
               <Route path="/file-upload-test">
                 {isSystemAdmin ? <FileUploadTest /> : <Redirect to="/" />}
               </Route>
-              <Route path="/company-accounts" component={CompanyAccounts} />
+              {/* <Route path="/company-accounts" component={CompanyAccounts} /> */}
               <Route path="/billing" component={Billing} />
               <Route component={NotFound} />
             </Switch>
