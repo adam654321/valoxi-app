@@ -155,7 +155,7 @@ const DEFAULT_PIPELINE_STAGES = [
   { stageName: 'Not Qualified', stageOrder: 10, description: 'Target did not meet criteria' },
 ];
 
-async function seedDefaultPipelineStages(userCompanyId: number) {
+export async function seedDefaultPipelineStages(userCompanyId: number) {
   const [existing] = await db
     .select({ count: count() })
     .from(pipelineStages);

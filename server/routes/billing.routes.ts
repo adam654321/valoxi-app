@@ -1,15 +1,21 @@
 import { Router, type Request, type Response } from 'express';
 import Stripe from 'stripe';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
 import { promoCodeService } from '../services/promo-code.service';
+import { magicLinkService } from '../services/magic-link.service';
 import { db } from '../db';
-import { webhookEvents } from '@shared/schema/core';
+import { webhookEvents, users, userCompanies } from '@shared/schema/core';
+import { subscriptions } from '@shared/schema/billing';
 import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
 import { isAuthenticated } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
+import { emailApiService } from '../services/email.service';
 
 const router = Router();
 
@@ -82,16 +88,102 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
         const userCompanyId = parseInt(session.metadata?.userCompanyId ?? '0', 10);
         const planKey = (session.metadata?.planKey as PlanKey) ?? 'CORE';
         const billingInterval = (session.metadata?.billingInterval as BillingInterval) ?? 'month';
+        const promoCodeId = session.metadata?.promoCodeId || '';
+        const isNewSignup = session.metadata?.isNewSignup === 'true';
 
-        if (userCompanyId && session.customer && session.subscription) {
-          await billingService.activateSubscription(userCompanyId, {
-            stripeCustomerId: session.customer as string,
-            stripeSubscriptionId: session.subscription as string,
-            planKey,
-            billingInterval,
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(),
+        if (isNewSignup) {
+          const customerEmail = session.customer_details?.email || session.customer_email;
+
+          if (!customerEmail) {
+            console.error('[webhook] New signup checkout completed but no email found');
+            await logWebhookEvent(event.type, event.data.object, 'error', 'no_customer_email');
+            break;
+          }
+
+          const existingUser = await db.query.users.findFirst({
+            where: eq(users.email, customerEmail),
           });
+
+          if (existingUser) {
+            if (existingUser.userCompanyId && session.customer && session.subscription) {
+              await billingService.activateSubscription(existingUser.userCompanyId, {
+                stripeCustomerId: session.customer as string,
+                stripeSubscriptionId: session.subscription as string,
+                planKey,
+                billingInterval,
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: new Date(),
+              });
+            }
+
+            await emailApiService.sendPaymentLinkedEmail({
+              to: customerEmail,
+              firstName: existingUser.firstName || 'there',
+              planKey,
+            });
+
+            console.log('[webhook] Payment linked to existing user:', customerEmail, planKey);
+          } else {
+            const [userCompany] = await db.insert(userCompanies).values({
+              companyName: session.customer_details?.name || 'My Company',
+            }).returning();
+
+            const tempPassword = crypto.randomBytes(16).toString('hex');
+            const passwordHash = await bcrypt.hash(tempPassword, 12);
+            const nameParts = (session.customer_details?.name || '').split(' ');
+
+            const [user] = await db.insert(users).values({
+              email: customerEmail,
+              firstName: nameParts[0] || '',
+              lastName: nameParts.slice(1).join(' ') || '',
+              passwordHash,
+              userCompanyId: userCompany.id,
+              onboardingCompleted: false,
+            }).returning();
+
+            const trialEndsAt = promoCodeId ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await db.insert(subscriptions).values({
+              userCompanyId: userCompany.id,
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+              planKey,
+              status: 'active',
+              billingInterval,
+              trialEndsAt,
+            });
+
+            if (promoCodeId) {
+              await promoCodeService.claimCode(promoCodeId, userCompany.id, session.customer as string);
+            }
+
+            const { seedDefaultPipelineStages } = await import('./auth.routes');
+
+            await seedDefaultPipelineStages(userCompany.id);
+
+            const magicLink = await magicLinkService.generateMagicLink(user.id, 'welcome');
+
+            await emailApiService.sendWelcomeEmail({
+              to: customerEmail,
+              firstName: nameParts[0] || 'there',
+              planKey,
+              magicLink,
+              freeMonths: promoCodeId ? 3 : 0,
+              trialDays: promoCodeId ? 0 : 7,
+            });
+
+            console.log('[webhook] New user created via Stripe checkout:', customerEmail, planKey);
+          }
+        } else {
+          if (userCompanyId && session.customer && session.subscription) {
+            await billingService.activateSubscription(userCompanyId, {
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+              planKey,
+              billingInterval,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(),
+            });
+          }
         }
 
         await logWebhookEvent(event.type, event.data.object, 'processed');
@@ -485,7 +577,12 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(500).json({ error: 'stripe_not_configured' });
     }
 
-    const { planKey, billingInterval } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year' };
+    const { planKey, billingInterval, promoCodeId, isNewSignup } = req.body as {
+      planKey: PlanKey;
+      billingInterval: 'month' | 'year';
+      promoCodeId?: string;
+      isNewSignup?: boolean;
+    };
 
     if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
       return res.status(400).json({ error: 'invalid_plan', message: 'Plan must be CORE, PROFESSIONAL, or EXPERT. Enterprise plans are invoice-only.' });
@@ -512,9 +609,10 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
     const stripe = new Stripe(config.stripe.secretKey);
     const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-    let customerId = existingSub?.stripeCustomerId;
+    const newSignup = isNewSignup === true;
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
 
-    if (!customerId) {
+    if (!customerId && !newSignup) {
       const customer = await stripe.customers.create({
         metadata: { userCompanyId: String(userCompanyId) },
       });
@@ -528,7 +626,6 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
 
     const checkoutParams: any = {
       mode: 'subscription',
-      customer: customerId,
       line_items: [{ price: prices.data[0].id, quantity: 1 }],
       success_url: `${baseUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/billing?canceled=true`,
@@ -537,8 +634,16 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
         userCompanyId: String(userCompanyId),
         planKey,
         billingInterval,
+        promoCodeId: promoCodeId || '',
+        isNewSignup: newSignup ? 'true' : 'false',
       },
     };
+
+    if (newSignup) {
+      checkoutParams.customer_creation = 'always';
+    } else if (customerId) {
+      checkoutParams.customer = customerId;
+    }
 
     if (existingSub?.trialEndsAt && !existingSub.promoCodeId && existingSub.status === 'trialing') {
       const remainingMs = existingSub.trialEndsAt.getTime() - Date.now();

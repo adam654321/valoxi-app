@@ -4,7 +4,7 @@ import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
 import { eq, and, gt, isNull, isNotNull, lt } from 'drizzle-orm';
 import { db } from '../db';
-import { subscriptions } from '@shared/schema/billing';
+import { subscriptions, promoCodes, promoCodeCampaigns } from '@shared/schema/billing';
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
 import { emailService } from '../email';
 import { userCompanies } from '@shared/schema/core';
@@ -150,9 +150,29 @@ export function initializeBillingCron(): void {
 
         if (elapsed >= sub.freeMonthsTotal) {
           try {
-            let couponId = 'community_discount';
+            let couponId: string | null = null;
 
-            if (sub.stripeCustomerId) {
+            if (sub.promoCodeId) {
+              try {
+                const [promoCode] = await db
+                  .select()
+                  .from(promoCodes)
+                  .where(eq(promoCodes.id, sub.promoCodeId));
+                if (promoCode) {
+                  const [campaign] = await db
+                    .select()
+                    .from(promoCodeCampaigns)
+                    .where(eq(promoCodeCampaigns.id, promoCode.campaignId));
+                  if (campaign?.postFreePeriodCouponId) {
+                    couponId = campaign.postFreePeriodCouponId;
+                  }
+                }
+              } catch (lookupErr) {
+                console.error(`[billing-cron] Failed to look up campaign coupon for company ${sub.userCompanyId}:`, lookupErr);
+              }
+            }
+
+            if (couponId && sub.stripeCustomerId) {
               try {
                 await stripe.customers.update(sub.stripeCustomerId, {
                   coupon: couponId,
@@ -163,7 +183,7 @@ export function initializeBillingCron(): void {
             }
 
             await billingRepository.updateByCompanyId(sub.userCompanyId, {
-              communityDiscountCouponId: couponId,
+              communityDiscountCouponId: couponId || 'none',
             });
 
             try {
@@ -172,6 +192,8 @@ export function initializeBillingCron(): void {
                 freeMonthsTotal: sub.freeMonthsTotal,
                 elapsed,
                 referralSource: sub.referralSource,
+                campaignId: sub.promoCodeId,
+                couponApplied: couponId,
               });
             } catch (err) {
               console.error('[billing-cron] Failed to track funnel event:', err);
