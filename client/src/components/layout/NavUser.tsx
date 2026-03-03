@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Settings, User, ChevronsUpDown, Send } from "lucide-react";
+import { LogOut, User, ChevronsUpDown, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -101,12 +101,7 @@ export function NavUser() {
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild data-testid="menu-item-company-accounts">
-              <Link href="/company-accounts" className="flex w-full">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Company Accounts</span>
-              </Link>
-            </DropdownMenuItem>
+            {/* Company Accounts hidden — reserved for future use */}
             <DropdownMenuItem asChild data-testid="menu-item-file-upload-test">
               <Link href="/file-upload-test" className="flex w-full">
                 <Send className="mr-2 h-4 w-4" />
