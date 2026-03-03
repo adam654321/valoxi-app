@@ -4,7 +4,6 @@ import { sendSuccess } from '../utils/response';
 import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
 import { targetCompaniesRepository } from '../repositories/target-companies.repository';
-import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
@@ -26,7 +25,8 @@ router.post('/trigger-stage1/:id', asyncHandler(async (req: Request, res: Respon
   sendSuccess(res, { message: 'Screening pipeline started' });
 }));
 
-router.post('/trigger-pipeline/:id', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+// TODO: Gate display by tier in Stage 4 — analysis runs for all tiers, view differs
+router.post('/trigger-pipeline/:id', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -44,7 +44,8 @@ router.post('/trigger-pipeline/:id', requireFeature('expertAnalysisFullDetail'),
   sendSuccess(res, { message: 'Pipeline started' });
 }));
 
-router.post('/retry/:id/:expertType', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+// TODO: Gate display by tier in Stage 4 — analysis runs for all tiers, view differs
+router.post('/retry/:id/:expertType', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -64,7 +65,8 @@ router.post('/retry/:id/:expertType', requireFeature('expertAnalysisFullDetail')
   sendSuccess(res, { message: `${expertType} retry started` });
 }));
 
-router.post('/resume/:id', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+// TODO: Gate display by tier in Stage 4 — analysis runs for all tiers, view differs
+router.post('/resume/:id', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();

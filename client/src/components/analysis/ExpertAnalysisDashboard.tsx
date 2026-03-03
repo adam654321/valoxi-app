@@ -10,7 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getReportViewForExpert } from "./ExpertReportViews";
-import { UpgradePrompt } from "@/components/billing";
 import {
   Brain,
   Loader2,
@@ -498,12 +497,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
         </div>
       </div>
 
-      <UpgradePrompt
-        feature="expertAnalysisFullDetail"
-        requiredPlan="PROFESSIONAL"
-        title="Expert Deep Dive Analysis"
-        description="Run comprehensive multi-dimensional expert analysis with detailed reports across market, financial, operational, and strategic dimensions."
-      >
+      {/* TODO Stage 4: Replace with <CoreAnalysisSummaryView> for expertAnalysisSummary tier, <ExpertAnalysisFullView> for expertAnalysisFullDetail tier */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -661,7 +655,6 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
           </div>
         )}
       </div>
-      </UpgradePrompt>
 
       <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh] p-0">
