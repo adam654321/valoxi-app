@@ -66,6 +66,8 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'invalid_signature' });
   }
 
+  console.log('[billing-webhook] Received event:', event.type);
+
   const existing = await billingRepository.getEventByStripeId(event.id);
   if (existing) {
     return res.status(200).json({ received: true, skipped: true });
@@ -266,6 +268,61 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
   } catch (err: any) {
     console.error('[Billing] Error fetching subscription:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscription.' });
+  }
+});
+
+router.post('/verify-session', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ success: false, reason: 'unauthorized' });
+    }
+
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ success: false, reason: 'stripe_not_configured' });
+    }
+
+    const { sessionId } = req.body as { sessionId: string };
+    if (!sessionId || typeof sessionId !== 'string') {
+      return res.status(400).json({ success: false, reason: 'missing_session_id' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    const sessionCompanyId = parseInt(session.metadata?.userCompanyId ?? '0', 10);
+    if (sessionCompanyId !== userCompanyId) {
+      return res.status(403).json({ success: false, reason: 'company_mismatch' });
+    }
+
+    if (session.payment_status !== 'paid') {
+      return res.status(200).json({ success: false, reason: 'not_paid' });
+    }
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+    if (existingSub && (existingSub.status === 'active' || existingSub.status === 'admin_comped')) {
+      return res.status(200).json({ success: true, planKey: existingSub.planKey, status: existingSub.status, alreadyActive: true });
+    }
+
+    const planKey = (session.metadata?.planKey as PlanKey) ?? 'CORE';
+    const billingInterval = (session.metadata?.billingInterval as BillingInterval) ?? 'month';
+
+    if (session.customer && session.subscription) {
+      await billingService.activateSubscription(userCompanyId, {
+        stripeCustomerId: session.customer as string,
+        stripeSubscriptionId: session.subscription as string,
+        planKey,
+        billingInterval,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+      });
+    }
+
+    console.log(`[billing] Session verified and subscription activated for company ${userCompanyId}, plan: ${planKey}`);
+    return res.status(200).json({ success: true, planKey, status: 'active' });
+  } catch (err: any) {
+    console.error('[billing] Error verifying checkout session:', err);
+    return res.status(500).json({ success: false, reason: 'internal_error' });
   }
 });
 

@@ -72,6 +72,12 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.warn('[billing] WARNING: STRIPE_SECRET_KEY not set — billing features will not work');
+    }
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      console.warn('[billing] WARNING: STRIPE_WEBHOOK_SECRET not set — webhooks will not be verified');
+    }
     initializeChaseUpCron();
     initializeBillingCron();
     initializeBackupCron();

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useSubscriptionContext, usePlanKey } from "@/context/subscription-context";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,6 +117,39 @@ export default function BillingPage() {
   const currentPlan = usePlanKey();
   const { toast } = useToast();
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [verifyingSession, setVerifyingSession] = useState(false);
+  const verifyAttempted = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (!sessionId || verifyAttempted.current) return;
+    verifyAttempted.current = true;
+    setVerifyingSession(true);
+
+    apiRequest("POST", "/api/v2/billing/verify-session", { sessionId })
+      .then((res) => res.json())
+      .then((data: any) => {
+        if (data.success) {
+          queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+          toast({
+            title: "Payment successful",
+            description: `Your ${data.planKey?.charAt(0) + data.planKey?.slice(1).toLowerCase()} plan has been activated.`,
+          });
+        }
+      })
+      .catch(() => {
+        toast({
+          title: "Verification issue",
+          description: "We couldn't verify your payment right away. Your plan will activate shortly.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setVerifyingSession(false);
+        window.history.replaceState({}, "", "/billing");
+      });
+  }, [toast]);
 
   const checkoutMutation = useMutation({
     mutationFn: async ({ planKey, interval }: { planKey: PlanKey; interval: "month" | "year" }) => {
@@ -195,8 +228,14 @@ export default function BillingPage() {
         </p>
       </div>
 
-      {isLoading ? (
+      {isLoading || verifyingSession ? (
         <div className="space-y-6">
+          {verifyingSession && (
+            <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Verifying your payment and activating your plan...</p>
+            </div>
+          )}
           <Skeleton className="h-24 w-full" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Skeleton className="h-96" />
