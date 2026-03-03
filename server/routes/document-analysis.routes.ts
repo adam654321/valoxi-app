@@ -8,7 +8,7 @@ import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
-router.get('/document/:documentId', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+router.get('/document/:documentId', requireFeature('documentExtraction'), asyncHandler(async (req: Request, res: Response) => {
   const documentId = parseInt(req.params.documentId);
   const userCompanyId = req.session.userCompanyId!;
   if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
@@ -16,7 +16,7 @@ router.get('/document/:documentId', requireFeature('expertAnalysisFullDetail'), 
   sendSuccess(res, results);
 }));
 
-router.get('/by-type/:documentType', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+router.get('/by-type/:documentType', requireFeature('documentExtraction'), asyncHandler(async (req: Request, res: Response) => {
   const documentType = req.params.documentType;
   const userCompanyId = req.session.userCompanyId!;
   if (!documentType) throw new BadRequestError('Document type is required');
@@ -24,7 +24,7 @@ router.get('/by-type/:documentType', requireFeature('expertAnalysisFullDetail'),
   sendSuccess(res, results);
 }));
 
-router.get('/company/:companyId', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+router.get('/company/:companyId', requireFeature('documentExtraction'), asyncHandler(async (req: Request, res: Response) => {
   const targetCompanyId = parseInt(req.params.companyId);
   const userCompanyId = req.session.userCompanyId!;
   if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
@@ -32,7 +32,7 @@ router.get('/company/:companyId', requireFeature('expertAnalysisFullDetail'), as
   sendSuccess(res, results);
 }));
 
-router.get('/company/:companyId/by-type/:documentType', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+router.get('/company/:companyId/by-type/:documentType', requireFeature('documentExtraction'), asyncHandler(async (req: Request, res: Response) => {
   const targetCompanyId = parseInt(req.params.companyId);
   const documentType = req.params.documentType;
   const userCompanyId = req.session.userCompanyId!;

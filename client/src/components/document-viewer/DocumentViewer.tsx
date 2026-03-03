@@ -90,23 +90,65 @@ function formatFileSize(bytes: number) {
 export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFileBaseUrl, hideAnalysis }: DocumentViewerProps) {
   const { toast } = useToast();
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
+  const [pollCount, setPollCount] = useState(0);
+  const [featureGated, setFeatureGated] = useState(false);
+  const [nonRetryableError, setNonRetryableError] = useState<string | null>(null);
+  const MAX_POLL_COUNT = 24;
   
   // Check if document was uploaded recently (within 5 minutes)
   const isRecentUpload = document?.createdAt ? 
     (Date.now() - new Date(document.createdAt).getTime()) < 5 * 60 * 1000 : false;
 
+  // Reset state when document changes
+  useEffect(() => {
+    setPollCount(0);
+    setFeatureGated(false);
+    setNonRetryableError(null);
+  }, [document?.id]);
+
   const { data: analysisResults = [], isLoading: analysisLoading, error: analysisError } = useQuery<DocumentAnalysisResult[]>({
     queryKey: ["/api/v2/document-analysis/document", document?.id],
-    enabled: !!document?.id && isOpen,
+    enabled: !!document?.id && isOpen && !featureGated,
     staleTime: 0,
-    retry: 3,
+    retry: (failureCount, error: any) => {
+      const status = error?.status || error?.response?.status;
+      if (status === 403 || status === 404) return false;
+      return failureCount < 2;
+    },
     select: (response: any) => response.data,
-    // Auto-refresh every 5 seconds if document is recent and no results yet
     refetchInterval: (query) => {
+      if (featureGated || nonRetryableError) return false;
+      if (pollCount >= MAX_POLL_COUNT) return false;
       const hasResults = query.state.data && query.state.data.length > 0;
-      return isRecentUpload && !hasResults ? 5000 : false;
+      if (hasResults) return false;
+      const hasError = query.state.error;
+      if (hasError) {
+        const status = (hasError as any)?.status || (hasError as any)?.response?.status;
+        if (status === 403 || status === 404 || status === 500) return false;
+      }
+      return isRecentUpload ? 5000 : false;
     },
   });
+
+  useEffect(() => {
+    if (analysisError) {
+      const status = (analysisError as any)?.status || (analysisError as any)?.response?.status;
+      if (status === 403) {
+        setFeatureGated(true);
+        return;
+      }
+      if (status === 404 || status === 500) {
+        setNonRetryableError(status === 404 ? 'Document not found' : 'Server error — please try again later');
+        return;
+      }
+    }
+  }, [analysisError]);
+
+  useEffect(() => {
+    if (isRecentUpload && analysisResults.length === 0 && !featureGated && !nonRetryableError) {
+      setPollCount(prev => prev + 1);
+    }
+  }, [analysisResults, analysisLoading]);
 
   useEffect(() => {
     if (document?.id && isOpen) {
@@ -114,10 +156,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
         results: analysisResults,
         loading: analysisLoading,
         error: analysisError,
-        length: analysisResults?.length
+        length: analysisResults?.length,
+        pollCount,
+        featureGated,
       });
     }
-  }, [document?.id, isOpen, analysisResults, analysisLoading, analysisError]);
+  }, [document?.id, isOpen, analysisResults, analysisLoading, analysisError, pollCount, featureGated]);
 
   if (!document) return null;
 
@@ -267,11 +311,14 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
               <TabsContent value="analysis" className="flex-1 overflow-auto p-4">
                 <AnalysisDisplay 
                   results={analysisResults}
-                  isLoading={analysisLoading}
+                  isLoading={analysisLoading && !featureGated}
                   isRetryingAnalysis={isRetryingAnalysis}
                   onRetryAnalysis={handleRetryWebhook}
                   documentUploadedAt={document.createdAt}
-                  isPendingAnalysis={isRecentUpload && analysisResults.length === 0}
+                  isPendingAnalysis={isRecentUpload && analysisResults.length === 0 && !featureGated && !nonRetryableError && pollCount < MAX_POLL_COUNT}
+                  featureGated={featureGated}
+                  nonRetryableError={nonRetryableError}
+                  pollExhausted={pollCount >= MAX_POLL_COUNT && analysisResults.length === 0}
                 />
               </TabsContent>
             )}

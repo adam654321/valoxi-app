@@ -14,8 +14,12 @@ import {
   Plus,
   Calendar,
   List,
-  Code
+  Code,
+  Lock,
+  ArrowUpRight,
+  RefreshCw
 } from "lucide-react";
+import { Link } from "wouter";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { DocumentAnalysisResult } from "./types";
@@ -27,6 +31,9 @@ interface AnalysisDisplayProps {
   onRetryAnalysis: () => void;
   documentUploadedAt?: string;
   isPendingAnalysis?: boolean;
+  featureGated?: boolean;
+  nonRetryableError?: string | null;
+  pollExhausted?: boolean;
 }
 
 export function formatDate(dateString: string) {
@@ -1000,13 +1007,61 @@ function renderCompanyAccountsAnalysis(analysisData: any) {
   );
 }
 
-export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetryAnalysis, documentUploadedAt, isPendingAnalysis }: AnalysisDisplayProps) {
+export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetryAnalysis, documentUploadedAt, isPendingAnalysis, featureGated, nonRetryableError, pollExhausted }: AnalysisDisplayProps) {
   // Check if document was uploaded recently (within 5 minutes)
   const isRecentUpload = documentUploadedAt ? 
     (Date.now() - new Date(documentUploadedAt).getTime()) < 5 * 60 * 1000 : false;
   
   // Show pending analysis state if document was recently uploaded or explicitly marked as pending
-  const showPendingState = (isPendingAnalysis || isRecentUpload) && results.length === 0;
+  const showPendingState = (isPendingAnalysis || isRecentUpload) && results.length === 0 && !featureGated && !nonRetryableError && !pollExhausted;
+
+  if (featureGated) {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-4">
+          <Lock className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Analysis Complete</h3>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Your document has been processed. Upgrade to Professional to view the full analysis results.
+        </p>
+        <Link href="/billing">
+          <Button className="mt-6 gap-2">
+            Upgrade to Professional
+            <ArrowUpRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (nonRetryableError) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500 opacity-70" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Analysis</h3>
+        <p className="text-muted-foreground">{nonRetryableError}</p>
+      </div>
+    );
+  }
+
+  if (pollExhausted) {
+    return (
+      <div className="text-center py-12">
+        <RefreshCw className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">Analysis is taking longer than expected</h3>
+        <p className="text-muted-foreground">Please refresh the page to check for results.</p>
+        <Button 
+          variant="outline" 
+          className="mt-4 gap-2" 
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh Page
+        </Button>
+      </div>
+    );
+  }
   
   if (isLoading) {
     return (

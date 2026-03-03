@@ -49,6 +49,7 @@ export interface TierFeatures {
 
   documentUpload: boolean;
   aiDocumentExtraction: boolean;
+  documentExtraction: boolean;
   expertAnalysisSummary: boolean;
   expertAnalysisFullDetail: boolean;
 
@@ -104,6 +105,7 @@ const CORE_FEATURES: TierFeatures = {
 
   documentUpload: true,
   aiDocumentExtraction: true,
+  documentExtraction: true,
   expertAnalysisSummary: true,
   expertAnalysisFullDetail: false,
 
