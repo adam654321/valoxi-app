@@ -13,7 +13,18 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   AlertTriangle,
+  ArrowRight,
   Check,
   Crown,
   Loader2,
@@ -25,6 +36,20 @@ import {
   UserPlus,
 } from "lucide-react";
 import type { PlanKey } from "@shared/schema/billing";
+
+const formatGBP = (pence: number) => `£${(pence / 100).toFixed(2)}`;
+
+interface UpgradePreview {
+  currentPlan: string;
+  currentInterval: string;
+  newPlan: string;
+  newInterval: string;
+  creditAmount: number;
+  chargeAmount: number;
+  nextInvoiceDate: string;
+  nextInvoiceAmount: number;
+  currency: string;
+}
 
 const PLAN_ORDER: PlanKey[] = ["CORE", "PROFESSIONAL", "EXPERT"];
 
@@ -153,42 +178,54 @@ export default function BillingPage() {
       });
   }, [toast]);
 
+  const [upgradePreview, setUpgradePreview] = useState<UpgradePreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [pendingUpgrade, setPendingUpgrade] = useState<{ planKey: PlanKey; interval: "month" | "year" } | null>(null);
+
+  const handlePlanAction = async (planKey: PlanKey, interval: "month" | "year") => {
+    setPreviewLoading(planKey);
+    try {
+      const previewRes = await fetch(`/api/v2/billing/upgrade-preview?planKey=${planKey}&billingInterval=${interval}`, {
+        credentials: "include",
+      });
+      const previewData = await previewRes.json() as (UpgradePreview & { isNewSubscription?: boolean });
+
+      if (previewData.isNewSubscription) {
+        checkoutMutation.mutate({ planKey, interval });
+        return;
+      }
+
+      setUpgradePreview(previewData);
+      setPendingUpgrade({ planKey, interval });
+    } catch {
+      checkoutMutation.mutate({ planKey, interval });
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
+
+  const confirmUpgrade = () => {
+    if (!pendingUpgrade) return;
+    upgradeMutation.mutate(pendingUpgrade);
+    setUpgradePreview(null);
+    setPendingUpgrade(null);
+  };
+
+  const cancelUpgrade = () => {
+    setUpgradePreview(null);
+    setPendingUpgrade(null);
+  };
+
   const checkoutMutation = useMutation({
     mutationFn: async ({ planKey, interval }: { planKey: PlanKey; interval: "month" | "year" }) => {
-      const checkoutRes = await apiRequest("POST", "/api/v2/billing/checkout", {
+      const res = await apiRequest("POST", "/api/v2/billing/checkout", {
         planKey,
         billingInterval: interval,
       });
-      const checkoutData = await checkoutRes.json() as { checkoutUrl?: string; requiresUpgrade?: boolean };
-
-      if (checkoutData.requiresUpgrade) {
-        const upgradeRes = await apiRequest("POST", "/api/v2/billing/upgrade", {
-          planKey,
-          billingInterval: interval,
-        });
-        const upgradeData = await upgradeRes.json() as { upgraded?: boolean; planKey?: string; error?: string; message?: string };
-        if (upgradeData.upgraded) {
-          return { upgraded: true } as const;
-        }
-        throw new Error(upgradeData.message || "Failed to upgrade plan.");
-      }
-
-      if (checkoutData.checkoutUrl) {
-        return { checkoutUrl: checkoutData.checkoutUrl } as const;
-      }
-
-      throw new Error("Unexpected response from billing.");
+      return res.json() as Promise<{ checkoutUrl?: string; requiresUpgrade?: boolean }>;
     },
     onSuccess: (data) => {
-      if ("upgraded" in data && data.upgraded) {
-        queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
-        toast({
-          title: "Plan upgraded",
-          description: "Your new plan is now active. Enjoy your upgraded features!",
-        });
-        return;
-      }
-      if ("checkoutUrl" in data && data.checkoutUrl) {
+      if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       }
     },
@@ -196,6 +233,32 @@ export default function BillingPage() {
       toast({
         title: "Checkout failed",
         description: error.message || "Failed to start checkout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const upgradeMutation = useMutation({
+    mutationFn: async ({ planKey, interval }: { planKey: PlanKey; interval: "month" | "year" }) => {
+      const res = await apiRequest("POST", "/api/v2/billing/upgrade", {
+        planKey,
+        billingInterval: interval,
+      });
+      return res.json() as Promise<{ upgraded?: boolean; error?: string; message?: string }>;
+    },
+    onSuccess: (data) => {
+      if (data.upgraded) {
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+        toast({
+          title: "Plan upgraded",
+          description: "Your new plan is now active. Enjoy your upgraded features!",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upgrade failed",
+        description: error.message || "Failed to upgrade plan. Please try again.",
         variant: "destructive",
       });
     },
@@ -454,15 +517,10 @@ export default function BillingPage() {
                       ) : isUpgrade ? (
                         <Button
                           className="w-full"
-                          onClick={() =>
-                            checkoutMutation.mutate({
-                              planKey: plan.key,
-                              interval: billingInterval,
-                            })
-                          }
-                          disabled={checkoutMutation.isPending}
+                          onClick={() => handlePlanAction(plan.key, billingInterval)}
+                          disabled={previewLoading === plan.key || upgradeMutation.isPending}
                         >
-                          {checkoutMutation.isPending ? (
+                          {previewLoading === plan.key || upgradeMutation.isPending ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : null}
                           Upgrade to {plan.name}
@@ -470,15 +528,10 @@ export default function BillingPage() {
                       ) : (
                         <Button
                           className="w-full"
-                          onClick={() =>
-                            checkoutMutation.mutate({
-                              planKey: plan.key,
-                              interval: billingInterval,
-                            })
-                          }
-                          disabled={checkoutMutation.isPending}
+                          onClick={() => handlePlanAction(plan.key, billingInterval)}
+                          disabled={previewLoading === plan.key || checkoutMutation.isPending}
                         >
-                          {checkoutMutation.isPending ? (
+                          {previewLoading === plan.key || checkoutMutation.isPending ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : null}
                           Get Started
@@ -704,6 +757,75 @@ export default function BillingPage() {
           </Card>
         </>
       )}
+      <AlertDialog open={!!upgradePreview} onOpenChange={(open) => { if (!open) cancelUpgrade(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Plan Change</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Current</p>
+                    <p className="font-semibold text-foreground">
+                      {upgradePreview?.currentPlan} ({upgradePreview?.currentInterval === "year" ? "Annual" : "Monthly"})
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-primary" />
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">New</p>
+                    <p className="font-semibold text-foreground">
+                      {upgradePreview?.newPlan} ({upgradePreview?.newInterval === "year" ? "Annual" : "Monthly"})
+                    </p>
+                  </div>
+                </div>
+
+                {upgradePreview && upgradePreview.creditAmount > 0 && (
+                  <p className="text-sm">
+                    Unused time credit: <span className="font-medium text-green-600">{formatGBP(upgradePreview.creditAmount)}</span> will be applied to your account
+                  </p>
+                )}
+
+                {upgradePreview && (
+                  <p className="text-sm">
+                    Amount due today: <span className="font-semibold text-foreground">{formatGBP(upgradePreview.chargeAmount)}</span>
+                  </p>
+                )}
+
+                {upgradePreview && (
+                  <p className="text-sm">
+                    Your next invoice of <span className="font-medium">{formatGBP(upgradePreview.nextInvoiceAmount)}</span> will be on{" "}
+                    {new Date(upgradePreview.nextInvoiceDate).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                )}
+
+                {upgradePreview &&
+                  upgradePreview.currentInterval === "year" &&
+                  upgradePreview.newInterval === "month" && (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-800">
+                      <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-amber-700 dark:text-amber-400">
+                        You are switching from annual to monthly billing. Your per-month cost will increase.
+                      </p>
+                    </div>
+                  )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelUpgrade}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUpgrade} disabled={upgradeMutation.isPending}>
+              {upgradeMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Confirm Upgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

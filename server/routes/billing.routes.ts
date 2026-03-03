@@ -271,6 +271,88 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
   }
 });
 
+router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ error: 'stripe_not_configured' });
+    }
+
+    const planKey = req.query.planKey as PlanKey;
+    const billingInterval = req.query.billingInterval as 'month' | 'year';
+
+    if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
+      return res.status(400).json({ error: 'invalid_plan' });
+    }
+
+    if (!billingInterval || !['month', 'year'].includes(billingInterval)) {
+      return res.status(400).json({ error: 'invalid_interval' });
+    }
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+
+    if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
+      return res.status(200).json({ isNewSubscription: true });
+    }
+
+    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    if (!lookupKey) {
+      return res.status(400).json({ error: 'invalid_combination' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+    if (!prices.data.length) {
+      return res.status(400).json({ error: 'price_not_found' });
+    }
+
+    const currentStripeSub = await stripe.subscriptions.retrieve(existingSub.stripeSubscriptionId);
+    const existingItemId = currentStripeSub.items.data[0]?.id;
+    if (!existingItemId) {
+      return res.status(400).json({ error: 'no_subscription_item' });
+    }
+
+    // @ts-expect-error — Stripe v20 renamed retrieveUpcoming; raw API still accepts these params
+    const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
+      subscription: existingSub.stripeSubscriptionId,
+      subscription_items: [{ id: existingItemId, price: prices.data[0].id }],
+      subscription_proration_behavior: 'always_invoice',
+    });
+
+    const lines: Array<{ amount: number }> = upcomingInvoice.lines?.data ?? [];
+    const creditLines = lines.filter((l: { amount: number }) => l.amount < 0);
+    const chargeLines = lines.filter((l: { amount: number }) => l.amount > 0);
+    const creditAmount = Math.abs(creditLines.reduce((sum: number, l: { amount: number }) => sum + l.amount, 0));
+    const chargeAmount = chargeLines.reduce((sum: number, l: { amount: number }) => sum + l.amount, 0);
+
+    const recurringPrice = prices.data[0].unit_amount ?? 0;
+
+    const periodEnd = upcomingInvoice.period_end
+      ? new Date(upcomingInvoice.period_end * 1000).toISOString()
+      : new Date().toISOString();
+
+    return res.status(200).json({
+      currentPlan: existingSub.planKey,
+      currentInterval: existingSub.billingInterval,
+      newPlan: planKey,
+      newInterval: billingInterval,
+      creditAmount,
+      chargeAmount: Math.max(0, upcomingInvoice.amount_due ?? (chargeAmount - creditAmount)),
+      nextInvoiceDate: periodEnd,
+      nextInvoiceAmount: recurringPrice,
+      currency: 'gbp',
+    });
+  } catch (err: any) {
+    console.error('[Billing] Error fetching upgrade preview:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch upgrade preview.' });
+  }
+});
+
 router.post('/verify-session', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
