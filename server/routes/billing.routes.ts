@@ -422,10 +422,9 @@ router.post('/portal', isAuthenticated, validateCsrfToken, async (req: Request, 
   }
 });
 
-const ADDON_PRICES: Record<string, number> = {
-  company_slot: 800,
-  // TODO: Seat unit price is a placeholder (1000 pence) — confirm final pricing before launch.
-  seat: 1000,
+const ADDON_LOOKUP_KEYS: Record<string, string> = {
+  company_slot: 'ma_addon_company_slot',
+  seat: 'ma_addon_seat',
 };
 
 router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
@@ -454,10 +453,15 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
       return res.status(400).json({ error: 'no_stripe_customer', message: 'No billing account found. Please subscribe first.' });
     }
 
-    const unitPrice = ADDON_PRICES[addonType];
-    const totalAmount = unitPrice * quantity;
-
     const stripe = new Stripe(config.stripe.secretKey);
+
+    const lookupKey = ADDON_LOOKUP_KEYS[addonType];
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+    if (!prices.data.length) {
+      return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
+    }
+    const unitPrice = prices.data[0].unit_amount ?? 0;
+    const totalAmount = unitPrice * quantity;
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmount,
@@ -483,6 +487,51 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
   } catch (err: any) {
     console.error('[Billing] Error processing addon purchase:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to process addon purchase.' });
+  }
+});
+
+router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    const { quantity } = req.body as { quantity: number };
+
+    if (!quantity || typeof quantity !== 'number' || quantity < 1) {
+      return res.status(400).json({ error: 'invalid_quantity', message: 'Quantity must be at least 1.' });
+    }
+
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription) {
+      return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
+    }
+
+    if (quantity > (subscription.additionalSeats ?? 0)) {
+      return res.status(400).json({ error: 'exceeds_seats', message: `Cannot remove ${quantity} seat(s) — you only have ${subscription.additionalSeats ?? 0} additional seat(s).` });
+    }
+
+    const newSeatCount = (subscription.additionalSeats ?? 0) - quantity;
+    const updated = await billingRepository.updateByCompanyId(userCompanyId, {
+      additionalSeats: newSeatCount,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'addon.seat_removed',
+      previousPlanKey: subscription.planKey,
+      newPlanKey: subscription.planKey,
+      previousStatus: subscription.status,
+      newStatus: subscription.status,
+      payload: { quantity, previousSeats: subscription.additionalSeats, newSeats: newSeatCount },
+    });
+
+    console.log(`[billing] Removed ${quantity} seat(s) for company ${userCompanyId}, new count: ${newSeatCount}`);
+    return res.status(200).json({ subscription: updated });
+  } catch (err: any) {
+    console.error('[Billing] Error removing seats:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to remove seats.' });
   }
 });
 

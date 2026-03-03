@@ -21,6 +21,8 @@ import {
   Building2,
   Users,
   Mail,
+  Minus,
+  UserPlus,
 } from "lucide-react";
 import type { PlanKey } from "@shared/schema/billing";
 
@@ -209,6 +211,24 @@ export default function BillingPage() {
     },
   });
 
+  const removeSeatMutation = useMutation({
+    mutationFn: async ({ quantity }: { quantity: number }) => {
+      const res = await apiRequest("POST", "/api/v2/billing/remove-seat", { quantity });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      toast({ title: "Seat removed", description: "Your seat has been removed successfully." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove seat",
+        description: error.message || "Could not remove seat. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const [slotQuantity, setSlotQuantity] = useState("1");
   const [seatQuantity, setSeatQuantity] = useState("1");
 
@@ -218,6 +238,7 @@ export default function BillingPage() {
   const hasStripeCustomer = !!subscription?.stripeCustomerId;
   const trialDays = status === "trialing" ? getTrialDaysRemaining(subscription?.trialEnd) : null;
   const showSeats = currentPlan === "PROFESSIONAL" || currentPlan === "EXPERT" || currentPlan === "ENTERPRISE";
+  const currentSeats = subscription?.additionalSeats ?? 0;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
@@ -333,6 +354,7 @@ export default function BillingPage() {
                 return (
                   <Card
                     key={plan.key}
+                    data-plan={plan.key}
                     className={`relative flex flex-col ${plan.popular ? "border-primary shadow-md" : ""} ${isCurrent ? "bg-muted/30" : ""}`}
                   >
                     {plan.popular && (
@@ -426,7 +448,6 @@ export default function BillingPage() {
               <div>
                 <h2 className="text-lg font-semibold text-foreground mb-4">Add-ons</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* // TODO: confirm final add-on slot pricing before launch */}
                   <Card>
                     <CardHeader>
                       <div className="flex items-center gap-2">
@@ -434,7 +455,7 @@ export default function BillingPage() {
                         <CardTitle className="text-base">Additional Company Slots</CardTitle>
                       </div>
                       <CardDescription>
-                        Add more target company slots to your plan. £8 per additional slot.
+                        Add more target company slots to your plan. £9 per additional slot/month.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -448,7 +469,7 @@ export default function BillingPage() {
                             <SelectContent>
                               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                                 <SelectItem key={n} value={String(n)}>
-                                  {n} slot{n > 1 ? "s" : ""} — £{n * 8}/mo
+                                  {n} slot{n > 1 ? "s" : ""} — £{n * 9}/mo
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -469,22 +490,23 @@ export default function BillingPage() {
                     </CardContent>
                   </Card>
 
-                  {showSeats && (
-                    // TODO: confirm final seat pricing before launch
+                  {showSeats ? (
                     <Card>
                       <CardHeader>
                         <div className="flex items-center gap-2">
                           <Users className="h-5 w-5 text-primary" />
-                          <CardTitle className="text-base">Additional Seats</CardTitle>
+                          <CardTitle className="text-base">Team Seats</CardTitle>
                         </div>
                         <CardDescription>
-                          Add more team member seats to your plan. £10 per additional seat.
+                          {currentSeats > 0
+                            ? `${currentSeats} additional seat${currentSeats !== 1 ? "s" : ""} — £${currentSeats * 100}/month`
+                            : "Add team members to collaborate on deals. £100 per seat/month."}
                         </CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="space-y-4">
                         <div className="flex items-end gap-4">
                           <div className="space-y-1.5 flex-1">
-                            <Label className="text-sm">Quantity</Label>
+                            <Label className="text-sm">Add Seats</Label>
                             <Select value={seatQuantity} onValueChange={setSeatQuantity}>
                               <SelectTrigger>
                                 <SelectValue />
@@ -492,7 +514,7 @@ export default function BillingPage() {
                               <SelectContent>
                                 {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                                   <SelectItem key={n} value={String(n)}>
-                                    {n} seat{n > 1 ? "s" : ""} — £{n * 10}/mo
+                                    {n} seat{n > 1 ? "s" : ""} — £{n * 100}/mo
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -507,9 +529,51 @@ export default function BillingPage() {
                             {addonMutation.isPending ? (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             ) : null}
-                            Purchase
+                            Add Seats
                           </Button>
                         </div>
+                        {currentSeats > 0 && (
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <span className="text-sm text-muted-foreground">
+                              {currentSeats} additional seat{currentSeats !== 1 ? "s" : ""} active
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeSeatMutation.mutate({ quantity: 1 })}
+                              disabled={removeSeatMutation.isPending}
+                            >
+                              {removeSeatMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Minus className="h-4 w-4 mr-2" />
+                              )}
+                              Remove a Seat
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-5 w-5 text-primary" />
+                          <CardTitle className="text-base">Invite Your Team</CardTitle>
+                        </div>
+                        <CardDescription>
+                          Collaborating on a deal? Upgrade to Professional to add team members from £100/seat/month.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button
+                          onClick={() => {
+                            const el = document.querySelector('[data-plan="PROFESSIONAL"]');
+                            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                        >
+                          Upgrade to Professional
+                        </Button>
                       </CardContent>
                     </Card>
                   )}
