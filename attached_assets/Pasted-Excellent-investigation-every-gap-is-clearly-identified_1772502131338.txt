@@ -1,0 +1,85 @@
+Excellent investigation — every gap is clearly identified. Now send this fix prompt to Replit:
+
+Fix the subscription upgrade flow based on the investigation findings. All 6 gaps need addressing. Read the investigation findings carefully before touching any code.
+Fix 1 — New /upgrade endpoint (Gap A + Gap D):
+Create POST /api/v2/billing/upgrade in server/routes/billing.routes.ts:
+
+Requires isAuthenticated and validateCsrfToken
+Accepts { planKey, billingInterval }
+Validates planKey is CORE/PROFESSIONAL/EXPERT only
+Fetches the current subscription from DB — if no active subscription with a stripeSubscriptionId exists, return { error: 'no_active_subscription' } (they should use checkout instead)
+Looks up the new price by lookup key
+Retrieves the current Stripe subscription to find the existing price item ID: stripe.subscriptions.retrieve(stripeSubscriptionId)
+Gets the first subscription item ID from subscription.items.data[0].id
+Calls stripe.subscriptions.update(stripeSubscriptionId, { items: [{ id: existingItemId, price: newPriceId }], proration_behavior: 'always_invoice' })
+Updates the DB subscription row: planKey, billingInterval, logs event subscription.upgraded with old and new plan in metadata
+Returns { upgraded: true, planKey, billingInterval, status: 'active' }
+
+Register at /api/v2/billing/upgrade with isAuthenticated and validateCsrfToken.
+Fix 2 — Update checkout endpoint to route upgrades correctly (Gap A):
+In POST /api/v2/billing/checkout, add a check at the top after validation:
+
+Query the DB for an existing subscription row
+If one exists with a stripeSubscriptionId and status is active or trialing — return { requiresUpgrade: true } instead of creating a checkout session
+The frontend will catch this and call the upgrade endpoint instead
+Only proceed with Checkout Session creation if no active Stripe subscription exists
+
+Fix 3 — Fix verify-session alreadyActive short-circuit (Gap C):
+In POST /api/v2/billing/verify-session, replace the alreadyActive short-circuit:
+
+Instead of returning early when status is active, compare the existing planKey with the session's metadata.planKey
+If they match — return { success: true, alreadyActive: true } (genuine duplicate call)
+If they differ — this is an upgrade via checkout, proceed with activation AND cancel the old subscription:
+
+Store the old stripeSubscriptionId before overwriting
+Call billingService.activateSubscription() to update the DB row
+If old stripeSubscriptionId exists and differs from the new one, call stripe.subscriptions.cancel(oldStripeSubscriptionId) immediately after
+Log event subscription.cancelled_on_upgrade
+
+
+
+Fix 4 — Frontend upgrade path (Gap D):
+In client/src/pages/billing.tsx, update the checkout mutation:
+typescript// Step 1: Try checkout endpoint
+const checkoutResponse = await apiRequest('POST', '/api/v2/billing/checkout', { planKey, billingInterval });
+
+// Step 2: If requiresUpgrade, call upgrade endpoint instead
+if (checkoutResponse.requiresUpgrade) {
+  const upgradeResponse = await apiRequest('POST', '/api/v2/billing/upgrade', { planKey, billingInterval });
+  if (upgradeResponse.upgraded) {
+    queryClient.invalidateQueries(['/api/v2/billing/subscription']);
+    toast({ title: 'Plan upgraded', description: 'Your new features are now active.' });
+    return;
+  }
+}
+
+// Step 3: Otherwise redirect to Stripe Checkout as before
+if (checkoutResponse.checkoutUrl) {
+  window.location.href = checkoutResponse.checkoutUrl;
+}
+Fix 5 — Downgrade policy (Gap F):
+For now, treat downgrades the same as upgrades — immediate with proration. Add a comment in the upgrade endpoint: // TODO: Consider cancel_at_period_end for downgrades in Stage 5. Do not block this fix waiting for a downgrade policy decision.
+Fix 6 — Clean up the test account:
+The test account (userCompanyId: 5) currently has:
+
+DB: Core active, sub_1T6hL52NY9vSmGIWT4kkpNnT
+Stripe: likely also has a Professional annual subscription orphaned from the second checkout
+
+Do the following:
+
+Query Stripe for all subscriptions on cus_U4r236ytNSeIzU
+Identify which subscription is Professional annual
+Cancel the Core subscription if Professional annual exists and is active
+Update the DB row to reflect the correct current state
+Paste the result of: SELECT plan_key, status, billing_interval, stripe_subscription_id FROM subscriptions WHERE user_company_id = 5;
+
+
+Validation:
+
+Confirm POST /api/v2/billing/upgrade endpoint created and registered
+Confirm POST /api/v2/billing/checkout returns { requiresUpgrade: true } when active subscription exists
+Confirm frontend handles both requiresUpgrade and checkoutUrl responses correctly
+Confirm verify-session compares plan keys before short-circuiting
+Test the full upgrade flow: log in as the test user, click Upgrade to Professional, confirm no Stripe redirect occurs, confirm billing page updates to Professional active without page reload
+Paste the subscription table after test: SELECT plan_key, status, billing_interval, stripe_subscription_id FROM subscriptions WHERE user_company_id = 5;
+Run npx tsc --noEmit — zero new TypeScript errors

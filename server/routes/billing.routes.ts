@@ -299,13 +299,51 @@ router.post('/verify-session', isAuthenticated, validateCsrfToken, async (req: R
       return res.status(200).json({ success: false, reason: 'not_paid' });
     }
 
-    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
-    if (existingSub && (existingSub.status === 'active' || existingSub.status === 'admin_comped')) {
-      return res.status(200).json({ success: true, planKey: existingSub.planKey, status: existingSub.status, alreadyActive: true });
-    }
-
     const planKey = (session.metadata?.planKey as PlanKey) ?? 'CORE';
     const billingInterval = (session.metadata?.billingInterval as BillingInterval) ?? 'month';
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+
+    if (existingSub && (existingSub.status === 'active' || existingSub.status === 'admin_comped')) {
+      if (existingSub.planKey === planKey) {
+        return res.status(200).json({ success: true, planKey: existingSub.planKey, status: existingSub.status, alreadyActive: true });
+      }
+
+      const oldStripeSubId = existingSub.stripeSubscriptionId;
+
+      if (session.customer && session.subscription) {
+        await billingService.activateSubscription(userCompanyId, {
+          stripeCustomerId: session.customer as string,
+          stripeSubscriptionId: session.subscription as string,
+          planKey,
+          billingInterval,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(),
+        });
+
+        if (oldStripeSubId && oldStripeSubId !== (session.subscription as string)) {
+          try {
+            await stripe.subscriptions.cancel(oldStripeSubId);
+            console.log(`[billing] Cancelled old subscription ${oldStripeSubId} on upgrade for company ${userCompanyId}`);
+          } catch (cancelErr: any) {
+            console.error(`[billing] Failed to cancel old subscription ${oldStripeSubId}:`, cancelErr.message);
+          }
+
+          await billingRepository.logEvent({
+            userCompanyId,
+            eventType: 'subscription.cancelled_on_upgrade',
+            previousPlanKey: existingSub.planKey as PlanKey | null,
+            newPlanKey: planKey,
+            previousStatus: existingSub.status,
+            newStatus: 'active',
+            payload: { cancelledSubscriptionId: oldStripeSubId, newSubscriptionId: session.subscription },
+          });
+        }
+      }
+
+      console.log(`[billing] Session verified — upgraded company ${userCompanyId} from ${existingSub.planKey} to ${planKey}`);
+      return res.status(200).json({ success: true, planKey, status: 'active' });
+    }
 
     if (session.customer && session.subscription) {
       await billingService.activateSubscription(userCompanyId, {
@@ -347,6 +385,15 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
     }
 
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+
+    if (
+      existingSub?.stripeSubscriptionId &&
+      (existingSub.status === 'active' || existingSub.status === 'trialing')
+    ) {
+      return res.status(200).json({ requiresUpgrade: true });
+    }
+
     const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
@@ -355,7 +402,6 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
     const stripe = new Stripe(config.stripe.secretKey);
     const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
     let customerId = existingSub?.stripeCustomerId;
 
     if (!customerId) {
@@ -388,6 +434,87 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
   } catch (err: any) {
     console.error('[Billing] Error creating checkout session:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to create checkout session.' });
+  }
+});
+
+router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ error: 'stripe_not_configured' });
+    }
+
+    const { planKey, billingInterval } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year' };
+
+    if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
+      return res.status(400).json({ error: 'invalid_plan', message: 'Plan must be CORE, PROFESSIONAL, or EXPERT.' });
+    }
+
+    if (!billingInterval || !['month', 'year'].includes(billingInterval)) {
+      return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
+    }
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+    if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
+      return res.status(400).json({ error: 'no_active_subscription', message: 'No active Stripe subscription found. Use checkout for new subscriptions.' });
+    }
+
+    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    if (!lookupKey) {
+      return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+    if (!prices.data.length) {
+      return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
+    }
+
+    const currentStripeSub = await stripe.subscriptions.retrieve(existingSub.stripeSubscriptionId);
+    const existingItemId = currentStripeSub.items.data[0]?.id;
+    if (!existingItemId) {
+      return res.status(400).json({ error: 'no_subscription_item', message: 'Could not find existing subscription item in Stripe.' });
+    }
+
+    // TODO: Consider cancel_at_period_end for downgrades in Stage 5
+    await stripe.subscriptions.update(existingSub.stripeSubscriptionId, {
+      items: [{ id: existingItemId, price: prices.data[0].id }],
+      proration_behavior: 'always_invoice',
+    });
+
+    const previousPlanKey = existingSub.planKey;
+    const previousInterval = existingSub.billingInterval;
+
+    await billingRepository.updateByCompanyId(userCompanyId, {
+      planKey,
+      billingInterval,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'subscription.upgraded',
+      previousPlanKey: previousPlanKey as PlanKey | null,
+      newPlanKey: planKey,
+      previousStatus: existingSub.status,
+      newStatus: 'active',
+      payload: {
+        previousPlanKey,
+        previousInterval,
+        newPlanKey: planKey,
+        newInterval: billingInterval,
+      },
+    });
+
+    console.log(`[billing] Upgraded company ${userCompanyId} from ${previousPlanKey}/${previousInterval} to ${planKey}/${billingInterval}`);
+    return res.status(200).json({ upgraded: true, planKey, billingInterval, status: 'active' });
+  } catch (err: any) {
+    console.error('[Billing] Error upgrading subscription:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to upgrade subscription.' });
   }
 });
 

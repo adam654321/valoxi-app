@@ -155,14 +155,42 @@ export default function BillingPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async ({ planKey, interval }: { planKey: PlanKey; interval: "month" | "year" }) => {
-      const res = await apiRequest("POST", "/api/v2/billing/checkout", {
+      const checkoutRes = await apiRequest("POST", "/api/v2/billing/checkout", {
         planKey,
         billingInterval: interval,
       });
-      return res.json() as Promise<{ checkoutUrl: string }>;
+      const checkoutData = await checkoutRes.json() as { checkoutUrl?: string; requiresUpgrade?: boolean };
+
+      if (checkoutData.requiresUpgrade) {
+        const upgradeRes = await apiRequest("POST", "/api/v2/billing/upgrade", {
+          planKey,
+          billingInterval: interval,
+        });
+        const upgradeData = await upgradeRes.json() as { upgraded?: boolean; planKey?: string; error?: string; message?: string };
+        if (upgradeData.upgraded) {
+          return { upgraded: true } as const;
+        }
+        throw new Error(upgradeData.message || "Failed to upgrade plan.");
+      }
+
+      if (checkoutData.checkoutUrl) {
+        return { checkoutUrl: checkoutData.checkoutUrl } as const;
+      }
+
+      throw new Error("Unexpected response from billing.");
     },
     onSuccess: (data) => {
-      window.location.href = data.checkoutUrl;
+      if ("upgraded" in data && data.upgraded) {
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+        toast({
+          title: "Plan upgraded",
+          description: "Your new plan is now active. Enjoy your upgraded features!",
+        });
+        return;
+      }
+      if ("checkoutUrl" in data && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
     },
     onError: (error: any) => {
       toast({
