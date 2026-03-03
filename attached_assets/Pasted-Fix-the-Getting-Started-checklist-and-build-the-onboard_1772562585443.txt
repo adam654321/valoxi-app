@@ -1,0 +1,123 @@
+Fix the Getting Started checklist and build the onboarding wizard. Read client/src/components/onboarding/ActivationChecklist.tsx and server/routes/onboarding.routes.ts fully before making any changes.
+Fix 1 — Correct step order:
+Replace the current 5-step STEPS array with this 7-step order:
+typescript1. createTarget     — "Add your first target company"
+2. addContact       — "Add a primary contact"
+3. sendPortal       — "Send the seller portal"
+4. uploadDocuments  — "Upload financial documents"
+5. generateAnalysis — "Generate expert analysis"
+6. saveModel        — "Save your deal model"
+7. generateDocument — "Generate an offer or heads of terms"
+Fix 2 — Add completion queries for new steps:
+In server/routes/onboarding.routes.ts, add two new completion checks:
+addContact — complete when target_contacts has ≥1 row where isPrimary = true and the target company belongs to the user's company:
+sqlSELECT COUNT(*) FROM target_contacts tc
+JOIN target_companies tgt ON tc.target_company_id = tgt.id
+WHERE tgt.user_company_id = $userCompanyId AND tc.is_primary = true
+sendPortal — complete when portal_link_shares has ≥1 row linked to the user's company:
+sqlSELECT COUNT(*) FROM portal_link_shares pls
+JOIN portal_access_tokens pat ON pls.portal_token_id = pat.id
+JOIN target_companies tgt ON pat.target_company_id = tgt.id
+WHERE tgt.user_company_id = $userCompanyId
+Fix 3 — Fix "Generate Expert Analysis" step:
+
+Remove the CTA button entirely — there should be no "Run Analysis" button on the dashboard. The step just shows as pending until the user runs analysis from within the target company detail page.
+Keep the completion condition as-is: expert_analysis_results has ≥1 row with status = 'completed'
+Show helper text instead of a button: "Run the expert analysis from your target company's Analysis tab"
+
+Fix 4 — Fix "Generate Offer / Heads of Terms" step:
+
+Change completion condition to require a document of type heads_of_terms or offer_letter specifically — not any deal document:
+
+sqlSELECT COUNT(*) FROM deal_documents
+WHERE user_company_id = $userCompanyId
+AND document_type IN ('heads_of_terms', 'offer_letter')
+
+This prevents NDA creation from incorrectly marking this step complete
+CTA button: "Go to Documents" — links to /target-companies (same as others for now)
+
+Fix 5 — Fix disabled logic for new steps:
+Update the disabled conditions:
+
+addContact — disabled when createTarget incomplete
+sendPortal — disabled when addContact incomplete
+uploadDocuments — disabled when createTarget incomplete (remove dependency on portal step — documents can be uploaded independently)
+generateAnalysis — disabled when uploadDocuments incomplete
+saveModel — disabled when createTarget incomplete
+generateDocument — disabled when saveModel incomplete
+
+Fix 6 — Build the onboarding wizard:
+Create client/src/pages/onboarding.tsx:
+Route: /onboarding — accessible only when user.onboardingCompleted = false. If onboardingCompleted = true, redirect to /dashboard.
+Single page layout — clean, centered, no sidebar:
+
+DealFlow AI logo/header at top
+Progress indicator: "Step 1 of 1 — Tell us about yourself" (single page)
+Form fields:
+
+Company Name — text input, pre-filled from userCompany.name (set from Stripe checkout), editable
+Your Industry — dropdown select:
+
+Business Services
+Financial Services
+Healthcare
+Manufacturing
+Property & Real Estate
+Retail & Consumer
+Technology
+Other
+
+
+Company Size — dropdown select:
+
+Just me
+2–10 employees
+11–50 employees
+51–200 employees
+200+ employees
+
+
+Your Role — text input, placeholder "e.g. Managing Director, Investment Analyst"
+How did you hear about DealFlow AI? — dropdown select:
+
+5D Community
+LinkedIn
+Google / Search
+Referred by a colleague
+Other
+
+
+
+
+"Get Started →" button at bottom
+On submit: calls POST /api/v2/onboarding/complete with form data
+On success: redirect to /dashboard
+Validation: company name and industry are required, others optional
+
+Create POST /api/v2/onboarding/complete in a new or existing onboarding routes file:
+
+Requires isAuthenticated
+Accepts: { companyName, industry, companySize, role, hearAboutUs }
+Updates user_companies row: name = companyName, industry = industry, companySize = companySize
+Updates users row: role = role, hearAboutUs = hearAboutUs, onboardingCompleted = true
+Returns { success: true }
+
+Add industry, companySize columns to user_companies table if they don't exist.
+Add role, hearAboutUs, onboardingCompleted columns to users table if they don't exist.
+Run db:push after any schema changes.
+
+Validation:
+
+Check the checklist step order — confirm 7 steps appear in the correct order
+Add a primary contact with isPrimary = true to a test company — confirm step 2 turns green
+Send a portal link for that company — confirm step 3 turns green
+Confirm "Generate Expert Analysis" step has no CTA button — only helper text
+Create an NDA document — confirm step 7 does NOT turn green (only offer_letter or heads_of_terms should trigger it)
+Create a heads_of_terms document — confirm step 7 turns green
+Navigate to /onboarding as a new user (onboardingCompleted = false) — confirm the wizard loads
+Fill in the form and submit — confirm redirect to /dashboard and onboardingCompleted = true in DB:
+
+sqlSELECT onboarding_completed FROM users WHERE id = [test user id];
+
+Navigate to /onboarding again — confirm redirect to /dashboard (already completed)
+Run npx tsc --noEmit — zero TypeScript errors

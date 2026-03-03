@@ -20,6 +20,7 @@ const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
 const MagicLinkPage = lazy(() => import("@/pages/auth/magic-link"));
 const LinkExpiredPage = lazy(() => import("@/pages/auth/link-expired"));
+const OnboardingPage = lazy(() => import("@/pages/onboarding"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const EnhancedTargetCompanies = lazy(() => import("@/pages/enhanced-target-companies"));
 const TargetCompanyDetail = lazy(() => import("@/pages/target-company-detail"));
@@ -127,6 +128,7 @@ function Router() {
 
         <Route path="/auth/magic" component={MagicLinkPage} />
         <Route path="/auth/link-expired" component={LinkExpiredPage} />
+        <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/login">{() => <Redirect to="/" />}</Route>
         <Route path="/register">{() => <Redirect to="/" />}</Route>
 

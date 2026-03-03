@@ -10,6 +10,8 @@ export const userCompanies = pgTable("user_companies", {
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   address: text("address"),
+  industry: varchar("industry", { length: 100 }),
+  companySize: varchar("company_size", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -32,6 +34,7 @@ export const users = pgTable("users", {
   onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
   onboardingStep: varchar("onboarding_step", { length: 50 }).default("create_target"),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
+  hearAboutUs: varchar("hear_about_us", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

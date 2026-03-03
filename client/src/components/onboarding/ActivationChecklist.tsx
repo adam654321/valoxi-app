@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   Building2,
+  UserPlus,
+  Send,
   FileText,
   Brain,
   Calculator,
@@ -19,6 +21,8 @@ import {
 interface OnboardingProgress {
   steps: {
     createTarget: boolean;
+    addContact: boolean;
+    sendPortal: boolean;
     uploadDocuments: boolean;
     generateAnalysis: boolean;
     saveModel: boolean;
@@ -32,11 +36,14 @@ interface StepConfig {
   key: keyof OnboardingProgress["steps"];
   title: string;
   description: string;
-  ctaLabel: string;
+  ctaLabel?: string;
+  helperText?: string;
   icon: typeof Building2;
-  getHref: (hasTarget: boolean) => string;
+  getHref?: () => string;
   disabledWhen?: (steps: OnboardingProgress["steps"]) => boolean;
 }
+
+const TOTAL_STEPS = 7;
 
 const STEPS: StepConfig[] = [
   {
@@ -46,6 +53,24 @@ const STEPS: StepConfig[] = [
     ctaLabel: "Add Target",
     icon: Building2,
     getHref: () => "/target-companies",
+  },
+  {
+    key: "addContact",
+    title: "Add a primary contact",
+    description: "Add a key contact at the target company — the seller, broker, or owner.",
+    ctaLabel: "Go to Target",
+    icon: UserPlus,
+    getHref: () => "/target-companies",
+    disabledWhen: (steps) => !steps.createTarget,
+  },
+  {
+    key: "sendPortal",
+    title: "Send the seller portal",
+    description: "Share a secure portal link so the seller can submit documents directly.",
+    ctaLabel: "Go to Target",
+    icon: Send,
+    getHref: () => "/target-companies",
+    disabledWhen: (steps) => !steps.addContact,
   },
   {
     key: "uploadDocuments",
@@ -60,9 +85,8 @@ const STEPS: StepConfig[] = [
     key: "generateAnalysis",
     title: "Generate expert analysis",
     description: "Run the AI analysis to get a full commercial due diligence report.",
-    ctaLabel: "Run Analysis",
+    helperText: "Run the expert analysis from your target company's Analysis tab",
     icon: Brain,
-    getHref: () => "/target-companies",
     disabledWhen: (steps) => !steps.uploadDocuments,
   },
   {
@@ -76,12 +100,12 @@ const STEPS: StepConfig[] = [
   },
   {
     key: "generateDocument",
-    title: "Generate an offer or HoT",
+    title: "Generate an offer or heads of terms",
     description: "Create your offer letter or heads of terms and send it to the seller.",
-    ctaLabel: "Generate Document",
+    ctaLabel: "Go to Documents",
     icon: FileCheck,
     getHref: () => "/target-companies",
-    disabledWhen: (steps) => !steps.createTarget,
+    disabledWhen: (steps) => !steps.saveModel,
   },
 ];
 
@@ -96,7 +120,7 @@ export default function ActivationChecklist() {
   });
 
   const completeMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/v2/onboarding/complete"),
+    mutationFn: () => apiRequest("POST", "/api/v2/onboarding/checklist-complete"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/onboarding/progress"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
@@ -107,13 +131,13 @@ export default function ActivationChecklist() {
     return null;
   }
 
-  const allComplete = progress.completedCount === 5;
+  const allComplete = progress.completedCount === TOTAL_STEPS;
 
   if (allComplete && !completeMutation.isPending) {
     completeMutation.mutate();
   }
 
-  const progressPercent = (progress.completedCount / 5) * 100;
+  const progressPercent = (progress.completedCount / TOTAL_STEPS) * 100;
 
   if (allComplete) {
     return (
@@ -128,7 +152,7 @@ export default function ActivationChecklist() {
                 You've completed your first deal pack — you're ready to buy a business.
               </h3>
               <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                All 5 activation steps complete. Your onboarding is finished.
+                All {TOTAL_STEPS} activation steps complete. Your onboarding is finished.
               </p>
             </div>
           </div>
@@ -154,7 +178,7 @@ export default function ActivationChecklist() {
         <div className="flex items-center gap-3 mt-2">
           <Progress value={progressPercent} className="flex-1 h-2" />
           <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-            {progress.completedCount} of 5
+            {progress.completedCount} of {TOTAL_STEPS}
           </span>
         </div>
       </CardHeader>
@@ -201,16 +225,21 @@ export default function ActivationChecklist() {
                     {step.description}
                   </p>
                 </div>
-                {!isComplete && (
+                {!isComplete && step.ctaLabel && step.getHref && (
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={isDisabled}
-                    onClick={() => navigate(step.getHref(progress.steps.createTarget))}
+                    onClick={() => navigate(step.getHref!())}
                     className="shrink-0"
                   >
                     {step.ctaLabel}
                   </Button>
+                )}
+                {!isComplete && step.helperText && !step.ctaLabel && (
+                  <p className="text-xs text-muted-foreground italic shrink-0 max-w-[200px] text-right">
+                    {step.helperText}
+                  </p>
                 )}
               </div>
             );
