@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { UpgradePrompt } from '@/components/billing';
 import { 
   FileText, Shield, Send, FileCheck, 
   CheckCircle, XCircle, Clock, AlertCircle,
@@ -123,13 +122,8 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
           );
         })}
 
+        {/* TODO Stage 4: Gate hotBuilder advanced features for Expert+ once builder is complete. Standard HoT available to all tiers. */}
         {showGenerateHotButton && (
-          <UpgradePrompt
-            feature="hotBuilder"
-            requiredPlan="PROFESSIONAL"
-            title="Heads of Terms Builder"
-            description="Generate customised Heads of Terms documents with configurable sections, conditions, and deal terms."
-          >
             <div className="rounded-lg border border-dashed border-border p-3 bg-muted/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -144,7 +138,6 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                 </Button>
               </div>
             </div>
-          </UpgradePrompt>
         )}
       </CardContent>
 
