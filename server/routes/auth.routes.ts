@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { eq, count } from 'drizzle-orm';
+import { eq, count, sql } from 'drizzle-orm';
 import { authService } from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
@@ -335,7 +335,7 @@ router.get('/magic', asyncHandler(async (req: Request, res: Response) => {
     }
 
     req.session.userId = user.id;
-    req.session.userCompanyId = user.userCompanyId;
+    req.session.userCompanyId = user.userCompanyId ?? undefined;
     await refreshSessionPermissions(req);
 
     if (user.onboardingCompleted === false) {
@@ -377,9 +377,10 @@ router.post('/resend-magic-link', authLimiter, asyncHandler(async (req: Request,
     return res.status(429).json({ error: 'rate_limited', message: 'Too many requests. Please wait before trying again.' });
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, email.toLowerCase().trim()),
-  });
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
 
   if (!user) {
     return res.status(200).json({ success: true, message: 'If an account exists for this email, a new link has been sent.' });
