@@ -41,8 +41,8 @@ const PLANS: PlanDefinition[] = [
     key: "CORE",
     name: "Core",
     description: "For solo buyers managing their first acquisitions.",
-    monthlyPrice: 99,
-    annualPrice: 69,
+    monthlyPrice: 67,
+    annualPrice: 53.60,
     features: [
       "Pipeline kanban board",
       "AI document extraction",
@@ -55,8 +55,8 @@ const PLANS: PlanDefinition[] = [
     key: "PROFESSIONAL",
     name: "Professional",
     description: "For active acquirers running multiple live deals.",
-    monthlyPrice: 299,
-    annualPrice: 209,
+    monthlyPrice: 297,
+    annualPrice: 237.60,
     popular: true,
     features: [
       "Full deal modeller with version history",
@@ -70,8 +70,8 @@ const PLANS: PlanDefinition[] = [
     key: "EXPERT",
     name: "Expert",
     description: "For M&A professionals and investment firms.",
-    monthlyPrice: 499,
-    annualPrice: 349,
+    monthlyPrice: 447,
+    annualPrice: 357.60,
     features: [
       "Value creation modeller with sensitivity analysis",
       "Heads of Terms builder",
@@ -278,7 +278,7 @@ export default function BillingPage() {
                   Annual
                 </Label>
                 {billingInterval === "year" && (
-                  <Badge variant="secondary" className="text-xs ml-1">Save ~30%</Badge>
+                  <Badge variant="secondary" className="text-xs ml-1">Save 20%</Badge>
                 )}
               </div>
             </div>
@@ -305,11 +305,11 @@ export default function BillingPage() {
                       <CardTitle className="text-xl">{plan.name}</CardTitle>
                       <CardDescription>{plan.description}</CardDescription>
                       <div className="pt-2">
-                        <span className="text-3xl font-bold text-foreground">£{price}</span>
+                        <span className="text-3xl font-bold text-foreground">£{price % 1 === 0 ? price : price.toFixed(2)}</span>
                         <span className="text-sm text-muted-foreground">/mo</span>
                         {billingInterval === "year" && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            £{price * 12}/year — billed annually
+                            £{(price * 12).toFixed(2)}/year — billed annually
                           </p>
                         )}
                       </div>
