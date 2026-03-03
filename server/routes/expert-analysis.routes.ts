@@ -97,7 +97,8 @@ router.post('/cancel/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { message: 'Analysis cancelled' });
 }));
 
-router.get('/results/:id', requireFeature('expertAnalysisFullDetail'), asyncHandler(async (req: Request, res: Response) => {
+// TODO: Split into beginner/full view based on tier — Stage 4
+router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
