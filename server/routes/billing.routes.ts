@@ -434,10 +434,6 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
       return res.status(401).json({ error: 'unauthorized' });
     }
 
-    if (!config.stripe.secretKey) {
-      return res.status(500).json({ error: 'stripe_not_configured' });
-    }
-
     const { addonType, quantity } = req.body as { addonType: 'company_slot' | 'seat'; quantity: number };
 
     if (!addonType || !['company_slot', 'seat'].includes(addonType)) {
@@ -449,41 +445,60 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
     }
 
     const subscription = await billingRepository.getByCompanyId(userCompanyId);
-    if (!subscription?.stripeCustomerId) {
-      return res.status(400).json({ error: 'no_stripe_customer', message: 'No billing account found. Please subscribe first.' });
+    if (!subscription) {
+      return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
     }
 
-    const stripe = new Stripe(config.stripe.secretKey);
+    const existing = addonType === 'company_slot'
+      ? (subscription.addOnCompanySlots ?? 0)
+      : (subscription.additionalSeats ?? 0);
+    const newTotal = existing + quantity;
 
-    const lookupKey = ADDON_LOOKUP_KEYS[addonType];
-    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
-    if (!prices.data.length) {
-      return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
+    if (subscription.stripeSubscriptionId && config.stripe.secretKey) {
+      const stripe = new Stripe(config.stripe.secretKey);
+      const lookupKey = ADDON_LOOKUP_KEYS[addonType];
+      const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+      if (!prices.data.length) {
+        return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
+      }
+
+      const existingItems = await stripe.subscriptionItems.list({ subscription: subscription.stripeSubscriptionId });
+      const existingItem = existingItems.data.find(
+        (item) => item.price.lookup_key === lookupKey
+      );
+
+      if (existingItem) {
+        await stripe.subscriptionItems.update(existingItem.id, {
+          quantity: (existingItem.quantity ?? 0) + quantity,
+        });
+      } else {
+        await stripe.subscriptionItems.create({
+          subscription: subscription.stripeSubscriptionId,
+          price: prices.data[0].id,
+          quantity,
+        });
+      }
     }
-    const unitPrice = prices.data[0].unit_amount ?? 0;
-    const totalAmount = unitPrice * quantity;
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalAmount,
-      currency: 'gbp',
-      customer: subscription.stripeCustomerId,
-      metadata: {
-        userCompanyId: String(userCompanyId),
-        addonType,
-        quantity: String(quantity),
-      },
+    const updateData: Record<string, unknown> = addonType === 'company_slot'
+      ? { addOnCompanySlots: newTotal }
+      : { additionalSeats: newTotal };
+
+    await billingRepository.updateByCompanyId(userCompanyId, updateData);
+
+    const eventType = addonType === 'company_slot' ? 'addon.company_slot_added' : 'addon.seat_added';
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType,
+      previousPlanKey: subscription.planKey,
+      newPlanKey: subscription.planKey,
+      previousStatus: subscription.status,
+      newStatus: subscription.status,
+      payload: { addonType, quantity, previousCount: existing, newTotal },
     });
 
-    const result = await billingService.purchaseAddonSlots(
-      userCompanyId,
-      addonType,
-      quantity,
-      unitPrice,
-      'gbp',
-      paymentIntent.id
-    );
-
-    return res.status(200).json({ clientSecret: paymentIntent.client_secret, purchase: result.purchase });
+    console.log(`[billing] Added ${quantity} ${addonType}(s) for company ${userCompanyId}, new total: ${newTotal}`);
+    return res.status(200).json({ success: true, addedQuantity: quantity, newTotal });
   } catch (err: any) {
     console.error('[Billing] Error processing addon purchase:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to process addon purchase.' });
@@ -508,11 +523,28 @@ router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Requ
       return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
     }
 
-    if (quantity > (subscription.additionalSeats ?? 0)) {
-      return res.status(400).json({ error: 'exceeds_seats', message: `Cannot remove ${quantity} seat(s) — you only have ${subscription.additionalSeats ?? 0} additional seat(s).` });
+    const currentSeats = subscription.additionalSeats ?? 0;
+    if (quantity > currentSeats) {
+      return res.status(400).json({ error: 'exceeds_seats', message: `Cannot remove ${quantity} seat(s) — you only have ${currentSeats} additional seat(s).` });
     }
 
-    const newSeatCount = (subscription.additionalSeats ?? 0) - quantity;
+    const newSeatCount = currentSeats - quantity;
+
+    if (subscription.stripeSubscriptionId && config.stripe.secretKey) {
+      const stripe = new Stripe(config.stripe.secretKey);
+      const seatLookupKey = ADDON_LOOKUP_KEYS['seat'];
+      const items = await stripe.subscriptionItems.list({ subscription: subscription.stripeSubscriptionId });
+      const seatItem = items.data.find((item) => item.price.lookup_key === seatLookupKey);
+
+      if (seatItem) {
+        if (newSeatCount <= 0) {
+          await stripe.subscriptionItems.del(seatItem.id);
+        } else {
+          await stripe.subscriptionItems.update(seatItem.id, { quantity: newSeatCount });
+        }
+      }
+    }
+
     const updated = await billingRepository.updateByCompanyId(userCompanyId, {
       additionalSeats: newSeatCount,
     });
@@ -524,11 +556,11 @@ router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Requ
       newPlanKey: subscription.planKey,
       previousStatus: subscription.status,
       newStatus: subscription.status,
-      payload: { quantity, previousSeats: subscription.additionalSeats, newSeats: newSeatCount },
+      payload: { quantity, previousSeats: currentSeats, newSeats: newSeatCount },
     });
 
     console.log(`[billing] Removed ${quantity} seat(s) for company ${userCompanyId}, new count: ${newSeatCount}`);
-    return res.status(200).json({ subscription: updated });
+    return res.status(200).json({ success: true, subscription: updated });
   } catch (err: any) {
     console.error('[Billing] Error removing seats:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to remove seats.' });

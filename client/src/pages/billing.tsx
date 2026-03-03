@@ -190,16 +190,16 @@ export default function BillingPage() {
     },
   });
 
-  // TODO: implement Stripe Elements for add-on payment confirmation
   const addonMutation = useMutation({
     mutationFn: async ({ addonType, quantity }: { addonType: "company_slot" | "seat"; quantity: number }) => {
       const res = await apiRequest("POST", "/api/v2/billing/addon", { addonType, quantity });
-      return res.json() as Promise<{ clientSecret: string }>;
+      return res.json() as Promise<{ success: boolean; addedQuantity: number; newTotal: number }>;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
       toast({
-        title: "Add-on purchased",
-        description: "Your add-on has been processed successfully.",
+        title: "Add-on activated",
+        description: "Your next invoice will include the additional charge.",
       });
     },
     onError: (error: any) => {
