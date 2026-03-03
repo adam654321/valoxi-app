@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertTriangle,
   ArrowRight,
@@ -34,6 +36,8 @@ import {
   Mail,
   Minus,
   UserPlus,
+  Tag,
+  ChevronDown,
 } from "lucide-react";
 import type { PlanKey } from "@shared/schema/billing";
 
@@ -340,6 +344,34 @@ export default function BillingPage() {
 
   const [slotQuantity, setSlotQuantity] = useState("1");
   const [seatQuantity, setSeatQuantity] = useState("1");
+
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  const promoClaimMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const res = await apiRequest("POST", "/api/v2/billing/claim-promo", { code });
+      return res.json() as Promise<{ success: boolean; reason?: string; freeMonths?: number; discountDescription?: string }>;
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+        toast({
+          title: "Promo code applied",
+          description: data.discountDescription || `${data.freeMonths} free month${data.freeMonths !== 1 ? "s" : ""} activated!`,
+        });
+        setPromoCode("");
+        setPromoError(null);
+        setPromoOpen(false);
+      } else {
+        setPromoError(data.reason || "Invalid promo code.");
+      }
+    },
+    onError: (error: any) => {
+      setPromoError(error.message || "Failed to apply promo code. Please try again.");
+    },
+  });
 
   const currentPlanIndex = getPlanIndex(currentPlan);
   const status = subscription?.status ?? null;
@@ -733,6 +765,54 @@ export default function BillingPage() {
                 </CardContent>
               </Card>
             </>
+          )}
+
+          {!subscription?.promoCodeId && (
+            <Collapsible open={promoOpen} onOpenChange={setPromoOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-center py-2">
+                  <Tag className="h-4 w-4" />
+                  <span>Have a referral or promo code? Click to apply</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${promoOpen ? "rotate-180" : ""}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <Card className="mt-2">
+                  <CardContent className="py-4">
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1 space-y-1.5">
+                        <Label className="text-sm">Promo Code</Label>
+                        <Input
+                          placeholder="e.g. 5DA-X7K2M"
+                          value={promoCode}
+                          onChange={(e) => {
+                            setPromoCode(e.target.value.toUpperCase());
+                            setPromoError(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && promoCode.trim()) {
+                              promoClaimMutation.mutate(promoCode.trim());
+                            }
+                          }}
+                        />
+                        {promoError && (
+                          <p className="text-sm text-destructive">{promoError}</p>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => promoClaimMutation.mutate(promoCode.trim())}
+                        disabled={!promoCode.trim() || promoClaimMutation.isPending}
+                      >
+                        {promoClaimMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : null}
+                        Apply
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           <Card className="border-dashed">

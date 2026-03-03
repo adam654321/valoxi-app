@@ -95,7 +95,7 @@ Preferred communication style: Simple, everyday language.
   - `dashboard.ts` — Dashboard preferences, alerts, composite types (2 tables)
   - `deal-models.ts` — Deal models, adjustments, funding lines, deal metrics snapshots (4 tables)
   - `value-creation.ts` — Value creation scenarios, assumptions, synergies, exit assumptions (4 tables)
-  - `billing.ts` — Subscription billing: subscriptions, subscription_events, addon_purchases (3 tables, 3 enums: plan_key, subscription_status, billing_interval)
+  - `billing.ts` — Subscription billing: subscriptions, subscription_events, addon_purchases, promo_code_campaigns, promo_codes (5 tables, 3 enums: plan_key, subscription_status, billing_interval)
   - `relations.ts` — All Drizzle relation definitions (centralized to avoid circular deps)
   - `index.ts` — Barrel re-export of all modules
   - `shared/schema.ts` — Top-level re-export (`export * from './schema/index'`) so all existing imports continue to work unchanged
@@ -118,6 +118,14 @@ Preferred communication style: Simple, everyday language.
     - `due-diligence.routes.ts` → `ddDataRoom`
     - `expert-analysis.routes.ts` → `expertAnalysisFullDetail` (trigger-pipeline/retry/resume/results)
 - **Intentionally NOT subscription-gated**: Auth, team (public), notifications, email, portal/portal-submit, public/*, admin, billing, user/companies, assignments/deals
+- **Promo Code & Referral System**:
+  - **Tables**: `promo_code_campaigns` (campaign config + Stripe coupon link), `promo_codes` (individual codes with usage tracking)
+  - **Subscription columns**: `referralSource`, `promoCodeId`, `freeMonthsTotal`, `freeMonthsStartedAt`, `communityDiscountCouponId`, `freeMonthsWarningEmailSentAt`
+  - **Service**: `server/services/promo-code.service.ts` — `generateCodes()`, `validateCode()`, `claimCode()`, `computeFreeMonthsElapsed()`, `isFreePeriodEndingSoon()`
+  - **Claim flow**: Registration form optional promo code field → `promoCodeService.claimCode()`. Also claimable from billing page via `POST /api/v2/billing/claim-promo`
+  - **Free months cron**: Daily at 09:15 UK time — checks subscriptions with active free periods, sends warning email 1 month before expiry, transitions to ongoing discount coupon when free period ends
+  - **Admin pages**: `/admin/promo-codes` (Stripe coupons viewer, campaign manager, code list with CSV export), `/admin/referral-invoice` (5D community invoice report with member table, CSV export, copy invoice text)
+  - **API endpoints**: `GET /admin/stripe-coupons`, `POST /admin/promo-campaigns`, `GET /admin/promo-campaigns`, `GET /admin/promo-codes`, `GET /admin/promo-codes/export`, `GET /admin/referral-invoice`, `POST /billing/claim-promo`
 - **Client-side Enforcement**:
   - `client/src/context/subscription-context.tsx`: `SubscriptionProvider` wraps app in `App.tsx`, exports `useHasFeature`, `usePlanKey`, `useSubscriptionContext`
   - `client/src/hooks/use-subscription.ts`: React Query hook for `GET /api/v2/billing/subscription`

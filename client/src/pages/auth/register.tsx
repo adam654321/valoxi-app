@@ -17,6 +17,7 @@ const registerSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string().min(8),
+  promoCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -37,6 +38,7 @@ export default function Register() {
       email: "",
       password: "",
       confirmPassword: "",
+      promoCode: "",
     },
   });
 
@@ -45,7 +47,7 @@ export default function Register() {
       const response = await apiRequest("POST", "/api/v2/auth/register", data);
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (data: any) => {
       await refreshCsrfToken();
       await queryClient.refetchQueries({ queryKey: ["/api/v2/auth/me"] });
       setLocation("/dashboard");
@@ -53,6 +55,19 @@ export default function Register() {
         title: "Success",
         description: "Account created successfully!",
       });
+      const responseData = data?.data || data;
+      if (responseData?.promoApplied) {
+        toast({
+          title: "Promo Code Applied",
+          description: responseData.discountDescription || "Your promo code has been applied successfully!",
+        });
+      } else if (responseData?.promoError) {
+        toast({
+          title: "Promo Code Not Applied",
+          description: responseData.promoError,
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -181,6 +196,24 @@ export default function Register() {
                           <Input
                             type="password"
                             placeholder="Confirm your password"
+                            className="px-4 py-3"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="promoCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-textPrimary">Referral / Promo Code (optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 5DA-X7K2M"
                             className="px-4 py-3"
                             {...field}
                           />

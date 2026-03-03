@@ -1,7 +1,7 @@
 import { pgTable, serial, varchar, text, integer, boolean, timestamp, jsonb, unique, pgEnum } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { userCompanies } from './core';
+import { userCompanies, users } from './core';
 
 export const planKeyEnum = pgEnum('plan_key', ['CORE', 'PROFESSIONAL', 'EXPERT', 'ENTERPRISE']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'trialing', 'past_due', 'canceled', 'incomplete', 'admin_comped']);
@@ -26,6 +26,12 @@ export const subscriptions = pgTable("subscriptions", {
   communityFreeMonthsRemaining: integer("community_free_months_remaining").notNull().default(0),
   enterpriseOverrides: jsonb("enterprise_overrides"),
   adminNotes: text("admin_notes"),
+  referralSource: varchar("referral_source", { length: 50 }),
+  promoCodeId: integer("promo_code_id"),
+  freeMonthsTotal: integer("free_months_total").notNull().default(0),
+  freeMonthsStartedAt: timestamp("free_months_started_at"),
+  communityDiscountCouponId: varchar("community_discount_coupon_id", { length: 50 }),
+  freeMonthsWarningEmailSentAt: timestamp("free_months_warning_email_sent_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -55,6 +61,31 @@ export const addonPurchases = pgTable("addon_purchases", {
   purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
 });
 
+export const promoCodeCampaigns = pgTable("promo_code_campaigns", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  stripeCouponId: varchar("stripe_coupon_id", { length: 50 }).notNull(),
+  referralSource: varchar("referral_source", { length: 50 }).notNull(),
+  freeMonthsTotal: integer("free_months_total").notNull().default(0),
+  codePrefix: varchar("code_prefix", { length: 10 }).notNull().default(''),
+  maxUsesPerCode: integer("max_uses_per_code").notNull().default(1),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+});
+
+export const promoCodes = pgTable("promo_codes", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull().references(() => promoCodeCampaigns.id),
+  code: varchar("code", { length: 20 }).notNull().unique(),
+  usesCount: integer("uses_count").notNull().default(0),
+  maxUses: integer("max_uses").notNull().default(1),
+  claimedByUserCompanyId: integer("claimed_by_user_company_id").references(() => userCompanies.id),
+  claimedAt: timestamp("claimed_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   id: true,
   createdAt: true,
@@ -79,6 +110,22 @@ export type InsertSubscriptionEvent = z.infer<typeof insertSubscriptionEventSche
 
 export type AddonPurchase = typeof addonPurchases.$inferSelect;
 export type InsertAddonPurchase = z.infer<typeof insertAddonPurchaseSchema>;
+
+export const insertPromoCodeCampaignSchema = createInsertSchema(promoCodeCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PromoCodeCampaign = typeof promoCodeCampaigns.$inferSelect;
+export type InsertPromoCodeCampaign = z.infer<typeof insertPromoCodeCampaignSchema>;
+
+export type PromoCode = typeof promoCodes.$inferSelect;
+export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
 
 export type PlanKey = 'CORE' | 'PROFESSIONAL' | 'EXPERT' | 'ENTERPRISE';
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'admin_comped';

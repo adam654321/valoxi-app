@@ -11,6 +11,7 @@ import { authLimiter } from '../middleware/rate-limit';
 import { db } from '../db';
 import { pipelineStages } from '@shared/schema/deals';
 import { emailService } from '../email';
+import { promoCodeService } from '../services/promo-code.service';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(8),
   companyName: z.string().min(1, 'Company name is required'),
+  promoCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
@@ -61,10 +63,36 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
     track(result.company.id, result.user.id, 'user.registered', { sector: validatedData.companyName });
   }
 
+  let promoApplied = false;
+  let promoError: string | undefined;
+  let discountDescription: string | undefined;
+
+  if (validatedData.promoCode && validatedData.promoCode.trim() && result.company?.id) {
+    try {
+      const claimResult = await promoCodeService.claimCode(
+        validatedData.promoCode,
+        result.company.id,
+        null
+      );
+      if (claimResult.success) {
+        promoApplied = true;
+        discountDescription = claimResult.discountDescription;
+      } else {
+        promoError = claimResult.reason || 'Could not apply promo code';
+      }
+    } catch (err) {
+      console.error('[REGISTRATION] Promo code claim error:', err);
+      promoError = 'Could not apply promo code';
+    }
+  }
+
   sendCreated(res, {
     message: 'User created successfully',
     user: result.user,
     company: result.company,
+    promoApplied,
+    promoError,
+    discountDescription,
   });
 }));
 

@@ -1,0 +1,209 @@
+
+Build the promo code and 5D community referral system as one integrated feature. This replaces the earlier referral prompt — do not implement that separately. Read all relevant files before making any changes.
+Step 1 — Database Schema:
+Create a promo_code_campaigns table:
+typescriptid: serial primary key
+name: varchar(100) not null                    // "5D Cohort 1 — 3 Months Free"
+stripeCouponId: varchar(50) not null           // Stripe coupon ID to apply on claim
+referralSource: varchar(50) not null           // e.g. "5d_community"
+freeMonthsTotal: integer default 0             // 0 if no free period
+codePrefix: varchar(10) default ''             // e.g. "5DA"
+maxUsesPerCode: integer default 1
+expiresAt: timestamp nullable
+createdAt: timestamp default now()
+createdByUserId: integer references users(id)
+Create a promo_codes table:
+typescriptid: serial primary key
+campaignId: integer references promo_code_campaigns(id)
+code: varchar(20) not null unique              // e.g. "5DA-X7K2M"
+usesCount: integer default 0
+maxUses: integer default 1
+claimedByUserCompanyId: integer nullable references user_companies(id)
+claimedAt: timestamp nullable
+expiresAt: timestamp nullable
+createdAt: timestamp default now()
+Add to subscriptions table:
+typescriptreferralSource: varchar(50) default null
+promoCodeId: integer nullable references promo_codes(id)
+freeMonthsTotal: integer default 0
+freeMonthsStartedAt: timestamp nullable
+communityDiscountCouponId: varchar(50) default null
+Remove freeMonthsUsed as a stored column — this will be computed dynamically from freeMonthsStartedAt. Instead add a helper function in the service:
+typescriptfunction computeFreeMonthsElapsed(freeMonthsStartedAt: Date): number {
+  const now = new Date()
+  const months = (now.getFullYear() - freeMonthsStartedAt.getFullYear()) * 12
+    + (now.getMonth() - freeMonthsStartedAt.getMonth())
+  return Math.floor(months)
+}
+Run db:push after all schema changes.
+Step 2 — Promo Code Service:
+Create server/services/promo-code.service.ts:
+typescript// Generate codes for a campaign
+generateCodes(campaignId: number, quantity: number): Promise<PromoCode[]>
+// Format: {PREFIX}-{5 random alphanumeric chars} e.g. "5DA-X7K2M"
+// Use crypto.randomBytes for generation
+// Check uniqueness before insert
+// Batch insert all codes in one DB call
+
+// Validate a code
+validateCode(code: string): Promise<{ valid: boolean, campaign?: Campaign, reason?: string }>
+// Checks: exists, usesCount < maxUses, not expired
+
+// Claim a code
+claimCode(code: string, userCompanyId: number, stripeCustomerId: string | null): Promise<ClaimResult>
+// Validates first, then in a transaction:
+// 1. Increments usesCount, sets claimedByUserCompanyId and claimedAt on promo_codes row
+// 2. Updates subscription row: referralSource, promoCodeId, freeMonthsTotal, freeMonthsStartedAt = now()
+// 3. If stripeCustomerId exists, applies Stripe coupon: stripe.customers.update(stripeCustomerId, { coupon: campaign.stripeCouponId })
+// 4. Logs funnel event: referral.code_claimed with { source, campaignName, code }
+// 5. Returns { success: true, freeMonths, discountDescription }
+// Never throws — returns { success: false, reason } on any failure
+
+// Compute free months elapsed (never stored, always computed)
+computeFreeMonthsElapsed(freeMonthsStartedAt: Date): number
+// Returns floor of full calendar months since freeMonthsStartedAt
+// e.g. signed up 25 Jan, checked 20 Feb = 0 full months elapsed
+// e.g. signed up 25 Jan, checked 26 Feb = 1 full month elapsed
+
+// Check if free period is ending soon (for warning emails)
+isFreePeriodEndingSoon(freeMonthsStartedAt: Date, freeMonthsTotal: number): boolean
+// Returns true if exactly freeMonthsTotal - 1 full months have elapsed
+Step 3 — Free Months Cron:
+In server/cron/billing.cron.ts, add a third job — runs daily at 09:15 UK time (not monthly — daily ensures no one misses their transition by a day):
+typescript// Query all subscriptions where freeMonthsTotal > 0 AND communityDiscountCouponId IS NULL
+// For each subscription:
+
+const elapsed = computeFreeMonthsElapsed(subscription.freeMonthsStartedAt)
+
+// Warning email — send once when elapsed = freeMonthsTotal - 1
+if (elapsed === subscription.freeMonthsTotal - 1) {
+  // Check we haven't already sent warning (add freeMonthsWarningEmailSentAt column)
+  // If not sent: send "Your free period ends in approximately 1 month" email
+  // Set freeMonthsWarningEmailSentAt = now() to prevent duplicate sends
+}
+
+// Transition — when free period is fully elapsed
+if (elapsed >= subscription.freeMonthsTotal) {
+  // 1. Apply community discount coupon to Stripe customer
+  await stripe.customers.update(stripeCustomerId, { coupon: communityDiscountCouponId })
+  // 2. Set communityDiscountCouponId on subscription row (marks as transitioned, stops cron processing this row)
+  // 3. Log funnel event: referral.free_period_ended
+  // 4. Send "Your free period has ended — your discount is now active" email
+}
+```
+
+Add `freeMonthsWarningEmailSentAt: timestamp nullable` to subscriptions table and run `db:push`.
+
+**Step 4 — Registration Flow:**
+
+In the registration route (`server/routes/auth.routes.ts`) and registration form (`client/src/pages/register.tsx` or equivalent):
+
+- Add optional `promoCode` field to registration form — label "Referral / Promo Code (optional)", placeholder "e.g. 5DA-X7K2M", positioned below password field
+- After successful registration and subscription creation, if `promoCode` provided:
+  - Call `promoCodeService.claimCode(code, userCompanyId, stripeCustomerId)`
+  - On success: include `{ promoApplied: true, freeMonths, discountDescription }` in registration response
+  - On failure: include `{ promoApplied: false, promoError: reason }` — never block registration
+- On the frontend, after successful registration:
+  - If `promoApplied: true`: show toast "Promo code applied — X months free, then 25% off forever"
+  - If `promoApplied: false` and code was entered: show warning toast "Code could not be applied — you can try again from the Billing page"
+
+**Step 5 — Billing Page Claim:**
+
+In `client/src/pages/billing.tsx`:
+
+- Add a "Have a promo code?" section at the bottom of the page, above the Enterprise card
+- Show only if `subscription.promoCodeId === null` (no promo already claimed)
+- Collapsed by default — show as a subtle link "Have a referral or promo code? Click to apply"
+- Expands to show: text input (placeholder "Enter your code") and "Apply" button
+- On submit, calls `POST /api/v2/billing/claim-promo`
+- On success: invalidate subscription query, show success toast with discount details, collapse the section
+- On failure: show inline error below input — "This code is invalid, expired, or has already been used"
+
+Create `POST /api/v2/billing/claim-promo` in `server/routes/billing.routes.ts`:
+- Requires `isAuthenticated` and `validateCsrfToken`
+- Accepts `{ code: string }`
+- Gets `stripeCustomerId` from existing subscription row
+- Calls `promoCodeService.claimCode(code, userCompanyId, stripeCustomerId)`
+- Returns `{ success: true, freeMonths, discountDescription }` or `{ success: false, reason }`
+
+**Step 6 — Admin: Stripe Coupons View:**
+
+Create `GET /api/v2/admin/stripe-coupons` (system admin only):
+- Calls `stripe.coupons.list({ limit: 50 })`
+- Returns: id, name, percentOff, amountOff, duration, durationInMonths, valid
+
+**Step 7 — Admin: Promo Code Manager Page:**
+
+Create `client/src/pages/admin/promo-codes.tsx` with three sections:
+
+Section 1 — Stripe Coupons:
+- Table: Name, Discount, Duration, Coupon ID
+- "Refresh" button to re-fetch from Stripe API
+- Note below table: "To add a new coupon, create it in your Stripe dashboard then click Refresh"
+- "Open Stripe Dashboard →" button opens `https://dashboard.stripe.com/coupons` in new tab
+
+Section 2 — Campaigns:
+- Table: Campaign Name, Stripe Coupon, Source, Free Months, Generated, Claimed, Remaining, Expiry
+- "Create Campaign" button opens dialog with fields:
+  - Campaign name (text)
+  - Stripe coupon — dropdown populated from Section 1 live data, shows "Name — X% off [duration]"
+  - Referral source tag (text, e.g. "5d_community")
+  - Free months total (number, default 0, 0 means discount-only no free period)
+  - Code prefix (text, max 5 chars, e.g. "5DA" — appended before the random segment)
+  - Number of codes to generate (number, 1–1000)
+  - Max uses per code (number, default 1)
+  - Expiry date (date picker, optional)
+  - "Generate Codes" button — calls `POST /api/v2/admin/promo-campaigns`, shows success with count generated
+
+Section 3 — Code List:
+- Campaign filter dropdown (defaults to most recently created campaign)
+- Status filter: All / Unclaimed / Claimed / Expired
+- Table: Code, Status badge (green=unclaimed, blue=claimed, grey=expired), Claimed By (company name if claimed), Claimed Date
+- "Export All CSV" button — downloads: code, status, claimed_by_company, claimed_at, expires_at
+- "Export Unclaimed CSV" button — downloads unclaimed codes only (for distributing to Dee's team)
+
+Add "Promo Codes" to admin sidebar with Tag icon.
+
+**Step 8 — Admin: 5D Invoice Report:**
+
+Create `client/src/pages/admin/referral-invoice.tsx`:
+
+- Month/year picker (defaults to current month)
+- Source filter dropdown (defaults to "5d_community", add others as campaigns grow)
+- Summary cards: Total Members on Free Period, Total Invoice Amount, Avg per Member, Codes Remaining Unclaimed
+- Members table: Company Name, Email, Plan, Free Period Start, Months Elapsed, Months Remaining, This Month's Invoice Amount
+- Invoice rate: £50.25/member/month (Core at 25% discount — hardcode for now, make configurable later)
+- "Export CSV" button — full table as CSV
+- "Copy Invoice Text" button — copies to clipboard:
+```
+DealFlow AI — 5D Community Invoice
+Period: [Month Year]
+Members on free period: [N]
+Rate per member: £50.25/month
+Total due from 5D: £[X.XX]
+Payment reference: DEALFLOW-5D-[YYYY-MM]
+Add "5D Invoice" to admin sidebar with Receipt icon.
+Step 9 — API Endpoints to Create:
+All system admin protected unless stated:
+
+GET /api/v2/admin/stripe-coupons
+POST /api/v2/admin/promo-campaigns — create campaign and generate codes
+GET /api/v2/admin/promo-campaigns — list campaigns with stats
+GET /api/v2/admin/promo-codes?campaignId=&status= — list codes with filters
+GET /api/v2/admin/promo-codes/export?campaignId=&status= — CSV download
+GET /api/v2/admin/referral-invoice?month=&source= — invoice report
+POST /api/v2/billing/claim-promo — authenticated user, not admin only
+
+
+Validation:
+
+Create a test campaign linked to the test mode 100% coupon — generate 10 codes with prefix "TST" — confirm codes appear in the code list table
+Export unclaimed CSV — confirm it downloads with correct columns
+Register a new test user with a valid TST- code — confirm: code marked as claimed, Stripe coupon applied to customer, subscription row has freeMonthsTotal = 3, freeMonthsStartedAt set, promoCodeId set
+Attempt to reuse the same code with a different account — confirm rejection: "already used"
+Attempt to claim a code on the billing page as an existing user without a promo — confirm it works and subscription updates
+Confirm computeFreeMonthsElapsed returns 0 for a subscription started today
+Confirm admin Stripe coupons section shows your live coupons including A09JvJxx and fRoxnZbY
+Confirm referral invoice page shows correct calculation for test data
+Simulate the cron for a subscription with freeMonthsStartedAt = 3 months ago — confirm it applies the discount coupon and logs the event
+Run npx tsc --noEmit — zero TypeScript errors

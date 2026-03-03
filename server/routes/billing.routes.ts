@@ -1,8 +1,10 @@
 import { Router, type Request, type Response } from 'express';
 import Stripe from 'stripe';
+import { z } from 'zod';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
+import { promoCodeService } from '../services/promo-code.service';
 import { db } from '../db';
 import { webhookEvents } from '@shared/schema/core';
 import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
@@ -912,6 +914,42 @@ router.get('/admin/subscriptions', isAuthenticated, async (req: Request, res: Re
   } catch (err: any) {
     console.error('[Billing] Error fetching all subscriptions:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscriptions.' });
+  }
+});
+
+const claimPromoSchema = z.object({
+  code: z.string().min(1, 'Promo code is required'),
+});
+
+router.post('/claim-promo', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) {
+      return res.status(401).json({ success: false, reason: 'unauthorized' });
+    }
+
+    const parsed = claimPromoSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, reason: 'Promo code is required' });
+    }
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+    const stripeCustomerId = existingSub?.stripeCustomerId ?? null;
+
+    const result = await promoCodeService.claimCode(parsed.data.code, userCompanyId, stripeCustomerId);
+
+    if (!result.success) {
+      return res.status(400).json({ success: false, reason: result.reason });
+    }
+
+    return res.status(200).json({
+      success: true,
+      freeMonths: result.freeMonths,
+      discountDescription: result.discountDescription,
+    });
+  } catch (err: any) {
+    console.error('[Billing] Error claiming promo code:', err);
+    return res.status(500).json({ success: false, reason: 'An unexpected error occurred' });
   }
 });
 

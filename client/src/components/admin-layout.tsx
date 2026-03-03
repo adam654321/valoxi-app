@@ -10,6 +10,8 @@ import {
   Flag,
   TrendingUp,
   ArrowLeft,
+  Receipt,
+  Tag,
 } from "lucide-react";
 
 const adminNav = [
@@ -22,6 +24,8 @@ const adminNav = [
   { title: "Companies", url: "/admin/companies", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Webhook Events", url: "/admin/webhook-events", icon: Webhook },
+  { title: "Promo Codes", url: "/admin/promo-codes", icon: Tag },
+  { title: "5D Invoice", url: "/admin/referral-invoice", icon: Receipt },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

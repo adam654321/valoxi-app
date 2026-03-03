@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { eq, and, sql, count, desc, gte } from 'drizzle-orm';
+import { eq, and, sql, count, desc, gte, isNull, isNotNull } from 'drizzle-orm';
+import Stripe from 'stripe';
 import { db } from '../db';
-import { subscriptions } from '@shared/schema/billing';
+import { config } from '../config';
+import { subscriptions, promoCodeCampaigns, promoCodes } from '@shared/schema/billing';
 import { userCompanies, users } from '@shared/schema/core';
 import { issueReports, funnelEvents } from '@shared/schema/dashboard';
 import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
@@ -10,6 +12,7 @@ import { adminService } from '../services/admin.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { passwordResetService } from '../services/password-reset.service';
+import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
 
 const router = Router();
 
@@ -247,6 +250,238 @@ router.patch('/issue-reports/:id', asyncHandler(async (req: Request, res: Respon
   }
 
   sendSuccess(res, updated);
+}));
+
+router.get('/stripe-coupons', asyncHandler(async (req: Request, res: Response) => {
+  if (!config.stripe.secretKey) {
+    return res.status(500).json({ success: false, message: 'Stripe not configured' });
+  }
+  const stripe = new Stripe(config.stripe.secretKey);
+  const coupons = await stripe.coupons.list({ limit: 50 });
+  const mapped = coupons.data.map((c) => ({
+    id: c.id,
+    name: c.name,
+    percentOff: c.percent_off,
+    amountOff: c.amount_off,
+    duration: c.duration,
+    durationInMonths: c.duration_in_months,
+    valid: c.valid,
+  }));
+  sendSuccess(res, mapped);
+}));
+
+const createPromoCampaignSchema = z.object({
+  name: z.string().min(1),
+  stripeCouponId: z.string().min(1),
+  referralSource: z.string().min(1),
+  freeMonthsTotal: z.number().int().min(0).default(0),
+  codePrefix: z.string().max(10).default(''),
+  codeCount: z.number().int().min(1).max(1000),
+  maxUsesPerCode: z.number().int().min(1).default(1),
+  expiresAt: z.string().nullable().optional(),
+});
+
+router.post('/promo-campaigns', asyncHandler(async (req: Request, res: Response) => {
+  const validated = createPromoCampaignSchema.parse(req.body);
+
+  const [campaign] = await db.insert(promoCodeCampaigns).values({
+    name: validated.name,
+    stripeCouponId: validated.stripeCouponId,
+    referralSource: validated.referralSource,
+    freeMonthsTotal: validated.freeMonthsTotal,
+    codePrefix: validated.codePrefix,
+    maxUsesPerCode: validated.maxUsesPerCode,
+    expiresAt: validated.expiresAt ? new Date(validated.expiresAt) : null,
+    createdByUserId: req.session.userId!,
+  }).returning();
+
+  const codes = await promoCodeService.generateCodes(campaign.id, validated.codeCount);
+
+  sendSuccess(res, { campaign, codesGenerated: codes.length }, 201);
+}));
+
+router.get('/promo-campaigns', asyncHandler(async (req: Request, res: Response) => {
+  const campaigns = await db.select().from(promoCodeCampaigns).orderBy(desc(promoCodeCampaigns.createdAt));
+
+  const result = await Promise.all(campaigns.map(async (campaign) => {
+    const [generated] = await db
+      .select({ count: count() })
+      .from(promoCodes)
+      .where(eq(promoCodes.campaignId, campaign.id));
+
+    const [claimed] = await db
+      .select({ count: count() })
+      .from(promoCodes)
+      .where(and(eq(promoCodes.campaignId, campaign.id), isNotNull(promoCodes.claimedAt)));
+
+    return {
+      ...campaign,
+      generatedCount: generated?.count ?? 0,
+      claimedCount: claimed?.count ?? 0,
+      remainingCount: (generated?.count ?? 0) - (claimed?.count ?? 0),
+    };
+  }));
+
+  sendSuccess(res, result);
+}));
+
+router.get('/promo-codes', asyncHandler(async (req: Request, res: Response) => {
+  const { campaignId, status } = req.query;
+  const conditions = [];
+
+  if (campaignId) {
+    conditions.push(eq(promoCodes.campaignId, Number(campaignId)));
+  }
+
+  if (status === 'claimed') {
+    conditions.push(isNotNull(promoCodes.claimedAt));
+  } else if (status === 'unclaimed') {
+    conditions.push(isNull(promoCodes.claimedAt));
+  } else if (status === 'expired') {
+    conditions.push(sql`${promoCodes.expiresAt} IS NOT NULL AND ${promoCodes.expiresAt} < NOW()`);
+  }
+
+  const rows = await db
+    .select({
+      id: promoCodes.id,
+      campaignId: promoCodes.campaignId,
+      code: promoCodes.code,
+      usesCount: promoCodes.usesCount,
+      maxUses: promoCodes.maxUses,
+      claimedByUserCompanyId: promoCodes.claimedByUserCompanyId,
+      claimedAt: promoCodes.claimedAt,
+      expiresAt: promoCodes.expiresAt,
+      createdAt: promoCodes.createdAt,
+      companyName: userCompanies.companyName,
+    })
+    .from(promoCodes)
+    .leftJoin(userCompanies, eq(promoCodes.claimedByUserCompanyId, userCompanies.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(promoCodes.createdAt))
+    .limit(500);
+
+  sendSuccess(res, rows);
+}));
+
+router.get('/promo-codes/export', asyncHandler(async (req: Request, res: Response) => {
+  const { campaignId, status } = req.query;
+  const conditions = [];
+
+  if (campaignId) {
+    conditions.push(eq(promoCodes.campaignId, Number(campaignId)));
+  }
+
+  if (status === 'claimed') {
+    conditions.push(isNotNull(promoCodes.claimedAt));
+  } else if (status === 'unclaimed') {
+    conditions.push(isNull(promoCodes.claimedAt));
+  } else if (status === 'expired') {
+    conditions.push(sql`${promoCodes.expiresAt} IS NOT NULL AND ${promoCodes.expiresAt} < NOW()`);
+  }
+
+  const rows = await db
+    .select({
+      code: promoCodes.code,
+      usesCount: promoCodes.usesCount,
+      maxUses: promoCodes.maxUses,
+      claimedAt: promoCodes.claimedAt,
+      expiresAt: promoCodes.expiresAt,
+      companyName: userCompanies.companyName,
+    })
+    .from(promoCodes)
+    .leftJoin(userCompanies, eq(promoCodes.claimedByUserCompanyId, userCompanies.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(promoCodes.createdAt));
+
+  const csvHeader = 'Code,Uses,Max Uses,Claimed At,Expires At,Company Name\n';
+  const csvRows = rows.map((r) =>
+    `${r.code},${r.usesCount},${r.maxUses},${r.claimedAt ? r.claimedAt.toISOString() : ''},${r.expiresAt ? r.expiresAt.toISOString() : ''},${r.companyName || ''}`
+  ).join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="promo-codes.csv"');
+  res.send(csvHeader + csvRows);
+}));
+
+router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response) => {
+  const { month, source } = req.query;
+  const referralSource = (source as string) || '5d_community';
+
+  let targetMonth: Date;
+  if (month && typeof month === 'string') {
+    targetMonth = new Date(month + '-01');
+  } else {
+    targetMonth = new Date();
+    targetMonth.setDate(1);
+  }
+  targetMonth.setHours(0, 0, 0, 0);
+
+  const subs = await db
+    .select({
+      subscription: subscriptions,
+      companyName: userCompanies.companyName,
+      email: users.email,
+    })
+    .from(subscriptions)
+    .innerJoin(userCompanies, eq(subscriptions.userCompanyId, userCompanies.id))
+    .leftJoin(users, eq(userCompanies.id, users.userCompanyId))
+    .where(
+      and(
+        eq(subscriptions.referralSource, referralSource),
+        sql`${subscriptions.freeMonthsTotal} > 0`,
+        isNotNull(subscriptions.freeMonthsStartedAt)
+      )
+    );
+
+  const INVOICE_RATE = 50.25;
+
+  const members = subs
+    .filter((s) => s.subscription.freeMonthsStartedAt !== null)
+    .map((s) => {
+      const startedAt = s.subscription.freeMonthsStartedAt!;
+      const elapsed = computeFreeMonthsElapsed(startedAt);
+      const total = s.subscription.freeMonthsTotal;
+      const remaining = Math.max(0, total - elapsed);
+      const isInFreePeriod = elapsed < total;
+
+      return {
+        companyName: s.companyName,
+        email: s.email,
+        planKey: s.subscription.planKey,
+        freeMonthsStartedAt: startedAt.toISOString(),
+        monthsElapsed: elapsed,
+        monthsRemaining: remaining,
+        invoiceAmount: isInFreePeriod ? INVOICE_RATE : 0,
+        isInFreePeriod,
+      };
+    });
+
+  const activeMembers = members.filter((m) => m.isInFreePeriod);
+  const totalInvoice = activeMembers.length * INVOICE_RATE;
+
+  const [unclaimedRow] = await db
+    .select({ count: count() })
+    .from(promoCodes)
+    .innerJoin(promoCodeCampaigns, eq(promoCodes.campaignId, promoCodeCampaigns.id))
+    .where(
+      and(
+        eq(promoCodeCampaigns.referralSource, referralSource),
+        isNull(promoCodes.claimedAt)
+      )
+    );
+
+  sendSuccess(res, {
+    month: targetMonth.toISOString().slice(0, 7),
+    source: referralSource,
+    invoiceRate: INVOICE_RATE,
+    summary: {
+      totalMembersOnFreePeriod: activeMembers.length,
+      totalInvoiceAmount: totalInvoice,
+      avgPerMember: activeMembers.length > 0 ? totalInvoice / activeMembers.length : 0,
+      codesRemainingUnclaimed: unclaimedRow?.count ?? 0,
+    },
+    members,
+  });
 }));
 
 router.get('/funnel', asyncHandler(async (req: Request, res: Response) => {
