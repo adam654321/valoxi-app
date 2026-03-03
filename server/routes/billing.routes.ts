@@ -274,11 +274,18 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
     let consumedSeats = 0;
     try {
       const { teamRepository } = await import('../repositories/team.repository');
-      const members = await teamRepository.getTeamMembers(userCompanyId);
+      const { db } = await import('../db');
+      const { users } = await import('@shared/schema/core');
+      const { eq, or, and, sql: sqlTag } = await import('drizzle-orm');
+      const activeUsers = await db.select({ count: sqlTag<number>`count(*)::int` })
+        .from(users)
+        .where(and(
+          or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
+          eq(users.isActive, true)
+        ));
       const invitations = await teamRepository.getInvitationsByCompany(userCompanyId);
-      const activeMembers = members.filter((m: any) => m.isActive).length;
       const pendingInvitations = invitations.filter((inv: any) => inv.invitationStatus === 'pending').length;
-      consumedSeats = activeMembers + pendingInvitations;
+      consumedSeats = (activeUsers[0]?.count ?? 0) + pendingInvitations;
     } catch {
       consumedSeats = 0;
     }

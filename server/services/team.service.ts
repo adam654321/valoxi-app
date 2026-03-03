@@ -40,10 +40,17 @@ export class TeamService {
       const effectiveMaxSeats = getMaxSeats(planKey, subscription.additionalSeats, subscription.enterpriseOverrides as Record<string, unknown> | null);
 
       if (effectiveMaxSeats !== null) {
-        const members = await teamRepository.getTeamMembers(userCompanyId);
-        const activeMembers = members.filter(m => m.isActive).length;
+        const { db } = await import('../db');
+        const { users } = await import('@shared/schema/core');
+        const { eq, or, and, sql: sqlTag } = await import('drizzle-orm');
+        const activeUsers = await db.select({ count: sqlTag<number>`count(*)::int` })
+          .from(users)
+          .where(and(
+            or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
+            eq(users.isActive, true)
+          ));
         const pendingInvitations = existingInvitations.filter(inv => inv.invitationStatus === 'pending').length;
-        const consumedSeats = activeMembers + pendingInvitations;
+        const consumedSeats = (activeUsers[0]?.count ?? 0) + pendingInvitations;
 
         if (consumedSeats >= effectiveMaxSeats) {
           const canPurchaseMore = hasFeature(planKey, 'additionalSeatPurchasing');
