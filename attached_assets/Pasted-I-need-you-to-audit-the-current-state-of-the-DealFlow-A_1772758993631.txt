@@ -1,0 +1,79 @@
+I need you to audit the current state of the DealFlow AI codebase before we make any changes.
+Do NOT modify any files. Read and report only.
+
+For each area below, tell me:
+  - What the current value / implementation is
+  - The file and approximate line number where it lives
+  - Whether it looks complete, partial, or missing
+
+---
+
+AREA 1 — Trial Period
+Find where Stripe checkout sessions are created (likely in a billing or checkout route).
+What is trial_period_days currently set to?
+
+---
+
+AREA 2 — Plan Company Slot Limits
+Find the plan entitlement config — likely an object called PLAN_LIMITS, PLAN_CONFIG, planLimits, or similar.
+What are the current companySlots (or equivalent) values for Core, Professional, and Expert?
+
+---
+
+AREA 3 — Plan Pricing Constants
+Find where plan prices are stored for display or calculation purposes.
+This might be in a constants file, a pricing config object, or inline in components.
+What are the current monthly prices for Core, Professional, and Expert (GBP and USD if present)?
+
+---
+
+AREA 4 — Stripe Lookup Key Resolution
+Find the code that selects which Stripe price ID or lookup key to use when creating a checkout session.
+What lookup key format is currently being used?
+Examples of what I'm looking for:
+  - ma_core_monthly (old GBP-only format, no currency suffix)
+  - ma_core_monthly_gbp (new format with _gbp suffix)
+  - ma_core_monthly_usd (USD variant)
+Does the code handle both GBP and USD, or GBP only?
+Does it accept a currency param on the checkout endpoint?
+
+---
+
+AREA 5 — 5D Community Promo Code Logic
+Find the promo code claim / redemption handler.
+What is freeMonthsTotal currently set to for Cohort 2 activations?
+Which coupon ID is applied for the free period? (look for fRoxnZbY or htWfiS4h or an env var reference)
+Is there a postFreePeriodCouponId that applies the 25% ongoing discount? What value?
+
+---
+
+AREA 6 — 5D Free Period Cron / Warning Email
+Find the daily cron job that checks for expiring free periods.
+What is the elapsed months threshold for the warning email?
+What is it currently doing when the free period ends — applying a coupon, sending an email?
+
+---
+
+AREA 7 — 5D Partner Invoice Logic
+Is there any code that creates Stripe invoice items on a partner customer account (Dee / 5D)?
+Is it triggered on code activation (upfront), or is it a monthly cron?
+Does it reference an env var like STRIPE_PARTNER_CUSTOMER_5D or STRIPE_PARTNER_PRICE_5D?
+
+---
+
+AREA 8 — Admin 5D Report Page
+Find the admin referral invoice or 5D report page/component.
+Is there a "Generate Partner Invoice" button or similar?
+What does it currently do when triggered?
+
+---
+
+AREA 9 — Environment Variables
+List all Stripe-related environment variable names currently used in the codebase.
+I don't need the values — just the variable names (e.g. STRIPE_SECRET_KEY, STRIPE_COUPON_25_FOREVER, etc.)
+
+---
+
+Format your response as a numbered list matching the areas above.
+For each area: current value, file path, and status (complete / partial / missing / not started).
+Do not make any changes.
