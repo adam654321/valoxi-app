@@ -1,0 +1,133 @@
+Step 5 of 8 — Restructure Operational and Risk Reports
+Context
+Steps 1-4 are complete:
+
+SynthesisReportView built (Step 1)
+Narrative moved to top of all 7 expert reports (Step 2)
+Screening report restructured (Step 3)
+QoE and Financial reports restructured (Step 4)
+
+This step restructures two report views: OperationalReportView and RiskReportView.
+Do not touch any other components in this step.
+
+PART A — Operational Report
+Step 5a — Read OperationalReportView
+Read client/src/components/analysis/ExpertReportViews.tsx.
+Find OperationalReportView and map the current render order and field names.
+Step 5b — Reorder OperationalReportView to this structure:
+Section 1 — Score header (keep existing)
+Section 2 — Narrative (confirmed in place from Step 2)
+Section 3 — Key Findings (bulleted list)
+Section 4 — Red Flags (amber/red highlighted box — only if red_flags[] non-empty)
+Section 5 — Working Capital Panel
+Show as a row of stat cards:
+Debtor days | Creditor days | Stock/Inventory days | Cash conversion cycle
+Format as whole numbers with "days" label.
+Colour code: debtor days >60 = amber, >90 = red. Creditor days >90 = amber, >120 = red.
+Cash conversion cycle: negative = green (efficient), positive = amber/red.
+Label: "Working Capital"
+Section 6 — Revenue per Employee
+Single stat card: Revenue per Employee formatted as £XX,XXX.
+Below: headcount number, key person dependencies noted if present.
+Label: "Staff Productivity"
+Section 7 — Process Maturity
+If data.process_maturity exists:
+Show a simple grid of process areas with maturity rating (Ad Hoc / Basic / Defined / Optimised).
+Use colour coding: Ad Hoc = red, Basic = amber, Defined = green, Optimised = bright green.
+Label: "Process Maturity"
+Only render if data present.
+Section 8 — Systems and Technology
+If data.systems_assessment or data.technology exists:
+Render as a bulleted list of systems with fit-for-purpose yes/no rating.
+Label: "Systems & Technology"
+Only render if data present.
+Section 9 — Scalability Assessment
+data.scalability_constraints[] — bulleted list with amber styling
+data.scalability_opportunities[] — bulleted list with green styling
+Only render if either array is non-empty.
+Label: "Scalability"
+
+PART B — Risk Report
+Step 5c — Read RiskReportView
+Find RiskReportView and map the current render order and field names.
+Step 5d — Reorder RiskReportView to this structure:
+Section 1 — Score header (keep existing)
+Section 2 — Narrative (confirmed in place from Step 2)
+Section 3 — Key Findings (bulleted list)
+Section 4 — Deal Breakers ← MOST IMPORTANT
+If data.deal_breakers[] is non-empty, render in a prominent RED box at the top
+with a clear "Deal Breakers" header and warning icon.
+These are critical — they must be impossible to miss.
+Only render if the array is non-empty.
+Section 5 — Red Flags (separate amber box — only if non-empty)
+Distinct from deal breakers — these are serious but not fatal.
+Label: "Red Flags"
+Section 6 — Risk Register Table
+For each item in data.risk_register[] or data.risks[]:
+Risk name | Category | Likelihood (H/M/L) | Impact (H/M/L) | Composite score | Mitigation
+Colour-code the Likelihood and Impact cells: H=red, M=amber, L=green.
+Sort by composite score descending (highest risk first) if a sort field is available,
+otherwise render in the order provided.
+Label: "Risk Register"
+Only render if array is non-empty.
+Section 7 — Customer Concentration
+data.customer_concentration:
+Top customer % of revenue — show as a large number with colour coding
+>40% = red, >25% = amber, ≤25% = green
+Top 3 customers % of revenue — show as a secondary stat
+Concentration risk level badge
+Label: "Customer Concentration"
+Only render if data present.
+Section 8 — Key Person Dependency
+data.key_person_risk or similar:
+List named key persons with their dependency level and mitigation note.
+Label: "Key Person Dependency"
+Only render if data present.
+Section 9 — Regulatory and Compliance
+data.regulatory_risks[] — bulleted list
+data.compliance_status — text paragraph
+Label: "Regulatory & Compliance"
+Only render if data present.
+
+What NOT to change in this step
+
+ScreeningReportView (Step 3, done)
+SynthesisReportView (Step 1, done)
+QoEReportView, FinancialReportView (Step 4, done)
+SectorReportView, ValuationReportView, DealStructureReportView — these are Steps 6-7
+ExpertAnalysisDashboard.tsx
+Any API routes or data fetching
+
+
+Validation Checklist
+Code checks
+[ ] Only OperationalReportView and RiskReportView were modified
+[ ] No TypeScript errors
+[ ] No other components touched
+Visual checks — Operational Report
+Open the app, click "View full report" on the Operational expert card.
+[ ] Narrative confirmed at top (Step 2, still in place)
+[ ] Key findings visible as bullet list
+[ ] Red flags box present if there are red flags (absent if none)
+[ ] Working capital panel shows 4 stat cards: debtor days, creditor days, stock days, cash conversion cycle
+[ ] Working capital cards are colour-coded (amber/red for high days, green for negative cash conversion)
+[ ] Staff productivity card shows revenue per employee as a £ figure
+[ ] Scalability section visible with green/amber bullets (if data present)
+Visual checks — Risk Report
+Open the app, click "View full report" on the Risk expert card.
+[ ] Narrative confirmed at top (Step 2, still in place)
+[ ] Key findings visible
+[ ] Deal breakers section in a PROMINENT RED BOX if any deal breakers present
+(if no deal breakers, section is absent entirely — not an empty red box)
+[ ] Red flags in a separate AMBER BOX distinct from deal breakers
+[ ] Risk register renders as a table with colour-coded H/M/L cells
+[ ] Customer concentration shows top customer % as a large colour-coded number
+[ ] Key person dependency section visible (if data present)
+Regression checks
+[ ] All previously restructured reports unchanged:
+Screening (Step 3), QoE (Step 4), Financial (Step 4), Synthesis (Step 1)
+[ ] Sector, Valuation, Deal Structure reports unchanged — narrative still at top from Step 2
+[ ] Dashboard card layout unchanged
+If anything fails
+Tell me which section is missing or incorrectly rendered.
+Do not proceed to Step 6 until all checks pass.

@@ -720,10 +720,43 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
   const wc = d.working_capital || {};
   const wcMetrics = wc.yearly_metrics || {};
   const wcYears = Object.keys(wcMetrics).sort();
+  const latestWcYear = wcYears[wcYears.length - 1];
+  const latestWc = latestWcYear ? wcMetrics[latestWcYear] || {} : wc;
   const capex = d.capex || {};
   const workforce = d.workforce || {};
   const ownerDep = d.owner_dependency || {};
   const scalability = d.scalability || {};
+  const processMat = d.process_maturity || {};
+  const systemsAssessment = d.systems_assessment || d.technology || {};
+  const scalabilityConstraints = scalability.constraints || d.scalability_constraints || [];
+  const scalabilityOpportunities = scalability.opportunities || d.scalability_opportunities || [];
+
+  function debtorDaysColor(v: number | null): string {
+    if (v == null) return "";
+    if (v > 90) return "text-red-600";
+    if (v > 60) return "text-amber-600";
+    return "";
+  }
+  function creditorDaysColor(v: number | null): string {
+    if (v == null) return "";
+    if (v > 120) return "text-red-600";
+    if (v > 90) return "text-amber-600";
+    return "";
+  }
+  function cashCycleColor(v: number | null): string {
+    if (v == null) return "";
+    if (v < 0) return "text-green-600";
+    if (v > 60) return "text-red-600";
+    return "text-amber-600";
+  }
+
+  const maturityColors: Record<string, string> = {
+    "ad hoc": "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30",
+    "basic": "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
+    "defined": "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
+    "optimised": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+    "optimized": "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+  };
 
   return (
     <div className="space-y-6">
@@ -733,9 +766,46 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
         </SectionCard>
       )}
 
-      {wcYears.length > 0 && (
-        <SectionCard icon={BarChart3} title="Working Capital" accent="border-l-blue-500">
-          <div className="flex items-center gap-4 mb-4">
+      {d.key_findings?.length > 0 && (
+        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
+          <BulletList items={d.key_findings} variant="strength" />
+        </SectionCard>
+      )}
+
+      {d.red_flags?.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-red-500/5 border-red-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-red-700 dark:text-red-300">Red Flags</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={d.red_flags.map((f: any) => typeof f === "string" ? f : f.description || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
+      )}
+
+      <SectionCard icon={BarChart3} title="Working Capital" accent="border-l-blue-500">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { key: "debtor_days", label: "Debtor Days", colorFn: debtorDaysColor },
+            { key: "creditor_days", label: "Creditor Days", colorFn: creditorDaysColor },
+            { key: "stock_days", label: "Stock Days", colorFn: () => "" },
+            { key: "cash_conversion_cycle_days", label: "Cash Conversion Cycle", colorFn: cashCycleColor },
+          ].map(({ key, label, colorFn }) => {
+            const val = latestWc[key] ?? wc[key] ?? null;
+            return (
+              <div key={key} className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                <p className={`text-2xl font-bold ${colorFn(val)}`}>
+                  {val != null ? `${Math.round(val)}` : "—"}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">days</p>
+              </div>
+            );
+          })}
+        </div>
+        {(wc.trend || wc.working_capital_intensity) && (
+          <div className="flex items-center gap-4 mt-3">
             {wc.trend && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Trend:</span>
@@ -749,32 +819,112 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
               </div>
             )}
           </div>
-          <div className="overflow-x-auto -mx-4 px-4">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="sticky left-0 bg-muted/30 font-bold">Metric</TableHead>
-                  {wcYears.map((y) => <TableHead key={y} className="text-right min-w-[90px] font-bold">{y}</TableHead>)}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {["debtor_days", "creditor_days", "stock_days", "cash_conversion_cycle_days", "net_working_capital", "working_capital_percent_revenue"].map((key, idx) => (
-                  <TableRow key={key} className={idx % 2 === 0 ? "bg-muted/10" : ""}>
-                    <TableCell className="sticky left-0 bg-inherit font-medium text-sm whitespace-nowrap">{formatLabel(key)}</TableCell>
-                    {wcYears.map((y) => {
-                      const val = wcMetrics[y]?.[key];
-                      return (
-                        <TableCell key={y} className="text-right text-sm font-mono">
-                          {key === "net_working_capital" ? formatCurrency(val) : key.includes("percent") ? formatPercent(val) : formatNumber(val)}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        )}
+        {wc.observations?.length > 0 && <div className="mt-3"><BulletList items={wc.observations} variant="info" /></div>}
+      </SectionCard>
+
+      {(workforce.revenue_per_employee != null || workforce.headcount != null || workforce.employee_count != null) && (
+        <SectionCard icon={Users} title="Staff Productivity" accent="border-l-purple-500">
+          <div className="flex items-center gap-6">
+            {(workforce.revenue_per_employee != null) && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Revenue per Employee</p>
+                <p className="text-3xl font-bold">{formatCurrency(workforce.revenue_per_employee)}</p>
+              </div>
+            )}
+            {(workforce.headcount ?? workforce.employee_count) != null && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Headcount</p>
+                <p className="text-2xl font-bold">{workforce.headcount ?? workforce.employee_count}</p>
+              </div>
+            )}
           </div>
-          {wc.observations?.length > 0 && <div className="mt-4"><BulletList items={wc.observations} variant="info" /></div>}
+          {workforce.key_person_dependencies && (
+            <p className="text-sm text-muted-foreground mt-3 italic">{workforce.key_person_dependencies}</p>
+          )}
+          {workforce.observations?.length > 0 && <div className="mt-3"><BulletList items={workforce.observations} variant="info" /></div>}
+        </SectionCard>
+      )}
+
+      {Object.keys(processMat).length > 0 && (
+        <SectionCard icon={Gauge} title="Process Maturity" accent="border-l-teal-500">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Object.entries(processMat).map(([area, rating]: [string, any]) => {
+              const ratingStr = String(rating ?? "").toLowerCase();
+              const colorCls = maturityColors[ratingStr] || "bg-muted/30 border-muted";
+              return (
+                <div key={area} className={`border rounded-lg p-3 text-center ${colorCls}`}>
+                  <p className="text-xs uppercase tracking-wide mb-1 font-medium">{formatLabel(area)}</p>
+                  <Badge variant="outline" className="capitalize font-medium">{String(rating ?? "—")}</Badge>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      )}
+
+      {Object.keys(systemsAssessment).length > 0 && (
+        <SectionCard icon={Layers} title="Systems & Technology" accent="border-l-blue-500">
+          {Array.isArray(systemsAssessment) ? (
+            <ul className="space-y-2">
+              {systemsAssessment.map((sys: any, i: number) => (
+                <li key={i} className="flex items-center justify-between p-3 rounded-lg border bg-muted/10">
+                  <span className="text-sm font-medium">{typeof sys === "string" ? sys : sys.name || sys.system || String(sys)}</span>
+                  {typeof sys === "object" && sys.fit_for_purpose != null && (
+                    <Badge className={sys.fit_for_purpose ? "bg-green-600 text-white" : "bg-red-600 text-white"}>
+                      {sys.fit_for_purpose ? "Fit" : "Not Fit"}
+                    </Badge>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="space-y-2">
+              {Object.entries(systemsAssessment).filter(([k]) => k !== "observations").map(([k, v]: [string, any]) => (
+                <li key={k} className="flex items-center justify-between p-3 rounded-lg border bg-muted/10">
+                  <span className="text-sm font-medium">{formatLabel(k)}</span>
+                  {typeof v === "boolean" ? (
+                    <Badge className={v ? "bg-green-600 text-white" : "bg-red-600 text-white"}>{v ? "Fit" : "Not Fit"}</Badge>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">{String(v ?? "—")}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      )}
+
+      {(scalabilityConstraints.length > 0 || scalabilityOpportunities.length > 0) && (
+        <SectionCard icon={TrendingUp} title="Scalability" accent="border-l-green-500">
+          <div className="space-y-4">
+            {scalabilityOpportunities.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Opportunities</p>
+                <ul className="space-y-1">
+                  {scalabilityOpportunities.map((item: string, i: number) => (
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <ArrowUpRight className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{typeof item === "string" ? item : String(item)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {scalabilityConstraints.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Constraints</p>
+                <ul className="space-y-1">
+                  {scalabilityConstraints.map((item: string, i: number) => (
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <span>{typeof item === "string" ? item : String(item)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </SectionCard>
       )}
 
@@ -796,16 +946,6 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
         </SectionCard>
       )}
 
-      {Object.keys(workforce).length > 0 && (
-        <SectionCard icon={Users} title="Workforce & Productivity" accent="border-l-purple-500">
-          <KeyValueGrid items={Object.entries(workforce).filter(([k]) => k !== "observations" && !Array.isArray(workforce[k])).map(([k, v]) => ({
-            label: formatLabel(k),
-            value: typeof v === "number" ? (k.includes("percent") ? formatPercent(v as number) : k.includes("revenue") || k.includes("cost") || k.includes("salary") ? formatCurrency(v as number) : formatNumber(v)) : String(v ?? "—"),
-          }))} />
-          {workforce.observations?.length > 0 && <div className="mt-4"><BulletList items={workforce.observations} variant="info" /></div>}
-        </SectionCard>
-      )}
-
       {Object.keys(ownerDep).length > 0 && (
         <SectionCard icon={Shield} title="Owner Dependency" accent="border-l-amber-500">
           <KeyValueGrid items={Object.entries(ownerDep).filter(([k]) => k !== "observations").map(([k, v]) => ({
@@ -815,28 +955,17 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
           {ownerDep.observations?.length > 0 && <div className="mt-4"><BulletList items={ownerDep.observations} variant="info" /></div>}
         </SectionCard>
       )}
-
-      {Object.keys(scalability).length > 0 && (
-        <SectionCard icon={TrendingUp} title="Scalability Assessment" accent="border-l-green-500">
-          <KeyValueGrid items={Object.entries(scalability).filter(([k]) => k !== "observations").map(([k, v]) => ({
-            label: formatLabel(k),
-            value: String(v ?? "—"),
-          }))} />
-          {scalability.observations?.length > 0 && <div className="mt-4"><BulletList items={scalability.observations} variant="info" /></div>}
-        </SectionCard>
-      )}
-
-      {d.key_findings?.length > 0 && (
-        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
-          <BulletList items={d.key_findings} variant="strength" />
-        </SectionCard>
-      )}
     </div>
   );
 }
 
 export function RiskReportView({ data }: { data: Record<string, unknown> }) {
   const d = data as any;
+  const custConc = d.customer_concentration || {};
+  const keyPerson = d.key_person_risk || d.key_person_dependency || {};
+  const regulatory = d.regulatory_risks || [];
+  const complianceStatus = d.compliance_status || d.compliance || null;
+  const riskRegister = d.risk_register || d.risks || [];
 
   const riskSections = [
     { key: "customer_concentration", label: "Customer Concentration", icon: Target, accent: "border-l-amber-500" },
@@ -846,6 +975,22 @@ export function RiskReportView({ data }: { data: Record<string, unknown> }) {
     { key: "balance_sheet_risks", label: "Balance Sheet Risks", icon: BarChart3, accent: "border-l-blue-500" },
     { key: "bad_debt", label: "Bad Debt Risk", icon: AlertTriangle, accent: "border-l-orange-500" },
   ];
+
+  function hmlColor(level: string | null): string {
+    if (!level) return "";
+    const l = String(level).toLowerCase();
+    if (l === "high" || l === "h") return "bg-red-600 text-white";
+    if (l === "medium" || l === "m") return "bg-amber-600 text-white";
+    if (l === "low" || l === "l") return "bg-green-600 text-white";
+    return "";
+  }
+
+  function concColor(pct: number | null): string {
+    if (pct == null) return "";
+    if (pct > 40) return "text-red-600";
+    if (pct > 25) return "text-amber-600";
+    return "text-green-600";
+  }
 
   return (
     <div className="space-y-6">
@@ -868,68 +1013,154 @@ export function RiskReportView({ data }: { data: Record<string, unknown> }) {
         </SectionCard>
       )}
 
-      {riskSections.map(({ key, label, icon, accent }) => {
-        const section = d[key];
-        if (!section || typeof section !== "object") return null;
-        return (
-          <SectionCard key={key} icon={icon} title={label} accent={accent}>
-            <div className="space-y-4">
-              {section.risk_level && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Risk Level:</span>
-                  <RiskLevelBadge level={section.risk_level} />
-                </div>
-              )}
-              <KeyValueGrid items={
-                Object.entries(section)
-                  .filter(([k]) => !["risk_level", "observations", "customers_over_15_percent"].includes(k) && !Array.isArray(section[k]))
-                  .map(([k, v]) => ({
-                    label: formatLabel(k),
-                    value: typeof v === "boolean" ? (v ? "Yes" : "No") : typeof v === "number" ? (k.includes("percent") ? formatPercent(v as number) : formatNumber(v)) : String(v ?? "—"),
-                  }))
-              } />
-              {section.customers_over_15_percent?.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {section.customers_over_15_percent.map((c: string, i: number) => (
-                    <Badge key={i} className="bg-red-600 text-white text-xs">{c}</Badge>
-                  ))}
-                </div>
-              )}
-              {section.observations?.length > 0 && <BulletList items={section.observations} variant="info" />}
-            </div>
-          </SectionCard>
-        );
-      })}
-
-      {d.risk_register?.length > 0 && (
-        <SectionCard icon={Shield} title="Risk Register" accent="border-l-red-500">
-          <div className="space-y-3">
-            {d.risk_register.map((risk: any, i: number) => (
-              <div key={i} className="border rounded-lg p-4 space-y-2 bg-red-500/3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-sm">{risk.risk || risk.description}</span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {risk.likelihood && <Badge variant="outline" className="text-[10px]">L: {risk.likelihood}</Badge>}
-                    {risk.impact && <Badge variant="outline" className="text-[10px]">I: {risk.impact}</Badge>}
-                    {risk.severity && <RiskLevelBadge level={risk.severity} />}
-                  </div>
-                </div>
-                {risk.mitigation && <p className="text-sm text-muted-foreground">{risk.mitigation}</p>}
-              </div>
-            ))}
-          </div>
+      {d.key_findings?.length > 0 && (
+        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
+          <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
 
       {d.deal_breakers?.length > 0 && (
-        <SectionCard icon={XCircle} title="Deal Breakers" accent="border-l-red-600">
-          <BulletList items={d.deal_breakers.map((db: any) => typeof db === "string" ? db : db.description || db.risk)} variant="concern" />
+        <div className="border-2 rounded-lg overflow-hidden bg-red-500/10 border-red-600/40">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-600/20 border-b border-red-600/30">
+            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <h3 className="font-bold text-sm tracking-tight text-red-700 dark:text-red-300 uppercase">Deal Breakers</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={d.deal_breakers.map((db: any) => typeof db === "string" ? db : db.description || db.risk)} variant="concern" />
+          </div>
+        </div>
+      )}
+
+      {d.red_flags?.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-amber-500/5 border-amber-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-amber-500/10 border-b border-amber-500/20">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-amber-700 dark:text-amber-300">Red Flags</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={d.red_flags.map((f: any) => typeof f === "string" ? f : f.description || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
+      )}
+
+      {riskRegister.length > 0 && (
+        <SectionCard icon={Shield} title="Risk Register" accent="border-l-red-500">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-bold">Risk</TableHead>
+                  <TableHead className="font-bold">Category</TableHead>
+                  <TableHead className="font-bold text-center">Likelihood</TableHead>
+                  <TableHead className="font-bold text-center">Impact</TableHead>
+                  <TableHead className="font-bold text-center">Score</TableHead>
+                  <TableHead className="font-bold">Mitigation</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...riskRegister]
+                  .sort((a: any, b: any) => (b.composite_score ?? b.score ?? 0) - (a.composite_score ?? a.score ?? 0))
+                  .map((risk: any, i: number) => (
+                  <TableRow key={i} className={i % 2 === 0 ? "bg-muted/10" : ""}>
+                    <TableCell className="text-sm font-medium max-w-[200px]">{risk.risk || risk.description || risk.name}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-[10px] capitalize">{formatLabel(risk.category || "")}</Badge></TableCell>
+                    <TableCell className="text-center">
+                      <Badge className={`text-[10px] ${hmlColor(risk.likelihood)}`}>{risk.likelihood || "—"}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge className={`text-[10px] ${hmlColor(risk.impact)}`}>{risk.impact || "—"}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center text-sm font-mono font-bold">{risk.composite_score ?? risk.score ?? risk.severity ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px]">{risk.mitigation || "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </SectionCard>
       )}
 
-      {d.key_findings?.length > 0 && (
-        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
-          <BulletList items={d.key_findings} variant="strength" />
+      {(custConc.top_customer_percent != null || custConc.top_customer_revenue_percent != null || custConc.concentration_risk_level) && (
+        <SectionCard icon={Target} title="Customer Concentration" accent="border-l-amber-500">
+          <div className="flex items-center gap-6">
+            {(custConc.top_customer_percent ?? custConc.top_customer_revenue_percent) != null && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Top Customer % of Revenue</p>
+                <p className={`text-3xl font-bold ${concColor(custConc.top_customer_percent ?? custConc.top_customer_revenue_percent)}`}>
+                  {formatPercent(custConc.top_customer_percent ?? custConc.top_customer_revenue_percent)}
+                </p>
+              </div>
+            )}
+            {(custConc.top_3_customers_percent ?? custConc.top_3_customer_revenue_percent) != null && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Top 3 Customers</p>
+                <p className="text-xl font-bold">{formatPercent(custConc.top_3_customers_percent ?? custConc.top_3_customer_revenue_percent)}</p>
+              </div>
+            )}
+            {custConc.concentration_risk_level && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Risk Level</p>
+                <RiskLevelBadge level={custConc.concentration_risk_level} />
+              </div>
+            )}
+          </div>
+          {custConc.customers_over_15_percent?.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1">
+              <span className="text-xs text-muted-foreground mr-1">Customers &gt;15%:</span>
+              {custConc.customers_over_15_percent.map((c: string, i: number) => (
+                <Badge key={i} className="bg-red-600 text-white text-xs">{c}</Badge>
+              ))}
+            </div>
+          )}
+          {custConc.observations?.length > 0 && <div className="mt-3"><BulletList items={custConc.observations} variant="info" /></div>}
+        </SectionCard>
+      )}
+
+      {(keyPerson.key_persons?.length > 0 || keyPerson.dependency_level || keyPerson.risk_level) && (
+        <SectionCard icon={Users} title="Key Person Dependency" accent="border-l-purple-500">
+          {keyPerson.risk_level && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm text-muted-foreground">Risk Level:</span>
+              <RiskLevelBadge level={keyPerson.risk_level} />
+            </div>
+          )}
+          {keyPerson.key_persons?.length > 0 ? (
+            <div className="space-y-2">
+              {keyPerson.key_persons.map((person: any, i: number) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg border bg-muted/10">
+                  <div>
+                    <span className="text-sm font-medium">{person.name || person.role || `Person ${i + 1}`}</span>
+                    {person.role && person.name && <span className="text-xs text-muted-foreground ml-2">({person.role})</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {person.dependency_level && <Badge variant="outline" className="text-[10px] capitalize">{person.dependency_level}</Badge>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <KeyValueGrid items={Object.entries(keyPerson).filter(([k]) => !["observations", "key_persons", "risk_level"].includes(k) && !Array.isArray(keyPerson[k])).map(([k, v]) => ({
+              label: formatLabel(k),
+              value: typeof v === "boolean" ? (v ? "Yes" : "No") : String(v ?? "—"),
+            }))} />
+          )}
+          {(keyPerson.mitigation || keyPerson.mitigation_note) && (
+            <p className="text-sm text-muted-foreground mt-3 italic">{keyPerson.mitigation || keyPerson.mitigation_note}</p>
+          )}
+          {keyPerson.observations?.length > 0 && <div className="mt-3"><BulletList items={keyPerson.observations} variant="info" /></div>}
+        </SectionCard>
+      )}
+
+      {(regulatory.length > 0 || complianceStatus) && (
+        <SectionCard icon={ShieldCheck} title="Regulatory & Compliance" accent="border-l-blue-500">
+          <div className="space-y-4">
+            {complianceStatus && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{typeof complianceStatus === "string" ? complianceStatus : JSON.stringify(complianceStatus)}</p>
+            )}
+            {regulatory.length > 0 && (
+              <BulletList items={regulatory.map((r: any) => typeof r === "string" ? r : r.description || r.risk || String(r))} variant="concern" />
+            )}
+          </div>
         </SectionCard>
       )}
     </div>
