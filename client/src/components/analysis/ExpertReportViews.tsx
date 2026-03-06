@@ -1228,6 +1228,340 @@ export function DealStructureReportView({ data }: { data: Record<string, unknown
   );
 }
 
+export function SynthesisReportView({ data }: { data: Record<string, unknown> }) {
+  const d = data as any;
+  const recommendation = d.recommendation || "";
+  const overallScore = d.overall_score ?? 0;
+  const scoresDashboard = d.scores_dashboard || {};
+  const consensus = d.expert_consensus || {};
+  const devil = d.devils_advocate || {};
+  const thesis = d.investment_thesis || {};
+  const infoRequests = d.information_requests || {};
+  const valSummary = d.valuation_summary || {};
+  const equityRange = valSummary.equity_value_range || {};
+
+  const isGreen = recommendation === "STRONG_PROCEED" || recommendation === "PROCEED";
+  const isAmber = recommendation === "PROCEED_WITH_CAUTION";
+
+  const verdictColor = isGreen
+    ? "bg-green-500/5 border-green-500/30"
+    : isAmber
+      ? "bg-amber-500/5 border-amber-500/30"
+      : "bg-red-500/5 border-red-500/30";
+
+  const verdictBadgeColor = isGreen
+    ? "bg-green-600 hover:bg-green-700"
+    : isAmber
+      ? "bg-amber-600 hover:bg-amber-700"
+      : "bg-red-600 hover:bg-red-700";
+
+  const expertOrder = ["financial", "operational", "risk", "quality_of_earnings", "sector", "valuation", "deal_structure"];
+
+  function renderNarrativeReport(text: string) {
+    const lines = text.split("\n");
+    const elements: React.ReactNode[] = [];
+    let currentParagraph: string[] = [];
+
+    const flushParagraph = () => {
+      if (currentParagraph.length > 0) {
+        elements.push(
+          <p key={`p-${elements.length}`} className="text-sm leading-relaxed mb-3">
+            {currentParagraph.join("\n")}
+          </p>
+        );
+        currentParagraph = [];
+      }
+    };
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) {
+        flushParagraph();
+        return;
+      }
+      if (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed) && trimmed.length > 2) {
+        flushParagraph();
+        elements.push(
+          <h3 key={`h-${elements.length}`} className="text-sm font-bold uppercase tracking-wide text-foreground mt-5 mb-2 border-b border-muted pb-1">
+            {trimmed}
+          </h3>
+        );
+      } else {
+        currentParagraph.push(trimmed);
+      }
+    });
+    flushParagraph();
+    return elements;
+  }
+
+  const criticalRequests = infoRequests.critical || [];
+  const importantRequests = infoRequests.important || [];
+  const niceToHaveRequests = infoRequests.nice_to_have || [];
+
+  return (
+    <div className="space-y-6">
+      {(recommendation || overallScore > 0) && (
+        <div className={`rounded-xl p-6 border-2 ${verdictColor}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Combined Verdict</p>
+              <Badge className={`text-lg px-4 py-1.5 font-bold tracking-wide ${verdictBadgeColor} text-white`}>
+                {recommendation.replace(/_/g, " ") || "—"}
+              </Badge>
+              <p className="text-xs text-muted-foreground mt-3">Combined verdict across 8 specialist expert analyses</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Overall Score</p>
+              <ScoreRing score={overallScore} size="lg" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {d.executive_summary && (
+        <SectionCard icon={Brain} title="Executive Summary" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.executive_summary} />
+        </SectionCard>
+      )}
+
+      {Object.keys(scoresDashboard).length > 0 && (
+        <SectionCard icon={BarChart3} title="Scores Dashboard" accent="border-l-blue-500">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {expertOrder.map((key) => {
+              const entry = scoresDashboard[key];
+              if (!entry) return null;
+              const score = entry.score ?? 0;
+              return (
+                <div key={key} className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30 space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{formatLabel(key)}</p>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-lg font-bold ${score >= 70 ? "text-green-600" : score >= 40 ? "text-amber-600" : "text-red-600"}`}>
+                      {score}/100
+                    </span>
+                    {entry.confidence && (
+                      <Badge variant="outline" className="text-[10px] capitalize">{entry.confidence}</Badge>
+                    )}
+                  </div>
+                  <ScoreBar score={score} />
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      )}
+
+      {(equityRange.low !== undefined || equityRange.mid !== undefined || equityRange.high !== undefined) && (
+        <SectionCard icon={CircleDollarSign} title="Valuation Snapshot" accent="border-l-emerald-500">
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            {[
+              { k: "low", l: "Conservative" },
+              { k: "mid", l: "Base Case", highlight: true },
+              { k: "high", l: "Optimistic" },
+            ].filter(({ k }) => equityRange[k] !== undefined && equityRange[k] !== null).map(({ k, l, highlight }) => (
+              <div key={k} className={`border rounded-xl p-5 text-center ${highlight ? "border-primary bg-primary/5 ring-1 ring-primary/20" : ""}`}>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{l}</p>
+                <p className="text-2xl font-bold tracking-tight">{formatCurrency(equityRange[k])}</p>
+                <p className="text-xs text-muted-foreground mt-1">Equity Value</p>
+              </div>
+            ))}
+          </div>
+          {valSummary.recommended_offer && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-muted-foreground">Recommended Offer:</span>
+              <span className="text-sm font-bold">{typeof valSummary.recommended_offer === "number" ? formatCurrency(valSummary.recommended_offer) : String(valSummary.recommended_offer)}</span>
+            </div>
+          )}
+          {valSummary.recommended_structure && (
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">Recommended Structure:</span>
+              <Badge variant="outline" className="capitalize font-medium">{valSummary.recommended_structure}</Badge>
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {(consensus.agreements?.length > 0 || consensus.contradictions?.length > 0) && (
+        <SectionCard icon={Users} title="Expert Consensus" accent="border-l-purple-500">
+          <div className="space-y-5">
+            {consensus.agreements?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Where Experts Agreed</p>
+                <BulletList items={consensus.agreements} variant="strength" />
+              </div>
+            )}
+            {consensus.contradictions?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Where Experts Disagreed</p>
+                <div className="space-y-3">
+                  {consensus.contradictions.map((c: any, i: number) => (
+                    <div key={i} className="border rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-2 divide-x">
+                        <div className="p-3 bg-blue-500/5">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{c.expert_a || "Expert A"}</p>
+                          <p className="text-sm">{c.expert_a_view || "—"}</p>
+                        </div>
+                        <div className="p-3 bg-amber-500/5">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{c.expert_b || "Expert B"}</p>
+                          <p className="text-sm">{c.expert_b_view || "—"}</p>
+                        </div>
+                      </div>
+                      {c.resolution && (
+                        <div className="px-3 py-2 bg-muted/30 border-t">
+                          <p className="text-xs"><span className="font-semibold">Resolution:</span> {c.resolution}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {(devil.worst_case_scenario || devil.weakest_assumptions?.length > 0 || devil.underweighted_risks?.length > 0) && (
+        <SectionCard icon={AlertTriangle} title="Devil's Advocate" accent="border-l-amber-500">
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 space-y-4">
+            {devil.worst_case_scenario && (
+              <div>
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">Worst Case Scenario</p>
+                <p className="text-sm leading-relaxed">{devil.worst_case_scenario}</p>
+              </div>
+            )}
+            {devil.weakest_assumptions?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">Weakest Assumptions</p>
+                <BulletList items={devil.weakest_assumptions} variant="concern" />
+              </div>
+            )}
+            {devil.underweighted_risks?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">Underweighted Risks</p>
+                <BulletList items={devil.underweighted_risks} variant="concern" />
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {(thesis.positive_case || thesis.conditions_for_success?.length > 0 || thesis.integration_priorities_100_days?.length > 0) && (
+        <SectionCard icon={TrendingUp} title="Investment Thesis" accent="border-l-green-500">
+          <div className="space-y-4">
+            {thesis.positive_case && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Positive Case</p>
+                <NarrativeBlock text={thesis.positive_case} />
+              </div>
+            )}
+            {thesis.conditions_for_success?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Conditions for Success</p>
+                <ol className="space-y-2">
+                  {thesis.conditions_for_success.map((item: string, i: number) => (
+                    <li key={i} className="flex gap-3 p-3 rounded-lg border bg-green-500/5 border-green-500/10">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500/20 text-green-700 dark:text-green-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                      <span className="text-sm leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {thesis.integration_priorities_100_days?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Integration Priorities (First 100 Days)</p>
+                <ol className="space-y-2">
+                  {thesis.integration_priorities_100_days.map((item: string, i: number) => (
+                    <li key={i} className="flex gap-3 p-3 rounded-lg border bg-blue-500/5 border-blue-500/10">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                      <span className="text-sm leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {(criticalRequests.length > 0 || importantRequests.length > 0 || niceToHaveRequests.length > 0) && (
+        <SectionCard icon={FileText} title="Information Requests" accent="border-l-red-500">
+          <div className="space-y-5">
+            {criticalRequests.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">Critical</p>
+                </div>
+                <div className="space-y-2">
+                  {criticalRequests.map((req: any, i: number) => (
+                    <div key={i} className="border border-red-500/20 bg-red-500/5 rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold">{typeof req === "string" ? req : req.request || req.item || "—"}</p>
+                        {req.source_expert && <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">{formatLabel(req.source_expert)}</Badge>}
+                      </div>
+                      {req.rationale && <p className="text-xs text-muted-foreground">{req.rationale}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {importantRequests.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Important</p>
+                </div>
+                <div className="space-y-2">
+                  {importantRequests.map((req: any, i: number) => (
+                    <div key={i} className="border border-amber-500/20 bg-amber-500/5 rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold">{typeof req === "string" ? req : req.request || req.item || "—"}</p>
+                        {req.source_expert && <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">{formatLabel(req.source_expert)}</Badge>}
+                      </div>
+                      {req.rationale && <p className="text-xs text-muted-foreground">{req.rationale}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {niceToHaveRequests.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nice to Have</p>
+                </div>
+                <div className="space-y-2">
+                  {niceToHaveRequests.map((req: any, i: number) => (
+                    <div key={i} className="border rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold">{typeof req === "string" ? req : req.request || req.item || "—"}</p>
+                        {req.source_expert && <Badge variant="outline" className="text-[10px] capitalize flex-shrink-0">{formatLabel(req.source_expert)}</Badge>}
+                      </div>
+                      {req.rationale && <p className="text-xs text-muted-foreground">{req.rationale}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {d.narrative_report && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/40 border-b">
+            <Brain className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm tracking-tight">Investment Memorandum</h3>
+          </div>
+          <div className="p-5 bg-muted/10">
+            {renderNarrativeReport(d.narrative_report)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function GenericReportView({ data }: { data: Record<string, unknown> }) {
   const SKIP = new Set(["expert", "company_name", "sector", "analysis_date", "score", "confidence"]);
 
@@ -1321,6 +1655,7 @@ export function getReportViewForExpert(expertType: string, rawData: Record<strin
     case "sector": return <SectorReportView data={data} />;
     case "valuation": return <ValuationReportView data={data} />;
     case "deal_structure": return <DealStructureReportView data={data} />;
+    case "synthesis": return <SynthesisReportView data={data} />;
     default: return <GenericReportView data={data} />;
   }
 }
