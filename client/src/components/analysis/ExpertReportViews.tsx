@@ -464,9 +464,16 @@ export function FinancialReportView({ data }: { data: Record<string, unknown> })
   const costStructure = d.cost_structure || {};
   const earningsQuality = d.earnings_quality || {};
   const debtService = d.debt_service || {};
+  const topOverheads = costStructure.top_5_overheads || costStructure.top_overheads || [];
 
   const latestYear = years[years.length - 1];
   const latestData = yearlyMetrics[latestYear] || {};
+
+  const cagrFields = [
+    { key: "revenue_cagr", label: "Revenue CAGR" },
+    { key: "gross_profit_cagr", label: "Gross Profit CAGR" },
+    { key: "operating_profit_cagr", label: "Operating Profit CAGR" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -494,97 +501,214 @@ export function FinancialReportView({ data }: { data: Record<string, unknown> })
         </SectionCard>
       )}
 
+      {d.key_findings?.length > 0 && (
+        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
+          <BulletList items={d.key_findings} variant="strength" />
+        </SectionCard>
+      )}
+
+      {d.red_flags?.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-red-500/5 border-red-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-red-700 dark:text-red-300">Red Flags</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={d.red_flags.map((f: any) => typeof f === "string" ? f : f.description || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
+      )}
+
       {years.length > 0 && (
-        <SectionCard icon={DollarSign} title="Yearly Financial Metrics" accent="border-l-emerald-500">
+        <SectionCard icon={DollarSign} title="Profit & Loss Summary" accent="border-l-emerald-500">
           <div className="overflow-x-auto -mx-4 px-4">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead className="sticky left-0 bg-muted/30 font-bold">Metric</TableHead>
-                  {years.map((y) => (
-                    <TableHead key={y} className="text-right min-w-[100px] font-bold">{y}</TableHead>
-                  ))}
+                  <TableHead className="sticky left-0 bg-muted/30 font-bold">Year</TableHead>
+                  <TableHead className="text-right font-bold">Revenue</TableHead>
+                  <TableHead className="text-right font-bold">Gross Profit</TableHead>
+                  <TableHead className="text-right font-bold">Gross %</TableHead>
+                  <TableHead className="text-right font-bold">Op. Profit</TableHead>
+                  <TableHead className="text-right font-bold">Op. %</TableHead>
+                  {years.some((y) => yearlyMetrics[y]?.ebitda != null) && (
+                    <TableHead className="text-right font-bold">EBITDA</TableHead>
+                  )}
+                  <TableHead className="text-right font-bold">Net Profit</TableHead>
+                  <TableHead className="text-right font-bold">Net %</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[
-                  { key: "revenue", label: "Revenue", format: "currency" },
-                  { key: "revenue_yoy_growth_percent", label: "Revenue Growth", format: "percent", colored: true },
-                  { key: "gross_profit", label: "Gross Profit", format: "currency" },
-                  { key: "gross_margin_percent", label: "Gross Margin", format: "percent" },
-                  { key: "operating_profit", label: "Operating Profit", format: "currency" },
-                  { key: "operating_margin_percent", label: "Operating Margin", format: "percent" },
-                  { key: "ebitda", label: "EBITDA", format: "currency" },
-                  { key: "net_profit", label: "Net Profit", format: "currency", colored: true },
-                  { key: "net_margin_percent", label: "Net Margin", format: "percent" },
-                  { key: "interest_coverage_ratio", label: "Interest Coverage", format: "number" },
-                  { key: "effective_tax_rate_percent", label: "Effective Tax Rate", format: "percent" },
-                ].map(({ key, label, format, colored }, idx) => (
-                  <TableRow key={key} className={idx % 2 === 0 ? "bg-muted/10" : ""}>
-                    <TableCell className="sticky left-0 bg-inherit font-medium text-sm whitespace-nowrap">{label}</TableCell>
-                    {years.map((y) => {
-                      const val = yearlyMetrics[y]?.[key];
-                      return (
-                        <TableCell key={y} className={`text-right text-sm font-mono ${colored ? colorForValue(val) : ""}`}>
-                          {format === "currency" ? formatCurrency(val) : format === "percent" ? (
-                            <span>{formatPercent(val)} <TrendIcon val={val} /></span>
-                          ) : formatNumber(val)}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
+                {years.map((y, idx) => {
+                  const m = yearlyMetrics[y] || {};
+                  const hasEbitda = years.some((yr) => yearlyMetrics[yr]?.ebitda != null);
+                  return (
+                    <TableRow key={y} className={idx % 2 === 0 ? "bg-muted/10" : ""}>
+                      <TableCell className="sticky left-0 bg-inherit font-bold text-sm">{y}</TableCell>
+                      <TableCell className="text-right text-sm font-mono">{formatCurrency(m.revenue)}</TableCell>
+                      <TableCell className="text-right text-sm font-mono">{formatCurrency(m.gross_profit)}</TableCell>
+                      <TableCell className="text-right text-sm font-mono">{formatPercent(m.gross_margin_percent)}</TableCell>
+                      <TableCell className="text-right text-sm font-mono">{formatCurrency(m.operating_profit)}</TableCell>
+                      <TableCell className="text-right text-sm font-mono">{formatPercent(m.operating_margin_percent)}</TableCell>
+                      {hasEbitda && <TableCell className="text-right text-sm font-mono">{formatCurrency(m.ebitda)}</TableCell>}
+                      <TableCell className={`text-right text-sm font-mono ${colorForValue(m.net_profit)}`}>{formatCurrency(m.net_profit)}</TableCell>
+                      <TableCell className="text-right text-sm font-mono">{formatPercent(m.net_margin_percent)}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         </SectionCard>
       )}
 
-      {Object.keys(cagr).length > 0 && (
-        <SectionCard icon={TrendingUp} title="Growth Rates (CAGR)" accent="border-l-teal-500">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Object.entries(cagr).map(([key, val]: [string, any]) => (
+      <SectionCard icon={TrendingUp} title="Growth Rates (CAGR)" accent="border-l-teal-500">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {cagrFields.map(({ key, label }) => {
+            const val = cagr[key] ?? cagr[key.replace("_cagr", "")] ?? null;
+            return (
+              <div key={key} className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                {val != null && typeof val === "number" ? (
+                  <p className={`text-xl font-bold ${colorForValue(val)}`}>
+                    {formatPercent(val)} <TrendIcon val={val} />
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Insufficient data</p>
+                )}
+              </div>
+            );
+          })}
+          {Object.entries(cagr)
+            .filter(([k]) => !cagrFields.some((f) => f.key === k || f.key.replace("_cagr", "") === k))
+            .map(([key, val]: [string, any]) => (
               <div key={key} className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{formatLabel(key)}</p>
-                <p className={`text-xl font-bold ${colorForValue(val)}`}>
-                  {typeof val === "number" ? formatPercent(val) : String(val ?? "—")} <TrendIcon val={typeof val === "number" ? val : null} />
-                </p>
+                {typeof val === "number" ? (
+                  <p className={`text-xl font-bold ${colorForValue(val)}`}>
+                    {formatPercent(val)} <TrendIcon val={val} />
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Insufficient data</p>
+                )}
+              </div>
+            ))}
+        </div>
+      </SectionCard>
+
+      {(costStructure.cost_of_sales_percent_revenue != null || costStructure.overheads_percent_revenue != null || costStructure.staff_costs_percent_revenue != null) && (
+        <SectionCard icon={BarChart3} title="Cost Structure" accent="border-l-blue-500">
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[
+              { key: "cost_of_sales_percent_revenue", label: "Cost of Sales" },
+              { key: "overheads_percent_revenue", label: "Overheads" },
+              { key: "staff_costs_percent_revenue", label: "Staff Costs" },
+            ].filter(({ key }) => costStructure[key] != null).map(({ key, label }) => (
+              <div key={key} className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                <p className="text-xl font-bold">{formatPercent(costStructure[key])}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">% of Revenue</p>
               </div>
             ))}
           </div>
-        </SectionCard>
-      )}
-
-      {Object.keys(costStructure).length > 0 && (
-        <SectionCard icon={BarChart3} title="Cost Structure" accent="border-l-blue-500">
-          <KeyValueGrid items={Object.entries(costStructure).map(([k, v]) => ({
-            label: formatLabel(k),
-            value: typeof v === "number" ? (k.includes("percent") ? formatPercent(v as number) : formatCurrency(v as number)) : String(v ?? "—"),
-          }))} />
+          {topOverheads.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Top Overheads</p>
+              <Table>
+                <TableBody>
+                  {topOverheads.map((item: any, i: number) => (
+                    <TableRow key={i} className={i % 2 === 0 ? "bg-muted/10" : ""}>
+                      <TableCell className="text-sm font-medium">{typeof item === "string" ? item : item.name || item.item || String(item)}</TableCell>
+                      {typeof item === "object" && item.amount != null && (
+                        <TableCell className="text-right text-sm font-mono">{formatCurrency(item.amount)}</TableCell>
+                      )}
+                      {typeof item === "object" && item.percent != null && (
+                        <TableCell className="text-right text-sm font-mono text-muted-foreground">{formatPercent(item.percent)}</TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </SectionCard>
       )}
 
       {Object.keys(earningsQuality).length > 0 && (
         <SectionCard icon={ShieldCheck} title="Earnings Quality" accent="border-l-amber-500">
-          <KeyValueGrid items={Object.entries(earningsQuality).map(([k, v]) => ({
-            label: formatLabel(k),
-            value: typeof v === "number" ? (k.includes("percent") ? formatPercent(v as number) : formatCurrency(v as number)) : String(v ?? "—"),
-          }))} />
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-4">
+              {earningsQuality.net_profit_tracks_operating_profit != null && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Net Profit Tracks Operating Profit:</span>
+                  <Badge className={earningsQuality.net_profit_tracks_operating_profit ? "bg-green-600 text-white" : "bg-red-600 text-white"}>
+                    {earningsQuality.net_profit_tracks_operating_profit ? "Yes" : "No"}
+                  </Badge>
+                </div>
+              )}
+              {earningsQuality.tax_rate_consistent != null && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Tax Rate Consistent:</span>
+                  <Badge className={earningsQuality.tax_rate_consistent ? "bg-green-600 text-white" : "bg-amber-600 text-white"}>
+                    {earningsQuality.tax_rate_consistent ? "Yes" : "No"}
+                  </Badge>
+                </div>
+              )}
+            </div>
+            {earningsQuality.exceptional_items_identified?.length > 0 && (
+              <div className="border-l-4 border-l-amber-500 bg-amber-500/5 rounded-r-lg p-3">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Exceptional Items</p>
+                <ul className="space-y-1">
+                  {earningsQuality.exceptional_items_identified.map((item: any, i: number) => (
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <span>{typeof item === "string" ? item : item.description || String(item)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {earningsQuality.limitations?.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1 font-medium">Limitations</p>
+                <ul className="space-y-0.5">
+                  {earningsQuality.limitations.map((lim: any, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground leading-relaxed">• {typeof lim === "string" ? lim : String(lim)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </SectionCard>
       )}
 
-      {Object.keys(debtService).length > 0 && (
-        <SectionCard icon={Shield} title="Debt Service" accent="border-l-red-500">
-          <KeyValueGrid items={Object.entries(debtService).map(([k, v]) => ({
-            label: formatLabel(k),
-            value: typeof v === "number" ? formatCurrency(v as number) : String(v ?? "—"),
-          }))} />
-        </SectionCard>
-      )}
-
-      {d.key_findings?.length > 0 && (
-        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
-          <BulletList items={d.key_findings} variant="strength" />
+      {(debtService.latest_interest_coverage != null || debtService.interest_coverage_trend || debtService.additional_debt_capacity_assessment) && (
+        <SectionCard icon={Shield} title="Debt Service Capacity" accent="border-l-red-500">
+          <div className="space-y-4">
+            <div className="flex items-center gap-6">
+              {debtService.latest_interest_coverage != null && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Interest Coverage</p>
+                  <p className={`text-3xl font-bold ${(debtService.latest_interest_coverage ?? 0) >= 3 ? "text-green-600" : (debtService.latest_interest_coverage ?? 0) >= 1.5 ? "text-amber-600" : "text-red-600"}`}>
+                    {typeof debtService.latest_interest_coverage === "number" ? debtService.latest_interest_coverage.toFixed(1) : "—"}x
+                  </p>
+                </div>
+              )}
+              {debtService.interest_coverage_trend && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Trend</p>
+                  <Badge variant="outline" className={`capitalize font-medium ${
+                    debtService.interest_coverage_trend === "improving" ? "border-green-500 text-green-600" :
+                    debtService.interest_coverage_trend === "declining" ? "border-red-500 text-red-600" :
+                    "border-muted-foreground"
+                  }`}>{debtService.interest_coverage_trend}</Badge>
+                </div>
+              )}
+            </div>
+            {debtService.additional_debt_capacity_assessment && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{debtService.additional_debt_capacity_assessment}</p>
+            )}
+          </div>
         </SectionCard>
       )}
     </div>
@@ -819,7 +943,14 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
   const deductions = d.deductions || [];
   const adjusted = d.adjusted_ebitda || {};
   const directorSalary = d.director_salary_analysis || {};
+  const directors = directorSalary.directors || [];
   const sustainability = d.sustainability_assessment || {};
+
+  const reportedEbitda = reported.reported_ebitda;
+  const totalAddBacks = d.total_add_backs ?? addBacks.reduce((s: number, ab: any) => s + (ab.amount || 0), 0);
+  const totalDeductions = d.total_deductions ?? deductions.reduce((s: number, ded: any) => s + (ded.amount || 0), 0);
+  const adjustedBase = adjusted.base ?? adjusted.mid;
+  const adjustedBaseColor = (adjustedBase ?? 0) > 0 ? "text-green-600" : "text-amber-600";
 
   return (
     <div className="space-y-6">
@@ -836,8 +967,71 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
         </SectionCard>
       )}
 
+      {reportedEbitda != null && (
+        <SectionCard icon={Layers} title="EBITDA Bridge" accent="border-l-emerald-500">
+          <div className="space-y-0">
+            <div className="flex items-center justify-between p-3 rounded-t-lg bg-muted/30 border border-b-0">
+              <span className="text-sm font-medium">Reported EBITDA</span>
+              <span className="text-sm font-bold font-mono">{formatCurrency(reportedEbitda)}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-500/5 border border-b-0 border-green-500/20">
+              <span className="text-sm font-medium text-green-700 dark:text-green-400">+ Add-backs</span>
+              <span className="text-sm font-bold font-mono text-green-600 dark:text-green-400">
+                {totalAddBacks >= 0 ? `+${formatCurrency(totalAddBacks)}` : formatCurrency(totalAddBacks)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-red-500/5 border border-b-0 border-red-500/20">
+              <span className="text-sm font-medium text-red-700 dark:text-red-400">− Deductions</span>
+              <span className="text-sm font-bold font-mono text-red-600 dark:text-red-400">−{formatCurrency(totalDeductions)}</span>
+            </div>
+            <div className="border-t-2 border-dashed border-muted-foreground/30" />
+            <div className="flex items-center justify-between p-3 rounded-b-lg bg-muted/40 border border-t-0">
+              <span className="text-sm font-bold">Adjusted EBITDA (Base)</span>
+              <span className={`text-lg font-bold font-mono ${adjustedBaseColor}`}>{formatCurrency(adjustedBase)}</span>
+            </div>
+          </div>
+
+          {(adjusted.low != null || adjusted.base != null || adjusted.mid != null || adjusted.high != null) && (
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {[
+                { k: "low", l: "Conservative" },
+                { k: "base", l: "Base", alt: "mid" },
+                { k: "high", l: "Optimistic" },
+              ].map(({ k, l, alt }) => {
+                const val = adjusted[k] ?? (alt ? adjusted[alt] : null);
+                const isBase = k === "base";
+                return val != null ? (
+                  <div key={k} className={`border rounded-xl p-4 text-center ${isBase ? "border-primary bg-primary/5 ring-1 ring-primary/20" : ""}`}>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{l}</p>
+                    <p className={`text-xl font-bold tracking-tight ${isBase ? "text-primary" : ""}`}>{formatCurrency(val)}</p>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {d.key_findings?.length > 0 && (
+        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
+          <BulletList items={d.key_findings} variant="strength" />
+        </SectionCard>
+      )}
+
+      {d.red_flags?.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-red-500/5 border-red-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-red-700 dark:text-red-300">Red Flags</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={d.red_flags.map((f: any) => typeof f === "string" ? f : f.description || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
+      )}
+
       {addBacks.length > 0 && (
-        <SectionCard icon={TrendingUp} title={`Add-Backs (${addBacks.length})`} accent="border-l-green-500">
+        <SectionCard icon={TrendingUp} title="Add-backs" accent="border-l-green-500">
           <div className="overflow-x-auto -mx-4 px-4">
             <Table>
               <TableHeader>
@@ -845,7 +1039,9 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
                   <TableHead className="font-bold">Item</TableHead>
                   <TableHead className="font-bold">Category</TableHead>
                   <TableHead className="text-right font-bold">Amount</TableHead>
-                  <TableHead className="font-bold">Confidence</TableHead>
+                  <TableHead className="font-bold">Recurrence</TableHead>
+                  <TableHead className="text-right font-bold">Defensibility</TableHead>
+                  <TableHead className="font-bold">Justification</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -854,24 +1050,19 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
                     <TableCell className="text-sm font-medium">{ab.item}</TableCell>
                     <TableCell><Badge variant="outline" className="text-[10px] capitalize">{formatLabel(ab.category || "")}</Badge></TableCell>
                     <TableCell className="text-right text-sm text-green-600 dark:text-green-400 font-bold font-mono">+{formatCurrency(ab.amount)}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-[10px] capitalize">{ab.confidence}</Badge></TableCell>
+                    <TableCell className="text-sm">{ab.recurrence || ab.recurring || "—"}</TableCell>
+                    <TableCell className="text-right text-sm font-mono">{ab.defensibility_score != null ? `${ab.defensibility_score}/10` : ab.defensibility ?? ab.confidence ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{ab.justification || "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-          {addBacks.map((ab: any) => ab.justification).filter(Boolean).length > 0 && (
-            <div className="mt-3 space-y-2">
-              {addBacks.filter((ab: any) => ab.justification).map((ab: any, i: number) => (
-                <p key={i} className="text-xs text-muted-foreground"><strong>{ab.item}:</strong> {ab.justification}</p>
-              ))}
-            </div>
-          )}
         </SectionCard>
       )}
 
       {deductions.length > 0 && (
-        <SectionCard icon={AlertTriangle} title={`Deductions (${deductions.length})`} accent="border-l-red-500">
+        <SectionCard icon={AlertTriangle} title="Deductions" accent="border-l-red-500">
           <div className="overflow-x-auto -mx-4 px-4">
             <Table>
               <TableHeader>
@@ -879,7 +1070,9 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
                   <TableHead className="font-bold">Item</TableHead>
                   <TableHead className="font-bold">Category</TableHead>
                   <TableHead className="text-right font-bold">Amount</TableHead>
-                  <TableHead className="font-bold">Confidence</TableHead>
+                  <TableHead className="font-bold">Recurrence</TableHead>
+                  <TableHead className="text-right font-bold">Defensibility</TableHead>
+                  <TableHead className="font-bold">Justification</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -887,8 +1080,10 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
                   <TableRow key={i} className={i % 2 === 0 ? "bg-red-500/5" : ""}>
                     <TableCell className="text-sm font-medium">{ded.item}</TableCell>
                     <TableCell><Badge variant="outline" className="text-[10px] capitalize">{formatLabel(ded.category || "")}</Badge></TableCell>
-                    <TableCell className="text-right text-sm text-red-600 dark:text-red-400 font-bold font-mono">-{formatCurrency(ded.amount)}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-[10px] capitalize">{ded.confidence}</Badge></TableCell>
+                    <TableCell className="text-right text-sm text-red-600 dark:text-red-400 font-bold font-mono">−{formatCurrency(ded.amount)}</TableCell>
+                    <TableCell className="text-sm">{ded.recurrence || ded.recurring || "—"}</TableCell>
+                    <TableCell className="text-right text-sm font-mono">{ded.defensibility_score != null ? `${ded.defensibility_score}/10` : ded.defensibility ?? ded.confidence ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{ded.justification || "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -897,45 +1092,90 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
         </SectionCard>
       )}
 
-      {(adjusted.low || adjusted.mid || adjusted.high) && (
-        <SectionCard icon={ShieldCheck} title="Adjusted EBITDA Range" accent="border-l-emerald-500">
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { k: "low", l: "Conservative", color: "" },
-              { k: "mid", l: "Base Case", color: "border-primary bg-primary/5 ring-1 ring-primary/20" },
-              { k: "high", l: "Optimistic", color: "" },
-            ].map(({ k, l, color }) => (
-              <div key={k} className={`border rounded-xl p-5 text-center ${color}`}>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{l}</p>
-                <p className="text-2xl font-bold tracking-tight">{formatCurrency(adjusted[k])}</p>
-              </div>
-            ))}
+      {directors.length > 0 && (
+        <SectionCard icon={Users} title="Director / Owner Salary Analysis" accent="border-l-purple-500">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-bold">Name</TableHead>
+                  <TableHead className="text-right font-bold">Current Salary</TableHead>
+                  <TableHead className="text-right font-bold">Market Rate</TableHead>
+                  <TableHead className="text-right font-bold">Adjustment</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {directors.map((dir: any, i: number) => (
+                  <TableRow key={i} className={i % 2 === 0 ? "bg-muted/10" : ""}>
+                    <TableCell className="text-sm font-medium">{dir.name || dir.title || `Director ${i + 1}`}</TableCell>
+                    <TableCell className="text-right text-sm font-mono">{formatCurrency(dir.current_salary ?? dir.salary)}</TableCell>
+                    <TableCell className="text-right text-sm font-mono">{formatCurrency(dir.market_rate ?? dir.market_rate_estimate)}</TableCell>
+                    <TableCell className={`text-right text-sm font-mono font-bold ${(dir.adjustment ?? 0) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {dir.adjustment != null ? formatCurrency(dir.adjustment) : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-          {adjusted.adjustments_narrative && <div className="mt-4"><NarrativeBlock text={adjusted.adjustments_narrative} /></div>}
-        </SectionCard>
-      )}
-
-      {Object.keys(directorSalary).length > 0 && (
-        <SectionCard icon={Users} title="Director Salary Analysis" accent="border-l-purple-500">
-          <KeyValueGrid items={Object.entries(directorSalary).filter(([k]) => k !== "observations").map(([k, v]) => ({
-            label: formatLabel(k),
-            value: typeof v === "number" ? (k.includes("percent") ? formatPercent(v as number) : formatCurrency(v as number)) : String(v ?? "—"),
-          }))} />
+          {(directorSalary.benchmark_range || directorSalary.benchmark_source) && (
+            <p className="mt-2 text-xs text-muted-foreground italic">
+              Benchmark: {directorSalary.benchmark_range || directorSalary.benchmark_source}
+            </p>
+          )}
         </SectionCard>
       )}
 
       {Object.keys(sustainability).length > 0 && (
         <SectionCard icon={Shield} title="Sustainability Assessment" accent="border-l-teal-500">
-          <KeyValueGrid items={Object.entries(sustainability).filter(([k]) => !Array.isArray(sustainability[k]) && typeof sustainability[k] !== "object").map(([k, v]) => ({
-            label: formatLabel(k),
-            value: String(v ?? "—"),
-          }))} />
-        </SectionCard>
-      )}
-
-      {d.key_findings?.length > 0 && (
-        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
-          <BulletList items={d.key_findings} variant="strength" />
+          <div className="space-y-4">
+            {sustainability.sustainable_for_3_years != null && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">Sustainable for 3 Years:</span>
+                <Badge className={sustainability.sustainable_for_3_years ? "bg-green-600 text-white" : "bg-red-600 text-white"}>
+                  {sustainability.sustainable_for_3_years ? "Yes" : "No"}
+                </Badge>
+              </div>
+            )}
+            {sustainability.key_assumptions?.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Key Assumptions</p>
+                <BulletList items={sustainability.key_assumptions} variant="strength" />
+              </div>
+            )}
+            {sustainability.sensitivity_factors?.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Sensitivity Factors</p>
+                <BulletList items={sustainability.sensitivity_factors} variant="question" />
+              </div>
+            )}
+            {sustainability.upside_scenarios?.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Upside Scenarios</p>
+                <ul className="space-y-1">
+                  {sustainability.upside_scenarios.map((item: string, i: number) => (
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <ArrowUpRight className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {sustainability.downside_scenarios?.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">Downside Scenarios</p>
+                <ul className="space-y-1">
+                  {sustainability.downside_scenarios.map((item: string, i: number) => (
+                    <li key={i} className="text-sm flex items-start gap-2">
+                      <ArrowDownRight className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </SectionCard>
       )}
     </div>
