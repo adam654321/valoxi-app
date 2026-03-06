@@ -450,6 +450,12 @@ export function FinancialReportView({ data }: { data: Record<string, unknown> })
         </div>
       )}
 
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
+        </SectionCard>
+      )}
+
       {years.length > 0 && (
         <SectionCard icon={DollarSign} title="Yearly Financial Metrics" accent="border-l-emerald-500">
           <div className="overflow-x-auto -mx-4 px-4">
@@ -543,12 +549,6 @@ export function FinancialReportView({ data }: { data: Record<string, unknown> })
           <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -565,6 +565,12 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
 
   return (
     <div className="space-y-6">
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
+        </SectionCard>
+      )}
+
       {wcYears.length > 0 && (
         <SectionCard icon={BarChart3} title="Working Capital" accent="border-l-blue-500">
           <div className="flex items-center gap-4 mb-4">
@@ -663,12 +669,6 @@ export function OperationalReportView({ data }: { data: Record<string, unknown> 
           <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -699,6 +699,12 @@ export function RiskReportView({ data }: { data: Record<string, unknown> }) {
           );
         })}
       </div>
+
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
+        </SectionCard>
+      )}
 
       {riskSections.map(({ key, label, icon, accent }) => {
         const section = d[key];
@@ -764,12 +770,6 @@ export function RiskReportView({ data }: { data: Record<string, unknown> }) {
           <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -791,6 +791,12 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
         <MetricCard label="Amortisation" value={formatCurrency(reported.amortisation)} />
         <MetricCard label="Reported EBITDA" value={formatCurrency(reported.reported_ebitda)} color="text-blue-600" subtext={reported.source_year ? `Year: ${reported.source_year}` : undefined} />
       </div>
+
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
+        </SectionCard>
+      )}
 
       {addBacks.length > 0 && (
         <SectionCard icon={TrendingUp} title={`Add-Backs (${addBacks.length})`} accent="border-l-green-500">
@@ -894,12 +900,6 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
           <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -919,6 +919,12 @@ export function SectorReportView({ data }: { data: Record<string, unknown> }) {
         {overview.uk_market_size_estimate && <MetricCard label="UK Market Size" value={overview.uk_market_size_estimate} />}
         {positioning.company_size_classification && <MetricCard label="Company Size" value={<span className="capitalize">{positioning.company_size_classification}</span>} />}
       </div>
+
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
+        </SectionCard>
+      )}
 
       {overview.key_trends?.length > 0 && (
         <SectionCard icon={TrendingUp} title="Key Sector Trends" accent="border-l-blue-500">
@@ -1022,12 +1028,6 @@ export function SectorReportView({ data }: { data: Record<string, unknown> }) {
           <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -1040,6 +1040,12 @@ export function ValuationReportView({ data }: { data: Record<string, unknown> })
 
   return (
     <div className="space-y-6">
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
+        </SectionCard>
+      )}
+
       {Object.keys(ebitdaVal).length > 0 && (
         <SectionCard icon={DollarSign} title="EBITDA Multiple Valuation" accent="border-l-emerald-500">
           <div className="space-y-4">
@@ -1127,12 +1133,6 @@ export function ValuationReportView({ data }: { data: Record<string, unknown> })
           <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
-        </SectionCard>
-      )}
     </div>
   );
 }
@@ -1157,6 +1157,12 @@ export function DealStructureReportView({ data }: { data: Record<string, unknown
       {d.recommendation_rationale && (
         <SectionCard icon={Brain} title="Rationale" accent="border-l-indigo-500">
           <NarrativeBlock text={d.recommendation_rationale} />
+        </SectionCard>
+      )}
+
+      {d.narrative && (
+        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
+          <NarrativeBlock text={d.narrative} />
         </SectionCard>
       )}
 
@@ -1216,12 +1222,6 @@ export function DealStructureReportView({ data }: { data: Record<string, unknown
       {d.key_findings?.length > 0 && (
         <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
           <BulletList items={d.key_findings} variant="strength" />
-        </SectionCard>
-      )}
-
-      {d.narrative && (
-        <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.narrative} />
         </SectionCard>
       )}
     </div>
