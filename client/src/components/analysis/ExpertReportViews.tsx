@@ -315,6 +315,20 @@ export function ScreeningReportView({ data }: { data: Record<string, unknown> })
   const isProceed = recommendation === "PROCEED" || recommendation === "STRONG_PROCEED";
   const isReview = recommendation === "REVIEW";
 
+  const dimensionOrder = ["earnings_trajectory", "balance_sheet_health", "cash_reality", "customer_risk", "asset_quality", "people_capability"];
+  const dimensionEntries = dimensionOrder
+    .filter((key) => dims[key])
+    .map((key) => ({ key, ...dims[key] }));
+  const extraDimensions = Object.keys(dims)
+    .filter((key) => !dimensionOrder.includes(key))
+    .map((key) => ({ key, ...dims[key] }));
+  const allDimensions = [...dimensionEntries, ...extraDimensions];
+
+  function truncate(text: string, max: number): string {
+    if (!text || text.length <= max) return text || "";
+    return text.slice(0, max).trimEnd() + "…";
+  }
+
   return (
     <div className="space-y-6">
       <div className={`rounded-xl p-6 border-2 ${isProceed ? "bg-green-500/5 border-green-500/30" : isReview ? "bg-amber-500/5 border-amber-500/30" : "bg-red-500/5 border-red-500/30"}`}>
@@ -338,52 +352,75 @@ export function ScreeningReportView({ data }: { data: Record<string, unknown> })
         </div>
       </div>
 
-      {d.executive_summary && (
-        <SectionCard icon={Brain} title="Executive Summary" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.executive_summary} />
-        </SectionCard>
+      {(d.recommendation_justification || d.executive_summary) && (
+        <div className="space-y-3">
+          {d.recommendation_justification && (
+            <div className="bg-muted/30 rounded-lg p-4 border border-dashed">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{d.recommendation_justification}</p>
+            </div>
+          )}
+          {d.executive_summary && d.executive_summary !== d.recommendation_justification && (
+            <SectionCard icon={Brain} title="Executive Summary" accent="border-l-indigo-500">
+              <NarrativeBlock text={d.executive_summary} />
+            </SectionCard>
+          )}
+        </div>
       )}
 
-      <SectionCard icon={Target} title="Screening Dimensions" accent="border-l-blue-500">
-        <div className="space-y-4">
-          {Object.entries(dims).map(([key, dim]: [string, any]) => {
-            const ragColor = dim.rag === "GREEN" ? "border-l-green-500 bg-green-500/3" : dim.rag === "AMBER" ? "border-l-amber-500 bg-amber-500/3" : "border-l-red-500 bg-red-500/3";
-            return (
-              <div key={key} className={`border rounded-lg border-l-4 overflow-hidden ${ragColor}`}>
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-sm tracking-tight">{formatLabel(key)}</h4>
-                    <div className="flex items-center gap-3">
-                      <ScoreRing score={dim.score} size="sm" />
-                      <RagBadge rag={dim.rag} size="lg" />
-                    </div>
-                  </div>
-                  <ScoreBar score={dim.score} />
-                  {dim.explanation && (
-                    <p className="text-sm text-muted-foreground leading-relaxed">{dim.explanation}</p>
-                  )}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                    {Object.entries(dim)
-                      .filter(([k]) => !["rag", "score", "explanation"].includes(k))
-                      .map(([k, v]) => (
-                        <div key={k} className="bg-background/60 rounded-lg px-3 py-2">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{formatLabel(k)}</p>
-                          <p className="text-sm font-semibold mt-0.5">
-                            {typeof v === "number"
-                              ? k.includes("percent") ? formatPercent(v)
-                              : k.includes("revenue") || k.includes("assets") || k.includes("cash") || k.includes("nbv") || k.includes("debt") ? formatCurrency(v)
-                              : v.toLocaleString()
-                              : String(v ?? "—")}
-                          </p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      {d.comparable_context && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-muted/40">
+            <Building className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm tracking-tight">Sector Context</h3>
+          </div>
+          <div className="p-4">
+            <p className="text-sm leading-relaxed italic text-muted-foreground whitespace-pre-wrap">{d.comparable_context}</p>
+          </div>
         </div>
-      </SectionCard>
+      )}
+
+      {allDimensions.length > 0 && (
+        <SectionCard icon={Target} title="Dimension Breakdown" accent="border-l-blue-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {allDimensions.map((dim: any) => {
+              const ragBg = dim.rag === "GREEN"
+                ? "bg-green-500/5 border-green-500/30"
+                : dim.rag === "AMBER"
+                  ? "bg-amber-500/5 border-amber-500/30"
+                  : dim.rag === "RED"
+                    ? "bg-red-500/5 border-red-500/30"
+                    : "bg-muted/30 border-muted";
+              const ragDot = dim.rag === "GREEN"
+                ? "bg-green-500"
+                : dim.rag === "AMBER"
+                  ? "bg-amber-500"
+                  : dim.rag === "RED"
+                    ? "bg-red-500"
+                    : "bg-muted-foreground";
+              const scoreColor = (dim.score ?? 0) >= 70
+                ? "text-green-600"
+                : (dim.score ?? 0) >= 40
+                  ? "text-amber-600"
+                  : "text-red-600";
+
+              return (
+                <div key={dim.key} className={`border rounded-lg p-4 space-y-2 ${ragBg}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${ragDot}`} />
+                      <h4 className="font-semibold text-sm">{formatLabel(dim.key)}</h4>
+                    </div>
+                    <span className={`text-sm font-bold ${scoreColor}`}>{dim.score ?? "—"}/100</span>
+                  </div>
+                  {dim.explanation && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">{truncate(dim.explanation, 120)}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      )}
 
       {d.key_strengths?.length > 0 && (
         <SectionCard icon={CheckCircle2} title="Key Strengths" accent="border-l-green-500">
@@ -398,21 +435,22 @@ export function ScreeningReportView({ data }: { data: Record<string, unknown> })
       )}
 
       {d.questions_for_seller?.length > 0 && (
-        <SectionCard icon={FileText} title="Questions for Seller" accent="border-l-purple-500">
-          <BulletList items={d.questions_for_seller} variant="question" />
-        </SectionCard>
-      )}
-
-      {d.comparable_context && (
-        <SectionCard icon={Building} title="Comparable Context" accent="border-l-slate-500">
-          <NarrativeBlock text={d.comparable_context} />
-        </SectionCard>
-      )}
-
-      {d.recommendation_justification && (
-        <SectionCard icon={Brain} title="Recommendation Justification" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.recommendation_justification} />
-        </SectionCard>
+        <div className="border rounded-lg overflow-hidden bg-blue-500/5 border-blue-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-blue-500/10 border-b border-blue-500/20">
+            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-blue-700 dark:text-blue-300">Questions to Ask the Seller</h3>
+          </div>
+          <div className="p-4">
+            <ol className="space-y-2">
+              {d.questions_for_seller.map((q: string, i: number) => (
+                <li key={i} className="flex gap-3 p-3 rounded-lg border border-blue-500/10 bg-background/60">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                  <span className="text-sm leading-relaxed">{q}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
       )}
     </div>
   );
