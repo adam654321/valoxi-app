@@ -10,21 +10,21 @@ export interface TierLimits {
 
 export const TIER_LIMITS: Record<PlanKey, TierLimits> = {
   CORE: {
-    maxActiveTargets: 3,
+    maxActiveTargets: 5,
     maxSeats: 1,
     maxStorageGb: 1,
     maxDealModelVersions: 1,
     versionHistoryRetentionDays: 0,
   },
   PROFESSIONAL: {
-    maxActiveTargets: 20,
+    maxActiveTargets: 15,
     maxSeats: 1,
     maxStorageGb: 10,
     maxDealModelVersions: 5,
     versionHistoryRetentionDays: 90,
   },
   EXPERT: {
-    maxActiveTargets: 100,
+    maxActiveTargets: 50,
     maxSeats: 1,
     maxStorageGb: 25,
     maxDealModelVersions: 20,

@@ -50,6 +50,8 @@ export const config = {
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || '',
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    partnerCustomer5d: process.env.STRIPE_PARTNER_CUSTOMER_5D || '',
+    partnerPrice5d: process.env.STRIPE_PARTNER_PRICE_5D || '',
   },
 
   geminiPricing: {

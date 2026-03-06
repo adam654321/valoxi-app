@@ -35,7 +35,7 @@ Preferred communication style: Simple, everyday language.
     - `session.ts`: Exports `createSessionMiddleware()` for PostgreSQL-backed session configuration. Requires `SESSION_SECRET` env var (throws on missing).
     - `auth.ts`: Exports `isAuthenticated` middleware for route protection (checks `req.session.userId`).
 - **EventBus Pattern**: Typed EventEmitter singleton (`server/services/event-bus.service.ts`) for decoupled inter-service communication. Supports events: `file:uploaded`, `stage:updated`, `document:update`, `financial_data:update`.
-- **Centralized Configuration**: All environment variables managed through `server/config.ts` module organized by domain (server, gemini, smtp, replit, database, session).
+- **Centralized Configuration**: All environment variables managed through `server/config.ts` module organized by domain (server, gemini, smtp, replit, database, session, stripe — including partner invoice config).
 - **Repository Pattern (Primary)**: Data access through domain repositories (`server/repositories/*.repository.ts`):
     - `usersRepository`: User CRUD, sessions, invitations, roles, team management
     - `targetCompaniesRepository`: Target company CRUD with search/filter
@@ -95,7 +95,7 @@ Preferred communication style: Simple, everyday language.
   - `dashboard.ts` — Dashboard preferences, alerts, composite types (2 tables)
   - `deal-models.ts` — Deal models, adjustments, funding lines, deal metrics snapshots (4 tables)
   - `value-creation.ts` — Value creation scenarios, assumptions, synergies, exit assumptions (4 tables)
-  - `billing.ts` — Subscription billing: subscriptions, subscription_events, addon_purchases, promo_code_campaigns, promo_codes (5 tables, 3 enums: plan_key, subscription_status, billing_interval)
+  - `billing.ts` — Subscription billing: subscriptions (with currency column), subscription_events, addon_purchases, promo_code_campaigns, promo_codes (5 tables, 3 enums: plan_key, subscription_status, billing_interval)
   - `relations.ts` — All Drizzle relation definitions (centralized to avoid circular deps)
   - `index.ts` — Barrel re-export of all modules
   - `shared/schema.ts` — Top-level re-export (`export * from './schema/index'`) so all existing imports continue to work unchanged
@@ -127,7 +127,9 @@ Preferred communication style: Simple, everyday language.
   - **Claim flow**: Registration form optional promo code field → `promoCodeService.claimCode()`. Also claimable from billing page via `POST /api/v2/billing/claim-promo`
   - **Free months cron**: Daily at 09:15 UK time — checks subscriptions with active free periods, sends warning email 1 month before expiry, transitions to ongoing discount coupon when free period ends
   - **Admin pages**: `/admin/promo-codes` (Stripe coupons viewer, campaign manager, code list with CSV export), `/admin/referral-invoice` (5D community invoice report with member table, CSV export, copy invoice text)
-  - **API endpoints**: `GET /admin/stripe-coupons`, `POST /admin/promo-campaigns`, `GET /admin/promo-campaigns`, `GET /admin/promo-codes`, `GET /admin/promo-codes/export`, `GET /admin/referral-invoice`, `POST /billing/claim-promo`
+  - **5D Partner Invoice**: On Cohort 2 code activation, creates upfront Stripe invoice items on partner customer account (STRIPE_PARTNER_CUSTOMER_5D) for the full free period. Admin can generate a finalized Stripe invoice via "Generate Partner Invoice" button on the 5D Invoice page (preview → confirm → generate flow).
+  - **Multi-currency Support**: Checkout and upgrade endpoints accept a `currency` parameter ('gbp' or 'usd', defaults to 'gbp'). Stripe lookup keys use `_gbp`/`_usd` suffix format (e.g. `ma_core_monthly_gbp`). Currency stored on subscription record. Billing UI supports GBP/USD pricing display via URL param `?currency=usd`.
+  - **API endpoints**: `GET /admin/stripe-coupons`, `POST /admin/promo-campaigns`, `GET /admin/promo-campaigns`, `GET /admin/promo-codes`, `GET /admin/promo-codes/export`, `GET /admin/referral-invoice`, `POST /admin/partner-invoice/preview`, `POST /admin/partner-invoice/generate`, `POST /billing/claim-promo`
 - **Client-side Enforcement**:
   - `client/src/context/subscription-context.tsx`: `SubscriptionProvider` wraps app in `App.tsx`, exports `useHasFeature`, `usePlanKey`, `useSubscriptionContext`
   - `client/src/hooks/use-subscription.ts`: React Query hook for `GET /api/v2/billing/subscription`
@@ -244,6 +246,10 @@ Configure these in the Replit **Secrets** panel (padlock icon). Variables marked
 | `SMTP_PASS` | ⚠️ Email only | SMTP password or app password |
 | `SMTP_FROM_EMAIL` | ⚠️ Email only | Sender address for outbound emails |
 | `SMTP_SECURE` | ⚠️ Email only | `true` for TLS/465, `false` for STARTTLS/587 |
+| `STRIPE_SECRET_KEY` | ⚠️ Billing only | Stripe API secret key |
+| `STRIPE_WEBHOOK_SECRET` | ⚠️ Billing only | Stripe webhook signing secret |
+| `STRIPE_PARTNER_CUSTOMER_5D` | ⚠️ Partner invoicing | Dee's Stripe customer ID for 5D partner invoicing |
+| `STRIPE_PARTNER_PRICE_5D` | ⚠️ Partner invoicing | Stripe price ID for partner invoice line items ($50.25/unit) |
 
 # API Reference
 

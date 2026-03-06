@@ -141,7 +141,8 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
               onboardingCompleted: false,
             }).returning();
 
-            const trialEndsAt = promoCodeId ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            const trialEndsAt = promoCodeId ? null : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+            const sessionCurrency = (session as any).currency || 'gbp';
             await db.insert(subscriptions).values({
               userCompanyId: userCompany.id,
               stripeCustomerId: session.customer as string,
@@ -150,6 +151,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
               status: 'active',
               billingInterval,
               trialEndsAt,
+              currency: sessionCurrency,
             });
 
             if (promoCodeId) {
@@ -167,8 +169,8 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
               firstName: nameParts[0] || 'there',
               planKey,
               magicLink,
-              freeMonths: promoCodeId ? 3 : 0,
-              trialDays: promoCodeId ? 0 : 7,
+              freeMonths: promoCodeId ? 6 : 0,
+              trialDays: promoCodeId ? 0 : 3,
             });
 
             console.log('[webhook] New user created via Stripe checkout:', customerEmail, planKey);
@@ -337,13 +339,19 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 });
 
 const VALID_PLAN_KEYS: PlanKey[] = ['CORE', 'PROFESSIONAL', 'EXPERT'];
-const LOOKUP_KEY_MAP: Record<string, string> = {
-  'CORE_month': 'ma_core_monthly',
-  'CORE_year': 'ma_core_annual',
-  'PROFESSIONAL_month': 'ma_professional_monthly',
-  'PROFESSIONAL_year': 'ma_professional_annual',
-  'EXPERT_month': 'ma_expert_monthly',
-  'EXPERT_year': 'ma_expert_annual',
+const LOOKUP_KEY_MAP: Record<string, Record<string, Record<string, string>>> = {
+  CORE: {
+    month: { gbp: 'ma_core_monthly_gbp', usd: 'ma_core_monthly_usd' },
+    year: { gbp: 'ma_core_annual_gbp', usd: 'ma_core_annual_usd' },
+  },
+  PROFESSIONAL: {
+    month: { gbp: 'ma_professional_monthly_gbp', usd: 'ma_professional_monthly_usd' },
+    year: { gbp: 'ma_professional_annual_gbp', usd: 'ma_professional_annual_usd' },
+  },
+  EXPERT: {
+    month: { gbp: 'ma_expert_monthly_gbp', usd: 'ma_expert_monthly_usd' },
+    year: { gbp: 'ma_expert_annual_gbp', usd: 'ma_expert_annual_usd' },
+  },
 };
 
 router.get('/subscription', isAuthenticated, async (req: Request, res: Response) => {
@@ -589,11 +597,12 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(500).json({ error: 'stripe_not_configured' });
     }
 
-    const { planKey, billingInterval, promoCodeId, isNewSignup } = req.body as {
+    const { planKey, billingInterval, promoCodeId, isNewSignup, currency: reqCurrency } = req.body as {
       planKey: PlanKey;
       billingInterval: 'month' | 'year';
       promoCodeId?: string;
       isNewSignup?: boolean;
+      currency?: string;
     };
 
     if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
@@ -604,6 +613,8 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
     }
 
+    const currency = reqCurrency === 'usd' ? 'usd' : 'gbp';
+
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
 
     if (
@@ -613,7 +624,7 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(200).json({ requiresUpgrade: true });
     }
 
-    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
     }
@@ -683,7 +694,7 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       return res.status(500).json({ error: 'stripe_not_configured' });
     }
 
-    const { planKey, billingInterval } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year' };
+    const { planKey, billingInterval, currency: reqCurrency } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year'; currency?: string };
 
     if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
       return res.status(400).json({ error: 'invalid_plan', message: 'Plan must be CORE, PROFESSIONAL, or EXPERT.' });
@@ -693,12 +704,14 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
     }
 
+    const currency = reqCurrency === 'usd' ? 'usd' : 'gbp';
+
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
     if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
       return res.status(400).json({ error: 'no_active_subscription', message: 'No active Stripe subscription found. Use checkout for new subscriptions.' });
     }
 
-    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
     }

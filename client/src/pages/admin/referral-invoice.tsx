@@ -1,12 +1,23 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Copy, Users, PoundSterling, TrendingUp, Tag, Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Download, Copy, Users, PoundSterling, TrendingUp, Tag, Loader2, FileText, ExternalLink } from "lucide-react";
 
 const INVOICE_RATE = 50.25;
 
@@ -48,11 +59,75 @@ function getMonthOptions() {
   return options;
 }
 
+interface PartnerInvoiceItem {
+  id: string;
+  description: string;
+  amount: number;
+  currency: string;
+  quantity: number;
+}
+
+interface PartnerInvoicePreview {
+  itemCount: number;
+  totalAmount: number;
+  currency: string;
+  items: PartnerInvoiceItem[];
+}
+
+interface PartnerInvoiceResult {
+  invoiceId: string;
+  invoiceUrl: string;
+  total: number;
+  currency: string;
+}
+
 export default function AdminReferralInvoice() {
   const { toast } = useToast();
   const now = new Date();
   const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
   const [source, setSource] = useState("5d_community");
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewData, setPreviewData] = useState<PartnerInvoicePreview | null>(null);
+  const [invoiceResult, setInvoiceResult] = useState<PartnerInvoiceResult | null>(null);
+  const [showResultDialog, setShowResultDialog] = useState(false);
+
+  const previewMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/v2/admin/partner-invoice/preview");
+      return res.json();
+    },
+    onSuccess: (data: { success: boolean; data: PartnerInvoicePreview }) => {
+      if (data.data.itemCount === 0) {
+        toast({ title: "No pending items", description: "There are no pending invoice items for the partner account." });
+        return;
+      }
+      setPreviewData(data.data);
+      setShowPreviewDialog(true);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to fetch pending invoice items.", variant: "destructive" });
+    },
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/v2/admin/partner-invoice/generate");
+      return res.json();
+    },
+    onSuccess: (data: { success: boolean; data: PartnerInvoiceResult }) => {
+      setShowPreviewDialog(false);
+      setInvoiceResult(data.data);
+      setShowResultDialog(true);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to generate invoice.", variant: "destructive" });
+    },
+  });
+
+  const formatAmount = (amount: number, currency: string) => {
+    const symbol = currency === 'usd' ? '$' : '£';
+    return `${symbol}${(amount / 100).toFixed(2)}`;
+  };
 
   const monthOptions = getMonthOptions();
 
@@ -218,6 +293,18 @@ export default function AdminReferralInvoice() {
                 <Copy className="h-4 w-4 mr-2" />
                 Copy Invoice Text
               </Button>
+              <Button
+                size="sm"
+                onClick={() => previewMutation.mutate()}
+                disabled={previewMutation.isPending}
+              >
+                {previewMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4 mr-2" />
+                )}
+                Generate Partner Invoice
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -280,6 +367,79 @@ export default function AdminReferralInvoice() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate Partner Invoice</AlertDialogTitle>
+            <AlertDialogDescription>
+              {previewData && (
+                <div className="space-y-3 mt-2">
+                  <p className="text-sm">
+                    <strong>{previewData.itemCount}</strong> pending item{previewData.itemCount !== 1 ? "s" : ""} totalling{" "}
+                    <strong>{formatAmount(previewData.totalAmount, previewData.currency)}</strong>
+                  </p>
+                  <div className="max-h-48 overflow-y-auto border rounded p-2 space-y-1">
+                    {previewData.items.map((item) => (
+                      <p key={item.id} className="text-xs text-muted-foreground">
+                        {item.description} — {formatAmount(item.amount, item.currency)}
+                      </p>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This will create a draft invoice in Stripe. You can review it before sending.
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
+            >
+              {generateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showResultDialog} onOpenChange={setShowResultDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Invoice Created</AlertDialogTitle>
+            <AlertDialogDescription>
+              {invoiceResult && (
+                <div className="space-y-2 mt-2">
+                  <p className="text-sm">
+                    Invoice <strong>{invoiceResult.invoiceId}</strong> created for{" "}
+                    <strong>{formatAmount(invoiceResult.total, invoiceResult.currency)}</strong>.
+                  </p>
+                  <p className="text-sm">Review in Stripe before sending.</p>
+                  {invoiceResult.invoiceUrl && (
+                    <a
+                      href={invoiceResult.invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View in Stripe
+                    </a>
+                  )}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Done</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

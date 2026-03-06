@@ -500,6 +500,66 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
   });
 }));
 
+router.post('/partner-invoice/preview', asyncHandler(async (req: Request, res: Response) => {
+  if (!config.stripe.secretKey) {
+    return res.status(500).json({ error: 'stripe_not_configured' });
+  }
+  const partnerCustomerId = config.stripe.partnerCustomer5d;
+  if (!partnerCustomerId) {
+    return res.status(400).json({ error: 'partner_not_configured', message: 'STRIPE_PARTNER_CUSTOMER_5D is not set.' });
+  }
+
+  const stripe = new Stripe(config.stripe.secretKey);
+  const pendingItems = await stripe.invoiceItems.list({
+    customer: partnerCustomerId,
+    pending: true,
+    limit: 100,
+  });
+
+  const items = pendingItems.data.map((item) => ({
+    id: item.id,
+    description: item.description || 'No description',
+    amount: item.amount,
+    currency: item.currency,
+    quantity: item.quantity,
+  }));
+
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+
+  sendSuccess(res, {
+    itemCount: items.length,
+    totalAmount,
+    currency: items[0]?.currency || 'gbp',
+    items,
+  });
+}));
+
+router.post('/partner-invoice/generate', asyncHandler(async (req: Request, res: Response) => {
+  if (!config.stripe.secretKey) {
+    return res.status(500).json({ error: 'stripe_not_configured' });
+  }
+  const partnerCustomerId = config.stripe.partnerCustomer5d;
+  if (!partnerCustomerId) {
+    return res.status(400).json({ error: 'partner_not_configured', message: 'STRIPE_PARTNER_CUSTOMER_5D is not set.' });
+  }
+
+  const stripe = new Stripe(config.stripe.secretKey);
+
+  const invoice = await stripe.invoices.create({
+    customer: partnerCustomerId,
+    auto_advance: false,
+  });
+
+  const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
+
+  sendSuccess(res, {
+    invoiceId: finalizedInvoice.id,
+    invoiceUrl: finalizedInvoice.hosted_invoice_url,
+    total: finalizedInvoice.total,
+    currency: finalizedInvoice.currency,
+  });
+}));
+
 router.get('/funnel', asyncHandler(async (req: Request, res: Response) => {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

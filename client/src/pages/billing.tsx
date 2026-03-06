@@ -43,6 +43,9 @@ import {
 import type { PlanKey } from "@shared/schema/billing";
 
 const formatGBP = (pence: number) => `£${(pence / 100).toFixed(2)}`;
+const formatUSD = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+const formatCurrency = (minorUnits: number, currency: string) =>
+  currency === 'usd' ? formatUSD(minorUnits) : formatGBP(minorUnits);
 
 interface UpgradePreview {
   currentPlan: string;
@@ -60,6 +63,11 @@ interface UpgradePreview {
 
 const PLAN_ORDER: PlanKey[] = ["CORE", "PROFESSIONAL", "EXPERT"];
 
+interface PlanPricing {
+  monthlyPrice: number;
+  annualPrice: number;
+}
+
 interface PlanDefinition {
   key: PlanKey;
   name: string;
@@ -70,51 +78,66 @@ interface PlanDefinition {
   features: string[];
 }
 
-const PLANS: PlanDefinition[] = [
-  {
-    key: "CORE",
-    name: "Core",
-    description: "For solo buyers managing their first acquisitions.",
-    monthlyPrice: 67,
-    annualPrice: 53.60,
-    features: [
-      "Pipeline kanban board",
-      "AI document extraction",
-      "Simplified deal modeller",
-      "Seller portal with document collection",
-      "AI offer letter generation",
-    ],
+const PLAN_PRICING: Record<string, Record<PlanKey, PlanPricing>> = {
+  gbp: {
+    CORE: { monthlyPrice: 67, annualPrice: 53.60 },
+    PROFESSIONAL: { monthlyPrice: 127, annualPrice: 101.60 },
+    EXPERT: { monthlyPrice: 297, annualPrice: 237.60 },
+    ENTERPRISE: { monthlyPrice: 0, annualPrice: 0 },
   },
-  {
-    key: "PROFESSIONAL",
-    name: "Professional",
-    description: "For active acquirers running multiple live deals.",
-    monthlyPrice: 297,
-    annualPrice: 237.60,
-    popular: true,
-    features: [
-      "Full deal modeller with version history",
-      "Expert deep-dive analysis (11 dimensions)",
-      "Due diligence data room",
-      "Multi-document uploads & review workflow",
-      "Onboarding call & priority features",
-    ],
+  usd: {
+    CORE: { monthlyPrice: 67, annualPrice: 53.60 },
+    PROFESSIONAL: { monthlyPrice: 127, annualPrice: 101.60 },
+    EXPERT: { monthlyPrice: 297, annualPrice: 237.60 },
+    ENTERPRISE: { monthlyPrice: 0, annualPrice: 0 },
   },
-  {
-    key: "EXPERT",
-    name: "Expert",
-    description: "For M&A professionals and investment firms.",
-    monthlyPrice: 447,
-    annualPrice: 357.60,
-    features: [
-      "Value creation modeller with sensitivity analysis",
-      "Heads of Terms builder",
-      "Third-party DD access & white-label portal",
-      "Role-based access control & API access",
-      "Priority support",
-    ],
-  },
-];
+};
+
+function getPlans(currency: string): PlanDefinition[] {
+  const pricing = PLAN_PRICING[currency] || PLAN_PRICING.gbp;
+  return [
+    {
+      key: "CORE",
+      name: "Core",
+      description: "For solo buyers managing their first acquisitions.",
+      ...pricing.CORE,
+      features: [
+        "Pipeline kanban board",
+        "AI document extraction",
+        "Simplified deal modeller",
+        "Seller portal with document collection",
+        "AI offer letter generation",
+      ],
+    },
+    {
+      key: "PROFESSIONAL",
+      name: "Professional",
+      description: "For active acquirers running multiple live deals.",
+      ...pricing.PROFESSIONAL,
+      popular: true,
+      features: [
+        "Full deal modeller with version history",
+        "Expert deep-dive analysis (11 dimensions)",
+        "Due diligence data room",
+        "Multi-document uploads & review workflow",
+        "Onboarding call & priority features",
+      ],
+    },
+    {
+      key: "EXPERT",
+      name: "Expert",
+      description: "For M&A professionals and investment firms.",
+      ...pricing.EXPERT,
+      features: [
+        "Value creation modeller with sensitivity analysis",
+        "Heads of Terms builder",
+        "Third-party DD access & white-label portal",
+        "Role-based access control & API access",
+        "Priority support",
+      ],
+    },
+  ];
+}
 
 function getStatusLabel(status: string): { label: string; variant: "default" | "secondary" | "destructive" | "outline" } {
   switch (status) {
@@ -151,6 +174,12 @@ export default function BillingPage() {
   const currentPlan = usePlanKey();
   const { toast } = useToast();
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [pricingCurrency, setPricingCurrency] = useState<"gbp" | "usd">(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("currency") === "usd" ? "usd" : "gbp";
+  });
+  const currencySymbol = pricingCurrency === "usd" ? "$" : "£";
+  const PLANS = getPlans(pricingCurrency);
   const [verifyingSession, setVerifyingSession] = useState(false);
   const verifyAttempted = useRef(false);
 
@@ -228,6 +257,7 @@ export default function BillingPage() {
       const res = await apiRequest("POST", "/api/v2/billing/checkout", {
         planKey,
         billingInterval: interval,
+        currency: pricingCurrency,
       });
       return res.json() as Promise<{ checkoutUrl?: string; requiresUpgrade?: boolean }>;
     },
@@ -250,6 +280,7 @@ export default function BillingPage() {
       const res = await apiRequest("POST", "/api/v2/billing/upgrade", {
         planKey,
         billingInterval: interval,
+        currency: pricingCurrency,
       });
       return res.json() as Promise<{ upgraded?: boolean; error?: string; message?: string }>;
     },
@@ -513,11 +544,11 @@ export default function BillingPage() {
                       <CardTitle className="text-xl">{plan.name}</CardTitle>
                       <CardDescription>{plan.description}</CardDescription>
                       <div className="pt-2">
-                        <span className="text-3xl font-bold text-foreground">£{price % 1 === 0 ? price : price.toFixed(2)}</span>
+                        <span className="text-3xl font-bold text-foreground">{currencySymbol}{price % 1 === 0 ? price : price.toFixed(2)}</span>
                         <span className="text-sm text-muted-foreground">/mo</span>
                         {billingInterval === "year" && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            £{(price * 12).toFixed(2)}/year — billed annually
+                            {currencySymbol}{(price * 12).toFixed(2)}/year — billed annually
                           </p>
                         )}
                       </div>
