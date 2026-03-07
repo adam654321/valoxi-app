@@ -2722,11 +2722,8 @@ export function CoreAnalysisSummaryView({ results }: { results: CoreExpertResult
                 <Badge className={`${pillColor} text-white text-sm px-3 py-0.5`}>
                   {scoreNum != null ? `${scoreNum}` : "—"}
                 </Badge>
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Upgrade to Professional to see full report</span>
-                  </div>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
               </div>
             );
@@ -2795,11 +2792,8 @@ export function CoreAnalysisSummaryView({ results }: { results: CoreExpertResult
                     </p>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Upgrade to Professional to unlock full report</span>
-                  </div>
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <Lock className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
             );
@@ -2827,32 +2821,38 @@ export function CoreAnalysisSummaryView({ results }: { results: CoreExpertResult
         </div>
       )}
 
-      <div className="border rounded-xl p-6 bg-gradient-to-br from-muted/30 to-muted/10 text-center">
-        <h3 className="text-base font-semibold mb-1">You're seeing a summary view</h3>
-        <p className="text-sm text-muted-foreground mb-4">Upgrade to Professional to unlock:</p>
-        <div className="text-left max-w-md mx-auto mb-6">
-          <ul className="space-y-2">
+      <div className="rounded-xl border border-indigo-500/20 overflow-hidden bg-gradient-to-br from-indigo-50/50 via-background to-blue-50/30 dark:from-indigo-950/20 dark:via-background dark:to-blue-950/10">
+        <div className="p-8 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Lock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-lg font-semibold">Unlock the full picture</h3>
+          </div>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+            You're on the Core plan. Upgrade to Professional to access detailed reports from all 8 specialist expert areas.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-lg mx-auto mb-8">
             {[
-              "Full Financial deep-dive with P&L trend tables and CAGR analysis",
-              "Quality of Earnings EBITDA bridge waterfall with full add-backs breakdown",
-              "Sector benchmarking vs typical margins and comparable transactions",
-              "Detailed valuation methodology with sensitivity analysis",
-              "Three-way deal structure comparison with payment mechanics",
-              "Full investment memorandum (2,000+ words)",
-              "Seller expectation gap analysis",
-            ].map((feature, i) => (
-              <li key={i} className="text-sm flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <span>{feature}</span>
-              </li>
+              { icon: "📊", title: "Deep-dive Financials", desc: "P&L trends and CAGR analysis" },
+              { icon: "🏦", title: "EBITDA Bridge", desc: "Waterfall + full add-backs detail" },
+              { icon: "📈", title: "Sensitivity Analysis", desc: "Valuation bridge and scenarios" },
+              { icon: "🤝", title: "Deal Structures", desc: "3-way comparison with mechanics" },
+              { icon: "🏭", title: "Sector Benchmarks", desc: "Margins and comparables" },
+              { icon: "📝", title: "Full Memorandum", desc: "Investment memo (2,000+ words)" },
+            ].map((tile, i) => (
+              <div key={i} className="border rounded-lg p-3 bg-background/60 text-left">
+                <p className="text-base mb-1">{tile.icon}</p>
+                <p className="text-xs font-semibold mb-0.5">{tile.title}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{tile.desc}</p>
+              </div>
             ))}
-          </ul>
+          </div>
+          <a href="/billing">
+            <button className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-8 py-3 text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm">
+              Upgrade to Professional — from £127/mo
+            </button>
+          </a>
+          <p className="text-xs text-muted-foreground mt-3">No commitment. Cancel anytime.</p>
         </div>
-        <a href="/billing">
-          <button className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
-            Upgrade to Professional →
-          </button>
-        </a>
       </div>
     </div>
   );
