@@ -2839,10 +2839,10 @@ export function CoreAnalysisSummaryView({ results }: { results: CoreExpertResult
               { icon: "🏭", title: "Sector Benchmarks", desc: "Margins and comparables" },
               { icon: "📝", title: "Full Memorandum", desc: "Investment memo (2,000+ words)" },
             ].map((tile, i) => (
-              <div key={i} className="border rounded-lg p-3 bg-background/60 text-left">
-                <p className="text-base mb-1">{tile.icon}</p>
-                <p className="text-xs font-semibold mb-0.5">{tile.title}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">{tile.desc}</p>
+              <div key={i} className="border rounded-lg p-4 bg-background/60 text-left">
+                <p className="text-lg mb-1.5">{tile.icon}</p>
+                <p className="text-sm font-semibold mb-0.5">{tile.title}</p>
+                <p className="text-xs text-muted-foreground leading-snug">{tile.desc}</p>
               </div>
             ))}
           </div>
