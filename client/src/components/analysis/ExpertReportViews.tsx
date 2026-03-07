@@ -1420,6 +1420,19 @@ export function SectorReportView({ data }: { data: Record<string, unknown> }) {
   const multiples = d.comparable_multiples || {};
   const growth = d.growth_opportunities || {};
   const sectorRisks = d.sector_risks || {};
+  const comparables = d.comparable_transactions || d.sector_comparables || [];
+  const tailwinds = d.sector_tailwinds || d.opportunities || growth.organic || [];
+  const regulatoryEnv = d.regulatory_environment || d.external_factors || null;
+  const sectorRiskItems = sectorRisks.threats || sectorRisks.risks || [];
+
+  const growthOutlookColor: Record<string, string> = {
+    growing: "bg-green-600 text-white",
+    stable: "bg-blue-600 text-white",
+    declining: "bg-red-600 text-white",
+    disrupted: "bg-amber-600 text-white",
+  };
+
+  const marginComparison = positioning.margin_vs_sector || positioning.company_vs_typical;
 
   return (
     <div className="space-y-6">
@@ -1435,92 +1448,105 @@ export function SectorReportView({ data }: { data: Record<string, unknown> }) {
         </SectionCard>
       )}
 
-      {overview.key_trends?.length > 0 && (
-        <SectionCard icon={TrendingUp} title="Key Sector Trends" accent="border-l-blue-500">
-          <BulletList items={overview.key_trends} variant="info" />
+      {d.key_findings?.length > 0 && (
+        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
+          <BulletList items={d.key_findings} variant="strength" />
         </SectionCard>
       )}
 
-      {overview.regulatory_factors?.length > 0 && (
-        <SectionCard icon={Shield} title="Regulatory Factors" accent="border-l-amber-500">
-          <BulletList items={overview.regulatory_factors} variant="concern" />
-        </SectionCard>
-      )}
-
-      {positioning.positioning_assessment && (
-        <SectionCard icon={Target} title="Competitive Positioning" accent="border-l-purple-500">
-          <NarrativeBlock text={positioning.positioning_assessment} />
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            {[
-              { k: "typical_gross_margin_range", l: "Gross Margin Range" },
-              { k: "typical_operating_margin_range", l: "Operating Margin Range" },
-              { k: "typical_ebitda_margin_range", l: "EBITDA Margin Range" },
-            ].map(({ k, l }) => {
-              const range = positioning[k];
-              if (!range) return null;
-              return (
-                <div key={k} className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{l}</p>
-                  <p className="font-bold text-lg">{formatPercent(range.low)} — {formatPercent(range.high)}</p>
-                </div>
-              );
-            })}
+      {d.red_flags?.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-red-500/5 border-red-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-red-700 dark:text-red-300">Red Flags</h3>
           </div>
-        </SectionCard>
+          <div className="p-4">
+            <BulletList items={d.red_flags.map((f: any) => typeof f === "string" ? f : f.description || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
       )}
 
-      {(multiples.ev_revenue_range || multiples.ev_ebitda_range) && (
-        <SectionCard icon={CircleDollarSign} title="Comparable Multiples" accent="border-l-emerald-500">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { k: "ev_revenue_range", l: "EV / Revenue" },
-              { k: "ev_ebitda_range", l: "EV / EBITDA" },
-            ].map(({ k, l }) => {
-              const range = multiples[k];
-              if (!range) return null;
-              return (
-                <div key={k} className="border rounded-xl p-5 bg-gradient-to-br from-background to-muted/20">
-                  <p className="text-sm font-semibold mb-4">{l}</p>
-                  <div className="flex justify-between items-end text-center">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Low</p>
-                      <p className="text-xl font-bold text-muted-foreground">{range.low}x</p>
-                    </div>
-                    <div className="border-2 border-primary rounded-xl px-4 py-2 bg-primary/5">
-                      <p className="text-xs text-primary mb-1">Mid</p>
-                      <p className="text-2xl font-bold text-primary">{range.mid}x</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">High</p>
-                      <p className="text-xl font-bold text-muted-foreground">{range.high}x</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+      <SectionCard icon={Building} title="Sector Overview" accent="border-l-blue-500">
+        <div className="grid grid-cols-2 gap-3">
+          {overview.sector_name && (
+            <div className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Sector</p>
+              <p className="text-sm font-bold">{overview.sector_name}</p>
+            </div>
+          )}
+          {overview.growth_outlook && (
+            <div className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Growth Outlook</p>
+              <Badge className={`capitalize font-medium ${growthOutlookColor[overview.growth_outlook?.toLowerCase()] || ""}`}>
+                {overview.growth_outlook}
+              </Badge>
+            </div>
+          )}
+          {overview.uk_market_size_estimate && (
+            <div className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Market Size</p>
+              <p className="text-sm font-bold">{overview.uk_market_size_estimate}</p>
+            </div>
+          )}
+          {positioning.company_size_classification && (
+            <div className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Company Size vs Sector</p>
+              <Badge variant="outline" className="capitalize font-medium">{positioning.company_size_classification}</Badge>
+            </div>
+          )}
+          {positioning.typical_ebitda_margin_range && (
+            <div className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Typical EBITDA Margin</p>
+              <p className="text-sm font-bold">{formatPercent(positioning.typical_ebitda_margin_range.low)} — {formatPercent(positioning.typical_ebitda_margin_range.high)}</p>
+              {marginComparison && <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">Company: {marginComparison}</p>}
+            </div>
+          )}
+          {multiples.ev_ebitda_range && (
+            <div className="border rounded-xl p-4 bg-gradient-to-br from-background to-muted/30">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Typical EV/EBITDA</p>
+              <p className="text-sm font-bold">{multiples.ev_ebitda_range.low}x — {multiples.ev_ebitda_range.high}x</p>
+              {multiples.ev_ebitda_range.mid && <p className="text-[10px] text-muted-foreground mt-0.5">Mid: {multiples.ev_ebitda_range.mid}x</p>}
+            </div>
+          )}
+        </div>
+        {positioning.positioning_assessment && (
+          <div className="mt-4">
+            <NarrativeBlock text={positioning.positioning_assessment} />
+          </div>
+        )}
+      </SectionCard>
+
+      {comparables.length > 0 && (
+        <SectionCard icon={CircleDollarSign} title="Comparable Transactions" accent="border-l-emerald-500">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-bold">Company / Deal</TableHead>
+                  <TableHead className="text-right font-bold">Revenue</TableHead>
+                  <TableHead className="text-right font-bold">EBITDA</TableHead>
+                  <TableHead className="text-right font-bold">Multiple</TableHead>
+                  <TableHead className="font-bold">Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {comparables.map((comp: any, i: number) => (
+                  <TableRow key={i} className={i % 2 === 0 ? "bg-muted/10" : ""}>
+                    <TableCell className="text-sm font-medium">{comp.company || comp.name || comp.deal || `Comparable ${i + 1}`}</TableCell>
+                    <TableCell className="text-right text-sm font-mono">{comp.revenue != null ? formatCurrency(comp.revenue) : "—"}</TableCell>
+                    <TableCell className="text-right text-sm font-mono">{comp.ebitda != null ? formatCurrency(comp.ebitda) : "—"}</TableCell>
+                    <TableCell className="text-right text-sm font-mono font-bold">{comp.multiple != null ? `${comp.multiple}x` : "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px]">{comp.notes || comp.description || "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
           {multiples.data_quality_note && <p className="text-xs text-muted-foreground mt-3 italic">{multiples.data_quality_note}</p>}
         </SectionCard>
       )}
 
-      {(growth.organic?.length > 0 || growth.acquisition?.length > 0) && (
-        <SectionCard icon={TrendingUp} title="Growth Opportunities" accent="border-l-green-500">
-          {growth.organic?.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Organic Growth</p>
-              <BulletList items={growth.organic} variant="strength" />
-            </div>
-          )}
-          {growth.acquisition?.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Acquisition Growth</p>
-              <BulletList items={growth.acquisition} variant="strength" />
-            </div>
-          )}
-        </SectionCard>
-      )}
-
-      {(sectorRisks.threats?.length > 0 || sectorRisks.cyclicality) && (
+      {sectorRiskItems.length > 0 && (
         <SectionCard icon={AlertTriangle} title="Sector Risks" accent="border-l-red-500">
           {sectorRisks.cyclicality && (
             <div className="flex items-center gap-2 mb-3">
@@ -1528,13 +1554,77 @@ export function SectorReportView({ data }: { data: Record<string, unknown> }) {
               <Badge variant="outline" className="capitalize font-medium">{sectorRisks.cyclicality}</Badge>
             </div>
           )}
-          {sectorRisks.threats?.length > 0 && <BulletList items={sectorRisks.threats} variant="concern" />}
+          <div className="space-y-2">
+            {[...sectorRiskItems]
+              .sort((a: any, b: any) => {
+                const sev = (v: any) => typeof v === "string" ? (v.toLowerCase() === "high" ? 3 : v.toLowerCase() === "medium" ? 2 : 1) : 0;
+                return sev(b.severity || b.risk_level) - sev(a.severity || a.risk_level);
+              })
+              .map((risk: any, i: number) => {
+                const riskName = typeof risk === "string" ? risk : risk.name || risk.threat || risk.description;
+                const severity = typeof risk === "object" ? (risk.severity || risk.risk_level) : null;
+                const desc = typeof risk === "object" ? (risk.description || risk.detail) : null;
+                return (
+                  <div key={i} className="border rounded-lg p-3 bg-muted/10 flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{riskName}</p>
+                      {desc && desc !== riskName && <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>}
+                    </div>
+                    {severity && (
+                      <Badge className={`text-[10px] flex-shrink-0 ${
+                        String(severity).toLowerCase() === "high" ? "bg-red-600 text-white" :
+                        String(severity).toLowerCase() === "medium" ? "bg-amber-600 text-white" :
+                        "bg-green-600 text-white"
+                      }`}>{severity}</Badge>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
         </SectionCard>
       )}
 
-      {d.key_findings?.length > 0 && (
-        <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
-          <BulletList items={d.key_findings} variant="strength" />
+      {tailwinds.length > 0 && (
+        <SectionCard icon={TrendingUp} title="Sector Tailwinds" accent="border-l-green-500">
+          <ul className="space-y-1">
+            {tailwinds.map((item: any, i: number) => (
+              <li key={i} className="text-sm flex items-start gap-2">
+                <ArrowUpRight className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                <span>{typeof item === "string" ? item : item.description || item.name || String(item)}</span>
+              </li>
+            ))}
+          </ul>
+          {growth.acquisition?.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Acquisition Opportunities</p>
+              <BulletList items={growth.acquisition} variant="strength" />
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {(regulatoryEnv || overview.regulatory_factors?.length > 0) && (
+        <SectionCard icon={ShieldCheck} title="Regulatory & External Environment" accent="border-l-amber-500">
+          {regulatoryEnv && typeof regulatoryEnv === "string" && (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap mb-3">{regulatoryEnv}</p>
+          )}
+          {regulatoryEnv && typeof regulatoryEnv === "object" && (
+            <div className="mb-3">
+              <KeyValueGrid items={Object.entries(regulatoryEnv).map(([k, v]) => ({
+                label: formatLabel(k),
+                value: String(v ?? "—"),
+              }))} />
+            </div>
+          )}
+          {overview.regulatory_factors?.length > 0 && (
+            <BulletList items={overview.regulatory_factors} variant="concern" />
+          )}
+        </SectionCard>
+      )}
+
+      {overview.key_trends?.length > 0 && (
+        <SectionCard icon={TrendingUp} title="Key Sector Trends" accent="border-l-blue-500">
+          <BulletList items={overview.key_trends} variant="info" />
         </SectionCard>
       )}
     </div>
@@ -1546,6 +1636,13 @@ export function ValuationReportView({ data }: { data: Record<string, unknown> })
   const ebitdaVal = d.ebitda_multiple_valuation || {};
   const bridge = d.ev_to_equity_bridge || {};
   const summary = d.valuation_summary || {};
+  const sensitivity = d.sensitivity_analysis || {};
+  const sellerExp = d.seller_expectation || d.valuation_gap || null;
+
+  const equityRange = bridge.equity_value_range || summary.equity_value_range || {};
+  const evRange = ebitdaVal.enterprise_value_range || {};
+  const recommendedOffer = summary.recommended_offer ?? summary.recommended_offer_price ?? d.recommended_offer;
+  const recommendedStructure = summary.recommended_structure ?? d.recommended_structure;
 
   return (
     <div className="space-y-6">
@@ -1555,91 +1652,214 @@ export function ValuationReportView({ data }: { data: Record<string, unknown> })
         </SectionCard>
       )}
 
-      {Object.keys(ebitdaVal).length > 0 && (
-        <SectionCard icon={DollarSign} title="EBITDA Multiple Valuation" accent="border-l-emerald-500">
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <MetricCard label="Adjusted EBITDA" value={formatCurrency(ebitdaVal.adjusted_ebitda_base)} color="text-emerald-600" />
-              <MetricCard label="Selected Multiple" value={`${ebitdaVal.selected_multiple}x`} color="text-blue-600" />
-              {ebitdaVal.sector_multiple_range && (
-                <MetricCard label="Sector Range" value={`${ebitdaVal.sector_multiple_range.low}x – ${ebitdaVal.sector_multiple_range.high}x`} />
-              )}
-            </div>
-            {ebitdaVal.enterprise_value_range && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                  Implied Valuation Range
-                  <ExplainButton
-                    metricKey="Implied Valuation Range"
-                    metricValue={`${formatCurrency(ebitdaVal.enterprise_value_range.conservative)} – ${formatCurrency(ebitdaVal.enterprise_value_range.optimistic)}`}
-                    context={{ companyName: d.company_name || 'This company', sector: d.sector || 'Unknown', adjustedEbitda: ebitdaVal.adjusted_ebitda_base }}
-                  />
-                </p>
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { k: "conservative", l: "Conservative", color: "" },
-                    { k: "base", l: "Base Case", color: "border-primary bg-primary/5 ring-1 ring-primary/20" },
-                    { k: "optimistic", l: "Optimistic", color: "" },
-                  ].map(({ k, l, color }) => (
-                    <div key={k} className={`border rounded-xl p-5 text-center ${color}`}>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{l}</p>
-                      <p className="text-2xl font-bold tracking-tight">{formatCurrency(ebitdaVal.enterprise_value_range[k])}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Enterprise Value</p>
-                    </div>
-                  ))}
-                </div>
+      <SectionCard icon={CircleDollarSign} title="Equity Value Range" accent="border-l-emerald-500">
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { k: "conservative", l: "Conservative" },
+            { k: "base", l: "Base Case" },
+            { k: "optimistic", l: "Optimistic" },
+          ].map(({ k, l }) => {
+            const val = equityRange[k] ?? evRange[k];
+            const isBase = k === "base";
+            return (
+              <div key={k} className={`border rounded-xl p-5 text-center ${isBase ? "border-primary bg-primary/5 ring-1 ring-primary/20" : ""}`}>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{l}</p>
+                <p className={`text-2xl font-bold tracking-tight ${isBase ? "text-primary" : ""}`}>{formatCurrency(val)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Equity Value</p>
               </div>
-            )}
-            {ebitdaVal.multiple_justification && <NarrativeBlock text={ebitdaVal.multiple_justification} />}
+            );
+          })}
+        </div>
+        {recommendedOffer != null && (
+          <div className="mt-4 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 text-center">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Recommended Offer</p>
+            <p className="text-3xl font-bold text-primary tracking-tight">{formatCurrency(recommendedOffer)}</p>
           </div>
-        </SectionCard>
-      )}
-
-      {Object.keys(bridge).length > 0 && (
-        <SectionCard icon={BarChart3} title="EV to Equity Bridge" accent="border-l-blue-500">
-          <div className="space-y-1 max-w-md mx-auto">
-            {[
-              { k: "enterprise_value_base", l: "Enterprise Value (Base)", sign: "" },
-              { k: "plus_cash", l: "+ Cash at Bank", sign: "+" },
-              { k: "minus_long_term_debt", l: "– Long-term Debt", sign: "–" },
-              { k: "minus_director_loans", l: "– Director Loans", sign: "–" },
-              { k: "minus_bad_debt_provision", l: "– Bad Debt Provision", sign: "–" },
-              { k: "minus_working_capital_adjustment", l: "– Working Capital Adj.", sign: "–" },
-            ].filter(({ k }) => bridge[k] !== undefined && bridge[k] !== null).map(({ k, l, sign }, i) => (
-              <div key={k} className={`flex justify-between py-2.5 px-4 rounded-lg ${i === 0 ? "bg-muted/40 font-semibold" : "border-b border-dashed"}`}>
-                <span className="text-sm">{l}</span>
-                <span className={`text-sm font-mono font-semibold ${sign === "+" ? "text-green-600" : sign === "–" ? "text-red-600" : ""}`}>
-                  {formatCurrency(Math.abs(bridge[k]))}
-                </span>
-              </div>
-            ))}
-            <Separator className="my-2" />
-            {bridge.equity_value_range && (
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                {["conservative", "base", "optimistic"].map((level) => (
-                  <div key={level} className={`border rounded-xl p-4 text-center ${level === "base" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : ""}`}>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 capitalize">Equity ({level})</p>
-                    <p className="text-lg font-bold">{formatCurrency(bridge.equity_value_range[level])}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+        )}
+        {recommendedStructure && (
+          <div className="mt-3 flex justify-center">
+            <Badge variant="outline" className="text-sm capitalize font-medium px-4 py-1">{recommendedStructure}</Badge>
           </div>
-        </SectionCard>
-      )}
-
-      {Object.keys(summary).length > 0 && (
-        <SectionCard icon={Target} title="Valuation Summary" accent="border-l-teal-500">
-          <KeyValueGrid items={Object.entries(summary).filter(([, v]) => typeof v !== "object").map(([k, v]) => ({
-            label: formatLabel(k),
-            value: typeof v === "number" ? formatCurrency(v as number) : String(v ?? "—"),
-          }))} />
-        </SectionCard>
-      )}
+        )}
+      </SectionCard>
 
       {d.key_findings?.length > 0 && (
         <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
           <BulletList items={d.key_findings} variant="strength" />
+        </SectionCard>
+      )}
+
+      {d.red_flags?.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-red-500/5 border-red-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-red-700 dark:text-red-300">Red Flags</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={d.red_flags.map((f: any) => typeof f === "string" ? f : f.description || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
+      )}
+
+      {(Object.keys(bridge).length > 0 || Object.keys(ebitdaVal).length > 0) && (
+        <SectionCard icon={BarChart3} title="Valuation Bridge" accent="border-l-blue-500">
+          <div className="space-y-0 max-w-lg mx-auto">
+            {ebitdaVal.adjusted_ebitda_base != null && (
+              <div className="flex items-center justify-between p-3 rounded-t-lg bg-muted/30 border border-b-0">
+                <span className="text-sm font-medium">Adjusted EBITDA</span>
+                <span className="text-sm font-bold font-mono">{formatCurrency(ebitdaVal.adjusted_ebitda_base)}</span>
+              </div>
+            )}
+            {(ebitdaVal.selected_multiple != null || ebitdaVal.sector_multiple_range) && (
+              <div className="flex items-center justify-between p-3 bg-blue-500/5 border border-b-0 border-blue-500/20">
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">× Multiple Applied</span>
+                <span className="text-sm font-bold font-mono text-blue-600 dark:text-blue-400">
+                  {ebitdaVal.selected_multiple != null ? `${ebitdaVal.selected_multiple}x` : ""}
+                  {ebitdaVal.sector_multiple_range ? ` (sector: ${ebitdaVal.sector_multiple_range.low}x–${ebitdaVal.sector_multiple_range.high}x)` : ""}
+                </span>
+              </div>
+            )}
+            {(bridge.enterprise_value_base != null || evRange.base != null) && (
+              <div className="flex items-center justify-between p-3 bg-muted/20 border border-b-0">
+                <span className="text-sm font-medium">Enterprise Value</span>
+                <span className="text-sm font-bold font-mono">{formatCurrency(bridge.enterprise_value_base ?? evRange.base)}</span>
+              </div>
+            )}
+            {[
+              { k: "plus_cash", l: "+ Cash at Bank", sign: "+" },
+              { k: "minus_long_term_debt", l: "− Long-term Debt", sign: "−" },
+              { k: "minus_director_loans", l: "− Director Loans", sign: "−" },
+              { k: "minus_bad_debt_provision", l: "− Bad Debt Provision", sign: "−" },
+              { k: "minus_working_capital_adjustment", l: "− Working Capital Adj.", sign: "−" },
+            ].filter(({ k }) => bridge[k] != null).map(({ k, l, sign }) => (
+              <div key={k} className={`flex items-center justify-between p-3 border border-b-0 ${sign === "+" ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                <span className={`text-sm font-medium ${sign === "+" ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>{l}</span>
+                <span className={`text-sm font-bold font-mono ${sign === "+" ? "text-green-600" : "text-red-600"}`}>
+                  {formatCurrency(Math.abs(bridge[k]))}
+                </span>
+              </div>
+            ))}
+            <div className="border-t-2 border-dashed border-muted-foreground/30" />
+            {equityRange.base != null && (
+              <div className="flex items-center justify-between p-3 rounded-b-lg bg-muted/40 border border-t-0">
+                <span className="text-sm font-bold">Equity Value (Base)</span>
+                <span className="text-lg font-bold font-mono text-primary">{formatCurrency(equityRange.base)}</span>
+              </div>
+            )}
+          </div>
+          {ebitdaVal.multiple_justification && <div className="mt-4"><NarrativeBlock text={ebitdaVal.multiple_justification} /></div>}
+        </SectionCard>
+      )}
+
+      {(ebitdaVal.sector_multiple_range || d.comparable_multiples) && (
+        <SectionCard icon={Target} title="Multiple Benchmarking" accent="border-l-teal-500">
+          <div className="grid grid-cols-3 gap-3">
+            {ebitdaVal.sector_multiple_range && (
+              <div className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Sector EV/EBITDA Range</p>
+                <p className="text-xl font-bold">{ebitdaVal.sector_multiple_range.low}x — {ebitdaVal.sector_multiple_range.high}x</p>
+              </div>
+            )}
+            {ebitdaVal.selected_multiple != null && (
+              <div className="border rounded-xl p-4 text-center border-primary bg-primary/5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Applied Multiple</p>
+                <p className="text-xl font-bold text-primary">{ebitdaVal.selected_multiple}x</p>
+              </div>
+            )}
+            {(ebitdaVal.premium_discount_percent != null || d.premium_discount) && (
+              <div className="border rounded-xl p-4 text-center bg-gradient-to-br from-background to-muted/30">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Premium / Discount</p>
+                <p className="text-xl font-bold">{formatPercent(ebitdaVal.premium_discount_percent ?? d.premium_discount)}</p>
+                {(ebitdaVal.premium_discount_reason || d.premium_discount_reason) && (
+                  <p className="text-[10px] text-muted-foreground mt-1">{ebitdaVal.premium_discount_reason || d.premium_discount_reason}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {(sensitivity.scenarios?.length > 0 || sensitivity.grid || Object.keys(sensitivity).length > 2) && (
+        <SectionCard icon={Gauge} title="Sensitivity Analysis" accent="border-l-amber-500">
+          {sensitivity.grid ? (
+            <div className="overflow-x-auto -mx-4 px-4">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="font-bold">EBITDA \ Multiple</TableHead>
+                    {(sensitivity.grid.multiples || []).map((m: number) => (
+                      <TableHead key={m} className="text-right font-bold">{m}x</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(sensitivity.grid.ebitda_values || []).map((ebitda: number, ri: number) => (
+                    <TableRow key={ri} className={ri % 2 === 0 ? "bg-muted/10" : ""}>
+                      <TableCell className="font-medium text-sm">{formatCurrency(ebitda)}</TableCell>
+                      {(sensitivity.grid.multiples || []).map((m: number, ci: number) => {
+                        const val = sensitivity.grid.values?.[ri]?.[ci];
+                        const isBase = sensitivity.grid.base_row === ri && sensitivity.grid.base_col === ci;
+                        return (
+                          <TableCell key={ci} className={`text-right text-sm font-mono ${isBase ? "bg-primary/10 font-bold text-primary" : ""}`}>
+                            {formatCurrency(val)}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : sensitivity.scenarios?.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {sensitivity.scenarios.map((sc: any, i: number) => (
+                <div key={i} className={`border rounded-xl p-4 text-center ${sc.is_base ? "border-primary bg-primary/5" : "bg-gradient-to-br from-background to-muted/30"}`}>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{sc.label || sc.name || `Scenario ${i + 1}`}</p>
+                  <p className={`text-xl font-bold ${sc.is_base ? "text-primary" : ""}`}>{formatCurrency(sc.equity_value ?? sc.value)}</p>
+                  {sc.ebitda && <p className="text-[10px] text-muted-foreground mt-0.5">EBITDA: {formatCurrency(sc.ebitda)}</p>}
+                  {sc.multiple && <p className="text-[10px] text-muted-foreground">Multiple: {sc.multiple}x</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <KeyValueGrid items={Object.entries(sensitivity).filter(([k]) => k !== "grid" && k !== "scenarios").map(([k, v]) => ({
+              label: formatLabel(k),
+              value: typeof v === "number" ? formatCurrency(v as number) : String(v ?? "—"),
+            }))} />
+          )}
+        </SectionCard>
+      )}
+
+      {sellerExp && typeof sellerExp === "object" && (
+        <SectionCard icon={Handshake} title="Seller Expectation Gap" accent="border-l-purple-500">
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              {sellerExp.seller_expectation != null && (
+                <div className="border rounded-xl p-4 text-center bg-red-500/5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Seller Expectation</p>
+                  <p className="text-xl font-bold text-red-600">{formatCurrency(sellerExp.seller_expectation)}</p>
+                </div>
+              )}
+              {(recommendedOffer ?? sellerExp.recommended_offer) != null && (
+                <div className="border rounded-xl p-4 text-center border-primary bg-primary/5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Recommended Offer</p>
+                  <p className="text-xl font-bold text-primary">{formatCurrency(recommendedOffer ?? sellerExp.recommended_offer)}</p>
+                </div>
+              )}
+              {(sellerExp.gap ?? sellerExp.gap_amount) != null && (
+                <div className="border rounded-xl p-4 text-center bg-amber-500/5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Gap</p>
+                  <p className="text-xl font-bold text-amber-600">{formatCurrency(sellerExp.gap ?? sellerExp.gap_amount)}</p>
+                  {(sellerExp.gap_percent ?? sellerExp.gap_percentage) != null && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatPercent(sellerExp.gap_percent ?? sellerExp.gap_percentage)}</p>
+                  )}
+                </div>
+              )}
+            </div>
+            {(sellerExp.bridging_strategy || sellerExp.how_to_bridge) && (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{sellerExp.bridging_strategy || sellerExp.how_to_bridge}</p>
+            )}
+          </div>
         </SectionCard>
       )}
     </div>
