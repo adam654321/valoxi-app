@@ -53,49 +53,49 @@ const FUNDING_TYPE_LABELS: Record<string, string> = {
 const RATING_CONFIG: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: typeof CheckCircle; description: string }> = {
   strong: {
     label: 'Strong',
-    color: 'text-green-700',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
+    color: 'text-green-700 dark:text-green-400',
+    bgColor: 'bg-green-50 dark:bg-green-950/30',
+    borderColor: 'border-green-200 dark:border-green-800',
     icon: ShieldCheck,
     description: 'Excellent debt serviceability. Lenders compete for this deal — strong covenant headroom even in a downturn.',
   },
   fundable: {
     label: 'Fundable',
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
+    color: 'text-blue-700 dark:text-blue-400',
+    bgColor: 'bg-blue-50 dark:bg-blue-950/30',
+    borderColor: 'border-blue-200 dark:border-blue-800',
     icon: CheckCircle,
     description: 'Meets standard lending thresholds. Most cash flow lenders are comfortable at this level with reasonable headroom for fluctuations.',
   },
   challenging: {
     label: 'Challenging',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
+    color: 'text-amber-700 dark:text-amber-400',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
+    borderColor: 'border-amber-200 dark:border-amber-800',
     icon: AlertTriangle,
     description: 'Below the 1.5x threshold most mainstream lenders require. Specialist or alternative lenders may consider, but expect tighter covenants and higher rates.',
   },
   critical: {
     label: 'Critical',
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
+    color: 'text-orange-700 dark:text-orange-400',
+    bgColor: 'bg-orange-50 dark:bg-orange-950/30',
+    borderColor: 'border-orange-200 dark:border-orange-800',
     icon: AlertTriangle,
     description: 'Technically covers debt service but with virtually no headroom. One bad month risks default. Very few lenders will fund at this level.',
   },
   unfundable: {
     label: 'Unfundable',
-    color: 'text-red-700',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
+    color: 'text-red-700 dark:text-red-400',
+    bgColor: 'bg-red-50 dark:bg-red-950/30',
+    borderColor: 'border-red-200 dark:border-red-800',
     icon: XCircle,
     description: 'Cash flow does not cover debt repayments. The deal structure must be revised — reduce debt, extend terms, or increase equity.',
   },
   no_debt: {
     label: 'No Debt Service',
-    color: 'text-slate-700',
-    bgColor: 'bg-slate-50',
-    borderColor: 'border-slate-200',
+    color: 'text-slate-700 dark:text-slate-400',
+    bgColor: 'bg-slate-50 dark:bg-slate-950/30',
+    borderColor: 'border-slate-200 dark:border-slate-800',
     icon: Info,
     description: 'No debt facilities with repayment terms are active. Add funding sources with interest rates and terms to calculate the DSCR.',
   },
@@ -337,17 +337,17 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                   </div>
                   {calculations?.paymentCoverRatio != null && (
                     <div
-                      className="absolute top-[-2px] bottom-[-2px] w-1 bg-slate-900 rounded-full shadow-sm"
+                      className="absolute top-[-2px] bottom-[-2px] w-1 bg-slate-900 dark:bg-white rounded-full shadow-sm"
                       style={{ left: `${getRatioBarWidth(calculations.paymentCoverRatio)}%` }}
                     />
                   )}
                 </div>
                 <div className="relative flex text-[10px] text-muted-foreground mt-1" style={{ height: '14px' }}>
-                  <span className="absolute text-red-600 font-medium" style={{ left: '0%' }}>Unfundable</span>
-                  <span className="absolute text-orange-600 font-medium" style={{ left: '20%' }}>Critical</span>
-                  <span className="absolute text-amber-600 font-medium" style={{ left: '32%' }}>Challenging</span>
-                  <span className="absolute text-blue-600 font-medium" style={{ left: '45%' }}>Fundable</span>
-                  <span className="absolute text-green-600 font-medium" style={{ right: '0%' }}>Strong</span>
+                  <span className="absolute text-red-600 dark:text-red-400 font-medium" style={{ left: '0%' }}>Unfundable</span>
+                  <span className="absolute text-orange-600 dark:text-orange-400 font-medium" style={{ left: '20%' }}>Critical</span>
+                  <span className="absolute text-amber-600 dark:text-amber-400 font-medium" style={{ left: '32%' }}>Challenging</span>
+                  <span className="absolute text-blue-600 dark:text-blue-400 font-medium" style={{ left: '45%' }}>Fundable</span>
+                  <span className="absolute text-green-600 dark:text-green-400 font-medium" style={{ right: '0%' }}>Strong</span>
                 </div>
                 <div className="relative flex text-[9px] text-muted-foreground mt-0.5" style={{ height: '12px' }}>
                   <span className="absolute" style={{ left: '0%' }}>0x</span>
@@ -412,27 +412,27 @@ export default function ViabilitySection({ modelId, model, calculations, funding
           let burdenDescription: string;
           
           if (debtBurdenPct <= 40) {
-            burdenColor = 'text-green-700';
-            burdenBg = 'bg-green-50';
-            burdenBorder = 'border-green-200';
+            burdenColor = 'text-green-700 dark:text-green-400';
+            burdenBg = 'bg-green-50 dark:bg-green-950/30';
+            burdenBorder = 'border-green-200 dark:border-green-800';
             burdenLabel = 'Comfortable';
             burdenDescription = 'Low debt burden — significant cash flow remains for operations, reinvestment, and absorbing downturns.';
           } else if (debtBurdenPct <= 60) {
-            burdenColor = 'text-blue-700';
-            burdenBg = 'bg-blue-50';
-            burdenBorder = 'border-blue-200';
+            burdenColor = 'text-blue-700 dark:text-blue-400';
+            burdenBg = 'bg-blue-50 dark:bg-blue-950/30';
+            burdenBorder = 'border-blue-200 dark:border-blue-800';
             burdenLabel = 'Moderate';
             burdenDescription = 'Manageable debt burden — adequate cash flow for operations but limited room for unexpected costs or revenue dips.';
           } else if (debtBurdenPct <= 80) {
-            burdenColor = 'text-amber-700';
-            burdenBg = 'bg-amber-50';
-            burdenBorder = 'border-amber-200';
+            burdenColor = 'text-amber-700 dark:text-amber-400';
+            burdenBg = 'bg-amber-50 dark:bg-amber-950/30';
+            burdenBorder = 'border-amber-200 dark:border-amber-800';
             burdenLabel = 'Heavy';
             burdenDescription = 'High debt burden — most cash flow consumed by debt servicing. Minimal headroom for operational issues or investment.';
           } else {
-            burdenColor = 'text-red-700';
-            burdenBg = 'bg-red-50';
-            burdenBorder = 'border-red-200';
+            burdenColor = 'text-red-700 dark:text-red-400';
+            burdenBg = 'bg-red-50 dark:bg-red-950/30';
+            burdenBorder = 'border-red-200 dark:border-red-800';
             burdenLabel = 'Unsustainable';
             burdenDescription = debtBurdenPct >= 100 
               ? 'Debt service exceeds EBITDA — the business cannot cover repayments from operating cash flow.'
@@ -469,16 +469,16 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                     <div className="bg-red-400 h-full" style={{ width: '20%' }} />
                   </div>
                   <div
-                    className="absolute top-[-2px] bottom-[-2px] w-1 bg-slate-900 rounded-full shadow-sm"
+                    className="absolute top-[-2px] bottom-[-2px] w-1 bg-slate-900 dark:bg-white rounded-full shadow-sm"
                     style={{ left: `${Math.min(debtBurdenPct, 100)}%` }}
                   />
                 </div>
                 <div className="relative flex text-[10px] text-muted-foreground mt-0.5" style={{ height: '14px' }}>
-                  <span className="absolute text-green-600 font-medium" style={{ left: '0%' }}>0%</span>
-                  <span className="absolute text-green-600 font-medium" style={{ left: '40%', transform: 'translateX(-50%)' }}>40%</span>
-                  <span className="absolute text-blue-600 font-medium" style={{ left: '60%', transform: 'translateX(-50%)' }}>60%</span>
-                  <span className="absolute text-amber-600 font-medium" style={{ left: '80%', transform: 'translateX(-50%)' }}>80%</span>
-                  <span className="absolute text-red-600 font-medium" style={{ right: '0%' }}>100%</span>
+                  <span className="absolute text-green-600 dark:text-green-400 font-medium" style={{ left: '0%' }}>0%</span>
+                  <span className="absolute text-green-600 dark:text-green-400 font-medium" style={{ left: '40%', transform: 'translateX(-50%)' }}>40%</span>
+                  <span className="absolute text-blue-600 dark:text-blue-400 font-medium" style={{ left: '60%', transform: 'translateX(-50%)' }}>60%</span>
+                  <span className="absolute text-amber-600 dark:text-amber-400 font-medium" style={{ left: '80%', transform: 'translateX(-50%)' }}>80%</span>
+                  <span className="absolute text-red-600 dark:text-red-400 font-medium" style={{ right: '0%' }}>100%</span>
                 </div>
               </div>
 
@@ -490,11 +490,11 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Annual Debt Service</p>
-                    <p className="font-semibold tabular-nums text-red-700">−{formatCurrency(calculations.totalAnnualDebtService)}</p>
+                    <p className="font-semibold tabular-nums text-red-700 dark:text-red-400">−{formatCurrency(calculations.totalAnnualDebtService)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Residual Cash Flow</p>
-                    <p className={`font-semibold tabular-nums ${residualCash >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    <p className={`font-semibold tabular-nums ${residualCash >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                       {formatCurrency(residualCash)}
                     </p>
                   </div>
@@ -510,12 +510,12 @@ export default function ViabilitySection({ modelId, model, calculations, funding
         })()}
 
         {hasDebtService && (
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+          <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
             <div className="flex items-start gap-2 mb-2">
-              <Info className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
-              <h4 className="text-sm font-medium text-slate-700">Lender Context</h4>
+              <Info className="h-4 w-4 text-slate-500 dark:text-slate-400 mt-0.5 shrink-0" />
+              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">Lender Context</h4>
             </div>
-            <ul className="space-y-1.5 text-xs text-slate-600 ml-6">
+            <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 ml-6">
               <li><strong>1.5x is the key threshold</strong> — most mainstream cash flow lenders require a minimum DSCR of 1.5x for senior debt facilities.</li>
               <li>Below 1.25x, even specialist lenders are reluctant. The deal needs restructuring (less debt, longer terms, or more equity).</li>
               <li>Above 2.0x provides strong covenant headroom — the business can absorb a significant revenue downturn and still service its debt.</li>
@@ -621,14 +621,14 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                   </tr>
                   <tr>
                     <td className="px-3 py-2 text-muted-foreground">− Total Funded</td>
-                    <td className="px-3 py-2 text-right font-medium tabular-nums text-green-700">
+                    <td className="px-3 py-2 text-right font-medium tabular-nums text-green-700 dark:text-green-400">
                       {calculations ? formatCurrency(calculations.totalFunded) : '—'}
                     </td>
                   </tr>
                   <tr className={`border-t font-semibold ${
                     !calculations ? ''
-                    : Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0 ? 'bg-green-50 text-green-800'
-                    : 'bg-red-50 text-red-800'
+                    : Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0 ? 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-400'
+                    : 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-400'
                   }`}>
                     <td className="px-3 py-2">
                       {calculations && (Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0) ? 'Surplus / Fully Funded' : 'Cash to Introduce'}
@@ -686,21 +686,21 @@ export default function ViabilitySection({ modelId, model, calculations, funding
               </h3>
               <div className={`rounded-lg border p-4 ${
                 overallVerdict.viable
-                  ? 'bg-green-50 border-green-200'
+                  ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
                   : overallVerdict.issues.length > 1
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-amber-50 border-amber-200'
+                    ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                    : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
               }`}>
                 <div className="flex items-center gap-2 mb-3">
                   {overallVerdict.viable ? (
-                    <ShieldCheck className="h-5 w-5 text-green-600" />
+                    <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
                   ) : overallVerdict.issues.length > 1 ? (
-                    <XCircle className="h-5 w-5 text-red-600" />
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                   ) : (
-                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   )}
                   <span className={`font-semibold ${
-                    overallVerdict.viable ? 'text-green-800' : overallVerdict.issues.length > 1 ? 'text-red-800' : 'text-amber-800'
+                    overallVerdict.viable ? 'text-green-800 dark:text-green-400' : overallVerdict.issues.length > 1 ? 'text-red-800 dark:text-red-400' : 'text-amber-800 dark:text-amber-400'
                   }`}>
                     {overallVerdict.viable
                       ? 'Deal structure looks viable'
@@ -712,14 +712,14 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                 <div className="space-y-1.5">
                   {overallVerdict.positives.map((p, i) => (
                     <div key={`p-${i}`} className="flex items-start gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                      <span className="text-green-800">{p}</span>
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                      <span className="text-green-800 dark:text-green-400">{p}</span>
                     </div>
                   ))}
                   {overallVerdict.issues.map((issue, i) => (
                     <div key={`i-${i}`} className="flex items-start gap-2 text-sm">
-                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                      <span className="text-amber-800">{issue}</span>
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                      <span className="text-amber-800 dark:text-amber-400">{issue}</span>
                     </div>
                   ))}
                 </div>

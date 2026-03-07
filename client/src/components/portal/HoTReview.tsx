@@ -200,7 +200,7 @@ function HoTCard({ token, doc, isLatest, onResponseSubmitted }: {
           ) : (
             <div className="border rounded-lg p-6 bg-card">
               <div
-                className="prose prose-sm max-w-none"
+                className="prose prose-sm dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: contentData?.html || '<p>Unable to load document content.</p>' }}
               />
             </div>
@@ -245,7 +245,7 @@ function HoTCard({ token, doc, isLatest, onResponseSubmitted }: {
               <Button
                 variant="outline"
                 onClick={() => setConfirmDialog('reject')}
-                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                className="flex-1 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Reject Heads of Terms
