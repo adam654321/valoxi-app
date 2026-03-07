@@ -1,0 +1,111 @@
+Step 7 of 8 — Restructure Deal Structure Report
+Context
+Steps 1-6 are complete:
+
+SynthesisReportView built (Step 1)
+Narrative moved to top of all 7 expert reports (Step 2)
+Screening restructured (Step 3)
+QoE and Financial restructured (Step 4)
+Operational and Risk restructured (Step 5)
+Valuation and Sector restructured (Step 6)
+
+This step restructures DealStructureReportView only.
+Do not touch any other components in this step.
+
+The Build
+Step 7a — Read DealStructureReportView
+Read client/src/components/analysis/ExpertReportViews.tsx.
+Find DealStructureReportView and map the current render order and field names.
+Step 7b — Reorder DealStructureReportView to this structure:
+Section 1 — Score header (keep existing)
+Section 2 — Narrative (confirmed in place from Step 2)
+Section 3 — Recommended Approach Banner ← keep if already prominent, confirm it's here
+Large badge: Conservative / Balanced / Competitive
+Colour coding: Conservative = green (low risk), Balanced = amber, Competitive = blue/purple
+Brief rationale paragraph below the badge.
+This should already be near the top — confirm and adjust position if needed.
+Section 4 — Key Findings (bulleted list)
+Section 5 — Red Flags / Deal Breaker Terms (highlighted box — only if non-empty)
+If data.deal_breaker_terms[] or data.red_flags[] is non-empty, render in red/amber box.
+Label: "Terms to Watch"
+Section 6 — Three Structure Comparison
+This is the centrepiece of the Deal Structure report.
+Render 3 side-by-side cards (or stacked on mobile):
+Card 1 — Conservative Structure
+Card 2 — Balanced Structure
+Card 3 — Competitive Structure
+For each card show:
+
+Structure name as card header (colour coded as above)
+Upfront payment: £XX,XXX (% of total)
+Deferred/earnout: £XX,XXX (% of total)
+Total consideration: £XX,XXX
+Earnout period: X months
+Key condition(s): one or two lines
+Risk to buyer badge: Low / Medium / High
+
+Highlight the RECOMMENDED structure card with a border or badge.
+If the data does not have three pre-built structures, use whatever structure objects exist
+(conservative, balanced, aggressive/competitive) and adapt the field names accordingly.
+Check the actual data shape before building.
+Label: "Structure Comparison"
+Section 7 — Payment Mechanics
+If data.payment_mechanics or data.earnout_structure exists:
+Earnout triggers: bulleted list (what must happen for deferred payment to release)
+Measurement period: text
+Payment schedule: table or list showing milestone → payment amount
+Label: "Payment Mechanics"
+Only render if data present.
+Section 8 — Conditions Precedent
+If data.conditions_precedent[] or similar exists:
+Numbered list of pre-completion conditions
+Label: "Conditions Precedent"
+Only render if non-empty.
+Section 9 — Post-Acquisition Protection
+If data.warranties_indemnities or data.protections exist:
+Key warranties: bulleted list
+Indemnities: bulleted list
+Retention / escrow recommended: yes/no badge + amount if yes
+Label: "Post-Acquisition Protection"
+Only render if data present.
+Section 10 — Integration Priorities (First 100 Days)
+If data.integration_priorities[] or data.first_100_days[] exists:
+Numbered list — these are the most time-sensitive actions post-completion
+Label: "First 100 Days"
+Only render if data present.
+
+What NOT to change in this step
+
+All previously restructured components (Steps 1-6)
+ExpertAnalysisDashboard.tsx
+Any API routes or data fetching
+
+
+Validation Checklist
+Code checks
+[ ] Only DealStructureReportView was modified
+[ ] No TypeScript errors
+[ ] No other components touched
+Visual checks
+Open the app, click "View full report" on the Deal Structure expert card.
+[ ] Narrative confirmed at top (Step 2, still in place)
+[ ] Recommended approach badge visible near top — colour coded (green/amber/blue)
+[ ] Rationale paragraph visible below the badge
+[ ] Key findings as bullet list
+[ ] Terms to watch box present if non-empty (absent if empty)
+[ ] Three structure comparison cards visible side by side:
+Conservative | Balanced | Competitive (or equivalent)
+[ ] Each card shows: upfront amount, deferred amount, total, earnout period, key condition
+[ ] Recommended structure card is visually highlighted (border, badge, or similar)
+[ ] Payment mechanics section visible (if data present)
+[ ] Conditions precedent as numbered list (if data present)
+[ ] Post-acquisition protection section visible (if data present)
+[ ] First 100 days numbered list visible (if data present)
+Regression checks
+[ ] All previously restructured reports unchanged:
+Synthesis (Step 1), Screening (Step 3), QoE + Financial (Step 4),
+Operational + Risk (Step 5), Valuation + Sector (Step 6)
+[ ] Dashboard card layout unchanged
+If anything fails
+Tell me which section is missing or incorrectly rendered.
+Do not proceed to Step 8 until all checks pass.

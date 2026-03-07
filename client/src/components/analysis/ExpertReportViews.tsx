@@ -31,6 +31,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  Calendar,
+  ClipboardList,
+  ListOrdered,
   type LucideIcon,
 } from "lucide-react";
 import ExplainButton from '@/components/analysis/ExplainButton';
@@ -1870,87 +1873,256 @@ export function DealStructureReportView({ data }: { data: Record<string, unknown
   const d = data as any;
   const structures = d.structures || [];
   const recommended = d.recommended_structure;
+  const dealBreakers = d.deal_breaker_terms || d.red_flags || [];
+  const paymentMechanics = d.payment_mechanics || d.earnout_structure || null;
+  const conditionsPrecedent = d.conditions_precedent || [];
+  const protections = d.warranties_indemnities || d.protections || null;
+  const integrationPriorities = d.integration_priorities || d.first_100_days || [];
+
+  const approachColor = (name: string) => {
+    const n = (name || "").toLowerCase();
+    if (n.includes("conservative")) return { bg: "bg-green-500/10 border-green-500/30", badge: "bg-green-600 text-white", text: "text-green-700 dark:text-green-400" };
+    if (n.includes("competitive") || n.includes("aggressive")) return { bg: "bg-blue-500/10 border-blue-500/30", badge: "bg-blue-600 text-white", text: "text-blue-700 dark:text-blue-400" };
+    return { bg: "bg-amber-500/10 border-amber-500/30", badge: "bg-amber-600 text-white", text: "text-amber-700 dark:text-amber-400" };
+  };
+
+  const recColors = approachColor(recommended || "balanced");
 
   return (
     <div className="space-y-6">
-      {recommended && (
-        <div className="rounded-xl p-5 border-2 border-primary/30 bg-primary/5 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Recommended Approach</p>
-            <p className="text-lg font-bold">{recommended}</p>
-          </div>
-          <Badge className="bg-primary text-lg px-4 py-1.5">Recommended</Badge>
-        </div>
-      )}
-
-      {d.recommendation_rationale && (
-        <SectionCard icon={Brain} title="Rationale" accent="border-l-indigo-500">
-          <NarrativeBlock text={d.recommendation_rationale} />
-        </SectionCard>
-      )}
-
       {d.narrative && (
         <SectionCard icon={Brain} title="Narrative" accent="border-l-indigo-500">
           <NarrativeBlock text={d.narrative} />
         </SectionCard>
       )}
 
-      {structures.length > 0 && (
-        <div className="space-y-4">
-          {structures.map((struct: any, i: number) => {
-            const isRec = struct.name === recommended;
-            const consideration = struct.consideration || {};
-            const effectivePrice = struct.effective_price_modeling || {};
-
-            return (
-              <div key={i} className={`border rounded-xl overflow-hidden ${isRec ? "border-primary ring-1 ring-primary/20" : ""}`}>
-                <div className={`px-5 py-3.5 border-b flex items-center justify-between ${isRec ? "bg-primary/10" : "bg-muted/40"}`}>
-                  <div className="flex items-center gap-3">
-                    <Handshake className={`w-5 h-5 ${isRec ? "text-primary" : "text-muted-foreground"}`} />
-                    <h3 className="font-bold text-sm">{struct.name}</h3>
-                    {isRec && <Badge className="bg-primary text-xs">Recommended</Badge>}
-                  </div>
-                </div>
-                <div className="p-5 space-y-4">
-                  {struct.strategy && <p className="text-sm">{struct.strategy}</p>}
-                  {struct.suitable_when && <p className="text-xs text-muted-foreground italic">Best suited when: {struct.suitable_when}</p>}
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { k: "total_headline", l: "Total Headline" },
-                      { k: "upfront_cash", l: "Upfront Cash" },
-                      { k: "deferred", l: "Deferred" },
-                      { k: "earnout_maximum", l: "Earnout Max" },
-                    ].map(({ k, l }) => (
-                      <div key={k} className="border rounded-lg p-3 text-center bg-gradient-to-br from-background to-muted/20">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{l}</p>
-                        <p className="text-lg font-bold mt-1">{formatCurrency(consideration[k])}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {consideration.upfront_percent && (
-                    <p className="text-xs text-muted-foreground">Upfront: <strong>{consideration.upfront_percent}%</strong> of total consideration</p>
-                  )}
-
-                  {Object.keys(effectivePrice).length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Effective Price Modeling</p>
-                      <KeyValueGrid items={Object.entries(effectivePrice).map(([k, v]) => ({
-                        label: formatLabel(k),
-                        value: typeof v === "number" ? (k.includes("percent") || k.includes("multiple") ? formatNumber(v) : formatCurrency(v as number)) : String(v ?? "—"),
-                      }))} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+      {recommended && (
+        <div className={`rounded-xl p-5 border-2 ${recColors.bg} flex items-center justify-between`}>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Recommended Approach</p>
+            <p className="text-lg font-bold">{recommended}</p>
+          </div>
+          <Badge className={`text-lg px-4 py-1.5 ${recColors.badge}`}>Recommended</Badge>
         </div>
+      )}
+
+      {d.recommendation_rationale && (
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">{d.recommendation_rationale}</p>
       )}
 
       {d.key_findings?.length > 0 && (
         <SectionCard icon={CheckCircle2} title="Key Findings" accent="border-l-green-500">
           <BulletList items={d.key_findings} variant="strength" />
+        </SectionCard>
+      )}
+
+      {dealBreakers.length > 0 && (
+        <div className="border rounded-lg overflow-hidden bg-red-500/5 border-red-500/20">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-sm tracking-tight text-red-700 dark:text-red-300">Terms to Watch</h3>
+          </div>
+          <div className="p-4">
+            <BulletList items={dealBreakers.map((f: any) => typeof f === "string" ? f : f.description || f.term || f.flag || String(f))} variant="concern" />
+          </div>
+        </div>
+      )}
+
+      {structures.length > 0 && (
+        <SectionCard icon={Handshake} title="Structure Comparison" accent="border-l-purple-500">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {structures.map((struct: any, i: number) => {
+              const isRec = struct.name === recommended || (structures.length === 1);
+              const consideration = struct.consideration || {};
+              const colors = approachColor(struct.name || "");
+              const totalVal = consideration.total_headline ?? consideration.total ?? consideration.total_consideration;
+              const upfrontVal = consideration.upfront_cash ?? consideration.upfront ?? consideration.initial_payment;
+              const deferredVal = consideration.deferred ?? consideration.deferred_cash ?? consideration.earnout_maximum ?? consideration.earnout;
+              const upfrontPct = consideration.upfront_percent ?? (totalVal && upfrontVal ? Math.round((upfrontVal / totalVal) * 100) : null);
+              const deferredPct = upfrontPct != null ? 100 - upfrontPct : null;
+              const earnoutPeriod = struct.earnout_period ?? consideration.earnout_period ?? struct.deferred_period;
+              const keyConditions = struct.key_conditions || struct.conditions || consideration.key_conditions || [];
+              const riskLevel = struct.risk_to_buyer ?? struct.buyer_risk ?? consideration.risk_level;
+
+              return (
+                <div key={i} className={`border rounded-xl overflow-hidden flex flex-col ${isRec ? "border-2 ring-1 ring-primary/20 border-primary/40" : ""}`}>
+                  <div className={`px-4 py-3 border-b flex items-center justify-between ${colors.bg}`}>
+                    <h3 className={`font-bold text-sm ${colors.text}`}>{struct.name}</h3>
+                    {isRec && <Badge className={`text-[10px] ${recColors.badge}`}>Recommended</Badge>}
+                  </div>
+                  <div className="p-4 space-y-3 flex-1">
+                    {struct.strategy && <p className="text-xs text-muted-foreground">{struct.strategy}</p>}
+
+                    {upfrontVal != null && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Upfront Payment</span>
+                        <span className="text-sm font-bold font-mono">
+                          {formatCurrency(upfrontVal)}
+                          {upfrontPct != null && <span className="text-[10px] text-muted-foreground ml-1">({upfrontPct}%)</span>}
+                        </span>
+                      </div>
+                    )}
+                    {deferredVal != null && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Deferred / Earnout</span>
+                        <span className="text-sm font-bold font-mono">
+                          {formatCurrency(deferredVal)}
+                          {deferredPct != null && <span className="text-[10px] text-muted-foreground ml-1">({deferredPct}%)</span>}
+                        </span>
+                      </div>
+                    )}
+                    <Separator />
+                    {totalVal != null && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold text-muted-foreground">Total Consideration</span>
+                        <span className="text-base font-bold font-mono">{formatCurrency(totalVal)}</span>
+                      </div>
+                    )}
+                    {earnoutPeriod && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Earnout Period</span>
+                        <span className="text-sm font-medium">{typeof earnoutPeriod === "number" ? `${earnoutPeriod} months` : earnoutPeriod}</span>
+                      </div>
+                    )}
+                    {keyConditions.length > 0 && (
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Key Conditions</p>
+                        {(Array.isArray(keyConditions) ? keyConditions : [keyConditions]).slice(0, 2).map((cond: any, ci: number) => (
+                          <p key={ci} className="text-xs text-muted-foreground">• {typeof cond === "string" ? cond : cond.description || String(cond)}</p>
+                        ))}
+                      </div>
+                    )}
+                    {riskLevel && (
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-[10px] text-muted-foreground uppercase">Buyer Risk</span>
+                        <Badge className={`text-[10px] ${
+                          String(riskLevel).toLowerCase() === "low" ? "bg-green-600 text-white" :
+                          String(riskLevel).toLowerCase() === "high" ? "bg-red-600 text-white" :
+                          "bg-amber-600 text-white"
+                        }`}>{riskLevel}</Badge>
+                      </div>
+                    )}
+
+                    {struct.suitable_when && (
+                      <p className="text-[10px] text-muted-foreground italic mt-2">Best suited when: {struct.suitable_when}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      )}
+
+      {paymentMechanics && typeof paymentMechanics === "object" && (
+        <SectionCard icon={Calendar} title="Payment Mechanics" accent="border-l-teal-500">
+          <div className="space-y-4">
+            {(paymentMechanics.earnout_triggers || paymentMechanics.triggers || []).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Earnout Triggers</p>
+                <BulletList items={paymentMechanics.earnout_triggers || paymentMechanics.triggers} variant="info" />
+              </div>
+            )}
+            {(paymentMechanics.measurement_period || paymentMechanics.period) && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Measurement Period:</span>
+                <Badge variant="outline" className="font-medium">{paymentMechanics.measurement_period || paymentMechanics.period}</Badge>
+              </div>
+            )}
+            {(paymentMechanics.payment_schedule || paymentMechanics.milestones || []).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Payment Schedule</p>
+                <div className="overflow-x-auto -mx-4 px-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead className="font-bold">Milestone</TableHead>
+                        <TableHead className="text-right font-bold">Amount</TableHead>
+                        <TableHead className="font-bold">Timing</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(paymentMechanics.payment_schedule || paymentMechanics.milestones).map((item: any, i: number) => (
+                        <TableRow key={i} className={i % 2 === 0 ? "bg-muted/10" : ""}>
+                          <TableCell className="text-sm font-medium">{item.milestone || item.description || item.name || `Payment ${i + 1}`}</TableCell>
+                          <TableCell className="text-right text-sm font-mono font-bold">{formatCurrency(item.amount ?? item.value)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{item.timing || item.date || item.when || "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+            {typeof paymentMechanics === "object" && !paymentMechanics.earnout_triggers && !paymentMechanics.triggers && !paymentMechanics.payment_schedule && !paymentMechanics.milestones && (
+              <KeyValueGrid items={Object.entries(paymentMechanics).filter(([, v]) => typeof v !== "object").map(([k, v]) => ({
+                label: formatLabel(k),
+                value: typeof v === "number" ? formatCurrency(v as number) : String(v ?? "—"),
+              }))} />
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {conditionsPrecedent.length > 0 && (
+        <SectionCard icon={ClipboardList} title="Conditions Precedent" accent="border-l-amber-500">
+          <ol className="space-y-2">
+            {conditionsPrecedent.map((cond: any, i: number) => (
+              <li key={i} className="text-sm flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                <span>{typeof cond === "string" ? cond : cond.description || cond.condition || String(cond)}</span>
+              </li>
+            ))}
+          </ol>
+        </SectionCard>
+      )}
+
+      {protections && typeof protections === "object" && (
+        <SectionCard icon={ShieldCheck} title="Post-Acquisition Protection" accent="border-l-blue-500">
+          <div className="space-y-4">
+            {(protections.key_warranties || protections.warranties || []).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Key Warranties</p>
+                <BulletList items={protections.key_warranties || protections.warranties} variant="info" />
+              </div>
+            )}
+            {(protections.indemnities || []).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Indemnities</p>
+                <BulletList items={protections.indemnities} variant="concern" />
+              </div>
+            )}
+            {(protections.retention_recommended != null || protections.escrow_recommended != null) && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">Retention / Escrow:</span>
+                <Badge className={`${(protections.retention_recommended || protections.escrow_recommended) ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}`}>
+                  {(protections.retention_recommended || protections.escrow_recommended) ? "Recommended" : "Not Required"}
+                </Badge>
+                {(protections.retention_amount || protections.escrow_amount) && (
+                  <span className="text-sm font-mono font-bold">{formatCurrency(protections.retention_amount || protections.escrow_amount)}</span>
+                )}
+              </div>
+            )}
+            {typeof protections === "object" && !protections.key_warranties && !protections.warranties && !protections.indemnities && protections.retention_recommended == null && protections.escrow_recommended == null && (
+              <KeyValueGrid items={Object.entries(protections).filter(([, v]) => typeof v !== "object" || v === null).map(([k, v]) => ({
+                label: formatLabel(k),
+                value: String(v ?? "—"),
+              }))} />
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {integrationPriorities.length > 0 && (
+        <SectionCard icon={ListOrdered} title="First 100 Days" accent="border-l-emerald-500">
+          <ol className="space-y-2">
+            {integrationPriorities.map((item: any, i: number) => (
+              <li key={i} className="text-sm flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                <span>{typeof item === "string" ? item : item.description || item.action || item.priority || String(item)}</span>
+              </li>
+            ))}
+          </ol>
         </SectionCard>
       )}
     </div>
