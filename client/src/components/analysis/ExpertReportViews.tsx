@@ -34,6 +34,7 @@ import {
   Calendar,
   ClipboardList,
   ListOrdered,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import ExplainButton from '@/components/analysis/ExplainButton';
@@ -2540,6 +2541,319 @@ export function GenericReportView({ data }: { data: Record<string, unknown> }) {
           <NarrativeBlock text={narrativeEntry[1] as string} />
         </SectionCard>
       )}
+    </div>
+  );
+}
+
+interface CoreExpertResult {
+  expertType: string;
+  status: string;
+  analysisData: Record<string, unknown> | null;
+  score: number | null;
+}
+
+const CORE_EXPERT_ICONS: Record<string, { icon: LucideIcon; label: string; color: string }> = {
+  financial: { icon: DollarSign, label: "Financials", color: "text-emerald-500" },
+  operational: { icon: BarChart3, label: "Operational", color: "text-blue-500" },
+  risk: { icon: Shield, label: "Risk", color: "text-red-500" },
+  qoe: { icon: ShieldCheck, label: "Quality of Earnings", color: "text-amber-500" },
+  sector: { icon: Layers, label: "Sector", color: "text-purple-500" },
+  valuation: { icon: TrendingUp, label: "Valuation", color: "text-teal-500" },
+  deal_structure: { icon: Handshake, label: "Deal Structure", color: "text-orange-500" },
+};
+
+export function CoreAnalysisSummaryView({ results }: { results: CoreExpertResult[] }) {
+  const getResult = (type: string) => results.find((r) => r.expertType === type);
+  const getData = (type: string) => {
+    const r = getResult(type);
+    if (!r || r.status !== "success" || !r.analysisData) return null;
+    return r.analysisData as any;
+  };
+
+  const synthesis = getData("synthesis");
+  const qoe = getData("qoe");
+  const financial = getData("financial");
+  const screening = getData("screening");
+
+  if (!synthesis) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <Brain className="w-12 h-12 mx-auto mb-4 opacity-40" />
+        <p className="text-sm font-medium">Analysis is still in progress</p>
+        <p className="text-xs mt-1">The summary will appear once all expert analyses are complete.</p>
+      </div>
+    );
+  }
+
+  const recommendation = synthesis.recommendation || "";
+  const overallScore = synthesis.overall_score ?? 0;
+  const isGreen = recommendation === "STRONG_PROCEED" || recommendation === "PROCEED";
+  const isAmber = recommendation === "PROCEED_WITH_CAUTION";
+  const verdictBg = isGreen ? "bg-green-500/10 border-green-500/30" : isAmber ? "bg-amber-500/10 border-amber-500/30" : "bg-red-500/10 border-red-500/30";
+  const verdictBadge = isGreen ? "bg-green-600" : isAmber ? "bg-amber-600" : "bg-red-600";
+  const scoreColor = overallScore >= 70 ? "text-green-600" : overallScore >= 40 ? "text-amber-600" : "text-red-600";
+
+  const execSummary = synthesis.executive_summary || "";
+  const thesis = synthesis.investment_thesis || {};
+  const devil = synthesis.devils_advocate || {};
+  const valSummary = synthesis.valuation_summary || {};
+  const equityRange = valSummary.equity_value_range || {};
+  const scoresDashboard = synthesis.scores_dashboard || {};
+  const infoRequests = synthesis.information_requests || {};
+
+  const positiveCase = thesis.positive_case || thesis.bull_case || "";
+  const positiveBullets = typeof positiveCase === "string"
+    ? positiveCase.split(/\n|(?<=[.!?])\s+/).filter((s: string) => s.trim().length > 10).slice(0, 3)
+    : Array.isArray(positiveCase) ? positiveCase.slice(0, 3) : [];
+
+  const weakAssumptions = devil.weakest_assumptions || devil.bear_case_points || devil.key_risks || [];
+
+  const reportedEbitda = qoe?.reported_figures?.reported_ebitda;
+  const adjustedEbitda = qoe?.adjusted_ebitda?.base ?? qoe?.adjusted_ebitda?.mid;
+  const revenue = financial?.income_statement?.[0]?.revenue ?? financial?.revenue ?? screening?.financials?.revenue;
+  const recommendedOffer = valSummary.recommended_offer ?? valSummary.recommended_offer_price;
+
+  const ebitdaGap = (reportedEbitda != null && adjustedEbitda != null) ? reportedEbitda - adjustedEbitda : null;
+  const significantGap = ebitdaGap != null && ebitdaGap > 0 && ebitdaGap > (reportedEbitda * 0.1);
+
+  const expertOrder = ["financial", "operational", "risk", "qoe", "sector", "valuation", "deal_structure"];
+
+  const criticalQuestions = (infoRequests.critical || []).slice(0, 5);
+
+  return (
+    <div className="space-y-8">
+      <div className={`rounded-xl p-6 border-2 ${verdictBg} text-center`}>
+        <Badge className={`${verdictBadge} text-white text-lg px-6 py-2 mb-3`}>
+          {recommendation.replace(/_/g, " ")}
+        </Badge>
+        <p className={`text-3xl font-bold ${scoreColor} mt-2`}>{overallScore} / 100</p>
+        <p className="text-xs text-muted-foreground mt-2">Based on AI analysis across 8 specialist areas</p>
+      </div>
+
+      {execSummary && (
+        <SectionCard icon={Brain} title="What This Means" accent="border-l-indigo-500">
+          <div className="prose prose-sm max-w-none dark:prose-invert">
+            {execSummary.split(/\n\n|\n/).filter((p: string) => p.trim()).map((p: string, i: number) => (
+              <p key={i} className="text-sm leading-relaxed mb-3 last:mb-0">{p.trim()}</p>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {(positiveBullets.length > 0 || weakAssumptions.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 bg-green-500/10 border-b border-green-500/20">
+              <h3 className="font-semibold text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> Reasons to Proceed
+              </h3>
+            </div>
+            <div className="p-4">
+              {positiveBullets.length > 0 ? (
+                <BulletList items={positiveBullets.map((b: any) => typeof b === "string" ? b : b.description || String(b))} variant="strength" />
+              ) : (
+                <p className="text-xs text-muted-foreground italic">No positive case data available</p>
+              )}
+            </div>
+          </div>
+          <div className="border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 bg-amber-500/10 border-b border-amber-500/20">
+              <h3 className="font-semibold text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> Reasons for Caution
+              </h3>
+            </div>
+            <div className="p-4">
+              {weakAssumptions.length > 0 ? (
+                <BulletList items={weakAssumptions.slice(0, 3).map((a: any) => typeof a === "string" ? a : a.assumption || a.description || String(a))} variant="concern" />
+              ) : (
+                <p className="text-xs text-muted-foreground italic">No caution points identified</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SectionCard icon={CircleDollarSign} title="Key Numbers" accent="border-l-emerald-500">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {revenue != null && <MetricCard label="Revenue" value={formatCurrency(revenue)} />}
+          {reportedEbitda != null && <MetricCard label="Reported EBITDA" value={formatCurrency(reportedEbitda)} />}
+          {adjustedEbitda != null && (
+            <MetricCard
+              label="Adjusted EBITDA"
+              value={formatCurrency(adjustedEbitda)}
+              color={significantGap ? "text-amber-600" : "text-emerald-600"}
+            />
+          )}
+          {(equityRange.conservative != null || equityRange.optimistic != null || equityRange.low != null || equityRange.high != null) && (
+            <MetricCard
+              label="Valuation Range"
+              value={`${formatCurrency(equityRange.conservative ?? equityRange.low)} — ${formatCurrency(equityRange.optimistic ?? equityRange.high)}`}
+            />
+          )}
+          {recommendedOffer != null && (
+            <MetricCard label="Recommended Offer" value={formatCurrency(recommendedOffer)} color="text-primary" />
+          )}
+        </div>
+        {significantGap && (
+          <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              Adjusted figure is {formatCurrency(ebitdaGap)} lower than reported — review Quality of Earnings
+            </p>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard icon={Gauge} title="Expert Scorecard" accent="border-l-purple-500">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {expertOrder.map((expertType) => {
+            const config = CORE_EXPERT_ICONS[expertType];
+            if (!config) return null;
+            const score = scoresDashboard[expertType]?.score ?? scoresDashboard[expertType] ?? getResult(expertType)?.score;
+            const scoreNum = typeof score === "number" ? score : null;
+            const pillColor = scoreNum == null ? "bg-muted" : scoreNum >= 70 ? "bg-green-600" : scoreNum >= 40 ? "bg-amber-600" : "bg-red-600";
+            const Icon = config.icon;
+            return (
+              <div key={expertType} className="border rounded-xl p-3 text-center group relative cursor-default">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Icon className={`w-4 h-4 ${config.color}`} />
+                  <span className="text-xs font-medium truncate">{config.label}</span>
+                </div>
+                <Badge className={`${pillColor} text-white text-sm px-3 py-0.5`}>
+                  {scoreNum != null ? `${scoreNum}` : "—"}
+                </Badge>
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Upgrade to Professional to see full report</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
+
+      <SectionCard icon={FileText} title="Key Takeaways" accent="border-l-teal-500">
+        <div className="space-y-4">
+          {expertOrder.map((expertType) => {
+            const config = CORE_EXPERT_ICONS[expertType];
+            if (!config) return null;
+            const expertData = getData(expertType);
+            const result = getResult(expertType);
+            if (!result || result.status !== "success") return null;
+
+            const Icon = config.icon;
+            const score = result.score ?? (expertData?.overall_score as number | undefined);
+            const pillColor = score == null ? "bg-muted" : score >= 70 ? "bg-green-600" : score >= 40 ? "bg-amber-600" : "bg-red-600";
+            const keyFindings = (expertData?.key_findings || []).slice(0, 3);
+
+            let footerFlag: { text: string; severity: "red" | "amber" } | null = null;
+            if (expertType === "risk") {
+              const dealBreakers = expertData?.deal_breakers || [];
+              if (dealBreakers.length > 0) {
+                const first = dealBreakers[0];
+                footerFlag = { text: typeof first === "string" ? first : first.description || first.name || String(first), severity: "red" };
+              } else if (expertData?.red_flags?.length > 0) {
+                const first = expertData.red_flags[0];
+                footerFlag = { text: typeof first === "string" ? first : first.description || first.flag || String(first), severity: "amber" };
+              }
+            } else if (expertType === "qoe" && significantGap) {
+              footerFlag = { text: `Adjusted EBITDA is ${formatCurrency(ebitdaGap)} lower than reported`, severity: "amber" };
+            } else if (expertData?.red_flags?.length > 0) {
+              const first = expertData.red_flags[0];
+              footerFlag = { text: typeof first === "string" ? first : first.description || first.flag || String(first), severity: "amber" };
+            }
+
+            return (
+              <div key={expertType} className="border rounded-xl overflow-hidden group relative cursor-default">
+                <div className="px-4 py-3 bg-muted/30 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon className={`w-4 h-4 ${config.color}`} />
+                    <span className="text-sm font-semibold">{config.label}</span>
+                  </div>
+                  <Badge className={`${pillColor} text-white text-xs`}>
+                    {score != null ? `${score}/100` : "—"}
+                  </Badge>
+                </div>
+                <div className="p-4">
+                  {keyFindings.length > 0 ? (
+                    <BulletList items={keyFindings.map((f: any) => typeof f === "string" ? f : f.description || String(f))} variant="info" />
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Analysis complete — upgrade to view detailed findings</p>
+                  )}
+                </div>
+                {footerFlag && (
+                  <div className={`px-4 py-2.5 border-t ${
+                    footerFlag.severity === "red" ? "bg-red-500/10 border-red-500/20" : "bg-amber-500/10 border-amber-500/20"
+                  }`}>
+                    <p className={`text-xs flex items-center gap-1.5 ${
+                      footerFlag.severity === "red" ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400"
+                    }`}>
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      {footerFlag.text}
+                    </p>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Upgrade to Professional to unlock full report</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
+
+      {criticalQuestions.length > 0 && (
+        <div className="border-2 border-indigo-500/20 rounded-xl overflow-hidden bg-indigo-500/5">
+          <div className="px-5 py-3 bg-indigo-500/10 border-b border-indigo-500/20">
+            <h3 className="font-semibold text-sm text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+              <Info className="w-4 h-4" /> Top Questions to Ask the Seller
+            </h3>
+          </div>
+          <div className="p-5">
+            <ol className="space-y-2">
+              {criticalQuestions.map((q: any, i: number) => (
+                <li key={i} className="text-sm flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                  <span>{typeof q === "string" ? q : q.request || q.question || q.description || String(q)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      )}
+
+      <div className="border rounded-xl p-6 bg-gradient-to-br from-muted/30 to-muted/10 text-center">
+        <h3 className="text-base font-semibold mb-1">You're seeing a summary view</h3>
+        <p className="text-sm text-muted-foreground mb-4">Upgrade to Professional to unlock:</p>
+        <div className="text-left max-w-md mx-auto mb-6">
+          <ul className="space-y-2">
+            {[
+              "Full Financial deep-dive with P&L trend tables and CAGR analysis",
+              "Quality of Earnings EBITDA bridge waterfall with full add-backs breakdown",
+              "Sector benchmarking vs typical margins and comparable transactions",
+              "Detailed valuation methodology with sensitivity analysis",
+              "Three-way deal structure comparison with payment mechanics",
+              "Full investment memorandum (2,000+ words)",
+              "Seller expectation gap analysis",
+            ].map((feature, i) => (
+              <li key={i} className="text-sm flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <a href="/billing">
+          <button className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
+            Upgrade to Professional →
+          </button>
+        </a>
+      </div>
     </div>
   );
 }

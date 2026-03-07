@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { getReportViewForExpert } from "./ExpertReportViews";
+import { getReportViewForExpert, CoreAnalysisSummaryView } from "./ExpertReportViews";
+import { useHasFeature } from "@/context/subscription-context";
 import {
   Brain,
   Loader2,
@@ -249,6 +250,7 @@ function ExpertCard({
 export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }: ExpertAnalysisDashboardProps) {
   const { toast } = useToast();
   const [selectedExpert, setSelectedExpert] = useState<ExpertResult | null>(null);
+  const hasFullDetail = useHasFeature("expertAnalysisFullDetail");
 
   const { data: results = [], isLoading } = useQuery<ExpertResult[]>({
     queryKey: ["/api/v2/expert-analysis/results", targetCompanyId],
@@ -497,8 +499,11 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
         </div>
       </div>
 
-      {/* TODO Stage 4: Replace with <CoreAnalysisSummaryView> for expertAnalysisSummary tier, <ExpertAnalysisFullView> for expertAnalysisFullDetail tier */}
-      <div>
+      {hasFullDetail === false && hasDeepDiveStarted && completedDeepDive === totalDeepDive && (
+        <CoreAnalysisSummaryView results={results} />
+      )}
+
+      {hasFullDetail !== false && (<div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
@@ -654,7 +659,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
             })}
           </div>
         )}
-      </div>
+      </div>)}
 
       <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh] p-0">

@@ -1,0 +1,201 @@
+Step 8 of 8 — Build Core Tier Beginner View (CoreAnalysisSummaryView)
+Context
+Steps 1-7 are complete. All expert report views have been restructured.
+This final step builds the CoreAnalysisSummaryView — the display shown to Core tier users
+instead of the full expert report drill-down.
+Core users have completed a full AI analysis run. All 8 expert results exist in the database
+and are already returned to the frontend. The difference is what we SHOW them, not what we run.
+This is a display-only change. No new API calls. No schema changes. No backend changes.
+
+The Build
+Step 8a — Read the entitlement gate
+Read client/src/components/analysis/ExpertAnalysisDashboard.tsx.
+Find where the entitlement check for expertAnalysisFullDetail is (or should be).
+If it already exists, note exactly where and how it gates content.
+If it does not exist yet, we will add it in Step 8d.
+Also read shared/entitlements.ts to confirm:
+
+What the entitlement field is called (likely expertAnalysisFullDetail or similar)
+Which tiers have it set to true (Professional and Expert) vs false (Core)
+
+Step 8b — Build CoreAnalysisSummaryView
+Create a new component CoreAnalysisSummaryView in ExpertReportViews.tsx.
+This component receives the FULL analysis results object — the same data that Professional
+users see. It just renders a curated subset of it.
+Props: { results: AnalysisResults } where AnalysisResults contains all expert results
+including synthesis, screening, financial, operational, risk, qoe, sector, valuation,
+deal_structure. Use the existing type that ExpertAnalysisDashboard already uses.
+Render these sections in order:
+
+Section 1 — Verdict
+Source: synthesis result
+Large recommendation badge (same colour coding as SynthesisReportView):
+STRONG_PROCEED / PROCEED = green
+PROCEED_WITH_CAUTION = amber
+DO_NOT_PROCEED / NO_GO = red
+Overall score: "{score} / 100"
+Subtext: "Based on AI analysis across 8 specialist areas"
+
+Section 2 — What This Means
+Source: synthesis.executive_summary
+Render as readable prose paragraphs.
+Label: "What This Means"
+
+Section 3 — Reasons to Proceed / Reasons for Caution
+Two-column layout (stacked on mobile).
+Left column (green) — "Reasons to Proceed"
+Source: synthesis.investment_thesis.positive_case
+Parse into bullet points — split on newlines or sentence boundaries.
+Show max 3 points.
+Right column (amber) — "Reasons for Caution"
+Source: synthesis.devils_advocate.weakest_assumptions[]
+Show first 3 items.
+
+Section 4 — Key Numbers
+Source: synthesis.valuation_summary + qoe result
+Display as a clean stat grid (2 or 3 columns):
+Revenue: from financial or screening result
+Reported EBITDA: qoe.reported_figures.reported_ebitda
+Adjusted EBITDA: qoe.adjusted_ebitda.base
+Valuation range: synthesis.valuation_summary.equity_value_range (low — high)
+Recommended offer: synthesis.valuation_summary.recommended_offer
+Format all monetary values as £XX,XXX (or $ if USD).
+The Adjusted EBITDA should be visually distinct from Reported EBITDA —
+the gap between these two numbers is critical and users must notice it.
+If Adjusted EBITDA is significantly lower than Reported, show a small warning note:
+"Adjusted figure is £XX,XXX lower than reported — review Quality of Earnings"
+Label: "Key Numbers"
+
+Section 5 — Expert Scorecard
+Source: synthesis.scores_dashboard
+Show all 7 experts as a compact grid of score pills.
+For each: score pill (colour-coded) + expert area label.
+Score pill colour: green ≥70, amber ≥40, red <40.
+Cards are NOT clickable — they are display only.
+On hover over any card: show a locked padlock icon + "Upgrade to Professional to see full report"
+Do NOT show a tooltip that opens a report — just the lock message.
+Label: "Expert Scorecard"
+
+Section 6 — Key Takeaways from Each Expert Area
+This is the most important section of the Core view.
+Source: individual expert results (financial, operational, risk, qoe, sector, valuation, deal_structure)
+Render 7 expert cards in order. For each card:
+CARD HEADER:
+Score pill (colour coded) + Expert area name with icon:
+💰 Financials
+⚙ Operational
+🛡 Risk
+📊 Quality of Earnings
+🏭 Sector
+💎 Valuation
+🤝 Deal Structure
+CARD BODY:
+Up to 3 bullet points from expert.key_findings[] (first 3 items only)
+If key_findings[] is empty or absent, skip the bullets gracefully
+CARD FOOTER (conditional):
+If the expert has red_flags[] with at least one item:
+Show the first red flag in an amber/red highlight strip at the bottom of the card:
+⚠ [red flag text]
+For Risk: use deal_breakers[] first — if non-empty, show first deal breaker in RED
+(deal breaker > red flag for the Risk card)
+For QoE: always show the adjusted vs reported EBITDA gap if it exists, even if not in red_flags
+If no red flags and no deal breakers: no footer strip
+Cards are NOT clickable for Core users.
+On hover: show "🔒 Upgrade to Professional to unlock full report"
+Do not make them look like buttons.
+Label: "Key Takeaways"
+
+Section 7 — Top Questions to Ask the Seller
+Source: synthesis.information_requests.critical[]
+Numbered list, max 5 items.
+Show only the request text — omit source_expert and rationale for Core view (too detailed).
+Render in a visually distinct highlighted box (light background, clear label).
+Label: "Top Questions to Ask the Seller"
+Only render if critical[] is non-empty.
+
+Section 8 — Upgrade Prompt
+Render as a prominent call-to-action card at the bottom.
+Do NOT make it aggressive or annoying — it should feel helpful, not pushy.
+Heading: "You're seeing a summary view"
+Subheading: "Upgrade to Professional to unlock:"
+Feature list (bulleted):
+• Full Financial deep-dive with P&L trend tables and CAGR analysis
+• Quality of Earnings EBITDA bridge waterfall with full add-backs breakdown
+• Sector benchmarking vs typical margins and comparable transactions
+• Detailed valuation methodology with sensitivity analysis
+• Three-way deal structure comparison with payment mechanics
+• Full investment memorandum (2,000+ words)
+• Seller expectation gap analysis
+Button: "Upgrade to Professional →"
+The button should link to /billing or the upgrade page — use the existing upgrade route
+that other parts of the app use. Check ExpertAnalysisDashboard for the existing upgrade link pattern.
+
+Step 8c — Null safety rules
+All fields must be treated as optional. Apply these rules:
+
+If synthesis result is absent: show a loading/error state, do not crash
+If any individual expert result is absent: skip that card entirely from Section 6
+If key_findings[] is empty: show "Analysis complete — upgrade to view detailed findings" in grey
+If valuation_summary is absent: skip Section 4 valuation fields gracefully
+Never render an empty section header with no content below it
+
+
+Step 8d — Wire the gate in ExpertAnalysisDashboard.tsx
+Find where the analysis results are displayed for a completed analysis.
+Find the entitlement check for expertAnalysisFullDetail (or equivalent).
+Add this logic:
+if (!entitlements.expertAnalysisFullDetail) {
+return <CoreAnalysisSummaryView results={allExpertResults} />;
+}
+// else render existing full dashboard view
+Place this gate at the point where the full expert dashboard content renders,
+AFTER loading and error states are handled.
+If the entitlement field name is different, use whatever the correct field name is
+from shared/entitlements.ts — do not guess, read the file first.
+
+Step 8e — Do not change
+
+Any of the restructured expert report views (Steps 1-7)
+The analysis pipeline or API routes
+The dashboard card layout for Professional/Expert users
+Any Stripe or billing logic
+
+
+Validation Checklist
+Code checks
+[ ] CoreAnalysisSummaryView component exists in ExpertReportViews.tsx
+[ ] ExpertAnalysisDashboard.tsx has the entitlement gate added
+[ ] Gate correctly shows CoreAnalysisSummaryView for Core tier users
+[ ] Gate correctly shows full dashboard for Professional/Expert users
+[ ] No TypeScript errors
+[ ] No other components modified
+Visual checks — Core tier view
+To test: either use a Core tier test account, or temporarily hardcode the entitlement
+check to false and reload.
+[ ] Section 1: Large verdict badge visible at top with correct colour
+[ ] Section 1: Score shown as XX/100
+[ ] Section 2: Executive summary renders as readable paragraphs
+[ ] Section 3: Two-column layout — Reasons to Proceed (green) | Reasons for Caution (amber)
+[ ] Section 3: Max 3 bullets in each column
+[ ] Section 4: Key numbers grid shows Revenue, Reported EBITDA, Adjusted EBITDA,
+Valuation range, Recommended offer
+[ ] Section 4: Adjusted EBITDA is visually distinct — gap note shown if significantly lower
+[ ] Section 5: Expert scorecard shows 7 score pills, colour coded
+[ ] Section 5: Cards are NOT clickable links — hovering shows lock message only
+[ ] Section 6: All 7 expert takeaway cards present
+(Financials, Operational, Risk, QoE, Sector, Valuation, Deal Structure)
+[ ] Section 6: Each card shows up to 3 key findings as bullets
+[ ] Section 6: Red flag / deal breaker strip shows at bottom of relevant cards
+[ ] Section 6: Risk card shows deal breaker in RED if present
+[ ] Section 6: No clickable links on any card — hover shows lock message
+[ ] Section 7: Questions for Seller in highlighted box, numbered, max 5
+[ ] Section 8: Upgrade prompt present at bottom with feature bullet list and CTA button
+Visual checks — Professional/Expert tier (regression)
+[ ] Full expert dashboard still renders correctly for Professional/Expert users
+[ ] All 8 expert cards still show with "View full report" links
+[ ] All restructured reports from Steps 1-7 still work correctly
+Regression check
+[ ] No existing functionality broken for any tier
+If anything fails
+Tell me specifically what is wrong. This is the final step —
+once all checks pass, the expert analysis redesign is complete.
