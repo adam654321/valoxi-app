@@ -52,7 +52,7 @@ router.post('/', asyncHandler(async (req, res) => {
   const pageText = body.pageUrl ? `<p><strong>Page:</strong> ${body.pageTitle || body.pageUrl}</p>` : '';
 
   await emailService.sendEmail({
-    to: 'hello@valoxi.ai',
+    to: 'adam@shiftopsconsulting.com',
     subject: `[Beta Feedback] ${body.type.toUpperCase()}: ${body.title}`,
     html: `
       <!DOCTYPE html>
