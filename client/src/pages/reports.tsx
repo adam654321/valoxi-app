@@ -280,14 +280,23 @@ export default function Reports() {
             <CardContent>
               {activityLoading ? (
                 <Skeleton className="h-64 w-full" />
+              ) : !activityData?.activityByType?.length ? (
+                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-2">
+                  <Activity className="h-8 w-8 opacity-30" />
+                  <p className="text-sm">No activity data yet</p>
+                  <p className="text-xs opacity-70">Activities will appear here once logged against target companies</p>
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={activityData?.activityByType || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="activity_type" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" />
+                  <BarChart data={activityData.activityByType} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-40" />
+                    <XAxis dataKey="activity_type" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))' }}
+                      cursor={{ fill: 'hsl(var(--muted))' }}
+                    />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
