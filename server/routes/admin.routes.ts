@@ -707,6 +707,7 @@ router.get('/feedback', asyncHandler(async (req: Request, res: Response) => {
       pageTitle: betaFeedback.pageTitle,
       status: betaFeedback.status,
       adminNotes: betaFeedback.adminNotes,
+      screenshotUrl: betaFeedback.screenshotUrl,
       createdAt: betaFeedback.createdAt,
       updatedAt: betaFeedback.updatedAt,
       companyName: userCompanies.companyName,

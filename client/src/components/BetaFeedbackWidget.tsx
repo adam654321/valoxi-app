@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { MessageSquarePlus, Loader2, CheckCircle2 } from "lucide-react";
+import { MessageSquarePlus, Loader2, CheckCircle2, ImagePlus, X } from "lucide-react";
 
 const TYPE_OPTIONS = [
   { value: "bug", label: "Bug", emoji: "🐛" },
@@ -37,6 +36,9 @@ export function BetaFeedbackWidget() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [pageUrl, setPageUrl] = useState("");
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: betaConfig } = useQuery<{ data: { feedbackEnabled: boolean; tierSwitchEnabled: boolean } }>({
     queryKey: ["/api/v2/beta/config"],
@@ -51,20 +53,59 @@ export function BetaFeedbackWidget() {
     setSeverity("medium");
     setTitle("");
     setDescription("");
+    setScreenshot(null);
+    setScreenshotPreview(null);
     setShowSuccess(false);
     setOpen(true);
   };
 
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Screenshots must be under 5 MB.", variant: "destructive" });
+      return;
+    }
+
+    setScreenshot(file);
+    const reader = new FileReader();
+    reader.onload = () => setScreenshotPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removeScreenshot = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/v2/beta-feedback", {
-        type,
-        severity: type === "bug" ? severity : undefined,
-        title,
-        description,
-        pageUrl,
-        pageTitle: document.title,
+      const csrfRes = await fetch("/api/v2/auth/csrf", { credentials: "include" });
+      const csrfData = await csrfRes.json();
+      const csrfToken = csrfData?.data?.csrfToken;
+
+      const formData = new FormData();
+      formData.append("type", type);
+      if (type === "bug") formData.append("severity", severity);
+      formData.append("title", title);
+      formData.append("description", description);
+      if (pageUrl) formData.append("pageUrl", pageUrl);
+      formData.append("pageTitle", document.title);
+      if (screenshot) formData.append("screenshot", screenshot);
+
+      const res = await fetch("/api/v2/beta-feedback", {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-csrf-token": csrfToken },
+        body: formData,
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `${res.status}: ${JSON.stringify(data)}`);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -173,6 +214,53 @@ export function BetaFeedbackWidget() {
                     rows={4}
                   />
                   <p className="text-xs text-muted-foreground text-right">{description.length}/2000</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Screenshot</Label>
+                    <span className="text-xs text-muted-foreground">Optional</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Add a screenshot if the issue is visual — e.g. layout problems, styling glitches, or error messages on screen.
+                  </p>
+                  {screenshotPreview ? (
+                    <div className="relative rounded-md border border-border overflow-hidden bg-muted/30 dark:bg-muted/20">
+                      <img
+                        src={screenshotPreview}
+                        alt="Screenshot preview"
+                        className="w-full max-h-40 object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeScreenshot}
+                        className="absolute top-1.5 right-1.5 rounded-full bg-background/80 backdrop-blur-sm p-1 border border-border hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                      <p className="text-xs text-muted-foreground px-2 py-1 truncate">
+                        {screenshot?.name}
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full rounded-md border-2 border-dashed border-border px-4 py-4 text-center hover:bg-muted/50 transition-colors dark:hover:bg-muted/30"
+                    >
+                      <ImagePlus className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                      <p className="text-xs text-muted-foreground">
+                        Click to attach a screenshot (PNG, JPEG, WebP — max 5 MB)
+                      </p>
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={handleScreenshotChange}
+                    className="hidden"
+                  />
                 </div>
 
                 <div className="space-y-1.5">

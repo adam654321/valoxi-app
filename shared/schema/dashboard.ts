@@ -123,6 +123,7 @@ export const betaFeedback = pgTable("beta_feedback", {
   pageUrl: varchar("page_url", { length: 500 }),
   pageTitle: varchar("page_title", { length: 255 }),
   userAgent: varchar("user_agent", { length: 500 }),
+  screenshotUrl: varchar("screenshot_url", { length: 500 }),
   status: varchar("status", { length: 20 }).default("open").notNull(),
   adminNotes: text("admin_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

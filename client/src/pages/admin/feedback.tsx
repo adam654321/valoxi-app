@@ -25,6 +25,7 @@ interface FeedbackRow {
   pageTitle: string | null;
   status: string;
   adminNotes: string | null;
+  screenshotUrl: string | null;
   createdAt: string;
   updatedAt: string;
   companyName: string | null;
@@ -296,6 +297,24 @@ export default function AdminFeedback() {
                                   <div>
                                     <div className="text-xs font-medium text-muted-foreground mb-1">Page URL</div>
                                     <div className="text-sm text-blue-600 dark:text-blue-400">{row.pageUrl}</div>
+                                  </div>
+                                )}
+                                {row.screenshotUrl && (
+                                  <div>
+                                    <div className="text-xs font-medium text-muted-foreground mb-1">Screenshot</div>
+                                    <a
+                                      href={`/api/v2/beta-feedback/screenshot/${encodeURIComponent(row.screenshotUrl)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <img
+                                        src={`/api/v2/beta-feedback/screenshot/${encodeURIComponent(row.screenshotUrl)}`}
+                                        alt="Feedback screenshot"
+                                        className="max-w-md max-h-64 rounded-md border border-border object-contain bg-background cursor-pointer hover:opacity-90 transition-opacity"
+                                      />
+                                    </a>
                                   </div>
                                 )}
                                 {row.companyName && (
