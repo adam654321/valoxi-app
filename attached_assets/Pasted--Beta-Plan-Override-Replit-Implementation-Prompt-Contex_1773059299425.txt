@@ -1,0 +1,176 @@
+# Beta Plan Override — Replit Implementation Prompt
+
+## Context
+Valoxi is entering beta testing. Testers need to be able to experience all three plan tiers (Core, Professional, Expert) without going through Stripe checkout. We need the lightest possible implementation — no test payments, no multiple accounts.
+
+## Approach
+Add a `betaPlanOverride` field to the user_companies table. When this field is set, the entitlements system uses it instead of the real Stripe subscription tier. Admin can set/clear it from the admin panel. Testers can also self-switch from their billing page (beta only).
+
+---
+
+## 1. Database Migration
+
+Add a new column to `user_companies` (or whichever table stores subscription/plan tier per tenant):
+
+```sql
+ALTER TABLE user_companies 
+ADD COLUMN beta_plan_override VARCHAR(20) NULL;
+-- Valid values: 'core', 'professional', 'expert', NULL (null = use real subscription)
+```
+
+Add via Drizzle schema: in `shared/schema.ts`, add to the user_companies table definition:
+```typescript
+betaPlanOverride: varchar('beta_plan_override', { length: 20 }),
+```
+
+Then run `npm run db:push` to apply.
+
+---
+
+## 2. Entitlements Logic
+
+In the entitlements/plan tier resolution logic (wherever the current user's plan tier is determined for feature gating), modify it to check `betaPlanOverride` first:
+
+```typescript
+function getEffectivePlanTier(userCompany: UserCompany): string {
+  // Beta override takes precedence over real subscription
+  if (userCompany.betaPlanOverride) {
+    return userCompany.betaPlanOverride;
+  }
+  // Fall back to real Stripe subscription tier
+  return userCompany.subscriptionTier ?? 'core';
+}
+```
+
+This must be applied everywhere plan tier is read for entitlement checks. Search the codebase for `subscriptionTier` and update each resolution point to use `getEffectivePlanTier()` instead.
+
+---
+
+## 3. Admin Panel — Set Override
+
+In `server/routes/admin.routes.ts`, add:
+
+```typescript
+const setPlanOverrideSchema = z.object({
+  planOverride: z.enum(['core', 'professional', 'expert']).nullable(),
+});
+
+router.post('/companies/:id/plan-override', asyncHandler(async (req: Request, res: Response) => {
+  const companyId = Number(req.params.id);
+  const { planOverride } = setPlanOverrideSchema.parse(req.body);
+  await adminService.setBetaPlanOverride(companyId, planOverride);
+  sendSuccess(res, { message: `Plan override set to: ${planOverride ?? 'cleared'}` });
+}));
+```
+
+In `adminService`, add:
+```typescript
+async setBetaPlanOverride(companyId: number, planOverride: string | null) {
+  await db.update(userCompanies)
+    .set({ betaPlanOverride: planOverride })
+    .where(eq(userCompanies.id, companyId));
+}
+```
+
+In the admin panel UI (React), on the Companies list and/or the user detail view, add a simple dropdown next to each company:
+
+```tsx
+<select 
+  value={company.betaPlanOverride ?? ''} 
+  onChange={(e) => setPlanOverride(company.id, e.target.value || null)}
+  style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+>
+  <option value="">Real subscription</option>
+  <option value="core">Core (beta override)</option>
+  <option value="professional">Professional (beta override)</option>
+  <option value="expert">Expert (beta override)</option>
+</select>
+```
+
+Show a small amber badge "BETA OVERRIDE: PROFESSIONAL" on the company card when an override is active.
+
+---
+
+## 4. Self-Switch on Billing Page (Optional but recommended)
+
+On the billing page (`client/src/pages/billing.tsx`), if the app is in beta mode (check `VITE_BETA_MODE=true` env var), show a simple "Test different plans" section:
+
+```tsx
+{import.meta.env.VITE_BETA_MODE === 'true' && (
+  <div style={{ 
+    background: 'rgba(245,166,35,0.08)', 
+    border: '1px solid rgba(245,166,35,0.3)', 
+    borderRadius: '12px', 
+    padding: '20px 24px',
+    marginBottom: '24px'
+  }}>
+    <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#f5a623', marginBottom: '8px' }}>
+      Beta Testing Mode
+    </div>
+    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+      Switch your view to test different plan tiers. No payment required.
+    </p>
+    <div style={{ display: 'flex', gap: '8px' }}>
+      {['core', 'professional', 'expert'].map(tier => (
+        <button
+          key={tier}
+          onClick={() => switchBetaPlan(tier)}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '8px',
+            border: currentOverride === tier ? '2px solid #c9a84c' : '1px solid rgba(255,255,255,0.1)',
+            background: currentOverride === tier ? 'rgba(201,168,76,0.12)' : 'transparent',
+            color: currentOverride === tier ? '#c9a84c' : 'var(--text-muted)',
+            cursor: 'pointer',
+            textTransform: 'capitalize',
+            fontWeight: currentOverride === tier ? 600 : 400,
+          }}
+        >
+          {tier}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+Add a new API endpoint for self-switching (authenticated, beta mode only):
+
+```typescript
+// In billing routes or a new beta.routes.ts
+router.post('/beta/switch-plan', isAuthenticated, asyncHandler(async (req, res) => {
+  if (process.env.BETA_MODE !== 'true') {
+    return res.status(403).json({ error: 'Not in beta mode' });
+  }
+  const { tier } = z.object({ tier: z.enum(['core', 'professional', 'expert']) }).parse(req.body);
+  const companyId = req.session.userCompanyId!;
+  await db.update(userCompanies).set({ betaPlanOverride: tier }).where(eq(userCompanies.id, companyId));
+  // Refresh session permissions
+  await refreshSessionPermissions(req);
+  sendSuccess(res, { tier });
+}));
+```
+
+---
+
+## 5. Environment Variable
+
+Add to `.env` / Replit secrets:
+```
+BETA_MODE=true
+VITE_BETA_MODE=true
+```
+
+Remove/set to false when going to full production.
+
+---
+
+## Summary of Changes
+- `shared/schema.ts` — add `betaPlanOverride` column
+- DB migration via `npm run db:push`
+- Entitlements logic — add `getEffectivePlanTier()` helper, replace all direct `subscriptionTier` reads
+- `server/routes/admin.routes.ts` — add `POST /admin/companies/:id/plan-override`
+- `server/services/admin.service.ts` — add `setBetaPlanOverride()`
+- Admin panel UI — plan override dropdown on company cards
+- `client/src/pages/billing.tsx` — beta plan switcher UI (gated on VITE_BETA_MODE)
+- New `POST /api/beta/switch-plan` endpoint (gated on BETA_MODE env var)

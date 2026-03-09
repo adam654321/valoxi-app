@@ -1,0 +1,382 @@
+# Beta Feedback & Issue Reporter — Replit Implementation Prompt
+
+## Context
+Valoxi is entering beta testing. We need a lightweight in-app feedback widget that allows testers to report bugs, leave comments, and flag issues. All submissions must be:
+1. Saved to the database (permanent record)
+2. Emailed to the admin immediately (hello@valoxi.ai)
+3. Viewable in the admin panel
+
+The widget should be non-intrusive — a floating button on every page — and quick to use (under 30 seconds to submit).
+
+---
+
+## 1. Database Table
+
+In `shared/schema.ts`, add a new table:
+
+```typescript
+export const betaFeedback = pgTable('beta_feedback', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  userCompanyId: integer('user_company_id').references(() => userCompanies.id),
+  // Reporter info (denormalised for easy admin viewing)
+  reporterEmail: varchar('reporter_email', { length: 255 }),
+  reporterName: varchar('reporter_name', { length: 255 }),
+  // Feedback content
+  type: varchar('type', { length: 20 }).notNull(), // 'bug' | 'comment' | 'suggestion' | 'other'
+  severity: varchar('severity', { length: 10 }), // 'low' | 'medium' | 'high' | 'critical' — only for bugs
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  // Context (auto-captured)
+  pageUrl: varchar('page_url', { length: 500 }),
+  pageTitle: varchar('page_title', { length: 255 }),
+  userAgent: varchar('user_agent', { length: 500 }),
+  // Status for admin tracking
+  status: varchar('status', { length: 20 }).default('open').notNull(), // 'open' | 'in_progress' | 'resolved' | 'wont_fix'
+  adminNotes: text('admin_notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+```
+
+Run `npm run db:push` to apply.
+
+---
+
+## 2. Backend Route
+
+Create `server/routes/beta-feedback.routes.ts`:
+
+```typescript
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import { db } from '../db';
+import { betaFeedback, users, userCompanies } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import { isAuthenticated } from '../middleware/auth';
+import { asyncHandler } from '../utils/async-handler';
+import { sendSuccess, sendCreated } from '../utils/response';
+import { sendEmail } from '../email'; // use existing email utility
+
+const router = Router();
+
+const submitFeedbackSchema = z.object({
+  type: z.enum(['bug', 'comment', 'suggestion', 'other']),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  title: z.string().min(3).max(255),
+  description: z.string().min(10),
+  pageUrl: z.string().optional(),
+  pageTitle: z.string().optional(),
+});
+
+router.post('/', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
+  const data = submitFeedbackSchema.parse(req.body);
+  const userId = req.session.userId!;
+  const companyId = req.session.userCompanyId;
+
+  // Get reporter details
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+
+  const [feedback] = await db.insert(betaFeedback).values({
+    userId,
+    userCompanyId: companyId,
+    reporterEmail: user?.email,
+    reporterName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+    type: data.type,
+    severity: data.severity,
+    title: data.title,
+    description: data.description,
+    pageUrl: data.pageUrl,
+    pageTitle: data.pageTitle,
+    userAgent: req.headers['user-agent'],
+  }).returning();
+
+  // Send email alert to admin
+  const severityLabel = data.severity ? ` [${data.severity.toUpperCase()}]` : '';
+  const typeLabel = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+  
+  await sendEmail({
+    to: 'hello@valoxi.ai',
+    subject: `[Valoxi Beta] ${typeLabel}${severityLabel}: ${data.title}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px;">
+        <h2 style="color: #c9a84c; margin-bottom: 4px;">${typeLabel}${severityLabel}</h2>
+        <p style="color: #666; font-size: 0.85rem; margin-top: 0;">Feedback ID: #${feedback.id} &nbsp;|&nbsp; ${new Date().toLocaleString('en-GB')}</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+          <tr>
+            <td style="padding: 8px; background: #f5f5f5; font-weight: bold; width: 140px;">Reporter</td>
+            <td style="padding: 8px;">${feedback.reporterName} &lt;${feedback.reporterEmail}&gt;</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; background: #f5f5f5; font-weight: bold;">Title</td>
+            <td style="padding: 8px;">${data.title}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; background: #f5f5f5; font-weight: bold;">Page</td>
+            <td style="padding: 8px;">${data.pageUrl ?? 'Not captured'}</td>
+          </tr>
+          ${data.severity ? `<tr><td style="padding: 8px; background: #f5f5f5; font-weight: bold;">Severity</td><td style="padding: 8px; color: ${data.severity === 'critical' ? '#e53e3e' : data.severity === 'high' ? '#dd6b20' : '#666'}">${data.severity.toUpperCase()}</td></tr>` : ''}
+        </table>
+        
+        <h3 style="margin-bottom: 8px;">Description</h3>
+        <div style="background: #f9f9f9; border-left: 3px solid #c9a84c; padding: 16px; white-space: pre-wrap;">${data.description}</div>
+        
+        <p style="margin-top: 24px; font-size: 0.8rem; color: #999;">View all feedback in the <a href="https://app.valoxi.ai/admin/feedback">Valoxi Admin Panel</a></p>
+      </div>
+    `,
+  });
+
+  sendCreated(res, { id: feedback.id, message: 'Feedback submitted. Thank you.' });
+}));
+
+export default router;
+```
+
+Register it in `server/routes/index.ts`:
+```typescript
+import betaFeedbackRoutes from './beta-feedback.routes';
+// ...
+app.use('/api/beta-feedback', betaFeedbackRoutes);
+```
+
+---
+
+## 3. Admin Panel — View All Feedback
+
+In `server/routes/admin.routes.ts`, add:
+
+```typescript
+router.get('/feedback', asyncHandler(async (req: Request, res: Response) => {
+  const { status, type } = req.query;
+  let query = db.select().from(betaFeedback).orderBy(desc(betaFeedback.createdAt));
+  // Add filters if provided
+  const items = await query;
+  sendSuccess(res, items);
+}));
+
+router.patch('/feedback/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { status, adminNotes } = z.object({
+    status: z.enum(['open', 'in_progress', 'resolved', 'wont_fix']).optional(),
+    adminNotes: z.string().optional(),
+  }).parse(req.body);
+  
+  await db.update(betaFeedback)
+    .set({ status, adminNotes, updatedAt: new Date() })
+    .where(eq(betaFeedback.id, id));
+  
+  sendSuccess(res, { message: 'Updated' });
+}));
+```
+
+Create an admin page at `/admin/feedback` (React) that shows:
+- Summary counts: Open / In Progress / Resolved, by type
+- Sortable table: ID | Type | Severity | Title | Reporter | Page | Date | Status
+- Click to expand full description + admin notes field
+- Status dropdown to update (open / in_progress / resolved / wont_fix)
+- Filter by type and status
+
+---
+
+## 4. Frontend Widget
+
+Create `client/src/components/BetaFeedbackWidget.tsx`:
+
+```tsx
+import { useState } from 'react';
+
+export default function BetaFeedbackWidget() {
+  const [open, setOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    type: 'bug',
+    severity: 'medium',
+    title: '',
+    description: '',
+  });
+
+  const handleSubmit = async () => {
+    if (!form.title || !form.description) return;
+    setLoading(true);
+    try {
+      await fetch('/api/beta-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          severity: form.type === 'bug' ? form.severity : undefined,
+          pageUrl: window.location.href,
+          pageTitle: document.title,
+        }),
+      });
+      setSubmitted(true);
+      setTimeout(() => { setOpen(false); setSubmitted(false); setForm({ type: 'bug', severity: 'medium', title: '', description: '' }); }, 2000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Floating trigger button */}
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          background: 'rgba(201,168,76,0.15)',
+          border: '1px solid rgba(201,168,76,0.4)',
+          borderRadius: '100px',
+          padding: '10px 18px',
+          color: '#c9a84c',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <span>⚑</span> Beta Feedback
+      </button>
+
+      {/* Modal */}
+      {open && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 10000,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+          <div style={{
+            background: '#13131f', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '16px', padding: '32px', width: '480px', maxWidth: '90vw',
+          }}>
+            {submitted ? (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>✓</div>
+                <div style={{ color: '#2dd4a0', fontWeight: 600 }}>Feedback received. Thanks!</div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Report an Issue</h3>
+                  <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+                </div>
+
+                {/* Type */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '0.78rem', color: '#999', display: 'block', marginBottom: '6px' }}>Type</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[['bug', '🐛 Bug'], ['comment', '💬 Comment'], ['suggestion', '💡 Suggestion'], ['other', '📝 Other']].map(([val, label]) => (
+                      <button key={val} onClick={() => setForm(f => ({...f, type: val}))} style={{
+                        padding: '6px 12px', borderRadius: '8px', fontSize: '0.78rem', cursor: 'pointer',
+                        border: form.type === val ? '1px solid #c9a84c' : '1px solid rgba(255,255,255,0.1)',
+                        background: form.type === val ? 'rgba(201,168,76,0.12)' : 'transparent',
+                        color: form.type === val ? '#c9a84c' : '#999',
+                      }}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Severity (bugs only) */}
+                {form.type === 'bug' && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '0.78rem', color: '#999', display: 'block', marginBottom: '6px' }}>Severity</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['critical', 'Critical']].map(([val, label]) => (
+                        <button key={val} onClick={() => setForm(f => ({...f, severity: val}))} style={{
+                          padding: '6px 12px', borderRadius: '8px', fontSize: '0.78rem', cursor: 'pointer',
+                          border: form.severity === val ? '1px solid rgba(242,95,92,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                          background: form.severity === val ? 'rgba(242,95,92,0.1)' : 'transparent',
+                          color: form.severity === val ? '#f25f5c' : '#999',
+                        }}>{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Title */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '0.78rem', color: '#999', display: 'block', marginBottom: '6px' }}>Title</label>
+                  <input
+                    value={form.title}
+                    onChange={e => setForm(f => ({...f, title: e.target.value}))}
+                    placeholder="Brief description of the issue"
+                    style={{
+                      width: '100%', padding: '10px 12px', borderRadius: '8px', boxSizing: 'border-box',
+                      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#fff', fontSize: '0.875rem',
+                    }}
+                  />
+                </div>
+
+                {/* Description */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '0.78rem', color: '#999', display: 'block', marginBottom: '6px' }}>Description</label>
+                  <textarea
+                    value={form.description}
+                    onChange={e => setForm(f => ({...f, description: e.target.value}))}
+                    placeholder="What happened? What were you expecting? Steps to reproduce if a bug."
+                    rows={4}
+                    style={{
+                      width: '100%', padding: '10px 12px', borderRadius: '8px', boxSizing: 'border-box',
+                      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                      color: '#fff', fontSize: '0.875rem', resize: 'vertical',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#555' }}>Page: {window.location.pathname}</span>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading || !form.title || !form.description}
+                    style={{
+                      padding: '10px 24px', borderRadius: '8px', border: 'none',
+                      background: '#c9a84c', color: '#08080f', fontWeight: 600,
+                      cursor: loading ? 'wait' : 'pointer', opacity: (!form.title || !form.description) ? 0.5 : 1,
+                    }}
+                  >
+                    {loading ? 'Sending...' : 'Submit'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+```
+
+Mount it in the root layout (e.g. `App.tsx` or the main authenticated layout), gated on beta mode:
+
+```tsx
+{import.meta.env.VITE_BETA_MODE === 'true' && <BetaFeedbackWidget />}
+```
+
+---
+
+## 5. Email Utility Note
+
+The feedback route uses `sendEmail()` from `server/email.ts`. Confirm this function accepts `{ to, subject, html }` — adjust the call signature if your existing email helper uses different parameter names.
+
+---
+
+## Summary of Changes
+- `shared/schema.ts` — add `betaFeedback` table
+- `npm run db:push` — apply migration
+- `server/routes/beta-feedback.routes.ts` — new file (POST submit endpoint)
+- `server/routes/admin.routes.ts` — add GET /admin/feedback + PATCH /admin/feedback/:id
+- `server/routes/index.ts` — register beta-feedback routes
+- Admin panel — new `/admin/feedback` page
+- `client/src/components/BetaFeedbackWidget.tsx` — new floating widget
+- `client/src/App.tsx` (or root layout) — mount widget gated on VITE_BETA_MODE
