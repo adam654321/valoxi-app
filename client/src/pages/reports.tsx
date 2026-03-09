@@ -57,6 +57,20 @@ const COLORS = [
   '#ec4899', '#14b8a6',
 ];
 
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-card text-card-foreground border border-border rounded-lg shadow-md px-3 py-2 text-sm">
+      {label && <p className="font-medium mb-1">{label}</p>}
+      {payload.map((entry: any, i: number) => (
+        <p key={i} style={{ color: entry.color || entry.fill }}>
+          {entry.name}: <span className="font-semibold">{entry.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function Reports() {
   const [dateRange, setDateRange] = useState<string>("30");
 
@@ -271,10 +285,7 @@ export default function Reports() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string) => [value, name]}
-                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: '13px' }}
-                    />
+                    <Tooltip content={<ChartTooltip />} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -305,10 +316,7 @@ export default function Reports() {
                     <CartesianGrid strokeDasharray="3 3" className="opacity-40" />
                     <XAxis dataKey="activity_type" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: '13px' }}
-                      cursor={{ fill: 'var(--muted)' }}
-                    />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(100,116,139,0.15)' }} />
                     <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
