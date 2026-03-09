@@ -1,4 +1,4 @@
-import { eq, sql, count } from 'drizzle-orm';
+import { eq, sql, count, and, isNotNull } from 'drizzle-orm';
 import { db } from '../db';
 import { targetCompanies, activities, users } from '@shared/schema';
 
@@ -11,7 +11,7 @@ export class ReportsRepository {
     }).from(targetCompanies).where(eq(targetCompanies.userCompanyId, userCompanyId)).groupBy(targetCompanies.stage);
     const [totalResult] = await db.select({ total: sql<number>`count(*)::int` }).from(targetCompanies).where(eq(targetCompanies.userCompanyId, userCompanyId));
     const stageStats = pipelineDistribution.map(item => ({ stageName: item.stage || 'Unknown', stageOrder: 1, companyCount: item.count, avgDaysInStage: null as number | null }));
-    return { stageStats, recentChanges: [], totalCompanies: totalResult?.total || 0 };
+    return { pipelineDistribution, stageStats, recentChanges: [], totalCompanies: totalResult?.total || 0 };
   }
 
   async getActivitySummary(userCompanyId: number, dateRange?: string) {
@@ -21,7 +21,12 @@ export class ReportsRepository {
       companies_contacted: sql<number>`count(distinct ${activities.targetCompanyId})::int`,
     }).from(activities)
       .innerJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id))
-      .where(eq(targetCompanies.userCompanyId, userCompanyId)).groupBy(activities.activityType);
+      .where(
+        and(
+          eq(targetCompanies.userCompanyId, userCompanyId),
+          isNotNull(activities.activityType)
+        )
+      ).groupBy(activities.activityType);
     return { activityByType, activityByUser: [], activityTrends: [] };
   }
 
