@@ -51,7 +51,11 @@ interface UserPerformanceData {
   success_rate: number;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
+const COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#06b6d4', '#f97316', '#84cc16',
+  '#ec4899', '#14b8a6',
+];
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState<string>("30");
@@ -244,25 +248,34 @@ export default function Reports() {
             <CardContent>
               {pipelineLoading ? (
                 <Skeleton className="h-64 w-full" />
+              ) : !pipelineData?.pipelineDistribution?.length ? (
+                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-2">
+                  <BarChart3 className="h-8 w-8 opacity-30" />
+                  <p className="text-sm">No pipeline data yet</p>
+                  <p className="text-xs opacity-70">Add deals to see stage distribution</p>
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={pipelineData?.pipelineDistribution || []}
+                      data={pipelineData.pipelineDistribution}
                       dataKey="count"
                       nameKey="stage"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      label
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={3}
                     >
-                      {pipelineData?.pipelineDistribution?.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {pipelineData.pipelineDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [value, name]}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: '13px' }}
+                    />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -293,10 +306,10 @@ export default function Reports() {
                     <XAxis dataKey="activity_type" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip
-                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))' }}
-                      cursor={{ fill: 'hsl(var(--muted))' }}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--card-foreground)', fontSize: '13px' }}
+                      cursor={{ fill: 'var(--muted)' }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
