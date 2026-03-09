@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { betaFeedback } from '@shared/schema/dashboard';
+import { users } from '@shared/schema/core';
 import { systemConfigService } from '../services/system-config.service';
 import { emailService } from '../email';
 import { asyncHandler } from '../utils/async-handler';
@@ -25,7 +27,11 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 
   const body = createFeedbackSchema.parse(req.body);
-  const user = (req as any).user;
+
+  const [user] = await db.select().from(users).where(eq(users.id, req.session.userId!));
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'User not found' });
+  }
 
   const [inserted] = await db.insert(betaFeedback).values({
     userId: user.id,
