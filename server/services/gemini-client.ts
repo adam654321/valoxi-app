@@ -34,7 +34,7 @@ export interface GenerateContentOptions {
   model?: string;
   temperature?: number;
   responseMimeType?: string;
-  fileData?: { fileUri: string; mimeType: string };
+  inlineData?: { mimeType: string; data: string };
   thinkingLevel?: ThinkingLevel;
   userId?: number;
   userCompanyId?: number;
@@ -103,11 +103,11 @@ export class GeminiClient {
     const temperature = options.temperature ?? 0;
 
     const parts: any[] = [];
-    if (options.fileData) {
+    if (options.inlineData) {
       parts.push({
-        fileData: {
-          fileUri: options.fileData.fileUri,
-          mimeType: options.fileData.mimeType,
+        inlineData: {
+          mimeType: options.inlineData.mimeType,
+          data: options.inlineData.data,
         },
       });
     }

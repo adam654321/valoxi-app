@@ -18,8 +18,19 @@ async function readFileContent(filePath: string): Promise<string | null> {
   }
 }
 
+async function readFileAsBase64(filePath: string): Promise<string | null> {
+  try {
+    const fs = await import('fs/promises');
+    const buffer = await fs.readFile(filePath);
+    return buffer.toString('base64');
+  } catch (error) {
+    console.error(`[GEMINI_CLASSIFICATION] Failed to read file as base64: ${filePath}`, error);
+    return null;
+  }
+}
+
 export interface DocumentClassificationRequest {
-  fileUrl: string;
+  fileUrl?: string;
   filePath: string;
   mimeType: string;
   fileName: string;
@@ -59,7 +70,7 @@ export async function classifyDocumentWithGemini(
     console.log(`[GEMINI_CLASSIFICATION] File path: ${request.filePath}`);
 
     let prompt = buildDocumentClassificationPrompt();
-    let fileData: { fileUri: string; mimeType: string } | undefined;
+    let inlineData: { mimeType: string; data: string } | undefined;
     const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
 
     if (isTextFile) {
@@ -68,20 +79,26 @@ export async function classifyDocumentWithGemini(
         prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
         console.log(`[GEMINI_CLASSIFICATION] Embedded ${textContent.length} chars inline (read from disk)`);
       } else {
-        fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+        const base64Data = await readFileAsBase64(request.filePath);
+        if (base64Data) {
+          inlineData = { mimeType: request.mimeType, data: base64Data };
+        }
       }
     } else {
-      fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+      const base64Data = await readFileAsBase64(request.filePath);
+      if (base64Data) {
+        inlineData = { mimeType: request.mimeType, data: base64Data };
+      }
     }
 
-    console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API${isTextFile && !fileData ? ' (inline text)' : ' (file attachment)'}`);
+    console.log(`[GEMINI_CLASSIFICATION] Sending request to Gemini API${isTextFile && !inlineData ? ' (inline text)' : ' (base64 inline)'}`);
 
     const response = await geminiClient.generateContent({
       prompt,
       temperature: 0,
       responseMimeType: "application/json",
       thinkingLevel: "MINIMAL",
-      ...(fileData ? { fileData } : {}),
+      ...(inlineData ? { inlineData } : {}),
       service: 'document_classification',
       userId: tracking?.userId,
       userCompanyId: tracking?.userCompanyId,

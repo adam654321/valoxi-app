@@ -9,7 +9,7 @@ import type { DocumentTrackingContext } from "./gemini-document-classification-s
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
 
 export interface Step2AnalysisRequest {
-  fileUrl: string;
+  fileUrl?: string;
   filePath: string;
   mimeType: string;
   fileName: string;
@@ -65,6 +65,17 @@ async function readFileContent(filePath: string): Promise<string | null> {
   }
 }
 
+async function readFileAsBase64(filePath: string): Promise<string | null> {
+  try {
+    const fs = await import('fs/promises');
+    const buffer = await fs.readFile(filePath);
+    return buffer.toString('base64');
+  } catch (error) {
+    console.error(`[GEMINI_STEP2] Failed to read file as base64: ${filePath}`, error);
+    return null;
+  }
+}
+
 const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
 
 export async function analyzeDocumentWithGemini(
@@ -78,7 +89,7 @@ export async function analyzeDocumentWithGemini(
     console.log(`[GEMINI_STEP2] File path: ${request.filePath}`);
 
     let prompt = getPromptForDocumentType(request.documentType);
-    let fileData: { fileUri: string; mimeType: string } | undefined;
+    let inlineData: { mimeType: string; data: string } | undefined;
 
     const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
 
@@ -88,21 +99,27 @@ export async function analyzeDocumentWithGemini(
         prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
         console.log(`[GEMINI_STEP2] Embedded ${textContent.length} chars of text content inline for ${request.fileName} (read from disk)`);
       } else {
-        fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
-        console.log(`[GEMINI_STEP2] Falling back to file attachment for ${request.fileName}`);
+        const base64Data = await readFileAsBase64(request.filePath);
+        if (base64Data) {
+          inlineData = { mimeType: request.mimeType, data: base64Data };
+        }
+        console.log(`[GEMINI_STEP2] Falling back to base64 inline for ${request.fileName}`);
       }
     } else {
-      fileData = { fileUri: request.fileUrl, mimeType: request.mimeType };
+      const base64Data = await readFileAsBase64(request.filePath);
+      if (base64Data) {
+        inlineData = { mimeType: request.mimeType, data: base64Data };
+      }
     }
 
-    console.log(`[GEMINI_STEP2] Sending request to Gemini API for ${request.documentType}${isTextFile && !fileData ? ' (inline text)' : ' (file attachment)'}`);
+    console.log(`[GEMINI_STEP2] Sending request to Gemini API for ${request.documentType}${isTextFile && !inlineData ? ' (inline text)' : ' (base64 inline)'}`);
 
     const response = await geminiClient.generateContent({
       prompt,
       temperature: 0,
       responseMimeType: "application/json",
       thinkingLevel: "MINIMAL",
-      ...(fileData ? { fileData } : {}),
+      ...(inlineData ? { inlineData } : {}),
       service: `document_step2_${request.documentType}`,
       userId: tracking?.userId,
       userCompanyId: tracking?.userCompanyId,
