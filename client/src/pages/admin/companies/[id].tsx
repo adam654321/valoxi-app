@@ -1,13 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCompanyDetail() {
   const [, params] = useRoute("/admin/companies/:id");
   const companyId = params?.id;
+  const { toast } = useToast();
 
   const { data: company, isLoading: companyLoading } = useQuery<any>({
     queryKey: ["/api/v2/admin/companies", companyId],
@@ -48,6 +53,20 @@ export default function AdminCompanyDetail() {
     enabled: !!companyId,
   });
 
+  const planOverrideMutation = useMutation({
+    mutationFn: async ({ planOverride }: { planOverride: string | null }) => {
+      return apiRequest("POST", `/api/v2/admin/companies/${companyId}/plan-override`, { planOverride });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/companies", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/companies"] });
+      toast({ title: "Plan override updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update plan override", variant: "destructive" });
+    },
+  });
+
   if (companyLoading || serviceLoading || usersLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -67,10 +86,46 @@ export default function AdminCompanyDetail() {
           <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">{company.companyName}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{company.companyName}</h1>
+            {company.betaPlanOverride && (
+              <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+                BETA OVERRIDE: {company.betaPlanOverride.toUpperCase()}
+              </Badge>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{company.userCount} users · {company.dealCount} deals · ${parseFloat(company.totalTokenCost ?? 0).toFixed(4)} total token cost</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Beta Plan Override</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Select
+              value={company.betaPlanOverride ?? "none"}
+              onValueChange={(value) => {
+                planOverrideMutation.mutate({
+                  planOverride: value === "none" ? null : value,
+                });
+              }}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Override</SelectItem>
+                <SelectItem value="core">Core</SelectItem>
+                <SelectItem value="professional">Professional</SelectItem>
+                <SelectItem value="expert">Expert</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Override the billing plan for beta testing purposes
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Token Usage by Service</CardTitle></CardHeader>

@@ -110,6 +110,34 @@ export type UserWithRole = User & {
   };
 };
 
+export const betaFeedback = pgTable("beta_feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  userCompanyId: integer("user_company_id").references(() => userCompanies.id),
+  reporterEmail: varchar("reporter_email", { length: 255 }),
+  reporterName: varchar("reporter_name", { length: 255 }),
+  type: varchar("type", { length: 20 }).notNull(),
+  severity: varchar("severity", { length: 10 }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  pageUrl: varchar("page_url", { length: 500 }),
+  pageTitle: varchar("page_title", { length: 255 }),
+  userAgent: varchar("user_agent", { length: 500 }),
+  status: varchar("status", { length: 20 }).default("open").notNull(),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertBetaFeedbackSchema = createInsertSchema(betaFeedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type BetaFeedback = typeof betaFeedback.$inferSelect;
+export type InsertBetaFeedback = z.infer<typeof insertBetaFeedbackSchema>;
+
 export const funnelEvents = pgTable("funnel_events", {
   id: serial("id").primaryKey(),
   userCompanyId: integer("user_company_id").references(() => userCompanies.id).notNull(),

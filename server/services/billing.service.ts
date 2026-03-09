@@ -18,8 +18,26 @@ import {
 } from '@shared/entitlements';
 
 class BillingService {
+  private getEffectivePlanKey(subscription: Subscription, betaPlanOverride: string | null): PlanKey {
+    const validOverrides: PlanKey[] = ['CORE', 'PROFESSIONAL', 'EXPERT', 'ENTERPRISE'];
+    if (betaPlanOverride && validOverrides.includes(betaPlanOverride.toUpperCase() as PlanKey)) {
+      return betaPlanOverride.toUpperCase() as PlanKey;
+    }
+    return subscription.planKey as PlanKey;
+  }
+
   async getSubscription(userCompanyId: number): Promise<Subscription | null> {
-    return billingRepository.getByCompanyId(userCompanyId);
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription) return null;
+
+    const betaPlanOverride = await billingRepository.getBetaPlanOverride(userCompanyId);
+    const effectivePlanKey = this.getEffectivePlanKey(subscription, betaPlanOverride);
+
+    if (effectivePlanKey !== subscription.planKey) {
+      return { ...subscription, planKey: effectivePlanKey };
+    }
+
+    return subscription;
   }
 
   async getEntitlements(
@@ -28,13 +46,20 @@ class BillingService {
     const subscription = await billingRepository.getByCompanyId(userCompanyId);
     if (!subscription) return null;
 
-    const limits = getEffectiveLimits(
-      subscription.planKey as PlanKey,
-      subscription.enterpriseOverrides as Record<string, unknown> | null
-    );
-    const features = TIER_FEATURES[subscription.planKey as PlanKey];
+    const betaPlanOverride = await billingRepository.getBetaPlanOverride(userCompanyId);
+    const effectivePlanKey = this.getEffectivePlanKey(subscription, betaPlanOverride);
 
-    return { subscription, limits, features };
+    const effectiveSubscription = effectivePlanKey !== subscription.planKey
+      ? { ...subscription, planKey: effectivePlanKey }
+      : subscription;
+
+    const limits = getEffectiveLimits(
+      effectivePlanKey,
+      effectiveSubscription.enterpriseOverrides as Record<string, unknown> | null
+    );
+    const features = TIER_FEATURES[effectivePlanKey];
+
+    return { subscription: effectiveSubscription, limits, features };
   }
 
   async createTrialSubscription(

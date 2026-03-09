@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 - **Admin Section** (`client/src/pages/admin/`): System admin dashboard with its own layout and route guard:
   - `AdminRoute` component (`client/src/components/admin-route.tsx`): Auth + isSystemAdmin guard
   - `AdminLayout` component (`client/src/components/admin-layout.tsx`): Dedicated sidebar with admin navigation
-  - Pages: Overview (metrics + charts), Token Usage (by company/deal/service with date filtering), Platform Costs (CRUD + summary cards), Companies (list + detail drill-down), Users (list with roles/status), Webhook Events (log viewer), Promo Codes (campaigns + codes + CSV export), 5D Invoice (referral invoice report), Settings (registration mode toggle)
+  - Pages: Overview (metrics + charts), Token Usage (by company/deal/service with date filtering), Platform Costs (CRUD + summary cards), Companies (list + detail drill-down with beta plan override dropdown), Users (list with roles/status), Webhook Events (log viewer), Promo Codes (campaigns + codes + CSV export), 5D Invoice (referral invoice report), Beta Feedback (filterable table with status management + admin notes), Settings (registration mode toggle + beta feature kill switches)
   - Sidebar collapses to icon-only mode with tooltips, mobile-responsive drawer on small screens, keyboard shortcut Ctrl+B to toggle
 
 ## Backend Architecture
@@ -92,7 +92,7 @@ Preferred communication style: Simple, everyday language.
   - `documents.ts` — Document storage, categories, access log, upload events, AI analysis (7 tables)
   - `portal.ts` — External portal tokens, submissions, chase-ups, campaigns, analytics (13 tables)
   - `financials.ts` — P&L, balance sheets, staff data, assets, loans, EBITDA adjustments, valuations (9 tables)
-  - `dashboard.ts` — Dashboard preferences, alerts, composite types (2 tables)
+  - `dashboard.ts` — Dashboard preferences, alerts, beta feedback, composite types (3 tables)
   - `deal-models.ts` — Deal models, adjustments, funding lines, deal metrics snapshots (4 tables)
   - `value-creation.ts` — Value creation scenarios, assumptions, synergies, exit assumptions (4 tables)
   - `billing.ts` — Subscription billing: subscriptions (with currency column), subscription_events, addon_purchases, promo_code_campaigns, promo_codes (5 tables, 3 enums: plan_key, subscription_status, billing_interval)
@@ -117,7 +117,16 @@ Preferred communication style: Simple, everyday language.
     - `document-analysis.routes.ts` → `expertAnalysisFullDetail` (detail endpoints)
     - `due-diligence.routes.ts` → `ddDataRoom`
     - `expert-analysis.routes.ts` → `expertAnalysisFullDetail` (trigger-pipeline/retry/resume/results)
-- **Intentionally NOT subscription-gated**: Auth, team (public), notifications, email, portal/portal-submit, public/*, admin, billing, user/companies, assignments/deals
+- **Intentionally NOT subscription-gated**: Auth, team (public), notifications, email, portal/portal-submit, public/*, admin, billing, user/companies, assignments/deals, beta, beta-feedback
+- **Beta Testing Infrastructure** (env vars `BETA_MODE=true`, `VITE_BETA_MODE=true`):
+  - **Plan Override**: `userCompanies.betaPlanOverride` column overrides the effective plan tier without touching Stripe. Applied in `billingService.getEntitlements()` and `getSubscription()` so all feature gates (server middleware + client context) respect the override.
+  - **Admin Plan Override**: `POST /api/v2/admin/companies/:id/plan-override` — set/clear override per company. UI on admin companies list and detail pages.
+  - **Self-Switch**: `POST /api/v2/beta/switch-plan` — testers switch their own tier from billing page. Gated on `BETA_MODE` env var AND `beta_tier_switch_enabled` system config.
+  - **Beta Config**: `GET /api/v2/beta/config` — returns `{ tierSwitchEnabled, feedbackEnabled }` from system config. Frontend uses this to conditionally show beta features.
+  - **Feedback Widget**: `client/src/components/BetaFeedbackWidget.tsx` — floating amber button (bottom-right) on all authenticated pages. Opens modal with type/severity/title/description form. Submits to `POST /api/v2/beta-feedback` which saves to `beta_feedback` table and emails admin at hello@valoxi.ai.
+  - **Admin Feedback View**: `/admin/feedback` page with summary cards, filterable table, expandable rows with admin notes and status management.
+  - **Kill Switches**: `beta_feedback_enabled` and `beta_tier_switch_enabled` system config keys, toggled from admin settings page. When disabled, backend returns 403 and frontend hides the feature.
+  - **Routes**: `server/routes/beta.routes.ts` (config + switch-plan), `server/routes/beta-feedback.routes.ts` (feedback submission)
 - **Promo Code & Referral System**:
   - **Tables**: `promo_code_campaigns` (campaign config + Stripe coupon link), `promo_codes` (individual codes with usage tracking)
   - **Subscription columns**: `referralSource`, `promoCodeId`, `freeMonthsTotal`, `freeMonthsStartedAt`, `communityDiscountCouponId`, `freeMonthsWarningEmailSentAt`

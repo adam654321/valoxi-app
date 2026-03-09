@@ -24,6 +24,14 @@ export class BillingRepository {
     return row ?? null;
   }
 
+  async getBetaPlanOverride(userCompanyId: number): Promise<string | null> {
+    const [row] = await db
+      .select({ betaPlanOverride: userCompanies.betaPlanOverride })
+      .from(userCompanies)
+      .where(eq(userCompanies.id, userCompanyId));
+    return row?.betaPlanOverride ?? null;
+  }
+
   async getWithCompany(
     userCompanyId: number
   ): Promise<(Subscription & { userCompany: UserCompany }) | null> {

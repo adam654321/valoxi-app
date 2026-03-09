@@ -4,7 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, ShieldCheck, Globe } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, ShieldCheck, Globe, MessageSquare, ArrowLeftRight } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface ConfigRow {
   key: string;
@@ -20,17 +22,16 @@ export default function AdminSettings() {
 
   const configs = data?.data ?? [];
   const currentMode = configs.find((c) => c.key === "registration_mode")?.value ?? "invite_only";
+  const betaFeedbackEnabled = configs.find((c) => c.key === "beta_feedback_enabled")?.value !== "false";
+  const betaTierSwitchEnabled = configs.find((c) => c.key === "beta_tier_switch_enabled")?.value !== "false";
 
   const mutation = useMutation({
-    mutationFn: async (value: string) => {
-      const res = await apiRequest("POST", "/api/v2/admin/system-config", {
-        key: "registration_mode",
-        value,
-      });
+    mutationFn: async ({ key, value }: { key: string; value: string }) => {
+      const res = await apiRequest("POST", "/api/v2/admin/system-config", { key, value });
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Settings updated", description: "Registration mode has been changed." });
+      toast({ title: "Settings updated" });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/system-config"] });
     },
     onError: (error: any) => {
@@ -89,7 +90,7 @@ export default function AdminSettings() {
                   } ${mutation.isPending ? "opacity-60 pointer-events-none" : ""}`}
                   onClick={() => {
                     if (!isSelected && !mutation.isPending) {
-                      mutation.mutate(option.value);
+                      mutation.mutate({ key: "registration_mode", value: option.value });
                     }
                   }}
                 >
@@ -106,7 +107,7 @@ export default function AdminSettings() {
                               Active
                             </Badge>
                           )}
-                          {mutation.isPending && mutation.variables === option.value && (
+                          {mutation.isPending && mutation.variables?.value === option.value && (
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                           )}
                         </div>
@@ -122,6 +123,84 @@ export default function AdminSettings() {
                 </Card>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Beta Features</h2>
+          <p className="text-sm text-muted-foreground mt-1">Enable or disable beta testing features for all users.</p>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className={`transition-all ${betaFeedbackEnabled ? "border-amber-400/40" : ""}`}>
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${betaFeedbackEnabled ? "bg-amber-500/10" : "bg-muted"}`}>
+                      <MessageSquare className={`h-5 w-5 ${betaFeedbackEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">Feedback Widget</span>
+                        {betaFeedbackEnabled && (
+                          <Badge className="text-xs bg-amber-500/15 text-amber-600 border-amber-400/30">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Floating feedback button on every page for testers to report bugs and suggestions.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={betaFeedbackEnabled}
+                    onCheckedChange={(checked) =>
+                      mutation.mutate({ key: "beta_feedback_enabled", value: checked ? "true" : "false" })
+                    }
+                    disabled={mutation.isPending}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={`transition-all ${betaTierSwitchEnabled ? "border-amber-400/40" : ""}`}>
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${betaTierSwitchEnabled ? "bg-amber-500/10" : "bg-muted"}`}>
+                      <ArrowLeftRight className={`h-5 w-5 ${betaTierSwitchEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">Plan Tier Self-Switch</span>
+                        {betaTierSwitchEnabled && (
+                          <Badge className="text-xs bg-amber-500/15 text-amber-600 border-amber-400/30">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Allows testers to switch between Core, Professional, and Expert tiers from the billing page.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={betaTierSwitchEnabled}
+                    onCheckedChange={(checked) =>
+                      mutation.mutate({ key: "beta_tier_switch_enabled", value: checked ? "true" : "false" })
+                    }
+                    disabled={mutation.isPending}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useSubscriptionContext, usePlanKey } from "@/context/subscription-context";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,7 @@ import {
   Tag,
   ChevronDown,
   Gift,
+  FlaskConical,
 } from "lucide-react";
 import type { PlanKey } from "@shared/schema/billing";
 
@@ -404,6 +405,36 @@ export default function BillingPage() {
     },
     onError: (error: any) => {
       setPromoError(error.message || "Failed to apply promo code. Please try again.");
+    },
+  });
+
+  const isBetaMode = import.meta.env.VITE_BETA_MODE === 'true';
+
+  const { data: betaConfig } = useQuery<{ success: boolean; data: { tierSwitchEnabled: boolean; feedbackEnabled: boolean } }>({
+    queryKey: ['/api/v2/beta/config'],
+    enabled: isBetaMode,
+  });
+
+  const betaTierSwitchEnabled = isBetaMode && betaConfig?.data?.tierSwitchEnabled === true;
+
+  const betaSwitchMutation = useMutation({
+    mutationFn: async (tier: string) => {
+      const res = await apiRequest("POST", "/api/v2/beta/switch-plan", { tier });
+      return res.json();
+    },
+    onSuccess: (_data, tier) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      toast({
+        title: "Plan switched",
+        description: `You are now on the ${tier.charAt(0).toUpperCase() + tier.slice(1)} plan (beta override).`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Switch failed",
+        description: error.message || "Failed to switch plan. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -847,6 +878,48 @@ export default function BillingPage() {
                 </Card>
               </CollapsibleContent>
             </Collapsible>
+          )}
+
+          {betaTierSwitchEnabled && (
+            <>
+              <Separator />
+              <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <CardTitle className="text-base text-amber-800 dark:text-amber-300">Beta Testing Mode</CardTitle>
+                    <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 text-xs">BETA</Badge>
+                  </div>
+                  <CardDescription>
+                    Switch between plan tiers to test features at different subscription levels. This does not affect billing.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-3">
+                    {(["core", "professional", "expert"] as const).map((tier) => {
+                      const isActive = currentPlan === tier.toUpperCase();
+                      return (
+                        <Button
+                          key={tier}
+                          variant={isActive ? "default" : "outline"}
+                          className={isActive ? "pointer-events-none" : ""}
+                          disabled={betaSwitchMutation.isPending}
+                          onClick={() => {
+                            if (!isActive) betaSwitchMutation.mutate(tier);
+                          }}
+                        >
+                          {betaSwitchMutation.isPending && betaSwitchMutation.variables === tier ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : null}
+                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                          {isActive && <Check className="h-4 w-4 ml-2" />}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
           )}
 
           <Card className="border-dashed">

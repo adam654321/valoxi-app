@@ -6,7 +6,7 @@ import { db } from '../db';
 import { config } from '../config';
 import { subscriptions, promoCodeCampaigns, promoCodes } from '@shared/schema/billing';
 import { userCompanies, users } from '@shared/schema/core';
-import { issueReports, funnelEvents } from '@shared/schema/dashboard';
+import { issueReports, funnelEvents, betaFeedback } from '@shared/schema/dashboard';
 import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
 import { adminService } from '../services/admin.service';
 import { systemConfigService } from '../services/system-config.service';
@@ -96,6 +96,27 @@ router.get('/companies/:id', asyncHandler(async (req: Request, res: Response) =>
     return res.status(404).json({ success: false, message: 'Company not found', code: 'NOT_FOUND' });
   }
   sendSuccess(res, data);
+}));
+
+const planOverrideSchema = z.object({
+  planOverride: z.enum(['core', 'professional', 'expert']).nullable(),
+});
+
+router.post('/companies/:id/plan-override', asyncHandler(async (req: Request, res: Response) => {
+  const companyId = Number(req.params.id);
+  const { planOverride } = planOverrideSchema.parse(req.body);
+
+  const [updated] = await db
+    .update(userCompanies)
+    .set({ betaPlanOverride: planOverride })
+    .where(eq(userCompanies.id, companyId))
+    .returning({ id: userCompanies.id, betaPlanOverride: userCompanies.betaPlanOverride });
+
+  if (!updated) {
+    return res.status(404).json({ success: false, message: 'Company not found', code: 'NOT_FOUND' });
+  }
+
+  sendSuccess(res, updated);
 }));
 
 router.get('/users', asyncHandler(async (req: Request, res: Response) => {
@@ -624,7 +645,7 @@ router.get('/system-config', asyncHandler(async (req: Request, res: Response) =>
 }));
 
 const setConfigSchema = z.object({
-  key: z.enum(['registration_mode']),
+  key: z.enum(['registration_mode', 'beta_feedback_enabled', 'beta_tier_switch_enabled']),
   value: z.string().min(1),
 });
 
@@ -657,6 +678,72 @@ router.post('/resend-magic-link', asyncHandler(async (req: Request, res: Respons
 
   console.log(`[admin] Resent magic link to user ${targetUser.id} (${targetUser.email}) by admin ${req.session.userId}`);
   sendSuccess(res, { success: true, message: `Magic link sent to ${targetUser.email}` });
+}));
+
+router.get('/feedback', asyncHandler(async (req: Request, res: Response) => {
+  const conditions = [];
+  if (req.query.status && req.query.status !== 'all') {
+    conditions.push(eq(betaFeedback.status, req.query.status as string));
+  }
+  if (req.query.type && req.query.type !== 'all') {
+    conditions.push(eq(betaFeedback.type, req.query.type as string));
+  }
+  if (req.query.severity && req.query.severity !== 'all') {
+    conditions.push(eq(betaFeedback.severity, req.query.severity as string));
+  }
+
+  const rows = await db
+    .select({
+      id: betaFeedback.id,
+      userId: betaFeedback.userId,
+      userCompanyId: betaFeedback.userCompanyId,
+      reporterEmail: betaFeedback.reporterEmail,
+      reporterName: betaFeedback.reporterName,
+      type: betaFeedback.type,
+      severity: betaFeedback.severity,
+      title: betaFeedback.title,
+      description: betaFeedback.description,
+      pageUrl: betaFeedback.pageUrl,
+      pageTitle: betaFeedback.pageTitle,
+      status: betaFeedback.status,
+      adminNotes: betaFeedback.adminNotes,
+      createdAt: betaFeedback.createdAt,
+      updatedAt: betaFeedback.updatedAt,
+      companyName: userCompanies.companyName,
+    })
+    .from(betaFeedback)
+    .leftJoin(userCompanies, eq(betaFeedback.userCompanyId, userCompanies.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(betaFeedback.createdAt))
+    .limit(500);
+
+  sendSuccess(res, rows);
+}));
+
+const updateFeedbackSchema = z.object({
+  status: z.enum(['open', 'in_progress', 'resolved', 'wont_fix']).optional(),
+  adminNotes: z.string().optional(),
+});
+
+router.patch('/feedback/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const validated = updateFeedbackSchema.parse(req.body);
+
+  const updateData: Record<string, any> = { updatedAt: new Date() };
+  if (validated.status !== undefined) updateData.status = validated.status;
+  if (validated.adminNotes !== undefined) updateData.adminNotes = validated.adminNotes;
+
+  const [updated] = await db
+    .update(betaFeedback)
+    .set(updateData)
+    .where(eq(betaFeedback.id, id))
+    .returning({ id: betaFeedback.id, status: betaFeedback.status });
+
+  if (!updated) {
+    return res.status(404).json({ success: false, message: 'Feedback not found' });
+  }
+
+  sendSuccess(res, updated);
 }));
 
 export default router;

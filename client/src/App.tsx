@@ -11,6 +11,7 @@ import { SubscriptionProvider } from "@/context/subscription-context";
 import Layout from "@/components/layout";
 import AdminRoute from "@/components/admin-route";
 import AdminLayout from "@/components/admin-layout";
+import { BetaFeedbackWidget } from "@/components/BetaFeedbackWidget";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import AcceptInvitation from "@/pages/accept-invitation";
@@ -49,6 +50,7 @@ const AdminFunnel = lazy(() => import("@/pages/admin/funnel"));
 const AdminPromoCodes = lazy(() => import("@/pages/admin/promo-codes"));
 const AdminReferralInvoice = lazy(() => import("@/pages/admin/referral-invoice"));
 const AdminSettings = lazy(() => import("@/pages/admin/settings"));
+const AdminFeedback = lazy(() => import("@/pages/admin/feedback"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -110,6 +112,7 @@ function Router() {
                   <Route path="/admin/referral-invoice" component={AdminReferralInvoice} />
                   <Route path="/admin/promo-codes" component={AdminPromoCodes} />
                   <Route path="/admin/settings" component={AdminSettings} />
+                  <Route path="/admin/feedback" component={AdminFeedback} />
                   <Route component={NotFound} />
                 </Switch>
               </AdminLayout>
@@ -161,6 +164,7 @@ function Router() {
           </Layout>
         </Route>
       </Switch>
+      {import.meta.env.VITE_BETA_MODE === 'true' && <BetaFeedbackWidget />}
     </Suspense>
   );
 }
