@@ -461,10 +461,12 @@ function DocumentViewerDialog({ document, onClose }: { document: DealDocument | 
           {isLoading ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground/70">Loading document...</div>
           ) : (
-            <div 
-              className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: htmlData?.html || '<p>Unable to load document.</p>' }}
-            />
+            <div className="bg-white text-gray-900 rounded-lg shadow-sm p-6">
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: htmlData?.html || '<p>Unable to load document.</p>' }}
+              />
+            </div>
           )}
         </div>
       </DialogContent>

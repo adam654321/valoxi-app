@@ -188,7 +188,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
               <div
                 ref={scrollRef}
                 onScroll={handleScroll}
-                className="max-h-[60vh] overflow-y-auto bg-white rounded-lg shadow-inner"
+                className="max-h-[60vh] overflow-y-auto bg-white text-gray-900 rounded-lg shadow-sm"
                 style={{ scrollBehavior: 'smooth' }}
               >
                 <div className="px-10 py-8">
