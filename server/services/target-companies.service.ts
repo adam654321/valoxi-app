@@ -58,7 +58,7 @@ export class TargetCompaniesService {
         ? parseInt(data.yearEstablished as string) || null
         : data.yearEstablished || null,
       description: data.description || null,
-      stage: data.stage || null,
+      stage: data.stage || 'New Target',
       userCompanyId,
       createdBy: userId,
     };
