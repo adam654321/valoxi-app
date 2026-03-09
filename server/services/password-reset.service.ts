@@ -19,12 +19,12 @@ class PasswordResetService {
 
     await (legacyEmailService as any).sendEmail({
       to: user.email,
-      subject: 'Reset your password — M&A Platform',
+      subject: 'Reset your password — Valoxi',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="display: inline-block; background: #2563eb; color: white; width: 48px; height: 48px; border-radius: 12px; line-height: 48px; font-size: 24px;">⚡</div>
-            <h1 style="margin: 16px 0 0; font-size: 24px; color: #111;">M&A Deal Pipeline</h1>
+            <h1 style="margin: 16px 0 0; font-size: 24px; color: #111;">Valoxi</h1>
           </div>
           <h2 style="font-size: 20px; color: #111; margin-bottom: 16px;">Reset Your Password</h2>
           <p style="color: #555; line-height: 1.6; margin-bottom: 24px;">

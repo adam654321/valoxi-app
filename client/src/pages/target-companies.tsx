@@ -227,7 +227,7 @@ export default function TargetCompanies() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <span className="ml-3 text-xl font-semibold text-textPrimary">M&A Pipeline</span>
+                <span className="ml-3 text-xl font-semibold text-textPrimary">Valoxi</span>
               </div>
               <div className="hidden md:ml-10 md:flex md:space-x-8">
                 <Link href="/dashboard" className="text-textSecondary hover:text-textPrimary border-b-2 border-transparent hover:border-border px-1 pt-1 pb-4 text-sm font-medium transition-colors">

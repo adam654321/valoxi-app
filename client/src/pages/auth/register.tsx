@@ -126,7 +126,7 @@ export default function Register() {
             </svg>
           </div>
           <h1 className="mt-6 text-3xl font-bold text-textPrimary">Create Your Account</h1>
-          <p className="mt-2 text-sm text-textSecondary">Join the M&A deal pipeline platform</p>
+          <p className="mt-2 text-sm text-textSecondary">Join Valoxi</p>
         </div>
 
         <Card>
@@ -222,7 +222,7 @@ export default function Register() {
                           <p className="text-sm text-red-600 dark:text-red-400 mt-1">{codeError}</p>
                         )}
                         <p className="text-xs text-textSecondary mt-1">
-                          Don't have a code? DealFlow AI is currently in early access. Visit our website to join the waitlist.
+                          Don't have a code? Valoxi is currently in early access. Visit our website to join the waitlist.
                         </p>
                         <FormMessage />
                       </FormItem>

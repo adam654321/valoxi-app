@@ -108,7 +108,7 @@ class EmailService {
             <div class="content">
               <p>Hello,</p>
               
-              <p><strong>${inviterName}</strong> has invited you to join the <strong>${companyName}</strong> team on our M&A CRM platform.</p>
+              <p><strong>${inviterName}</strong> has invited you to join the <strong>${companyName}</strong> team on Valoxi.</p>
               
               <div class="highlight">
                 <p><strong>Your Role:</strong> ${roleName}</p>
@@ -129,7 +129,7 @@ class EmailService {
               The ${companyName} Team</p>
             </div>
             <div class="footer">
-              <p>This is an automated email from your M&A CRM system.</p>
+              <p>This is an automated email from Valoxi.</p>
             </div>
           </div>
         </body>
@@ -214,7 +214,7 @@ class EmailService {
               The ${companyName} Deal Team</p>
             </div>
             <div class="footer">
-              <p>This is a secure communication from your M&A CRM system.</p>
+              <p>This is a secure communication from Valoxi.</p>
             </div>
           </div>
         </body>
@@ -271,10 +271,10 @@ class EmailService {
               <p>The document has been automatically added to your CRM system and is available for review in the target company's document section.</p>
               
               <p>Best regards,<br>
-              Your M&A CRM System</p>
+              Valoxi</p>
             </div>
             <div class="footer">
-              <p>This is an automated notification from your M&A CRM system.</p>
+              <p>This is an automated notification from Valoxi.</p>
             </div>
           </div>
         </body>

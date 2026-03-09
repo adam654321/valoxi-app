@@ -165,7 +165,7 @@ export default function ActivationChecklist() {
     <Card className="mb-8">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Get started with DealFlow AI</CardTitle>
+          <CardTitle className="text-lg">Get started with Valoxi</CardTitle>
           <Button
             variant="ghost"
             size="icon"

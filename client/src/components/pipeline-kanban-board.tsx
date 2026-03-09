@@ -201,7 +201,7 @@ export function PipelineKanbanBoard() {
   return (
     <div className="p-6 min-w-0 overflow-hidden">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">M&A Pipeline Board</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Pipeline</h1>
         <p className="text-muted-foreground">Drag and drop companies between stages</p>
       </div>
 

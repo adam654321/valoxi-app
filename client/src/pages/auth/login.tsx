@@ -67,7 +67,7 @@ export default function Login() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h1 className="mt-6 text-3xl font-bold text-textPrimary">M&A Deal Pipeline</h1>
+          <h1 className="mt-6 text-3xl font-bold text-textPrimary">Valoxi</h1>
           <p className="mt-2 text-sm text-textSecondary">Sign in to your acquisition management platform</p>
         </div>
 

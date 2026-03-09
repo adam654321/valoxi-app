@@ -87,7 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </svg>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">M&A Pipeline</span>
+                  <span className="truncate font-semibold">Valoxi</span>
                   <span className="truncate text-xs text-muted-foreground">Enterprise</span>
                 </div>
               </Link>

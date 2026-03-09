@@ -98,7 +98,7 @@ export const stage1AnalysisEvents = pgTable("stage1_analysis_events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Expert analysis results for Multi-Expert M&A Analysis Engine
+// Expert analysis results for Valoxi Multi-Expert M&A Analysis Engine
 export const expertAnalysisResults = pgTable("expert_analysis_results", {
   id: serial("id").primaryKey(),
   targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),

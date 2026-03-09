@@ -122,7 +122,7 @@ export default function Reports() {
               Reports & Analytics
             </h1>
             <p className="text-muted-foreground mt-2">
-              Comprehensive insights into your M&A pipeline performance
+              Comprehensive insights into your Valoxi pipeline performance
             </p>
           </div>
 

@@ -50,7 +50,7 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
       return res.status(403).json({
         success: false,
         error: 'invite_required',
-        message: 'Access to DealFlow AI is currently by invitation only. Please enter your invitation code to continue.',
+        message: 'Access to Valoxi is currently by invitation only. Please enter your invitation code to continue.',
       });
     }
 
@@ -182,7 +182,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to DealFlow AI</title>
+        <title>Welcome to Valoxi</title>
         <style>
           .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
           .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
@@ -197,11 +197,11 @@ async function sendWelcomeEmail(email: string, firstName: string) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to DealFlow AI</h1>
+            <h1>Welcome to Valoxi</h1>
           </div>
           <div class="content">
             <p>Hi ${firstName},</p>
-            <p>Your account is set up and your free trial has started. You now have access to the full M&A deal management platform.</p>
+            <p>Your account is set up and your free trial has started. You now have access to the full Valoxi platform.</p>
             <p>Here's how to get started:</p>
             <div class="steps">
               <ol>
@@ -211,12 +211,12 @@ async function sendWelcomeEmail(email: string, firstName: string) {
               </ol>
             </div>
             <p style="text-align: center;">
-              <a href="${appUrl}" class="button">Open DealFlow AI</a>
+              <a href="${appUrl}" class="button">Open Valoxi</a>
             </p>
-            <p>Best regards,<br>The DealFlow AI Team</p>
+            <p>Best regards,<br>The Valoxi Team</p>
           </div>
           <div class="footer">
-            <p>DealFlow AI — Acquire Smarter, Faster.</p>
+            <p>Valoxi — Acquire Smarter, Faster.</p>
           </div>
         </div>
       </body>
@@ -225,7 +225,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
 
   await emailService.sendEmail({
     to: email,
-    subject: "Welcome to DealFlow AI — let's run your first deal",
+    subject: "Welcome to Valoxi — let's run your first deal",
     html,
   });
   console.log(`[REGISTRATION] Welcome email sent to ${email}`);

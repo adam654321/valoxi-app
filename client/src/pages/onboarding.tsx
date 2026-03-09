@@ -104,7 +104,7 @@ export default function OnboardingPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/v2/onboarding/progress"] });
-      toast({ title: "Welcome to DealFlow AI", description: "Your account is set up. Let's find you a deal." });
+      toast({ title: "Welcome to Valoxi", description: "Your account is set up. Let's find you a deal." });
       navigate("/dashboard");
     },
     onError: (error: any) => {
@@ -145,7 +145,7 @@ export default function OnboardingPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h1 className="mt-6 text-2xl font-bold text-foreground">Welcome to DealFlow AI</h1>
+          <h1 className="mt-6 text-2xl font-bold text-foreground">Welcome to Valoxi</h1>
           <p className="mt-2 text-sm text-muted-foreground">Acquire Smarter, Faster</p>
         </div>
 
@@ -206,7 +206,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">How did you hear about DealFlow AI?</Label>
+              <Label className="text-sm font-medium">How did you hear about Valoxi?</Label>
               <Select value={hearAboutUs} onValueChange={setHearAboutUs}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select an option" />

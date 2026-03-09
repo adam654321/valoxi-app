@@ -322,7 +322,7 @@ export default function CompanyAccounts() {
             <Building2 className="h-12 w-12 text-muted-foreground/70 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Company Accounts</h3>
             <p className="text-muted-foreground mb-4">
-              Create your first company account to get started with the M&A CRM platform.
+              Create your first company account to get started with Valoxi.
             </p>
             <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
               <DialogTrigger asChild>

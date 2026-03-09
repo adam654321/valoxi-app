@@ -1,6 +1,6 @@
 # Overview
 
-This M&A (Mergers & Acquisitions) CRM platform is designed to assist business buyers, M&A professionals, and investment firms in managing their deal pipelines. It centralizes the tracking and management of potential acquisition targets from initial identification through to deal completion. The platform aims to streamline the M&A process by offering comprehensive target and contact management, robust team collaboration with role-based access control, integrated activity tracking, and a secure external document portal for due diligence.
+Valoxi is an M&A (Mergers & Acquisitions) deal management platform designed to assist business buyers, M&A professionals, and investment firms in managing their deal pipelines. It centralizes the tracking and management of potential acquisition targets from initial identification through to deal completion. The platform streamlines the M&A process by offering comprehensive target and contact management, robust team collaboration with role-based access control, integrated activity tracking, and a secure external document portal for due diligence.
 
 # User Preferences
 

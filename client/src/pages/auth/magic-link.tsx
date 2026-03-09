@@ -52,7 +52,7 @@ export default function MagicLinkPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-foreground">DealFlow AI</h1>
+        <h1 className="text-xl font-bold text-foreground">Valoxi</h1>
         <div className="flex items-center justify-center gap-2">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Signing you in...</p>
