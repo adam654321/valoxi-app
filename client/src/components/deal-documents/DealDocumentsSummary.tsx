@@ -50,10 +50,10 @@ interface DealDocumentsSummaryProps {
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' | 'secondary'; icon: any; bgColour: string }> = {
   draft: { label: 'Draft', variant: 'outline', icon: FileText, bgColour: 'bg-muted' },
-  sent: { label: 'Sent — Awaiting Response', variant: 'outline', icon: Clock, bgColour: 'bg-blue-50' },
-  viewed: { label: 'Viewed — Awaiting Response', variant: 'outline', icon: Eye, bgColour: 'bg-blue-50' },
-  accepted: { label: 'Accepted', variant: 'default', icon: CheckCircle, bgColour: 'bg-green-50' },
-  rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle, bgColour: 'bg-red-50' },
+  sent: { label: 'Sent — Awaiting Response', variant: 'outline', icon: Clock, bgColour: 'bg-blue-50 dark:bg-blue-950/30' },
+  viewed: { label: 'Viewed — Awaiting Response', variant: 'outline', icon: Eye, bgColour: 'bg-blue-50 dark:bg-blue-950/30' },
+  accepted: { label: 'Accepted', variant: 'default', icon: CheckCircle, bgColour: 'bg-green-50 dark:bg-green-950/30' },
+  rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle, bgColour: 'bg-red-50 dark:bg-red-950/30' },
   withdrawn: { label: 'Withdrawn', variant: 'outline', icon: AlertCircle, bgColour: 'bg-muted' },
   superseded: { label: 'Superseded', variant: 'outline', icon: Clock, bgColour: 'bg-muted' },
 };
@@ -338,9 +338,9 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
           <div className="mt-3 pt-3 border-t space-y-3">
             {latestResponse && (
               <div className={`rounded p-3 ${
-                latestResponse.responseType === 'accepted' ? 'bg-green-100 border border-green-200' :
-                latestResponse.responseType === 'rejected' ? 'bg-red-100 border border-red-200' :
-                'bg-amber-100 border border-amber-200'
+                latestResponse.responseType === 'accepted' ? 'bg-green-100 dark:bg-green-950/40 border border-green-200 dark:border-green-800' :
+                latestResponse.responseType === 'rejected' ? 'bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800' :
+                'bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800'
               }`}>
                 <div className="flex items-center gap-2 mb-2">
                   {latestResponse.responseType === 'accepted' && <CheckCircle className="h-4 w-4 text-green-600" />}

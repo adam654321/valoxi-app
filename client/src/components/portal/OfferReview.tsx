@@ -190,9 +190,9 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
               <span className="ml-2 text-muted-foreground">Loading offer details...</span>
             </div>
           ) : (
-            <div className="border rounded-lg p-6 bg-card">
+            <div className="border rounded-lg p-6 bg-white text-gray-900 shadow-sm">
               <div
-                className="prose prose-sm dark:prose-invert max-w-none"
+                className="prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: contentData?.html || '<p>Unable to load offer content.</p>' }}
               />
             </div>

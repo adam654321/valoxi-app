@@ -115,7 +115,7 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted-foreground">Target Companies</p>
                   <p className="text-2xl font-bold text-foreground">{stats?.targetCompanies || 0}</p>
                 </div>
-                <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                <div className="h-12 w-12 bg-blue-50 dark:bg-blue-950 rounded-lg flex items-center justify-center">
                   <Building2 className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
                   <p className="text-2xl font-bold text-foreground">{stats?.activeDeals || 0}</p>
                 </div>
-                <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center">
+                <div className="h-12 w-12 bg-green-50 dark:bg-green-950 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-green-600" />
                 </div>
               </div>
@@ -149,7 +149,7 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted-foreground">Total Contacts</p>
                   <p className="text-2xl font-bold text-foreground">{stats?.totalContacts || 0}</p>
                 </div>
-                <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                <div className="h-12 w-12 bg-purple-50 dark:bg-purple-950 rounded-lg flex items-center justify-center">
                   <Users className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-muted-foreground">Deal Value</p>
                   <p className="text-2xl font-bold text-foreground">{stats?.dealValue || '$0'}</p>
                 </div>
-                <div className="h-12 w-12 bg-yellow-50 rounded-lg flex items-center justify-center">
+                <div className="h-12 w-12 bg-yellow-50 dark:bg-yellow-950 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-yellow-600" />
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
-              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="h-12 w-12 bg-blue-50 dark:bg-blue-950 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Building2 className="w-6 h-6 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Add Target Company</h3>
@@ -217,7 +217,7 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
-              <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="h-12 w-12 bg-green-50 dark:bg-green-950 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Activity className="w-6 h-6 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">View Pipeline</h3>
@@ -234,7 +234,7 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
-              <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="h-12 w-12 bg-purple-50 dark:bg-purple-950 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-purple-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Team Management</h3>

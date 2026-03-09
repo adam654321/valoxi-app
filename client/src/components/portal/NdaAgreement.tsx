@@ -164,7 +164,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
       <div className="max-w-3xl mx-auto space-y-6">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <CardTitle className="text-2xl">Non-Disclosure Agreement</CardTitle>
@@ -188,19 +188,21 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
               <div
                 ref={scrollRef}
                 onScroll={handleScroll}
-                className="max-h-[60vh] overflow-y-auto px-10 py-8"
+                className="max-h-[60vh] overflow-y-auto bg-white rounded-lg shadow-inner"
                 style={{ scrollBehavior: 'smooth' }}
               >
-                <div
-                  className="nda-content"
-                  dangerouslySetInnerHTML={{ __html: ndaContent?.html || '<p>Unable to load NDA content.</p>' }}
-                />
+                <div className="px-10 py-8">
+                  <div
+                    className="nda-content"
+                    dangerouslySetInnerHTML={{ __html: ndaContent?.html || '<p>Unable to load NDA content.</p>' }}
+                  />
+                </div>
               </div>
             )}
 
             {!hasScrolledToBottom && !isLoading && (
               <div
-                className="flex items-center justify-center gap-2 py-3 bg-amber-50 border-t border-amber-200 text-amber-700 text-sm cursor-pointer hover:bg-amber-100 transition-colors"
+                className="flex items-center justify-center gap-2 py-3 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
                 onClick={scrollToBottom}
               >
                 <ChevronDown className="h-4 w-4 animate-bounce" />
@@ -210,7 +212,7 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
             )}
 
             {hasScrolledToBottom && !isLoading && (
-              <div className="flex items-center justify-center gap-2 py-2 bg-green-50 border-t border-green-200 text-green-700 text-sm">
+              <div className="flex items-center justify-center gap-2 py-2 bg-green-50 dark:bg-green-950/30 border-t border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm">
                 <CheckCircle className="h-4 w-4" />
                 Full agreement reviewed
               </div>
