@@ -45,7 +45,7 @@ export class ReportsRepository {
       stage_name: targetCompanies.stage, deal_count: sql<number>`count(*)::int`,
       avg_days: sql<number>`avg(extract(days from (now() - ${targetCompanies.stageUpdatedAt})))`,
       risk_level: sql<string>`case when avg(extract(days from (now() - ${targetCompanies.stageUpdatedAt}))) > 30 then 'high' when avg(extract(days from (now() - ${targetCompanies.stageUpdatedAt}))) > 14 then 'medium' else 'low' end`,
-    }).from(targetCompanies).where(eq(targetCompanies.userCompanyId, userCompanyId)).groupBy(targetCompanies.stage);
+    }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), isNotNull(targetCompanies.stage))).groupBy(targetCompanies.stage);
   }
 
   async getUserPerformance(userCompanyId: number, dateRange?: string) {

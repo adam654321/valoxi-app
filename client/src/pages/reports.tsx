@@ -344,7 +344,7 @@ export default function Reports() {
                   <TableBody>
                     {stageAnalysisData?.map((stage, index) => (
                       <TableRow key={index}>
-                        <TableCell className="font-medium">{stage.stage_name}</TableCell>
+                        <TableCell className="font-medium">{stage.stage_name || 'Unknown'}</TableCell>
                         <TableCell>{stage.deal_count}</TableCell>
                         <TableCell>{Math.round(stage.avg_days || 0)}</TableCell>
                         <TableCell>
