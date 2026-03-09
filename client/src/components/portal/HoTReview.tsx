@@ -245,7 +245,7 @@ function HoTCard({ token, doc, isLatest, onResponseSubmitted }: {
               <Button
                 variant="outline"
                 onClick={() => setConfirmDialog('reject')}
-                className="flex-1 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30"
+                className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Reject Heads of Terms

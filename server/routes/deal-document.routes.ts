@@ -134,6 +134,12 @@ router.get('/:id/html', asyncHandler(async (req, res) => {
     html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
   }
 
+  if (['nda', 'offer_letter', 'heads_of_terms'].includes(doc.documentType)) {
+    const responses = await dealDocumentService.getDocumentResponses(documentId);
+    const docData = doc.documentData as any;
+    html += buildSignatureBlock(doc.documentType, docData, responses, doc.respondedAt);
+  }
+
   res.json({ html, documentData: doc.documentData });
 }));
 

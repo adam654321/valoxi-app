@@ -622,7 +622,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   if (isPortalLoading) {
     return (
-      <div className="min-h-screen bg-muted p-4">
+      <div className="force-light min-h-screen bg-muted p-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -635,7 +635,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
   if (!portalData) {
     return (
-      <div className="min-h-screen bg-muted p-4">
+      <div className="force-light min-h-screen bg-muted p-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
             <p className="text-red-600">Invalid or expired portal link</p>
@@ -680,7 +680,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const isCompleted = (portalData?.progress_percentage ?? 0) >= 100;
 
   return (
-    <div className="min-h-screen bg-muted p-4">
+    <div className="force-light min-h-screen bg-muted p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <Card>
