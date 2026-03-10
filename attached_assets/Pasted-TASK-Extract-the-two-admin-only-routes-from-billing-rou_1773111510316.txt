@@ -1,0 +1,111 @@
+TASK: Extract the two admin-only routes from billing.routes.ts into a
+new dedicated file. No logic changes — this is a pure file split.
+
+CONTEXT:
+billing.routes.ts is 1,095 lines. The two admin routes at the bottom
+are the only routes in the file that require isSystemAdmin. Separating
+them makes the file easier to audit and makes the admin surface
+explicit. No shared constants, helpers, or functions are used
+exclusively by the admin routes — every import they need can be
+independently imported in the new file.
+
+--- CHANGE 1: CREATE server/routes/billing-admin.routes.ts ---
+
+Create this file with exactly the following content:
+
+import { Router, type Request, type Response } from 'express';
+import { billingService } from '../services/billing.service';
+import { billingRepository } from '../repositories/billing.repository';
+import { isAuthenticated, isSystemAdmin } from '../middleware/auth';
+import { validateCsrfToken } from '../middleware/csrf';
+import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
+
+const router = Router();
+
+router.post('/admin/comp', isAuthenticated, validateCsrfToken, isSystemAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userCompanyId, planKey, notes } = req.body as { userCompanyId: number; planKey: PlanKey; notes?: string };
+
+    if (!userCompanyId || typeof userCompanyId !== 'number') {
+      return res.status(400).json({ error: 'invalid_company', message: 'A valid userCompanyId is required.' });
+    }
+
+    if (!planKey || !['CORE', 'PROFESSIONAL', 'EXPERT', 'ENTERPRISE'].includes(planKey)) {
+      return res.status(400).json({ error: 'invalid_plan', message: 'A valid planKey is required.' });
+    }
+
+    const adminUserId = req.session.userId!;
+    const subscription = await billingService.grantAdminComp(userCompanyId, planKey, adminUserId, notes);
+
+    return res.status(200).json({ subscription });
+  } catch (err: any) {
+    console.error('[Billing] Error granting admin comp:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to grant comped access.' });
+  }
+});
+
+router.get('/admin/subscriptions', isAuthenticated, isSystemAdmin, async (req: Request, res: Response) => {
+  try {
+    const filters: { status?: SubscriptionStatus; planKey?: PlanKey } = {};
+    if (req.query.status) {
+      filters.status = req.query.status as SubscriptionStatus;
+    }
+    if (req.query.planKey) {
+      filters.planKey = req.query.planKey as PlanKey;
+    }
+
+    const subscriptions = await billingRepository.getAllSubscriptions(
+      Object.keys(filters).length > 0 ? filters : undefined
+    );
+
+    return res.status(200).json({ subscriptions });
+  } catch (err: any) {
+    console.error('[Billing] Error fetching all subscriptions:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscriptions.' });
+  }
+});
+
+export default router;
+
+IMPORTANT: The inline `if (!req.session.isSystemAdmin)` guard blocks
+that existed in the original handlers must NOT be copied into the new
+file. The isSystemAdmin middleware in the chain is the sole guard —
+the inline checks were redundant and have already been removed.
+
+--- CHANGE 2: REMOVE from server/routes/billing.routes.ts ---
+
+Delete the two admin route handler blocks in their entirety, including
+their router.post / router.get declarations:
+
+  router.post('/admin/comp', isAuthenticated, validateCsrfToken, ...)
+  router.get('/admin/subscriptions', isAuthenticated, ...)
+
+Do not touch any other route, constant, import, or helper in
+billing.routes.ts.
+
+--- CHANGE 3: UPDATE server/routes/index.ts ---
+
+Add one import at the top (alongside the other billing import):
+  import billingAdminRoutes from './billing-admin.routes';
+
+Add one registration line immediately after the existing billing
+router registration:
+  app.use('/api/v2/billing', billingAdminRoutes);
+
+--- VALIDATION CHECKS ---
+
+1. Confirm server/routes/billing-admin.routes.ts exists and contains
+   both route definitions (grep for '/admin/comp' and
+   '/admin/subscriptions' in that file).
+
+2. Confirm billing.routes.ts no longer contains '/admin/comp' or
+   '/admin/subscriptions' (grep — expect zero hits).
+
+3. Confirm index.ts imports billingAdminRoutes and registers it under
+   /api/v2/billing.
+
+4. Run tsc --noEmit. Confirm zero new TypeScript errors — only the
+   same 2 pre-existing errors are acceptable.
+
+5. Make a curl or HTTP request to POST /api/v2/billing/admin/comp
+   without auth — confirm 401 response (middleware chain is intact).
