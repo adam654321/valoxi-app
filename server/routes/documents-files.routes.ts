@@ -40,7 +40,7 @@ router.delete('/clear-all', asyncHandler(async (req: Request, res: Response) => 
 
   const result = await documentsFilesService.clearAllCompanyDocuments(userCompanyId);
 
-  console.log(`[API] Document clearing completed:`, result);
+  console.log(`[API] Document clearing completed: ${result.deletedDocuments} doc(s), ${result.deletedExternalSubmissions} submission(s), ${result.filesDeleted.length} file(s) removed from disk`);
 
   sendSuccess(res, {
     success: true,

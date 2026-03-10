@@ -108,7 +108,7 @@ export async function classifyDocumentWithGemini(
 
     const processingTime = Date.now() - startTime;
 
-    console.log(`[GEMINI_CLASSIFICATION] Raw response: ${response.text}`);
+    console.log(`[GEMINI_CLASSIFICATION] Raw response length: ${response.text.length} chars`);
 
     if (!response.json) {
       throw new Error(`Failed to parse Gemini response as JSON`);

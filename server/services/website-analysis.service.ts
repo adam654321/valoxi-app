@@ -70,8 +70,6 @@ export class WebsiteAnalysisService {
         return { success: false, error: 'No content in Gemini response', processingTime };
       }
 
-      console.log(`[WEBSITE_ANALYSIS] Raw response:`, response.text.substring(0, 500));
-
       const analysis = response.json
         ? this.extractAnalysisFields(response.json)
         : this.parseAnalysisResponse(response.text);
