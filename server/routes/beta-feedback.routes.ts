@@ -26,12 +26,10 @@ const upload = multer({
   },
 });
 
-let _storageClient: Client | null = null;
-function getStorageClient(): Client {
-  if (!_storageClient) {
-    _storageClient = new Client();
-  }
-  return _storageClient;
+function createStorageClient(): Client {
+  const client = new Client();
+  (client as any).state?.promise?.catch?.(() => {});
+  return client;
 }
 
 const createFeedbackSchema = z.object({
@@ -61,7 +59,7 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
     try {
       const ext = req.file.originalname?.split('.').pop() || 'png';
       const key = `.private/beta-feedback/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      await getStorageClient().uploadFromBytes(key, req.file.buffer);
+      await createStorageClient().uploadFromBytes(key, req.file.buffer);
       screenshotUrl = key;
     } catch (storageErr) {
       console.warn('[beta-feedback] Screenshot upload skipped — storage not configured:',
