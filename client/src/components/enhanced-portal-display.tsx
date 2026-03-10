@@ -1023,7 +1023,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                           </div>
                         )}
                         {ndaHtml && (
-                          <div className="p-4 bg-card border rounded-lg max-h-96 overflow-y-auto text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: ndaHtml }} />
+                          <div className="p-4 bg-white text-gray-900 border rounded-lg max-h-96 overflow-y-auto text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: ndaHtml }} />
                         )}
                         {!ndaHtml && !ndaHtmlLoading && (
                           <p className="text-sm text-muted-foreground">NDA Version {ndaDocument.version} — signed and in effect.</p>
