@@ -193,9 +193,13 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        // TODO: Stripe v20 type cast — revisit when billing layer is stable.
-        // current_period_start/end moved to SubscriptionItem in v20; cast from raw webhook payload.
-        const subData = event.data.object as any;
+        // Stripe v20: current_period_start/end remain on Stripe.Subscription
+        // but are deprecated in favour of SubscriptionItem. Cast retained as
+        // a narrow extension for the period fields accessed below.
+        const subData = event.data.object as Stripe.Subscription & {
+          current_period_start?: number;
+          current_period_end?: number;
+        };
         const lookupKey = subscription.items.data[0]?.price?.lookup_key ?? '';
         const planKey = derivePlanKeyFromLookupKey(lookupKey);
 
@@ -255,9 +259,12 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
       case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice;
-        // TODO: Stripe v20 type cast — revisit when billing layer is stable.
-        // Invoice.subscription restructured into parent.subscription_details in v20; cast from raw webhook payload.
-        const invoiceData = event.data.object as any;
+        // Stripe v20: Invoice.subscription removed from SDK types; parent.subscription_details added.
+        // Narrow extension restores both fields without escaping to any.
+        const invoiceData = event.data.object as Stripe.Invoice & {
+          subscription?: string | Stripe.Subscription | null;
+          parent?: { subscription_details?: { subscription?: string } };
+        };
         const subscriptionId: string | undefined =
           typeof invoiceData.subscription === 'string'
             ? invoiceData.subscription
@@ -289,9 +296,12 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        // TODO: Stripe v20 type cast — revisit when billing layer is stable.
-        // Invoice.subscription restructured into parent.subscription_details in v20; cast from raw webhook payload.
-        const invoiceData = event.data.object as any;
+        // Stripe v20: Invoice.subscription removed from SDK types; parent.subscription_details added.
+        // Narrow extension restores both fields without escaping to any.
+        const invoiceData = event.data.object as Stripe.Invoice & {
+          subscription?: string | Stripe.Subscription | null;
+          parent?: { subscription_details?: { subscription?: string } };
+        };
         const subscriptionId: string | undefined =
           typeof invoiceData.subscription === 'string'
             ? invoiceData.subscription
@@ -433,7 +443,9 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
       return res.status(400).json({ error: 'no_subscription_item' });
     }
 
-    // @ts-expect-error — Stripe v20 renamed retrieveUpcoming; raw API still accepts these params
+    // @ts-expect-error — stripe.invoices.retrieveUpcoming() removed from SDK types in v20.
+    // v20 replacement is stripe.invoices.createPreview(). Raw API still accepts these params.
+    // TODO: migrate to createPreview() when billing layer is stable.
     const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
       subscription: existingSub.stripeSubscriptionId,
       subscription_items: [{ id: existingItemId, price: prices.data[0].id }],

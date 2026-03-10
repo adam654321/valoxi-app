@@ -1,0 +1,82 @@
+TASK: Narrow three over-broad `as any` type casts in
+server/routes/billing.routes.ts to precise intersection types.
+Also update the comment on the one @ts-expect-error to reference
+the correct v20 replacement. No logic changes.
+
+CONTEXT:
+Stripe SDK v20 changed the shape of some types. Three webhook handlers
+currently cast the entire event data object to `any` to access fields
+that are either still typed on the real type or require a narrow
+extension — not a full any escape. One route uses @ts-expect-error
+because retrieveUpcoming() was removed from the v20 type surface; the
+correct v20 replacement is stripe.invoices.createPreview() but the
+raw API still works, so we retain the directive and improve the comment
+only.
+
+--- CHANGE 1: customer.subscription.updated handler ---
+
+Find:
+  // TODO: Stripe v20 type cast — revisit when billing layer is stable.
+  // current_period_start/end moved to SubscriptionItem in v20; cast from raw webhook payload.
+  const subData = event.data.object as any;
+
+Replace with:
+  // Stripe v20: current_period_start/end remain on Stripe.Subscription
+  // but are deprecated in favour of SubscriptionItem. Cast retained as
+  // a narrow extension for the period fields accessed below.
+  const subData = event.data.object as Stripe.Subscription & {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
+
+--- CHANGE 2: invoice.paid handler ---
+
+Find (first occurrence):
+  // TODO: Stripe v20 type cast — revisit when billing layer is stable.
+  // Invoice.subscription restructured into parent.subscription_details in v20; cast from raw webhook payload.
+  const invoiceData = event.data.object as any;
+
+Replace with:
+  // Stripe v20: Invoice.subscription is still typed as string | Stripe.Subscription | null.
+  // parent.subscription_details is a v20 addition not yet in the SDK types; narrow extension used.
+  const invoiceData = event.data.object as Stripe.Invoice & {
+    parent?: { subscription_details?: { subscription?: string } };
+  };
+
+--- CHANGE 3: invoice.payment_failed handler ---
+
+Find (second occurrence):
+  // TODO: Stripe v20 type cast — revisit when billing layer is stable.
+  // Invoice.subscription restructured into parent.subscription_details in v20; cast from raw webhook payload.
+  const invoiceData = event.data.object as any;
+
+Replace with:
+  // Stripe v20: Invoice.subscription is still typed as string | Stripe.Subscription | null.
+  // parent.subscription_details is a v20 addition not yet in the SDK types; narrow extension used.
+  const invoiceData = event.data.object as Stripe.Invoice & {
+    parent?: { subscription_details?: { subscription?: string } };
+  };
+
+--- CHANGE 4: upgrade-preview @ts-expect-error comment ---
+
+Find:
+  // @ts-expect-error — Stripe v20 renamed retrieveUpcoming; raw API still accepts these params
+
+Replace with:
+  // @ts-expect-error — stripe.invoices.retrieveUpcoming() removed from SDK types in v20.
+  // v20 replacement is stripe.invoices.createPreview(). Raw API still accepts these params.
+  // TODO: migrate to createPreview() when billing layer is stable.
+
+--- VALIDATION CHECKS ---
+
+1. Confirm the three `as any` casts are gone from billing.routes.ts
+   (grep for 'as any' — expect zero hits in that file).
+
+2. Confirm the three intersection type casts are present:
+   grep for 'Stripe.Subscription &' — expect 1 hit
+   grep for 'Stripe.Invoice &' — expect 2 hits
+
+3. Confirm the @ts-expect-error comment now references createPreview().
+
+4. Run tsc --noEmit. Confirm zero new TypeScript errors — same 2
+   pre-existing errors only.
