@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { expertAnalysisService } from '../services/expert-analysis.service';
+import { billingService } from '../services/billing.service';
+import type { PlanKey } from '@shared/schema/billing';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
@@ -99,7 +101,7 @@ router.post('/cancel/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { message: 'Analysis cancelled' });
 }));
 
-// TODO: Split into beginner/full view based on tier — Stage 4
+// Tier gating: CORE gets summary only; PROFESSIONAL+ gets full detail
 router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
@@ -112,7 +114,24 @@ router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   if (!company) throw new NotFoundError('Company not found');
 
   const results = await expertAnalysisService.getExpertResults(companyId);
-  sendSuccess(res, results);
+
+  const entitlements = await billingService.getEntitlements(userCompanyId);
+  const hasFullDetail = entitlements?.features?.expertAnalysisFullDetail ?? false;
+
+  if (hasFullDetail) {
+    sendSuccess(res, results);
+  } else {
+    const summaryResults = results.map((r: any) => ({
+      id: r.id,
+      expertType: r.expertType,
+      status: r.status,
+      score: r.score,
+      confidence: r.confidence,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+    }));
+    sendSuccess(res, summaryResults);
+  }
 }));
 
 export default router;
