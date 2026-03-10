@@ -74,7 +74,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, issueReportsRoutes);
   app.use('/api/v2/billing', billingRoutes);
-  app.use('/api/v2/onboarding', isAuthenticated, onboardingRoutes);
+  app.use('/api/v2/onboarding', isAuthenticated, validateCsrfToken, onboardingRoutes);
   app.use('/api/v2/explain', isAuthenticated, validateCsrfToken, requireActiveSubscription, explainRoutes);
   app.use('/api/v2/beta-feedback', isAuthenticated, validateCsrfToken, betaFeedbackRoutes);
   app.use('/api/v2/beta', isAuthenticated, validateCsrfToken, betaRoutes);
