@@ -24,6 +24,16 @@ export class BillingRepository {
     return row ?? null;
   }
 
+  async getByStripeSubscriptionId(
+    stripeSubscriptionId: string
+  ): Promise<Subscription | null> {
+    const [row] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    return row ?? null;
+  }
+
   async getBetaPlanOverride(userCompanyId: number): Promise<string | null> {
     const [row] = await db
       .select({ betaPlanOverride: userCompanies.betaPlanOverride })

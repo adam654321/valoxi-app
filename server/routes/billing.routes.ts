@@ -199,10 +199,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
         const lookupKey = subscription.items.data[0]?.price?.lookup_key ?? '';
         const planKey = derivePlanKeyFromLookupKey(lookupKey);
 
-        const allSubs = await billingRepository.getAllSubscriptions();
-        const matchingSub = allSubs.find(
-          (s) => s.stripeSubscriptionId === subscription.id
-        );
+        const matchingSub = await billingRepository.getByStripeSubscriptionId(subscription.id);
 
         if (matchingSub) {
           const statusMap: Record<string, string> = {
@@ -242,10 +239,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const allSubs = await billingRepository.getAllSubscriptions();
-        const matchingSub = allSubs.find(
-          (s) => s.stripeSubscriptionId === subscription.id
-        );
+        const matchingSub = await billingRepository.getByStripeSubscriptionId(subscription.id);
 
         if (matchingSub) {
           await billingService.updateSubscriptionStatus(
@@ -270,10 +264,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
             : invoiceData.subscription?.id ?? invoiceData.parent?.subscription_details?.subscription;
 
         if (subscriptionId) {
-          const allSubs = await billingRepository.getAllSubscriptions();
-          const matchingSub = allSubs.find(
-            (s) => s.stripeSubscriptionId === subscriptionId
-          );
+          const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
 
           if (matchingSub) {
             await billingService.updateSubscriptionStatus(
@@ -307,10 +298,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
             : invoiceData.subscription?.id ?? invoiceData.parent?.subscription_details?.subscription;
 
         if (subscriptionId) {
-          const allSubs = await billingRepository.getAllSubscriptions();
-          const matchingSub = allSubs.find(
-            (s) => s.stripeSubscriptionId === subscriptionId
-          );
+          const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
 
           if (matchingSub) {
             await billingService.updateSubscriptionStatus(
