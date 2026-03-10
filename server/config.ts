@@ -29,6 +29,7 @@ export const config = {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
     fromEmail: process.env.SMTP_FROM_EMAIL || '',
+    alertEmail: process.env.SMTP_ALERT_EMAIL || '',
     secure: process.env.SMTP_SECURE === 'true',
   },
 

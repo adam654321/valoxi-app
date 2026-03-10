@@ -8,6 +8,7 @@ import { betaFeedback } from '@shared/schema/dashboard';
 import { users } from '@shared/schema/core';
 import { systemConfigService } from '../services/system-config.service';
 import { emailService } from '../email';
+import { config } from '../config';
 import { escapeHtml } from '../utils/html';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess, sendError } from '../utils/response';
