@@ -74,7 +74,7 @@ export class GeminiClient {
     if (!apiKey) {
       throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
     }
-    this.ai = new GoogleGenAI({ apiKey });
+    this.ai = new GoogleGenAI({ apiKey, httpOptions: { baseUrl: 'https://generativelanguage.googleapis.com/' } });
     this.defaultModel = config.model || appConfig.gemini.model;
     this.maxRetries = config.maxRetries ?? DEFAULT_RETRY.maxRetries;
     this.baseDelayMs = config.baseDelayMs ?? DEFAULT_RETRY.baseDelayMs;
