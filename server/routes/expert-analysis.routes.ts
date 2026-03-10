@@ -107,6 +107,8 @@ router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
 
+  res.setHeader('Cache-Control', 'no-store');
+
   const companyId = parseInt(req.params.id, 10);
   if (isNaN(companyId)) throw new BadRequestError('Invalid company ID');
 

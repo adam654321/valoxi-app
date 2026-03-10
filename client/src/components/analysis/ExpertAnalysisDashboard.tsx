@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -251,6 +251,15 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
   const { toast } = useToast();
   const [selectedExpert, setSelectedExpert] = useState<ExpertResult | null>(null);
   const hasFullDetail = useHasFeature("expertAnalysisFullDetail");
+
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/v2/expert-analysis/results", targetCompanyId] });
+  }, [hasFullDetail, targetCompanyId]);
 
   const { data: results = [], isLoading } = useQuery<ExpertResult[]>({
     queryKey: ["/api/v2/expert-analysis/results", targetCompanyId],
