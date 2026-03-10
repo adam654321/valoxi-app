@@ -27,7 +27,8 @@ const upload = multer({
 });
 
 function createStorageClient(): Client {
-  const client = new Client();
+  const bucketId = process.env.BETA_FEEDBACK_BUCKET_ID;
+  const client = new Client(bucketId ? { bucketId } : undefined);
   (client as any).state?.promise?.catch?.(() => {});
   return client;
 }

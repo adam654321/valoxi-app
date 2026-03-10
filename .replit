@@ -82,3 +82,7 @@ integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_object_storag
 [userenv.shared]
 BETA_MODE = "true"
 VITE_BETA_MODE = "true"
+BETA_FEEDBACK_BUCKET_ID = "replit-objstore-c09af028-225c-4fd7-b187-f15a3b723b24"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-c09af028-225c-4fd7-b187-f15a3b723b24"
