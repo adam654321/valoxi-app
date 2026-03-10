@@ -1,0 +1,62 @@
+TASK: Replace inline isSystemAdmin session checks in two billing admin 
+routes with the proper isSystemAdmin middleware from auth.ts.
+
+CONTEXT:
+POST /admin/comp and GET /admin/subscriptions both guard themselves with 
+a raw inline check: if (!req.session.isSystemAdmin) { return 403; }
+This bypasses the TTL-aware cache refresh in the isSystemAdmin middleware,
+meaning a revoked admin can retain access for up to 7 days (full session 
+lifetime). The fix adds isSystemAdmin to the middleware chain of both 
+routes and removes the now-redundant inline checks.
+
+CHANGE 1 — update the auth import at the top of 
+server/routes/billing.routes.ts
+
+Find this line:
+  import { isAuthenticated } from '../middleware/auth';
+
+Replace with:
+  import { isAuthenticated, isSystemAdmin } from '../middleware/auth';
+
+CHANGE 2 — POST /admin/comp middleware chain and handler
+
+Find this route definition and opening handler lines:
+  router.post('/admin/comp', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+    try {
+      if (!req.session.isSystemAdmin) {
+        return res.status(403).json({ error: 'forbidden', message: 'System admin access required.' });
+      }
+
+Replace with:
+  router.post('/admin/comp', isAuthenticated, validateCsrfToken, isSystemAdmin, async (req: Request, res: Response) => {
+    try {
+
+CHANGE 3 — GET /admin/subscriptions middleware chain and handler
+
+Find this route definition and opening handler lines:
+  router.get('/admin/subscriptions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.session.isSystemAdmin) {
+        return res.status(403).json({ error: 'forbidden', message: 'System admin access required.' });
+      }
+
+Replace with:
+  router.get('/admin/subscriptions', isAuthenticated, isSystemAdmin, async (req: Request, res: Response) => {
+    try {
+
+No other lines in billing.routes.ts change.
+
+VALIDATION CHECKS:
+1. Show the updated import line to confirm isSystemAdmin is now imported 
+   alongside isAuthenticated
+2. Show the POST /admin/comp route definition line and the first 3 lines 
+   of its handler to confirm isSystemAdmin is in the chain and the inline 
+   check is gone
+3. Show the GET /admin/subscriptions route definition line and the first 
+   3 lines of its handler to confirm the same
+4. Search billing.routes.ts for the string 'req.session.isSystemAdmin' 
+   and list every occurrence with line number — zero hits should remain 
+   in handler bodies (it may appear in comments only)
+5. Run tsc --noEmit — confirm zero new TypeScript errors (same 2 
+   pre-existing errors acceptable: beta-feedback.routes.ts:154 and 
+   promo-code.service.ts:223)

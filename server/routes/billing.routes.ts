@@ -13,7 +13,7 @@ import { db } from '../db';
 import { webhookEvents, users, userCompanies } from '@shared/schema/core';
 import { subscriptions } from '@shared/schema/billing';
 import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
-import { isAuthenticated } from '../middleware/auth';
+import { isAuthenticated, isSystemAdmin } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { emailApiService } from '../services/email.service';
 import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
@@ -1011,11 +1011,8 @@ router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Requ
   }
 });
 
-router.post('/admin/comp', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/admin/comp', isAuthenticated, validateCsrfToken, isSystemAdmin, async (req: Request, res: Response) => {
   try {
-    if (!req.session.isSystemAdmin) {
-      return res.status(403).json({ error: 'forbidden', message: 'System admin access required.' });
-    }
 
     const { userCompanyId, planKey, notes } = req.body as { userCompanyId: number; planKey: PlanKey; notes?: string };
 
@@ -1037,11 +1034,8 @@ router.post('/admin/comp', isAuthenticated, validateCsrfToken, async (req: Reque
   }
 });
 
-router.get('/admin/subscriptions', isAuthenticated, async (req: Request, res: Response) => {
+router.get('/admin/subscriptions', isAuthenticated, isSystemAdmin, async (req: Request, res: Response) => {
   try {
-    if (!req.session.isSystemAdmin) {
-      return res.status(403).json({ error: 'forbidden', message: 'System admin access required.' });
-    }
 
     const filters: { status?: SubscriptionStatus; planKey?: PlanKey } = {};
     if (req.query.status) {
