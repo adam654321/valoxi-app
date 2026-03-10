@@ -58,10 +58,15 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
 
   let screenshotUrl: string | null = null;
   if (req.file) {
-    const ext = req.file.originalname?.split('.').pop() || 'png';
-    const key = `.private/beta-feedback/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    await getStorageClient().uploadFromBytes(key, req.file.buffer);
-    screenshotUrl = key;
+    try {
+      const ext = req.file.originalname?.split('.').pop() || 'png';
+      const key = `.private/beta-feedback/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      await getStorageClient().uploadFromBytes(key, req.file.buffer);
+      screenshotUrl = key;
+    } catch (storageErr) {
+      console.warn('[beta-feedback] Screenshot upload skipped — storage not configured:',
+        storageErr instanceof Error ? storageErr.message : storageErr);
+    }
   }
 
   const [inserted] = await db.insert(betaFeedback).values({

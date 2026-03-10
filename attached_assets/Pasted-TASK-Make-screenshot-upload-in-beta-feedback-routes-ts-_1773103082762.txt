@@ -1,0 +1,52 @@
+TASK: Make screenshot upload in beta-feedback.routes.ts fail gracefully when 
+Replit Object Storage is not configured, so feedback submissions succeed 
+even without screenshot storage available.
+
+CONTEXT:
+When a user submits feedback, the widget auto-captures a screenshot and 
+attaches it. The upload to Replit Object Storage throws "A bucket name is 
+needed to use Cloud Storage" because no storage bucket is configured in 
+this environment. This crashes the entire submission before the DB insert 
+or email send ever runs.
+
+The fix is to wrap the screenshot upload block in a try/catch so that if 
+storage is unavailable, screenshotUrl stays null and the submission 
+continues normally without the screenshot.
+
+THE FIX — one change to server/routes/beta-feedback.routes.ts only:
+
+Find this exact block (the screenshot upload section):
+
+  let screenshotUrl: string | null = null;
+  if (req.file) {
+    const ext = req.file.originalname?.split('.').pop() || 'png';
+    const key = `.private/beta-feedback/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    await getStorageClient().uploadFromBytes(key, req.file.buffer);
+    screenshotUrl = key;
+  }
+
+Replace it with:
+
+  let screenshotUrl: string | null = null;
+  if (req.file) {
+    try {
+      const ext = req.file.originalname?.split('.').pop() || 'png';
+      const key = `.private/beta-feedback/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      await getStorageClient().uploadFromBytes(key, req.file.buffer);
+      screenshotUrl = key;
+    } catch (storageErr) {
+      console.warn('[beta-feedback] Screenshot upload skipped — storage not configured:', 
+        storageErr instanceof Error ? storageErr.message : storageErr);
+    }
+  }
+
+That is the only change. The rest of the file — DB insert, email send, response — 
+is untouched.
+
+VALIDATION CHECKS:
+1. Show the updated screenshot block in context to confirm the try/catch wraps 
+   only the upload, and screenshotUrl remains null if upload fails
+2. Confirm the DB insert, email construction, and sendSuccess call below are 
+   completely unchanged
+3. Run tsc --noEmit — confirm zero new errors
+4. Confirm no other files were modified
