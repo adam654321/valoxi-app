@@ -129,7 +129,7 @@ router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   if (hasFullDetail) {
     sendSuccess(res, results);
   } else {
-    const UNGATED_TYPES = ['data_quality', 'screening'];
+    const UNGATED_TYPES = ['data_quality', 'screening', 'synthesis', 'qoe', 'financial'];
 
     const summaryResults = results.map((r: any) => {
       if (UNGATED_TYPES.includes(r.expertType)) {
