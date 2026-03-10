@@ -23,9 +23,13 @@ interface NdaAgreementProps {
 const ndaStyles = `
   .nda-content {
     font-family: 'Georgia', 'Times New Roman', Times, serif;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
     line-height: 1.8;
     font-size: 14px;
+  }
+  .nda-content * {
+    color: inherit !important;
+    background-color: transparent !important;
   }
   .nda-content h1 {
     font-size: 22px;
