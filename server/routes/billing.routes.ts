@@ -16,6 +16,7 @@ import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schem
 import { isAuthenticated } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { emailApiService } from '../services/email.service';
+import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 
 const router = Router();
 
@@ -158,9 +159,7 @@ router.post('/webhook/stripe', async (req: Request, res: Response) => {
               await promoCodeService.claimCode(promoCodeId, userCompany.id, session.customer as string);
             }
 
-            const { seedDefaultPipelineStages } = await import('./auth.routes');
-
-            await seedDefaultPipelineStages(userCompany.id);
+            await seedDefaultPipelineStages();
 
             const magicLink = await magicLinkService.generateMagicLink(user.id, 'welcome');
 

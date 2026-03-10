@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { eq, count, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { authService } from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
@@ -9,8 +9,8 @@ import { asyncHandler } from '../utils/async-handler';
 import { passwordResetService } from '../services/password-reset.service';
 import { authLimiter } from '../middleware/rate-limit';
 import { db } from '../db';
-import { pipelineStages } from '@shared/schema/deals';
 import { users } from '@shared/schema/core';
+import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 import { emailService } from '../email';
 import { promoCodeService } from '../services/promo-code.service';
 import { billingService } from '../services/billing.service';
@@ -89,7 +89,7 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
   await refreshSessionPermissions(req);
 
   if (result.company?.id) {
-    seedDefaultPipelineStages(result.company.id).catch(err =>
+    seedDefaultPipelineStages().catch(err =>
       console.error('[REGISTRATION] Failed to seed pipeline stages:', err)
     );
   }
@@ -144,32 +144,6 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
     discountDescription,
   });
 }));
-
-const DEFAULT_PIPELINE_STAGES = [
-  { stageName: 'New Target', stageOrder: 1, description: 'Newly identified acquisition target' },
-  { stageName: 'Initial Contact', stageOrder: 2, description: 'First outreach made to the target' },
-  { stageName: 'Documents Requested', stageOrder: 3, description: 'Financial and operational documents requested' },
-  { stageName: 'Under Review', stageOrder: 4, description: 'Documents and business under active review' },
-  { stageName: 'Offer Stage', stageOrder: 5, description: 'Preparing or submitting an offer' },
-  { stageName: 'Heads of Terms', stageOrder: 6, description: 'Negotiating and agreeing heads of terms' },
-  { stageName: 'Due Diligence', stageOrder: 7, description: 'Formal due diligence in progress' },
-  { stageName: 'Legal & Accounting', stageOrder: 8, description: 'Legal and accounting workstreams active' },
-  { stageName: 'Completion', stageOrder: 9, description: 'Deal completing or completed' },
-  { stageName: 'Not Qualified', stageOrder: 10, description: 'Target did not meet criteria' },
-];
-
-export async function seedDefaultPipelineStages(userCompanyId: number) {
-  const [existing] = await db
-    .select({ count: count() })
-    .from(pipelineStages);
-
-  if ((existing?.count ?? 0) > 0) {
-    return;
-  }
-
-  await db.insert(pipelineStages).values(DEFAULT_PIPELINE_STAGES).onConflictDoNothing();
-  console.log(`[REGISTRATION] Seeded default pipeline stages`);
-}
 
 async function sendWelcomeEmail(email: string, firstName: string) {
   const appUrl = process.env.REPLIT_DEV_DOMAIN
