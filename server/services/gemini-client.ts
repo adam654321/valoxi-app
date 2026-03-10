@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { db } from '../db';
 import { tokenUsage } from '@shared/schema';
 import { calculateTokenCost } from '../utils/token-cost';
+import { config as appConfig } from '../config';
 
 export interface GeminiClientConfig {
   apiKey?: string;
@@ -43,8 +44,6 @@ export interface GenerateContentOptions {
   service?: string;
 }
 
-const DEFAULT_MODEL = "gemini-3-flash-preview";
-
 const DEFAULT_RETRY: Required<Pick<GeminiClientConfig, "maxRetries" | "baseDelayMs" | "maxDelayMs" | "timeoutMs">> = {
   maxRetries: 2,
   baseDelayMs: 15000,
@@ -76,7 +75,7 @@ export class GeminiClient {
       throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
     }
     this.ai = new GoogleGenAI({ apiKey });
-    this.defaultModel = config.model || DEFAULT_MODEL;
+    this.defaultModel = config.model || appConfig.gemini.model;
     this.maxRetries = config.maxRetries ?? DEFAULT_RETRY.maxRetries;
     this.baseDelayMs = config.baseDelayMs ?? DEFAULT_RETRY.baseDelayMs;
     this.maxDelayMs = config.maxDelayMs ?? DEFAULT_RETRY.maxDelayMs;
