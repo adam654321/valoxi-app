@@ -115,8 +115,14 @@ router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
 
   const results = await expertAnalysisService.getExpertResults(companyId);
 
-  const entitlements = await billingService.getEntitlements(userCompanyId);
-  const hasFullDetail = entitlements?.features?.expertAnalysisFullDetail ?? false;
+  let hasFullDetail = false;
+  try {
+    const entitlements = await billingService.getEntitlements(userCompanyId);
+    hasFullDetail = entitlements?.features?.expertAnalysisFullDetail ?? false;
+  } catch (err) {
+    console.error('[EXPERT_ANALYSIS] Entitlements lookup failed, defaulting to summary view:', err);
+    hasFullDetail = false;
+  }
 
   if (hasFullDetail) {
     sendSuccess(res, results);
