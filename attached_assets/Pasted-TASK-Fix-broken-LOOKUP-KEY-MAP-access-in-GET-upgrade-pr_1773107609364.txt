@@ -1,0 +1,45 @@
+TASK: Fix broken LOOKUP_KEY_MAP access in GET /upgrade-preview route in 
+server/routes/billing.routes.ts.
+
+CONTEXT:
+The upgrade-preview endpoint is completely broken for users with active or 
+trialing subscriptions. It constructs a flattened key like "EXPERT_month" 
+to access LOOKUP_KEY_MAP, but the map is a 3-level nested structure keyed 
+by [planKey][interval][currency]. The flattened key never matches any entry, 
+so the route always returns 400 invalid_combination. The POST /checkout and 
+POST /upgrade routes already use the correct 3-level access pattern — this 
+fix brings upgrade-preview in line with them.
+
+THE FIX — one file, one block:
+
+Find this exact block in the GET /upgrade-preview route handler:
+
+    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    if (!lookupKey) {
+      return res.status(400).json({ error: 'invalid_combination' });
+    }
+
+Replace it with:
+
+    const currency = (req.query.currency === 'usd') ? 'usd' : 'gbp';
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
+    if (!lookupKey) {
+      return res.status(400).json({ error: 'invalid_combination' });
+    }
+
+No other lines in this file change. The currency default mirrors the 
+pattern already used in POST /checkout and POST /upgrade (reqCurrency === 
+'usd' ? 'usd' : 'gbp').
+
+VALIDATION CHECKS:
+1. Show the updated block in context (two lines above and below) to confirm 
+   the template-literal access is gone and the three-level optional-chained 
+   access is in place
+2. Confirm no other lines in billing.routes.ts were modified
+3. Run tsc --noEmit — confirm zero new TypeScript errors (same 3 pre-existing 
+   errors are acceptable: beta-feedback.routes.ts:154, billing.routes.ts:436, 
+   promo-code.service.ts:223)
+4. Search billing.routes.ts for the string LOOKUP_KEY_MAP and list every 
+   occurrence with line number — there should be exactly three hits, all 
+   using the [planKey]?.[interval]?.[currency] pattern, none using a 
+   template literal

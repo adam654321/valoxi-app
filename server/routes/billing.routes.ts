@@ -426,7 +426,8 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
       return res.status(200).json({ isNewSubscription: true });
     }
 
-    const lookupKey = LOOKUP_KEY_MAP[`${planKey}_${billingInterval}`];
+    const currency = (req.query.currency === 'usd') ? 'usd' : 'gbp';
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination' });
     }
