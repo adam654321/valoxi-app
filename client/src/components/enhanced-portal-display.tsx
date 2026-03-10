@@ -452,6 +452,22 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
     select: (response: any) => response.data,
   });
 
+  const { data: analysisCompletion } = useQuery<{
+    completedTypes: string[];
+    missingTypes: string[];
+    isComplete: boolean;
+    completionPercentage: number;
+    completedCount: number;
+    totalCount: number;
+  }>({
+    queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`],
+    enabled: !!token,
+    refetchInterval: 10000,
+    refetchIntervalInBackground: false,
+    staleTime: 30000,
+    select: (response: any) => response.data,
+  });
+
   // SSE subscription for real-time document updates
   useEffect(() => {
     const companyId = portalData?.targetCompanyId || portalData?.company?.id;
@@ -536,6 +552,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
       // Refresh all portal data
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
     },
     onError: (error: Error) => {
       toast({
@@ -873,11 +890,36 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                         <SelectValue placeholder="Select document type to upload" />
                       </SelectTrigger>
                       <SelectContent>
-                        {DOCUMENT_TYPES.map(type => (
-                          <SelectItem key={type.value} value={type.value} data-testid={`option-${type.value}`}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
+                        {DOCUMENT_TYPES
+                          .filter(type => {
+                            if (!analysisCompletion) return true;
+                            switch (type.value) {
+                              case 'company_accounts': {
+                                const count = analysisCompletion.completedTypes.filter(t =>
+                                  t.startsWith('company_accounts')
+                                ).length;
+                                return count < 5;
+                              }
+                              case 'asset_register':
+                                return !analysisCompletion.completedTypes.includes('asset_register');
+                              case 'balance_sheet':
+                                return !analysisCompletion.completedTypes.includes('balance_sheet');
+                              case 'p_and_l':
+                                return !analysisCompletion.completedTypes.includes('profit_and_loss');
+                              case 'sales_ledger':
+                                return !analysisCompletion.completedTypes.includes('sales_ledger');
+                              case 'staff_matrix':
+                                return !analysisCompletion.completedTypes.includes('staff_matrix');
+                              default:
+                                return true;
+                            }
+                          })
+                          .map(type => (
+                            <SelectItem key={type.value} value={type.value} data-testid={`option-${type.value}`}>
+                              {type.label}
+                            </SelectItem>
+                          ))
+                        }
                       </SelectContent>
                     </Select>
                   </div>
