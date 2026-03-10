@@ -11,6 +11,7 @@ import { authLimiter } from '../middleware/rate-limit';
 import { db } from '../db';
 import { users } from '@shared/schema/core';
 import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
+import { escapeHtml } from '../utils/html';
 import { emailService } from '../email';
 import { promoCodeService } from '../services/promo-code.service';
 import { billingService } from '../services/billing.service';
@@ -174,7 +175,7 @@ async function sendWelcomeEmail(email: string, firstName: string) {
             <h1>Welcome to Valoxi</h1>
           </div>
           <div class="content">
-            <p>Hi ${firstName},</p>
+            <p>Hi ${escapeHtml(firstName)},</p>
             <p>Your account is set up and your free trial has started. You now have access to the full Valoxi platform.</p>
             <p>Here's how to get started:</p>
             <div class="steps">

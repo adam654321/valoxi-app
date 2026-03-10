@@ -8,6 +8,7 @@ import { betaFeedback } from '@shared/schema/dashboard';
 import { users } from '@shared/schema/core';
 import { systemConfigService } from '../services/system-config.service';
 import { emailService } from '../email';
+import { escapeHtml } from '../utils/html';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess, sendError } from '../utils/response';
 
@@ -79,14 +80,20 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
     status: 'open',
   }).returning();
 
-  const severityText = body.severity ? `<p><strong>Severity:</strong> ${body.severity}</p>` : '';
-  const pageText = body.pageUrl ? `<p><strong>Page:</strong> ${body.pageTitle || body.pageUrl}</p>` : '';
-  const screenshotText = screenshotUrl ? `<p><strong>Screenshot:</strong> Attached (view in admin panel)</p>` : '';
+  const severityText = body.severity
+    ? `<p><strong>Severity:</strong> ${body.severity}</p>`
+    : '';
+  const pageText = body.pageUrl
+    ? `<p><strong>Page:</strong> ${escapeHtml(body.pageTitle || body.pageUrl)}</p>`
+    : '';
+  const screenshotText = screenshotUrl
+    ? `<p><strong>Screenshot:</strong> Attached (view in admin panel)</p>`
+    : '';
 
   try {
     await emailService.sendEmail({
       to: 'adam@shiftopsconsulting.com',
-      subject: `[Beta Feedback] ${body.type.toUpperCase()}: ${body.title}`,
+      subject: `[Beta Feedback] ${body.type.toUpperCase()}: ${escapeHtml(body.title)}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -109,13 +116,13 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
                 <div class="details">
                   <p><strong>Type:</strong> ${body.type}</p>
                   ${severityText}
-                  <p><strong>Title:</strong> ${body.title}</p>
-                  <p><strong>Reporter:</strong> ${user.firstName} ${user.lastName} (${user.email})</p>
+                  <p><strong>Title:</strong> ${escapeHtml(body.title)}</p>
+                  <p><strong>Reporter:</strong> ${escapeHtml(user.firstName)} ${escapeHtml(user.lastName)} (${escapeHtml(user.email)})</p>
                   ${pageText}
                   ${screenshotText}
                 </div>
                 <p><strong>Description:</strong></p>
-                <p>${body.description.replace(/\n/g, '<br>')}</p>
+                <p>${escapeHtml(body.description).replace(/\n/g, '<br>')}</p>
               </div>
               <div class="footer">
                 <p>Feedback ID: #${inserted.id}</p>
