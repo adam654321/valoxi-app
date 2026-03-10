@@ -121,15 +121,22 @@ router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   if (hasFullDetail) {
     sendSuccess(res, results);
   } else {
-    const summaryResults = results.map((r: any) => ({
-      id: r.id,
-      expertType: r.expertType,
-      status: r.status,
-      score: r.score,
-      confidence: r.confidence,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-    }));
+    const UNGATED_TYPES = ['data_quality', 'screening'];
+
+    const summaryResults = results.map((r: any) => {
+      if (UNGATED_TYPES.includes(r.expertType)) {
+        return r; // full payload — screening phase is visible to all tiers
+      }
+      return {
+        id:         r.id,
+        expertType: r.expertType,
+        status:     r.status,
+        score:      r.score,
+        confidence: r.confidence,
+        createdAt:  r.createdAt,
+        updatedAt:  r.updatedAt,
+      };
+    });
     sendSuccess(res, summaryResults);
   }
 }));
