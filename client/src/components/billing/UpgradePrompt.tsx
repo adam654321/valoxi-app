@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Lock, Sparkles } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Link } from "wouter";
 
 interface UpgradePromptProps {
@@ -37,27 +37,18 @@ export function UpgradePrompt({ feature, requiredPlan, title, description, child
         </div>
       )}
       <div className={children ? "absolute inset-0 flex items-center justify-center p-4" : "flex items-center justify-center p-4"}>
-        <Card className="w-full max-w-md border border-indigo-200/60 dark:border-indigo-500/20 shadow-2xl dark:shadow-indigo-950/50 bg-white dark:bg-slate-900/95 backdrop-blur-sm ring-1 ring-inset ring-white/10">
-          <CardContent className="flex flex-col items-center gap-5 p-8 text-center">
-            <div className="relative">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
-                <Lock className="h-7 w-7 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 shadow-sm">
-                <Sparkles className="h-3 w-3 text-amber-900" />
-              </div>
+        <Card className="w-full max-w-md border border-border shadow-lg dark:shadow-black/40 bg-background">
+          <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted border border-border">
+              <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-semibold text-foreground">{title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
             </div>
-            <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 px-3 py-1">
-              Requires {planLabel}
-            </Badge>
-            <Link href="/billing">
-              <Button className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25 border-0">
-                Upgrade to {planLabel}
-              </Button>
+            <Badge variant="secondary" className="px-3 py-0.5">Requires {planLabel}</Badge>
+            <Link href="/billing" className="w-full">
+              <Button className="w-full">Upgrade to {planLabel}</Button>
             </Link>
           </CardContent>
         </Card>
