@@ -37,7 +37,7 @@ export function UpgradePrompt({ feature, requiredPlan, title, description, child
         </div>
       )}
       <div className={children ? "absolute inset-0 flex items-center justify-center p-4" : "flex items-center justify-center p-4"}>
-        <Card className="w-full max-w-md border border-border shadow-lg dark:shadow-black/40 bg-background">
+        <Card className="w-full max-w-md border border-border shadow-2xl dark:shadow-black/60 bg-background backdrop-blur-sm">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted border border-border">
               <Lock className="h-5 w-5 text-muted-foreground" />
