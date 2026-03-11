@@ -44,7 +44,8 @@ import {
   Loader2,
   Send,
 } from 'lucide-react';
-import { UpgradePrompt } from '@/components/billing';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useHasFeature } from "@/context/subscription-context";
 
 interface DealModellerProps {
   companyId: number;
@@ -287,6 +288,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const hasModels = models.length > 0;
   const selectedModel = models.find(m => m.id === selectedModelId);
   const isLocked = selectedModel?.isLocked ?? false;
+  const hasFullDealModeller = useHasFeature("fullDealModeller");
 
   return (
     <div className="space-y-6">
@@ -382,12 +384,24 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                 </AlertDialog>
               )}
 
-              <UpgradePrompt
-                feature="fullDealModeller"
-                requiredPlan="PROFESSIONAL"
-                title="Version History"
-                description="Create and compare multiple deal model versions to refine your offer."
-              >
+              {hasFullDealModeller === false ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <Button variant="secondary" size="sm" disabled className="opacity-50 cursor-not-allowed pointer-events-none">
+                          <Lock className="h-4 w-4 mr-2" />
+                          New Version
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                      <p className="font-medium">Version History</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Upgrade to Professional to create and compare multiple deal model versions.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -401,7 +415,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   )}
                   New Version
                 </Button>
-              </UpgradePrompt>
+              )}
             </div>
           </div>
 
