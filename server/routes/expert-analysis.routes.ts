@@ -1,7 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { expertAnalysisService } from '../services/expert-analysis.service';
-import { billingService } from '../services/billing.service';
-import type { PlanKey } from '@shared/schema/billing';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
@@ -101,7 +99,7 @@ router.post('/cancel/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { message: 'Analysis cancelled' });
 }));
 
-// Tier gating: CORE gets summary only; PROFESSIONAL+ gets full detail
+// Data is returned in full for all tiers — frontend controls display depth by tier
 router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
@@ -116,37 +114,7 @@ router.get('/results/:id', asyncHandler(async (req: Request, res: Response) => {
   if (!company) throw new NotFoundError('Company not found');
 
   const results = await expertAnalysisService.getExpertResults(companyId);
-
-  let hasFullDetail = false;
-  try {
-    const entitlements = await billingService.getEntitlements(userCompanyId);
-    hasFullDetail = entitlements?.features?.expertAnalysisFullDetail ?? false;
-  } catch (err) {
-    console.error('[EXPERT_ANALYSIS] Entitlements lookup failed, defaulting to summary view:', err);
-    hasFullDetail = false;
-  }
-
-  if (hasFullDetail) {
-    sendSuccess(res, results);
-  } else {
-    const UNGATED_TYPES = ['data_quality', 'screening', 'synthesis', 'qoe', 'financial'];
-
-    const summaryResults = results.map((r: any) => {
-      if (UNGATED_TYPES.includes(r.expertType)) {
-        return r; // full payload — screening phase is visible to all tiers
-      }
-      return {
-        id:         r.id,
-        expertType: r.expertType,
-        status:     r.status,
-        score:      r.score,
-        confidence: r.confidence,
-        createdAt:  r.createdAt,
-        updatedAt:  r.updatedAt,
-      };
-    });
-    sendSuccess(res, summaryResults);
-  }
+  sendSuccess(res, results);
 }));
 
 export default router;
