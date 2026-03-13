@@ -67,9 +67,9 @@ const STEPS: StepConfig[] = [
     key: "sendPortal",
     title: "Send the seller portal",
     description: "Share a secure portal link so the seller can submit documents directly.",
-    ctaLabel: "Go to Target",
+    ctaLabel: "Send Portal Link",
     icon: Send,
-    getHref: () => "/target-companies",
+    getHref: () => "/portal-management",
     disabledWhen: (steps) => !steps.addContact,
   },
   {
