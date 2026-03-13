@@ -165,13 +165,6 @@ export class GeminiClient {
         clearTimeout(timeoutId);
       }
 
-      const auditHeaders: Record<string, string> = {};
-      ['server', 'via', 'x-goog-request-id', 'x-guploader-uploadid', 'content-type', 'alt-svc'].forEach(h => {
-        const v = res.headers.get(h);
-        if (v) auditHeaders[h] = v;
-      });
-      console.log(`[GEMINI_CLIENT] Response headers audit — status: ${res.status}`, JSON.stringify(auditHeaders));
-
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`Gemini API error ${res.status}: ${errText}`);
