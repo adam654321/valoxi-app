@@ -1,43 +1,15 @@
-/*
- * WARNING: This file is Replit-scaffolded integration code. It uses Replit's
- * internal Gemini proxy (AI_INTEGRATIONS_GEMINI_API_KEY / AI_INTEGRATIONS_GEMINI_BASE_URL),
- * NOT the application's GOOGLE_GEMINI_API_KEY. DO NOT import from this file in
- * application services. All app Gemini calls must go through server/services/gemini-client.ts.
- */
-import { GoogleGenAI, Modality } from "@google/genai";
-
-// This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
-export const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
-
 /**
- * Generate an image and return as base64 data URL.
- * Uses gemini-2.5-flash-image model via Replit AI Integrations.
+ * DISABLED — Replit AI Integrations image client removed.
+ * All Gemini API calls must go through server/services/gemini-client.ts
+ * using GOOGLE_GEMINI_API_KEY. Do not re-enable this file or add
+ * AI_INTEGRATIONS_GEMINI_API_KEY / AI_INTEGRATIONS_GEMINI_BASE_URL
+ * to this project.
  */
-export async function generateImage(prompt: string): Promise<string> {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    config: {
-      responseModalities: [Modality.TEXT, Modality.IMAGE],
-    },
-  });
 
-  const candidate = response.candidates?.[0];
-  const imagePart = candidate?.content?.parts?.find(
-    (part: { inlineData?: { data?: string; mimeType?: string } }) => part.inlineData
+export function generateImage(_prompt: string): Promise<string> {
+  throw new Error(
+    'generateImage is disabled. All AI calls must use server/services/gemini-client.ts'
   );
-
-  if (!imagePart?.inlineData?.data) {
-    throw new Error("No image data in response");
-  }
-
-  const mimeType = imagePart.inlineData.mimeType || "image/png";
-  return `data:${mimeType};base64,${imagePart.inlineData.data}`;
 }
 
+export const ai = null;
