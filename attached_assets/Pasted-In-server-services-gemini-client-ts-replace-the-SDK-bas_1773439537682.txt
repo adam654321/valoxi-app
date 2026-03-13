@@ -1,0 +1,71 @@
+In server/services/gemini-client.ts, replace the SDK-based generateFn inside generateContent() with a raw fetch call to the Gemini REST API. This bypasses the @google/genai SDK entirely for the actual HTTP request, which prevents any network-level proxy from intercepting it.
+Keep all existing logic — retry, JSON recovery, token logging, timeout — unchanged. Only the inner generateFn block changes.
+Remove the import { GoogleGenAI } from "@google/genai" import and the private ai: GoogleGenAI field. Add private apiKey: string as a private field and store the raw key there in the constructor (in addition to apiKeyPrefix).
+Replace the constructor line this.ai = new GoogleGenAI(...) with this.apiKey = apiKey.
+Replace the entire generateFn async function inside generateContent() with this:
+typescriptconst generateFn = async () => {
+  const model = options.model || this.defaultModel;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+
+  const requestBody: any = {
+    contents: [{ role: 'user', parts }],
+    generationConfig: {
+      temperature,
+      ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
+      ...(options.thinkingLevel ? {
+        thinkingConfig: {
+          thinkingBudget: options.thinkingLevel === 'MINIMAL' ? 128
+            : options.thinkingLevel === 'LOW' ? 1024
+            : options.thinkingLevel === 'MEDIUM' ? 4096
+            : 8192
+        }
+      } : {}),
+    },
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+
+  const candidate = data.candidates?.[0];
+  const text = candidate?.content?.parts?.map((p: any) => p.text || '').join('') ?? '';
+  const usageMetadata = data.usageMetadata ?? null;
+
+  return { text, usageMetadata };
+};
+Then update the section after const response = await this.withRetry(generateFn) to read from the new return shape. Replace:
+typescriptconst text = response.text || "";
+const usage = response.usageMetadata ? { ... } : null;
+With:
+typescriptconst text = response.text || "";
+const usage = response.usageMetadata
+  ? {
+      promptTokens: response.usageMetadata.promptTokenCount ?? 0,
+      candidateTokens: response.usageMetadata.candidatesTokenCount ?? 0,
+      totalTokens: response.usageMetadata.totalTokenCount ?? 0,
+    }
+  : null;
+(This is identical to what was there — just confirming it stays the same.)
+Also update the per-call log line to include the literal URL host being called:
+typescriptconsole.log(`[GEMINI_CLIENT] API call — key: ${this.apiKeyPrefix} host: generativelanguage.googleapis.com service: ${options.service ?? this.service ?? 'unknown'} model: ${options.model || this.defaultModel}`);
+Restart and trigger one AI call. We expect to see the call appear in the Google AI Studio API key dashboard within a few minutes if this is now going through the real endpoint.
+
+This is the definitive fix. If calls still don't appear in your Google AI Studio dashboard after this, it confirms Replit is doing transparent TCP-level proxying — at which point the only option is to move off Replit hosting entirely for the production app, which you're planning to do anyway before launch.

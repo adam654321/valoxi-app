@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import { db } from '../db';
 import { tokenUsage } from '@shared/schema';
 import { calculateTokenCost } from '../utils/token-cost';
@@ -52,12 +51,15 @@ const DEFAULT_RETRY: Required<Pick<GeminiClientConfig, "maxRetries" | "baseDelay
 };
 
 /**
- * Unified Gemini API client that consolidates all Gemini access patterns.
- * Uses the @google/genai SDK with built-in retry logic (exponential backoff
- * on 429/503), 3-stage JSON recovery, and configurable model defaults.
+ * Unified Gemini API client. Uses raw fetch directly to the Gemini REST API,
+ * bypassing the @google/genai SDK entirely. This prevents any SDK-level or
+ * Node.js HTTP-module-level proxy interception by Replit's AI Integrations
+ * system. All calls go directly to https://generativelanguage.googleapis.com
+ * using GOOGLE_GEMINI_API_KEY as a query parameter.
  */
 export class GeminiClient {
-  private ai: GoogleGenAI;
+  private apiKey: string;
+  private apiKeyPrefix: string;
   private defaultModel: string;
   private maxRetries: number;
   private baseDelayMs: number;
@@ -77,15 +79,15 @@ export class GeminiClient {
         'All Gemini calls must use the project API key, not Replit AI Integrations.'
       );
     }
-    const geminiBaseUrl = 'https://generativelanguage.googleapis.com/';
     const injectedBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
     if (injectedBaseUrl) {
       console.warn(
         '[GEMINI_CLIENT] WARNING: AI_INTEGRATIONS_GEMINI_BASE_URL is set (' + injectedBaseUrl + '). ' +
-        'Ignoring — forcing all calls to ' + geminiBaseUrl
+        'Ignoring — all calls use raw fetch directly to https://generativelanguage.googleapis.com'
       );
     }
-    this.ai = new GoogleGenAI({ apiKey, httpOptions: { baseUrl: geminiBaseUrl } });
+    this.apiKey = apiKey;
+    this.apiKeyPrefix = apiKey.slice(0, 8) + '...';
     this.defaultModel = config.model || appConfig.gemini.model;
     this.maxRetries = config.maxRetries ?? DEFAULT_RETRY.maxRetries;
     this.baseDelayMs = config.baseDelayMs ?? DEFAULT_RETRY.baseDelayMs;
@@ -100,12 +102,13 @@ export class GeminiClient {
 
   /**
    * Generate content from the Gemini API with automatic retry and JSON recovery.
+   * Uses raw fetch to bypass any SDK or Node.js HTTP-level proxy interception.
    *
    * @param options.prompt - The text prompt to send
    * @param options.model - Override the default model for this call
    * @param options.temperature - Sampling temperature (default 0)
    * @param options.responseMimeType - e.g. 'application/json' for structured output
-   * @param options.fileData - Optional file attachment (for document analysis)
+   * @param options.inlineData - Optional inline file attachment (for document analysis)
    * @returns GeminiResponse with text, parsed JSON (if applicable), and token usage
    */
   async generateContent(options: GenerateContentOptions): Promise<GeminiResponse> {
@@ -123,25 +126,57 @@ export class GeminiClient {
     }
     parts.push({ text: options.prompt });
 
+    console.log(
+      `[GEMINI_CLIENT] API call — key: ${this.apiKeyPrefix} host: generativelanguage.googleapis.com` +
+      ` service: ${options.service ?? this.service ?? 'unknown'} model: ${model}`
+    );
+
     const generateFn = async () => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+
+      const requestBody: any = {
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          temperature,
+          ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
+          ...(options.thinkingLevel ? {
+            thinkingConfig: {
+              thinkingBudget: options.thinkingLevel === 'MINIMAL' ? 128
+                : options.thinkingLevel === 'LOW' ? 1024
+                : options.thinkingLevel === 'MEDIUM' ? 4096
+                : 8192
+            }
+          } : {}),
+        },
+      };
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
+      let res: Response;
       try {
-        const response = await this.ai.models.generateContent({
-          model,
-          contents: [{ role: "user", parts }],
-          config: {
-            temperature,
-            ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
-            ...(options.thinkingLevel ? { thinkingConfig: { thinkingBudget: options.thinkingLevel === "MINIMAL" ? 128 : options.thinkingLevel === "LOW" ? 1024 : options.thinkingLevel === "MEDIUM" ? 4096 : 8192 } } : {}),
-            abortSignal: controller.signal,
-          },
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
         });
-        return response;
       } finally {
         clearTimeout(timeoutId);
       }
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini API error ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+
+      const candidate = data.candidates?.[0];
+      const text = candidate?.content?.parts?.map((p: any) => p.text || '').join('') ?? '';
+      const usageMetadata = data.usageMetadata ?? null;
+
+      return { text, usageMetadata };
     };
 
     const response = await this.withRetry(generateFn);
