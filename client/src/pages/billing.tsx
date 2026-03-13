@@ -933,9 +933,8 @@ export default function BillingPage() {
                   </p>
                 </div>
               </div>
-              {/* // TODO: replace with real contact email before launch */}
               <Button variant="outline" asChild>
-                <a href="mailto:enterprise@example.com">
+                <a href="mailto:enterprise@valoxi.ai">
                   <Mail className="h-4 w-4 mr-2" />
                   Contact Us
                 </a>

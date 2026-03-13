@@ -271,6 +271,8 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     },
   });
 
+  const hasFullDealModeller = useHasFeature("fullDealModeller");
+
   if (modelsLoading) {
     return (
       <div className="space-y-6">
@@ -288,7 +290,6 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const hasModels = models.length > 0;
   const selectedModel = models.find(m => m.id === selectedModelId);
   const isLocked = selectedModel?.isLocked ?? false;
-  const hasFullDealModeller = useHasFeature("fullDealModeller");
 
   return (
     <div className="space-y-6">
