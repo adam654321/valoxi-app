@@ -1,7 +1,9 @@
-// WARNING: This file is Replit-scaffolded integration code. It uses Replit's
-// internal Gemini proxy (AI_INTEGRATIONS_GEMINI_API_KEY / AI_INTEGRATIONS_GEMINI_BASE_URL),
-// NOT the application's GOOGLE_GEMINI_API_KEY. DO NOT import from this file in
-// application services. All app Gemini calls must go through server/services/gemini-client.ts.
+/*
+ * WARNING: This file is Replit-scaffolded integration code. It uses Replit's
+ * internal Gemini proxy (AI_INTEGRATIONS_GEMINI_API_KEY / AI_INTEGRATIONS_GEMINI_BASE_URL),
+ * NOT the application's GOOGLE_GEMINI_API_KEY. DO NOT import from this file in
+ * application services. All app Gemini calls must go through server/services/gemini-client.ts.
+ */
 import { GoogleGenAI, Modality } from "@google/genai";
 
 // This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
