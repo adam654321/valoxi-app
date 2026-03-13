@@ -1,3 +1,7 @@
+// WARNING: This file is Replit-scaffolded integration code. It uses Replit's
+// internal Gemini proxy (AI_INTEGRATIONS_GEMINI_API_KEY / AI_INTEGRATIONS_GEMINI_BASE_URL),
+// NOT the application's GOOGLE_GEMINI_API_KEY. DO NOT import from this file in
+// application services. All app Gemini calls must go through server/services/gemini-client.ts.
 import type { Express, Request, Response } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { chatStorage } from "./storage";

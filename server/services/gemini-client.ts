@@ -74,6 +74,11 @@ export class GeminiClient {
     if (!apiKey) {
       throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
     }
+    // CRITICAL GUARD: The explicit baseUrl below prevents calls from being silently
+    // routed through Replit's internal proxy (AI_INTEGRATIONS_GEMINI_BASE_URL at
+    // localhost:1106). Without it, the @google/genai SDK may be intercepted by the
+    // Replit integration, bypassing GOOGLE_GEMINI_API_KEY and using Replit's billing.
+    // DO NOT remove the httpOptions.baseUrl — it is an intentional protection.
     this.ai = new GoogleGenAI({ apiKey, httpOptions: { baseUrl: 'https://generativelanguage.googleapis.com/' } });
     this.defaultModel = config.model || appConfig.gemini.model;
     this.maxRetries = config.maxRetries ?? DEFAULT_RETRY.maxRetries;

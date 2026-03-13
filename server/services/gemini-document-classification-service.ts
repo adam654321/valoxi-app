@@ -1,4 +1,5 @@
 import { buildDocumentClassificationPrompt } from "../prompts/document-classification-prompt";
+// Uses the app's geminiClient (GOOGLE_GEMINI_API_KEY) — never swap for replit_integrations/
 import { geminiClient } from "./gemini-client";
 
 const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];

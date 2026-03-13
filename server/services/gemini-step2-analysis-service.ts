@@ -3,6 +3,7 @@ import { buildBalanceSheetAnalysisPrompt } from "../prompts/step2-balance-sheet-
 import { buildProfitAndLossAnalysisPrompt } from "../prompts/step2-profit-and-loss-prompt";
 import { buildSalesLedgerAnalysisPrompt } from "../prompts/step2-sales-ledger-prompt";
 import { buildStaffMatrixAnalysisPrompt } from "../prompts/step2-staff-matrix-prompt";
+// Uses the app's geminiClient (GOOGLE_GEMINI_API_KEY) — never swap for replit_integrations/
 import { geminiClient } from "./gemini-client";
 import type { DocumentTrackingContext } from "./gemini-document-classification-service";
 
