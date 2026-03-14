@@ -6,7 +6,7 @@ import { targetCompanies, targetContacts } from '@shared/schema/deals';
 import { documents, expertAnalysisResults } from '@shared/schema/documents';
 import { dealModels } from '@shared/schema/deal-models';
 import { dealDocuments } from '@shared/schema/deal-documents';
-import { portalLinkShares, portalAccessTokens } from '@shared/schema/portal';
+import { portalAccessTokens } from '@shared/schema/portal';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { UnauthorizedError } from '../utils/errors';
@@ -70,10 +70,8 @@ router.get('/progress', asyncHandler(async (req: Request, res: Response) => {
 
     const [portalResult] = await db
       .select({ count: count() })
-      .from(portalLinkShares)
-      .innerJoin(portalAccessTokens, eq(portalLinkShares.portalTokenId, portalAccessTokens.id))
-      .innerJoin(targetCompanies, eq(portalAccessTokens.targetCompanyId, targetCompanies.id))
-      .where(eq(targetCompanies.userCompanyId, userCompanyId));
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.userCompanyId, userCompanyId));
     hasPortal = (portalResult?.count ?? 0) > 0;
 
     const [docResult] = await db
@@ -89,7 +87,7 @@ router.get('/progress', asyncHandler(async (req: Request, res: Response) => {
       .innerJoin(targetCompanies, eq(expertAnalysisResults.targetCompanyId, targetCompanies.id))
       .where(and(
         eq(targetCompanies.userCompanyId, userCompanyId),
-        eq(expertAnalysisResults.status, 'completed')
+        eq(expertAnalysisResults.status, 'success')
       ));
     hasAnalysis = (analysisResult?.count ?? 0) > 0;
 
