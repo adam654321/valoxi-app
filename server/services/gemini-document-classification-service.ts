@@ -115,9 +115,14 @@ export async function classifyDocumentWithGemini(
       throw new Error(`Failed to parse Gemini response as JSON`);
     }
 
-    const parsedResponse = response.json as { document_types: string[]; confidence?: string; reasoning?: string };
+    // Gemini occasionally wraps the response in an array — unwrap if needed
+    const rawParsed = response.json;
+    const parsedResponse = (Array.isArray(rawParsed) ? rawParsed[0] : rawParsed) as { document_types?: string[]; documentTypes?: string[]; confidence?: string; reasoning?: string };
 
-    if (!parsedResponse.document_types || !Array.isArray(parsedResponse.document_types)) {
+    // Accept both snake_case (document_types) and camelCase (documentTypes)
+    const docTypes = parsedResponse?.document_types ?? parsedResponse?.documentTypes;
+    if (!docTypes || !Array.isArray(docTypes)) {
+      console.error(`[GEMINI_CLASSIFICATION] Raw response JSON:`, JSON.stringify(response.json));
       throw new Error(`Invalid response structure: missing document_types array`);
     }
 
@@ -128,7 +133,7 @@ export async function classifyDocumentWithGemini(
     } : undefined;
 
     console.log(`[GEMINI_CLASSIFICATION] Classification completed in ${processingTime}ms`);
-    console.log(`[GEMINI_CLASSIFICATION] Document types: ${parsedResponse.document_types.join(", ")}`);
+    console.log(`[GEMINI_CLASSIFICATION] Document types: ${docTypes.join(", ")}`);
     console.log(`[GEMINI_CLASSIFICATION] Confidence: ${parsedResponse.confidence || "unknown"}`);
     if (usageMetadata) {
       console.log(`[GEMINI_CLASSIFICATION] Token usage: prompt=${usageMetadata.promptTokenCount}, candidates=${usageMetadata.candidatesTokenCount}, total=${usageMetadata.totalTokenCount}`);
@@ -136,7 +141,7 @@ export async function classifyDocumentWithGemini(
 
     return {
       success: true,
-      documentTypes: parsedResponse.document_types,
+      documentTypes: docTypes,
       confidence: parsedResponse.confidence as "high" | "medium" | "low" | undefined,
       reasoning: parsedResponse.reasoning,
       processingTime,
