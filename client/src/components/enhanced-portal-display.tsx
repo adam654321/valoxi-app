@@ -1025,47 +1025,72 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           {hotAccepted && portalData.buyerPlanKey !== 'CORE' && (
             <TabsContent value="stage2">
               {showDdIntro ? (
-                <div className="max-w-2xl mx-auto space-y-6 py-4">
-                  <div className="text-center space-y-3">
-                    <div className="h-16 w-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center mx-auto">
-                      <ClipboardList className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                <div className="min-h-[60vh] flex items-center justify-center py-8 px-4">
+                  <div className="max-w-xl w-full space-y-8">
+
+                    <div className="text-center space-y-4">
+                      <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-indigo-600 shadow-lg mx-auto">
+                        <ClipboardList className="h-10 w-10 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-bold text-foreground">Stage 2: Due Diligence</h2>
+                        <p className="text-muted-foreground mt-2 text-base leading-relaxed">
+                          The Heads of Terms have been agreed. We now need to collect the supporting documents
+                          so the buyer can complete a thorough review of the business before exchange.
+                        </p>
+                      </div>
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground">Thank you for accepting the Heads of Terms</h2>
-                    <p className="text-muted-foreground text-base">
-                      The next step is to complete full due diligence. We need to collect the remaining company documents so the buyer can carry out a thorough review before proceeding to exchange.
-                    </p>
-                  </div>
-                  <div className="rounded-lg border bg-card p-5 space-y-4">
-                    <h3 className="font-semibold text-foreground">How Stage 2 works</h3>
-                    <ul className="space-y-3 text-sm text-muted-foreground">
-                      <li className="flex items-start gap-3">
-                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                        <span>You will see a list of document categories and specific requirements within each one.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                        <span>Click into a category, then upload one or more documents against each requirement.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
-                        <span>Once you have uploaded all documents for a requirement, click <strong>Mark as complete</strong> to notify the buyer to review.</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
-                        <span>The buyer may request additional documents for certain items — these will be flagged clearly so you know exactly what is still needed.</span>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="flex justify-center">
+
+                    <div className="bg-card border border-border rounded-xl divide-y divide-border">
+                      {[
+                        {
+                          n: '1',
+                          title: 'Browse the document categories',
+                          detail: 'Each category contains a list of specific documents the buyer needs. Work through the Mandatory items first.',
+                        },
+                        {
+                          n: '2',
+                          title: 'Upload documents against each requirement',
+                          detail: 'Click into a category and use the Add document button on each item. You can upload multiple files per requirement — add as many as needed before marking it complete.',
+                        },
+                        {
+                          n: '3',
+                          title: 'Mark each requirement as complete',
+                          detail: "Once you've uploaded everything for a requirement, click Mark as complete. This notifies the buyer to review what you've submitted.",
+                        },
+                        {
+                          n: '4',
+                          title: 'Respond to any follow-up requests',
+                          detail: 'The buyer may ask for additional documents on certain items. These will be clearly flagged so nothing gets missed.',
+                        },
+                      ].map(({ n, title, detail }) => (
+                        <div key={n} className="flex items-start gap-4 p-4">
+                          <span className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center">
+                            {n}
+                          </span>
+                          <div>
+                            <p className="font-semibold text-foreground text-sm">{title}</p>
+                            <p className="text-muted-foreground text-sm mt-0.5">{detail}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
                     <Button
                       size="lg"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold py-4"
                       onClick={() => {
                         try { localStorage.setItem(`dd-intro-dismissed-${token}`, '1'); } catch {}
                         setShowDdIntro(false);
                       }}
                     >
-                      I understand — let's begin
+                      Get started
                     </Button>
+
+                    <p className="text-center text-xs text-muted-foreground">
+                      You can revisit these instructions at any time using the <strong>How this works</strong> button inside the due diligence section.
+                    </p>
+
                   </div>
                 </div>
               ) : (

@@ -1,0 +1,75 @@
+Good — the screenshot confirms Replit implemented a lighter version than the one I specified. The redesign prompt I wrote above addresses all of this, including the solid indigo icon, stronger typography and better copy. I just need to fold in the multiple documents point to step 2.
+Here's the updated combined prompt for both test and live:
+
+Replit prompt — test app (then live):
+
+In client/src/components/enhanced-portal-display.tsx, find the Stage 2 intro screen block — everything inside {showDdIntro ? ( down to the ) : ( separator — and replace the entire intro screen div with:
+tsx<div className="min-h-[60vh] flex items-center justify-center py-8 px-4">
+  <div className="max-w-xl w-full space-y-8">
+
+    <div className="text-center space-y-4">
+      <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-indigo-600 shadow-lg mx-auto">
+        <ClipboardList className="h-10 w-10 text-white" />
+      </div>
+      <div>
+        <h2 className="text-3xl font-bold text-foreground">Stage 2: Due Diligence</h2>
+        <p className="text-muted-foreground mt-2 text-base leading-relaxed">
+          The Heads of Terms have been agreed. We now need to collect the supporting documents
+          so the buyer can complete a thorough review of the business before exchange.
+        </p>
+      </div>
+    </div>
+
+    <div className="bg-card border border-border rounded-xl divide-y divide-border">
+      {[
+        {
+          n: '1',
+          title: 'Browse the document categories',
+          detail: 'Each category contains a list of specific documents the buyer needs. Work through the Mandatory items first.',
+        },
+        {
+          n: '2',
+          title: 'Upload documents against each requirement',
+          detail: 'Click into a category and use the Add document button on each item. You can upload multiple files per requirement — add as many as needed before marking it complete.',
+        },
+        {
+          n: '3',
+          title: 'Mark each requirement as complete',
+          detail: "Once you've uploaded everything for a requirement, click Mark as complete. This notifies the buyer to review what you've submitted.",
+        },
+        {
+          n: '4',
+          title: 'Respond to any follow-up requests',
+          detail: 'The buyer may ask for additional documents on certain items. These will be clearly flagged so nothing gets missed.',
+        },
+      ].map(({ n, title, detail }) => (
+        <div key={n} className="flex items-start gap-4 p-4">
+          <span className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center">
+            {n}
+          </span>
+          <div>
+            <p className="font-semibold text-foreground text-sm">{title}</p>
+            <p className="text-muted-foreground text-sm mt-0.5">{detail}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <Button
+      size="lg"
+      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold py-4"
+      onClick={() => {
+        try { localStorage.setItem(`dd-intro-dismissed-${token}`, '1'); } catch {}
+        setShowDdIntro(false);
+      }}
+    >
+      Get started
+    </Button>
+
+    <p className="text-center text-xs text-muted-foreground">
+      You can revisit these instructions at any time using the <strong>How this works</strong> button inside the due diligence section.
+    </p>
+
+  </div>
+</div>
+No other changes. Confirm it renders cleanly.
