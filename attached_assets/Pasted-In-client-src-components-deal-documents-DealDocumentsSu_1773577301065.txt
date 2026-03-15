@@ -1,0 +1,74 @@
+In client/src/components/deal-documents/DealDocumentsSummary.tsx, modify HoTConfigDialog to show a send confirmation step after generation succeeds instead of just closing.
+Changes to HoTConfigDialog:
+
+Add two new state variables inside the component:
+
+tsxconst [generated, setGenerated] = useState(false);
+const [generatedDocId, setGeneratedDocId] = useState<number | null>(null);
+
+Add a sendMutation inside HoTConfigDialog:
+
+tsxconst sendMutation = useMutation({
+  mutationFn: async (docId: number) => {
+    const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+    onClose();
+  },
+  onError: (err: any) => {
+    setError(err.message || 'Failed to send document');
+  },
+});
+
+In generateMutation.onSuccess, replace the onClose() call with:
+
+tsxconst docId = data?.id ?? data?.data?.id ?? null;
+setGeneratedDocId(docId);
+setGenerated(true);
+
+Add a reset on the dialog's onOpenChange so state clears when closed:
+Replace onOpenChange={(o) => !o && onClose()} with:
+
+tsxonOpenChange={(o) => {
+  if (!o) {
+    setGenerated(false);
+    setGeneratedDocId(null);
+    setError('');
+    onClose();
+  }
+}}
+
+Replace the dialog body so that when generated is true it shows a confirmation screen instead of the form:
+
+tsx{generated ? (
+  <div className="space-y-5 pt-2">
+    <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 px-4 py-4">
+      <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+      <div>
+        <p className="font-medium text-green-800 dark:text-green-200">Heads of Terms generated</p>
+        <p className="text-sm text-green-700 dark:text-green-300 mt-0.5">
+          Ready to send to the seller. This will email the portal contact directly.
+        </p>
+      </div>
+    </div>
+    {error && <p className="text-sm text-red-600">{error}</p>}
+    <div className="flex justify-end gap-2 pt-2">
+      <Button variant="outline" onClick={onClose} disabled={sendMutation.isPending}>
+        I'll send later
+      </Button>
+      <Button
+        onClick={() => generatedDocId && sendMutation.mutate(generatedDocId)}
+        disabled={!generatedDocId || sendMutation.isPending}
+      >
+        {sendMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        Send to Seller Now
+      </Button>
+    </div>
+  </div>
+) : (
+  // ... existing form JSX unchanged
+)}
+Add CheckCircle to the existing lucide-react imports.
+No other changes. Confirm the HoT config dialog now transitions to a send confirmation screen after generation instead of closing.

@@ -163,6 +163,8 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
   const [targetCompletionWeeks, setTargetCompletionWeeks] = useState(12);
   const [additionalConditions, setAdditionalConditions] = useState('');
   const [error, setError] = useState('');
+  const [generated, setGenerated] = useState(false);
+  const [generatedDocId, setGeneratedDocId] = useState<number | null>(null);
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -183,18 +185,41 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
       setError('');
-      onClose();
+      const docId = data?.id ?? data?.data?.id ?? null;
+      setGeneratedDocId(docId);
+      setGenerated(true);
     },
     onError: (err: any) => {
       setError(err.message || 'Failed to generate Heads of Terms');
     },
   });
 
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      onClose();
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to send document');
+    },
+  });
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => {
+      if (!o) {
+        setGenerated(false);
+        setGeneratedDocId(null);
+        setError('');
+        onClose();
+      }
+    }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Configure Heads of Terms</DialogTitle>
@@ -203,59 +228,86 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="exclusivity">Exclusivity Period (days)</Label>
-              <Input id="exclusivity" type="number" value={exclusivityPeriodDays} onChange={(e) => setExclusivityPeriodDays(Number(e.target.value))} />
+        {generated ? (
+          <div className="space-y-5 pt-2">
+            <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 px-4 py-4">
+              <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-green-800 dark:text-green-200">Heads of Terms generated</p>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-0.5">
+                  Ready to send to the seller. This will email the portal contact directly.
+                </p>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nonCompete">Non-Compete Period (years)</Label>
-              <Input id="nonCompete" type="number" value={nonCompetePeriodYears} onChange={(e) => setNonCompetePeriodYears(Number(e.target.value))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nonSolicit">Non-Solicitation (years)</Label>
-              <Input id="nonSolicit" type="number" value={nonSolicitPeriodYears} onChange={(e) => setNonSolicitPeriodYears(Number(e.target.value))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="warranty">Warranty Claim Period (months)</Label>
-              <Input id="warranty" type="number" value={warrantyClaimPeriodMonths} onChange={(e) => setWarrantyClaimPeriodMonths(Number(e.target.value))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="minClaim">Minimum Warranty Claim (£)</Label>
-              <Input id="minClaim" type="number" value={warrantyMinClaim} onChange={(e) => setWarrantyMinClaim(Number(e.target.value))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="completion">Target Completion (weeks)</Label>
-              <Input id="completion" type="number" value={targetCompletionWeeks} onChange={(e) => setTargetCompletionWeeks(Number(e.target.value))} />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={onClose} disabled={sendMutation.isPending}>
+                I'll send later
+              </Button>
+              <Button
+                onClick={() => generatedDocId && sendMutation.mutate(generatedDocId)}
+                disabled={!generatedDocId || sendMutation.isPending}
+              >
+                {sendMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Send to Seller Now
+              </Button>
             </div>
           </div>
+        ) : (
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="exclusivity">Exclusivity Period (days)</Label>
+                <Input id="exclusivity" type="number" value={exclusivityPeriodDays} onChange={(e) => setExclusivityPeriodDays(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nonCompete">Non-Compete Period (years)</Label>
+                <Input id="nonCompete" type="number" value={nonCompetePeriodYears} onChange={(e) => setNonCompetePeriodYears(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nonSolicit">Non-Solicitation (years)</Label>
+                <Input id="nonSolicit" type="number" value={nonSolicitPeriodYears} onChange={(e) => setNonSolicitPeriodYears(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="warranty">Warranty Claim Period (months)</Label>
+                <Input id="warranty" type="number" value={warrantyClaimPeriodMonths} onChange={(e) => setWarrantyClaimPeriodMonths(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="minClaim">Minimum Warranty Claim (£)</Label>
+                <Input id="minClaim" type="number" value={warrantyMinClaim} onChange={(e) => setWarrantyMinClaim(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="completion">Target Completion (weeks)</Label>
+                <Input id="completion" type="number" value={targetCompletionWeeks} onChange={(e) => setTargetCompletionWeeks(Number(e.target.value))} />
+              </div>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="conditions">Additional Conditions</Label>
-            <Textarea
-              id="conditions"
-              value={additionalConditions}
-              onChange={(e) => setAdditionalConditions(e.target.value)}
-              placeholder="Any additional conditions to include..."
-              rows={3}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="conditions">Additional Conditions</Label>
+              <Textarea
+                id="conditions"
+                value={additionalConditions}
+                onChange={(e) => setAdditionalConditions(e.target.value)}
+                placeholder="Any additional conditions to include..."
+                rows={3}
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={onClose} disabled={generateMutation.isPending}>
+                Cancel
+              </Button>
+              <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
+                {generateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Generate Heads of Terms
+              </Button>
+            </div>
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} disabled={generateMutation.isPending}>
-              Cancel
-            </Button>
-            <Button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
-              {generateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Generate Heads of Terms
-            </Button>
-          </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
