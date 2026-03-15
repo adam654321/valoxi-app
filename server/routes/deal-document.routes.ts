@@ -1,7 +1,13 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { dealDocumentService } from '../services/deal-document.service';
 import { z } from 'zod';
 import { asyncHandler } from '../utils/async-handler';
+import { db } from '../db';
+import { eq, and, isNotNull, desc } from 'drizzle-orm';
+import { dealDocuments } from '@shared/schema/deal-documents';
+import { targetCompanies } from '@shared/schema/deals';
+import { sendSuccess } from '../utils/response';
+import { UnauthorizedError } from '../utils/errors';
 
 const router = Router();
 const publicRouter = Router();
@@ -107,6 +113,30 @@ router.post('/send-offer', asyncHandler(async (req, res) => {
   const sent = await dealDocumentService.sendDocument(doc.id);
 
   res.status(201).json(sent);
+}));
+
+router.get('/pending-send', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+
+  const pending = await db
+    .select({
+      id: dealDocuments.id,
+      documentType: dealDocuments.documentType,
+      createdAt: dealDocuments.createdAt,
+      targetCompanyId: dealDocuments.targetCompanyId,
+      companyName: targetCompanies.companyName,
+    })
+    .from(dealDocuments)
+    .innerJoin(targetCompanies, eq(dealDocuments.targetCompanyId, targetCompanies.id))
+    .where(and(
+      eq(dealDocuments.userCompanyId, userCompanyId),
+      eq(dealDocuments.status, 'draft'),
+      isNotNull(dealDocuments.generatedFileUrl),
+    ))
+    .orderBy(desc(dealDocuments.createdAt));
+
+  sendSuccess(res, pending);
 }));
 
 router.get('/:id/html', asyncHandler(async (req, res) => {

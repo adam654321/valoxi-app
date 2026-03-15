@@ -21,6 +21,7 @@ import {
   UpcomingRemindersWidget,
   TeamActivityWidget,
   StageAlertsWidget,
+  PendingSendWidget,
 } from "@/components/dashboard";
 import ActivationChecklist from "@/components/onboarding/ActivationChecklist";
 
@@ -188,6 +189,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <RecentActivitiesWidget />
         <QuickStatsWidget />
+      </div>
+
+      <div className="mb-8">
+        <PendingSendWidget />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
