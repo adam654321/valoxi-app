@@ -5,12 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, refreshCsrfToken } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -21,7 +20,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -37,20 +36,13 @@ export default function Login() {
       return response.json();
     },
     onSuccess: async () => {
+      setLoginError(null);
       await refreshCsrfToken();
       await queryClient.refetchQueries({ queryKey: ["/api/v2/auth/me"] });
       setLocation("/dashboard");
-      toast({
-        title: "Success",
-        description: "Logged in successfully!",
-      });
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Login failed",
-        variant: "destructive",
-      });
+    onError: () => {
+      setLoginError("The email address or password you entered is incorrect. Please try again.");
     },
   });
 
@@ -88,6 +80,7 @@ export default function Login() {
                             placeholder="Enter your email"
                             className="px-4 py-3"
                             {...field}
+                            onChange={(e) => { field.onChange(e); setLoginError(null); }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -107,6 +100,7 @@ export default function Login() {
                             placeholder="Enter your password"
                             className="px-4 py-3"
                             {...field}
+                            onChange={(e) => { field.onChange(e); setLoginError(null); }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -114,6 +108,13 @@ export default function Login() {
                     )}
                   />
                 </div>
+
+                {loginError && (
+                  <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-end">
                   <button
