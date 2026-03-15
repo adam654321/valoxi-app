@@ -788,7 +788,9 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
             <div className="hidden lg:block w-[320px] shrink-0">
               <div className="sticky top-20">
                 <ScrollArea className="h-[calc(100vh-200px)]">
-                  {assumptionsPanelContent}
+                  <div className="pr-3">
+                    {assumptionsPanelContent}
+                  </div>
                 </ScrollArea>
               </div>
             </div>
