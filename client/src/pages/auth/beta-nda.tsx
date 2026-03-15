@@ -24,6 +24,16 @@ export default function BetaNda() {
     },
     onSuccess: async () => {
       setSigned(true);
+      // Optimistically update the cached user so the App.tsx gate sees
+      // betaNdaSigned=true immediately — invalidate fires a background refetch
+      // but the gate re-evaluates on navigation before the response arrives,
+      // causing an infinite redirect loop if we only invalidate.
+      queryClient.setQueryData(['/api/v2/auth/me'], (old: any) => {
+        if (!old) return old;
+        const data = old?.data ?? old;
+        const updated = { ...data, betaNdaSigned: true };
+        return old?.data !== undefined ? { ...old, data: updated } : updated;
+      });
       await queryClient.invalidateQueries({ queryKey: ['/api/v2/auth/me'] });
       setTimeout(() => setLocation('/dashboard'), 2500);
     },
