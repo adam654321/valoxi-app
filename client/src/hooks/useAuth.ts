@@ -9,6 +9,7 @@ export interface AuthUser {
   lastName: string;
   isSystemAdmin?: boolean;
   onboardingCompleted?: boolean;
+  betaNdaSigned?: boolean;
   company?: {
     id: number;
     companyName: string;

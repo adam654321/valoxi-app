@@ -21,6 +21,7 @@ const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
 const MagicLinkPage = lazy(() => import("@/pages/auth/magic-link"));
 const LinkExpiredPage = lazy(() => import("@/pages/auth/link-expired"));
+const BetaNda = lazy(() => import("@/pages/auth/beta-nda"));
 const OnboardingPage = lazy(() => import("@/pages/onboarding"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const EnhancedTargetCompanies = lazy(() => import("@/pages/enhanced-target-companies"));
@@ -62,7 +63,7 @@ const LoadingSpinner = () => (
 );
 
 function Router() {
-  const { isAuthenticated, isLoading, isSystemAdmin } = useAuth();
+  const { isAuthenticated, isLoading, isSystemAdmin, user } = useAuth();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -83,6 +84,17 @@ function Router() {
           <Route path="/auth/link-expired" component={LinkExpiredPage} />
           <Route path="/accept-invitation" component={AcceptInvitation} />
           <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    );
+  }
+
+  if (import.meta.env.VITE_BETA_MODE === 'true' && user && !user.betaNdaSigned) {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <Switch>
+          <Route path="/beta-nda" component={BetaNda} />
+          <Route>{() => <Redirect to="/beta-nda" />}</Route>
         </Switch>
       </Suspense>
     );
@@ -131,6 +143,7 @@ function Router() {
 
         <Route path="/auth/magic" component={MagicLinkPage} />
         <Route path="/auth/link-expired" component={LinkExpiredPage} />
+        <Route path="/beta-nda" component={BetaNda} />
         <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/login">{() => <Redirect to="/" />}</Route>
         <Route path="/register">{() => <Redirect to="/" />}</Route>
