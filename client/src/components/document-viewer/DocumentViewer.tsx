@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -17,9 +16,7 @@ import {
   X, 
   ExternalLink,
   Eye,
-  BarChart3,
-  Clock,
-  Code
+  BarChart3
 } from "lucide-react";
 import { DocumentPreview } from "./DocumentPreview";
 import { AnalysisDisplay, formatDate, formatDocumentType, getDocumentTypeColor } from "./AnalysisDisplay";
@@ -273,12 +270,8 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          <Tabs defaultValue="document" className="h-full flex flex-col">
-            <TabsList className={`grid w-full ${hideAnalysis ? 'grid-cols-1' : 'grid-cols-3'}`}>
-              <TabsTrigger value="document" className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                Document
-              </TabsTrigger>
+          <Tabs defaultValue={hideAnalysis ? "document" : "analysis"} className="h-full flex flex-col">
+            <TabsList className={`grid w-full ${hideAnalysis ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {!hideAnalysis && (
                 <TabsTrigger value="analysis" className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
@@ -290,23 +283,12 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
                   )}
                 </TabsTrigger>
               )}
-              {!hideAnalysis && (
-                <TabsTrigger value="webhook-json" className="flex items-center gap-2">
-                  <Code className="w-4 h-4" />
-                  Webhook JSON
-                  {analysisResults.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-xs">
-                      {analysisResults.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="document" className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                Document
+              </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="document" className="flex-1 overflow-hidden">
-              <DocumentPreview document={document} onDownload={onDownload} publicFileBaseUrl={publicFileBaseUrl} />
-            </TabsContent>
-            
+
             {!hideAnalysis && (
               <TabsContent value="analysis" className="flex-1 overflow-auto p-4">
                 <AnalysisDisplay 
@@ -322,75 +304,10 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
                 />
               </TabsContent>
             )}
-            
-            {!hideAnalysis && (<TabsContent value="webhook-json" className="flex-1 overflow-auto p-4">
-              {analysisLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                    <p className="text-muted-foreground">Loading analysis results...</p>
-                  </div>
-                </div>
-              ) : analysisResults.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Code className="w-5 h-5" />
-                    <h3 className="text-lg font-semibold">Webhook JSON Data</h3>
-                    <Badge variant="outline" className="text-xs">
-                      Raw analysis data sent to external webhook
-                    </Badge>
-                  </div>
-                  
-                  {analysisResults.map((result, index) => (
-                    <Card key={result.id}>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <Badge 
-                            className={getDocumentTypeColor(result.documentType, result.analysisData)}
-                          >
-                            {formatDocumentType(result.documentType, result.analysisData)}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            Document Analysis #{index + 1}
-                          </span>
-                        </CardTitle>
-                        <CardDescription>
-                          Raw JSON data that would be sent to the analysis webhook for this document
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="bg-muted rounded-lg p-4 overflow-auto max-h-96">
-                          <pre className="text-sm whitespace-pre-wrap break-words">
-                            <code>
-                              {JSON.stringify(enhanceDisplayData(result.analysisData, result.documentType), null, 2)}
-                            </code>
-                          </pre>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span>Document Type: {result.documentType}</span>
-                          <span>•</span>
-                          <span>Created: {formatDate(result.createdAt)}</span>
-                          {result.processingTime && (
-                            <>
-                              <span>•</span>
-                              <span>Processing Time: {result.processingTime}ms</span>
-                            </>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <Code className="w-16 h-16 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Analysis Data</h3>
-                  <p className="text-muted-foreground">
-                    No webhook analysis data is available for this document yet.
-                  </p>
-                </div>
-              )}
-            </TabsContent>)}
+
+            <TabsContent value="document" className="flex-1 overflow-hidden">
+              <DocumentPreview document={document} onDownload={onDownload} publicFileBaseUrl={publicFileBaseUrl} />
+            </TabsContent>
           </Tabs>
         </div>
       </DialogContent>
