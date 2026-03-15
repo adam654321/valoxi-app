@@ -155,6 +155,7 @@ const CompanyFormDialog: React.FC<CompanyFormDialogProps> = ({
                   <FormItem>
                     <FormLabel>Sub-sector *</FormLabel>
                     <Select
+                      key={`subsector-${editingCompany?.id ?? 'new'}-${selectedSector}`}
                       onValueChange={field.onChange}
                       value={field.value}
                       disabled={!selectedSector || selectedSector === "Other"}
