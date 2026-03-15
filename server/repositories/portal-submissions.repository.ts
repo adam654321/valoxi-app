@@ -1,5 +1,6 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../db';
+import { subscriptions } from '@shared/schema/billing';
 import {
   portalAccessTokens, externalDocumentSubmissions, portalActivityLog, documents,
   documentAnalysisResults, targetCompanies, targetContacts, fileUploadEvents,
@@ -25,6 +26,11 @@ export class PortalSubmissionsRepository {
     const [token] = await db.select().from(portalAccessTokens).where(eq(portalAccessTokens.id, portalTokenId));
     if (!token) return null;
     const [company] = await db.select().from(targetCompanies).where(eq(targetCompanies.id, token.targetCompanyId));
+    const [subscription] = await db
+      .select({ planKey: subscriptions.planKey })
+      .from(subscriptions)
+      .where(eq(subscriptions.userCompanyId, token.userCompanyId));
+    const buyerPlanKey = subscription?.planKey ?? 'CORE';
     const [contact] = await db.select().from(targetContacts).where(eq(targetContacts.id, token.targetContactId));
     const submissions = await db.select().from(externalDocumentSubmissions)
       .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId)).orderBy(desc(externalDocumentSubmissions.submittedAt));
@@ -42,6 +48,7 @@ export class PortalSubmissionsRepository {
     ];
     const uploadedTypes = submissions.map(s => s.documentCategory);
     return {
+      buyerPlanKey,
       token: { id: token.id, expiresAt: token.expiresAt, customMessage: token.customMessage },
       company: company ? { id: company.id, name: company.companyName } : null,
       contact: contact ? { id: contact.id, name: `${contact.firstName} ${contact.lastName}`, email: contact.email } : null,

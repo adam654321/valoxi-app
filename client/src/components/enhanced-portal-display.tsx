@@ -167,6 +167,7 @@ interface PortalData {
   targetCompanyId: number;
   token?: { id: number; expiresAt: string; customMessage: string | null };
   company?: { id: number; name: string };
+  buyerPlanKey?: string;
 }
 
 interface Document {
@@ -513,10 +514,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   );
 
   useEffect(() => {
-    if (hotAccepted) {
+    if (hotAccepted && portalData?.buyerPlanKey !== 'CORE') {
       setActivePortalTab('stage2');
     }
-  }, [hotAccepted]);
+  }, [hotAccepted, portalData?.buyerPlanKey]);
 
   // Submit document mutation
   const submitDocumentMutation = useMutation({
@@ -728,7 +729,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
               <FileText className="w-4 h-4" />
               Stage 1: Financial
             </TabsTrigger>
-            {hotAccepted && (
+            {hotAccepted && portalData.buyerPlanKey !== 'CORE' && (
               <TabsTrigger value="stage2" className="flex items-center gap-2 flex-1">
                 <FileCheck className="w-4 h-4" />
                 Stage 2: Due Diligence
@@ -1014,16 +1015,18 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="stage2">
-            <DdCollection
-              token={token}
-              onDocumentUploaded={() => {
-                queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-                queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
-                queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
-              }}
-            />
-          </TabsContent>
+          {hotAccepted && portalData.buyerPlanKey !== 'CORE' && (
+            <TabsContent value="stage2">
+              <DdCollection
+                token={token}
+                onDocumentUploaded={() => {
+                  queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+                  queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+                  queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+                }}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="deal-documents" className="space-y-6">
             {ndaDocument && ndaAccepted && (
