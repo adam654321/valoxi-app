@@ -399,6 +399,13 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const [expandedDealDocs, setExpandedDealDocs] = useState<Set<string>>(new Set());
   const [ndaHtml, setNdaHtml] = useState<string | null>(null);
   const [ndaHtmlLoading, setNdaHtmlLoading] = useState(false);
+  const [showDdIntro, setShowDdIntro] = useState(() => {
+    try {
+      return !localStorage.getItem(`dd-intro-dismissed-${token}`);
+    } catch {
+      return true;
+    }
+  });
   
   const { toast } = useToast();
 
@@ -1017,14 +1024,60 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
 
           {hotAccepted && portalData.buyerPlanKey !== 'CORE' && (
             <TabsContent value="stage2">
-              <DdCollection
-                token={token}
-                onDocumentUploaded={() => {
-                  queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
-                  queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
-                  queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
-                }}
-              />
+              {showDdIntro ? (
+                <div className="max-w-2xl mx-auto space-y-6 py-4">
+                  <div className="text-center space-y-3">
+                    <div className="h-16 w-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center mx-auto">
+                      <ClipboardList className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">Thank you for accepting the Heads of Terms</h2>
+                    <p className="text-muted-foreground text-base">
+                      The next step is to complete full due diligence. We need to collect the remaining company documents so the buyer can carry out a thorough review before proceeding to exchange.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border bg-card p-5 space-y-4">
+                    <h3 className="font-semibold text-foreground">How Stage 2 works</h3>
+                    <ul className="space-y-3 text-sm text-muted-foreground">
+                      <li className="flex items-start gap-3">
+                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
+                        <span>You will see a list of document categories and specific requirements within each one.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
+                        <span>Click into a category, then upload one or more documents against each requirement.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
+                        <span>Once you have uploaded all documents for a requirement, click <strong>Mark as complete</strong> to notify the buyer to review.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
+                        <span>The buyer may request additional documents for certain items — these will be flagged clearly so you know exactly what is still needed.</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="flex justify-center">
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        try { localStorage.setItem(`dd-intro-dismissed-${token}`, '1'); } catch {}
+                        setShowDdIntro(false);
+                      }}
+                    >
+                      I understand — let's begin
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <DdCollection
+                  token={token}
+                  onDocumentUploaded={() => {
+                    queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}`] });
+                    queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/documents`] });
+                    queryClient.invalidateQueries({ queryKey: [`/api/v2/portal-submit/${token}/analysis-completion`] });
+                  }}
+                />
+              )}
             </TabsContent>
           )}
 

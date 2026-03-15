@@ -20,7 +20,14 @@ import {
   Eye,
   ArrowLeft,
   ChevronRight,
+  HelpCircle,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { DocumentViewer } from '@/components/document-viewer';
@@ -117,6 +124,7 @@ function getRequirementTint(req: DdRequirement): string {
 }
 
 export default function DdCollection({ token, onDocumentUploaded }: DdCollectionProps) {
+  const [showHelp, setShowHelp] = useState(false);
   const [uploadingRequirementId, setUploadingRequirementId] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submissionNotes, setSubmissionNotes] = useState('');
@@ -625,13 +633,21 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
     <>
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <ClipboardList className="h-5 w-5 text-indigo-600" />
-            Due Diligence Documents
-          </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Please upload the requested documents against each requirement below.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ClipboardList className="h-5 w-5 text-indigo-600" />
+                Due Diligence Documents
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please upload the requested documents against each requirement below.
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setShowHelp(true)} className="shrink-0 text-muted-foreground">
+              <HelpCircle className="h-4 w-4 mr-1" />
+              How this works
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -664,6 +680,32 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>How Stage 2 works</DialogTitle>
+          </DialogHeader>
+          <ul className="space-y-3 text-sm text-muted-foreground pt-2">
+            <li className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
+              <span>Click a category below to see the specific documents required within it.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
+              <span>Upload one or more documents against each requirement using the <strong>Add document</strong> button.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
+              <span>Once ready, click <strong>Mark as complete</strong> on a requirement to notify the buyer.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
+              <span>If the buyer needs more, the requirement will be flagged — upload the additional documents and mark complete again.</span>
+            </li>
+          </ul>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader className="pb-2">
