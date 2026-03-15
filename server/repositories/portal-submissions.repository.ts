@@ -1,6 +1,7 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { subscriptions } from '@shared/schema/billing';
+import { userCompanies } from '@shared/schema/core';
 import {
   portalAccessTokens, externalDocumentSubmissions, portalActivityLog, documents,
   documentAnalysisResults, targetCompanies, targetContacts, fileUploadEvents,
@@ -30,7 +31,17 @@ export class PortalSubmissionsRepository {
       .select({ planKey: subscriptions.planKey })
       .from(subscriptions)
       .where(eq(subscriptions.userCompanyId, token.userCompanyId));
-    const buyerPlanKey = subscription?.planKey ?? 'CORE';
+
+    const [buyerCompany] = await db
+      .select({ betaPlanOverride: userCompanies.betaPlanOverride })
+      .from(userCompanies)
+      .where(eq(userCompanies.id, token.userCompanyId));
+
+    const validOverrides = ['CORE', 'PROFESSIONAL', 'EXPERT', 'ENTERPRISE'];
+    const override = buyerCompany?.betaPlanOverride?.toUpperCase();
+    const buyerPlanKey = (override && validOverrides.includes(override))
+      ? override
+      : (subscription?.planKey ?? 'CORE');
     const [contact] = await db.select().from(targetContacts).where(eq(targetContacts.id, token.targetContactId));
     const submissions = await db.select().from(externalDocumentSubmissions)
       .where(eq(externalDocumentSubmissions.portalTokenId, portalTokenId)).orderBy(desc(externalDocumentSubmissions.submittedAt));
