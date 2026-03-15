@@ -1,16 +1,14 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation } from "@tanstack/react-query";
-import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, User, ChevronsUpDown, Send } from "lucide-react";
+import { LogOut, ChevronsUpDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -96,19 +94,6 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem data-testid="menu-item-profile">
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            {/* Company Accounts hidden — reserved for future use */}
-            <DropdownMenuItem asChild data-testid="menu-item-file-upload-test">
-              <Link href="/file-upload-test" className="flex w-full">
-                <Send className="mr-2 h-4 w-4" />
-                <span>File Upload Test</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
