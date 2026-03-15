@@ -37,6 +37,7 @@ interface FundingSectionProps {
   fundingLines: DealModelFundingLine[];
   calculations: CalculationResult | null;
   totalFundingRequired: number;
+  cashFromBusiness: number;
   isLocked: boolean;
   onDataChange: () => void;
 }
@@ -462,6 +463,7 @@ export default function FundingSection({
   fundingLines,
   calculations,
   totalFundingRequired,
+  cashFromBusiness,
   isLocked,
   onDataChange,
 }: FundingSectionProps) {
@@ -509,20 +511,20 @@ export default function FundingSection({
   );
 
   const totalFunded = calculations?.totalFunded ?? 0;
-  const rawFundingGap = calculations?.fundingGap ?? 0;
-  const fundingGap = Math.abs(rawFundingGap) < 1 ? 0 : rawFundingGap;
-  const isFullyFunded = fundingGap <= 0;
-  const progressPct = totalFundingRequired > 0 ? Math.min(100, (totalFunded / totalFundingRequired) * 100) : 0;
+  const adjustedTotal = Math.max(0, totalFundingRequired - cashFromBusiness);
+  const adjustedFundingGap = Math.round((adjustedTotal - totalFunded) * 100) / 100;
+  const isFullyFunded = adjustedFundingGap <= 0;
+  const progressPct = adjustedTotal > 0 ? Math.min(100, (totalFunded / adjustedTotal) * 100) : 0;
 
   const gapColour = isFullyFunded
     ? 'text-green-700'
-    : fundingGap < totalFundingRequired * 0.3
+    : adjustedFundingGap < adjustedTotal * 0.3
       ? 'text-amber-700'
       : 'text-red-700';
 
   const gapBorderColour = isFullyFunded
     ? 'border-l-green-500'
-    : fundingGap < totalFundingRequired * 0.3
+    : adjustedFundingGap < adjustedTotal * 0.3
       ? 'border-l-amber-500'
       : 'border-l-red-500';
 
@@ -551,20 +553,26 @@ export default function FundingSection({
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Funding Target</h4>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Total to Fund</p>
+              <p className="text-sm text-muted-foreground">Offer Price</p>
               <p className="text-xl font-bold">{formatCurrency(totalFundingRequired)}</p>
-              <p className="text-xs text-muted-foreground">Offer price (excl. transaction fees)</p>
             </div>
+            {cashFromBusiness > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground">Cash Released from Business</p>
+                <p className="text-xl font-bold text-green-700">− {formatCurrency(cashFromBusiness)}</p>
+                <p className="text-xs text-muted-foreground">Excess cash after working capital</p>
+              </div>
+            )}
             <div>
-              <p className="text-sm text-muted-foreground">Funded So Far</p>
-              <p className="text-xl font-bold">{formatCurrency(totalFunded)}</p>
+              <p className="text-sm text-muted-foreground">Net External Funding Required</p>
+              <p className="text-xl font-bold">{formatCurrency(Math.max(0, totalFundingRequired - cashFromBusiness))}</p>
             </div>
             <div className={`border-l-4 pl-3 ${gapBorderColour}`}>
               <p className="text-sm text-muted-foreground">Funding Gap</p>
               <p className={`text-xl font-bold ${gapColour}`}>
-                {isFullyFunded ? 'Fully Funded' : formatCurrency(fundingGap)}
+                {adjustedFundingGap <= 0 ? 'Fully Funded' : formatCurrency(adjustedFundingGap)}
               </p>
             </div>
           </div>
@@ -572,7 +580,7 @@ export default function FundingSection({
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{progressPct.toFixed(0)}% funded</span>
-              <span>{formatCurrency(totalFunded)} / {formatCurrency(totalFundingRequired)}</span>
+              <span>{formatCurrency(totalFunded)} / {formatCurrency(adjustedTotal)}</span>
             </div>
             <div className="h-3 bg-muted rounded-full overflow-hidden">
               <div

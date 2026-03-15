@@ -21,7 +21,6 @@ import {
   Scale,
   Check,
   Loader2,
-  Info,
 } from 'lucide-react';
 import ExplainButton from '@/components/analysis/ExplainButton';
 
@@ -293,11 +292,6 @@ export default function ValuationSection({
     { label: 'Corporation Tax Due', field: 'minusCorpTaxDue', dbField: 'minusCorpTaxDue', direction: '-', expertField: 'minusCorpTaxDue' },
   ];
 
-  const upfrontCash = toNum(model.upfrontCash);
-  const deferredAmount = toNum(model.deferredAmount);
-  const earnoutMaximum = toNum(model.earnoutMaximum);
-  const hasConsideration = upfrontCash > 0 || deferredAmount > 0 || earnoutMaximum > 0;
-  const considerationTotal = upfrontCash + deferredAmount + earnoutMaximum;
 
   return (
     <Card>
@@ -754,54 +748,6 @@ export default function ValuationSection({
           </div>
         </div>
 
-        {hasConsideration && (
-          <>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Indicative Consideration Structure
-                </h4>
-                <Badge variant="outline" className="text-xs h-5">From Deal Structure Expert</Badge>
-              </div>
-
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2.5">
-                {upfrontCash > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Upfront Cash</span>
-                    <span className="font-medium">{formatCurrency(upfrontCash)}</span>
-                  </div>
-                )}
-                {deferredAmount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Deferred Consideration</span>
-                    <span className="font-medium">{formatCurrency(deferredAmount)}</span>
-                  </div>
-                )}
-                {earnoutMaximum > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Earnout (maximum)</span>
-                    <span className="font-medium">{formatCurrency(earnoutMaximum)}</span>
-                  </div>
-                )}
-                <Separator />
-                <div className="flex justify-between text-base font-semibold">
-                  <span>Total</span>
-                  <span>{formatCurrency(considerationTotal)}</span>
-                </div>
-                {Math.abs(considerationTotal - offerPrice) > 1 && offerPrice > 0 && (
-                  <p className="text-sm text-amber-600 flex items-center gap-1 mt-1">
-                    <Info className="h-3.5 w-3.5" />
-                    Total differs from offer price by {formatCurrency(Math.abs(considerationTotal - offerPrice))}
-                  </p>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground italic">
-                This can be refined in the deal structure section.
-              </p>
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );

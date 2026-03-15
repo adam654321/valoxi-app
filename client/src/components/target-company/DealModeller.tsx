@@ -215,6 +215,13 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput);
   }, [modelDetails, reportedEbitdaByYear]);
 
+  const netCashFromBusiness = useMemo(() => {
+    if (!modelDetails) return 0;
+    const excessCash = toNum(modelDetails.plusExcessCash);
+    const workingCap = toNum(modelDetails.minusWorkingCapitalAdj);
+    return Math.max(0, excessCash - workingCap);
+  }, [modelDetails]);
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest('POST', `/api/v2/deal-models/create/${companyId}`);
@@ -531,6 +538,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     fundingLines={modelDetails.fundingLines || []}
                     calculations={calculations}
                     totalFundingRequired={calculations?.offerPrice ?? 0}
+                    cashFromBusiness={netCashFromBusiness}
                     isLocked={isLocked}
                     onDataChange={() => {
                       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
