@@ -62,7 +62,6 @@ export interface CalculationResult {
 
   feeLegalDd: number;
   feeAccountingDd: number;
-  feeBroker: number;
   feeLoanArrangement: number;
   feeDealMaker: number;
   customFeeAmounts: Array<{ label: string; amount: number }>;
@@ -156,7 +155,6 @@ export function calculateFees(
 ): {
   feeLegalDd: number;
   feeAccountingDd: number;
-  feeBroker: number;
   feeLoanArrangement: number;
   feeDealMaker: number;
   customFeeAmounts: Array<{ label: string; amount: number }>;
@@ -170,7 +168,6 @@ export function calculateFees(
 
   const feeLegalDd = calcFee(model.feeLegalDdPercent, model.feeLegalDdType, offerPrice);
   const feeAccountingDd = calcFee(model.feeAccountingDdPercent, model.feeAccountingDdType, offerPrice);
-  const feeBroker = calcFee(model.feeBrokerPercent, model.feeBrokerType, offerPrice);
   const feeLoanArrangement = calcFee(model.feeLoanArrangementPercent, model.feeLoanArrangementType, offerPrice);
   const feeDealMaker = calcFee(model.feeDealMakerPercent, model.feeDealMakerType, offerPrice);
 
@@ -185,13 +182,12 @@ export function calculateFees(
   }
 
   const totalCustomFees = customFeeAmounts.reduce((acc, f) => acc + f.amount, 0);
-  const totalFees = feeLegalDd + feeAccountingDd + feeBroker + feeLoanArrangement + feeDealMaker + totalCustomFees;
+  const totalFees = feeLegalDd + feeAccountingDd + feeLoanArrangement + feeDealMaker + totalCustomFees;
   const totalFundingRequired = offerPrice + totalFees;
 
   return {
     feeLegalDd,
     feeAccountingDd,
-    feeBroker,
     feeLoanArrangement,
     feeDealMaker,
     customFeeAmounts,

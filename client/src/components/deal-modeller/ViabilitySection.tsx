@@ -122,7 +122,6 @@ export default function ViabilitySection({ modelId, model, calculations, funding
   const FEE_FIELDS = [
     { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdPercent', typeField: 'feeLegalDdType' },
     { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdPercent', typeField: 'feeAccountingDdType' },
-    { key: 'feeBroker', label: 'Broker Fee', valueField: 'feeBrokerPercent', typeField: 'feeBrokerType' },
     { key: 'feeLoanArrangement', label: 'Loan Arrangement Fee', valueField: 'feeLoanArrangementPercent', typeField: 'feeLoanArrangementType' },
     { key: 'feeDealMaker', label: 'Deal Maker Fee', valueField: 'feeDealMakerPercent', typeField: 'feeDealMakerType' },
   ] as const;

@@ -163,11 +163,10 @@ describe('calculateFees', () => {
     const result = calculateFees(offerPrice, baseModel);
     expect(result.feeLegalDd).toBe(20_000);
     expect(result.feeAccountingDd).toBe(15_000);
-    expect(result.feeBroker).toBe(30_000);
     expect(result.feeLoanArrangement).toBe(10_000);
     expect(result.feeDealMaker).toBe(5_000);
-    expect(result.totalFees).toBe(80_000);
-    expect(result.totalFundingRequired).toBe(1_080_000);
+    expect(result.totalFees).toBe(50_000);
+    expect(result.totalFundingRequired).toBe(1_050_000);
   });
 
   it('handles fixed fee type', () => {
