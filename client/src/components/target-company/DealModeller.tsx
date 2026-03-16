@@ -222,6 +222,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     return Math.max(0, excessCash - workingCap);
   }, [modelDetails]);
 
+  const adjustedFundingGap = useMemo(() => {
+    if (!calculations) return 0;
+    const adjustedTotal = Math.max(0, calculations.offerPrice - netCashFromBusiness);
+    return Math.round((adjustedTotal - calculations.totalFunded) * 100) / 100;
+  }, [calculations, netCashFromBusiness]);
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest('POST', `/api/v2/deal-models/create/${companyId}`);
@@ -468,8 +474,8 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
                   <Card className={`border-l-4 ${
                     !calculations ? 'border-l-muted'
-                    : calculations.fundingGap <= 0 ? 'border-l-green-500'
-                    : calculations.fundingGap < calculations.offerPrice * 0.5 ? 'border-l-amber-500'
+                    : adjustedFundingGap <= 0 ? 'border-l-green-500'
+                    : adjustedFundingGap < calculations.offerPrice * 0.5 ? 'border-l-amber-500'
                     : 'border-l-red-500'
                   }`}>
                     <CardContent className="py-4">
@@ -479,11 +485,11 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                       </p>
                       <p className={`text-2xl font-bold mt-1 ${
                         !calculations ? ''
-                        : calculations.fundingGap <= 0 ? 'text-green-700'
-                        : calculations.fundingGap < calculations.offerPrice * 0.5 ? 'text-amber-700'
+                        : adjustedFundingGap <= 0 ? 'text-green-700'
+                        : adjustedFundingGap < calculations.offerPrice * 0.5 ? 'text-amber-700'
                         : 'text-red-700'
                       }`}>
-                        {calculations ? formatCurrency(calculations.fundingGap) : '—'}
+                        {calculations ? formatCurrency(Math.max(0, adjustedFundingGap)) : '—'}
                       </p>
                     </CardContent>
                   </Card>
