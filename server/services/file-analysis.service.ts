@@ -455,6 +455,7 @@ export async function sendFileUploadWebhook(eventId: number) {
 }
 
 export async function retriggerAnalysisForDocument(documentId: number): Promise<void> {
+  console.log('[DEBUG] retriggerCounts:', [...retriggerCounts.entries()]);
   const events = await documentsRepository.getFileUploadEventsByDocumentId(documentId);
   if (!events || events.length === 0) {
     throw new Error(`No upload events found for document ${documentId}`);
