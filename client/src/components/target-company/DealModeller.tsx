@@ -552,6 +552,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   calculations={calculations}
                   fundingLines={modelDetails?.fundingLines || []}
                   isLocked={isLocked}
+                  cashFromBusiness={netCashFromBusiness}
                   onDataChange={() => {
                     queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
                   }}

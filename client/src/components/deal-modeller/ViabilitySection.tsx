@@ -35,6 +35,7 @@ interface ViabilitySectionProps {
   isLocked: boolean;
   onDataChange: () => void;
   explainContext?: ExplainContext;
+  cashFromBusiness: number;
 }
 
 const FUNDING_TYPE_LABELS: Record<string, string> = {
@@ -118,7 +119,7 @@ function getRatioBarWidth(ratio: number | null): number {
   }
 }
 
-export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange, explainContext }: ViabilitySectionProps) {
+export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange, explainContext, cashFromBusiness }: ViabilitySectionProps) {
   const FEE_FIELDS = [
     { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdPercent', typeField: 'feeLegalDdType' },
     { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdPercent', typeField: 'feeAccountingDdType' },
@@ -233,6 +234,11 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     return items;
   }, [calculations, fundingLines]);
 
+  const adjustedFundingGap = calculations
+    ? Math.round((Math.max(0, calculations.offerPrice - cashFromBusiness) - calculations.totalFunded) * 100) / 100
+    : 0;
+  const isAdjustedFullyFunded = adjustedFundingGap <= 0;
+
   const rating = calculations ? RATING_CONFIG[calculations.paymentCoverRating] || RATING_CONFIG.no_debt : RATING_CONFIG.no_debt;
   const RatingIcon = rating.icon;
 
@@ -242,8 +248,8 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     const issues: string[] = [];
     const positives: string[] = [];
 
-    if (calculations.fundingGap > 0 && Math.abs(calculations.fundingGap) >= 1) {
-      issues.push(`Deal funding shortfall of ${formatCurrency(calculations.fundingGap)} (before transaction fees)`);
+    if (adjustedFundingGap > 0 && Math.abs(adjustedFundingGap) >= 1) {
+      issues.push(`Deal funding shortfall of ${formatCurrency(adjustedFundingGap)} (before transaction fees)`);
     } else {
       positives.push('Deal fully funded — no additional cash required for the purchase');
     }
@@ -266,7 +272,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
 
     const viable = issues.length === 0;
     return { viable, issues, positives };
-  }, [calculations]);
+  }, [calculations, adjustedFundingGap]);
 
   const hasDebtService = calculations != null && calculations.totalAnnualDebtService > 0;
 
@@ -626,14 +632,14 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                   </tr>
                   <tr className={`border-t font-semibold ${
                     !calculations ? ''
-                    : Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0 ? 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-400'
+                    : isAdjustedFullyFunded ? 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-400'
                     : 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-400'
                   }`}>
                     <td className="px-3 py-2">
-                      {calculations && (Math.abs(calculations.fundingGap) < 1 || calculations.fundingGap <= 0) ? 'Surplus / Fully Funded' : 'Cash to Introduce'}
+                      {calculations && isAdjustedFullyFunded ? 'Surplus / Fully Funded' : 'Cash to Introduce'}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {calculations ? (Math.abs(calculations.fundingGap) < 1 ? '£0' : formatCurrency(Math.abs(calculations.fundingGap))) : '—'}
+                      {calculations ? (isAdjustedFullyFunded ? '£0' : formatCurrency(Math.abs(adjustedFundingGap))) : '—'}
                     </td>
                   </tr>
                   <tr className="border-t bg-muted/30">
