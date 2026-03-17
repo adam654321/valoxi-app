@@ -433,7 +433,7 @@ router.post('/beta-nda/sign', isAuthenticated, asyncHandler(async (req: Request,
             </table>
           </div>
           <p style="margin:0 0 16px;color:#6b7280;font-size:13px;">By electronically accepting this agreement, both parties confirm their agreement to the terms of the Valoxi Beta Testing Non-Disclosure Agreement Version 1.0, March 2026.</p>
-          <p style="margin:0;color:#6b7280;font-size:13px;">For questions, contact: <a href="mailto:hello@valoxi.ai" style="color:#2563eb;">hello@valoxi.ai</a></p>
+          <p style="margin:0;color:#6b7280;font-size:13px;">For questions, contact: <a href="mailto:adam@shiftopsconsulting.com" style="color:#2563eb;">adam@shiftopsconsulting.com</a></p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
           <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; A trading name of ShiftOps Consulting Ltd &middot; Registered in England &amp; Wales</p>
@@ -452,7 +452,7 @@ router.post('/beta-nda/sign', isAuthenticated, asyncHandler(async (req: Request,
   });
 
   await (emailService as any).sendEmail({
-    to: 'hello@valoxi.ai',
+    to: 'adam@shiftopsconsulting.com',
     subject: `Beta NDA signed — ${signerName} (${user.email})`,
     html: ndaEmailHtml(signerName),
     fromName: 'Valoxi (ShiftOps Consulting Ltd)',

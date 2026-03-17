@@ -180,7 +180,7 @@ export default function BetaNda() {
             </Button>
 
             <p className="text-center text-xs text-muted-foreground">
-              A signed copy will be emailed to you and to hello@valoxi.ai for our records.
+              A signed copy will be emailed to you and to adam@shiftopsconsulting.com for our records.
             </p>
           </CardContent>
         </Card>
