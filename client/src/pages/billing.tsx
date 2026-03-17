@@ -489,37 +489,43 @@ export default function BillingPage() {
             </Card>
           )}
 
-          {subscription && (
-            <Card>
-              <CardContent className="flex items-center justify-between py-5">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Crown className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-semibold text-foreground">
-                        {currentPlan ? currentPlan.charAt(0) + currentPlan.slice(1).toLowerCase() : "No Plan"} Plan
-                      </h2>
+          <Card>
+            <CardContent className="flex items-center justify-between py-5">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <Crown className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {subscription
+                        ? `${currentPlan ? currentPlan.charAt(0) + currentPlan.slice(1).toLowerCase() : "No"} Plan`
+                        : "No Active Plan"}
+                    </h2>
+                    {subscription && (
                       <Badge variant={getStatusLabel(subscription.status).variant}>
                         {getStatusLabel(subscription.status).label}
                       </Badge>
-                    </div>
-                    {trialDays !== null && (
+                    )}
+                  </div>
+                  {subscription ? (
+                    trialDays !== null && (
                       <p className="text-sm text-muted-foreground">
                         {trialDays} day{trialDays !== 1 ? "s" : ""} remaining in trial
                       </p>
-                    )}
-                  </div>
+                    )
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Choose a plan below to get started.</p>
+                  )}
                 </div>
-                {subscription.billingInterval && (
-                  <Badge variant="outline" className="text-xs">
-                    Billed {subscription.billingInterval === "year" ? "annually" : "monthly"}
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
-          )}
+              </div>
+              {subscription?.billingInterval && (
+                <Badge variant="outline" className="text-xs">
+                  Billed {subscription.billingInterval === "year" ? "annually" : "monthly"}
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
 
           <div>
             <div className="flex items-center justify-between mb-6">
