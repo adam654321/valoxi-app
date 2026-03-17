@@ -80,22 +80,16 @@ interface PlanDefinition {
 }
 
 const PLAN_PRICING: Record<string, Record<PlanKey, PlanPricing>> = {
-  gbp: {
-    CORE: { monthlyPrice: 67, annualPrice: 53.60 },
-    PROFESSIONAL: { monthlyPrice: 127, annualPrice: 101.60 },
-    EXPERT: { monthlyPrice: 297, annualPrice: 237.60 },
-    ENTERPRISE: { monthlyPrice: 0, annualPrice: 0 },
-  },
   usd: {
-    CORE: { monthlyPrice: 67, annualPrice: 53.60 },
-    PROFESSIONAL: { monthlyPrice: 127, annualPrice: 101.60 },
-    EXPERT: { monthlyPrice: 297, annualPrice: 237.60 },
+    CORE: { monthlyPrice: 87, annualPrice: 69.60 },
+    PROFESSIONAL: { monthlyPrice: 167, annualPrice: 133.60 },
+    EXPERT: { monthlyPrice: 397, annualPrice: 317.60 },
     ENTERPRISE: { monthlyPrice: 0, annualPrice: 0 },
   },
 };
 
 function getPlans(currency: string): PlanDefinition[] {
-  const pricing = PLAN_PRICING[currency] || PLAN_PRICING.gbp;
+  const pricing = PLAN_PRICING[currency] || PLAN_PRICING.usd;
   return [
     {
       key: "CORE",
@@ -175,12 +169,8 @@ export default function BillingPage() {
   const currentPlan = usePlanKey();
   const { toast } = useToast();
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
-  const [pricingCurrency, setPricingCurrency] = useState<"gbp" | "usd">(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("currency") === "usd" ? "usd" : "gbp";
-  });
-  const currencySymbol = pricingCurrency === "usd" ? "$" : "£";
-  const PLANS = getPlans(pricingCurrency);
+  const currencySymbol = "$";
+  const PLANS = getPlans('usd');
   const [verifyingSession, setVerifyingSession] = useState(false);
   const verifyAttempted = useRef(false);
 
@@ -258,7 +248,7 @@ export default function BillingPage() {
       const res = await apiRequest("POST", "/api/v2/billing/checkout", {
         planKey,
         billingInterval: interval,
-        currency: pricingCurrency,
+        currency: 'usd',
       });
       return res.json() as Promise<{ checkoutUrl?: string; requiresUpgrade?: boolean }>;
     },
@@ -281,7 +271,7 @@ export default function BillingPage() {
       const res = await apiRequest("POST", "/api/v2/billing/upgrade", {
         planKey,
         billingInterval: interval,
-        currency: pricingCurrency,
+        currency: 'usd',
       });
       return res.json() as Promise<{ upgraded?: boolean; error?: string; message?: string }>;
     },
