@@ -13,7 +13,19 @@ async function seedAdmins() {
     await db.update(users).set({ isSystemAdmin: true }).where(eq(users.email, vivEmail));
     console.log(`[OK] ${vivEmail} — found (id: ${vivUser.id}), set isSystemAdmin = true`);
   } else {
-    console.warn(`[WARN] ${vivEmail} — user not found, skipping`);
+    const passwordHash = await bcrypt.hash('ChangeMe2025!', 10);
+    const [newUser] = await db.insert(users).values({
+      email: vivEmail,
+      firstName: 'Viv',
+      lastName: '',
+      passwordHash,
+      isSystemAdmin: true,
+      isCompanyAdmin: true,
+      isActive: true,
+      role: 'admin',
+      userCompanyId: null,
+    }).returning();
+    console.log(`[OK] ${vivEmail} — created new user (id: ${newUser.id}) with isSystemAdmin = true`);
   }
 
   const adamEmail = 'adam@shiftopsconsulting.com';
