@@ -722,7 +722,7 @@ router.get('/feedback', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 const updateFeedbackSchema = z.object({
-  status: z.enum(['open', 'in_progress', 'resolved', 'wont_fix']).optional(),
+  status: z.enum(['open', 'in_progress', 'resolved', 'resolved_test', 'resolved_live', 'resolved_both', 'wont_fix']).optional(),
   adminNotes: z.string().optional(),
 });
 
@@ -745,6 +745,63 @@ router.patch('/feedback/:id', asyncHandler(async (req: Request, res: Response) =
   }
 
   sendSuccess(res, updated);
+}));
+
+router.get('/feedback/export', asyncHandler(async (_req: Request, res: Response) => {
+  const rows = await db
+    .select({
+      id: betaFeedback.id,
+      type: betaFeedback.type,
+      severity: betaFeedback.severity,
+      title: betaFeedback.title,
+      description: betaFeedback.description,
+      reporterName: betaFeedback.reporterName,
+      reporterEmail: betaFeedback.reporterEmail,
+      companyName: userCompanies.companyName,
+      pageTitle: betaFeedback.pageTitle,
+      pageUrl: betaFeedback.pageUrl,
+      status: betaFeedback.status,
+      adminNotes: betaFeedback.adminNotes,
+      createdAt: betaFeedback.createdAt,
+      updatedAt: betaFeedback.updatedAt,
+    })
+    .from(betaFeedback)
+    .leftJoin(userCompanies, eq(betaFeedback.userCompanyId, userCompanies.id))
+    .orderBy(desc(betaFeedback.createdAt));
+
+  const escape = (val: any): string => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const headers = ['ID', 'Type', 'Severity', 'Title', 'Description', 'Reporter Name', 'Reporter Email', 'Company', 'Page Title', 'Page URL', 'Status', 'Admin Notes', 'Submitted', 'Updated'];
+  const csvRows = rows.map(r => [
+    r.id,
+    r.type,
+    r.severity,
+    r.title,
+    r.description,
+    r.reporterName,
+    r.reporterEmail,
+    r.companyName,
+    r.pageTitle,
+    r.pageUrl,
+    r.status,
+    r.adminNotes,
+    r.createdAt ? new Date(r.createdAt).toISOString() : '',
+    r.updatedAt ? new Date(r.updatedAt).toISOString() : '',
+  ].map(escape).join(','));
+
+  const csv = [headers.join(','), ...csvRows].join('\n');
+  const filename = `beta-feedback-${new Date().toISOString().split('T')[0]}.csv`;
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
 }));
 
 export default router;

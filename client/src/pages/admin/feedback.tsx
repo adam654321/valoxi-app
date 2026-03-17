@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, ChevronDown, ChevronRight, Bug, MessageSquare, Lightbulb, HelpCircle, AlertTriangle, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight, Bug, MessageSquare, Lightbulb, HelpCircle, AlertTriangle, Clock, CheckCircle2, XCircle, Download } from "lucide-react";
 
 interface FeedbackRow {
   id: number;
@@ -48,9 +48,14 @@ const SEVERITY_CONFIG: Record<string, { label: string; className: string }> = {
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; className: string }> = {
   open: { label: "Open", icon: AlertTriangle, className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
   in_progress: { label: "In Progress", icon: Clock, className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" },
+  resolved_test: { label: "Resolved - Test", icon: CheckCircle2, className: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400" },
+  resolved_live: { label: "Resolved - Live", icon: CheckCircle2, className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
+  resolved_both: { label: "Resolved - Both", icon: CheckCircle2, className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400" },
   resolved: { label: "Resolved", icon: CheckCircle2, className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
   wont_fix: { label: "Won't Fix", icon: XCircle, className: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400" },
 };
+
+const RESOLVED_STATUSES = ["resolved_test", "resolved_live", "resolved_both", "resolved"];
 
 export default function AdminFeedback() {
   const { toast } = useToast();
@@ -59,10 +64,11 @@ export default function AdminFeedback() {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<number, string>>({});
+  const [isExporting, setIsExporting] = useState(false);
 
   const buildUrl = () => {
     const params = new URLSearchParams();
-    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (statusFilter !== "all" && statusFilter !== "all_resolved") params.set("status", statusFilter);
     if (typeFilter !== "all") params.set("type", typeFilter);
     if (severityFilter !== "all") params.set("severity", severityFilter);
     const qs = params.toString();
@@ -97,15 +103,37 @@ export default function AdminFeedback() {
     },
   });
 
-  const rows = data?.data ?? [];
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch("/api/v2/admin/feedback/export", { credentials: "include" });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `beta-feedback-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-  const openCount = rows.filter(r => r.status === "open").length;
-  const inProgressCount = rows.filter(r => r.status === "in_progress").length;
-  const resolvedCount = rows.filter(r => r.status === "resolved").length;
+  const allRows = data?.data ?? [];
+  const rows = statusFilter === "all_resolved"
+    ? allRows.filter(r => RESOLVED_STATUSES.includes(r.status))
+    : allRows;
 
-  const bugCount = rows.filter(r => r.type === "bug").length;
-  const suggestionCount = rows.filter(r => r.type === "suggestion").length;
-  const commentCount = rows.filter(r => r.type === "comment").length;
+  const openCount = allRows.filter(r => r.status === "open").length;
+  const inProgressCount = allRows.filter(r => r.status === "in_progress").length;
+  const resolvedCount = allRows.filter(r => RESOLVED_STATUSES.includes(r.status)).length;
+
+  const bugCount = allRows.filter(r => r.type === "bug").length;
+  const suggestionCount = allRows.filter(r => r.type === "suggestion").length;
+  const commentCount = allRows.filter(r => r.type === "comment").length;
 
   return (
     <div className="p-6 space-y-6">
@@ -159,14 +187,17 @@ export default function AdminFeedback() {
             <CardTitle>Feedback ({rows.length})</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-44">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="all_resolved">All Resolved</SelectItem>
+                  <SelectItem value="resolved_test">Resolved - Test</SelectItem>
+                  <SelectItem value="resolved_live">Resolved - Live</SelectItem>
+                  <SelectItem value="resolved_both">Resolved - Both</SelectItem>
                   <SelectItem value="wont_fix">Won't Fix</SelectItem>
                 </SelectContent>
               </Select>
@@ -194,6 +225,19 @@ export default function AdminFeedback() {
                   <SelectItem value="critical">Critical</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                Export CSV
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -235,9 +279,8 @@ export default function AdminFeedback() {
                     const TypeIcon = typeConf.icon;
 
                     return (
-                      <>
+                      <Fragment key={row.id}>
                         <TableRow
-                          key={row.id}
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => setExpandedId(isExpanded ? null : row.id)}
                         >
@@ -350,7 +393,7 @@ export default function AdminFeedback() {
                                       Save Notes
                                     </Button>
                                   </div>
-                                  <div className="w-48">
+                                  <div className="w-52">
                                     <div className="text-xs font-medium text-muted-foreground mb-1">Update Status</div>
                                     <Select
                                       value={row.status}
@@ -364,7 +407,9 @@ export default function AdminFeedback() {
                                       <SelectContent>
                                         <SelectItem value="open">Open</SelectItem>
                                         <SelectItem value="in_progress">In Progress</SelectItem>
-                                        <SelectItem value="resolved">Resolved</SelectItem>
+                                        <SelectItem value="resolved_test">Resolved - Test</SelectItem>
+                                        <SelectItem value="resolved_live">Resolved - Live</SelectItem>
+                                        <SelectItem value="resolved_both">Resolved - Both</SelectItem>
                                         <SelectItem value="wont_fix">Won't Fix</SelectItem>
                                       </SelectContent>
                                     </Select>
@@ -374,7 +419,7 @@ export default function AdminFeedback() {
                             </TableCell>
                           </TableRow>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })
                 )}
