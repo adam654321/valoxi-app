@@ -28,23 +28,39 @@ async function seedAdmins() {
 
   if (vivUser) {
     await db.update(users)
-      .set({ isSystemAdmin: true, userCompanyId: shiftOpsCompanyId })
+      .set({
+        firstName: 'Vivek',
+        lastName: 'Kuvelker',
+        role: 'admin',
+        userRole: 'company_admin',
+        isCompanyAdmin: true,
+        isSystemAdmin: true,
+        isActive: true,
+        emailVerified: true,
+        onboardingCompleted: true,
+        onboardingStep: 'create_target',
+        userCompanyId: shiftOpsCompanyId,
+      })
       .where(eq(users.email, vivEmail));
-    console.log(`[OK] ${vivEmail} — found (id: ${vivUser.id}), set isSystemAdmin = true, company = ${shiftOpsCompanyId}`);
+    console.log(`[OK] ${vivEmail} — updated (id: ${vivUser.id}), company = ${shiftOpsCompanyId}`);
   } else {
     const passwordHash = await bcrypt.hash('ChangeMe2025!', 10);
     const [newUser] = await db.insert(users).values({
       email: vivEmail,
-      firstName: 'Viv',
-      lastName: '',
+      firstName: 'Vivek',
+      lastName: 'Kuvelker',
       passwordHash,
-      isSystemAdmin: true,
-      isCompanyAdmin: true,
-      isActive: true,
       role: 'admin',
+      userRole: 'company_admin',
+      isCompanyAdmin: true,
+      isSystemAdmin: true,
+      isActive: true,
+      emailVerified: true,
+      onboardingCompleted: true,
+      onboardingStep: 'create_target',
       userCompanyId: shiftOpsCompanyId,
     }).returning();
-    console.log(`[OK] ${vivEmail} — created new user (id: ${newUser.id}), company = ${shiftOpsCompanyId}`);
+    console.log(`[OK] ${vivEmail} — created (id: ${newUser.id}), company = ${shiftOpsCompanyId}`);
   }
 
   // 3. Adam
@@ -53,23 +69,41 @@ async function seedAdmins() {
 
   if (adamUser) {
     await db.update(users)
-      .set({ isSystemAdmin: true, userCompanyId: shiftOpsCompanyId })
+      .set({
+        firstName: 'Adam',
+        lastName: 'ShiftOps',
+        role: 'admin',
+        userRole: 'analyst',
+        isCompanyAdmin: false,
+        isSystemAdmin: true,
+        isActive: true,
+        emailVerified: true,
+        onboardingCompleted: true,
+        onboardingStep: 'create_target',
+        betaNdaSigned: true,
+        userCompanyId: shiftOpsCompanyId,
+      })
       .where(eq(users.email, adamEmail));
-    console.log(`[OK] ${adamEmail} — found (id: ${adamUser.id}), set isSystemAdmin = true, company = ${shiftOpsCompanyId}`);
+    console.log(`[OK] ${adamEmail} — updated (id: ${adamUser.id}), company = ${shiftOpsCompanyId}`);
   } else {
     const passwordHash = await bcrypt.hash('ChangeMe2025!', 10);
     const [newUser] = await db.insert(users).values({
       email: adamEmail,
       firstName: 'Adam',
-      lastName: 'Auty',
+      lastName: 'ShiftOps',
       passwordHash,
-      isSystemAdmin: true,
-      isCompanyAdmin: true,
-      isActive: true,
       role: 'admin',
+      userRole: 'analyst',
+      isCompanyAdmin: false,
+      isSystemAdmin: true,
+      isActive: true,
+      emailVerified: true,
+      onboardingCompleted: true,
+      onboardingStep: 'create_target',
+      betaNdaSigned: true,
       userCompanyId: shiftOpsCompanyId,
     }).returning();
-    console.log(`[OK] ${adamEmail} — created new user (id: ${newUser.id}), company = ${shiftOpsCompanyId}`);
+    console.log(`[OK] ${adamEmail} — created (id: ${newUser.id}), company = ${shiftOpsCompanyId}`);
   }
 
   console.log('\n=== Done ===');
