@@ -323,7 +323,7 @@ async function seedDdRequirements() {
   console.log(`  Total requirements in data: ${DD_DATA.reduce((sum, c) => sum + c.requirements.length, 0)}`);
 }
 
-if (require.main === module || process.argv[1]?.includes('seed-dd-requirements')) {
+if (process.argv[1]?.includes('seed-dd-requirements')) {
   seedDdRequirements()
     .then(() => process.exit(0))
     .catch((err) => {

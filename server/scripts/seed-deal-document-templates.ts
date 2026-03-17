@@ -145,7 +145,7 @@ async function seedTemplates() {
   console.log('Template seeding complete.');
 }
 
-if (require.main === module || process.argv[1]?.includes('seed-deal-document-templates')) {
+if (process.argv[1]?.includes('seed-deal-document-templates')) {
   seedTemplates()
     .then(() => process.exit(0))
     .catch((err) => {
