@@ -6,6 +6,7 @@ import { buildStaffMatrixAnalysisPrompt } from "../prompts/step2-staff-matrix-pr
 // Uses the app's geminiClient (GOOGLE_GEMINI_API_KEY) — never swap for replit_integrations/
 import { geminiClient } from "./gemini-client";
 import type { DocumentTrackingContext } from "./gemini-document-classification-service";
+import { fileStorageService } from "./file-storage.service";
 
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
 
@@ -50,10 +51,24 @@ function getPromptForDocumentType(documentType: DocumentType): string {
   }
 }
 
+async function readFileBuffer(filePath: string): Promise<Buffer | null> {
+  try {
+    if (fileStorageService.isObjectStorageKey(filePath)) {
+      return await fileStorageService.download(filePath);
+    }
+    const fs = await import('fs/promises');
+    return await fs.readFile(filePath);
+  } catch (error) {
+    console.error(`[GEMINI_STEP2] Failed to read file: ${filePath}`, error);
+    return null;
+  }
+}
+
 async function readFileContent(filePath: string): Promise<string | null> {
   try {
-    const fs = await import('fs/promises');
-    const content = await fs.readFile(filePath, 'utf-8');
+    const buffer = await readFileBuffer(filePath);
+    if (!buffer) return null;
+    const content = buffer.toString('utf-8');
     const maxChars = 50000;
     if (content.length > maxChars) {
       console.log(`[GEMINI_STEP2] Text content truncated from ${content.length} to ${maxChars} chars`);
@@ -61,15 +76,15 @@ async function readFileContent(filePath: string): Promise<string | null> {
     }
     return content.trim() || null;
   } catch (error) {
-    console.error(`[GEMINI_STEP2] Failed to read file from disk: ${filePath}`, error);
+    console.error(`[GEMINI_STEP2] Failed to read file content: ${filePath}`, error);
     return null;
   }
 }
 
 async function readFileAsBase64(filePath: string): Promise<string | null> {
   try {
-    const fs = await import('fs/promises');
-    const buffer = await fs.readFile(filePath);
+    const buffer = await readFileBuffer(filePath);
+    if (!buffer) return null;
     return buffer.toString('base64');
   } catch (error) {
     console.error(`[GEMINI_STEP2] Failed to read file as base64: ${filePath}`, error);
