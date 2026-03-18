@@ -39,6 +39,7 @@ const industries = [
 const targetCompanySchema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
   industry: z.string().min(1, "Industry is required"),
+  subSector: z.string().optional().nullable(),
   website: z.string().url("Please enter a valid website URL").optional().or(z.literal("")),
   phone: z.string().optional(),
   email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
@@ -111,6 +112,7 @@ export default function TargetCompanies() {
       if (!editingCompany) return;
       const payload = {
         ...data,
+        subSector: data.subSector || null,
         website: data.website || null,
         email: data.email || null,
       };
@@ -169,6 +171,7 @@ export default function TargetCompanies() {
     form.reset({
       companyName: company.companyName,
       industry: company.industry || "",
+      subSector: company.subSector || "",
       website: company.website || "",
       phone: company.phone || "",
       email: company.email || "",
