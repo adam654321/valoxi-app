@@ -140,6 +140,12 @@ export default function OnboardingPage() {
       return res.json();
     },
     onSuccess: async () => {
+      queryClient.setQueryData(["/api/v2/auth/me"], (old: any) => {
+        if (!old) return old;
+        const data = old?.data ?? old;
+        const updated = { ...data, onboardingCompleted: true };
+        return old?.data !== undefined ? { ...old, data: updated } : updated;
+      });
       await queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/v2/onboarding/progress"] });
       toast({ title: "Welcome to Valoxi", description: "Your account is set up. Let's find you a deal." });
