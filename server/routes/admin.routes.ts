@@ -807,4 +807,10 @@ router.get('/feedback/export', asyncHandler(async (_req: Request, res: Response)
   res.send(csv);
 }));
 
+router.post('/backfill-company-accounts', asyncHandler(async (_req: Request, res: Response) => {
+  const { backfillCompanyAccountsRows } = await import('../scripts/backfill-company-accounts');
+  const result = await backfillCompanyAccountsRows();
+  return res.status(200).json({ success: true, ...result });
+}));
+
 export default router;

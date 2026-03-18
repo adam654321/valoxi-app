@@ -1,0 +1,103 @@
+Add a one-time admin migration script and route. This backfills company_accounts rows in document_analysis_results for documents that have profit_and_loss and balance_sheet rows but no company_accounts row.
+1. Create server/scripts/backfill-company-accounts.ts:
+typescriptimport { db } from '../db';
+import { documentAnalysisResults, documents } from '@shared/schema';
+import { eq, and, notExists } from 'drizzle-orm';
+
+export async function backfillCompanyAccountsRows(): Promise<{ inserted: number; skipped: number }> {
+  console.log('[BACKFILL] Starting company_accounts backfill...');
+
+  // Find all documents in Company Accounts category that have P&L results but no company_accounts row
+  const candidates = await db
+    .select({
+      documentId: documentAnalysisResults.documentId,
+      fileUploadEventId: documentAnalysisResults.fileUploadEventId,
+      analysisData: documentAnalysisResults.analysisData,
+    })
+    .from(documentAnalysisResults)
+    .innerJoin(documents, eq(documents.id, documentAnalysisResults.documentId))
+    .where(
+      and(
+        eq(documentAnalysisResults.documentType, 'profit_and_loss'),
+        eq(documents.documentCategory, 'Company Accounts'),
+        notExists(
+          db.select()
+            .from(documentAnalysisResults)
+            .where(
+              and(
+                eq(documentAnalysisResults.documentId, documentAnalysisResults.documentId),
+                eq(documentAnalysisResults.documentType, 'company_accounts')
+              )
+            )
+        )
+      )
+    );
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const plRow of candidates) {
+    // Check again individually to be safe
+    const existing = await db
+      .select({ id: documentAnalysisResults.id })
+      .from(documentAnalysisResults)
+      .where(
+        and(
+          eq(documentAnalysisResults.documentId, plRow.documentId),
+          eq(documentAnalysisResults.documentType, 'company_accounts')
+        )
+      );
+
+    if (existing.length > 0) {
+      console.log(`[BACKFILL] Skipping doc ${plRow.documentId} — company_accounts row already exists`);
+      skipped++;
+      continue;
+    }
+
+    // Get the balance sheet row for this document
+    const [bsRow] = await db
+      .select({ analysisData: documentAnalysisResults.analysisData })
+      .from(documentAnalysisResults)
+      .where(
+        and(
+          eq(documentAnalysisResults.documentId, plRow.documentId),
+          eq(documentAnalysisResults.documentType, 'balance_sheet')
+        )
+      );
+
+    const caData: Record<string, any> = {
+      document: 'company_accounts',
+      source: 'statutory_accounts',
+      profit_and_loss: plRow.analysisData,
+      balance_sheet: bsRow?.analysisData ?? null,
+    };
+
+    await db.insert(documentAnalysisResults).values({
+      documentId: plRow.documentId,
+      fileUploadEventId: plRow.fileUploadEventId,
+      documentType: 'company_accounts',
+      analysisData: caData,
+      processingTime: 0,
+      usageMetadata: null,
+    });
+
+    console.log(`[BACKFILL] Inserted company_accounts row for document ${plRow.documentId}`);
+    inserted++;
+  }
+
+  console.log(`[BACKFILL] Done — inserted: ${inserted}, skipped: ${skipped}`);
+  return { inserted, skipped };
+}
+2. Add a protected admin route to server/routes/admin.routes.ts:
+Import and add this route inside the existing admin router:
+typescriptrouter.post('/backfill-company-accounts', isSystemAdmin, async (req: Request, res: Response) => {
+  try {
+    const { backfillCompanyAccountsRows } = await import('../scripts/backfill-company-accounts');
+    const result = await backfillCompanyAccountsRows();
+    return res.status(200).json({ success: true, ...result });
+  } catch (err: any) {
+    console.error('[BACKFILL] Error:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+No DB schema changes, no frontend changes. Just deploy and confirm the server starts cleanly.
