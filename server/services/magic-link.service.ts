@@ -27,7 +27,9 @@ class MagicLinkService {
       expiresAt,
     });
 
-    const appUrl = process.env.APP_URL || 'http://localhost:5000';
+    const appUrl = process.env.APP_URL
+      || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : null)
+      || 'http://localhost:5000';
     return `${appUrl}/auth/magic?token=${token}`;
   }
 

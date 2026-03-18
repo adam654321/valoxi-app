@@ -126,7 +126,11 @@ export class DealDocumentService {
             .where(eq(targetContacts.id, token.targetContactId));
 
           if (contact?.email) {
-            const portalUrl = `${process.env.REPLIT_DEV_DOMAIN ? 'https://' + process.env.REPLIT_DEV_DOMAIN : 'https://localhost:5000'}/portal/${token.accessToken}`;
+            const _baseUrl = process.env.APP_URL
+              || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : null)
+              || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null)
+              || 'http://localhost:5000';
+            const portalUrl = `${_baseUrl}/portal/${token.accessToken}`;
 
             const sellerHtml = `
               <h2>You Have Received ${doc.documentType === 'offer_letter' ? 'an Offer' : `a ${docLabel}`}</h2>
