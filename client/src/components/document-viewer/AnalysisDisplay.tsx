@@ -985,13 +985,6 @@ function renderCompanyAccountsAnalysis(analysisData: any) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <div className="bg-teal-100 dark:bg-teal-900/40 px-4 py-2 rounded-full">
-          <span className="text-teal-800 dark:text-teal-200 font-semibold text-base">Company Accounts</span>
-        </div>
-        <span className="text-muted-foreground text-sm">Financial Records Analysis</span>
-      </div>
-
       {plData && renderProfitAndLossAnalysis(plData)}
       {bsData && renderBalanceSheetAnalysis(bsData)}
 
@@ -1183,56 +1176,6 @@ export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetr
             </Card>
           )}
           
-          {result.usageMetadata && (
-            <Card className="bg-muted/30 mt-4">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Analysis Metadata
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                  <div>
-                    <div className="text-muted-foreground">Prompt Tokens</div>
-                    <div className="font-semibold">{result.usageMetadata.promptTokenCount?.toLocaleString() || 0}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Response Tokens</div>
-                    <div className="font-semibold">{result.usageMetadata.candidatesTokenCount?.toLocaleString() || 0}</div>
-                  </div>
-                  {result.usageMetadata.thoughtsTokenCount !== undefined && result.usageMetadata.thoughtsTokenCount > 0 && (
-                    <div>
-                      <div className="text-muted-foreground">Thinking Tokens</div>
-                      <div className="font-semibold">{result.usageMetadata.thoughtsTokenCount?.toLocaleString() || 0}</div>
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-muted-foreground">Total Tokens</div>
-                    <div className="font-semibold">{result.usageMetadata.totalTokenCount?.toLocaleString() || 0}</div>
-                  </div>
-                  {result.processingTime && (
-                    <div>
-                      <div className="text-muted-foreground">Processing Time</div>
-                      <div className="font-semibold">{(result.processingTime / 1000).toFixed(1)}s</div>
-                    </div>
-                  )}
-                </div>
-                {result.usageMetadata.promptTokensDetails && result.usageMetadata.promptTokensDetails.length > 0 && (
-                  <div>
-                    <div className="text-muted-foreground text-sm mb-2">Token Breakdown by Modality</div>
-                    <div className="flex flex-wrap gap-2">
-                      {result.usageMetadata.promptTokensDetails.map((detail, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {detail.modality}: {detail.tokenCount?.toLocaleString()}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
       ))}
     </div>
