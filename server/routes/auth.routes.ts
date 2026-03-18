@@ -268,7 +268,9 @@ const forgotPasswordSchema = z.object({
 
 router.post('/forgot-password', authLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email } = forgotPasswordSchema.parse(req.body);
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const baseUrl = process.env.APP_URL
+    || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : null)
+    || `${req.protocol}://${req.get('host')}`;
   await passwordResetService.requestReset(email, baseUrl);
   sendSuccess(res, { message: 'If an account exists with that email, a password reset link has been sent.' });
 }));
