@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,8 +10,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCompanyDetail() {
-  const params = useParams<{ id: string }>();
-  const companyId = params?.id;
+  const [path] = useLocation();
+  const companyId = path.match(/\/admin\/companies\/([^/]+)/)?.[1] ?? window.location.pathname.match(/\/admin\/companies\/([^/]+)/)?.[1];
   const { toast } = useToast();
 
   const { data: company, isLoading: companyLoading } = useQuery<any>({

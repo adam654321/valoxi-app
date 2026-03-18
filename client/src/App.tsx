@@ -118,6 +118,16 @@ function Router() {
         <Route path="/portal/:token" component={PortalPage} />
         <Route path="/invite/:token" component={AcceptInvitation} />
 
+        <Route path="/admin/companies/:id">
+          {() => (
+            <AdminRoute>
+              <AdminLayout>
+                <AdminCompanyDetail />
+              </AdminLayout>
+            </AdminRoute>
+          )}
+        </Route>
+
         <Route path="/admin/:rest*">
           {() => (
             <AdminRoute>
