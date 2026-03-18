@@ -974,8 +974,15 @@ function renderBalanceSheetAnalysis(analysisData: any) {
 }
 
 function renderCompanyAccountsAnalysis(analysisData: any) {
-  const accountsData = analysisData.data;
-  
+  if (!analysisData) return null;
+
+  // Current format: { document: 'company_accounts', profit_and_loss: {...}, balance_sheet: {...} }
+  const plData = analysisData.profit_and_loss;
+  const bsData = analysisData.balance_sheet;
+
+  // Legacy format: { document: 'company_accounts', data: { document_type: '...', data: {...} } }
+  const legacyData = analysisData.data;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
@@ -985,21 +992,22 @@ function renderCompanyAccountsAnalysis(analysisData: any) {
         <span className="text-muted-foreground text-sm">Financial Records Analysis</span>
       </div>
 
-      {accountsData.document_type === 'sales_ledger' && renderSalesLedgerAnalysis(accountsData.data)}
-      {accountsData.document_type === 'staff_matrix' && renderStaffMatrixAnalysis(accountsData.data)}
-      {accountsData.document_type === 'asset_register' && renderAssetRegisterAnalysis(accountsData.data)}
-      {accountsData.document_type === 'profit_and_loss' && renderProfitAndLossAnalysis(accountsData.data)}
-      {accountsData.document_type === 'balance_sheet' && renderBalanceSheetAnalysis(accountsData.data)}
-      
-      {!['sales_ledger', 'staff_matrix', 'asset_register', 'profit_and_loss', 'balance_sheet'].includes(accountsData.document_type) && (
+      {plData && renderProfitAndLossAnalysis(plData)}
+      {bsData && renderBalanceSheetAnalysis(bsData)}
+
+      {legacyData && legacyData.document_type === 'sales_ledger' && renderSalesLedgerAnalysis(legacyData.data)}
+      {legacyData && legacyData.document_type === 'staff_matrix' && renderStaffMatrixAnalysis(legacyData.data)}
+      {legacyData && legacyData.document_type === 'asset_register' && renderAssetRegisterAnalysis(legacyData.data)}
+      {legacyData && legacyData.document_type === 'profit_and_loss' && renderProfitAndLossAnalysis(legacyData.data)}
+      {legacyData && legacyData.document_type === 'balance_sheet' && renderBalanceSheetAnalysis(legacyData.data)}
+
+      {!plData && !bsData && !legacyData && (
         <Card>
           <CardHeader>
             <CardTitle>Company Accounts Data</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
-              {JSON.stringify(accountsData, null, 2)}
-            </pre>
+            <p className="text-sm text-muted-foreground">No detailed financial data available for this document.</p>
           </CardContent>
         </Card>
       )}
