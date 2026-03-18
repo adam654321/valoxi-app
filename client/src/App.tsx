@@ -100,6 +100,18 @@ function Router() {
     );
   }
 
+  // Onboarding gate — redirect users who haven't completed onboarding
+  if (user && user.onboardingCompleted === false) {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <Switch>
+          <Route path="/onboarding" component={OnboardingPage} />
+          <Route>{() => <Redirect to="/onboarding" />}</Route>
+        </Switch>
+      </Suspense>
+    );
+  }
+
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Switch>
