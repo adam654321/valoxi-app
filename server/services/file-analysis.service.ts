@@ -200,6 +200,17 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
     console.log(`[FILE_ANALYSIS] Confidence: ${classificationResult.confidence}`);
     console.log(`[FILE_ANALYSIS] Reasoning: ${classificationResult.reasoning}`);
 
+    // The classification prompt does not instruct Gemini to return 'company_accounts'
+    // as a type — it returns the sub-types directly. Override based on document category
+    // so the expansion logic below always fires correctly for statutory accounts files.
+    if (
+      document.documentCategory === 'Company Accounts' &&
+      !classificationResult.documentTypes.includes('company_accounts')
+    ) {
+      console.log(`[FILE_ANALYSIS] Category override: uploaded as 'Company Accounts' but Gemini returned [${classificationResult.documentTypes.join(', ')}] — overriding to [company_accounts]`);
+      classificationResult.documentTypes = ['company_accounts'];
+    }
+
     const classificationData = {
       step: 'classification',
       documentTypes: classificationResult.documentTypes,

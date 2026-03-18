@@ -90,16 +90,16 @@ IMPORTANT: Respond with a JSON object in the following format:
 }
 
 Where document_types is an array containing one or more of the following values:
-- "profit_and_loss" (for Profit & Loss analysis)
-- "balance_sheet" (for Balance Sheet analysis)
+- "profit_and_loss" (for a standalone Profit & Loss document)
+- "balance_sheet" (for a standalone Balance Sheet document)
 - "asset_register" (for Asset register)
 - "sales_ledger" (for Sales ledger)
 - "staff_matrix" (for Staff matrix)
+- "company_accounts" (for statutory accounts or annual accounts files containing multi-year financial statements — use this even if the file contains P&L and balance sheet data)
 - "none" (if the document does not match any of the above types)
 
-For Company Accounts files (which may contain multiple years of financial statements), you may return multiple document types if the file contains information for more than one category.
-
-For single-purpose documents (like a dedicated staff list or sales ledger export), return only one document type.
+For Company Accounts / statutory accounts files return ["company_accounts"] only — do not return profit_and_loss or balance_sheet for these files.
+For single-purpose standalone documents return only one type.
 
 If the document cannot be classified into any of the above categories, return ["none"].`;
 }
