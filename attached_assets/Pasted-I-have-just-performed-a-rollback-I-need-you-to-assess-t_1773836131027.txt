@@ -1,0 +1,79 @@
+I have just performed a rollback. I need you to assess the current state of the codebase against a list of expected changes, and tell me exactly what is present, what is missing, and what needs review. Do not make any changes — assessment only.
+Check each item and report: ✅ Present / ❌ Missing / ⚠️ Partial
+1. server/scripts/seed-admins.ts
+
+Does company name say "Valoxi.ai"?
+Is password "Changeme2026!"?
+Does Adam have isSystemAdmin: true?
+Is there a subscription upsert block setting planKey: 'EXPERT', status: 'admin_comped'?
+
+2. server/scripts/_inspect-admins.ts
+
+Does this file exist?
+
+3. .replit
+
+Is there a [userenv.production] section?
+
+4. server/services/file-analysis.service.ts
+
+Is there a document category override block after the classification log lines that checks document.documentCategory === 'Company Accounts' and forces classificationResult.documentTypes = ['company_accounts']?
+
+5. server/prompts/document-classification-prompt.ts
+
+Does the valid types list include "company_accounts" as a returnable type?
+Does it say "For Company Accounts / statutory accounts files return ["company_accounts"] only"?
+
+6. server/routes/billing.routes.ts
+
+Are there any occurrences of INVOICE_RATE_PENCE = 5025? (should be gone)
+Is there a subCurrency variable that checks existingSub.currency in both the /upgrade-preview and /upgrade routes?
+Is INVOICE_RATE_CENTS set to subCurrency === 'gbp' ? 5025 : 6525?
+
+7. client/src/pages/billing.tsx
+
+Does PLAN_PRICING show Core at 87, Professional at 167, Expert at 397?
+Is currencySymbol hardcoded to "$"?
+Is there any GBP/USD toggle UI?
+
+8. client/src/pages/onboarding.tsx
+
+Does INDUSTRIES have more than 10 items?
+Does it include an "Other" free-text input that appears conditionally?
+Does COMPANY_SIZES include "2–5 employees"?
+Does HEAR_ABOUT_OPTIONS have more than 6 items?
+Does it include an "Other" free-text input for hear about us?
+
+9. shared/calculators/deal-model.calc.ts
+
+Is feeBroker removed from the CalculationResult interface?
+Is feeBroker removed from the calculateFees return and totalFees sum?
+
+10. client/src/components/deal-modeller/ViabilitySection.tsx
+
+Is the feeBroker entry removed from FEE_FIELDS?
+
+11. client/src/components/target-company/DealModeller.tsx
+
+Is there a netCashFromBusiness useMemo?
+Is cashFromBusiness={netCashFromBusiness} passed to <FundingSection />?
+
+12. client/src/components/deal-modeller/FundingSection.tsx
+
+Does FundingSectionProps include cashFromBusiness: number?
+Is there an adjustedTotal calculation?
+Does the Funding Target grid show "Cash Released from Business" conditionally?
+
+13. client/src/components/deal-modeller/ValuationSection.tsx
+
+Is the hasConsideration block and "Indicative Consideration Structure" section gone?
+
+14. client/src/lib/queryClient.ts
+
+Does throwIfResNotOk parse JSON and extract message and code fields?
+
+15. server/services/target-companies.service.ts
+
+Does the create() method check subscription limits before inserting?
+
+For each item show me the relevant lines or confirm their absence. Do not change anything.
