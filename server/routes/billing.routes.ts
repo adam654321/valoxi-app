@@ -470,7 +470,8 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
     if (existingSub.freeMonthsTotal > 0 && existingSub.freeMonthsStartedAt && !existingSub.communityDiscountCouponId) {
       const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
       unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
-      const INVOICE_RATE_CENTS = 6525;
+      const subCurrency = existingSub.currency ?? 'usd';
+      const INVOICE_RATE_CENTS = subCurrency === 'gbp' ? 5025 : 6525;
       freePeriodCredit = unusedFreeMonths * INVOICE_RATE_CENTS;
     }
 
@@ -733,14 +734,16 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
       const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
       if (unusedFreeMonths > 0 && existingSub.stripeCustomerId) {
-        const INVOICE_RATE_CENTS = 6525;
+        const subCurrency = existingSub.currency ?? 'usd';
+        const INVOICE_RATE_CENTS = subCurrency === 'gbp' ? 5025 : 6525;
         const creditAmount = unusedFreeMonths * INVOICE_RATE_CENTS;
         await stripe.customers.createBalanceTransaction(existingSub.stripeCustomerId, {
           amount: -creditAmount,
-          currency: 'usd',
+          currency: subCurrency,
           description: `Pro-rata credit for ${unusedFreeMonths} unused free month(s) from community referral`,
         });
-        console.log(`[billing] Applied $${(creditAmount / 100).toFixed(2)} free-period credit for company ${userCompanyId} (${unusedFreeMonths} months)`);
+        const symbol = subCurrency === 'gbp' ? '£' : '$';
+        console.log(`[billing] Applied ${symbol}${(creditAmount / 100).toFixed(2)} free-period credit for company ${userCompanyId} (${unusedFreeMonths} months)`);
 
         await billingRepository.updateByCompanyId(userCompanyId, {
           freeMonthsTotal: elapsed,
