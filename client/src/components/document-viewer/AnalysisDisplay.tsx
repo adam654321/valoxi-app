@@ -1126,10 +1126,7 @@ export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetr
     );
   }
 
-  const hasCompanyAccounts = results.some(r => r.documentType === 'company_accounts');
-  const displayResults = hasCompanyAccounts
-    ? results.filter(r => !['profit_and_loss', 'balance_sheet'].includes(r.documentType))
-    : results;
+  const displayResults = results.filter(r => r.documentType !== 'company_accounts');
 
   return (
     <div className="space-y-6">
