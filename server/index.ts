@@ -123,5 +123,6 @@ app.use((req, res, next) => {
     } catch (err) {
       console.error('[STARTUP] User roles seed failed:', err);
     }
+
   });
 })();
