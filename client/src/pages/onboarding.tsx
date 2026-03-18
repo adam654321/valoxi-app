@@ -49,10 +49,11 @@ const INDUSTRIES = [
 
 const COMPANY_SIZES = [
   "Just me",
-  "2–10 employees",
-  "11–50 employees",
-  "51–200 employees",
-  "200+ employees",
+  "2–5 employees",
+  "5–10 employees",
+  "10–20 employees",
+  "20–50 employees",
+  "50+ employees",
 ];
 
 const HEAR_ABOUT_OPTIONS = [
