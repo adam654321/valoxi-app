@@ -14,16 +14,16 @@ interface DocumentsTabProps {
 export function DocumentsTab({ companyId, targetCompanyId, companyName }: DocumentsTabProps) {
   return (
     <Tabs defaultValue="stage1" className="space-y-4">
-      <TabsList className="h-9 bg-muted/50">
-        <TabsTrigger value="stage1" className="text-xs gap-1.5 px-3">
+      <TabsList className="h-9 bg-muted/60 p-1">
+        <TabsTrigger value="stage1" className="text-xs gap-1.5 px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
           <FileText className="w-3.5 h-3.5" />
           Stage 1: Financial
         </TabsTrigger>
-        <TabsTrigger value="stage2" className="text-xs gap-1.5 px-3">
+        <TabsTrigger value="stage2" className="text-xs gap-1.5 px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
           <FileCheck className="w-3.5 h-3.5" />
           Stage 2: Due Diligence
         </TabsTrigger>
-        <TabsTrigger value="deal-documents" className="text-xs gap-1.5 px-3">
+        <TabsTrigger value="deal-documents" className="text-xs gap-1.5 px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
           <Shield className="w-3.5 h-3.5" />
           Deal Documents
         </TabsTrigger>

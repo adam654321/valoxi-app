@@ -186,9 +186,9 @@ export class AdminRepository {
         email: userCompanies.email,
         createdAt: userCompanies.createdAt,
         betaPlanOverride: userCompanies.betaPlanOverride,
-        userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.user_company_id = ${userCompanies.id})::int`,
-        dealCount: sql<number>`(SELECT COUNT(*) FROM target_companies WHERE target_companies.user_company_id = ${userCompanies.id})::int`,
-        totalTokenCost: sql<string>`COALESCE((SELECT SUM(estimated_cost_usd) FROM token_usage WHERE token_usage.user_company_id = ${userCompanies.id}), 0)::numeric(10,6)`,
+        userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.user_company_id = user_companies.id)::int`,
+        dealCount: sql<number>`(SELECT COUNT(*) FROM target_companies WHERE target_companies.user_company_id = user_companies.id)::int`,
+        totalTokenCost: sql<string>`COALESCE((SELECT SUM(estimated_cost_usd) FROM token_usage WHERE token_usage.user_company_id = user_companies.id), 0)::numeric(10,6)`,
       })
       .from(userCompanies)
       .orderBy(userCompanies.companyName);
@@ -202,9 +202,9 @@ export class AdminRepository {
         email: userCompanies.email,
         createdAt: userCompanies.createdAt,
         betaPlanOverride: userCompanies.betaPlanOverride,
-        userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.user_company_id = ${userCompanies.id})::int`,
-        dealCount: sql<number>`(SELECT COUNT(*) FROM target_companies WHERE target_companies.user_company_id = ${userCompanies.id})::int`,
-        totalTokenCost: sql<string>`COALESCE((SELECT SUM(estimated_cost_usd) FROM token_usage WHERE token_usage.user_company_id = ${userCompanies.id}), 0)::numeric(10,6)`,
+        userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.user_company_id = user_companies.id)::int`,
+        dealCount: sql<number>`(SELECT COUNT(*) FROM target_companies WHERE target_companies.user_company_id = user_companies.id)::int`,
+        totalTokenCost: sql<string>`COALESCE((SELECT SUM(estimated_cost_usd) FROM token_usage WHERE token_usage.user_company_id = user_companies.id), 0)::numeric(10,6)`,
       })
       .from(userCompanies)
       .where(eq(userCompanies.id, companyId));
