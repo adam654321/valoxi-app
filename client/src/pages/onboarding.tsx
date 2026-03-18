@@ -60,7 +60,16 @@ const HEAR_ABOUT_OPTIONS = [
   "5D Community",
   "LinkedIn",
   "Google / Search",
+  "YouTube",
+  "Podcast",
+  "Twitter / X",
+  "Facebook / Instagram",
+  "Newsletter / Email",
   "Referred by a colleague",
+  "Referred by a friend",
+  "Online forum or community",
+  "Press / News article",
+  "Webinar or event",
   "Other",
 ];
 
@@ -94,6 +103,7 @@ export default function OnboardingPage() {
   const [companySize, setCompanySize] = useState("");
   const [role, setRole] = useState("");
   const [hearAboutUs, setHearAboutUs] = useState("");
+  const [hearAboutUsOther, setHearAboutUsOther] = useState("");
   const [companyNamePreFilled, setCompanyNamePreFilled] = useState(false);
 
   useEffect(() => {
@@ -159,7 +169,7 @@ export default function OnboardingPage() {
       industry: industry === "Other" ? `Other: ${industryOther.trim()}` : industry,
       companySize,
       role,
-      hearAboutUs,
+      hearAboutUs: hearAboutUs === "Other" ? `Other: ${hearAboutUsOther.trim()}` : hearAboutUs,
     });
   };
 
@@ -261,6 +271,15 @@ export default function OnboardingPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {hearAboutUs === "Other" && (
+                <div className="space-y-1.5 mt-2">
+                  <Input
+                    value={hearAboutUsOther}
+                    onChange={(e) => setHearAboutUsOther(e.target.value)}
+                    placeholder="Please tell us how you found us"
+                  />
+                </div>
+              )}
             </div>
 
             <Button
