@@ -5,6 +5,7 @@ import { authService } from '../services/auth.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { isAuthenticated, refreshSessionPermissions } from '../middleware/auth';
+import { validateCsrfToken } from '../middleware/csrf';
 import { asyncHandler } from '../utils/async-handler';
 import { passwordResetService } from '../services/password-reset.service';
 import { authLimiter } from '../middleware/rate-limit';
@@ -378,9 +379,11 @@ const betaNdaSchema = z.object({
   signerName: z.string().min(2, 'Please enter your full name'),
 });
 
-router.post('/beta-nda/sign', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
+router.post('/beta-nda/sign', isAuthenticated, validateCsrfToken, asyncHandler(async (req: Request, res: Response) => {
   const { signerName } = betaNdaSchema.parse(req.body);
   const userId = req.session.userId!;
+
+  const signerIp = (req.ip ?? req.socket.remoteAddress ?? '').replace(/^::ffff:/, '');
 
   const [user] = await db
     .select()
@@ -394,7 +397,12 @@ router.post('/beta-nda/sign', isAuthenticated, asyncHandler(async (req: Request,
 
   await db
     .update(users)
-    .set({ betaNdaSigned: true, betaNdaSignedAt: new Date() })
+    .set({
+      betaNdaSigned: true,
+      betaNdaSignedAt: new Date(),
+      betaNdaSignerName: signerName,
+      betaNdaSignerIp: signerIp || null,
+    })
     .where(eq(users.id, userId));
 
   const signedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
