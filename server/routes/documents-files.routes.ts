@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs/promises';
 import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
 import { documentsRepository } from '../repositories/documents.repository';
@@ -6,32 +8,28 @@ import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
 import { sanitizeFilename, sharedFileFilter } from '../utils/upload';
-import { fileStorageService } from '../services/file-storage.service';
+
 import { uploadLimiter } from '../middleware/rate-limit';
 
 const router = Router();
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: sharedFileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 },
+const uploadStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const companyId = req.params.id;
+    if (!companyId) return cb(new Error('Company ID is required'), '');
+    const uploadPath = path.join(process.cwd(), 'uploads', 'companies', companyId);
+    try {
+      await fs.mkdir(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+    } catch (error) { cb(error as Error, ''); }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `doc-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
 });
 
-async function serveFile(res: Response, filePath: string, contentType: string, disposition: string, filename: string) {
-  if (!fileStorageService.isObjectStorageKey(filePath)) {
-    return res.status(404).json({ error: 'File no longer available — please re-upload this document.' });
-  }
-  try {
-    const buffer = await fileStorageService.download(filePath);
-    res.setHeader('Content-Type', contentType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `${disposition}; filename="${sanitizeFilename(filename)}"`);
-    res.setHeader('Cache-Control', 'private, max-age=3600');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.send(buffer);
-  } catch {
-    res.status(404).json({ error: 'File not found in storage.' });
-  }
-}
+const upload = multer({ storage: uploadStorage, fileFilter: sharedFileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 router.delete('/clear-all', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
@@ -42,7 +40,7 @@ router.delete('/clear-all', asyncHandler(async (req: Request, res: Response) => 
 
   const result = await documentsFilesService.clearAllCompanyDocuments(userCompanyId);
 
-  console.log(`[API] Document clearing completed: ${result.deletedDocuments} doc(s), ${result.deletedExternalSubmissions} submission(s), ${result.filesDeleted.length} file(s) removed`);
+  console.log(`[API] Document clearing completed: ${result.deletedDocuments} doc(s), ${result.deletedExternalSubmissions} submission(s), ${result.filesDeleted.length} file(s) removed from disk`);
 
   sendSuccess(res, {
     success: true,
@@ -69,20 +67,15 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         return res.status(400).json({ error: err.message });
       }
       if (!req.file) throw new BadRequestError('No file uploaded');
-
       await documentsFilesService.verifyCompanyAccess(targetCompanyId, userCompanyId);
-
-      const originalFilename = sanitizeFilename(req.file.originalname);
-      const storageKey = fileStorageService.generateKey(`documents/companies/${targetCompanyId}`, originalFilename);
-      await fileStorageService.upload(storageKey, req.file.buffer);
-
       const documentCategory = req.body.document_category || 'Company Accounts';
+      const originalFilename = sanitizeFilename(req.file.originalname);
       const document = await documentsFilesService.createDocument({
         targetCompanyId,
         uploadedBy: userId,
         documentName: req.body.document_name || originalFilename,
         originalFilename: originalFilename,
-        filePath: storageKey,
+        filePath: req.file.path,
         fileSize: req.file.size,
         fileType: req.file.mimetype,
         documentCategory,
@@ -97,13 +90,13 @@ router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) 
         fileName: originalFilename,
         fileUrl: `${baseUrl}/api/v2/public/documents/${document.publicToken}/download`,
       });
-
+      
       const { analysisQueue } = await import('../services/analysis-queue.service');
       analysisQueue.enqueue({
         eventId: uploadEvent.id,
         targetCompanyId: parseInt(req.params.id),
       });
-
+      
       const { track } = await import('../services/funnel.service');
       track(userCompanyId, userId, 'document.uploaded', { documentType: documentCategory, fileSize: req.file.size });
 
@@ -138,7 +131,11 @@ router.get('/:id/view', asyncHandler(async (req: Request, res: Response) => {
   if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
   const document = await documentsFilesService.getDocument(documentId, userCompanyId);
   await documentsFilesService.logAccess(documentId, userId, 'view', req.ip);
-  await serveFile(res, document.filePath, document.fileType || 'application/octet-stream', 'inline', document.originalFilename);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `inline; filename="${sanitizeFilename(document.originalFilename)}"`);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.sendFile(path.resolve(document.filePath));
 }));
 
 router.get('/:id/download', asyncHandler(async (req: Request, res: Response) => {
@@ -149,7 +146,9 @@ router.get('/:id/download', asyncHandler(async (req: Request, res: Response) => 
   if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
   const document = await documentsFilesService.getDocument(documentId, userCompanyId);
   await documentsFilesService.logAccess(documentId, userId, 'download', req.ip);
-  await serveFile(res, document.filePath, document.fileType || 'application/octet-stream', 'attachment', document.originalFilename);
+  res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(document.originalFilename)}"`);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.sendFile(path.resolve(document.filePath));
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
@@ -185,7 +184,9 @@ publicDocumentRoutes.get('/:token/download', asyncHandler(async (req: Request, r
   const document = await documentsFilesService.getDocumentByPublicToken(token);
   if (!document) return res.status(404).json({ error: 'Document not found' });
   await documentsRepository.logDocumentAccess(document.id, null as any, 'public_download', req.ip);
-  await serveFile(res, document.filePath, document.fileType || 'application/octet-stream', 'attachment', document.originalFilename);
+  res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(document.originalFilename)}"`);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.sendFile(path.resolve(document.filePath));
 }));
 
 publicDocumentRoutes.get('/:token/view', asyncHandler(async (req: Request, res: Response) => {
@@ -194,5 +195,8 @@ publicDocumentRoutes.get('/:token/view', asyncHandler(async (req: Request, res: 
   const document = await documentsFilesService.getDocumentByPublicToken(token);
   if (!document) return res.status(404).json({ error: 'Document not found' });
   await documentsRepository.logDocumentAccess(document.id, null as any, 'public_view', req.ip);
-  await serveFile(res, document.filePath, document.fileType || 'application/octet-stream', 'inline', document.originalFilename);
+  res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `inline; filename="${sanitizeFilename(document.originalFilename)}"`);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.sendFile(path.resolve(document.filePath));
 }));
