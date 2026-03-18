@@ -116,5 +116,12 @@ app.use((req, res, next) => {
     } catch (err) {
       console.error('[STARTUP] Seed check failed:', err);
     }
+
+    try {
+      const { seedUserRoles } = await import('./scripts/seed-user-roles');
+      await seedUserRoles();
+    } catch (err) {
+      console.error('[STARTUP] User roles seed failed:', err);
+    }
   });
 })();
