@@ -21,8 +21,16 @@ export async function refreshCsrfToken(): Promise<void> {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    const error = new Error(`${res.status}: ${text}`) as any;
+    let message = `${res.status}: ${text}`;
+    let code: string | undefined;
+    try {
+      const json = JSON.parse(text);
+      if (json.message) message = json.message;
+      if (json.code) code = json.code;
+    } catch {}
+    const error = new Error(message) as any;
     error.status = res.status;
+    error.code = code;
     throw error;
   }
 }

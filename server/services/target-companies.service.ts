@@ -1,9 +1,13 @@
 import { targetCompaniesRepository, type TargetCompanyWithStats, type SearchParams, type FilterOptions } from '../repositories/target-companies.repository';
 import { websiteAnalysisService } from './website-analysis.service';
-import { BadRequestError, NotFoundError } from '../utils/errors';
+import { billingService } from './billing.service';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
+import { getMaxActiveTargets } from '@shared/entitlements';
+import type { PlanKey } from '@shared/schema/billing';
 import type { TargetCompany, InsertTargetCompany } from '@shared/schema';
 import { db } from '../db';
 import { 
+  targetCompanies,
   targetContacts, 
   activities, 
   documents, 
@@ -20,7 +24,7 @@ import {
   companyDocumentRequirements,
   documentStageProgression
 } from '@shared/schema';
-import { eq, sql, inArray } from 'drizzle-orm';
+import { eq, sql, inArray, count } from 'drizzle-orm';
 
 export class TargetCompaniesService {
   async getAll(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
@@ -43,6 +47,26 @@ export class TargetCompaniesService {
   }
 
   async create(data: Omit<InsertTargetCompany, 'userCompanyId' | 'createdBy'>, userId: number, userCompanyId: number): Promise<TargetCompany> {
+    const subscription = await billingService.getSubscription(userCompanyId);
+    if (subscription) {
+      const maxTargets = getMaxActiveTargets(
+        subscription.planKey as PlanKey,
+        subscription.addOnCompanySlots ?? 0,
+        subscription.enterpriseOverrides as Record<string, unknown> | null
+      );
+      if (maxTargets !== null) {
+        const [{ total }] = await db
+          .select({ total: count() })
+          .from(targetCompanies)
+          .where(eq(targetCompanies.userCompanyId, userCompanyId));
+        if (total >= maxTargets) {
+          throw new ForbiddenError(
+            `You have reached the limit of ${maxTargets} compan${maxTargets === 1 ? 'y' : 'ies'} on your current plan. Please upgrade to add more.`
+          );
+        }
+      }
+    }
+
     const processedData = {
       companyName: data.companyName,
       industry: data.industry || null,
