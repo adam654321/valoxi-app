@@ -1126,9 +1126,14 @@ export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetr
     );
   }
 
+  const hasCompanyAccounts = results.some(r => r.documentType === 'company_accounts');
+  const displayResults = hasCompanyAccounts
+    ? results.filter(r => !['profit_and_loss', 'balance_sheet'].includes(r.documentType))
+    : results;
+
   return (
     <div className="space-y-6">
-      {results.map((result) => (
+      {displayResults.map((result) => (
         <div key={result.id}>
           <div className="flex items-center justify-between mb-4">
             <div>
