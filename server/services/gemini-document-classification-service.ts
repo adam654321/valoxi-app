@@ -1,31 +1,43 @@
 import { buildDocumentClassificationPrompt } from "../prompts/document-classification-prompt";
 // Uses the app's geminiClient (GOOGLE_GEMINI_API_KEY) — never swap for replit_integrations/
 import { geminiClient } from "./gemini-client";
+import { fileStorageService } from './file-storage.service';
 
 const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
 
+async function readFileBuffer(filePath: string): Promise<Buffer | null> {
+  try {
+    if (fileStorageService.isObjectStorageKey(filePath)) {
+      return await fileStorageService.download(filePath);
+    }
+    const fs = await import('fs/promises');
+    return await fs.readFile(filePath);
+  } catch (error) {
+    console.error(`[GEMINI] Failed to read file: ${filePath}`, error);
+    return null;
+  }
+}
+
 async function readFileContent(filePath: string): Promise<string | null> {
   try {
-    const fs = await import('fs/promises');
-    const content = await fs.readFile(filePath, 'utf-8');
+    const buffer = await readFileBuffer(filePath);
+    if (!buffer) return null;
+    const content = buffer.toString('utf-8');
     const maxChars = 50000;
-    if (content.length > maxChars) {
-      return content.substring(0, maxChars);
-    }
-    return content.trim() || null;
+    return content.length > maxChars ? content.substring(0, maxChars) : content.trim() || null;
   } catch (error) {
-    console.error(`[GEMINI_CLASSIFICATION] Failed to read file from disk: ${filePath}`, error);
+    console.error(`[GEMINI] Failed to read file content: ${filePath}`, error);
     return null;
   }
 }
 
 async function readFileAsBase64(filePath: string): Promise<string | null> {
   try {
-    const fs = await import('fs/promises');
-    const buffer = await fs.readFile(filePath);
+    const buffer = await readFileBuffer(filePath);
+    if (!buffer) return null;
     return buffer.toString('base64');
   } catch (error) {
-    console.error(`[GEMINI_CLASSIFICATION] Failed to read file as base64: ${filePath}`, error);
+    console.error(`[GEMINI] Failed to read file as base64: ${filePath}`, error);
     return null;
   }
 }
