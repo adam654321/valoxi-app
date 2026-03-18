@@ -5,8 +5,10 @@ let storageClient: Client | null = null;
 
 function getClient(): Client {
   if (!storageClient) {
-    storageClient = new Client();
-    (storageClient as any).state?.promise?.catch?.(() => {});
+    const privateDir = process.env.PRIVATE_OBJECT_DIR ?? '';
+    const bucketId = privateDir.split('/')[1] ?? undefined;
+    storageClient = bucketId ? new Client({ bucketId }) : new Client();
+    console.log(`[FILE_STORAGE] Initialised object storage client, bucketId: ${bucketId ?? 'default'}`);
   }
   return storageClient;
 }
@@ -21,12 +23,12 @@ export const fileStorageService = {
 
   async upload(key: string, buffer: Buffer): Promise<void> {
     const result = await getClient().uploadFromBytes(key, buffer);
-    if (!result.ok) throw new Error(`Object storage upload failed: ${result.error}`);
+    if (!result.ok) throw new Error(`Object storage upload failed: ${JSON.stringify(result.error)}`);
   },
 
   async download(key: string): Promise<Buffer> {
     const result = await getClient().downloadAsBytes(key);
-    if (!result.ok) throw new Error(`Object storage download failed: ${result.error}`);
+    if (!result.ok) throw new Error(`Object storage download failed: ${JSON.stringify(result.error)}`);
     return result.value[0];
   },
 

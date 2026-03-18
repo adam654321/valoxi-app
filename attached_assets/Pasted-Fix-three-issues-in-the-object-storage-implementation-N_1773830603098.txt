@@ -1,0 +1,33 @@
+Fix three issues in the object storage implementation. No DB changes.
+1. server/services/file-storage.service.ts — wrong bucket ID and swallowed errors
+The Client() is constructed with no arguments so it connects to the wrong bucket. Fix the getClient() function to extract the bucket ID from the PRIVATE_OBJECT_DIR environment variable, which contains it in the path:
+typescriptfunction getClient(): Client {
+  if (!clientInstance) {
+    const privateDir = process.env.PRIVATE_OBJECT_DIR ?? '';
+    const bucketId = privateDir.split('/')[1] ?? undefined;
+    clientInstance = bucketId ? new Client({ bucketId }) : new Client();
+    console.log(`[FILE_STORAGE] Initialised object storage client, bucketId: ${bucketId ?? 'default'}`);
+  }
+  return clientInstance;
+}
+Also fix the error messages in upload and download to use JSON.stringify(result.error) instead of ${result.error} so the actual SDK error is visible in logs:
+In upload, change:
+typescriptthrow new Error(`Object storage upload failed: ${result.error}`);
+To:
+typescriptthrow new Error(`Object storage upload failed: ${JSON.stringify(result.error)}`);
+In download, change:
+typescriptthrow new Error(`Object storage download failed: ${result.error}`);
+To:
+typescriptthrow new Error(`Object storage download failed: ${JSON.stringify(result.error)}`);
+2. server/routes/portal-submissions.routes.ts — missing filename with memoryStorage
+multer.memoryStorage() does not set req.file.filename — that is only set by diskStorage. Find where fileWithKey is constructed (the spread of req.file with the injected path key) and add a synthetic filename derived from the storage key:
+typescriptconst syntheticFilename = storageKey.split('/').pop() ?? `doc-${Date.now()}`;
+const fileWithKey = {
+  ...req.file,
+  path: storageKey,
+  filename: syntheticFilename,
+};
+3. Confirm the PRIVATE_OBJECT_DIR env variable exists
+Run this in the shell and show me the output:
+bashecho "PRIVATE_OBJECT_DIR=$PRIVATE_OBJECT_DIR"
+Confirm clean restart with no TypeScript errors, then show me the updated getClient function and the portal filename fix.

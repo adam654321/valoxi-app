@@ -37,7 +37,8 @@ router.post('/:token/submit', (req: Request, res: Response) => {
       const storageKey = fileStorageService.generateKey('documents/portal', req.file.originalname);
       await fileStorageService.upload(storageKey, req.file.buffer);
 
-      const fileWithKey = { ...req.file, path: storageKey };
+      const syntheticFilename = storageKey.split('/').pop() ?? `doc-${Date.now()}`;
+      const fileWithKey = { ...req.file, path: storageKey, filename: syntheticFilename };
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const result = await portalSubmissionsService.submitDocument(req.params.token, fileWithKey as any, req.body, baseUrl, req.ip, req.get('User-Agent'));
       sendSuccess(res, { success: true, submissionId: result.submissionId, message: 'Document submitted successfully', filename: result.filename });
