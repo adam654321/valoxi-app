@@ -1,0 +1,40 @@
+Two changes to fix company accounts classification. Do not change anything else.
+1. server/services/file-analysis.service.ts
+Find the four classification log lines:
+typescriptconsole.log(`[FILE_ANALYSIS] Classification successful for event ${eventId}`);
+console.log(`[FILE_ANALYSIS] Document types: ${classificationResult.documentTypes.join(', ')}`);
+console.log(`[FILE_ANALYSIS] Confidence: ${classificationResult.confidence}`);
+console.log(`[FILE_ANALYSIS] Reasoning: ${classificationResult.reasoning}`);
+Immediately after those four lines add:
+typescript// The classification prompt does not instruct Gemini to return 'company_accounts'
+// as a type — it returns the sub-types directly. Override based on document category
+// so the expansion logic below always fires correctly for statutory accounts files.
+if (
+  document.documentCategory === 'Company Accounts' &&
+  !classificationResult.documentTypes.includes('company_accounts')
+) {
+  console.log(`[FILE_ANALYSIS] Category override: uploaded as 'Company Accounts' but Gemini returned [${classificationResult.documentTypes.join(', ')}] — overriding to [company_accounts]`);
+  classificationResult.documentTypes = ['company_accounts'];
+}
+2. server/prompts/document-classification-prompt.ts
+Find the list of valid document_types values in the prompt. Add company_accounts to the list and update the instruction. Find this section:
+Where document_types is an array containing one or more of the following values:
+- "profit_and_loss"
+- "balance_sheet"
+- "asset_register"
+- "sales_ledger"
+- "staff_matrix"
+- "none"
+Replace with:
+Where document_types is an array containing one or more of the following values:
+- "profit_and_loss" (for a standalone Profit & Loss document)
+- "balance_sheet" (for a standalone Balance Sheet document)
+- "asset_register" (for Asset register)
+- "sales_ledger" (for Sales ledger)
+- "staff_matrix" (for Staff matrix)
+- "company_accounts" (for statutory accounts or annual accounts files containing multi-year financial statements — use this even if the file contains P&L and balance sheet data)
+- "none" (if the document does not match any of the above types)
+
+For Company Accounts / statutory accounts files return ["company_accounts"] only — do not return profit_and_loss or balance_sheet for these files.
+For single-purpose standalone documents return only one type.
+Confirm clean restart. Show me the changed lines in both files before and after.
