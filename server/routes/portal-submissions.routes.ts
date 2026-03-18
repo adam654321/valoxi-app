@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
-import path from 'path';
-import fs from 'fs/promises';
 import multer from 'multer';
 import { portalSubmissionsService } from '../services/portal-submissions.service';
 import { dueDiligenceService } from '../services/due-diligence.service';
+import { fileStorageService } from '../services/file-storage.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { BadRequestError } from '../utils/errors';
@@ -15,19 +14,7 @@ import { sharedFileFilter } from '../utils/upload';
 const router = Router();
 
 const portalUpload = multer({
-  storage: multer.diskStorage({
-    destination: async (req, file, cb) => {
-      const uploadPath = path.join(process.cwd(), 'uploads', 'portal');
-      try {
-        await fs.mkdir(uploadPath, { recursive: true });
-        cb(null, uploadPath);
-      } catch (error) { cb(error as Error, ''); }
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-  }),
+  storage: multer.memoryStorage(),
   fileFilter: sharedFileFilter,
   limits: { fileSize: 10 * 1024 * 1024 }
 });
@@ -40,17 +27,20 @@ router.get('/:token', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/:token/submit', (req: Request, res: Response) => {
   portalUpload.single('document')(req, res, async (err) => {
+    let r2Key: string | null = null;
     try {
       if (err) {
         if ((err as any).code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File too large. Max 10MB.' });
         return res.status(400).json({ error: err.message });
       }
       if (!req.file) throw new BadRequestError('No document uploaded');
+      r2Key = fileStorageService.generateKey('portal', req.file.originalname);
+      await fileStorageService.upload(r2Key, req.file.buffer);
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const result = await portalSubmissionsService.submitDocument(req.params.token, req.file, req.body, baseUrl, req.ip, req.get('User-Agent'));
+      const result = await portalSubmissionsService.submitDocument(req.params.token, req.file, r2Key, req.body, baseUrl, req.ip, req.get('User-Agent'));
       sendSuccess(res, { success: true, submissionId: result.submissionId, message: 'Document submitted successfully', filename: result.filename });
     } catch (error) {
-      if (req.file) try { await fs.unlink(req.file.path); } catch { }
+      if (r2Key) await fileStorageService.delete(r2Key);
       sendError(res, error);
     }
   });

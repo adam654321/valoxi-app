@@ -1,8 +1,7 @@
-import path from 'path';
-import fs from 'fs/promises';
 import { documentsRepository } from '../repositories/documents.repository';
 import { financialDataRepository } from '../repositories/financial-data.repository';
 import { documentAnalysisRepository } from '../repositories/document-analysis.repository';
+import { fileStorageService } from './file-storage.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { Document, InsertDocument } from '@shared/schema';
 
@@ -109,14 +108,12 @@ export class DocumentsFilesService {
   async deleteDocument(documentId: number, userCompanyId: number): Promise<void> {
     const document = await documentsRepository.getDocument(documentId, userCompanyId);
     if (document) {
-      // Delete related financial data first to avoid foreign key constraint violations
       try {
         await financialDataRepository.deleteByDocumentId(documentId);
       } catch (error) {
         console.error(`[DELETE_DOCUMENT] Error deleting financial data for document ${documentId}:`, error);
       }
       
-      // Delete document analysis results
       try {
         await documentAnalysisRepository.deleteByDocumentId(documentId);
       } catch (error) {
@@ -129,19 +126,19 @@ export class DocumentsFilesService {
         try {
           const externalSubmission = await documentsRepository.getExternalSubmission(document.externalSubmissionId, userCompanyId);
           if (externalSubmission) {
-            try { await fs.unlink(externalSubmission.filePath); } catch { }
+            await fileStorageService.delete(externalSubmission.filePath);
           }
           await documentsRepository.deleteExternalSubmission(document.externalSubmissionId);
         } catch { }
       }
-      try { await fs.unlink(document.filePath); } catch { }
+      await fileStorageService.delete(document.filePath);
       return;
     }
     const externalSubmission = await documentsRepository.getExternalSubmission(documentId, userCompanyId);
     if (!externalSubmission) throw new NotFoundError('Document not found or access denied');
     const success = await documentsRepository.deleteExternalSubmission(documentId);
     if (!success) throw new Error('Failed to delete external submission');
-    try { await fs.unlink(externalSubmission.filePath); } catch { }
+    await fileStorageService.delete(externalSubmission.filePath);
   }
 
   async getDocumentCategories() {

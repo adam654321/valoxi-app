@@ -1,7 +1,6 @@
-import path from 'path';
-import fs from 'fs/promises';
 import { portalSubmissionsRepository } from '../repositories/portal-submissions.repository';
 import { dueDiligenceService } from './due-diligence.service';
+import { fileStorageService } from './file-storage.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import { sanitizeFilename } from '../utils/upload';
 import type { PortalAccessToken, ExternalDocumentSubmission } from '@shared/schema';
@@ -37,11 +36,10 @@ export class PortalSubmissionsService {
     return await portalSubmissionsRepository.getSimplePortalData(token.id);
   }
 
-  async submitDocument(accessToken: string, file: Express.Multer.File, body: any, baseUrl: string, ipAddress?: string, userAgent?: string) {
+  async submitDocument(accessToken: string, file: Express.Multer.File, r2Key: string, body: any, baseUrl: string, ipAddress?: string, userAgent?: string) {
     const token = await this.validateToken(accessToken);
     const allowedActions = JSON.parse(token.allowedActions || '{}');
     if (!allowedActions.upload) {
-      await this.cleanupFile(file.path);
       throw new ForbiddenError('Document upload not permitted for this portal');
     }
     const submittedType = body.documentType || body.document_category || 'general';
@@ -49,7 +47,7 @@ export class PortalSubmissionsService {
     const originalFilename = sanitizeFilename(file.originalname);
     const submission = await portalSubmissionsRepository.createSubmission({
       portalTokenId: token.id, targetCompanyId: token.targetCompanyId, targetContactId: token.targetContactId,
-      originalFilename: originalFilename, storedFilename: file.filename, filePath: file.path,
+      originalFilename: originalFilename, storedFilename: r2Key, filePath: r2Key,
       fileSize: file.size, fileType: file.mimetype, documentCategory: submittedType,
       submissionNotes: body.submissionNotes || body.submission_notes || null,
       submissionIp: ipAddress, submissionUserAgent: userAgent,
@@ -57,7 +55,7 @@ export class PortalSubmissionsService {
     });
     const mainDocument = await portalSubmissionsRepository.createDocument({
       targetCompanyId: token.targetCompanyId, uploadedBy: 1, documentName: originalFilename,
-      originalFilename: originalFilename, filePath: file.path, fileSize: file.size, fileType: file.mimetype,
+      originalFilename: originalFilename, filePath: r2Key, fileSize: file.size, fileType: file.mimetype,
       documentCategory: mappedCategory, description: `Submitted via external portal${body.submissionNotes ? ': ' + body.submissionNotes : ''}`,
       isConfidential: false, externalSubmissionId: submission.id,
     });
@@ -68,7 +66,6 @@ export class PortalSubmissionsService {
     });
     await portalSubmissionsRepository.reviewSubmission(submission.id, token.createdBy, 'approved', 'Auto-approved - unified upload process');
     
-    // Queue analysis instead of fire-and-forget to prevent Gemini rate limiting
     const { analysisQueue } = await import('./analysis-queue.service');
     analysisQueue.enqueue({
       eventId: uploadEvent.id,
@@ -171,11 +168,7 @@ export class PortalSubmissionsService {
     }
     const success = await portalSubmissionsRepository.deleteDocument(documentId);
     if (!success) throw new Error('Failed to delete document');
-    await this.cleanupFile(document.filePath);
-  }
-
-  private async cleanupFile(filePath: string): Promise<void> {
-    try { await fs.unlink(filePath); } catch { }
+    await fileStorageService.delete(document.filePath);
   }
 }
 
