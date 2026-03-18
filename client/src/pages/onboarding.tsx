@@ -89,6 +89,7 @@ export default function OnboardingPage() {
 
   const [companyName, setCompanyName] = useState("");
   const [industry, setIndustry] = useState("");
+  const [industryOther, setIndustryOther] = useState("");
   const [companySize, setCompanySize] = useState("");
   const [role, setRole] = useState("");
   const [hearAboutUs, setHearAboutUs] = useState("");
@@ -148,10 +149,17 @@ export default function OnboardingPage() {
     const newErrors: typeof errors = {};
     if (!companyName.trim()) newErrors.companyName = "Company name is required.";
     if (!industry) newErrors.industry = "Please select your industry.";
+    if (industry === "Other" && !industryOther.trim()) newErrors.industry = "Please describe your industry.";
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    submitMutation.mutate({ companyName, industry, companySize, role, hearAboutUs });
+    submitMutation.mutate({
+      companyName,
+      industry: industry === "Other" ? `Other: ${industryOther.trim()}` : industry,
+      companySize,
+      role,
+      hearAboutUs,
+    });
   };
 
   if (userLoading) {
@@ -206,6 +214,15 @@ export default function OnboardingPage() {
                 </SelectContent>
               </Select>
               {errors.industry && <p className="text-sm text-red-600">{errors.industry}</p>}
+              {industry === "Other" && (
+                <div className="space-y-1.5 mt-2">
+                  <Input
+                    value={industryOther}
+                    onChange={(e) => setIndustryOther(e.target.value)}
+                    placeholder="Please describe your industry"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
