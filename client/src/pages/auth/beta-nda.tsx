@@ -30,7 +30,7 @@ export default function BetaNda() {
         return old?.data !== undefined ? { ...old, data: updated } : updated;
       });
       setSigned(true);
-      setTimeout(() => setLocation('/dashboard'), 2500);
+      setTimeout(() => setLocation('/onboarding'), 2500);
     },
     onError: (err: any) => {
       setError(err.message || 'Failed to record signature. Please try again.');

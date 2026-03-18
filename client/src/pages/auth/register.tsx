@@ -76,7 +76,7 @@ export default function Register() {
     onSuccess: async (data: any) => {
       await refreshCsrfToken();
       await queryClient.refetchQueries({ queryKey: ["/api/v2/auth/me"] });
-      setLocation("/dashboard");
+      setLocation("/onboarding");
       toast({
         title: "Success",
         description: "Account created successfully!",
