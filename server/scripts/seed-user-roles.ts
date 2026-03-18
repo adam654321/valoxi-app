@@ -1,6 +1,6 @@
 import { db } from '../db';
-import { userRoles, users } from '@shared/schema';
-import { eq, isNull, sql } from 'drizzle-orm';
+import { userRoles } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 const DEFAULT_ROLES = [
   {
@@ -98,18 +98,5 @@ export async function seedUserRoles(): Promise<void> {
 
   if (seeded > 0 || updated > 0) {
     console.log(`[STARTUP] User roles: seeded ${seeded} new, updated ${updated} existing`);
-  }
-
-  const [nullRoleResult] = await db
-    .select({ count: sql<number>`COUNT(*)::int` })
-    .from(users)
-    .where(isNull(users.userRole));
-
-  const nullCount = nullRoleResult?.count ?? 0;
-  if (nullCount > 0) {
-    await db.update(users)
-      .set({ userRole: 'company_admin' })
-      .where(isNull(users.userRole));
-    console.log(`[STARTUP] Assigned company_admin role to ${nullCount} user(s) with no role`);
   }
 }

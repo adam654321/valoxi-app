@@ -7,13 +7,41 @@ import { rolesService } from '../services/roles.service';
 
 const PERMISSIONS_TTL_MS = 5 * 60 * 1000;
 
+// Default permissions granted to any authenticated user with role='user' and active subscription.
+// The subscription gate (requireActiveSubscription) is enforced separately upstream.
+const USER_ROLE_PERMISSIONS: Record<string, boolean> = {
+  canViewFinancials: true,
+  canUploadDocuments: true,
+  canCreateDeals: true,
+  canEditAllDeals: false,
+  canDeleteDeals: false,
+  canCreateOffers: false,
+  canManageUsers: false,
+  canManageCompany: false,
+  canAccessAnalytics: true,
+  canExportData: true,
+};
+
+const ADMIN_ROLE_PERMISSIONS: Record<string, boolean> = {
+  canViewFinancials: true,
+  canUploadDocuments: true,
+  canCreateDeals: true,
+  canEditAllDeals: true,
+  canDeleteDeals: true,
+  canCreateOffers: true,
+  canManageUsers: true,
+  canManageCompany: true,
+  canAccessAnalytics: true,
+  canExportData: true,
+};
+
 export async function refreshSessionPermissions(req: Request): Promise<void> {
   const userId = req.session.userId;
   if (!userId) return;
 
   try {
     const [user] = await db
-      .select({ isSystemAdmin: users.isSystemAdmin })
+      .select({ isSystemAdmin: users.isSystemAdmin, role: users.role })
       .from(users)
       .where(eq(users.id, userId));
 
@@ -22,6 +50,7 @@ export async function refreshSessionPermissions(req: Request): Promise<void> {
     const userWithPerms = await rolesService.getUserWithPermissions(userId);
     const perms = userWithPerms?.permissions;
     if (perms) {
+      // user_role matched an RBAC entry — use those permissions
       const permMap: Record<string, boolean | null> = {};
       for (const [key, value] of Object.entries(perms)) {
         if (typeof value === 'boolean' || value === null) {
@@ -30,7 +59,13 @@ export async function refreshSessionPermissions(req: Request): Promise<void> {
       }
       req.session.permissions = permMap;
     } else {
-      req.session.permissions = {};
+      // user_role is a job title (e.g. "MD", "Broker") with no RBAC entry —
+      // fall back to permissions derived from the system `role` column.
+      if (user?.role === 'admin') {
+        req.session.permissions = { ...ADMIN_ROLE_PERMISSIONS };
+      } else {
+        req.session.permissions = { ...USER_ROLE_PERMISSIONS };
+      }
     }
 
     req.session.permissionsCachedAt = Date.now();

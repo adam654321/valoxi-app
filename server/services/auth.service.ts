@@ -50,8 +50,6 @@ export class AuthService {
       lastName: data.lastName,
       userCompanyId: userCompany.id,
       role: 'user',
-      userRole: 'company_admin',
-      isCompanyAdmin: true,
     });
 
     return {
