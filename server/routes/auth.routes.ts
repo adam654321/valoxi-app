@@ -445,6 +445,30 @@ router.post('/beta-nda/sign', isAuthenticated, validateCsrfToken, asyncHandler(a
           <p style="margin:0 0 16px;color:#6b7280;font-size:13px;">By electronically accepting this agreement, both parties confirm their agreement to the terms of the Valoxi Beta Testing Non-Disclosure Agreement Version 1.0, March 2026.</p>
           <p style="margin:0;color:#6b7280;font-size:13px;">For questions, contact: <a href="mailto:adam@shiftopsconsulting.com" style="color:#2563eb;">adam@shiftopsconsulting.com</a></p>
         </td></tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 16px; color: #374151; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">Full Agreement Text</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">1. Background</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">ShiftOps Consulting Ltd (trading as Valoxi) ("Disclosing Party") is developing a software platform for M&amp;A deal analysis ("Valoxi Platform"). The individual named above ("Receiving Party") has agreed to participate in beta testing of the Platform.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">2. Definitions</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">"Confidential Information" means all non-public information relating to the Platform, including its features, functionality, design, source code, data, pricing, business model, and any feedback provided during testing.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">3. Confidentiality Obligations</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">The Receiving Party agrees to: (a) keep all Confidential Information strictly confidential; (b) not disclose any Confidential Information to any third party without prior written consent; (c) use Confidential Information solely for the purpose of beta testing; (d) not copy, reproduce, or distribute any part of the Platform or its content.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">4. Beta Testing Obligations</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">The Receiving Party agrees to: (a) use the Platform only for evaluation purposes; (b) provide honest feedback to assist in improving the Platform; (c) not attempt to reverse engineer, decompile, or extract source code; (d) not use the Platform for any commercial purpose during the beta period.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">5. Intellectual Property</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">All intellectual property rights in the Platform remain the sole property of ShiftOps Consulting Ltd. No licence or right to use any intellectual property is granted except as expressly set out in this Agreement.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">6. Data Protection</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">Any personal data processed during beta testing will be handled in accordance with applicable data protection legislation. Data entered during the beta period will be deleted upon conclusion of testing.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">7. Disclaimer and Liability</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">The Platform is provided "as is" for testing purposes. The Disclosing Party makes no warranties regarding fitness for purpose or uninterrupted operation. The Disclosing Party's liability is limited to the fullest extent permitted by law.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">8. Term and Return of Information</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">This Agreement remains in force for two years from the date of signing. Upon request or conclusion of the beta period, the Receiving Party will promptly destroy or return all Confidential Information.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">9. General</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">This Agreement is governed by the laws of England and Wales. If any provision is found unenforceable, the remaining provisions continue in full force. This Agreement constitutes the entire agreement between the parties regarding confidentiality of the Platform.</p>
+            <p style="margin: 0; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">Version 1.0, March 2026</p>
+          </td>
+        </tr>
         <tr><td style="background:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
           <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; A trading name of ShiftOps Consulting Ltd &middot; Registered in England &amp; Wales</p>
         </td></tr>
