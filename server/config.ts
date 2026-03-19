@@ -8,7 +8,7 @@ function getBaseUrl(): string {
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  return 'http://localhost:5000';
+  return 'https://test.valoxi.ai';
 }
 
 export const config = {

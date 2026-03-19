@@ -161,7 +161,7 @@ export class EmailApiService {
     };
     const planLabel = planLabels[planKey] || planKey;
 
-    const appUrl = process.env.APP_URL || 'https://app.dealflow.ai';
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const loginUrl = `${appUrl}/login`;
 
     const html = `<!DOCTYPE html>

@@ -13,6 +13,7 @@ import { db } from '../db';
 import { users } from '@shared/schema/core';
 import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 import { escapeHtml } from '../utils/html';
+import { config } from '../config';
 import { emailService } from '../email';
 import { promoCodeService } from '../services/promo-code.service';
 import { billingService } from '../services/billing.service';
@@ -148,9 +149,7 @@ router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Res
 }));
 
 async function sendWelcomeEmail(email: string, firstName: string) {
-  const appUrl = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : process.env.APP_URL || 'https://app.dealflow.ai';
+  const appUrl = config.baseUrl;
 
   const html = `
     <!DOCTYPE html>
