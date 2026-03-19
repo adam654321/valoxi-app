@@ -813,14 +813,5 @@ router.post('/backfill-company-accounts', asyncHandler(async (_req: Request, res
   return res.status(200).json({ success: true, ...result });
 }));
 
-router.get('/one-time/fix-company-admins', asyncHandler(async (req: Request, res: Response) => {
-  const result = await db.execute(sql`
-    UPDATE users
-    SET is_company_admin = true
-    WHERE id IN (3, 4, 5, 6, 7, 8, 9, 10, 11)
-    RETURNING id, email, first_name, last_name, is_company_admin
-  `);
-  sendSuccess(res, { updated: result.rows });
-}));
 
 export default router;
