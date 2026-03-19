@@ -267,7 +267,9 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
     refetchInterval: (query) => {
       const raw = query.state.data;
       const data = Array.isArray(raw) ? raw : Array.isArray((raw as any)?.data) ? (raw as any).data : null;
-      if (!data || data.length === 0) return false;
+      // Keep polling if array is empty — analysis may have just been triggered
+      // and rows haven't been created yet
+      if (!data || data.length === 0) return 3000;
       const hasRunning = data.some((r: ExpertResult) => r.status === "processing" || r.status === "pending");
       return hasRunning ? 3000 : false;
     },
