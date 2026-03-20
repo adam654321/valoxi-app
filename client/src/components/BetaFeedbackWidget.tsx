@@ -141,7 +141,7 @@ export function BetaFeedbackWidget() {
       </Tooltip>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md flex flex-col max-h-[90vh]">
           {showSuccess ? (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <CheckCircle2 className="h-12 w-12 text-green-500" />
@@ -153,7 +153,7 @@ export function BetaFeedbackWidget() {
               <DialogHeader>
                 <DialogTitle>Beta Feedback</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-2">
+              <div className="space-y-4 py-2 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Type</Label>
                   <div className="grid grid-cols-4 gap-2">
