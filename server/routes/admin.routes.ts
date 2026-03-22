@@ -813,5 +813,10 @@ router.post('/backfill-company-accounts', asyncHandler(async (_req: Request, res
   return res.status(200).json({ success: true, ...result });
 }));
 
+router.post('/seed-activity-types', asyncHandler(async (_req: Request, res: Response) => {
+  const { seedActivityTypes } = await import('../scripts/seed-activity-types');
+  const result = await seedActivityTypes();
+  sendSuccess(res, result);
+}));
 
 export default router;
