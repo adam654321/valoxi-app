@@ -46,20 +46,34 @@ const SEED_SCRIPTS = [
 type SeedKey = typeof SEED_SCRIPTS[number]["key"];
 type SeedStatus = { status: "idle" | "running" | "success" | "error"; message?: string };
 
+async function parseJsonSafe(res: Response): Promise<any> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Server returned unexpected response (${res.status}). The page may need to be refreshed.`);
+  }
+}
+
 async function getCsrfToken(): Promise<string> {
-  const res = await fetch("/api/v2/auth/csrf", { credentials: "include" });
-  const data = await res.json();
+  const res = await fetch("/api/v2/auth/csrf", {
+    credentials: "include",
+    cache: "no-store",
+  });
+  const data = await parseJsonSafe(res);
   return data?.data?.csrfToken ?? "";
 }
 
-async function adminPost(endpoint: string): Promise<any> {
+async function adminPost(endpoint: string, body?: object): Promise<any> {
   const csrfToken = await getCsrfToken();
   const res = await fetch(endpoint, {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
     headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
+    body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json();
+  const data = await parseJsonSafe(res);
   if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
   return data;
 }
