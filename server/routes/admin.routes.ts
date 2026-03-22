@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { eq, and, sql, count, desc, gte, isNull, isNotNull } from 'drizzle-orm';
+import bcrypt from 'bcrypt';
 import Stripe from 'stripe';
 import { db } from '../db';
 import { config } from '../config';
@@ -817,6 +818,44 @@ router.post('/seed-activity-types', asyncHandler(async (_req: Request, res: Resp
   const { seedActivityTypes } = await import('../scripts/seed-activity-types');
   const result = await seedActivityTypes();
   sendSuccess(res, result);
+}));
+
+router.post('/seed-pipeline-stages', asyncHandler(async (_req: Request, res: Response) => {
+  const { seedDefaultPipelineStages } = await import('../scripts/seed-pipeline-stages');
+  await seedDefaultPipelineStages();
+  sendSuccess(res, { seeded: true });
+}));
+
+router.post('/seed-dd-requirements', asyncHandler(async (_req: Request, res: Response) => {
+  const { seedDdRequirements } = await import('../scripts/seed-dd-requirements');
+  await seedDdRequirements();
+  sendSuccess(res, { seeded: true });
+}));
+
+router.post('/seed-deal-document-templates', asyncHandler(async (_req: Request, res: Response) => {
+  const { seedTemplates } = await import('../scripts/seed-deal-document-templates');
+  await seedTemplates();
+  sendSuccess(res, { seeded: true });
+}));
+
+router.post('/seed-user-roles', asyncHandler(async (_req: Request, res: Response) => {
+  const { seedUserRoles } = await import('../scripts/seed-user-roles');
+  await seedUserRoles();
+  sendSuccess(res, { seeded: true });
+}));
+
+router.post('/verify-credentials', asyncHandler(async (req: Request, res: Response) => {
+  const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
+  const [user] = await db.select({ id: users.id, passwordHash: users.passwordHash, isSystemAdmin: users.isSystemAdmin })
+    .from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+  if (!user?.isSystemAdmin) {
+    return res.status(403).json({ success: false, message: 'Not authorised' });
+  }
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+  sendSuccess(res, { verified: true });
 }));
 
 export default router;

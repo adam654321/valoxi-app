@@ -14,6 +14,7 @@ import {
   Tag,
   Settings,
   MessageSquareText,
+  Database,
 } from "lucide-react";
 
 const adminNav = [
@@ -30,6 +31,7 @@ const adminNav = [
   { title: "Promo Codes", url: "/admin/promo-codes", icon: Tag },
   { title: "5D Invoice", url: "/admin/referral-invoice", icon: Receipt },
   { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Database", url: "/admin/database", icon: Database },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

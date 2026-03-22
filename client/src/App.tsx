@@ -52,6 +52,7 @@ const AdminPromoCodes = lazy(() => import("@/pages/admin/promo-codes"));
 const AdminReferralInvoice = lazy(() => import("@/pages/admin/referral-invoice"));
 const AdminSettings = lazy(() => import("@/pages/admin/settings"));
 const AdminFeedback = lazy(() => import("@/pages/admin/feedback"));
+const AdminDatabase = lazy(() => import("@/pages/admin/database"));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -147,6 +148,7 @@ function Router() {
                   <Route path="/admin/promo-codes" component={AdminPromoCodes} />
                   <Route path="/admin/settings" component={AdminSettings} />
                   <Route path="/admin/feedback" component={AdminFeedback} />
+                  <Route path="/admin/database" component={AdminDatabase} />
                   <Route component={NotFound} />
                 </Switch>
               </AdminLayout>
