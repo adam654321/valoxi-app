@@ -90,16 +90,7 @@ export default function AdminDatabase() {
 
   const verifyMutation = useMutation({
     mutationFn: async () => {
-      const csrfToken = await getCsrfToken();
-      const res = await fetch("/api/v2/admin/verify-credentials", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Verification failed");
-      return data;
+      return adminPost("/api/v2/admin/verify-credentials", { email, password });
     },
     onSuccess: () => {
       setVerified(true);
