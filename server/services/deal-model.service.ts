@@ -93,22 +93,7 @@ function buildCalcInputs(model: DealModelWithDetails): {
     minusCorpTaxDue: model.minusCorpTaxDue ?? '0',
     minusWorkingCapitalAdj: model.minusWorkingCapitalAdj ?? '0',
     plusPropertyValue: model.propertyValue ?? '0',
-    otherAdjustments: (() => {
-      try {
-        const bridgeAdj = (model.expertDataSnapshot as any)?.valuation?.ev_to_equity_bridge?.other_adjustments;
-        if (Array.isArray(bridgeAdj) && bridgeAdj.length > 0) {
-          return bridgeAdj
-            .filter((a: any) => a && (a.label || a.description) && a.amount != null)
-            .map((a: any) => ({
-              label: a.label || a.description || 'Other adjustment',
-              amount: Number(a.amount) || 0,
-            }));
-        }
-        return null;
-      } catch {
-        return null;
-      }
-    })(),
+    otherAdjustments: null,
     feeLegalDdPercent: model.feeLegalDdPercent ?? '2.5',
     feeAccountingDdPercent: model.feeAccountingDdPercent ?? '1.5',
     feeBrokerPercent: model.feeBrokerPercent ?? '2.0',

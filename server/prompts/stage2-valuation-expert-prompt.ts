@@ -116,7 +116,6 @@ OUTPUT FORMAT:
     "minus_director_loans": null,
     "minus_bad_debt_provision": null,
     "minus_working_capital_adjustment": null,
-    "other_adjustments": [],
     "equity_value": {
       "conservative": null,
       "base": null,
