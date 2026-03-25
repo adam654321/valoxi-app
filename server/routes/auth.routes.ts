@@ -254,6 +254,12 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
     betaNdaSigned: result.user.betaNdaSigned ?? false,
     company: result.company,
     permissions: req.session.permissions ?? null,
+    viewingAs: req.session.adminViewingAsUserId
+      ? {
+          userId: req.session.adminViewingAsUserId,
+          companyId: req.session.adminViewingAsCompanyId,
+        }
+      : null,
   });
 }));
 

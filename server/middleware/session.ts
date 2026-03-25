@@ -10,6 +10,10 @@ declare module 'express-session' {
     isSystemAdmin?: boolean;
     permissions?: Record<string, boolean | null>;
     permissionsCachedAt?: number;
+    adminViewingAsUserId?: number;
+    adminViewingAsCompanyId?: number;
+    adminRealUserId?: number;
+    adminRealCompanyId?: number;
   }
 }
 

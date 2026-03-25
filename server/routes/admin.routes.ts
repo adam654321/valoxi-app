@@ -858,4 +858,55 @@ router.post('/verify-credentials', asyncHandler(async (req: Request, res: Respon
   sendSuccess(res, { verified: true });
 }));
 
+router.post('/users/:id/view-as', asyncHandler(async (req: Request, res: Response) => {
+  const targetUserId = parseInt(req.params.id, 10);
+  if (isNaN(targetUserId)) {
+    return res.status(400).json({ success: false, message: 'Invalid user ID' });
+  }
+
+  const [targetUser] = await db
+    .select({ id: users.id, isActive: users.isActive, userCompanyId: users.userCompanyId, isSystemAdmin: users.isSystemAdmin })
+    .from(users)
+    .where(eq(users.id, targetUserId));
+
+  if (!targetUser || !targetUser.isActive) {
+    return res.status(404).json({ success: false, message: 'User not found or inactive' });
+  }
+  if (targetUser.isSystemAdmin) {
+    return res.status(400).json({ success: false, message: 'Cannot view as another admin' });
+  }
+  if (!targetUser.userCompanyId) {
+    return res.status(400).json({ success: false, message: 'Target user has no company' });
+  }
+
+  req.session.adminRealUserId = req.session.userId;
+  req.session.adminRealCompanyId = req.session.userCompanyId;
+  req.session.adminViewingAsUserId = targetUser.id;
+  req.session.adminViewingAsCompanyId = targetUser.userCompanyId;
+
+  req.session.userId = targetUser.id;
+  req.session.userCompanyId = targetUser.userCompanyId;
+
+  console.log(`[admin] view-as activated: admin ${req.session.adminRealUserId} viewing as user ${targetUser.id}`);
+  return res.status(200).json({ success: true });
+}));
+
+router.post('/view-as/exit', asyncHandler(async (req: Request, res: Response) => {
+  if (!req.session.adminRealUserId) {
+    return res.status(400).json({ success: false, message: 'Not in view-as mode' });
+  }
+
+  const realUserId = req.session.adminRealUserId;
+  req.session.userId = req.session.adminRealUserId;
+  req.session.userCompanyId = req.session.adminRealCompanyId;
+
+  delete req.session.adminViewingAsUserId;
+  delete req.session.adminViewingAsCompanyId;
+  delete req.session.adminRealUserId;
+  delete req.session.adminRealCompanyId;
+
+  console.log(`[admin] view-as exited: admin ${realUserId} restored`);
+  return res.status(200).json({ success: true });
+}));
+
 export default router;

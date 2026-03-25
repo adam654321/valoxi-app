@@ -14,6 +14,10 @@ export interface AuthUser {
     id: number;
     companyName: string;
   };
+  viewingAs?: {
+    userId: number;
+    companyId: number;
+  } | null;
 }
 
 export function useAuth() {

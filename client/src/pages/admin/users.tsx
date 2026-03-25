@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, KeyRound } from "lucide-react";
+import { Loader2, KeyRound, Eye } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -86,14 +86,38 @@ export default function AdminUsers() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setResetTarget({ id: u.id, name: `${u.firstName} ${u.lastName}` })}
-                        title="Reset password"
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        {!u.isSystemAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="View app as this user"
+                            onClick={async () => {
+                              try {
+                                const res = await apiRequest('POST', `/api/v2/admin/users/${u.id}/view-as`);
+                                if (res.ok) {
+                                  window.location.href = '/dashboard';
+                                } else {
+                                  const body = await res.json();
+                                  toast({ title: 'Error', description: body.message || 'Failed to switch view', variant: 'destructive' });
+                                }
+                              } catch {
+                                toast({ title: 'Error', description: 'Failed to switch view', variant: 'destructive' });
+                              }
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setResetTarget({ id: u.id, name: `${u.firstName} ${u.lastName}` })}
+                          title="Reset password"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

@@ -1,0 +1,118 @@
+Good. The assessment confirms Option A is correct and the implementation is straightforward. Here is the clean build prompt:
+
+
+Implement admin "View As User" mode. Three parts, do them in order.
+Part 1 — Session type and new fields (server/middleware/session.ts)
+Add four new fields to SessionData:
+typescriptadminViewingAsUserId?: number;
+adminViewingAsCompanyId?: number;
+adminRealUserId?: number;
+adminRealCompanyId?: number;
+Part 2 — Write-block middleware and permission guard (server/middleware/auth.ts)
+Add a write-block middleware — place it so it applies to all non-admin API routes:
+typescriptexport function blockWritesInViewAsMode(req: Request, res: Response, next: NextFunction) {
+  if (req.session.adminViewingAsUserId && req.method !== 'GET') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Write operations are disabled while viewing as another user.' 
+    });
+  }
+  next();
+}
+In refreshSessionPermissions, add a guard at the very top of the function to skip the refresh entirely during view-as mode:
+typescriptif (req.session.adminViewingAsUserId) return;
+This prevents isSystemAdmin being overwritten with the viewed user's flag.
+Part 3 — Two admin endpoints (server/routes/admin.routes.ts)
+Add these two routes to the admin router (already protected by isSystemAdmin):
+typescript// Enter view-as mode
+router.post('/users/:id/view-as', asyncHandler(async (req: Request, res: Response) => {
+  const targetUserId = parseInt(req.params.id, 10);
+  if (isNaN(targetUserId)) throw new BadRequestError('Invalid user ID');
+
+  // Get the target user and their company
+  const [targetUser] = await db
+    .select({ id: users.id, isActive: users.isActive, userCompanyId: users.userCompanyId, isSystemAdmin: users.isSystemAdmin })
+    .from(users)
+    .where(eq(users.id, targetUserId));
+
+  if (!targetUser || !targetUser.isActive) throw new NotFoundError('User not found or inactive');
+  if (targetUser.isSystemAdmin) throw new BadRequestError('Cannot view as another admin');
+  if (!targetUser.userCompanyId) throw new BadRequestError('Target user has no company');
+
+  // Store the admin's real identity
+  req.session.adminRealUserId = req.session.userId;
+  req.session.adminRealCompanyId = req.session.userCompanyId;
+  req.session.adminViewingAsUserId = targetUser.id;
+  req.session.adminViewingAsCompanyId = targetUser.userCompanyId;
+
+  // Swap to the viewed user's identity
+  req.session.userId = targetUser.id;
+  req.session.userCompanyId = targetUser.userCompanyId;
+
+  return res.status(200).json({ success: true });
+}));
+
+// Exit view-as mode
+router.post('/view-as/exit', asyncHandler(async (req: Request, res: Response) => {
+  if (!req.session.adminRealUserId) {
+    return res.status(400).json({ success: false, message: 'Not in view-as mode' });
+  }
+
+  // Restore the admin's real identity
+  req.session.userId = req.session.adminRealUserId;
+  req.session.userCompanyId = req.session.adminRealCompanyId;
+
+  // Clear view-as fields
+  delete req.session.adminViewingAsUserId;
+  delete req.session.adminViewingAsCompanyId;
+  delete req.session.adminRealUserId;
+  delete req.session.adminRealCompanyId;
+
+  return res.status(200).json({ success: true });
+}));
+Part 4 — Update /api/v2/auth/me to include viewingAs
+In the /me route handler, after building the response object, add:
+typescriptviewingAs: req.session.adminViewingAsUserId
+  ? {
+      userId: req.session.adminViewingAsUserId,
+      companyId: req.session.adminViewingAsCompanyId,
+    }
+  : null,
+Part 5 — Frontend: View As button in admin users table (client/src/pages/admin/users.tsx)
+Add a "View As" button to each user row. Import Eye from lucide-react if not already imported:
+tsx<Button
+  variant="outline"
+  size="sm"
+  onClick={async () => {
+    await fetch(`/api/v2/admin/users/${user.id}/view-as`, { method: 'POST' });
+    window.location.href = '/dashboard';
+  }}
+  title="View app as this user"
+>
+  <Eye className="w-3 h-3" />
+</Button>
+Do not show the button for system admin users.
+Part 6 — Frontend: View As banner in main app layout
+In client/src/hooks/useAuth.ts, add viewingAs to the AuthUser interface:
+typescriptviewingAs?: {
+  userId: number;
+  companyId: number;
+} | null;
+In the main app layout component (check AppSidebar.tsx or the Layout wrapper), read user.viewingAs from the existing useAuth hook. When present, render a full-width banner at the very top:
+tsx{user?.viewingAs && (
+  <div className="w-full bg-amber-500 text-white text-sm font-medium px-4 py-2 flex items-center justify-between z-50">
+    <span>Viewing as User ID {user.viewingAs.userId} — read only mode</span>
+    <button
+      onClick={async () => {
+        await fetch('/api/v2/admin/view-as/exit', { method: 'POST' });
+        window.location.href = '/admin/users';
+      }}
+      className="underline hover:no-underline ml-4"
+    >
+      Exit view
+    </button>
+  </div>
+)}
+Note: the banner shows User ID for now — once you confirm it works we can enrich it with the actual user name from a separate query.
+Apply the blockWritesInViewAsMode middleware to the main API router (not the admin router) in server/routes/index.ts or wherever the main routes are mounted.
+Confirm clean restart with no TypeScript errors. Show me the new session fields, both admin endpoints, and the banner component location.

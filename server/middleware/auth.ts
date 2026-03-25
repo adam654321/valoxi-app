@@ -35,7 +35,19 @@ const ADMIN_ROLE_PERMISSIONS: Record<string, boolean> = {
   canExportData: true,
 };
 
+export function blockWritesInViewAsMode(req: Request, res: Response, next: NextFunction) {
+  if (req.session.adminViewingAsUserId && req.method !== 'GET') {
+    return res.status(403).json({
+      success: false,
+      message: 'Write operations are disabled while viewing as another user.',
+    });
+  }
+  next();
+}
+
 export async function refreshSessionPermissions(req: Request): Promise<void> {
+  if (req.session.adminViewingAsUserId) return;
+
   const userId = req.session.userId;
   if (!userId) return;
 

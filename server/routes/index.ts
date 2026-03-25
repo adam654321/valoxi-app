@@ -34,12 +34,17 @@ import onboardingRoutes from './onboarding.routes';
 import explainRoutes from './explain.routes';
 import betaFeedbackRoutes from './beta-feedback.routes';
 import betaRoutes from './beta.routes';
-import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
+import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 import { requireActiveSubscription, requireFeature } from '../middleware/subscription';
 
 export function registerModularRoutes(app: Express) {
+  app.use('/api/v2', (req: any, res: any, next: any) => {
+    if (req.path.startsWith('/admin')) return next();
+    blockWritesInViewAsMode(req, res, next);
+  });
+
   app.use('/api/v2/pipeline', isAuthenticated, validateCsrfToken, requireActiveSubscription, pipelineRoutes);
   app.use('/api/v2/roles', isAuthenticated, validateCsrfToken, rolesRoutes);
   app.use('/api/v2/contacts', isAuthenticated, validateCsrfToken, requireActiveSubscription, contactsRoutes);
