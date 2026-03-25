@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import type { Express, Request, Response, NextFunction } from 'express';
 import pipelineRoutes from './pipeline.routes';
 import rolesRoutes from './roles.routes';
 import contactsRoutes from './contacts.routes';
@@ -42,14 +42,14 @@ import { requireActiveSubscription, requireFeature } from '../middleware/subscri
 export function registerModularRoutes(app: Express) {
   // Write-block: applies to ALL /api/v2/* routes.
   // Only the view-as exit endpoint is explicitly exempted so admin can end the session.
-  app.use('/api/v2', (req: any, res: any, next: any) => {
+  app.use('/api/v2', (req: Request, res: Response, next: NextFunction) => {
     if (req.path === '/admin/view-as/exit') return next();
     blockWritesInViewAsMode(req, res, next);
   });
 
-  // Identity injection: swap userId/companyId to the viewed user for the duration of
+  // Identity injection: swap session identity to the viewed user for the duration of
   // each non-admin request. Admin routes must always resolve the real admin identity.
-  app.use('/api/v2', (req: any, res: any, next: any) => {
+  app.use('/api/v2', (req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/admin')) return next();
     injectViewAsIdentity(req, res, next);
   });

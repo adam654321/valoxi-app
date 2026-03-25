@@ -48,26 +48,43 @@ export function blockWritesInViewAsMode(req: Request, res: Response, next: NextF
 export function injectViewAsIdentity(req: Request, _res: Response, next: NextFunction) {
   if (!req.session.adminViewingAsUserId) return next();
 
-  const realUserId = req.session.userId;
-  const realCompanyId = req.session.userCompanyId;
+  // Snapshot ALL identity and permission fields from the real admin session.
+  // We restore them via session.save wrapping so the session store always
+  // persists the real admin's values — the swap is request-scoped only.
+  const snapshot = {
+    userId: req.session.userId,
+    userCompanyId: req.session.userCompanyId,
+    isSystemAdmin: req.session.isSystemAdmin,
+    permissions: req.session.permissions,
+    permissionsCachedAt: req.session.permissionsCachedAt,
+  };
 
+  // Inject viewed user identity for this request.
   req.session.userId = req.session.adminViewingAsUserId;
   req.session.userCompanyId = req.session.adminViewingAsCompanyId;
+  // Clear admin privileges so the viewed user's permissions are fetched fresh.
+  req.session.isSystemAdmin = false;
+  req.session.permissions = undefined;
+  req.session.permissionsCachedAt = undefined;
 
-  const res = _res as any;
-  const origEnd = res.end.bind(res);
-  res.end = function (...args: any[]) {
-    req.session.userId = realUserId;
-    req.session.userCompanyId = realCompanyId;
-    return origEnd(...args);
+  // Wrap session.save so that the real admin values are restored before any
+  // write to the session store. express-session calls session.save() when
+  // the response ends, so this runs before the session is persisted.
+  type SaveCallback = Parameters<typeof req.session.save>[0];
+  const origSave: typeof req.session.save = req.session.save.bind(req.session);
+  req.session.save = function (callback?: SaveCallback) {
+    req.session.userId = snapshot.userId;
+    req.session.userCompanyId = snapshot.userCompanyId;
+    req.session.isSystemAdmin = snapshot.isSystemAdmin;
+    req.session.permissions = snapshot.permissions;
+    req.session.permissionsCachedAt = snapshot.permissionsCachedAt;
+    return origSave(callback);
   };
 
   next();
 }
 
 export async function refreshSessionPermissions(req: Request): Promise<void> {
-  if (req.session.adminViewingAsUserId) return;
-
   const userId = req.session.userId;
   if (!userId) return;
 
