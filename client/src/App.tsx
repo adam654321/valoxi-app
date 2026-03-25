@@ -101,8 +101,10 @@ function Router() {
     );
   }
 
-  // Onboarding gate — redirect users who haven't completed onboarding
-  if (user && user.onboardingCompleted === false) {
+  // Onboarding gate — redirect users who haven't completed onboarding.
+  // Skip when admin is in view-as mode: they should land on the normal app,
+  // and the amber exit banner must remain accessible.
+  if (user && user.onboardingCompleted === false && !user.viewingAs) {
     return (
       <Suspense fallback={<LoadingSpinner />}>
         <Switch>
