@@ -90,7 +90,7 @@ function Router() {
     );
   }
 
-  if (import.meta.env.VITE_BETA_MODE === 'true' && user && !user.betaNdaSigned) {
+  if (import.meta.env.VITE_BETA_MODE === 'true' && user && !user.betaNdaSigned && !user.viewingAs) {
     return (
       <Suspense fallback={<LoadingSpinner />}>
         <Switch>
