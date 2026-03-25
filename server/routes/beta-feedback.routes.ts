@@ -1,8 +1,7 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import multer from 'multer';
-import { Client } from '@replit/object-storage';
 import { db } from '../db';
 import { betaFeedback } from '@shared/schema/dashboard';
 import { users } from '@shared/schema/core';
@@ -12,6 +11,7 @@ import { config } from '../config';
 import { escapeHtml } from '../utils/html';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess, sendError } from '../utils/response';
+import { fileStorageService } from '../services/file-storage.service';
 
 const router = Router();
 const upload = multer({
@@ -26,13 +26,6 @@ const upload = multer({
     }
   },
 });
-
-function createStorageClient(): Client {
-  const bucketId = process.env.BETA_FEEDBACK_BUCKET_ID;
-  const client = new Client(bucketId ? { bucketId } : undefined);
-  (client as any).state?.promise?.catch?.(() => {});
-  return client;
-}
 
 const createFeedbackSchema = z.object({
   type: z.enum(['bug', 'comment', 'suggestion', 'other']),
@@ -59,9 +52,8 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
   let screenshotUrl: string | null = null;
   if (req.file) {
     try {
-      const ext = req.file.originalname?.split('.').pop() || 'png';
-      const key = `.private/beta-feedback/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      await createStorageClient().uploadFromBytes(key, req.file.buffer);
+      const key = fileStorageService.generateKey('beta-feedback', req.file.originalname);
+      await fileStorageService.upload(key, req.file.buffer);
       screenshotUrl = key;
     } catch (storageErr) {
       console.warn('[beta-feedback] Screenshot upload skipped — storage not configured:',
@@ -144,21 +136,26 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
   sendSuccess(res, inserted, 201);
 }));
 
-router.get('/screenshot/:key(*)', asyncHandler(async (req, res) => {
+router.get('/screenshot/:key(*)', asyncHandler(async (req: Request, res: Response) => {
   const key = req.params.key;
-  if (!key.startsWith('.private/beta-feedback/')) {
-    return res.status(403).json({ success: false, message: 'Invalid path' });
+  if (!key) {
+    return res.status(400).json({ success: false, message: 'Invalid key' });
   }
-
   try {
-    const { data } = await createStorageClient().downloadAsBytes(key);
+    const buffer = await fileStorageService.download(key);
     const ext = key.split('.').pop()?.toLowerCase() || 'png';
-    const mimeMap: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+    const mimeMap: Record<string, string> = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      webp: 'image/webp',
+    };
     res.setHeader('Content-Type', mimeMap[ext] || 'image/png');
     res.setHeader('Cache-Control', 'private, max-age=3600');
-    res.send(Buffer.from(data));
+    return res.send(buffer);
   } catch {
-    res.status(404).json({ success: false, message: 'Screenshot not found' });
+    return res.status(404).json({ success: false, message: 'Screenshot not found' });
   }
 }));
 
