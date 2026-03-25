@@ -879,33 +879,23 @@ router.post('/users/:id/view-as', asyncHandler(async (req: Request, res: Respons
     return res.status(400).json({ success: false, message: 'Target user has no company' });
   }
 
-  req.session.adminRealUserId = req.session.userId;
-  req.session.adminRealCompanyId = req.session.userCompanyId;
   req.session.adminViewingAsUserId = targetUser.id;
   req.session.adminViewingAsCompanyId = targetUser.userCompanyId;
 
-  req.session.userId = targetUser.id;
-  req.session.userCompanyId = targetUser.userCompanyId;
-
-  console.log(`[admin] view-as activated: admin ${req.session.adminRealUserId} viewing as user ${targetUser.id}`);
+  console.log(`[admin] view-as activated: admin ${req.session.userId} viewing as user ${targetUser.id}`);
   return res.status(200).json({ success: true });
 }));
 
 router.post('/view-as/exit', asyncHandler(async (req: Request, res: Response) => {
-  if (!req.session.adminRealUserId) {
+  if (!req.session.adminViewingAsUserId) {
     return res.status(400).json({ success: false, message: 'Not in view-as mode' });
   }
 
-  const realUserId = req.session.adminRealUserId;
-  req.session.userId = req.session.adminRealUserId;
-  req.session.userCompanyId = req.session.adminRealCompanyId;
-
+  const viewedUserId = req.session.adminViewingAsUserId;
   delete req.session.adminViewingAsUserId;
   delete req.session.adminViewingAsCompanyId;
-  delete req.session.adminRealUserId;
-  delete req.session.adminRealCompanyId;
 
-  console.log(`[admin] view-as exited: admin ${realUserId} restored`);
+  console.log(`[admin] view-as exited: admin ${req.session.userId} was viewing user ${viewedUserId}`);
   return res.status(200).json({ success: true });
 }));
 

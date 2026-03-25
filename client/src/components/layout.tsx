@@ -28,8 +28,8 @@ export default function Layout({ children }: LayoutProps) {
       {isViewingAs && (
         <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-white text-sm font-medium px-4 py-2 flex items-center justify-between shadow-md">
           <span>
-            Viewing as {user?.firstName} {user?.lastName}
-            {user?.company?.companyName ? ` — ${user.company.companyName}` : ''} — read-only mode
+            Viewing as {user?.viewingAs?.name}
+            {user?.viewingAs?.companyName ? ` — ${user.viewingAs.companyName}` : ''} — read-only mode
           </span>
           <button
             onClick={handleExitViewAs}

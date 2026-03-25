@@ -45,6 +45,26 @@ export function blockWritesInViewAsMode(req: Request, res: Response, next: NextF
   next();
 }
 
+export function injectViewAsIdentity(req: Request, _res: Response, next: NextFunction) {
+  if (!req.session.adminViewingAsUserId) return next();
+
+  const realUserId = req.session.userId;
+  const realCompanyId = req.session.userCompanyId;
+
+  req.session.userId = req.session.adminViewingAsUserId;
+  req.session.userCompanyId = req.session.adminViewingAsCompanyId;
+
+  const res = _res as any;
+  const origEnd = res.end.bind(res);
+  res.end = function (...args: any[]) {
+    req.session.userId = realUserId;
+    req.session.userCompanyId = realCompanyId;
+    return origEnd(...args);
+  };
+
+  next();
+}
+
 export async function refreshSessionPermissions(req: Request): Promise<void> {
   if (req.session.adminViewingAsUserId) return;
 

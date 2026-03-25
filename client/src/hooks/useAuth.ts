@@ -16,7 +16,8 @@ export interface AuthUser {
   };
   viewingAs?: {
     userId: number;
-    companyId: number;
+    name: string;
+    companyName: string | null;
   } | null;
 }
 

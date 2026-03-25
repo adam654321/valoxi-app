@@ -257,7 +257,8 @@ router.get('/me', asyncHandler(async (req: Request, res: Response) => {
     viewingAs: req.session.adminViewingAsUserId
       ? {
           userId: req.session.adminViewingAsUserId,
-          companyId: req.session.adminViewingAsCompanyId,
+          name: `${result.user.firstName ?? ''} ${result.user.lastName ?? ''}`.trim(),
+          companyName: result.company?.companyName ?? null,
         }
       : null,
   });

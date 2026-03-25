@@ -12,8 +12,6 @@ declare module 'express-session' {
     permissionsCachedAt?: number;
     adminViewingAsUserId?: number;
     adminViewingAsCompanyId?: number;
-    adminRealUserId?: number;
-    adminRealCompanyId?: number;
   }
 }
 

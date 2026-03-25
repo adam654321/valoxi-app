@@ -34,15 +34,24 @@ import onboardingRoutes from './onboarding.routes';
 import explainRoutes from './explain.routes';
 import betaFeedbackRoutes from './beta-feedback.routes';
 import betaRoutes from './beta.routes';
-import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode } from '../middleware/auth';
+import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode, injectViewAsIdentity } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
 import { requireActiveSubscription, requireFeature } from '../middleware/subscription';
 
 export function registerModularRoutes(app: Express) {
+  // Write-block: applies to ALL /api/v2/* routes.
+  // Only the view-as exit endpoint is explicitly exempted so admin can end the session.
+  app.use('/api/v2', (req: any, res: any, next: any) => {
+    if (req.path === '/admin/view-as/exit') return next();
+    blockWritesInViewAsMode(req, res, next);
+  });
+
+  // Identity injection: swap userId/companyId to the viewed user for the duration of
+  // each non-admin request. Admin routes must always resolve the real admin identity.
   app.use('/api/v2', (req: any, res: any, next: any) => {
     if (req.path.startsWith('/admin')) return next();
-    blockWritesInViewAsMode(req, res, next);
+    injectViewAsIdentity(req, res, next);
   });
 
   app.use('/api/v2/pipeline', isAuthenticated, validateCsrfToken, requireActiveSubscription, pipelineRoutes);
