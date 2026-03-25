@@ -151,7 +151,7 @@ router.get('/screenshot/:key(*)', asyncHandler(async (req, res) => {
   }
 
   try {
-    const { data } = await getStorageClient().downloadAsBytes(key);
+    const { data } = await createStorageClient().downloadAsBytes(key);
     const ext = key.split('.').pop()?.toLowerCase() || 'png';
     const mimeMap: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
     res.setHeader('Content-Type', mimeMap[ext] || 'image/png');
