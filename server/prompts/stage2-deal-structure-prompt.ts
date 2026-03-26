@@ -26,46 +26,62 @@ ${operationalExpertOutput}
 QUALITY OF EARNINGS:
 ${qoeExpertOutput}
 
+EARNOUT TRIGGER RULES — READ BEFORE DESIGNING STRUCTURES
+An earnout is a contingent payment tied to future performance. It is NOT a default structuring tool. Only include an earnout component if one or more of the following specific risk conditions is present in the expert inputs above:
+
+LEGITIMATE EARNOUT TRIGGERS:
+1. Customer concentration — if any single customer represents >20% of revenue, tie earnout to retention of named customers post-completion
+2. Revenue stagnation or decline — if revenue has been flat or falling, tie earnout to revenue stabilisation at or above a defined floor
+3. Owner/key person dependency — if revenue or key relationships are demonstrably dependent on the current owner, tie earnout to a transition period during which those relationships are retained
+4. Unverified or uncertain add-backs — if QoE expert has flagged material add-backs that are uncertain or one-off in nature, tie earnout to EBITDA performance confirming normalised earnings
+5. Sector-specific risk — if sector expert has identified a specific near-term threat (contract renewal, regulatory change, technology disruption) that has not yet materialised
+6. Forecasted growth already priced in — if valuation is based on projected growth rather than historic performance, tie earnout to delivery of that growth
+
+If NONE of these triggers are present, do NOT include an earnout. Instead use unconditional deferred consideration (fixed scheduled payments) or a clean upfront deal.
+
+For each earnout you include, state in earnout_rationale which specific trigger condition it addresses and which expert identified it.
+
 YOUR TASK: Design 3 deal structures
 
 STRUCTURE 1: CONSERVATIVE (Maximum buyer protection)
 - Minimises upfront payment
-- Maximum deferred consideration tied to performance
-- Longest earnout period
+- Deferred consideration as fixed scheduled payments (not contingent)
+- Earnout ONLY if earnout triggers above are present — state which trigger
+- Longest deferred period
 - Broadest warranty and indemnity scope
 - Suitable when: high risk profile, uncertain earnings, owner dependency
 
 STRUCTURE 2: BALANCED (Fair to both parties)
 - Moderate upfront/deferred split
-- Reasonable earnout tied to key metrics
+- Earnout ONLY if earnout triggers above are present — if no triggers, use deferred consideration instead
 - Standard warranty package
 - Suitable when: moderate risk, reasonable confidence in data
 
 STRUCTURE 3: COMPETITIVE (Maximum chance of winning the deal)
 - Higher upfront component
-- Shorter or no earnout
+- No earnout in most cases — only include if a strong earnout trigger is present AND it meaningfully reduces buyer risk
+- Minimal deferred or clean deal
 - Lighter warranty requirements
 - Suitable when: competitive process, strong target, low risk
 
 FOR EACH STRUCTURE, SPECIFY:
 
 1. CONSIDERATION SPLIT
-- Upfront cash payment (% and amount)
-- Deferred consideration (amount, payment schedule)
-- Earnout component (amount, metrics, period)
+- Upfront cash payment (% and amount based on the valuation expert's offer price)
+- Deferred consideration (unconditional fixed payments — amount and schedule)
+- Earnout component (only if triggered — amount, metrics, period, specific trigger condition)
 - Retention/escrow amount and release conditions
 
-2. EARNOUT MECHANICS (if applicable)
-- What metric is the earnout tied to? (Revenue, EBITDA, customer retention, etc.)
+2. EARNOUT MECHANICS (only complete this section if an earnout is included)
+- Which specific trigger condition justifies this earnout
+- What metric is the earnout tied to (must be directly linked to the identified risk)
 - Measurement period
 - Payment triggers and amounts
-- Cap and collar
-- Why this metric was chosen (link to specific risks identified)
+- Why this metric was chosen (direct reference to the specific risk)
 
 3. SELLER OBLIGATIONS
 - Handover period (months)
 - Non-compete period and scope
-- Gardening leave provisions
 - Consultancy arrangement if appropriate
 
 4. KEY WARRANTIES & INDEMNITIES
@@ -77,12 +93,11 @@ FOR EACH STRUCTURE, SPECIFY:
 5. COMPLETION MECHANISM
 - Completion accounts or locked box?
 - Working capital peg (normalised working capital amount)
-- Leakage provisions if locked box
 
 6. EFFECTIVE PRICE MODELLING
 For each structure, model the effective price under 3 scenarios:
-- Best case: All earnout targets met, no warranty claims
-- Expected case: Partial earnout achievement, minor adjustments
+- Best case: All deferred/earnout targets met, no warranty claims
+- Expected case: Partial achievement, minor adjustments
 - Worst case: No earnout paid, warranty claims made
 Show the effective price the buyer pays in each scenario.
 
