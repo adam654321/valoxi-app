@@ -1,0 +1,90 @@
+Before making any changes, run two diagnostic checks:
+
+Temporarily test whether docx-templates can process our new HoT template by running:
+
+node -e "
+const { createReport } = require('docx-templates');
+const fs = require('fs');
+async function test() {
+  try {
+    const template = await fs.promises.readFile('data/templates/system_heads_of_terms.docx');
+    const buf = await createReport({
+      template,
+      data: {
+        sellerCompanyName: 'Test Co',
+        buyerCompanyName: 'Buyer Ltd',
+        sellerContactName: 'John Smith',
+        sellerAddress: '1 Test Street',
+        currentDate: '26 March 2026',
+        transactionTypeLabel: 'Share Sale',
+        transactionDescription: '100% of the share capital',
+        offerPrice: '£500,000',
+        dayOnePayment: '£400,000',
+        deferredTotal: '£100,000',
+        deferredInstalment: '£1,667 per month over 60 months',
+        earnoutMaximum: '',
+        earnoutMetric: '',
+        earnoutTermMonths: 0,
+        paymentText: 'Payment at completion: £400,000',
+        breakdownText: 'EV: £500,000',
+        additionalConditions: '',
+        exclusivityPeriodDays: 90,
+        nonCompetePeriodYears: 2,
+        nonSolicitPeriodYears: 2,
+        warrantyClaimPeriodMonths: 18,
+        warrantyMinClaim: '£5,000',
+        targetCompletionWeeks: 12,
+        buyerSignatoryName: 'Test Buyer',
+        buyerSignatoryTitle: 'Director',
+      },
+      cmdDelimiter: ['{{', '}}'],
+      processLineBreaks: true,
+      failFast: true,
+    });
+    await fs.promises.writeFile('/tmp/test_hot.docx', Buffer.from(buf));
+    console.log('SUCCESS — generated /tmp/test_hot.docx');
+  } catch(e) {
+    console.error('FAILED:', e.message);
+    if (e.errors) e.errors.forEach(err => console.error(' -', JSON.stringify(err)));
+  }
+}
+test();
+"
+
+Also check the same for the offer letter template:
+
+node -e "
+const { createReport } = require('docx-templates');
+const fs = require('fs');
+async function test() {
+  try {
+    const template = await fs.promises.readFile('data/templates/system_offer_letter.docx');
+    const buf = await createReport({
+      template,
+      data: {
+        sellerCompanyName: 'Test Co',
+        sellerAddress: '1 Test Street',
+        currentDate: '26 March 2026',
+        transactionTypeLabel: 'Share Sale',
+        transactionDescription: '100% of the share capital',
+        offerPrice: '£500,000',
+        breakdownText: 'EV: £500,000',
+        paymentText: 'Payment at completion: £500,000',
+        buyerSignatoryName: 'Test Buyer',
+        buyerSignatoryTitle: 'Director',
+        buyerCompanyName: 'Buyer Ltd',
+      },
+      cmdDelimiter: ['{{', '}}'],
+      processLineBreaks: true,
+      failFast: true,
+    });
+    await fs.promises.writeFile('/tmp/test_offer.docx', Buffer.from(buf));
+    console.log('SUCCESS — generated /tmp/test_offer.docx');
+  } catch(e) {
+    console.error('FAILED:', e.message);
+    if (e.errors) e.errors.forEach(err => console.error(' -', JSON.stringify(err)));
+  }
+}
+test();
+"
+Do not make any changes. Assessment only.
