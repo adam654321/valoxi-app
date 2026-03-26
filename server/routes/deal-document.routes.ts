@@ -564,9 +564,6 @@ function buildHoTHtml(data: any): string {
       ${section(2, 'PRICE AND CONSIDERATION', false)}
       <p>The total consideration for the acquisition is <strong>${data.offerPrice || fmt(raw.offerPrice)}</strong> (the Price), structured as follows:</p>
       ${paymentHtml || '<p>Full payment on completion.</p>'}
-      <p style="margin-top:12px;"><strong>2.1</strong> Cash at Completion: <strong>${data.dayOnePayment || fmt(raw.dayOnePayment)}</strong> payable to the Seller on the Completion Date.</p>
-      <p><strong>2.2</strong> Deferred Consideration: <strong>${data.deferredTotal || fmt(raw.deferredAmount)}</strong>${data.deferredInstalment ? ` — ${data.deferredInstalment}` : ''}</p>
-      ${raw.earnoutMaximum > 0 ? `<p><strong>2.3</strong> Earnout: Up to <strong>${fmt(raw.earnoutMaximum)}</strong>${raw.earnoutMetric ? ` based on ${raw.earnoutMetric}` : ''}${raw.earnoutTermMonths > 0 ? ` over ${raw.earnoutTermMonths} months post-completion` : ''}</p>` : ''}
 
       ${section(3, 'PRICE ASSUMPTIONS', false)}
       <p>The Price is calculated on the following basis:</p>
