@@ -1,0 +1,48 @@
+In server/services/deal-document.service.ts, in the buildOfferDataContext method, make the following targeted fixes. Do not touch anything else in the file.
+Fix 1 — dayOnePayment calculation (line ~793)
+Find:
+typescriptconst dayOnePayment = offerPrice - deferredAmount;
+Replace with:
+typescriptconst dayOnePayment = offerPrice - deferredAmount - earnoutMaximum;
+Fix 2 — compute deferredInstalment (add after the deferredTerms line, ~line 784)
+Find:
+typescriptconst deferredTerms = deferredNotes || (deferredTermMonths > 0 ? `Payable over ${deferredTermMonths} months post-completion` : '');
+Replace with:
+typescriptconst deferredTerms = deferredNotes || (deferredTermMonths > 0 ? `Payable over ${deferredTermMonths} months post-completion` : '');
+const deferredInstalmentAmount = deferredAmount > 0 && deferredTermMonths > 0
+  ? Math.round((deferredAmount / deferredTermMonths) * 100) / 100
+  : 0;
+const deferredInstalment = deferredInstalmentAmount > 0
+  ? `${fmt(deferredInstalmentAmount)} per month over ${deferredTermMonths} months`
+  : '';
+Fix 3 — add transactionType variable (add before the return statement)
+Find the line:
+typescriptconst dayOnePayment = offerPrice - deferredAmount - earnoutMaximum;
+Add these two lines directly after it:
+typescriptconst transactionType = (model as any).transactionType || 'share_sale';
+const transactionTypeLabel = transactionType === 'asset_sale' ? 'Asset Sale' : 'Share Sale';
+Fix 4 — update the return statement
+In the return block, find:
+typescriptdeferredInstalment: '',
+Replace with:
+typescriptdeferredInstalment,
+transactionType,
+transactionTypeLabel,
+In the _raw object inside the same return, find:
+typescriptearnoutTermMonths,
+averageEbitda: calculations.averageAdjustedEbitda || 0,
+Replace with:
+typescriptearnoutTermMonths,
+deferredInstalment,
+deferredTermMonths,
+transactionType,
+transactionTypeLabel,
+averageEbitda: calculations.averageAdjustedEbitda || 0,
+After all four fixes, confirm:
+
+Clean TypeScript compilation — no errors
+Server restarts cleanly
+Show me the updated deferredTerms / deferredInstalment block as it now reads
+Show me the updated return statement — the top-level fields and the _raw object
+
+Do not make any other changes.

@@ -781,6 +781,12 @@ export class DealDocumentService {
     const deferredNotes = sellerFinanceLines.length > 0 ? (sellerFinanceLines[0].notes || '') : '';
     const deferredTerms = deferredNotes
       || (deferredTermMonths > 0 ? `Payable over ${deferredTermMonths} months post-completion` : '');
+    const deferredInstalmentAmount = deferredAmount > 0 && deferredTermMonths > 0
+      ? Math.round((deferredAmount / deferredTermMonths) * 100) / 100
+      : 0;
+    const deferredInstalment = deferredInstalmentAmount > 0
+      ? `${fmt(deferredInstalmentAmount)} per month over ${deferredTermMonths} months`
+      : '';
 
     const earnoutLines = fundingLines.filter(
       fl => fl.fundingType === 'earnout' && fl.isActive
@@ -790,7 +796,9 @@ export class DealDocumentService {
     const earnoutNotes = earnoutLines.length > 0 ? (earnoutLines[0].notes || '') : '';
     const earnoutMetric = earnoutNotes || (earnoutLines.length > 0 ? (earnoutLines[0].label || '') : '');
 
-    const dayOnePayment = offerPrice - deferredAmount;
+    const dayOnePayment = offerPrice - deferredAmount - earnoutMaximum;
+    const transactionType = (model as any).transactionType || 'share_sale';
+    const transactionTypeLabel = transactionType === 'asset_sale' ? 'Asset Sale' : 'Share Sale';
 
     const breakdownLines: string[] = [];
     breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
@@ -834,7 +842,9 @@ export class DealDocumentService {
       breakdownText: breakdownLines.join('\n'),
       paymentText: paymentLines.join('\n'),
       deferredTotal: fmt(deferredAmount),
-      deferredInstalment: '',
+      deferredInstalment,
+      transactionType,
+      transactionTypeLabel,
       _raw: {
         offerPrice,
         enterpriseValue,
@@ -850,6 +860,10 @@ export class DealDocumentService {
         earnoutMaximum,
         earnoutMetric,
         earnoutTermMonths,
+        deferredInstalment,
+        deferredTermMonths,
+        transactionType,
+        transactionTypeLabel,
         averageEbitda: calculations.averageAdjustedEbitda || 0,
         ebitdaMultiple: Number(model.ebitdaMultiple) || 0,
       },
