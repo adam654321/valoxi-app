@@ -1,0 +1,54 @@
+In server/routes/deal-document.routes.ts, in the buildOfferLetterHtml function, make the following four targeted changes.
+Fix 1 — Subject line
+Find:
+typescript<p><strong>Re: ${data.sellerCompanyName || ''}</strong></p>
+Replace with:
+typescript<p><strong>Re: Indicative Offer — ${data.sellerCompanyName || ''} (${data.transactionTypeLabel || 'Share Sale'})</strong></p>
+Fix 2 — Opening sentence
+Find:
+typescript<p>Further to our conversations, I have the pleasure of enclosing an offer for
+         100% of the share capital of ${data.sellerCompanyName || ''}.</p>
+Replace with:
+typescript<p>Further to our conversations, I have the pleasure of enclosing an indicative offer for
+         ${data.transactionDescription || '100% of the share capital'} of ${data.sellerCompanyName || ''}.</p>
+Fix 3 — Deferred terms line in payment block
+Find:
+typescript    if (raw.deferredTerms) {
+      paymentHtml += `<p>Deferred terms: ${raw.deferredTerms}</p>`;
+    }
+Replace with:
+typescript    if (raw.deferredTermMonths > 0) {
+      paymentHtml += `<p>Deferred terms: Payable over ${raw.deferredTermMonths} months post-completion</p>`;
+    } else if (raw.deferredTerms) {
+      paymentHtml += `<p>Deferred terms: ${raw.deferredTerms}</p>`;
+    }
+Fix 4 — Replace the breakdown block with breakdownText
+Find the entire breakdown block:
+typescript  const breakdownLines: string[] = [];
+  breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): <strong>${fmt(raw.enterpriseValue)}</strong>`);
+  if (raw.excessCash > 0)        breakdownLines.push(`Plus Excess Cash: <strong>${fmt(raw.excessCash)}</strong>`);
+  if (raw.propertyValue > 0)     breakdownLines.push(`Plus Property Value: <strong>${fmt(raw.propertyValue)}</strong>`);
+  if (raw.primaryDebt > 0)       breakdownLines.push(`Less Primary Debt: <strong>(${fmt(raw.primaryDebt)})</strong>`);
+  if (raw.otherDebt > 0)         breakdownLines.push(`Less Other Debt: <strong>(${fmt(raw.otherDebt)})</strong>`);
+  if (raw.corpTaxDue > 0)        breakdownLines.push(`Less Corporation Tax Due: <strong>(${fmt(raw.corpTaxDue)})</strong>`);
+  if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: <strong>(${fmt(raw.workingCapitalAdj)})</strong>`);
+Replace with:
+typescript  const breakdownLines: string[] = [];
+  if (data.breakdownText) {
+    data.breakdownText.split('\n').filter((l: string) => l.trim()).forEach((l: string) => breakdownLines.push(l));
+  } else {
+    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): ${fmt(raw.enterpriseValue)}`);
+    if (raw.excessCash > 0)        breakdownLines.push(`Plus Excess Cash: ${fmt(raw.excessCash)}`);
+    if (raw.propertyValue > 0)     breakdownLines.push(`Plus Property Value: ${fmt(raw.propertyValue)}`);
+    if (raw.primaryDebt > 0)       breakdownLines.push(`Less Primary Debt: (${fmt(raw.primaryDebt)})`);
+    if (raw.otherDebt > 0)         breakdownLines.push(`Less Other Debt: (${fmt(raw.otherDebt)})`);
+    if (raw.corpTaxDue > 0)        breakdownLines.push(`Less Corporation Tax Due: (${fmt(raw.corpTaxDue)})`);
+    if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: (${fmt(raw.workingCapitalAdj)})`);
+  }
+After all four fixes confirm:
+
+Clean TypeScript compilation — no errors
+Server restarts cleanly
+Show me the updated subject line, opening sentence, and the deferred terms block as they now read
+
+Do not make any other changes.

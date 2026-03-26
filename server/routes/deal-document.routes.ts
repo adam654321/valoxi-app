@@ -423,13 +423,17 @@ function buildOfferLetterHtml(data: any): string {
   };
 
   const breakdownLines: string[] = [];
-  breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): <strong>${fmt(raw.enterpriseValue)}</strong>`);
-  if (raw.excessCash > 0) breakdownLines.push(`Plus Excess Cash: <strong>${fmt(raw.excessCash)}</strong>`);
-  if (raw.propertyValue > 0) breakdownLines.push(`Plus Property Value: <strong>${fmt(raw.propertyValue)}</strong>`);
-  if (raw.primaryDebt > 0) breakdownLines.push(`Less Primary Debt: <strong>(${fmt(raw.primaryDebt)})</strong>`);
-  if (raw.otherDebt > 0) breakdownLines.push(`Less Other Debt: <strong>(${fmt(raw.otherDebt)})</strong>`);
-  if (raw.corpTaxDue > 0) breakdownLines.push(`Less Corporation Tax Due: <strong>(${fmt(raw.corpTaxDue)})</strong>`);
-  if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: <strong>(${fmt(raw.workingCapitalAdj)})</strong>`);
+  if (data.breakdownText) {
+    data.breakdownText.split('\n').filter((l: string) => l.trim()).forEach((l: string) => breakdownLines.push(l));
+  } else {
+    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): ${fmt(raw.enterpriseValue)}`);
+    if (raw.excessCash > 0) breakdownLines.push(`Plus Excess Cash: ${fmt(raw.excessCash)}`);
+    if (raw.propertyValue > 0) breakdownLines.push(`Plus Property Value: ${fmt(raw.propertyValue)}`);
+    if (raw.primaryDebt > 0) breakdownLines.push(`Less Primary Debt: (${fmt(raw.primaryDebt)})`);
+    if (raw.otherDebt > 0) breakdownLines.push(`Less Other Debt: (${fmt(raw.otherDebt)})`);
+    if (raw.corpTaxDue > 0) breakdownLines.push(`Less Corporation Tax Due: (${fmt(raw.corpTaxDue)})`);
+    if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: (${fmt(raw.workingCapitalAdj)})`);
+  }
 
   let paymentHtml = '';
   if (raw.dayOnePayment > 0) {
@@ -437,7 +441,9 @@ function buildOfferLetterHtml(data: any): string {
   }
   if (raw.deferredAmount > 0) {
     paymentHtml += `<p>Deferred consideration: <strong>${fmt(raw.deferredAmount)}</strong></p>`;
-    if (raw.deferredTerms) {
+    if (raw.deferredTermMonths > 0) {
+      paymentHtml += `<p>Deferred terms: Payable over ${raw.deferredTermMonths} months post-completion</p>`;
+    } else if (raw.deferredTerms) {
       paymentHtml += `<p>Deferred terms: ${raw.deferredTerms}</p>`;
     }
   }
@@ -457,9 +463,9 @@ function buildOfferLetterHtml(data: any): string {
       <p>${data.sellerAddress || ''}</p>
       <p>${data.currentDate || ''}</p>
       <br/>
-      <p><strong>Re: ${data.sellerCompanyName || ''}</strong></p>
+      <p><strong>Re: Indicative Offer — ${data.sellerCompanyName || ''} (${data.transactionTypeLabel || 'Share Sale'})</strong></p>
       <br/>
-      <p>Further to our conversations, I have the pleasure of enclosing an offer for 100% of the share capital of ${data.sellerCompanyName || ''}.</p>
+      <p>Further to our conversations, I have the pleasure of enclosing an indicative offer for ${data.transactionDescription || '100% of the share capital'} of ${data.sellerCompanyName || ''}.</p>
       <br/>
       <h3 style="margin-bottom: 8px;">The total offer price is ${data.offerPrice || fmt(raw.offerPrice)}</h3>
       <br/>
