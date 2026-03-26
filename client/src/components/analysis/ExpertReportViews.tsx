@@ -1938,9 +1938,14 @@ export function DealStructureReportView({ data }: { data: Record<string, unknown
               const colors = approachColor(struct.name || "");
               const totalVal = consideration.total_headline ?? consideration.total ?? consideration.total_consideration;
               const upfrontVal = consideration.upfront_cash ?? consideration.upfront ?? consideration.initial_payment;
-              const deferredVal = consideration.deferred ?? consideration.deferred_cash ?? consideration.earnout_maximum ?? consideration.earnout;
+              const deferredVal = (
+                (consideration.deferred ?? consideration.deferred_cash ?? 0) +
+                (consideration.earnout_maximum ?? consideration.earnout ?? 0)
+              ) || null;
               const upfrontPct = consideration.upfront_percent ?? (totalVal && upfrontVal ? Math.round((upfrontVal / totalVal) * 100) : null);
-              const deferredPct = upfrontPct != null ? 100 - upfrontPct : null;
+              const deferredPct = (deferredVal != null && totalVal != null && totalVal > 0)
+                ? Math.round((deferredVal / totalVal) * 100)
+                : (upfrontPct != null ? 100 - upfrontPct : null);
               const earnoutPeriod = struct.earnout_period ?? consideration.earnout_period ?? struct.deferred_period;
               const keyConditions = struct.key_conditions || struct.conditions || consideration.key_conditions || [];
               const riskLevel = struct.risk_to_buyer ?? struct.buyer_risk ?? consideration.risk_level;
