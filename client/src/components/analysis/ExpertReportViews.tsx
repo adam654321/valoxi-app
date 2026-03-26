@@ -622,12 +622,12 @@ export function FinancialReportView({ data }: { data: Record<string, unknown> })
                 <TableBody>
                   {topOverheads.map((item: any, i: number) => (
                     <TableRow key={i} className={i % 2 === 0 ? "bg-muted/10" : ""}>
-                      <TableCell className="text-sm font-medium">{typeof item === "string" ? item : item.name || item.item || String(item)}</TableCell>
-                      {typeof item === "object" && item.amount != null && (
-                        <TableCell className="text-right text-sm font-mono">{formatCurrency(item.amount)}</TableCell>
+                      <TableCell className="text-sm font-medium">{typeof item === "string" ? item : item.name || item.item || item.category || String(item)}</TableCell>
+                      {typeof item === "object" && (item.amount != null || item.value != null) && (
+                        <TableCell className="text-right text-sm font-mono">{formatCurrency(item.amount ?? item.value)}</TableCell>
                       )}
-                      {typeof item === "object" && item.percent != null && (
-                        <TableCell className="text-right text-sm font-mono text-muted-foreground">{formatPercent(item.percent)}</TableCell>
+                      {typeof item === "object" && (item.percent != null || item.percent_of_overheads != null) && (
+                        <TableCell className="text-right text-sm font-mono text-muted-foreground">{formatPercent(item.percent ?? item.percent_of_overheads)}</TableCell>
                       )}
                     </TableRow>
                   ))}
