@@ -280,7 +280,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">5</span>
+          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">6</span>
           <CheckCircle className="h-4 w-4 text-muted-foreground" />
           Does The Deal Work?
         </CardTitle>

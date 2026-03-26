@@ -23,6 +23,7 @@ import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import FundingSection from '@/components/deal-modeller/FundingSection';
 import ViabilitySection from '@/components/deal-modeller/ViabilitySection';
+import PaymentTermsPanel from '@/components/deal-modeller/PaymentTermsPanel';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -587,6 +588,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     }}
                   />
                 )}
+
+                <PaymentTermsPanel
+                  calculations={calculations}
+                  fundingLines={modelDetails?.fundingLines || []}
+                  transactionType={transactionType}
+                />
 
                 <ViabilitySection
                   modelId={selectedModelId}

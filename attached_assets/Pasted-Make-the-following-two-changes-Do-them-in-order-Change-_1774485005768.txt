@@ -1,0 +1,221 @@
+Make the following two changes. Do them in order.
+Change 1 — Create new file client/src/components/deal-modeller/PaymentTermsPanel.tsx
+Create the file with exactly this content:
+tsximport { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/format-utils';
+import { toNum, type CalculationResult } from '@shared/calculators/deal-model.calc';
+import type { DealModelFundingLine } from '@shared/schema';
+import { Banknote, CalendarClock, TrendingUp } from 'lucide-react';
+
+interface PaymentTermsPanelProps {
+  calculations: CalculationResult | null;
+  fundingLines: DealModelFundingLine[];
+  transactionType: string;
+}
+
+export default function PaymentTermsPanel({
+  calculations,
+  fundingLines,
+  transactionType,
+}: PaymentTermsPanelProps) {
+  const offerPrice = calculations?.offerPrice ?? 0;
+
+  const sellerFinancingLines = useMemo(
+    () => fundingLines.filter(fl => fl.fundingType === 'seller_financing' && fl.isActive),
+    [fundingLines]
+  );
+
+  const earnoutLines = useMemo(
+    () => fundingLines.filter(fl => fl.fundingType === 'earnout' && fl.isActive),
+    [fundingLines]
+  );
+
+  const deferredTotal = useMemo(
+    () => sellerFinancingLines.reduce((sum, fl) => sum + toNum(fl.amountUsed), 0),
+    [sellerFinancingLines]
+  );
+
+  const earnoutTotal = useMemo(
+    () => earnoutLines.reduce((sum, fl) => sum + toNum(fl.amountUsed), 0),
+    [earnoutLines]
+  );
+
+  const dayOnePayment = offerPrice - deferredTotal - earnoutTotal;
+
+  const deferredTermMonths = sellerFinancingLines.length > 0
+    ? (sellerFinancingLines[0].termMonths ?? 0)
+    : 0;
+
+  const deferredMonthlyInstalment = deferredTotal > 0 && deferredTermMonths > 0
+    ? Math.round((deferredTotal / deferredTermMonths) * 100) / 100
+    : 0;
+
+  const earnoutTermMonths = earnoutLines.length > 0
+    ? (earnoutLines[0].termMonths ?? 0)
+    : 0;
+
+  const earnoutMetric = earnoutLines.length > 0
+    ? (earnoutLines[0].notes || earnoutLines[0].label || 'Performance-based')
+    : '';
+
+  if (offerPrice <= 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">
+            5
+          </span>
+          <Banknote className="h-4 w-4 text-muted-foreground" />
+          How Does The Seller Get Paid?
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Consideration structure for this{' '}
+          <span className="font-medium text-foreground">
+            {transactionType === 'asset_sale' ? 'asset sale' : 'share sale'}
+          </span>
+          . These figures flow directly into the offer letter and heads of terms.
+        </p>
+
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 text-xs text-muted-foreground uppercase">
+                <th className="px-4 py-2 text-left font-medium">Payment</th>
+                <th className="px-4 py-2 text-left font-medium">When</th>
+                <th className="px-4 py-2 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t bg-green-50 dark:bg-green-950/20">
+                <td className="px-4 py-3 font-semibold text-green-800 dark:text-green-300">
+                  Day One Payment
+                </td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">
+                  Payable at completion
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-green-800 dark:text-green-300 tabular-nums text-base">
+                  {formatCurrency(Math.max(0, dayOnePayment))}
+                </td>
+              </tr>
+
+              {deferredTotal > 0 && (
+                <>
+                  <tr className="border-t">
+                    <td className="px-4 py-3 font-medium">
+                      Deferred Consideration
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {deferredTermMonths > 0
+                        ? `Over ${deferredTermMonths} months post-completion`
+                        : 'Terms to be agreed'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                      {formatCurrency(deferredTotal)}
+                    </td>
+                  </tr>
+                  {deferredMonthlyInstalment > 0 && (
+                    <tr className="border-t bg-muted/20">
+                      <td className="px-4 py-2 text-muted-foreground text-xs pl-8 flex items-center gap-1">
+                        <CalendarClock className="h-3 w-3 shrink-0" />
+                        Monthly instalment
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground text-xs">
+                        {deferredTermMonths} payments
+                      </td>
+                      <td className="px-4 py-2 text-right text-sm font-medium tabular-nums text-muted-foreground">
+                        {formatCurrency(deferredMonthlyInstalment)} / month
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )}
+
+              {earnoutTotal > 0 && (
+                <tr className="border-t">
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                      Earnout (maximum)
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                        Conditional
+                      </Badge>
+                    </div>
+                    {earnoutMetric && (
+                      <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                        {earnoutMetric}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {earnoutTermMonths > 0
+                      ? `Over ${earnoutTermMonths} months post-completion`
+                      : 'Period to be agreed'}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                    {formatCurrency(earnoutTotal)}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 bg-muted/50 font-semibold">
+                <td className="px-4 py-3" colSpan={2}>
+                  Total Consideration
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-base">
+                  {formatCurrency(offerPrice)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {deferredTotal === 0 && earnoutTotal === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Full consideration payable at completion. Add a Seller Financing or Earnout funding line in Section 4 to model deferred or conditional payments.
+          </p>
+        )}
+
+        {deferredTotal > 0 && deferredTermMonths === 0 && (
+          <p className="text-xs text-amber-600 flex items-center gap-1">
+            ⚠ Deferred consideration has no term set — expand the Seller Financing line in Section 4 and enter the term in months.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+Change 2 — Wire it into DealModeller.tsx
+
+Add the import at the top of the file with the other section imports:
+
+typescriptimport PaymentTermsPanel from '@/components/deal-modeller/PaymentTermsPanel';
+
+In the <div className="space-y-6"> block, insert <PaymentTermsPanel> between <FundingSection ... /> and <ViabilitySection ... />:
+
+tsx<PaymentTermsPanel
+  calculations={calculations}
+  fundingLines={modelDetails?.fundingLines || []}
+  transactionType={transactionType}
+/>
+Note: the section number badges in ViabilitySection.tsx currently show 5 — it will now need to show 6. In ViabilitySection.tsx, find:
+tsx<span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">5</span>
+Change it to:
+tsx<span className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-xs font-bold">6</span>
+
+After both changes confirm:
+
+Clean TypeScript compilation — no errors
+Server restarts cleanly
+Show me the import line added to DealModeller.tsx
+Show me the <PaymentTermsPanel> JSX as inserted, with the lines immediately above and below it
+
+Do not make any other changes.
