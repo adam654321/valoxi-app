@@ -921,9 +921,13 @@ export class DealDocumentService {
         dealModelId: acceptedOffer.dealModelId || undefined,
       });
     } else {
-      const hotTemplate = await dealDocumentTemplateService.getSystemTemplate('heads_of_terms');
+      const acceptedTransactionType = (acceptedOffer.documentData as any)?.transactionType || 'share_sale';
+      const hotDocumentType = acceptedTransactionType === 'asset_sale'
+        ? 'heads_of_terms_asset_sale'
+        : 'heads_of_terms';
+      const hotTemplate = await dealDocumentTemplateService.getSystemTemplate(hotDocumentType);
       if (!hotTemplate) {
-        throw new Error('No active Heads of Terms template found');
+        throw new Error(`No active Heads of Terms template found for transaction type: ${acceptedTransactionType}`);
       }
 
       let resolvedPortalTokenId = params.portalTokenId;
