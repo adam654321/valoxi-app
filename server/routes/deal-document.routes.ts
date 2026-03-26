@@ -495,26 +495,36 @@ function buildHoTHtml(data: any): string {
   };
 
   const breakdownLines: string[] = [];
-  breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): <strong>${fmt(raw.enterpriseValue)}</strong>`);
-  if (raw.excessCash > 0) breakdownLines.push(`Plus Excess Cash: <strong>${fmt(raw.excessCash)}</strong>`);
-  if (raw.propertyValue > 0) breakdownLines.push(`Plus Property Value: <strong>${fmt(raw.propertyValue)}</strong>`);
-  if (raw.primaryDebt > 0) breakdownLines.push(`Less Primary Debt: <strong>(${fmt(raw.primaryDebt)})</strong>`);
-  if (raw.otherDebt > 0) breakdownLines.push(`Less Other Debt: <strong>(${fmt(raw.otherDebt)})</strong>`);
-  if (raw.corpTaxDue > 0) breakdownLines.push(`Less Corporation Tax Due: <strong>(${fmt(raw.corpTaxDue)})</strong>`);
-  if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: <strong>(${fmt(raw.workingCapitalAdj)})</strong>`);
+  if (data.breakdownText) {
+    data.breakdownText.split('\n').filter((l: string) => l.trim()).forEach((l: string) => breakdownLines.push(l));
+  } else {
+    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): ${fmt(raw.enterpriseValue)}`);
+    if (raw.excessCash > 0)        breakdownLines.push(`Plus Excess Cash: ${fmt(raw.excessCash)}`);
+    if (raw.propertyValue > 0)     breakdownLines.push(`Plus Property Value: ${fmt(raw.propertyValue)}`);
+    if (raw.primaryDebt > 0)       breakdownLines.push(`Less Primary Debt: (${fmt(raw.primaryDebt)})`);
+    if (raw.otherDebt > 0)         breakdownLines.push(`Less Other Debt: (${fmt(raw.otherDebt)})`);
+    if (raw.corpTaxDue > 0)        breakdownLines.push(`Less Corporation Tax Due: (${fmt(raw.corpTaxDue)})`);
+    if (raw.workingCapitalAdj > 0) breakdownLines.push(`Less Working Capital Adjustment: (${fmt(raw.workingCapitalAdj)})`);
+  }
 
   let paymentHtml = '';
   if (raw.dayOnePayment > 0) {
-    paymentHtml += `<p>Completion payment: <strong>${fmt(raw.dayOnePayment)}</strong></p>`;
+    paymentHtml += `<p>Payment due to the seller at closing: <strong>${fmt(raw.dayOnePayment)}</strong></p>`;
   }
   if (raw.deferredAmount > 0) {
     paymentHtml += `<p>Deferred consideration: <strong>${fmt(raw.deferredAmount)}</strong></p>`;
-    if (raw.deferredTerms) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Terms: ${raw.deferredTerms}</p>`;
+    if (data.deferredInstalment) {
+      paymentHtml += `<p>Payable at: <strong>${data.deferredInstalment}</strong></p>`;
+    } else if (raw.deferredTermMonths > 0) {
+      paymentHtml += `<p>Terms: Payable over ${raw.deferredTermMonths} months post-completion</p>`;
+    } else if (raw.deferredTerms) {
+      paymentHtml += `<p>Terms: ${raw.deferredTerms}</p>`;
+    }
   }
   if (raw.earnoutMaximum > 0) {
     paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
-    if (raw.earnoutMetric) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Metric: ${raw.earnoutMetric}</p>`;
-    if (raw.earnoutTermMonths > 0) paymentHtml += `<p style="color: #555; font-size: 0.95em;">Period: ${raw.earnoutTermMonths} months</p>`;
+    if (raw.earnoutMetric)         paymentHtml += `<p>Metric: ${raw.earnoutMetric}</p>`;
+    if (raw.earnoutTermMonths > 0) paymentHtml += `<p>Period: ${raw.earnoutTermMonths} months</p>`;
   }
 
   const keyTermsRows = [
@@ -550,14 +560,14 @@ function buildHoTHtml(data: any): string {
       <p style="color: #555;">Date: ${data.currentDate || ''}</p>
 
       <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">1. The Proposed Acquisition</h2>
-      <p>The Buyer proposes to acquire 100% of the issued share capital of <strong>${data.sellerCompanyName || ''}</strong> ("the Company") on the terms set out below.</p>
+      <p>The Buyer proposes to acquire ${data.transactionDescription || '100% of the issued share capital'} of <strong>${data.sellerCompanyName || ''}</strong> ("the Company") on the terms set out below.</p>
 
       <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">2. Price</h2>
       <p>The total consideration for the Shares shall be <strong>${data.offerPrice || fmt(raw.offerPrice)}</strong> ("the Price"), subject to adjustment as described below.</p>
       
       <table style="border-collapse: collapse; width: 100%; max-width: 550px; margin: 16px 0;">
         ${breakdownLines.map(line => `<tr><td style="padding: 5px 0;">${line}</td></tr>`).join('\n')}
-        <tr><td style="padding: 10px 0 5px; border-top: 2px solid #333;"><strong>Total Consideration: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>
+        ${!data.breakdownText ? `<tr><td style="padding: 10px 0 5px; border-top: 2px solid #333;"><strong>Total Consideration: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>` : ''}
       </table>
 
       <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">3. Payment Structure</h2>
