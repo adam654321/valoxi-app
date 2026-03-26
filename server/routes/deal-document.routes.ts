@@ -516,103 +516,123 @@ function buildHoTHtml(data: any): string {
   if (raw.deferredAmount > 0) {
     paymentHtml += `<p>Deferred consideration: <strong>${fmt(raw.deferredAmount)}</strong></p>`;
     if (data.deferredInstalment) {
-      paymentHtml += `<p>Payable at: <strong>${data.deferredInstalment}</strong></p>`;
+      paymentHtml += `<p style="color:#555;font-size:0.95em;">Payable at: <strong>${data.deferredInstalment}</strong></p>`;
     } else if (raw.deferredTermMonths > 0) {
-      paymentHtml += `<p>Terms: Payable over ${raw.deferredTermMonths} months post-completion</p>`;
+      paymentHtml += `<p style="color:#555;font-size:0.95em;">Terms: Payable over ${raw.deferredTermMonths} months post-completion</p>`;
     } else if (raw.deferredTerms) {
-      paymentHtml += `<p>Terms: ${raw.deferredTerms}</p>`;
+      paymentHtml += `<p style="color:#555;font-size:0.95em;">Terms: ${raw.deferredTerms}</p>`;
     }
   }
   if (raw.earnoutMaximum > 0) {
     paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
-    if (raw.earnoutMetric)         paymentHtml += `<p>Metric: ${raw.earnoutMetric}</p>`;
-    if (raw.earnoutTermMonths > 0) paymentHtml += `<p>Period: ${raw.earnoutTermMonths} months</p>`;
+    if (raw.earnoutMetric)         paymentHtml += `<p style="color:#555;font-size:0.95em;">Metric: ${raw.earnoutMetric}</p>`;
+    if (raw.earnoutTermMonths > 0) paymentHtml += `<p style="color:#555;font-size:0.95em;">Period: ${raw.earnoutTermMonths} months</p>`;
   }
 
-  const keyTermsRows = [
-    ['Exclusivity Period', `${raw.exclusivityPeriodDays || 90} days from the date of these Heads of Terms`],
-    ['Non-Compete Restriction', `${raw.nonCompetePeriodYears || 2} years post-completion`],
-    ['Non-Solicitation Restriction', `${raw.nonSolicitPeriodYears || 2} years post-completion`],
-    ['Warranty Claim Period', `${raw.warrantyClaimPeriodMonths || 18} months post-completion`],
-    ['Minimum Warranty Claim', fmt(raw.warrantyMinClaim || 5000)],
-    ['Target Completion', `${raw.targetCompletionWeeks || 12} weeks from signing`],
-  ];
+  const transactionTypeLabel = data.transactionTypeLabel || 'Share Sale';
+  const transactionDescription = data.transactionDescription || '100% of the share capital';
+  const isAssetSale = (data.transactionType || 'share_sale') === 'asset_sale';
+  const spaLabel = isAssetSale ? 'Asset Purchase Agreement' : 'Sale and Purchase Agreement';
+  const spaAbbrev = isAssetSale ? 'APA' : 'SPA';
+
+  const section = (num: number, title: string, binding: boolean) =>
+    `<h2 style="margin-top:30px;padding-bottom:8px;border-bottom:1px solid #ddd;font-size:16px;">
+      ${num}. ${title}
+      <span style="font-size:11px;font-weight:normal;color:${binding ? '#b45309' : '#555'};margin-left:8px;">(${binding ? 'Binding' : 'Non-Binding'})</span>
+    </h2>`;
 
   return `
-    <div style="font-family: Arial, sans-serif; line-height: 1.7; max-width: 700px; margin: 0 auto;">
-      <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #333;">
-        <h1 style="margin: 0; font-size: 24px;">Heads of Terms</h1>
-        <p style="margin: 5px 0 0; color: #555;">Subject to Contract &amp; Without Prejudice</p>
-      </div>
+    <div style="font-family:Arial,sans-serif;line-height:1.7;max-width:700px;margin:0 auto;">
 
-      <table style="width: 100%; margin-bottom: 20px;">
-        <tr>
-          <td style="width: 50%; vertical-align: top; padding: 10px;">
-            <p style="margin: 0; font-size: 0.85em; color: #777; text-transform: uppercase;">Buyer</p>
-            <p style="margin: 4px 0; font-weight: bold;">${data.buyerCompanyName || ''}</p>
-          </td>
-          <td style="width: 50%; vertical-align: top; padding: 10px;">
-            <p style="margin: 0; font-size: 0.85em; color: #777; text-transform: uppercase;">Seller</p>
-            <p style="margin: 4px 0; font-weight: bold;">${data.sellerCompanyName || ''}</p>
-            <p style="margin: 2px 0; font-size: 0.9em;">${data.sellerAddress || ''}</p>
-          </td>
-        </tr>
-      </table>
+      <p style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;">PRIVATE AND CONFIDENTIAL — SUBJECT TO CONTRACT</p>
 
-      <p style="color: #555;">Date: ${data.currentDate || ''}</p>
+      <p style="margin:16px 0 4px;"><strong>${data.sellerCompanyName || ''}</strong></p>
+      <p style="margin:0 0 4px;">${data.sellerAddress || ''}</p>
+      <p style="margin:0 0 20px;">${data.currentDate || ''}</p>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">1. The Proposed Acquisition</h2>
-      <p>The Buyer proposes to acquire ${data.transactionDescription || '100% of the issued share capital'} of <strong>${data.sellerCompanyName || ''}</strong> ("the Company") on the terms set out below.</p>
+      <h1 style="font-size:18px;margin:24px 0 8px;">HEADS OF TERMS — PROPOSED ACQUISITION OF ${(data.sellerCompanyName || '').toUpperCase()} (${transactionTypeLabel.toUpperCase()})</h1>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">2. Price</h2>
-      <p>The total consideration for the Shares shall be <strong>${data.offerPrice || fmt(raw.offerPrice)}</strong> ("the Price"), subject to adjustment as described below.</p>
-      
-      <table style="border-collapse: collapse; width: 100%; max-width: 550px; margin: 16px 0;">
-        ${breakdownLines.map(line => `<tr><td style="padding: 5px 0;">${line}</td></tr>`).join('\n')}
-        ${!data.breakdownText ? `<tr><td style="padding: 10px 0 5px; border-top: 2px solid #333;"><strong>Total Consideration: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>` : ''}
-      </table>
+      <p>Dear ${data.sellerContactName || 'Sir/Madam'},</p>
+      <p>Further to our recent discussions, this letter sets out the principal terms upon which <strong>${data.buyerCompanyName || ''}</strong> (the Buyer) is willing to acquire ${transactionDescription} of <strong>${data.sellerCompanyName || ''}</strong> (the Company). Save where expressly stated to be binding, this letter is non-binding and subject to contract.</p>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">3. Payment Structure</h2>
+      ${section(1, 'PARTIES AND TRANSACTION OVERVIEW', false)}
+      <p><strong>Buyer:</strong> ${data.buyerCompanyName || ''}</p>
+      <p><strong>Seller:</strong> ${data.sellerContactName || ''}, ${data.sellerCompanyName || ''}</p>
+      <p><strong>Transaction:</strong> Proposed ${transactionTypeLabel} of ${data.sellerCompanyName || ''}</p>
+      ${isAssetSale ? `<p style="color:#555;font-size:0.95em;">Note: The Seller entity is not being acquired. The Buyer is acquiring specified assets and the goodwill of the business only. Liabilities remain with the Seller unless expressly assumed.</p>` : ''}
+
+      ${section(2, 'PRICE AND CONSIDERATION', false)}
+      <p>The total consideration for the acquisition is <strong>${data.offerPrice || fmt(raw.offerPrice)}</strong> (the Price), structured as follows:</p>
       ${paymentHtml || '<p>Full payment on completion.</p>'}
+      <p style="margin-top:12px;"><strong>2.1</strong> Cash at Completion: <strong>${data.dayOnePayment || fmt(raw.dayOnePayment)}</strong> payable to the Seller on the Completion Date.</p>
+      <p><strong>2.2</strong> Deferred Consideration: <strong>${data.deferredTotal || fmt(raw.deferredAmount)}</strong>${data.deferredInstalment ? ` — ${data.deferredInstalment}` : ''}</p>
+      ${raw.earnoutMaximum > 0 ? `<p><strong>2.3</strong> Earnout: Up to <strong>${fmt(raw.earnoutMaximum)}</strong>${raw.earnoutMetric ? ` based on ${raw.earnoutMetric}` : ''}${raw.earnoutTermMonths > 0 ? ` over ${raw.earnoutTermMonths} months post-completion` : ''}</p>` : ''}
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">4. Key Terms</h2>
-      <table style="border-collapse: collapse; width: 100%; margin: 12px 0;">
-        ${keyTermsRows.map(([label, value]) => `
-          <tr>
-            <td style="padding: 8px 12px; border: 1px solid #ddd; font-weight: 600; width: 40%; background: #f9f9f9;">${label}</td>
-            <td style="padding: 8px 12px; border: 1px solid #ddd;">${value}</td>
-          </tr>
-        `).join('\n')}
+      ${section(3, 'PRICE ASSUMPTIONS', false)}
+      <p>The Price is calculated on the following basis:</p>
+      <table style="border-collapse:collapse;width:100%;max-width:550px;margin:12px 0;">
+        ${breakdownLines.map(line => `<tr><td style="padding:5px 0;">${line}</td></tr>`).join('\n')}
+        ${!data.breakdownText ? `<tr><td style="padding:10px 0 5px;border-top:2px solid #333;"><strong>Total Consideration: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>` : ''}
       </table>
+      ${isAssetSale
+        ? `<p>The Price reflects the agreed value of the business and its goodwill as a going concern. The specific assets to be acquired will be set out in an Asset Schedule to be agreed during due diligence.</p>`
+        : `<p>The Price is on a cash-free, debt-free basis, subject to a normalised level of working capital. Final Price will be adjusted through a completion accounts mechanism to reflect the actual cash, debt, and working capital position at the Completion Date.</p>`
+      }
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">5. Conditions</h2>
-      <p>This acquisition is conditional upon:</p>
-      <ul style="margin: 8px 0; padding-left: 24px;">
-        <li>Satisfactory completion of due diligence by the Buyer</li>
-        <li>Agreement and execution of a Share Purchase Agreement</li>
-        <li>No material adverse change in the business prior to completion</li>
-        <li>Receipt of all necessary regulatory approvals and third-party consents</li>
-      </ul>
+      ${section(4, 'CONDITIONS PRECEDENT', false)}
+      <p>The Proposed Acquisition is conditional upon:</p>
+      <p>(a) Satisfactory completion of legal and financial due diligence by the Buyer;</p>
+      <p>(b) Agreement and execution of a formal ${spaLabel};</p>
+      <p>(c) Confirmation of funding arrangements satisfactory to the Buyer;</p>
+      ${isAssetSale ? `<p>(d) Agreement of the Asset Schedule identifying all assets to be transferred;</p>` : ''}
+      <p>${isAssetSale ? '(e)' : '(d)'} No material adverse change in the business, assets, or financial position of the Company prior to Completion.</p>
       ${data.additionalConditions ? `<p><strong>Additional conditions:</strong> ${data.additionalConditions}</p>` : ''}
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">6. Due Diligence</h2>
-      <p>The Buyer shall be entitled to conduct full financial, legal, commercial, and operational due diligence on the Company during the Exclusivity Period. The Seller agrees to provide reasonable access to all requested information and documentation.</p>
+      ${section(5, 'DUE DILIGENCE', false)}
+      <p>The Buyer will conduct legal, financial, tax, and commercial due diligence on the Company. The Seller agrees to provide all reasonable access to information, personnel, and records as requested. Due diligence will be conducted on a confidential basis and subject to the NDA previously agreed between the parties.</p>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">7. Exclusivity</h2>
-      <p>The Seller agrees that for a period of <strong>${raw.exclusivityPeriodDays || 90} days</strong> from the date of these Heads of Terms, they shall not directly or indirectly solicit, encourage, or negotiate with any third party regarding the sale of the Company or any material part of its business or assets.</p>
+      ${section(6, 'TIMETABLE', false)}
+      <p>The parties will use reasonable endeavours to achieve completion of the Proposed Acquisition within <strong>${data.targetCompletionWeeks || raw.targetCompletionWeeks || 12} weeks</strong> of the date of this letter, subject to satisfactory completion of due diligence and agreement of the ${spaLabel}.</p>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">8. Timetable</h2>
-      <p>The parties shall use reasonable endeavours to complete the transaction within <strong>${raw.targetCompletionWeeks || 12} weeks</strong> from the date of these Heads of Terms, subject to satisfactory completion of due diligence and agreement of the Share Purchase Agreement.</p>
+      ${section(7, 'EXCLUSIVITY', true)}
+      <p>In consideration of the Buyer incurring costs in connection with the Proposed Acquisition, the Seller undertakes that for a period of <strong>${data.exclusivityPeriodDays || raw.exclusivityPeriodDays || 90} days</strong> from the date of this letter the Seller shall not:</p>
+      <p>(a) solicit, encourage, or entertain any approach from any third party relating to the sale or disposal of the Company or its business or assets;</p>
+      <p>(b) enter into any negotiations or discussions with any third party in relation to such a transaction; or</p>
+      <p>(c) provide any information to any third party in connection with any such transaction.</p>
+      <p><strong>This clause 7 is binding on the parties.</strong></p>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">9. Costs</h2>
-      <p>Each party shall bear their own costs in relation to the negotiation and completion of the proposed acquisition, including legal, accounting, and advisory fees.</p>
+      ${section(8, 'NON-COMPETE AND NON-SOLICITATION', false)}
+      <p>It is intended that the ${spaLabel} will include undertakings by the Seller that for a period of <strong>${data.nonCompetePeriodYears || raw.nonCompetePeriodYears || 2} years</strong> following Completion, the Seller will not:</p>
+      <p>(a) carry on or be engaged or interested in any business which competes with the business of the Company as at Completion;</p>
+      <p>(b) solicit or entice away any employee, customer, or supplier of the Company for a period of <strong>${data.nonSolicitPeriodYears || raw.nonSolicitPeriodYears || 2} years</strong> following Completion.</p>
 
-      <h2 style="margin-top: 30px; padding-bottom: 8px; border-bottom: 1px solid #ddd; font-size: 16px;">10. Governing Law</h2>
-      <p>These Heads of Terms and any dispute arising from them shall be governed by and construed in accordance with English law. The courts of England and Wales shall have exclusive jurisdiction.</p>
+      ${section(9, 'WARRANTIES AND INDEMNITIES', false)}
+      <p>The ${spaLabel} will include customary warranties from the Seller regarding the Company. It is intended that:</p>
+      <p>(a) Warranty claims must be notified within <strong>${data.warrantyClaimPeriodMonths || raw.warrantyClaimPeriodMonths || 18} months</strong> of Completion;</p>
+      <p>(b) The minimum individual claim threshold is <strong>${data.warrantyMinClaim || fmt(raw.warrantyMinClaim || 5000)}</strong>;</p>
+      <p>(c) The aggregate warranty cap will be agreed during the ${spaAbbrev} negotiation.</p>
 
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd;">
-        <p style="margin-bottom: 4px;"><strong>Status:</strong> These Heads of Terms are not legally binding save for the provisions relating to exclusivity, confidentiality, and costs, which are intended to be legally binding.</p>
-      </div>
+      ${section(10, isAssetSale ? 'ASSET PURCHASE AGREEMENT' : 'SALE AND PURCHASE AGREEMENT', false)}
+      <p>The Proposed Acquisition will be documented by a formal ${spaLabel} to be prepared by the Buyer's solicitors. The ${spaAbbrev} will be in a form customary for a transaction of this nature and will reflect the terms set out in this letter together with such other terms as are agreed between the parties during due diligence and negotiation.</p>
+
+      ${section(11, 'EMPLOYEES', false)}
+      ${isAssetSale
+        ? `<p>The Transfer of Undertakings (Protection of Employment) Regulations 2006 (TUPE) will automatically apply to this transaction. All employees of the business being acquired will transfer to the Buyer on their existing terms and conditions. The parties will cooperate to fulfil their respective information and consultation obligations under TUPE prior to Completion.</p>`
+        : `<p>The Buyer intends to retain all existing employees of the Company following Completion. The transaction will be subject to applicable employment legislation including TUPE where relevant. Key management arrangements will be discussed and agreed during the due diligence period.</p>`
+      }
+
+      ${section(12, 'COSTS', true)}
+      <p>Each party shall bear their own legal and professional costs incurred in connection with the Proposed Acquisition, whether or not the transaction proceeds to Completion. <strong>This clause 12 is binding on the parties.</strong></p>
+
+      ${section(13, 'ANNOUNCEMENTS', true)}
+      <p>Neither party shall make any public announcement or disclosure in connection with the Proposed Acquisition without the prior written consent of the other party, save as required by law or regulation. <strong>This clause 13 is binding on the parties.</strong></p>
+
+      ${section(14, 'GOVERNING LAW', true)}
+      <p>This letter and any non-contractual obligations arising from or in connection with it shall be governed by and construed in accordance with the laws of England and Wales. The parties submit to the exclusive jurisdiction of the courts of England and Wales. <strong>This clause 14 is binding on the parties.</strong></p>
+
+      <p style="margin-top:32px;">Please confirm your agreement to the above terms by signing and returning a copy of this letter.</p>
+      <p>Yours sincerely,</p>
+      <p style="margin-top:24px;"><strong>${data.buyerSignatoryName || ''}</strong><br/>${data.buyerSignatoryTitle || ''}<br/>${data.buyerCompanyName || ''}</p>
 
     </div>
   `;
