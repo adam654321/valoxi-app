@@ -70,6 +70,7 @@ export class TargetCompaniesService {
     const processedData = {
       companyName: data.companyName,
       industry: data.industry || null,
+      subSector: data.subSector || null,
       website: data.website || null,
       phone: data.phone || null,
       email: data.email || null,
