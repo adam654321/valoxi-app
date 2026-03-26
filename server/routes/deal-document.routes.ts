@@ -472,7 +472,7 @@ function buildOfferLetterHtml(data: any): string {
       <p><strong>This is comprised as follows:</strong></p>
       <table style="border-collapse: collapse; width: 100%; max-width: 500px; margin: 12px 0;">
         ${breakdownLines.map(line => `<tr><td style="padding: 4px 0;">${line}</td></tr>`).join('\n')}
-        <tr><td style="padding: 8px 0; border-top: 2px solid #333;"><strong>Total Offer Price: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>
+        ${!data.breakdownText ? `<tr><td style="padding: 8px 0; border-top: 2px solid #333;"><strong>Total Offer Price: ${data.offerPrice || fmt(raw.offerPrice)}</strong></td></tr>` : ''}
       </table>
       <br/>
       ${paymentHtml ? `<p><strong>Payment Structure:</strong></p>${paymentHtml}<br/>` : ''}
