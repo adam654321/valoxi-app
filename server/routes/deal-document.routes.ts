@@ -496,7 +496,9 @@ function buildHoTHtml(data: any): string {
 
   const breakdownLines: string[] = [];
   if (data.breakdownText) {
-    data.breakdownText.split('\n').filter((l: string) => l.trim()).forEach((l: string) => breakdownLines.push(l));
+    data.breakdownText.split('\n').filter((l: string) => l.trim()).forEach((l: string) => {
+      breakdownLines.push(l.replace(/^Total Offer Price:/i, 'Total Consideration:'));
+    });
   } else {
     breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${raw.ebitdaMultiple || 0} multiple): ${fmt(raw.enterpriseValue)}`);
     if (raw.excessCash > 0)        breakdownLines.push(`Plus Excess Cash: ${fmt(raw.excessCash)}`);
