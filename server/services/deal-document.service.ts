@@ -638,6 +638,14 @@ export class DealDocumentService {
   }) {
     const existingOffer = await this.getLatestActiveDocument(params.targetCompanyId, 'offer_letter');
 
+    if (existingOffer && existingOffer.status === 'accepted') {
+      throw new Error(
+        'An accepted offer letter already exists for this company. ' +
+        'A new offer cannot be issued once an offer has been accepted. ' +
+        'Proceed to Heads of Terms.'
+      );
+    }
+
     let doc;
     if (existingOffer && ['sent', 'viewed', 'countered', 'rejected'].includes(existingOffer.status)) {
       doc = await this.createNewVersion(existingOffer.id, params.createdBy, {
