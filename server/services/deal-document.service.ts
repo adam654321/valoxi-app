@@ -818,7 +818,9 @@ export class DealDocumentService {
     if (deferredAmount > 0) {
       paymentLines.push('');
       paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
-      if (deferredTerms) {
+      if (deferredInstalment) {
+        paymentLines.push(`Payable at: ${deferredInstalment}`);
+      } else if (deferredTerms) {
         paymentLines.push(`Deferred terms: ${deferredTerms}`);
       }
     }
@@ -845,6 +847,9 @@ export class DealDocumentService {
       deferredInstalment,
       transactionType,
       transactionTypeLabel,
+      transactionDescription: transactionType === 'asset_sale'
+        ? 'the business and specified assets'
+        : '100% of the share capital',
       _raw: {
         offerPrice,
         enterpriseValue,

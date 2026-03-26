@@ -1,0 +1,98 @@
+Make the following two changes. Do them in order.
+Change 1 — Add instalment line to paymentText in server/services/deal-document.service.ts
+In buildOfferDataContext, find the block that builds paymentLines. It currently looks like:
+typescriptif (deferredAmount > 0) {
+  paymentLines.push('');
+  paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
+  if (deferredTerms) {
+    paymentLines.push(`Deferred terms: ${deferredTerms}`);
+  }
+}
+Replace with:
+typescriptif (deferredAmount > 0) {
+  paymentLines.push('');
+  paymentLines.push(`Deferred consideration: ${fmt(deferredAmount)}`);
+  if (deferredInstalment) {
+    paymentLines.push(`Payable at: ${deferredInstalment}`);
+  } else if (deferredTerms) {
+    paymentLines.push(`Deferred terms: ${deferredTerms}`);
+  }
+}
+Change 2 — Regenerate the offer letter template
+Run this Node.js script to replace data/templates/system_offer_letter.docx with an updated version. The only substantive change from the current template is replacing the hardcoded "share capital" sentence with a dynamic {{transactionDescription}} placeholder, and adding {{transactionTypeLabel}} to the subject line:
+javascriptconst PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
+const fs = require('fs');
+const path = require('path');
+
+// Read existing template to preserve all docx formatting/styles
+const content = fs.readFileSync('data/templates/system_offer_letter.docx', 'binary');
+const zip = new PizZip(content);
+
+// Build updated template text — same structure, dynamic transaction type
+const templateXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>
+<w:p><w:r><w:t>{{sellerCompanyName}}</w:t></w:r></w:p>
+<w:p><w:r><w:t>{{sellerAddress}}</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>{{currentDate}}</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>Re: Indicative Offer — {{sellerCompanyName}} ({{transactionTypeLabel}})</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>Further to our conversations, I have the pleasure of enclosing an indicative offer for {{transactionDescription}} of {{sellerCompanyName}}.</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>The total offer price is {{offerPrice}}</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>This is comprised as follows:</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>{{breakdownText}}</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>Payment Structure:</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>{{paymentText}}</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>This offer is subject to due diligence and legal contract. I trust this offer meets with your approval and await your response. Following the acceptance of this offer, a heads of terms document will be submitted and negotiated to include agreements on working capital, exclusivity period and a timetable for due diligence and legal contract.</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>Yours sincerely,</w:t></w:r></w:p>
+<w:p><w:r><w:t></w:t></w:r></w:p>
+<w:p><w:r><w:t>{{buyerSignatoryName}}</w:t></w:r></w:p>
+<w:p><w:r><w:t>{{buyerSignatoryTitle}}</w:t></w:r></w:p>
+<w:p><w:r><w:t>{{buyerCompanyName}}</w:t></w:r></w:p>
+<w:sectPr/>
+</w:body>
+</w:document>`;
+
+zip.file('word/document.xml', templateXml);
+
+const buf = zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+fs.writeFileSync('data/templates/system_offer_letter.docx', buf);
+console.log('Template written successfully');
+Change 3 — Add transactionDescription to buildOfferDataContext return
+In the return block of buildOfferDataContext, find:
+typescripttransactionTypeLabel,
+Replace with:
+typescripttransactionTypeLabel,
+transactionDescription: transactionType === 'asset_sale'
+  ? 'the business and specified assets'
+  : '100% of the share capital',
+```
+
+After all three changes confirm:
+1. Clean TypeScript compilation — no errors
+2. Server restarts cleanly
+3. Run the template extraction script again on the new `system_offer_letter.docx` to confirm the new text is in the template:
+```
+node -e "
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
+const fs = require('fs');
+const content = fs.readFileSync('data/templates/system_offer_letter.docx', 'binary');
+const zip = new PizZip(content);
+const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+console.log(doc.getFullText());
+"
+
+Show me the updated paymentLines deferred block as it now reads
+
+Do not make any other changes.
