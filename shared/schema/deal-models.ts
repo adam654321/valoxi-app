@@ -12,6 +12,7 @@ export const dealModels = pgTable("deal_models", {
   name: varchar("name", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }).default('draft'),
   version: integer("version").default(1),
+  transactionType: varchar("transaction_type", { length: 20 }).default('share_sale'),
   parentModelId: integer("parent_model_id"),
   isLocked: boolean("is_locked").default(false),
   averagingYears: integer("averaging_years").default(3),

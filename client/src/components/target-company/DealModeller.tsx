@@ -96,6 +96,7 @@ export interface ExplainContext {
 export default function DealModeller({ companyId }: DealModellerProps) {
   const { toast } = useToast();
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
+  const [transactionType, setTransactionType] = useState<string>('share_sale');
 
   const { data: targetCompany } = useQuery<any>({
     queryKey: ['/api/v2/target-companies', companyId],
@@ -120,6 +121,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     select: (response: any) => response?.data || response,
     enabled: !!selectedModelId,
   });
+
+  useEffect(() => {
+    if (modelDetails) {
+      setTransactionType((modelDetails as any).transactionType || 'share_sale');
+    }
+  }, [modelDetails?.id]);
 
   const { data: financialsRaw } = useQuery<FinancialsData>({
     queryKey: ['/api/v2/financial-data/company', companyId, 'financials'],
@@ -250,6 +257,19 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     },
     onError: (error: Error) => {
       toast({ title: 'Could not create new version', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const transactionTypeMutation = useMutation({
+    mutationFn: async (value: string) => {
+      const res = await apiRequest('PUT', `/api/v2/deal-models/${selectedModelId}`, { transactionType: value });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Could not save transaction type', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -484,6 +504,37 @@ export default function DealModeller({ companyId }: DealModellerProps) {
               <Separator />
 
               <div className="space-y-6">
+                <Card>
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+                        Transaction Type
+                      </span>
+                      <Select
+                        value={transactionType}
+                        onValueChange={(val) => {
+                          setTransactionType(val);
+                          transactionTypeMutation.mutate(val);
+                        }}
+                        disabled={isLocked}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="share_sale">Share Sale</SelectItem>
+                          <SelectItem value="asset_sale">Asset Sale</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-muted-foreground">
+                        {transactionType === 'share_sale'
+                          ? 'Buyer acquires the company entity — shares transfer with all assets and liabilities.'
+                          : 'Buyer acquires specific assets only — liabilities remain with the seller entity.'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <PLSummarySection
                   financialData={financialsRaw}
                   adjustments={modelDetails?.adjustments || []}

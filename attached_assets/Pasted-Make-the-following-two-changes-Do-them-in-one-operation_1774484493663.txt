@@ -1,0 +1,77 @@
+Make the following two changes. Do them in one operation.
+Change 1 — Schema
+In shared/schema/deal-models.ts, add a new column to the dealModels table after the version line and before the parentModelId line:
+typescripttransactionType: varchar("transaction_type", { length: 20 }).default('share_sale'),
+Change 2 — UI
+In client/src/components/target-company/DealModeller.tsx:
+
+Add Select, SelectContent, SelectItem, SelectTrigger, SelectValue to the existing import from @/components/ui/select if not already present.
+Add a transactionType local state at the top of the component, after the existing useState declarations:
+
+typescriptconst [transactionType, setTransactionType] = useState<string>('share_sale');
+
+Add a useEffect to sync it when modelDetails loads — place it after the existing useEffect that syncs selectedModelId:
+
+typescriptuseEffect(() => {
+  if (modelDetails) {
+    setTransactionType((modelDetails as any).transactionType || 'share_sale');
+  }
+}, [modelDetails?.id]);
+
+Add a transactionTypeMutation using the existing pattern:
+
+typescriptconst transactionTypeMutation = useMutation({
+  mutationFn: async (value: string) => {
+    const res = await apiRequest('PUT', `/api/v2/deal-models/${selectedModelId}`, { transactionType: value });
+    return res.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', selectedModelId] });
+  },
+  onError: (error: Error) => {
+    toast({ title: 'Could not save transaction type', description: error.message, variant: 'destructive' });
+  },
+});
+
+In the render, inside the <div className="space-y-6"> block, insert the following as the first child (before <PLSummarySection):
+
+tsx<Card>
+  <CardContent className="py-4">
+    <div className="flex items-center gap-4">
+      <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide whitespace-nowrap">
+        Transaction Type
+      </span>
+      <Select
+        value={transactionType}
+        onValueChange={(val) => {
+          setTransactionType(val);
+          transactionTypeMutation.mutate(val);
+        }}
+        disabled={isLocked}
+      >
+        <SelectTrigger className="w-[200px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="share_sale">Share Sale</SelectItem>
+          <SelectItem value="asset_sale">Asset Sale</SelectItem>
+        </SelectContent>
+      </Select>
+      <span className="text-xs text-muted-foreground">
+        {transactionType === 'share_sale'
+          ? 'Buyer acquires the company entity — shares transfer with all assets and liabilities.'
+          : 'Buyer acquires specific assets only — liabilities remain with the seller entity.'}
+      </span>
+    </div>
+  </CardContent>
+</Card>
+After both changes:
+Run npm run db:push to add the column to the database.
+Then confirm:
+
+Clean TypeScript compilation — no errors
+Server restarts cleanly
+Show me the updated lines in deal-models.ts around the new column
+Show me the new JSX block in DealModeller.tsx as inserted
+
+Do not make any other changes.
