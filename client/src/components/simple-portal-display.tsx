@@ -40,8 +40,8 @@ interface SimplePortalDisplayProps {
 
 const DOCUMENT_TYPES = [
   { value: 'company_accounts', label: 'Company Accounts' },
-  { value: 'p_and_l', label: 'Profit and Loss' },
-  { value: 'balance_sheet', label: 'Balance Sheet' },
+  { value: 'p_and_l', label: 'YTD Profit and Loss' },
+  { value: 'balance_sheet', label: 'YTD Balance Sheet' },
   { value: 'sales_ledger', label: 'Sales Ledger' },
   { value: 'asset_register', label: 'Asset Register' },
   { value: 'staff_matrix', label: 'Staff Matrix' }

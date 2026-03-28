@@ -14,8 +14,8 @@ export const formatDocumentType = (type: string): string => {
     case 'asset_register': return 'Asset Register';
     case 'sales_ledger': return 'Sales Ledger';
     case 'staff_matrix': return 'Staff Matrix';
-    case 'profit_and_loss': return 'Profit & Loss';
-    case 'balance_sheet': return 'Balance Sheet';
+    case 'profit_and_loss': return 'YTD Profit & Loss';
+    case 'balance_sheet': return 'YTD Balance Sheet';
     default: return type;
   }
 };
@@ -44,8 +44,8 @@ export const getDocumentTypeColor = (type: string): string => {
  */
 export const DOCUMENT_TYPES = [
   { value: 'company_accounts', label: 'Company Accounts' },
-  { value: 'profit_and_loss', label: 'Profit and Loss' },
-  { value: 'balance_sheet', label: 'Balance Sheet' },
+  { value: 'profit_and_loss', label: 'YTD Profit and Loss' },
+  { value: 'balance_sheet', label: 'YTD Balance Sheet' },
   { value: 'sales_ledger', label: 'Sales Ledger' },
   { value: 'asset_register', label: 'Asset Register' },
   { value: 'staff_matrix', label: 'Staff Matrix' }

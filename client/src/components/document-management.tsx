@@ -579,6 +579,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           analysisType = 'asset_register';
           break;
         case 'Balance Sheet':
+        case 'YTD Balance Sheet':
           analysisType = 'balance_sheet';
           break;
         case 'Profit & Loss':
