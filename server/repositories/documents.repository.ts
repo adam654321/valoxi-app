@@ -26,8 +26,8 @@ export class DocumentsRepository {
   async getDocumentCategories(): Promise<DocumentCategory[]> {
     return [
       { id: 1, categoryName: 'Company Accounts', description: 'Company annual accounts and financial statements (up to 5 files)', isRequired: true, sortOrder: 1, createdAt: new Date() },
-      { id: 2, categoryName: 'Profit & Loss', description: 'Profit and loss statements', isRequired: true, sortOrder: 2, createdAt: new Date() },
-      { id: 3, categoryName: 'Balance Sheet', description: 'Balance sheet documents', isRequired: true, sortOrder: 3, createdAt: new Date() },
+      { id: 2, categoryName: 'YTD Profit & Loss', description: 'Profit and loss statements', isRequired: true, sortOrder: 2, createdAt: new Date() },
+      { id: 3, categoryName: 'YTD Balance Sheet', description: 'Balance sheet documents', isRequired: true, sortOrder: 3, createdAt: new Date() },
       { id: 4, categoryName: 'Sales Ledger', description: 'Sales ledger and transaction records', isRequired: true, sortOrder: 4, createdAt: new Date() },
       { id: 5, categoryName: 'Asset Register', description: 'Asset register and fixed asset records', isRequired: true, sortOrder: 5, createdAt: new Date() },
       { id: 6, categoryName: 'Staff Matrix', description: 'Staff matrix and employee information', isRequired: true, sortOrder: 6, createdAt: new Date() },
