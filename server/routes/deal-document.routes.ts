@@ -149,17 +149,18 @@ router.get('/:id/html', asyncHandler(async (req, res) => {
   if (!doc) {
     return res.status(404).json({ message: 'Document not found' });
   }
-  if (!doc.generatedFileUrl) {
-    return res.status(404).json({ message: 'Document file not generated' });
-  }
-
   let html: string;
 
-  if (doc.documentType === 'offer_letter' && doc.documentData) {
+  if (doc.documentType === 'nda' && doc.documentData) {
+    html = buildNdaHtml(doc.documentData as any);
+  } else if (doc.documentType === 'offer_letter' && doc.documentData) {
     html = buildOfferLetterHtml(doc.documentData as any);
   } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
     html = buildHoTHtml(doc.documentData as any);
   } else {
+    if (!doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not generated' });
+    }
     const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
     html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
   }
@@ -311,19 +312,20 @@ publicRouter.get('/:token/:documentId/html', asyncHandler(async (req, res) => {
   if (!doc || doc.portalTokenId !== portalData.tokenId) {
     return res.status(404).json({ message: 'Document not found' });
   }
-  if (!doc.generatedFileUrl) {
-    return res.status(404).json({ message: 'Document file not generated' });
-  }
-
   await dealDocumentService.markViewed(documentId);
 
   let html: string;
 
-  if (doc.documentType === 'offer_letter' && doc.documentData) {
+  if (doc.documentType === 'nda' && doc.documentData) {
+    html = buildNdaHtml(doc.documentData as any);
+  } else if (doc.documentType === 'offer_letter' && doc.documentData) {
     html = buildOfferLetterHtml(doc.documentData as any);
   } else if (doc.documentType === 'heads_of_terms' && doc.documentData) {
     html = buildHoTHtml(doc.documentData as any);
   } else {
+    if (!doc.generatedFileUrl) {
+      return res.status(404).json({ message: 'Document file not generated' });
+    }
     const { dealDocumentTemplateService } = await import('../services/deal-document-template.service');
     html = await dealDocumentTemplateService.convertToHtml(doc.generatedFileUrl);
   }
@@ -407,6 +409,72 @@ function buildSignatureBlock(documentType: string, docData: any, responses: any[
           </p>
         </div>
       ` : ''}
+    </div>
+  `;
+}
+
+function buildNdaHtml(data: any): string {
+  const buyerCompanyName = data.buyerCompanyName || '';
+  const buyerSignatoryName = data.buyerSignatoryName || '';
+  const buyerSignatoryTitle = data.buyerSignatoryTitle || 'Director';
+  const sellerCompanyName = data.sellerCompanyName || '';
+  const sellerAddress = data.sellerAddress || '';
+  const currentDate = data.currentDate || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const productOrService = data.productOrService || `the business operations of ${sellerCompanyName}`;
+
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.7; max-width: 700px; margin: 0 auto; color: #1a1a1a;">
+      <h1 style="font-size: 20px; text-align: center; margin-bottom: 8px;">NON-DISCLOSURE AGREEMENT</h1>
+      <p style="text-align: center; color: #555; font-size: 13px; margin-bottom: 32px;">Confidential — Not for Distribution</p>
+
+      <p>${currentDate}</p>
+      <p><strong>${sellerCompanyName}</strong><br/>${sellerAddress.replace(/\n/g, '<br/>')}</p>
+      <br/>
+
+      <p>Dear Sir/Madam,</p>
+
+      <p>This Non-Disclosure Agreement (<strong>"Agreement"</strong>) is entered into between:</p>
+
+      <p><strong>Disclosing Party:</strong> ${sellerCompanyName}, the owner of the business known as ${productOrService}.</p>
+      <p><strong>Receiving Party:</strong> ${buyerCompanyName} (<strong>"the Buyer"</strong>).</p>
+
+      <br/>
+      <h2 style="font-size: 15px;">1. PURPOSE</h2>
+      <p>The Receiving Party wishes to evaluate a potential acquisition of ${productOrService} (the <strong>"Proposed Transaction"</strong>). In connection with this evaluation, the Disclosing Party may disclose certain confidential and proprietary information to the Receiving Party.</p>
+
+      <h2 style="font-size: 15px;">2. CONFIDENTIAL INFORMATION</h2>
+      <p>For the purposes of this Agreement, <strong>"Confidential Information"</strong> means all information disclosed by the Disclosing Party to the Receiving Party, whether orally, in writing, or by any other means, that is designated as confidential or that reasonably should be understood to be confidential given the nature of the information and the circumstances of disclosure. This includes, without limitation, financial data, customer lists, business plans, trade secrets, operational procedures, and any other information relating to the business of the Disclosing Party.</p>
+
+      <h2 style="font-size: 15px;">3. OBLIGATIONS</h2>
+      <p>The Receiving Party agrees to:</p>
+      <p>(a) hold all Confidential Information in strict confidence;</p>
+      <p>(b) not disclose Confidential Information to any third party without the prior written consent of the Disclosing Party;</p>
+      <p>(c) use the Confidential Information solely for the purpose of evaluating the Proposed Transaction;</p>
+      <p>(d) limit access to Confidential Information to those of its advisors, employees, or agents who have a need to know and who are bound by obligations of confidentiality no less restrictive than those set out herein.</p>
+
+      <h2 style="font-size: 15px;">4. EXCLUSIONS</h2>
+      <p>The obligations in clause 3 shall not apply to information that:</p>
+      <p>(a) is or becomes publicly available through no fault of the Receiving Party;</p>
+      <p>(b) was rightfully known to the Receiving Party prior to disclosure;</p>
+      <p>(c) is independently developed by the Receiving Party without use of Confidential Information; or</p>
+      <p>(d) is required to be disclosed by law or court order, provided the Receiving Party gives prompt written notice to the Disclosing Party.</p>
+
+      <h2 style="font-size: 15px;">5. TERM</h2>
+      <p>This Agreement shall remain in effect for a period of two (2) years from the date of signing, unless terminated earlier by mutual written consent of the parties.</p>
+
+      <h2 style="font-size: 15px;">6. RETURN OF INFORMATION</h2>
+      <p>Upon request by the Disclosing Party or upon termination of discussions relating to the Proposed Transaction, the Receiving Party shall promptly return or destroy all Confidential Information and any copies thereof.</p>
+
+      <h2 style="font-size: 15px;">7. NO LICENCE</h2>
+      <p>Nothing in this Agreement grants the Receiving Party any right, title, or interest in or to the Confidential Information or any intellectual property of the Disclosing Party.</p>
+
+      <h2 style="font-size: 15px;">8. GOVERNING LAW</h2>
+      <p>This Agreement shall be governed by and construed in accordance with the laws of England and Wales. The parties submit to the exclusive jurisdiction of the courts of England and Wales.</p>
+
+      <br/>
+      <p>Agreed and accepted on behalf of the Receiving Party:</p>
+      <br/>
+      <p><strong>${buyerSignatoryName}</strong><br/>${buyerSignatoryTitle}<br/>${buyerCompanyName}</p>
     </div>
   `;
 }
