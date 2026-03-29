@@ -3,6 +3,7 @@ import mammoth from 'mammoth';
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from '../db';
+import { fileStorageService } from './file-storage.service';
 import { dealDocumentTemplates } from '@shared/schema/deal-documents';
 import { targetCompanies } from '@shared/schema/deals';
 import { userCompanies, users } from '@shared/schema/core';
@@ -169,13 +170,10 @@ export class DealDocumentTemplateService {
     data: DocumentDataContext,
     filename: string
   ): Promise<string> {
-    await this.ensureDirectories();
-
     const buffer = await this.generateDocument(templatePath, data);
-    const outputPath = path.join(GENERATED_DIR, filename);
-    await fs.writeFile(outputPath, buffer);
-
-    return outputPath;
+    const key = fileStorageService.generateKey('generated-documents', filename);
+    await fileStorageService.upload(key, buffer);
+    return key;
   }
 
   async getSystemTemplate(documentType: string): Promise<typeof dealDocumentTemplates.$inferSelect | null> {
