@@ -1,0 +1,70 @@
+Make the following two changes in order.
+Fix 1 — server/services/deal-document.service.ts — createNdaForPortal
+The try/catch silently swallows generation failures and returns a doc with generatedFileUrl: null. Remove the try/catch so errors propagate to the caller.
+Find this entire try/catch block:
+typescripttry {
+  const context = await dealDocumentTemplateService.buildDataContext(
+    params.targetCompanyId,
+    params.userCompanyId,
+    params.createdBy
+  );
+  await this.generateDocumentFile(doc.id, context);
+  await this.sendDocument(doc.id);
+  return doc;
+} catch (err) {
+  console.error(`[DEAL_DOCS] Failed to generate NDA for portal ${params.portalTokenId}:`, err);
+  return doc;
+}
+Replace with:
+typescriptconst context = await dealDocumentTemplateService.buildDataContext(
+  params.targetCompanyId,
+  params.userCompanyId,
+  params.createdBy
+);
+await this.generateDocumentFile(doc.id, context);
+await this.sendDocument(doc.id);
+console.log(`[DEAL_DOCS] NDA created and sent for portal ${params.portalTokenId} (doc id: ${doc.id})`);
+return doc;
+
+Fix 2 — client/src/components/portal/NdaAgreement.tsx — block signing when content fails
+2a — Add isError to the query destructuring. Find:
+typescriptconst { data: ndaContent, isLoading } = useQuery({
+Replace with:
+typescriptconst { data: ndaContent, isLoading, isError: contentError } = useQuery({
+2b — Block the scroll auto-unlock when content has errored. Find:
+typescriptuseEffect(() => {
+  if (!isLoading && ndaContent && scrollRef.current) {
+    const el = scrollRef.current;
+    if (el.scrollHeight <= el.clientHeight + 50) {
+      setHasScrolledToBottom(true);
+    }
+  }
+}, [isLoading, ndaContent]);
+Replace with:
+typescriptuseEffect(() => {
+  if (!isLoading && !contentError && ndaContent && scrollRef.current) {
+    const el = scrollRef.current;
+    if (el.scrollHeight <= el.clientHeight + 50) {
+      setHasScrolledToBottom(true);
+    }
+  }
+}, [isLoading, contentError, ndaContent]);
+2c — Add contentError to the canSubmit condition. Find:
+typescriptconst canSubmit = fullName.trim().length >= 2 && agreed && !submitting && hasScrolledToBottom;
+Replace with:
+typescriptconst canSubmit = !contentError && fullName.trim().length >= 2 && agreed && !submitting && hasScrolledToBottom;
+2d — Show a clear error message instead of the silent fallback. Find:
+typescriptdangerouslySetInnerHTML={{ __html: ndaContent?.html || '<p>Unable to load NDA content.</p>' }}
+Replace with:
+typescriptdangerouslySetInnerHTML={{ __html: contentError
+  ? '<p style="color:#dc2626;font-weight:600;padding:16px;">Unable to load the NDA document. Please refresh the page. If the problem continues, contact the buyer directly.</p>'
+  : (ndaContent?.html || '<p style="padding:16px;">Loading agreement...</p>')
+}}
+
+After both fixes confirm:
+
+Clean TypeScript compilation — no errors
+Server restarts cleanly
+Show me the updated canSubmit line and the updated dangerouslySetInnerHTML line as they now read
+
+Do not make any other changes.
