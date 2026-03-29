@@ -9,6 +9,7 @@ import { targetCompanies } from '@shared/schema/deals';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock } from '../utils/document-html-builders';
+import { fileStorageService } from '../services/file-storage.service';
 
 const router = Router();
 const publicRouter = Router();
@@ -33,9 +34,14 @@ router.get('/download/:id', asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Document file not found' });
   }
 
-  const fs = await import('fs/promises');
   const path = await import('path');
-  const buffer = await fs.readFile(doc.generatedFileUrl);
+  let buffer: Buffer;
+  if (fileStorageService.isObjectStorageKey(doc.generatedFileUrl)) {
+    buffer = await fileStorageService.download(doc.generatedFileUrl);
+  } else {
+    const fs = await import('fs/promises');
+    buffer = await fs.readFile(doc.generatedFileUrl);
+  }
   const filename = path.basename(doc.generatedFileUrl);
 
   const isPdf = filename.endsWith('.pdf');
@@ -361,9 +367,14 @@ publicRouter.get('/:token/:documentId/download', asyncHandler(async (req, res) =
 
   await dealDocumentService.markViewed(documentId);
 
-  const fs = await import('fs/promises');
   const path = await import('path');
-  const buffer = await fs.readFile(doc.generatedFileUrl);
+  let buffer: Buffer;
+  if (fileStorageService.isObjectStorageKey(doc.generatedFileUrl)) {
+    buffer = await fileStorageService.download(doc.generatedFileUrl);
+  } else {
+    const fs = await import('fs/promises');
+    buffer = await fs.readFile(doc.generatedFileUrl);
+  }
   const filename = path.basename(doc.generatedFileUrl);
 
   const isPdf = filename.endsWith('.pdf');
