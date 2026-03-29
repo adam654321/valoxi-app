@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, CheckCircle, Loader2, ChevronDown } from 'lucide-react';
+import { Shield, CheckCircle, Loader2, ChevronDown, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface NdaAgreementProps {
@@ -96,6 +96,8 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [acceptedName, setAcceptedName] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -153,13 +155,52 @@ export default function NdaAgreement({ token, ndaDocument, buyerCompanyName, onA
         throw new Error(data.message || 'Failed to submit agreement');
       }
 
-      toast({ title: 'NDA Accepted', description: 'A signed copy has been saved. You now have access to the document portal.' });
-      onAgreed();
+      setAcceptedName(fullName.trim());
+      setAccepted(true);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (accepted) {
+    return (
+      <div className="force-light min-h-screen bg-muted py-8 px-4">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <Card>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl">NDA Signed</CardTitle>
+              <CardDescription className="text-base mt-2">
+                Thank you, {acceptedName}. Your agreement has been recorded and a signed copy has been saved.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pb-6">
+              <a
+                href={`/api/v2/public/deal-documents/${token}/${ndaDocument.id}/download`}
+                download
+                className="w-full"
+              >
+                <Button variant="outline" className="w-full" size="lg">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Signed NDA (PDF)
+                </Button>
+              </a>
+              <Button
+                onClick={onAgreed}
+                className="w-full"
+                size="lg"
+              >
+                Continue to Portal
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (
