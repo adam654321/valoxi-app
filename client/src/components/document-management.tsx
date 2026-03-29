@@ -583,6 +583,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
           analysisType = 'balance_sheet';
           break;
         case 'Profit & Loss':
+        case 'YTD Profit & Loss':
+        case 'Profit and Loss':
+        case 'YTD Profit and Loss':
           analysisType = 'profit_and_loss';
           break;
         case 'Sales Ledger':
