@@ -6,6 +6,8 @@ import { financialPeriods, incomeStatements } from '@shared/schema/financials';
 import { eq, and, desc, not, inArray } from 'drizzle-orm';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 import { extendPortalTokenForCompany } from './portal-token.service';
+import { buildNdaHtml } from '../utils/document-html-builders';
+import { fileStorageService } from './file-storage.service';
 
 export class DealDocumentService {
 
@@ -350,11 +352,9 @@ export class DealDocumentService {
   }): Promise<string> {
     const doc = await this.getDocumentById(params.documentId);
     if (!doc) throw new Error('Document not found');
-    if (!doc.generatedFileUrl) throw new Error('Document not generated');
+    if (!doc.documentData) throw new Error('Document data not found');
 
-    const { dealDocumentTemplateService } = await import('./deal-document-template.service');
-    const originalDocxPath = doc.generatedFileUrl;
-    const html = await dealDocumentTemplateService.convertToHtml(originalDocxPath);
+    const html = buildNdaHtml(doc.documentData as any);
 
     const buyerName = (doc.documentData as any)?.buyerSignatoryName || 'Buyer';
     const buyerCompany = (doc.documentData as any)?.buyerCompanyName || '';
@@ -364,55 +364,52 @@ export class DealDocumentService {
     });
 
     const signedHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: 'Times New Roman', Times, serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #333; }
-          h1 { font-size: 18px; text-align: center; margin-bottom: 20px; }
-          h2 { font-size: 16px; margin-top: 24px; }
-          h3 { font-size: 14px; margin-top: 20px; }
-          p { margin: 8px 0; font-size: 12px; }
-          .signature-block { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
-          .signature-row { display: flex; justify-content: space-between; margin-top: 30px; }
-          .signature-party { width: 45%; }
-          .signature-party .sig-name { font-weight: bold; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
-          .signature-party .sig-detail { font-size: 11px; color: #555; margin: 2px 0; }
-          .acceptance-stamp { margin-top: 20px; padding: 12px; background: #f0f9f0; border: 1px solid #c0e0c0; border-radius: 4px; font-size: 11px; }
-        </style>
-      </head>
-      <body>
-        ${html}
-        <div class="signature-block">
-          <h3>SIGNATURES</h3>
-          <div class="signature-row">
-            <div class="signature-party">
-              <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Disclosing Party / Buyer:</p>
-              <div class="sig-name">${buyerName}</div>
-              <div class="sig-detail">${buyerCompany}</div>
-              <div class="sig-detail">Date: ${(doc.documentData as any)?.currentDate || ''}</div>
-            </div>
-            <div class="signature-party">
-              <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Receiving Party / Seller:</p>
-              <div class="sig-name">${params.respondentName}</div>
-              <div class="sig-detail">${sellerCompany}</div>
-              <div class="sig-detail">Date: ${signedDate}</div>
-            </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Times New Roman', Times, serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #333; }
+        h1 { font-size: 18px; text-align: center; margin-bottom: 20px; }
+        h2 { font-size: 16px; margin-top: 24px; }
+        h3 { font-size: 14px; margin-top: 20px; }
+        p { margin: 8px 0; font-size: 12px; }
+        .signature-block { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+        .signature-row { display: flex; justify-content: space-between; margin-top: 30px; }
+        .signature-party { width: 45%; }
+        .signature-party .sig-name { font-weight: bold; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+        .signature-party .sig-detail { font-size: 11px; color: #555; margin: 2px 0; }
+        .acceptance-stamp { margin-top: 20px; padding: 12px; background: #f0f9f0; border: 1px solid #c0e0c0; border-radius: 4px; font-size: 11px; }
+      </style>
+    </head>
+    <body>
+      ${html}
+      <div class="signature-block">
+        <h3>SIGNATURES</h3>
+        <div class="signature-row">
+          <div class="signature-party">
+            <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Disclosing Party / Buyer:</p>
+            <div class="sig-name">${buyerName}</div>
+            <div class="sig-detail">${buyerCompany}</div>
+            <div class="sig-detail">Date: ${(doc.documentData as any)?.currentDate || ''}</div>
           </div>
-          <div class="acceptance-stamp">
-            <strong>Electronic Acceptance Record</strong><br>
-            Accepted by: ${params.respondentName}<br>
-            Date &amp; Time: ${params.acceptedAt.toISOString()}<br>
-            IP Address: ${params.ipAddress || 'Not recorded'}<br>
-            This document was electronically accepted via the secure document portal.
+          <div class="signature-party">
+            <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Receiving Party / Seller:</p>
+            <div class="sig-name">${params.respondentName}</div>
+            <div class="sig-detail">${sellerCompany}</div>
+            <div class="sig-detail">Date: ${signedDate}</div>
           </div>
         </div>
-      </body>
-      </html>
-    `;
-
-    const fsModule = await import('fs/promises');
-    const pathModule = await import('path');
+        <div class="acceptance-stamp">
+          <strong>Electronic Acceptance Record</strong><br>
+          Accepted by: ${params.respondentName}<br>
+          Date &amp; Time: ${params.acceptedAt.toISOString()}<br>
+          IP Address: ${params.ipAddress || 'Not recorded'}<br>
+          This document was electronically accepted via the secure document portal.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 
     let pdfBuffer: Buffer;
     try {
@@ -433,17 +430,17 @@ export class DealDocumentService {
       throw new Error('PDF generation not available on this platform');
     }
 
-    const GENERATED_DIR = pathModule.join(process.cwd(), 'data', 'generated-documents');
-    await fsModule.mkdir(GENERATED_DIR, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const pdfFilename = `signed_nda_${doc.targetCompanyId}_${timestamp}.pdf`;
-    const pdfPath = pathModule.join(GENERATED_DIR, pdfFilename);
-    await fsModule.writeFile(pdfPath, pdfBuffer);
+    const r2Key = fileStorageService.generateKey('signed-ndas', pdfFilename);
+    await fileStorageService.upload(r2Key, pdfBuffer);
+    console.log(`[DEAL_DOCS] Signed NDA uploaded to R2: ${r2Key}`);
 
-    
+    await db.update(dealDocuments)
+      .set({ generatedFileUrl: r2Key })
+      .where(eq(dealDocuments.id, params.documentId));
 
     try {
-      const stat = await fsModule.stat(pdfPath);
       const sellerName = params.respondentName || 'Seller';
       const companyData = (doc.documentData as any);
       const sellerCompanyName = companyData?.sellerCompanyName || '';
@@ -457,8 +454,8 @@ export class DealDocumentService {
         uploadedBy: doc.createdBy,
         documentName: docName,
         originalFilename: pdfFilename,
-        filePath: pdfPath,
-        fileSize: stat.size,
+        filePath: r2Key,
+        fileSize: pdfBuffer.length,
         fileType: 'application/pdf',
         documentCategory: 'Deal Documents',
         description: `Signed NDA accepted by ${sellerName} on ${signedDate}. Electronic acceptance with IP address and timestamp recorded.`,
@@ -470,8 +467,7 @@ export class DealDocumentService {
       console.error('[DEAL_DOCS] Failed to save signed PDF to Document Library:', libErr);
     }
 
-    console.log(`[DEAL_DOCS] Signed NDA PDF generated: ${pdfPath}`);
-    return pdfPath;
+    return r2Key;
   }
 
   async createNewVersion(

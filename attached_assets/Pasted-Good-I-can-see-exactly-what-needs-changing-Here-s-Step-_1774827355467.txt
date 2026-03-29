@@ -1,0 +1,157 @@
+Good. I can see exactly what needs changing. Here's Step 4.
+
+STEP 4 OF 5 — Fix generateSignedPdf to use buildNdaHtml and R2
+Assess first — do not make any changes until you have read:
+
+server/services/deal-document.service.ts — look at the imports at the top, then find the full generateSignedPdf method
+
+What to do:
+Two changes to server/services/deal-document.service.ts only.
+Change 1 — add two imports at the top of the file, alongside the existing imports:
+tsimport { buildNdaHtml } from '../utils/document-html-builders';
+import { fileStorageService } from './file-storage.service';
+Change 2 — replace the entire generateSignedPdf method.
+Find the method starting with:
+tsasync generateSignedPdf(params: {
+and ending with the closing } of that method (just before async createNewVersion).
+Replace the entire method with this:
+tsasync generateSignedPdf(params: {
+  documentId: number;
+  respondentName: string;
+  respondentEmail?: string;
+  acceptedAt: Date;
+  ipAddress?: string;
+}): Promise<string> {
+  const doc = await this.getDocumentById(params.documentId);
+  if (!doc) throw new Error('Document not found');
+  if (!doc.documentData) throw new Error('Document data not found');
+
+  const html = buildNdaHtml(doc.documentData as any);
+
+  const buyerName = (doc.documentData as any)?.buyerSignatoryName || 'Buyer';
+  const buyerCompany = (doc.documentData as any)?.buyerCompanyName || '';
+  const sellerCompany = (doc.documentData as any)?.sellerCompanyName || '';
+  const signedDate = params.acceptedAt.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'long', year: 'numeric'
+  });
+
+  const signedHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Times New Roman', Times, serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; color: #333; }
+        h1 { font-size: 18px; text-align: center; margin-bottom: 20px; }
+        h2 { font-size: 16px; margin-top: 24px; }
+        h3 { font-size: 14px; margin-top: 20px; }
+        p { margin: 8px 0; font-size: 12px; }
+        .signature-block { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+        .signature-row { display: flex; justify-content: space-between; margin-top: 30px; }
+        .signature-party { width: 45%; }
+        .signature-party .sig-name { font-weight: bold; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+        .signature-party .sig-detail { font-size: 11px; color: #555; margin: 2px 0; }
+        .acceptance-stamp { margin-top: 20px; padding: 12px; background: #f0f9f0; border: 1px solid #c0e0c0; border-radius: 4px; font-size: 11px; }
+      </style>
+    </head>
+    <body>
+      ${html}
+      <div class="signature-block">
+        <h3>SIGNATURES</h3>
+        <div class="signature-row">
+          <div class="signature-party">
+            <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Disclosing Party / Buyer:</p>
+            <div class="sig-name">${buyerName}</div>
+            <div class="sig-detail">${buyerCompany}</div>
+            <div class="sig-detail">Date: ${(doc.documentData as any)?.currentDate || ''}</div>
+          </div>
+          <div class="signature-party">
+            <p style="font-size: 11px; color: #777; margin-bottom: 8px;">Receiving Party / Seller:</p>
+            <div class="sig-name">${params.respondentName}</div>
+            <div class="sig-detail">${sellerCompany}</div>
+            <div class="sig-detail">Date: ${signedDate}</div>
+          </div>
+        </div>
+        <div class="acceptance-stamp">
+          <strong>Electronic Acceptance Record</strong><br>
+          Accepted by: ${params.respondentName}<br>
+          Date &amp; Time: ${params.acceptedAt.toISOString()}<br>
+          IP Address: ${params.ipAddress || 'Not recorded'}<br>
+          This document was electronically accepted via the secure document portal.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  let pdfBuffer: Buffer;
+  try {
+    const puppeteer = await import('puppeteer');
+    const browser = await puppeteer.default.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.setContent(signedHtml, { waitUntil: 'networkidle0' });
+    pdfBuffer = Buffer.from(await page.pdf({
+      format: 'A4',
+      margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+    }));
+    await browser.close();
+  } catch (puppeteerErr) {
+    console.error('[DEAL_DOCS] Puppeteer PDF generation failed:', puppeteerErr);
+    throw new Error('PDF generation not available on this platform');
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const pdfFilename = `signed_nda_${doc.targetCompanyId}_${timestamp}.pdf`;
+  const r2Key = fileStorageService.generateKey('signed-ndas', pdfFilename);
+  await fileStorageService.upload(r2Key, pdfBuffer);
+  console.log(`[DEAL_DOCS] Signed NDA uploaded to R2: ${r2Key}`);
+
+  await db.update(dealDocuments)
+    .set({ generatedFileUrl: r2Key })
+    .where(eq(dealDocuments.id, params.documentId));
+
+  try {
+    const sellerName = params.respondentName || 'Seller';
+    const companyData = (doc.documentData as any);
+    const sellerCompanyName = companyData?.sellerCompanyName || '';
+    const docName = sellerCompanyName
+      ? `Signed NDA - ${sellerCompanyName}`
+      : `Signed NDA - ${sellerName}`;
+
+    const { randomUUID } = await import('crypto');
+    await db.insert(documents).values({
+      targetCompanyId: doc.targetCompanyId,
+      uploadedBy: doc.createdBy,
+      documentName: docName,
+      originalFilename: pdfFilename,
+      filePath: r2Key,
+      fileSize: pdfBuffer.length,
+      fileType: 'application/pdf',
+      documentCategory: 'Deal Documents',
+      description: `Signed NDA accepted by ${sellerName} on ${signedDate}. Electronic acceptance with IP address and timestamp recorded.`,
+      isConfidential: true,
+      publicToken: randomUUID(),
+    });
+    console.log(`[DEAL_DOCS] Signed NDA saved to Document Library for target company ${doc.targetCompanyId}`);
+  } catch (libErr) {
+    console.error('[DEAL_DOCS] Failed to save signed PDF to Document Library:', libErr);
+  }
+
+  return r2Key;
+}
+Key differences from the old method:
+
+buildNdaHtml(doc.documentData) replaces convertToHtml(originalDocxPath) — no file needed
+No local disk write — the fsModule.mkdir and fsModule.writeFile blocks are gone
+PDF uploaded to R2 under signed-ndas/ prefix
+deal_documents.generatedFileUrl updated to the R2 key so the download route can serve the signed PDF
+fileSize uses pdfBuffer.length instead of fsModule.stat since there's no local file
+filePath in the Document Library insert is the R2 key, not a local path
+
+Do not touch anything else in this file.
+Verify:
+
+Server restarts cleanly with no TypeScript errors
+Confirm the old fsModule / local path / stat references are completely gone from this method
