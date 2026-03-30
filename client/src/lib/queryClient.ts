@@ -23,11 +23,20 @@ async function throwIfResNotOk(res: Response) {
     const text = (await res.text()) || res.statusText;
     let message = `${res.status}: ${text}`;
     let code: string | undefined;
+    let errorField: string | undefined;
     try {
       const json = JSON.parse(text);
       if (json.message) message = json.message;
       if (json.code) code = json.code;
+      if (json.error) errorField = json.error;
     } catch {}
+
+    if (res.status === 402 && errorField === 'subscription_required') {
+      if (window.location.pathname !== '/billing') {
+        window.location.href = '/billing?reason=subscription_required';
+      }
+    }
+
     const error = new Error(message) as any;
     error.status = res.status;
     error.code = code;
