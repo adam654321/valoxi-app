@@ -3,14 +3,25 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ReportIssueButton } from "@/components/layout/ReportIssueButton";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscriptionContext } from "@/context/subscription-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+function getTrialDaysRemaining(trialEnd: string | Date | null | undefined): number | null {
+  if (!trialEnd) return null;
+  const end = new Date(trialEnd);
+  const now = new Date();
+  const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : 0;
+}
+
 export default function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
+  const { subscription, isLoading } = useSubscriptionContext();
   const isViewingAs = !!user?.viewingAs;
 
   const handleExitViewAs = async () => {
@@ -22,6 +33,16 @@ export default function Layout({ children }: LayoutProps) {
       window.location.href = '/admin/users';
     }
   };
+
+  const status = subscription?.status ?? null;
+  const trialDays = status === 'trialing' ? getTrialDaysRemaining((subscription as any)?.trialEnd) : null;
+
+  const showTrialBanner = !isLoading && status === 'trialing' && trialDays !== null;
+  const showExpiredBanner = !isLoading && (!subscription || status === 'canceled');
+  const trialUrgent = trialDays !== null && trialDays <= 3;
+  const trialWarning = trialDays !== null && trialDays <= 7 && trialDays > 3;
+
+  const bannerCount = [isViewingAs, showTrialBanner, showExpiredBanner].filter(Boolean).length;
 
   return (
     <SidebarProvider>
@@ -39,8 +60,43 @@ export default function Layout({ children }: LayoutProps) {
           </button>
         </div>
       )}
+
+      {showExpiredBanner && (
+        <div
+          className="fixed left-0 right-0 z-[9998] bg-destructive text-destructive-foreground text-sm font-medium px-4 py-2 flex items-center justify-between shadow-md"
+          style={{ top: isViewingAs ? '40px' : '0px' }}
+        >
+          <span>Your trial has ended — upgrade to keep access to your deals and data.</span>
+          <Link href="/billing" className="underline hover:no-underline ml-4 font-semibold">
+            Upgrade now
+          </Link>
+        </div>
+      )}
+
+      {showTrialBanner && (
+        <div
+          className={`fixed left-0 right-0 z-[9997] text-sm font-medium px-4 py-2 flex items-center justify-between shadow-md ${
+            trialUrgent
+              ? 'bg-destructive text-destructive-foreground'
+              : trialWarning
+              ? 'bg-amber-500 text-white'
+              : 'bg-muted text-muted-foreground border-b'
+          }`}
+          style={{ top: isViewingAs ? '40px' : showExpiredBanner ? '40px' : '0px' }}
+        >
+          <span>
+            {trialDays === 0
+              ? 'Your trial expires today.'
+              : `${trialDays} day${trialDays !== 1 ? 's' : ''} remaining in your trial.`}
+          </span>
+          <Link href="/billing" className="underline hover:no-underline ml-4 font-semibold">
+            Upgrade
+          </Link>
+        </div>
+      )}
+
       <AppSidebar />
-      <SidebarInset className={isViewingAs ? 'mt-10' : ''}>
+      <SidebarInset className={bannerCount > 0 ? `mt-10` : ''}>
         <PageHeader />
         <main className="flex-1 min-w-0 overflow-auto bg-muted">
           {children}
