@@ -7,6 +7,12 @@ import { rolesService } from '../services/roles.service';
 
 const PERMISSIONS_TTL_MS = 5 * 60 * 1000;
 
+const permissionInvalidationMap = new Map<number, number>();
+
+export function invalidateUserPermissions(userId: number): void {
+  permissionInvalidationMap.set(userId, Date.now());
+}
+
 // Default permissions granted to any authenticated user with role='user' and active subscription.
 // The subscription gate (requireActiveSubscription) is enforced separately upstream.
 const USER_ROLE_PERMISSIONS: Record<string, boolean> = {
@@ -126,6 +132,11 @@ export async function refreshSessionPermissions(req: Request): Promise<void> {
 function isPermissionsCacheValid(req: Request): boolean {
   const cachedAt = req.session.permissionsCachedAt;
   if (!cachedAt) return false;
+  const userId = req.session.userId;
+  if (userId) {
+    const invalidatedAt = permissionInvalidationMap.get(userId);
+    if (invalidatedAt && invalidatedAt > cachedAt) return false;
+  }
   return (Date.now() - cachedAt) < PERMISSIONS_TTL_MS;
 }
 
