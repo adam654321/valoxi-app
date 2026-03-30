@@ -16,15 +16,21 @@ const router = Router();
 const publicRouter = Router();
 
 router.get('/company/:targetCompanyId', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const targetCompanyId = parseInt(req.params.targetCompanyId);
-  const docs = await dealDocumentService.getDocumentsForCompany(targetCompanyId);
+  if (isNaN(targetCompanyId)) return res.status(400).json({ message: 'Invalid company ID' });
+  const docs = await dealDocumentService.getDocumentsForCompany(targetCompanyId, userCompanyId);
   res.json(docs);
 }));
 
 router.get('/company/:targetCompanyId/:documentType', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const targetCompanyId = parseInt(req.params.targetCompanyId);
+  if (isNaN(targetCompanyId)) return res.status(400).json({ message: 'Invalid company ID' });
   const documentType = req.params.documentType;
-  const history = await dealDocumentService.getVersionHistory(targetCompanyId, documentType);
+  const history = await dealDocumentService.getVersionHistory(targetCompanyId, documentType, userCompanyId);
   res.json(history);
 }));
 
