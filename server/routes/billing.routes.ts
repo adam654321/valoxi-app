@@ -18,6 +18,7 @@ import { validateCsrfToken } from '../middleware/csrf';
 import { emailApiService } from '../services/email.service';
 import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 
+export const billingWebhookRoutes = Router();
 const router = Router();
 
 export function derivePlanKeyFromLookupKey(lookupKey: string): PlanKey {
@@ -54,7 +55,7 @@ async function logWebhookEvent(
   }
 }
 
-router.post('/webhook/stripe', async (req: Request, res: Response) => {
+billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response) => {
   if (!config.stripe.secretKey || !config.stripe.webhookSecret) {
     console.error('[Billing] STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET not configured');
     return res.status(500).json({ error: 'stripe_not_configured' });
