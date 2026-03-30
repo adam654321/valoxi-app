@@ -187,7 +187,7 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
   await db
     .update(users)
     .set({
-      userRole: role?.trim() || undefined,
+      jobTitle: role?.trim() || null,
       hearAboutUs: hearAboutUs?.trim() || null,
       onboardingCompleted: true,
       onboardingCompletedAt: new Date(),

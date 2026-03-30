@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   onboardingStep: varchar("onboarding_step", { length: 50 }).default("create_target"),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
   hearAboutUs: varchar("hear_about_us", { length: 100 }),
+  jobTitle: varchar("job_title", { length: 100 }),
   betaNdaSigned: boolean("beta_nda_signed").default(false).notNull(),
   betaNdaSignedAt: timestamp("beta_nda_signed_at"),
   betaNdaSignerName: varchar("beta_nda_signer_name", { length: 255 }),
