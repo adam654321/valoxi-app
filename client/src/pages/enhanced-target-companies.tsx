@@ -239,7 +239,7 @@ export default function EnhancedTargetCompanies() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-textPrimary">Target Companies</h1>
         <p className="mt-1 text-textSecondary">
-          Manage and discover businesses you're interested in acquiring
+          Add and manage businesses you're interested in acquiring
         </p>
       </div>
 
