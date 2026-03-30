@@ -10,6 +10,7 @@ import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock } from '../utils/document-html-builders';
 import { fileStorageService } from '../services/file-storage.service';
+import { generatePdfFromHtml } from '../utils/pdf-generator';
 
 const router = Router();
 const publicRouter = Router();
@@ -51,35 +52,7 @@ router.get('/download/:id', asyncHandler(async (req, res) => {
   const responses = await dealDocumentService.getDocumentResponses(doc.id);
   html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
 
-  const fullHtml = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; line-height: 1.6; font-size: 13px; }
-  h1 { font-size: 18px; }
-  h2 { font-size: 15px; }
-  h3 { font-size: 13px; }
-  p { margin: 6px 0; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { padding: 4px 8px; }
-</style>
-</head>
-<body>${html}</body>
-</html>`;
-
-  const puppeteer = await import('puppeteer');
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-  const page = await browser.newPage();
-  await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-  const pdfBuffer = Buffer.from(await page.pdf({
-    format: 'A4',
-    margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
-  }));
-  await browser.close();
+  const pdfBuffer = await generatePdfFromHtml(html);
 
   const docTypeNames: Record<string, string> = {
     nda: 'NDA',
@@ -423,35 +396,7 @@ publicRouter.get('/:token/:documentId/download', asyncHandler(async (req, res) =
   const responses = await dealDocumentService.getDocumentResponses(doc.id);
   html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
 
-  const fullHtml = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; line-height: 1.6; font-size: 13px; }
-  h1 { font-size: 18px; }
-  h2 { font-size: 15px; }
-  h3 { font-size: 13px; }
-  p { margin: 6px 0; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { padding: 4px 8px; }
-</style>
-</head>
-<body>${html}</body>
-</html>`;
-
-  const puppeteer = await import('puppeteer');
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-  const page = await browser.newPage();
-  await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-  const pdfBuffer = Buffer.from(await page.pdf({
-    format: 'A4',
-    margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
-  }));
-  await browser.close();
+  const pdfBuffer = await generatePdfFromHtml(html);
 
   const docTypeNames: Record<string, string> = {
     nda: 'NDA',

@@ -8,6 +8,7 @@ import { dealDocumentTemplateService, DocumentDataContext } from './deal-documen
 import { extendPortalTokenForCompany } from './portal-token.service';
 import { buildNdaHtml } from '../utils/document-html-builders';
 import { fileStorageService } from './file-storage.service';
+import { generatePdfFromHtml } from '../utils/pdf-generator';
 
 export class DealDocumentService {
 
@@ -413,18 +414,7 @@ export class DealDocumentService {
 
     let pdfBuffer: Buffer;
     try {
-      const puppeteer = await import('puppeteer');
-      const browser = await puppeteer.default.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      const page = await browser.newPage();
-      await page.setContent(signedHtml, { waitUntil: 'networkidle0' });
-      pdfBuffer = Buffer.from(await page.pdf({
-        format: 'A4',
-        margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
-      }));
-      await browser.close();
+      pdfBuffer = await generatePdfFromHtml(signedHtml);
     } catch (puppeteerErr) {
       console.error('[DEAL_DOCS] Puppeteer PDF generation failed:', puppeteerErr);
       throw new Error('PDF generation not available on this platform');
