@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useSubscriptionContext, usePlanKey } from "@/context/subscription-context";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -168,6 +169,8 @@ export default function BillingPage() {
   const { subscription, isLoading, isError } = useSubscriptionContext();
   const currentPlan = usePlanKey();
   const { toast } = useToast();
+  const [location] = useLocation();
+  const redirectedForSubscription = new URLSearchParams(window.location.search).get('reason') === 'subscription_required';
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   const currencySymbol = "$";
   const PLANS = getPlans('usd');
@@ -465,6 +468,34 @@ export default function BillingPage() {
         </div>
       ) : (
         <>
+          {redirectedForSubscription && (!subscription || status === 'canceled') && (
+            <Card className="border-destructive bg-destructive/5">
+              <CardContent className="flex items-center gap-4 py-4">
+                <AlertTriangle className="h-6 w-6 text-destructive flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-destructive">Your access has ended</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your trial has expired. Choose a plan below to restore access to your deals and data — nothing has been deleted.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {redirectedForSubscription && status === 'trialing' && (
+            <Card className="border-amber-400 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardContent className="flex items-center gap-4 py-4">
+                <AlertTriangle className="h-6 w-6 text-amber-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">Feature requires an active subscription</p>
+                  <p className="text-sm text-muted-foreground">
+                    This feature is not available on a trial. Upgrade below to unlock full access.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {status === "past_due" && (
             <Card className="border-destructive bg-destructive/5">
               <CardContent className="flex items-center gap-4 py-4">
