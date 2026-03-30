@@ -514,9 +514,12 @@ export class DealDocumentService {
     return doc || null;
   }
 
-  async getDocumentsForCompany(targetCompanyId: number) {
+  async getDocumentsForCompany(targetCompanyId: number, userCompanyId: number) {
     return db.select().from(dealDocuments)
-      .where(eq(dealDocuments.targetCompanyId, targetCompanyId))
+      .where(and(
+        eq(dealDocuments.targetCompanyId, targetCompanyId),
+        eq(dealDocuments.userCompanyId, userCompanyId),
+      ))
       .orderBy(desc(dealDocuments.createdAt));
   }
 
@@ -554,12 +557,13 @@ export class DealDocumentService {
       .orderBy(desc(dealDocumentResponses.createdAt));
   }
 
-  async getVersionHistory(targetCompanyId: number, documentType: string) {
+  async getVersionHistory(targetCompanyId: number, documentType: string, userCompanyId: number) {
     const docs = await db.select().from(dealDocuments)
       .where(
         and(
           eq(dealDocuments.targetCompanyId, targetCompanyId),
-          eq(dealDocuments.documentType, documentType)
+          eq(dealDocuments.documentType, documentType),
+          eq(dealDocuments.userCompanyId, userCompanyId),
         )
       )
       .orderBy(dealDocuments.version);
