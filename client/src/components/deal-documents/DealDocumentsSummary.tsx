@@ -321,6 +321,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
 }) {
   const [expanded, setExpanded] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<DealDocument | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const latest = documents
     .filter(d => d.status !== 'superseded')
@@ -443,7 +444,8 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                 <Eye className="h-3 w-3 mr-1" /> View Document
               </Button>
               {latest.generatedFileUrl && (
-                <Button variant="outline" size="sm" onClick={async () => {
+                <Button variant="outline" size="sm" disabled={downloading} onClick={async () => {
+                  setDownloading(true);
                   try {
                     const res = await fetch(`/api/v2/deal-documents/download/${latest.id}`);
                     if (!res.ok) throw new Error();
@@ -457,9 +459,14 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
                   } catch {
+                  } finally {
+                    setDownloading(false);
                   }
                 }}>
-                  <Download className="h-3 w-3 mr-1" /> Download
+                  {downloading
+                    ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Generating...</>
+                    : <><Download className="h-3 w-3 mr-1" /> Download</>
+                  }
                 </Button>
               )}
               {showSendButton && (
