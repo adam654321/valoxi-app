@@ -55,7 +55,7 @@ export function registerModularRoutes(app: Express) {
   });
 
   app.use('/api/v2/pipeline', isAuthenticated, validateCsrfToken, requireActiveSubscription, pipelineRoutes);
-  app.use('/api/v2/roles', isAuthenticated, validateCsrfToken, rolesRoutes);
+  app.use('/api/v2/roles', isAuthenticated, validateCsrfToken, requirePermission('canManageUsers'), rolesRoutes);
   app.use('/api/v2/contacts', isAuthenticated, validateCsrfToken, requireActiveSubscription, contactsRoutes);
   app.use('/api/v2/activities', isAuthenticated, validateCsrfToken, requireActiveSubscription, activitiesRoutes);
   app.use('/api/v2/notifications', isAuthenticated, validateCsrfToken, notificationsRoutes);
