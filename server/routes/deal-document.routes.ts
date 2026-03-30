@@ -30,26 +30,68 @@ router.get('/company/:targetCompanyId/:documentType', asyncHandler(async (req, r
 router.get('/download/:id', asyncHandler(async (req, res) => {
   const id = parseInt(req.params.id);
   const doc = await dealDocumentService.getDocumentById(id);
-  if (!doc || !doc.generatedFileUrl) {
-    return res.status(404).json({ message: 'Document file not found' });
+  if (!doc) {
+    return res.status(404).json({ message: 'Document not found' });
+  }
+  if (!doc.documentData) {
+    return res.status(404).json({ message: 'Document data not available' });
   }
 
-  const path = await import('path');
-  let buffer: Buffer;
-  if (fileStorageService.isObjectStorageKey(doc.generatedFileUrl)) {
-    buffer = await fileStorageService.download(doc.generatedFileUrl);
+  let html: string;
+  if (doc.documentType === 'nda') {
+    html = buildNdaHtml(doc.documentData as any);
+  } else if (doc.documentType === 'offer_letter') {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms') {
+    html = buildHoTHtml(doc.documentData as any);
   } else {
-    const fs = await import('fs/promises');
-    buffer = await fs.readFile(doc.generatedFileUrl);
+    return res.status(400).json({ message: 'Unsupported document type' });
   }
-  const filename = path.basename(doc.generatedFileUrl);
 
-  const isPdf = filename.endsWith('.pdf');
-  res.setHeader('Content-Type', isPdf
-    ? 'application/pdf'
-    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  const responses = await dealDocumentService.getDocumentResponses(doc.id);
+  html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
+
+  const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; line-height: 1.6; font-size: 13px; }
+  h1 { font-size: 18px; }
+  h2 { font-size: 15px; }
+  h3 { font-size: 13px; }
+  p { margin: 6px 0; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 4px 8px; }
+</style>
+</head>
+<body>${html}</body>
+</html>`;
+
+  const puppeteer = await import('puppeteer');
+  const browser = await puppeteer.default.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+  const page = await browser.newPage();
+  await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+  const pdfBuffer = Buffer.from(await page.pdf({
+    format: 'A4',
+    margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+  }));
+  await browser.close();
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = ((doc.documentData as any)?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(buffer);
+  res.send(pdfBuffer);
 }));
 
 router.post('/generate-hot', asyncHandler(async (req, res) => {
@@ -361,28 +403,67 @@ publicRouter.get('/:token/:documentId/download', asyncHandler(async (req, res) =
   if (!doc || doc.portalTokenId !== portalData.tokenId) {
     return res.status(404).json({ message: 'Document not found' });
   }
-  if (!doc.generatedFileUrl) {
-    return res.status(404).json({ message: 'Document file not found' });
+  if (!doc.documentData) {
+    return res.status(404).json({ message: 'Document data not available' });
   }
 
   await dealDocumentService.markViewed(documentId);
 
-  const path = await import('path');
-  let buffer: Buffer;
-  if (fileStorageService.isObjectStorageKey(doc.generatedFileUrl)) {
-    buffer = await fileStorageService.download(doc.generatedFileUrl);
+  let html: string;
+  if (doc.documentType === 'nda') {
+    html = buildNdaHtml(doc.documentData as any);
+  } else if (doc.documentType === 'offer_letter') {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms') {
+    html = buildHoTHtml(doc.documentData as any);
   } else {
-    const fs = await import('fs/promises');
-    buffer = await fs.readFile(doc.generatedFileUrl);
+    return res.status(400).json({ message: 'Unsupported document type' });
   }
-  const filename = path.basename(doc.generatedFileUrl);
 
-  const isPdf = filename.endsWith('.pdf');
-  res.setHeader('Content-Type', isPdf
-    ? 'application/pdf'
-    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  const responses = await dealDocumentService.getDocumentResponses(doc.id);
+  html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
+
+  const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; line-height: 1.6; font-size: 13px; }
+  h1 { font-size: 18px; }
+  h2 { font-size: 15px; }
+  h3 { font-size: 13px; }
+  p { margin: 6px 0; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { padding: 4px 8px; }
+</style>
+</head>
+<body>${html}</body>
+</html>`;
+
+  const puppeteer = await import('puppeteer');
+  const browser = await puppeteer.default.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+  const page = await browser.newPage();
+  await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+  const pdfBuffer = Buffer.from(await page.pdf({
+    format: 'A4',
+    margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+  }));
+  await browser.close();
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = ((doc.documentData as any)?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(buffer);
+  res.send(pdfBuffer);
 }));
 
 export { publicRouter as publicDealDocumentRoutes };
