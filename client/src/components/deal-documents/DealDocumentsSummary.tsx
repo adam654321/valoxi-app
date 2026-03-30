@@ -451,7 +451,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `${label.replace(/\s+/g, '_')}_v${latest.version}.docx`;
+                    a.download = `${label.replace(/\s+/g, '_')}_v${latest.version}.pdf`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);

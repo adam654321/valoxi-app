@@ -209,7 +209,7 @@ function HoTCard({ token, doc, isLatest, onResponseSubmitted }: {
           <div className="flex justify-end">
             <Button variant="outline" size="sm" onClick={handleDownload}>
               <Download className="h-4 w-4 mr-2" />
-              Download .docx
+              Download PDF
             </Button>
           </div>
 
