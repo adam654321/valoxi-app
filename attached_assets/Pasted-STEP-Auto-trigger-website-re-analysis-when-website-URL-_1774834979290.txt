@@ -1,0 +1,45 @@
+STEP — Auto-trigger website re-analysis when website URL changes on update
+Assess first — read server/services/target-companies.service.ts and find the update method.
+What to do — one change only, in the update method of target-companies.service.ts:
+Find the current update method:
+tsasync update(id: number, updateData: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany> {
+  if (!id || isNaN(id)) {
+    throw new BadRequestError('Invalid target company ID');
+  }
+
+  const updated = await targetCompaniesRepository.update(id, updateData, userCompanyId);
+  if (!updated) {
+    throw new NotFoundError('Target company not found');
+  }
+  return updated;
+}
+Replace with:
+tsasync update(id: number, updateData: Partial<InsertTargetCompany>, userCompanyId: number): Promise<TargetCompany> {
+  if (!id || isNaN(id)) {
+    throw new BadRequestError('Invalid target company ID');
+  }
+
+  const existing = await targetCompaniesRepository.getById(id, userCompanyId);
+
+  const updated = await targetCompaniesRepository.update(id, updateData, userCompanyId);
+  if (!updated) {
+    throw new NotFoundError('Target company not found');
+  }
+
+  if (
+    updateData.website !== undefined &&
+    updateData.website &&
+    updateData.website !== existing?.website
+  ) {
+    console.log(`[TARGET_COMPANIES] Website changed for company ${id}: "${existing?.website}" → "${updateData.website}" — triggering re-analysis`);
+    websiteAnalysisService.triggerAnalysisIfNeeded(id, updateData.website, { userCompanyId, dealId: id });
+  }
+
+  return updated;
+}
+What this does: fetches the current state before updating, then after the update completes, checks if the website field was included in the update, is non-empty, and is different from what was there before. If all three are true, fires a re-analysis. The analysis runs in the background — it won't slow down the save response.
+Do not touch anything else in this file.
+Verify:
+
+Server restarts cleanly, no TypeScript errors
+Test by editing a company's website URL and saving — Replit logs should show [TARGET_COMPANIES] Website changed for company X followed by the website analysis starting

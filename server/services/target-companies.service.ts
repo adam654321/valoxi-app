@@ -105,10 +105,22 @@ export class TargetCompaniesService {
       throw new BadRequestError('Invalid target company ID');
     }
 
+    const existing = await targetCompaniesRepository.getById(id, userCompanyId);
+
     const updated = await targetCompaniesRepository.update(id, updateData, userCompanyId);
     if (!updated) {
       throw new NotFoundError('Target company not found');
     }
+
+    if (
+      updateData.website !== undefined &&
+      updateData.website &&
+      updateData.website !== existing?.website
+    ) {
+      console.log(`[TARGET_COMPANIES] Website changed for company ${id}: "${existing?.website}" → "${updateData.website}" — triggering re-analysis`);
+      websiteAnalysisService.triggerAnalysisIfNeeded(id, updateData.website, { userCompanyId, dealId: id });
+    }
+
     return updated;
   }
 
