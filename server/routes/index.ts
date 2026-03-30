@@ -65,7 +65,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/dashboard', isAuthenticated, validateCsrfToken, requireActiveSubscription, dashboardRoutes);
   app.use('/api/v2/team', publicTeamRoutes);
   app.use('/api/v2/team', isAuthenticated, validateCsrfToken, requirePermission('canManageUsers'), teamRoutes);
-  app.use('/api/v2/deals', isAuthenticated, validateCsrfToken, assignmentsRoutes);
+  app.use('/api/v2/deals', isAuthenticated, validateCsrfToken, requireActiveSubscription, assignmentsRoutes);
   app.use('/api/v2/reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, requirePermission('canAccessAnalytics'), reportsRoutes);
   app.use('/api/v2/portal', portalLimiter, portalPublicRoutes);
   app.use('/api/v2/portal', isAuthenticated, validateCsrfToken, portalRoutes);
