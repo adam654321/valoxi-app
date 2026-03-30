@@ -75,7 +75,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/document-analysis', isAuthenticated, validateCsrfToken, requireActiveSubscription, documentAnalysisRoutes);
   app.use('/api/v2/requirements', isAuthenticated, validateCsrfToken, portalRequirementsRoutes);
   app.use('/api/v2/public/portal', portalLimiter, portalRequirementsPublicRoutes);
-  app.use('/api/v2/email', isAuthenticated, validateCsrfToken, emailRoutes);
+  app.use('/api/v2/email', isAuthenticated, validateCsrfToken, requireActiveSubscription, emailRoutes);
   app.use('/api/v2/website-analysis', isAuthenticated, validateCsrfToken, requireActiveSubscription, analysisTriggerLimiter, websiteAnalysisRoutes);
   app.use('/api/v2/financial-data', isAuthenticated, validateCsrfToken, requireActiveSubscription, requirePermission('canViewFinancials'), financialDataRoutes);
   app.use('/api/v2/chase-up', isAuthenticated, validateCsrfToken, requireActiveSubscription, chaseUpRoutes);
