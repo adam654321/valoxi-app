@@ -135,7 +135,7 @@ function OfferCard({ token, offer, isLatest, onResponseSubmitted }: {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Offer_Letter_v${offer.version}.docx`;
+      a.download = `Offer_Letter_v${offer.version}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

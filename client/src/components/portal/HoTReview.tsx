@@ -139,7 +139,7 @@ function HoTCard({ token, doc, isLatest, onResponseSubmitted }: {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Heads_of_Terms_v${doc.version}.docx`;
+      a.download = `Heads_of_Terms_v${doc.version}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

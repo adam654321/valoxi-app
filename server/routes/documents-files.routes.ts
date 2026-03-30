@@ -22,7 +22,7 @@ async function serveFile(
   disposition: string,
   filename: string
 ) {
-  if (filePath.startsWith('/home/runner/workspace/uploads/') || filePath.startsWith('.private/') || filePath.startsWith('uploads/')) {
+  if (!fileStorageService.isObjectStorageKey(filePath)) {
     return res.status(404).json({
       error: 'file_unavailable',
       message: 'This file was uploaded before cloud storage was enabled. Please re-upload the document.',
