@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { rolesService } from '../services/roles.service';
+import { invalidateUserPermissions } from '../middleware/auth';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { z } from 'zod';
@@ -45,6 +46,8 @@ router.put('/user/:userId', asyncHandler(async (req: Request, res: Response) => 
     userCompanyId,
     requestingUserId
   );
+
+  invalidateUserPermissions(targetUserId);
 
   sendSuccess(res, updatedUser);
 }));
