@@ -16,7 +16,10 @@ export function initializeBillingCron(): void {
     console.log('[billing-cron] Starting daily trial expiry check...');
     try {
       const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
-      const trialing = expiring.filter((s) => s.status === 'trialing');
+      const trialing = expiring.filter((s) => s.status === 'trialing' && (
+        (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
+        (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
+      ));
 
       const trialEndsAtExpired = await db
         .select()
@@ -25,7 +28,7 @@ export function initializeBillingCron(): void {
           and(
             isNotNull(subscriptions.trialEndsAt),
             lt(subscriptions.trialEndsAt, new Date()),
-            eq(subscriptions.status, 'active')
+            eq(subscriptions.status, 'trialing')
           )
         );
 
