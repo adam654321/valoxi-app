@@ -1,0 +1,212 @@
+Now I have the complete picture of all dependencies. There are more missing than just those three. Rather than patching one at a time and hitting more errors, let me give Replit the complete corrected delete method in one go. Paste this into Replit:
+
+In server/services/target-companies.service.ts, make two changes:
+1. Replace the imports block. Find:
+typescriptimport { 
+  targetCompanies,
+  targetContacts, 
+  activities, 
+  documents, 
+  stageHistory,
+  portalAccessTokens,
+  portalActivityLog,
+  portalDocumentRequirements,
+  portalLinkShares,
+  chaseUpSchedules,
+  chaseUpEmails,
+  externalDocumentSubmissions,
+  fileUploadEvents,
+  documentAnalysisResults,
+  userDealAssignments,
+  teamNotifications,
+  dashboardAlerts,
+  portalAnalytics,
+  companyDocumentRequirements,
+  documentStageProgression
+} from '@shared/schema';
+Replace with:
+typescriptimport { 
+  targetCompanies,
+  targetContacts, 
+  activities, 
+  documents,
+  documentAccessLog,
+  stageHistory,
+  portalAccessTokens,
+  portalActivityLog,
+  portalDocumentRequirements,
+  portalLinkShares,
+  chaseUpSchedules,
+  chaseUpEmails,
+  externalDocumentSubmissions,
+  fileUploadEvents,
+  documentAnalysisResults,
+  stage1AnalysisEvents,
+  expertAnalysisResults,
+  userDealAssignments,
+  teamNotifications,
+  dashboardAlerts,
+  portalAnalytics,
+  companyDocumentRequirements,
+  documentStageProgression,
+  dealDocuments,
+  dealDocumentResponses,
+  financialPeriods,
+  incomeStatements,
+  balanceSheets,
+  staffData,
+  agedDebtors,
+  fixedAssetsRegister,
+  loanFacilities,
+  ebitdaAdjustments,
+  valuations,
+  dealModels,
+  dealModelAdjustments,
+  dealModelFundingLines,
+  dealMetricsSnapshots,
+} from '@shared/schema';
+2. Replace the entire delete method body. Find the method starting with:
+typescript  async delete(id: number, userCompanyId: number): Promise<boolean> {
+    if (!id || isNaN(id)) {
+      throw new BadRequestError('Invalid target company ID');
+    }
+And ending with:
+typescript    return true;
+  }
+Replace the entire method with:
+typescript  async delete(id: number, userCompanyId: number): Promise<boolean> {
+    if (!id || isNaN(id)) {
+      throw new BadRequestError('Invalid target company ID');
+    }
+
+    const company = await targetCompaniesRepository.getById(id, userCompanyId);
+    if (!company) {
+      throw new NotFoundError('Target company not found');
+    }
+
+    // 1. Get child IDs needed for cascading deletes
+    const uploadEvents = await db.select({ id: fileUploadEvents.id })
+      .from(fileUploadEvents)
+      .where(eq(fileUploadEvents.targetCompanyId, id));
+    const uploadEventIds = uploadEvents.map(e => e.id);
+
+    const portalTokens = await db.select({ id: portalAccessTokens.id })
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.targetCompanyId, id));
+    const portalTokenIds = portalTokens.map(t => t.id);
+
+    const dealModelRows = await db.select({ id: dealModels.id })
+      .from(dealModels)
+      .where(eq(dealModels.targetCompanyId, id));
+    const dealModelIds = dealModelRows.map(m => m.id);
+
+    // 2. Document analysis results (depend on fileUploadEvents)
+    if (uploadEventIds.length > 0) {
+      await db.delete(documentAnalysisResults).where(inArray(documentAnalysisResults.fileUploadEventId, uploadEventIds));
+    }
+    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.targetCompanyId, id));
+
+    // 3. Document access log (depends on documents)
+    await db.execute(sql`
+      DELETE FROM document_access_log
+      WHERE document_id IN (
+        SELECT id FROM documents WHERE target_company_id = ${id}
+      )
+    `);
+
+    // 4. Null out source_document_id on financial tables before deleting documents
+    await db.execute(sql`UPDATE financial_periods SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE income_statements SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE balance_sheets SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE staff_data SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE aged_debtors SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE fixed_assets_register SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE loan_facilities SET source_document_id = NULL WHERE target_company_id = ${id}`);
+
+    // 5. Deal document responses and deal documents (deal_documents references portal_access_tokens)
+    await db.execute(sql`
+      DELETE FROM deal_document_responses
+      WHERE deal_document_id IN (
+        SELECT id FROM deal_documents WHERE target_company_id = ${id}
+      )
+    `);
+    await db.delete(dealDocuments).where(eq(dealDocuments.targetCompanyId, id));
+
+    // 6. Documents
+    await db.delete(documents).where(eq(documents.targetCompanyId, id));
+
+    // 7. Document requirement submissions (no schema entry)
+    await db.execute(sql`DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);
+
+    // 8. Document stage progression and company document requirements
+    await db.delete(documentStageProgression).where(eq(documentStageProgression.targetCompanyId, id));
+    await db.delete(companyDocumentRequirements).where(eq(companyDocumentRequirements.targetCompanyId, id));
+
+    // 9. External document submissions
+    await db.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.targetCompanyId, id));
+
+    // 10. Portal analytics
+    await db.delete(portalAnalytics).where(eq(portalAnalytics.targetCompanyId, id));
+
+    // 11. Portal child records (depend on portal_access_tokens)
+    if (portalTokenIds.length > 0) {
+      await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, portalTokenIds));
+      await db.delete(portalDocumentRequirements).where(inArray(portalDocumentRequirements.portalTokenId, portalTokenIds));
+      await db.delete(portalLinkShares).where(inArray(portalLinkShares.portalTokenId, portalTokenIds));
+      await db.delete(chaseUpEmails).where(inArray(chaseUpEmails.portalTokenId, portalTokenIds));
+      await db.delete(chaseUpSchedules).where(inArray(chaseUpSchedules.portalTokenId, portalTokenIds));
+    }
+    await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
+
+    // 12. Financial data
+    await db.delete(ebitdaAdjustments).where(eq(ebitdaAdjustments.targetCompanyId, id));
+    await db.execute(sql`
+      DELETE FROM income_statements WHERE financial_period_id IN (
+        SELECT id FROM financial_periods WHERE target_company_id = ${id}
+      )
+    `);
+    await db.execute(sql`
+      DELETE FROM balance_sheets WHERE financial_period_id IN (
+        SELECT id FROM financial_periods WHERE target_company_id = ${id}
+      )
+    `);
+    await db.execute(sql`
+      DELETE FROM staff_data WHERE financial_period_id IN (
+        SELECT id FROM financial_periods WHERE target_company_id = ${id}
+      )
+    `);
+    await db.delete(agedDebtors).where(eq(agedDebtors.targetCompanyId, id));
+    await db.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.targetCompanyId, id));
+    await db.delete(loanFacilities).where(eq(loanFacilities.targetCompanyId, id));
+    await db.delete(valuations).where(eq(valuations.targetCompanyId, id));
+    await db.delete(financialPeriods).where(eq(financialPeriods.targetCompanyId, id));
+
+    // 13. Deal model data
+    if (dealModelIds.length > 0) {
+      await db.delete(dealMetricsSnapshots).where(inArray(dealMetricsSnapshots.dealModelId, dealModelIds));
+      await db.delete(dealModelAdjustments).where(inArray(dealModelAdjustments.dealModelId, dealModelIds));
+      await db.delete(dealModelFundingLines).where(inArray(dealModelFundingLines.dealModelId, dealModelIds));
+    }
+    await db.delete(dealMetricsSnapshots).where(eq(dealMetricsSnapshots.targetCompanyId, id));
+    await db.delete(dealModels).where(eq(dealModels.targetCompanyId, id));
+
+    // 14. Expert analysis
+    await db.delete(stage1AnalysisEvents).where(eq(stage1AnalysisEvents.targetCompanyId, id));
+    await db.delete(expertAnalysisResults).where(eq(expertAnalysisResults.targetCompanyId, id));
+
+    // 15. Remaining target company child records
+    await db.delete(stageHistory).where(eq(stageHistory.targetCompanyId, id));
+    await db.delete(activities).where(eq(activities.targetCompanyId, id));
+    await db.delete(targetContacts).where(eq(targetContacts.targetCompanyId, id));
+    await db.delete(teamNotifications).where(eq(teamNotifications.targetCompanyId, id));
+    await db.delete(dashboardAlerts).where(eq(dashboardAlerts.targetCompanyId, id));
+    await db.delete(userDealAssignments).where(eq(userDealAssignments.targetCompanyId, id));
+
+    // 16. Finally delete the target company itself
+    const deleted = await targetCompaniesRepository.delete(id, userCompanyId);
+    if (!deleted) {
+      throw new NotFoundError('Target company not found');
+    }
+    return true;
+  }
+No other changes. Error count should stay at 6. Confirm clean.

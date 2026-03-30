@@ -10,7 +10,8 @@ import {
   targetCompanies,
   targetContacts, 
   activities, 
-  documents, 
+  documents,
+  documentAccessLog,
   stageHistory,
   portalAccessTokens,
   portalActivityLog,
@@ -21,12 +22,29 @@ import {
   externalDocumentSubmissions,
   fileUploadEvents,
   documentAnalysisResults,
+  stage1AnalysisEvents,
+  expertAnalysisResults,
   userDealAssignments,
   teamNotifications,
   dashboardAlerts,
   portalAnalytics,
   companyDocumentRequirements,
-  documentStageProgression
+  documentStageProgression,
+  dealDocuments,
+  dealDocumentResponses,
+  financialPeriods,
+  incomeStatements,
+  balanceSheets,
+  staffData,
+  agedDebtors,
+  fixedAssetsRegister,
+  loanFacilities,
+  ebitdaAdjustments,
+  valuations,
+  dealModels,
+  dealModelAdjustments,
+  dealModelFundingLines,
+  dealMetricsSnapshots,
 } from '@shared/schema';
 import { eq, sql, inArray, count } from 'drizzle-orm';
 
@@ -133,54 +151,76 @@ export class TargetCompaniesService {
       throw new BadRequestError('Invalid target company ID');
     }
 
-    // Verify the company exists and belongs to this user company first
     const company = await targetCompaniesRepository.getById(id, userCompanyId);
     if (!company) {
       throw new NotFoundError('Target company not found');
     }
 
-    // Delete related records in dependency order (most dependent first)
-    // Order matters due to foreign key constraints between related tables
-    
-    // Get file upload event IDs for this target company to delete document analysis results
+    // 1. Get child IDs needed for cascading deletes
     const uploadEvents = await db.select({ id: fileUploadEvents.id })
       .from(fileUploadEvents)
       .where(eq(fileUploadEvents.targetCompanyId, id));
     const uploadEventIds = uploadEvents.map(e => e.id);
-    
-    // Delete document analysis results (via file upload event IDs)
-    if (uploadEventIds.length > 0) {
-      await db.delete(documentAnalysisResults).where(inArray(documentAnalysisResults.fileUploadEventId, uploadEventIds));
-    }
-    
-    // Delete file upload events
-    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.targetCompanyId, id));
-    
-    // Delete documents
-    await db.delete(documents).where(eq(documents.targetCompanyId, id));
-    
-    // Delete document requirement submissions via raw SQL (table exists but not in schema)
-    await db.execute(sql`DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);
-    
-    // Delete document stage progression
-    await db.delete(documentStageProgression).where(eq(documentStageProgression.targetCompanyId, id));
-    
-    // Delete company document requirements
-    await db.delete(companyDocumentRequirements).where(eq(companyDocumentRequirements.targetCompanyId, id));
-    
-    // Delete external document submissions
-    await db.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.targetCompanyId, id));
-    
-    // Delete portal analytics
-    await db.delete(portalAnalytics).where(eq(portalAnalytics.targetCompanyId, id));
-    
-    // Get portal token IDs to delete portal activity log first
+
     const portalTokens = await db.select({ id: portalAccessTokens.id })
       .from(portalAccessTokens)
       .where(eq(portalAccessTokens.targetCompanyId, id));
     const portalTokenIds = portalTokens.map(t => t.id);
-    
-    // Delete portal activity log (references portal_access_tokens)
+
+    const dealModelRows = await db.select({ id: dealModels.id })
+      .from(dealModels)
+      .where(eq(dealModels.targetCompanyId, id));
+    const dealModelIds = dealModelRows.map(m => m.id);
+
+    // 2. Document analysis results (depend on fileUploadEvents)
+    if (uploadEventIds.length > 0) {
+      await db.delete(documentAnalysisResults).where(inArray(documentAnalysisResults.fileUploadEventId, uploadEventIds));
+    }
+    await db.delete(fileUploadEvents).where(eq(fileUploadEvents.targetCompanyId, id));
+
+    // 3. Document access log (depends on documents)
+    await db.execute(sql`
+      DELETE FROM document_access_log
+      WHERE document_id IN (
+        SELECT id FROM documents WHERE target_company_id = ${id}
+      )
+    `);
+
+    // 4. Null out source_document_id on financial tables before deleting documents
+    await db.execute(sql`UPDATE financial_periods SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE income_statements SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE balance_sheets SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE staff_data SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE aged_debtors SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE fixed_assets_register SET source_document_id = NULL WHERE target_company_id = ${id}`);
+    await db.execute(sql`UPDATE loan_facilities SET source_document_id = NULL WHERE target_company_id = ${id}`);
+
+    // 5. Deal document responses and deal documents (deal_documents references portal_access_tokens)
+    await db.execute(sql`
+      DELETE FROM deal_document_responses
+      WHERE deal_document_id IN (
+        SELECT id FROM deal_documents WHERE target_company_id = ${id}
+      )
+    `);
+    await db.delete(dealDocuments).where(eq(dealDocuments.targetCompanyId, id));
+
+    // 6. Documents
+    await db.delete(documents).where(eq(documents.targetCompanyId, id));
+
+    // 7. Document requirement submissions (no schema entry)
+    await db.execute(sql`DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);
+
+    // 8. Document stage progression and company document requirements
+    await db.delete(documentStageProgression).where(eq(documentStageProgression.targetCompanyId, id));
+    await db.delete(companyDocumentRequirements).where(eq(companyDocumentRequirements.targetCompanyId, id));
+
+    // 9. External document submissions
+    await db.delete(externalDocumentSubmissions).where(eq(externalDocumentSubmissions.targetCompanyId, id));
+
+    // 10. Portal analytics
+    await db.delete(portalAnalytics).where(eq(portalAnalytics.targetCompanyId, id));
+
+    // 11. Portal child records (depend on portal_access_tokens)
     if (portalTokenIds.length > 0) {
       await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, portalTokenIds));
       await db.delete(portalDocumentRequirements).where(inArray(portalDocumentRequirements.portalTokenId, portalTokenIds));
@@ -188,29 +228,53 @@ export class TargetCompaniesService {
       await db.delete(chaseUpEmails).where(inArray(chaseUpEmails.portalTokenId, portalTokenIds));
       await db.delete(chaseUpSchedules).where(inArray(chaseUpSchedules.portalTokenId, portalTokenIds));
     }
-    
-    // Delete portal access tokens
     await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
-    
-    // Delete stage history
+
+    // 12. Financial data
+    await db.delete(ebitdaAdjustments).where(eq(ebitdaAdjustments.targetCompanyId, id));
+    await db.execute(sql`
+      DELETE FROM income_statements WHERE financial_period_id IN (
+        SELECT id FROM financial_periods WHERE target_company_id = ${id}
+      )
+    `);
+    await db.execute(sql`
+      DELETE FROM balance_sheets WHERE financial_period_id IN (
+        SELECT id FROM financial_periods WHERE target_company_id = ${id}
+      )
+    `);
+    await db.execute(sql`
+      DELETE FROM staff_data WHERE financial_period_id IN (
+        SELECT id FROM financial_periods WHERE target_company_id = ${id}
+      )
+    `);
+    await db.delete(agedDebtors).where(eq(agedDebtors.targetCompanyId, id));
+    await db.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.targetCompanyId, id));
+    await db.delete(loanFacilities).where(eq(loanFacilities.targetCompanyId, id));
+    await db.delete(valuations).where(eq(valuations.targetCompanyId, id));
+    await db.delete(financialPeriods).where(eq(financialPeriods.targetCompanyId, id));
+
+    // 13. Deal model data
+    if (dealModelIds.length > 0) {
+      await db.delete(dealMetricsSnapshots).where(inArray(dealMetricsSnapshots.dealModelId, dealModelIds));
+      await db.delete(dealModelAdjustments).where(inArray(dealModelAdjustments.dealModelId, dealModelIds));
+      await db.delete(dealModelFundingLines).where(inArray(dealModelFundingLines.dealModelId, dealModelIds));
+    }
+    await db.delete(dealMetricsSnapshots).where(eq(dealMetricsSnapshots.targetCompanyId, id));
+    await db.delete(dealModels).where(eq(dealModels.targetCompanyId, id));
+
+    // 14. Expert analysis
+    await db.delete(stage1AnalysisEvents).where(eq(stage1AnalysisEvents.targetCompanyId, id));
+    await db.delete(expertAnalysisResults).where(eq(expertAnalysisResults.targetCompanyId, id));
+
+    // 15. Remaining target company child records
     await db.delete(stageHistory).where(eq(stageHistory.targetCompanyId, id));
-    
-    // Delete activities
     await db.delete(activities).where(eq(activities.targetCompanyId, id));
-    
-    // Delete contacts
     await db.delete(targetContacts).where(eq(targetContacts.targetCompanyId, id));
-    
-    // Delete team notifications
     await db.delete(teamNotifications).where(eq(teamNotifications.targetCompanyId, id));
-    
-    // Delete dashboard alerts
     await db.delete(dashboardAlerts).where(eq(dashboardAlerts.targetCompanyId, id));
-    
-    // Delete user deal assignments
     await db.delete(userDealAssignments).where(eq(userDealAssignments.targetCompanyId, id));
 
-    // Now delete the target company itself
+    // 16. Finally delete the target company itself
     const deleted = await targetCompaniesRepository.delete(id, userCompanyId);
     if (!deleted) {
       throw new NotFoundError('Target company not found');
