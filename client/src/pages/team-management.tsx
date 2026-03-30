@@ -354,7 +354,7 @@ export default function TeamManagement() {
                           <SelectContent>
                             {roles?.map((role) => (
                               <SelectItem key={role.roleName} value={role.roleName}>
-                                {role.roleName.replace('_', ' ').split(' ').map(word => 
+                                {role.roleName.replaceAll('_', ' ').split(' ').map(word => 
                                   word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
                                 ).join(' ')}
                               </SelectItem>
@@ -486,7 +486,7 @@ export default function TeamManagement() {
                                   <SelectContent>
                                     {roles?.map((role) => (
                                       <SelectItem key={role.roleName} value={role.roleName}>
-                                        {role.roleName.replace('_', ' ').split(' ').map(word => 
+                                        {role.roleName.replaceAll('_', ' ').split(' ').map(word => 
                                           word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
                                         ).join(' ')}
                                       </SelectItem>
