@@ -68,7 +68,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/deals', isAuthenticated, validateCsrfToken, requireActiveSubscription, assignmentsRoutes);
   app.use('/api/v2/reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, requirePermission('canAccessAnalytics'), reportsRoutes);
   app.use('/api/v2/portal', portalLimiter, portalPublicRoutes);
-  app.use('/api/v2/portal', isAuthenticated, validateCsrfToken, portalRoutes);
+  app.use('/api/v2/portal', isAuthenticated, validateCsrfToken, requireActiveSubscription, portalRoutes);
   app.use('/api/v2/files', isAuthenticated, validateCsrfToken, requireActiveSubscription, documentsFilesRoutes);
   app.use('/api/v2/public/documents', portalLimiter, publicDocumentRoutes);
   app.use('/api/v2/portal-submit', portalLimiter, portalSubmissionsRoutes);
