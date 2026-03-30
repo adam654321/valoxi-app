@@ -417,7 +417,7 @@ export function ScreeningReportView({ data }: { data: Record<string, unknown> })
                     <span className={`text-sm font-bold ${scoreColor}`}>{dim.score ?? "—"}/100</span>
                   </div>
                   {dim.explanation && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">{truncate(dim.explanation, 120)}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{dim.explanation}</p>
                   )}
                 </div>
               );
