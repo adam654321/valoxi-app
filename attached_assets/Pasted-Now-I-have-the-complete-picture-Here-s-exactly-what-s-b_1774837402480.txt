@@ -1,0 +1,94 @@
+Now I have the complete picture. Here's exactly what's broken and what needs fixing.
+
+Root cause — three problems
+
+authService.register() sets isCompanyAdmin: true but never sets userRole: 'company_admin' — so the user gets is_company_admin = true but user_role = 'analyst' (the schema default). The RBAC check uses isCompanyAdmin which works, but the role label is wrong.
+onboarding/complete writes the free-text job title directly to user_role, overwriting whatever was there and breaking RBAC completely.
+There's nowhere to store the job title separately. The schema has no jobTitle field — it needs adding.
+
+
+The correct design going forward
+Eventis_company_adminuser_rolejob_titleStandard sign-uptruecompany_adminnot set yetOnboarding completesunchangedunchanged"MD", "Founder" etcTeam invite acceptedfalsewhatever role admin assignednot set
+
+STEP — Fix the RBAC/job title separation
+Assess first — read these files:
+
+shared/schema/core.ts — confirm the users table columns
+server/services/auth.service.ts — confirm the register method
+server/routes/onboarding.routes.ts — confirm the /complete POST handler
+
+Change 1 — add jobTitle column to shared/schema/core.ts
+In the users table definition, after the hearAboutUs line, add:
+tsjobTitle: varchar("job_title", { length: 100 }),
+Then run npm run db:push to apply the schema change.
+Change 2 — fix authService.register() in server/services/auth.service.ts
+Find:
+tsconst user = await usersRepository.create({
+  email: data.email,
+  passwordHash: hashedPassword,
+  firstName: data.firstName,
+  lastName: data.lastName,
+  userCompanyId: userCompany.id,
+  role: 'user',
+  isCompanyAdmin: true,
+});
+Replace with:
+tsconst user = await usersRepository.create({
+  email: data.email,
+  passwordHash: hashedPassword,
+  firstName: data.firstName,
+  lastName: data.lastName,
+  userCompanyId: userCompany.id,
+  role: 'user',
+  userRole: 'company_admin',
+  isCompanyAdmin: true,
+});
+Change 3 — fix onboarding.routes.ts /complete handler
+Find:
+tsawait db
+  .update(users)
+  .set({
+    userRole: role?.trim() || undefined,
+    hearAboutUs: hearAboutUs?.trim() || null,
+    onboardingCompleted: true,
+    onboardingCompletedAt: new Date(),
+  })
+  .where(eq(users.id, userId));
+Replace with:
+tsawait db
+  .update(users)
+  .set({
+    jobTitle: role?.trim() || null,
+    hearAboutUs: hearAboutUs?.trim() || null,
+    onboardingCompleted: true,
+    onboardingCompletedAt: new Date(),
+  })
+  .where(eq(users.id, userId));
+userRole is gone. role now maps to jobTitle.
+Change 4 — fix existing corrupted users in the database
+Run this SQL in the Replit DB console:
+sql-- See who is affected
+SELECT id, email, user_role, is_company_admin
+FROM users
+WHERE user_role NOT IN (SELECT role_name FROM user_roles)
+AND user_role IS NOT NULL;
+
+-- Fix company admins
+UPDATE users
+SET user_role = 'company_admin'
+WHERE is_company_admin = true
+AND (user_role NOT IN (SELECT role_name FROM user_roles) OR user_role IS NULL);
+
+-- Fix non-admins with invalid roles
+UPDATE users
+SET user_role = 'analyst'
+WHERE is_company_admin = false
+AND user_role NOT IN (SELECT role_name FROM user_roles)
+AND user_role IS NOT NULL;
+Verify:
+
+npm run db:push applies cleanly
+Server restarts with no TypeScript errors
+Log out and back in — permissions resolve correctly
+New registrations get user_role = 'company_admin'
+Onboarding no longer touches user_role
