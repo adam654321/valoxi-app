@@ -1,0 +1,95 @@
+Good. The live file matches what I expected. The ndaEmailHtml function is defined inline inside the route handler — it's a template function taking recipientName as a parameter but also closing over signerName, user.email, and signedDate from the outer scope.
+Two changes needed — create the template file first, then update the route. Starting with the new file. Paste this into Replit:
+
+Create a new file server/templates/beta-nda-email.ts with this content:
+typescriptexport function buildBetaNdaEmailHtml(params: {
+  recipientName: string;
+  signerName: string;
+  userEmail: string;
+  signedDate: string;
+}): string {
+  const { recipientName, signerName, userEmail, signedDate } = params;
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background:#0f172a;padding:32px;text-align:center;border-radius:8px 8px 0 0;">
+          <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;">Valoxi</h1>
+          <p style="margin:8px 0 0;color:#94a3b8;font-size:14px;">Beta Testing Non-Disclosure Agreement</p>
+        </td></tr>
+        <tr><td style="background:#fff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">Dear ${recipientName},</p>
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">This email confirms that the Valoxi Beta Testing Non-Disclosure Agreement has been signed. Please retain this copy for your records.</p>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:20px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="width:50%;padding:8px;vertical-align:top;">
+                  <p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">DISCLOSING PARTY</p>
+                  <p style="margin:0 0 4px;color:#1f2937;font-size:14px;font-weight:600;">ShiftOps Consulting Ltd (Valoxi)</p>
+                  <p style="margin:0 0 4px;color:#374151;font-size:14px;">Signed by: Adam Auty</p>
+                  <p style="margin:0 0 4px;color:#374151;font-size:14px;">Title: Director</p>
+                  <p style="margin:0;color:#374151;font-size:14px;">Date: ${signedDate}</p>
+                </td>
+                <td style="width:50%;padding:8px;vertical-align:top;">
+                  <p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">RECEIVING PARTY</p>
+                  <p style="margin:0 0 4px;color:#1f2937;font-size:14px;font-weight:600;">${signerName}</p>
+                  <p style="margin:0 0 4px;color:#374151;font-size:14px;">Email: ${userEmail}</p>
+                  <p style="margin:0;color:#374151;font-size:14px;">Date: ${signedDate}</p>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <p style="margin:0 0 16px;color:#6b7280;font-size:13px;">By electronically accepting this agreement, both parties confirm their agreement to the terms of the Valoxi Beta Testing Non-Disclosure Agreement Version 1.0, March 2026.</p>
+          <p style="margin:0;color:#6b7280;font-size:13px;">For questions, contact: <a href="mailto:adam@shiftopsconsulting.com" style="color:#2563eb;">adam@shiftopsconsulting.com</a></p>
+        </td></tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 16px; color: #374151; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">Full Agreement Text</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">1. Background</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">1.1 Valoxi has developed a proprietary artificial intelligence platform that delivers institutional-grade mergers and acquisitions due diligence analysis (the "Platform"). The Platform is currently in pre-launch beta testing.</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">1.2 Valoxi wishes to invite selected individuals to participate in its beta testing programme (the "Beta Programme") to evaluate the Platform and provide feedback.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">1.3 In connection with the Beta Programme, Valoxi will disclose to the Receiving Party certain Confidential Information (as defined below). This Agreement governs the use and protection of that information.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">2. Definitions</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">"Confidential Information" means all information disclosed by Valoxi to the Receiving Party, whether in written, electronic, oral, or visual form, in connection with the Beta Programme, including without limitation: the Platform, its features, functionality, user interface, and analytical outputs; software architecture, algorithms, data models, and AI methodologies; product roadmap, development plans, and unreleased features; business strategy, commercial terms, pricing, and competitive positioning; and any other information designated as confidential or that a reasonable person would understand to be confidential given the nature of the information and circumstances of disclosure.</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">"Beta Period" means the period commencing on the date of this Agreement and ending on the earlier of: (a) the public commercial launch of the Platform; or (b) written notice from Valoxi terminating the Beta Programme.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">"Permitted Purpose" means the evaluation of the Platform solely for the purposes of the Beta Programme and the provision of feedback to Valoxi.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">3. Confidentiality Obligations</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">3.1 The Receiving Party agrees to: keep all Confidential Information strictly confidential; use Confidential Information solely for the Permitted Purpose; not disclose Confidential Information to any third party without Valoxi's prior written consent; apply at least the same degree of care to the Confidential Information as the Receiving Party applies to its own confidential information, and in any event no less than reasonable care; notify Valoxi promptly upon becoming aware of any actual or suspected unauthorised disclosure of Confidential Information.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">3.2 The obligations in clause 3.1 do not apply to information which: is or becomes publicly available other than through breach of this Agreement; was already known to the Receiving Party prior to disclosure; is independently developed by the Receiving Party without reference to the Confidential Information; is required to be disclosed by law or court order, provided the Receiving Party gives Valoxi prompt written notice.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">4. Beta Testing Obligations</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">4.1 The Receiving Party agrees to: use the Platform solely for evaluation and testing purposes during the Beta Period; provide honest feedback to Valoxi; report any bugs, errors, or unexpected behaviour promptly; not use the Platform to process live deals, client data, or information belonging to third parties unless expressly agreed in writing by Valoxi.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">4.2 The Receiving Party acknowledges that the Platform is pre-release software and may contain defects. Valoxi does not warrant that the Platform will be error-free, complete, or fit for any particular purpose during the Beta Period.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">5. Intellectual Property</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">5.1 All intellectual property rights in and to the Platform, the Confidential Information, and any improvements or modifications made by Valoxi remain the exclusive property of Valoxi.</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">5.2 Any feedback, suggestions, ideas, or recommendations provided by the Receiving Party may be used by Valoxi without restriction. The Receiving Party hereby assigns to Valoxi all rights in and to such Feedback.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">5.3 Nothing in this Agreement grants the Receiving Party any licence or right to use Valoxi's intellectual property, trade marks, or brand materials without prior written consent.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">6. Data Protection</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">6.1 The parties acknowledge that any personal data processed in connection with the Beta Programme will be processed in accordance with applicable data protection legislation, including the UK GDPR and the Data Protection Act 2018.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">6.2 The Receiving Party agrees not to upload or input any personal data of third parties into the Platform during the Beta Period without the express knowledge and consent of those individuals.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">7. Disclaimer and Limitation of Liability</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">7.1 The Platform and all analysis outputs are provided for informational purposes only. Nothing produced by the Platform constitutes financial advice, investment advice, legal advice, or professional due diligence. The Receiving Party should not rely solely on Platform outputs when making investment or acquisition decisions.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">7.2 To the fullest extent permitted by law, Valoxi shall not be liable for any loss or damage arising from the Receiving Party's use of the Platform during the Beta Period.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">8. Term and Return of Information</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">8.1 This Agreement commences on the date of signature and continues until the end of the Beta Period. Confidentiality obligations survive termination for a period of three (3) years.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">8.2 Upon request by Valoxi, the Receiving Party shall promptly return or destroy all Confidential Information in its possession.</p>
+            <p style="margin: 0 0 12px; color: #374151; font-size: 13px; font-weight: 600;">9. General</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">9.1 This Agreement is governed by the laws of England and Wales. The parties submit to the exclusive jurisdiction of the courts of England and Wales.</p>
+            <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px; line-height: 1.6;">9.2 This Agreement constitutes the entire agreement between the parties with respect to its subject matter.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px; line-height: 1.6;">9.3 No amendment to this Agreement is effective unless made in writing and signed by both parties.</p>
+            <p style="margin: 0; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">Version 1.0, March 2026</p>
+          </td>
+        </tr>
+        <tr><td style="background:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; A trading name of ShiftOps Consulting Ltd &middot; Registered in England &amp; Wales</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+No other changes. Confirm the file is created and error count stays at 6.
