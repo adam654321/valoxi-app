@@ -35,9 +35,12 @@ router.get('/company/:targetCompanyId/:documentType', asyncHandler(async (req, r
 }));
 
 router.get('/download/:id', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
   const doc = await dealDocumentService.getDocumentById(id);
-  if (!doc) {
+  if (!doc || doc.userCompanyId !== userCompanyId) {
     return res.status(404).json({ message: 'Document not found' });
   }
   if (!doc.documentData) {
@@ -173,8 +176,10 @@ router.get('/:id/html', asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Invalid document ID' });
   }
 
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const doc = await dealDocumentService.getDocumentById(documentId);
-  if (!doc) {
+  if (!doc || doc.userCompanyId !== userCompanyId) {
     return res.status(404).json({ message: 'Document not found' });
   }
   let html: string;
@@ -203,9 +208,12 @@ router.get('/:id/html', asyncHandler(async (req, res) => {
 }));
 
 router.get('/:id', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
   const doc = await dealDocumentService.getDocumentById(id);
-  if (!doc) return res.status(404).json({ message: 'Document not found' });
+  if (!doc || doc.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
   const responses = await dealDocumentService.getDocumentResponses(id);
   res.json({ ...doc, responses });
 }));
@@ -238,29 +246,47 @@ router.post('/', asyncHandler(async (req, res) => {
 }));
 
 router.post('/:id/generate', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+  const existing = await dealDocumentService.getDocumentById(id);
+  if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
   const dataOverrides = req.body.dataOverrides || {};
   const result = await dealDocumentService.generateDocumentFile(id, dataOverrides);
   res.json(result);
 }));
 
 router.post('/:id/send', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+  const existing = await dealDocumentService.getDocumentById(id);
+  if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
   const doc = await dealDocumentService.sendDocument(id);
   res.json(doc);
 }));
 
 router.post('/:id/withdraw', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+  const existing = await dealDocumentService.getDocumentById(id);
+  if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
   const doc = await dealDocumentService.withdrawDocument(id);
   res.json(doc);
 }));
 
 router.post('/:id/new-version', asyncHandler(async (req, res) => {
-  const id = parseInt(req.params.id);
   const userId = req.session.userId;
-  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
+  const userCompanyId = req.session.userCompanyId;
+  if (!userId || !userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+  const existing = await dealDocumentService.getDocumentById(id);
+  if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
   const doc = await dealDocumentService.createNewVersion(id, userId, req.body);
   res.status(201).json(doc);
 }));
