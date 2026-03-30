@@ -78,7 +78,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/email', isAuthenticated, validateCsrfToken, requireActiveSubscription, emailRoutes);
   app.use('/api/v2/website-analysis', isAuthenticated, validateCsrfToken, requireActiveSubscription, analysisTriggerLimiter, websiteAnalysisRoutes);
   app.use('/api/v2/financial-data', isAuthenticated, validateCsrfToken, requireActiveSubscription, requirePermission('canViewFinancials'), financialDataRoutes);
-  app.use('/api/v2/chase-up', isAuthenticated, validateCsrfToken, requireActiveSubscription, chaseUpRoutes);
+  app.use('/api/v2/chase-up', isAuthenticated, validateCsrfToken, requireActiveSubscription, requirePermission('canCreateDeals'), chaseUpRoutes);
   app.use('/api/v2/expert-analysis', isAuthenticated, validateCsrfToken, requireActiveSubscription, requirePermission('canViewFinancials'), analysisTriggerLimiter, expertAnalysisRoutes);
   app.use('/api/v2/user/companies', isAuthenticated, validateCsrfToken, requireActiveSubscription, userCompaniesRoutes);
   app.use('/api/v2/deal-models', isAuthenticated, validateCsrfToken, requireActiveSubscription, dealModelRoutes);
