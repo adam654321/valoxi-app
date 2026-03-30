@@ -29,6 +29,18 @@ export const sectorsData: Record<string, string[]> = {
     "Specialist Care & Complex Needs",
     "Staffing & Recruitment (Care)"
   ],
+  "Childcare & Education": [
+    "After-School Clubs & Wraparound Care",
+    "Day Nurseries & Crèches",
+    "Early Years & EYFS Providers",
+    "Forest Schools & Outdoor Education",
+    "Holiday Clubs & Play Schemes",
+    "Independent & Private Schools",
+    "Montessori & Alternative Education",
+    "Nursery Chains & Group Operators",
+    "Special Educational Needs (SEND) Schools",
+    "Tutoring & Home Education"
+  ],
   "Cleaning & Facilities Management": [
     "Commercial Cleaning",
     "Facilities Management",
