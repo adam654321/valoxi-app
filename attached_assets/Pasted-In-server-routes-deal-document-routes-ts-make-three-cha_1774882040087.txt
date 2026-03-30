@@ -1,0 +1,102 @@
+In server/routes/deal-document.routes.ts, make three changes:
+1. Remove the unused import. Find:
+typescriptimport { fileStorageService } from '../services/file-storage.service';
+import { generatePdfFromHtml } from '../utils/pdf-generator';
+Replace with:
+typescriptimport { generatePdfFromHtml } from '../utils/pdf-generator';
+2. Add the shared helper function directly after the line const publicRouter = Router();:
+typescriptasync function buildAndSendDocumentPdf(
+  res: Response,
+  doc: { id: number; documentType: string; documentData: unknown; respondedAt: Date | null },
+) {
+  const data = doc.documentData as any;
+  let html: string;
+
+  if (doc.documentType === 'nda') {
+    html = buildNdaHtml(data);
+  } else if (doc.documentType === 'offer_letter') {
+    html = buildOfferLetterHtml(data);
+  } else if (doc.documentType === 'heads_of_terms') {
+    html = buildHoTHtml(data);
+  } else {
+    return res.status(400).json({ message: 'Unsupported document type' });
+  }
+
+  const responses = await dealDocumentService.getDocumentResponses(doc.id);
+  html += buildSignatureBlock(doc.documentType, data, responses, doc.respondedAt);
+
+  const pdfBuffer = await generatePdfFromHtml(html);
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = (data?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.send(pdfBuffer);
+}
+3. In router.get('/download/:id', ...), find:
+typescript  let html: string;
+  if (doc.documentType === 'nda') {
+    html = buildNdaHtml(doc.documentData as any);
+  } else if (doc.documentType === 'offer_letter') {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms') {
+    html = buildHoTHtml(doc.documentData as any);
+  } else {
+    return res.status(400).json({ message: 'Unsupported document type' });
+  }
+
+  const responses = await dealDocumentService.getDocumentResponses(doc.id);
+  html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
+
+  const pdfBuffer = await generatePdfFromHtml(html);
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = ((doc.documentData as any)?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(pdfBuffer);
+Replace with:
+typescript  return buildAndSendDocumentPdf(res, doc);
+Then in publicRouter.get('/:token/:documentId/download', ...), find:
+typescript  let html: string;
+  if (doc.documentType === 'nda') {
+    html = buildNdaHtml(doc.documentData as any);
+  } else if (doc.documentType === 'offer_letter') {
+    html = buildOfferLetterHtml(doc.documentData as any);
+  } else if (doc.documentType === 'heads_of_terms') {
+    html = buildHoTHtml(doc.documentData as any);
+  } else {
+    return res.status(400).json({ message: 'Unsupported document type' });
+  }
+
+  const responses = await dealDocumentService.getDocumentResponses(doc.id);
+  html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
+
+  const pdfBuffer = await generatePdfFromHtml(html);
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = ((doc.documentData as any)?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(pdfBuffer);
+Replace with:
+typescript  return buildAndSendDocumentPdf(res, doc);
+No other changes. Error count should stay at 6. Confirm clean.

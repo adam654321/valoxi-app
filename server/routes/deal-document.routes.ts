@@ -9,11 +9,45 @@ import { targetCompanies } from '@shared/schema/deals';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock } from '../utils/document-html-builders';
-import { fileStorageService } from '../services/file-storage.service';
 import { generatePdfFromHtml } from '../utils/pdf-generator';
 
 const router = Router();
 const publicRouter = Router();
+
+async function buildAndSendDocumentPdf(
+  res: Response,
+  doc: { id: number; documentType: string; documentData: unknown; respondedAt: Date | null },
+) {
+  const data = doc.documentData as any;
+  let html: string;
+
+  if (doc.documentType === 'nda') {
+    html = buildNdaHtml(data);
+  } else if (doc.documentType === 'offer_letter') {
+    html = buildOfferLetterHtml(data);
+  } else if (doc.documentType === 'heads_of_terms') {
+    html = buildHoTHtml(data);
+  } else {
+    return res.status(400).json({ message: 'Unsupported document type' });
+  }
+
+  const responses = await dealDocumentService.getDocumentResponses(doc.id);
+  html += buildSignatureBlock(doc.documentType, data, responses, doc.respondedAt);
+
+  const pdfBuffer = await generatePdfFromHtml(html);
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = (data?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.send(pdfBuffer);
+}
 
 router.get('/company/:targetCompanyId', asyncHandler(async (req, res) => {
   const userCompanyId = req.session.userCompanyId;
@@ -47,33 +81,7 @@ router.get('/download/:id', asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Document data not available' });
   }
 
-  let html: string;
-  if (doc.documentType === 'nda') {
-    html = buildNdaHtml(doc.documentData as any);
-  } else if (doc.documentType === 'offer_letter') {
-    html = buildOfferLetterHtml(doc.documentData as any);
-  } else if (doc.documentType === 'heads_of_terms') {
-    html = buildHoTHtml(doc.documentData as any);
-  } else {
-    return res.status(400).json({ message: 'Unsupported document type' });
-  }
-
-  const responses = await dealDocumentService.getDocumentResponses(doc.id);
-  html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
-
-  const pdfBuffer = await generatePdfFromHtml(html);
-
-  const docTypeNames: Record<string, string> = {
-    nda: 'NDA',
-    offer_letter: 'Offer_Letter',
-    heads_of_terms: 'Heads_of_Terms',
-  };
-  const sellerName = ((doc.documentData as any)?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
-  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
-
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(pdfBuffer);
+  return buildAndSendDocumentPdf(res, doc);
 }));
 
 router.post('/generate-hot', asyncHandler(async (req, res) => {
@@ -414,33 +422,7 @@ publicRouter.get('/:token/:documentId/download', asyncHandler(async (req, res) =
 
   await dealDocumentService.markViewed(documentId);
 
-  let html: string;
-  if (doc.documentType === 'nda') {
-    html = buildNdaHtml(doc.documentData as any);
-  } else if (doc.documentType === 'offer_letter') {
-    html = buildOfferLetterHtml(doc.documentData as any);
-  } else if (doc.documentType === 'heads_of_terms') {
-    html = buildHoTHtml(doc.documentData as any);
-  } else {
-    return res.status(400).json({ message: 'Unsupported document type' });
-  }
-
-  const responses = await dealDocumentService.getDocumentResponses(doc.id);
-  html += buildSignatureBlock(doc.documentType, doc.documentData as any, responses, doc.respondedAt);
-
-  const pdfBuffer = await generatePdfFromHtml(html);
-
-  const docTypeNames: Record<string, string> = {
-    nda: 'NDA',
-    offer_letter: 'Offer_Letter',
-    heads_of_terms: 'Heads_of_Terms',
-  };
-  const sellerName = ((doc.documentData as any)?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
-  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}.pdf`;
-
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(pdfBuffer);
+  return buildAndSendDocumentPdf(res, doc);
 }));
 
 export { publicRouter as publicDealDocumentRoutes };
