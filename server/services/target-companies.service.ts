@@ -14,6 +14,10 @@ import {
   stageHistory,
   portalAccessTokens,
   portalActivityLog,
+  portalDocumentRequirements,
+  portalLinkShares,
+  chaseUpSchedules,
+  chaseUpEmails,
   externalDocumentSubmissions,
   fileUploadEvents,
   documentAnalysisResults,
@@ -179,6 +183,10 @@ export class TargetCompaniesService {
     // Delete portal activity log (references portal_access_tokens)
     if (portalTokenIds.length > 0) {
       await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, portalTokenIds));
+      await db.delete(portalDocumentRequirements).where(inArray(portalDocumentRequirements.portalTokenId, portalTokenIds));
+      await db.delete(portalLinkShares).where(inArray(portalLinkShares.portalTokenId, portalTokenIds));
+      await db.delete(chaseUpEmails).where(inArray(chaseUpEmails.portalTokenId, portalTokenIds));
+      await db.delete(chaseUpSchedules).where(inArray(chaseUpSchedules.portalTokenId, portalTokenIds));
     }
     
     // Delete portal access tokens

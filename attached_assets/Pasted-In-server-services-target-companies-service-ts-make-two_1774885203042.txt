@@ -1,0 +1,64 @@
+In server/services/target-companies.service.ts, make two changes:
+1. Add missing imports. Find:
+typescriptimport { 
+  targetCompanies,
+  targetContacts, 
+  activities, 
+  documents, 
+  stageHistory,
+  portalAccessTokens,
+  portalActivityLog,
+  externalDocumentSubmissions,
+  fileUploadEvents,
+  documentAnalysisResults,
+  userDealAssignments,
+  teamNotifications,
+  dashboardAlerts,
+  portalAnalytics,
+  companyDocumentRequirements,
+  documentStageProgression
+} from '@shared/schema';
+Replace with:
+typescriptimport { 
+  targetCompanies,
+  targetContacts, 
+  activities, 
+  documents, 
+  stageHistory,
+  portalAccessTokens,
+  portalActivityLog,
+  portalDocumentRequirements,
+  portalLinkShares,
+  chaseUpSchedules,
+  chaseUpEmails,
+  externalDocumentSubmissions,
+  fileUploadEvents,
+  documentAnalysisResults,
+  userDealAssignments,
+  teamNotifications,
+  dashboardAlerts,
+  portalAnalytics,
+  companyDocumentRequirements,
+  documentStageProgression
+} from '@shared/schema';
+2. In the delete method, find the block that deletes portal activity log and portal access tokens:
+typescript    // Delete portal activity log (references portal_access_tokens)
+    if (portalTokenIds.length > 0) {
+      await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, portalTokenIds));
+    }
+    
+    // Delete portal access tokens
+    await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
+Replace with:
+typescript    // Delete portal activity log (references portal_access_tokens)
+    if (portalTokenIds.length > 0) {
+      await db.delete(portalActivityLog).where(inArray(portalActivityLog.portalTokenId, portalTokenIds));
+      await db.delete(portalDocumentRequirements).where(inArray(portalDocumentRequirements.portalTokenId, portalTokenIds));
+      await db.delete(portalLinkShares).where(inArray(portalLinkShares.portalTokenId, portalTokenIds));
+      await db.delete(chaseUpEmails).where(inArray(chaseUpEmails.portalTokenId, portalTokenIds));
+      await db.delete(chaseUpSchedules).where(inArray(chaseUpSchedules.portalTokenId, portalTokenIds));
+    }
+    
+    // Delete portal access tokens
+    await db.delete(portalAccessTokens).where(eq(portalAccessTokens.targetCompanyId, id));
+No other changes. Error count should stay at 6. Confirm clean.
