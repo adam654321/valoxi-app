@@ -5,7 +5,8 @@ import { ReportIssueButton } from "@/components/layout/ReportIssueButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscriptionContext } from "@/context/subscription-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Link } from "wouter";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,10 +36,17 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const status = subscription?.status ?? null;
-  const trialDays = status === 'trialing' ? getTrialDaysRemaining((subscription as any)?.trialEnd) : null;
+  const trialDays = status === 'trialing' ? getTrialDaysRemaining(subscription?.trialEndsAt ?? (subscription as any)?.trialEnd) : null;
 
   const showTrialBanner = !isLoading && status === 'trialing' && trialDays !== null;
   const showExpiredBanner = !isLoading && (!subscription || status === 'canceled');
+
+  const [location] = useLocation();
+  useEffect(() => {
+    if (!isLoading && showExpiredBanner && location !== '/billing') {
+      window.location.href = '/billing?reason=subscription_required';
+    }
+  }, [isLoading, showExpiredBanner, location]);
   const trialUrgent = trialDays !== null && trialDays <= 3;
   const trialWarning = trialDays !== null && trialDays <= 7 && trialDays > 3;
 
