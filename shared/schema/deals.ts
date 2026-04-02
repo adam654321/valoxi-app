@@ -29,6 +29,8 @@ export const targetCompanies = pgTable("target_companies", {
   initialDiscussionBy: integer("initial_discussion_by").references(() => users.id),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
+  isArchived: boolean("is_archived").default(false).notNull(),
+  archivedAt: timestamp("archived_at"),
 });
 
 // Primary contacts at target companies
