@@ -24,6 +24,8 @@ export interface TargetCompanyWithStats {
   employeeCount: number | null;
   yearEstablished: number | null;
   description: string | null;
+  isArchived: boolean;
+  archivedAt: string | null;
   createdBy: number | null;
   createdAt: string;
   contactCount: number;

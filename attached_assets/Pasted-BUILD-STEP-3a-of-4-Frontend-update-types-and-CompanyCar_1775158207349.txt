@@ -1,0 +1,91 @@
+BUILD STEP 3a of 4 — Frontend: update types and CompanyCard for archive support
+Two files change. No others.
+
+File 1: client/src/components/target-companies/types.ts
+Change 1 — Add isArchived and archivedAt to TargetCompanyWithStats
+After description: string | null; add:
+ts  isArchived: boolean;
+  archivedAt: string | null;
+
+File 2: client/src/components/target-companies/company-card.tsx
+Change 2 — Add Archive and ArchiveRestore to lucide imports
+Replace:
+tsimport { Pencil, Trash2, Eye, Users, DollarSign, Calendar } from "lucide-react";
+With:
+tsimport { Pencil, Trash2, Eye, Users, DollarSign, Calendar, Archive, ArchiveRestore } from "lucide-react";
+Change 3 — Add optional archive props to the interface
+Replace:
+tsinterface CompanyCardProps {
+  company: TargetCompanyWithStats;
+  onEdit: (company: TargetCompanyWithStats) => void;
+  onDelete: (company: TargetCompanyWithStats) => void;
+  isDeletePending: boolean;
+}
+With:
+tsinterface CompanyCardProps {
+  company: TargetCompanyWithStats;
+  onEdit: (company: TargetCompanyWithStats) => void;
+  onDelete: (company: TargetCompanyWithStats) => void;
+  isDeletePending: boolean;
+  onArchive?: (company: TargetCompanyWithStats) => void;
+  onUnarchive?: (company: TargetCompanyWithStats) => void;
+  isArchivePending?: boolean;
+}
+Change 4 — Destructure the new props
+Replace:
+tsconst CompanyCard: React.FC<CompanyCardProps> = ({
+  company,
+  onEdit,
+  onDelete,
+  isDeletePending,
+}) => {
+With:
+tsconst CompanyCard: React.FC<CompanyCardProps> = ({
+  company,
+  onEdit,
+  onDelete,
+  isDeletePending,
+  onArchive,
+  onUnarchive,
+  isArchivePending,
+}) => {
+Change 5 — Update the card header button group
+Replace the entire button group <div className="flex space-x-1 ml-2"> block (from that opening div through its closing </div>) with:
+tsx          <div className="flex space-x-1 ml-2">
+            {!company.isArchived && (
+              <Link href={`/target-companies/${company.id}`}>
+                <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-${company.id}`}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
+            {!company.isArchived && (
+              <Button variant="ghost" size="sm" onClick={() => onEdit(company)} title="Edit Company" data-testid={`button-edit-${company.id}`}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            {!company.isArchived && onArchive && (
+              <Button variant="ghost" size="sm" onClick={() => onArchive(company)} disabled={isArchivePending} title="Archive Company" data-testid={`button-archive-${company.id}`}>
+                <Archive className="h-4 w-4 text-amber-500" />
+              </Button>
+            )}
+            {!company.isArchived && (
+              <Button variant="ghost" size="sm" onClick={() => onDelete(company)} disabled={isDeletePending} title="Delete Company" data-testid={`button-delete-${company.id}`}>
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            )}
+            {company.isArchived && onUnarchive && (
+              <Button variant="ghost" size="sm" onClick={() => onUnarchive(company)} disabled={isArchivePending} title="Reinstate Company" data-testid={`button-unarchive-${company.id}`}>
+                <ArchiveRestore className="h-4 w-4 text-green-600" />
+              </Button>
+            )}
+          </div>
+Change 6 — Add "Archived" badge when applicable
+In the <div className="flex items-center gap-2 mt-1"> block that shows the industry badge, add after the industry badge:
+tsx              {company.isArchived && (
+                <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                  Archived
+                </Badge>
+              )}
+
+Error count should stay at 6. Confirm clean.

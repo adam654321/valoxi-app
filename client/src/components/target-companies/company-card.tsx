@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { Pencil, Trash2, Eye, Users, DollarSign, Calendar } from "lucide-react";
+import { Pencil, Trash2, Eye, Users, DollarSign, Calendar, Archive, ArchiveRestore } from "lucide-react";
 import { formatCurrency } from "./utils";
 import type { TargetCompanyWithStats } from "./types";
 
@@ -11,6 +11,9 @@ interface CompanyCardProps {
   onEdit: (company: TargetCompanyWithStats) => void;
   onDelete: (company: TargetCompanyWithStats) => void;
   isDeletePending: boolean;
+  onArchive?: (company: TargetCompanyWithStats) => void;
+  onUnarchive?: (company: TargetCompanyWithStats) => void;
+  isArchivePending?: boolean;
 }
 
 const CompanyCard: React.FC<CompanyCardProps> = ({
@@ -18,6 +21,9 @@ const CompanyCard: React.FC<CompanyCardProps> = ({
   onEdit,
   onDelete,
   isDeletePending,
+  onArchive,
+  onUnarchive,
+  isArchivePending,
 }) => {
   const [, setLocation] = useLocation();
 
@@ -45,38 +51,41 @@ const CompanyCard: React.FC<CompanyCardProps> = ({
                   {company.industry}
                 </Badge>
               )}
+              {company.isArchived && (
+                <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                  Archived
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex space-x-1 ml-2">
-            <Link href={`/target-companies/${company.id}`}>
-              <Button
-                variant="ghost"
-                size="sm"
-                title="View Details"
-                data-testid={`button-view-${company.id}`}
-              >
-                <Eye className="h-4 w-4" />
+            {!company.isArchived && (
+              <Link href={`/target-companies/${company.id}`}>
+                <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-${company.id}`}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
+            {!company.isArchived && (
+              <Button variant="ghost" size="sm" onClick={() => onEdit(company)} title="Edit Company" data-testid={`button-edit-${company.id}`}>
+                <Pencil className="h-4 w-4" />
               </Button>
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(company)}
-              title="Edit Company"
-              data-testid={`button-edit-${company.id}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(company)}
-              disabled={isDeletePending}
-              title="Delete Company"
-              data-testid={`button-delete-${company.id}`}
-            >
-              <Trash2 className="h-4 w-4 text-red-500" />
-            </Button>
+            )}
+            {!company.isArchived && onArchive && (
+              <Button variant="ghost" size="sm" onClick={() => onArchive(company)} disabled={isArchivePending} title="Archive Company" data-testid={`button-archive-${company.id}`}>
+                <Archive className="h-4 w-4 text-amber-500" />
+              </Button>
+            )}
+            {!company.isArchived && (
+              <Button variant="ghost" size="sm" onClick={() => onDelete(company)} disabled={isDeletePending} title="Delete Company" data-testid={`button-delete-${company.id}`}>
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </Button>
+            )}
+            {company.isArchived && onUnarchive && (
+              <Button variant="ghost" size="sm" onClick={() => onUnarchive(company)} disabled={isArchivePending} title="Reinstate Company" data-testid={`button-unarchive-${company.id}`}>
+                <ArchiveRestore className="h-4 w-4 text-green-600" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
