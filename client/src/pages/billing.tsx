@@ -374,6 +374,7 @@ export default function BillingPage() {
   const [seatQuantity, setSeatQuantity] = useState("1");
 
   const [promoOpen, setPromoOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
 
@@ -398,6 +399,35 @@ export default function BillingPage() {
     },
     onError: (error: any) => {
       setPromoError(error.message || "Failed to apply promo code. Please try again.");
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/v2/billing/cancel");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      setCancelDialogOpen(false);
+      toast({ title: "Cancellation scheduled", description: "Your access continues until the end of your billing period." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to cancel", description: error.message || "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/v2/billing/reactivate");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      toast({ title: "Subscription reactivated", description: "Your subscription will continue as normal." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to reactivate", description: error.message || "Please try again.", variant: "destructive" });
     },
   });
 
@@ -437,6 +467,9 @@ export default function BillingPage() {
   const currentPlanIndex = getPlanIndex(effectivePlan);
   const hasStripeCustomer = !!subscription?.stripeCustomerId;
   const trialDays = status === "trialing" ? getTrialDaysRemaining(subscription?.trialEnd) : null;
+  const periodEndDate = subscription?.currentPeriodEnd
+    ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
   const showSeats = currentPlan === "PROFESSIONAL" || currentPlan === "EXPERT" || currentPlan === "ENTERPRISE";
   const currentSeats = subscription?.additionalSeats ?? 0;
   const currentSlots = subscription?.addOnCompanySlots ?? 0;
@@ -516,6 +549,29 @@ export default function BillingPage() {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : null}
                   Update Payment Method
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {subscription?.cancelAtPeriodEnd && (
+            <Card className="border-amber-400 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardContent className="flex items-center gap-4 py-4">
+                <AlertTriangle className="h-6 w-6 text-amber-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-800 dark:text-amber-300">Cancellation scheduled</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your access continues until{periodEndDate ? ` ${periodEndDate}` : " the end of your billing period"}. After that you'll lose platform access — your data is preserved.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => reactivateMutation.mutate()}
+                  disabled={reactivateMutation.isPending}
+                  className="flex-shrink-0"
+                >
+                  {reactivateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Keep my subscription
                 </Button>
               </CardContent>
             </Card>
@@ -969,6 +1025,60 @@ export default function BillingPage() {
               </Button>
             </CardContent>
           </Card>
+          {isActiveOrComped && status !== 'admin_comped' && !subscription?.cancelAtPeriodEnd && hasStripeCustomer && (
+            <>
+              <Separator />
+              <Card className="border-dashed">
+                <CardContent className="flex items-center justify-between py-5">
+                  <div>
+                    <p className="font-medium text-foreground">Cancel subscription</p>
+                    <p className="text-sm text-muted-foreground">
+                      Your access continues until {periodEndDate ?? "the end of your billing period"}. You can reverse this any time before then.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="text-destructive border-destructive/30 hover:bg-destructive/10 flex-shrink-0"
+                    onClick={() => setCancelDialogOpen(true)}
+                  >
+                    Cancel subscription
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p>
+                      Your access will continue until{periodEndDate ? ` ${periodEndDate}` : " the end of your billing period"}. After that:
+                    </p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>You'll lose access to your deals, documents, and AI analysis</li>
+                      <li>Your data will be preserved — nothing is deleted</li>
+                      <li>You can resubscribe at any time to restore full access</li>
+                    </ul>
+                    <p className="font-medium text-foreground">You can reverse this before your access ends.</p>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={cancelMutation.isPending}>Keep my subscription</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/90"
+                  onClick={() => cancelMutation.mutate()}
+                  disabled={cancelMutation.isPending}
+                >
+                  {cancelMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Yes, cancel at period end
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
       <AlertDialog open={!!upgradePreview} onOpenChange={(open) => { if (!open) cancelUpgrade(); }}>
