@@ -324,6 +324,42 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
         break;
       }
 
+      case 'invoice.upcoming': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const invoiceData = event.data.object as Stripe.Invoice & {
+          subscription?: string | Stripe.Subscription | null;
+          parent?: { subscription_details?: { subscription?: string } };
+        };
+        const subscriptionId: string | undefined =
+          typeof invoiceData.subscription === 'string'
+            ? invoiceData.subscription
+            : invoiceData.subscription?.id ?? invoiceData.parent?.subscription_details?.subscription;
+
+        if (subscriptionId) {
+          const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
+          if (matchingSub && matchingSub.billingInterval === 'year') {
+            const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+            if (adminEmail) {
+              const renewalDate = invoice.period_end
+                ? new Date(invoice.period_end * 1000)
+                : new Date();
+              const amountDue = invoice.amount_due ?? 0;
+              await emailApiService.sendRenewalWarningEmail({
+                to: adminEmail.email,
+                firstName: adminEmail.firstName,
+                planKey: matchingSub.planKey,
+                renewalDate,
+                amountDue,
+                currency: matchingSub.currency ?? 'gbp',
+              });
+              console.log(`[billing] Renewal warning email sent to ${adminEmail.email} for company ${matchingSub.userCompanyId}`);
+            }
+          }
+        }
+        await logWebhookEvent(event.type, event.data.object, 'processed');
+        break;
+      }
+
       default:
         return res.status(200).json({ received: true, unhandled: true });
     }

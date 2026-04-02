@@ -13,7 +13,7 @@ import {
   type PlanKey,
   type SubscriptionStatus,
 } from '@shared/schema/billing';
-import { userCompanies, type UserCompany } from '@shared/schema/core';
+import { userCompanies, users, type UserCompany } from '@shared/schema/core';
 
 export class BillingRepository {
   async getByCompanyId(userCompanyId: number): Promise<Subscription | null> {
@@ -153,6 +153,22 @@ export class BillingRepository {
           )
         )
       );
+  }
+
+  async getAdminEmailForCompany(userCompanyId: number): Promise<{ email: string; firstName: string } | null> {
+    const [row] = await db
+      .select({ email: users.email, firstName: users.firstName })
+      .from(users)
+      .where(
+        and(
+          eq(users.userCompanyId, userCompanyId),
+          eq(users.isCompanyAdmin, true),
+          eq(users.isActive, true)
+        )
+      )
+      .limit(1);
+    if (!row || !row.email) return null;
+    return { email: row.email, firstName: row.firstName || '' };
   }
 }
 
