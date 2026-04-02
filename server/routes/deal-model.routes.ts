@@ -2,12 +2,13 @@ import { Router, Request, Response } from 'express';
 import { dealModelService } from '../services/deal-model.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
+import { requirePermission } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
 import { requireFeature } from '../middleware/subscription';
 
 const router = Router();
 
-router.post('/create/:companyId', asyncHandler(async (req: Request, res: Response) => {
+router.post('/create/:companyId', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -37,7 +38,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, result);
 }));
 
-router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -46,7 +47,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, result);
 }));
 
-router.post('/:id/adjustments', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/adjustments', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -55,7 +56,7 @@ router.post('/:id/adjustments', asyncHandler(async (req: Request, res: Response)
   sendCreated(res, result);
 }));
 
-router.put('/:id/adjustments/bulk', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id/adjustments/bulk', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -65,7 +66,7 @@ router.put('/:id/adjustments/bulk', asyncHandler(async (req: Request, res: Respo
   sendSuccess(res, result);
 }));
 
-router.put('/:id/adjustments/:adjId', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id/adjustments/:adjId', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -75,7 +76,7 @@ router.put('/:id/adjustments/:adjId', asyncHandler(async (req: Request, res: Res
   sendSuccess(res, result);
 }));
 
-router.delete('/:id/adjustments/:adjId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id/adjustments/:adjId', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -86,7 +87,7 @@ router.delete('/:id/adjustments/:adjId', asyncHandler(async (req: Request, res: 
 }));
 
 // TODO Stage 4: Display may differ by tier — data layer open for all
-router.post('/:id/funding-lines', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/funding-lines', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -96,7 +97,7 @@ router.post('/:id/funding-lines', asyncHandler(async (req: Request, res: Respons
 }));
 
 // TODO Stage 4: Display may differ by tier — data layer open for all
-router.put('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id/funding-lines/:lineId', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -107,7 +108,7 @@ router.put('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: 
 }));
 
 // TODO Stage 4: Display may differ by tier — data layer open for all
-router.delete('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id/funding-lines/:lineId', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
@@ -117,7 +118,7 @@ router.delete('/:id/funding-lines/:lineId', asyncHandler(async (req: Request, re
   sendSuccess(res, result);
 }));
 
-router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/lock', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
 
