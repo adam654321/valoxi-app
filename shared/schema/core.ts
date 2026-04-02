@@ -12,6 +12,7 @@ export const userCompanies = pgTable("user_companies", {
   address: text("address"),
   industry: varchar("industry", { length: 100 }),
   companySize: varchar("company_size", { length: 50 }),
+  country: varchar("country", { length: 10 }),
   betaPlanOverride: varchar("beta_plan_override", { length: 20 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
