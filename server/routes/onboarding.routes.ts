@@ -158,10 +158,11 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
     throw new UnauthorizedError();
   }
 
-  const { companyName, industry, companySize, role, hearAboutUs } = req.body as {
+  const { companyName, industry, companySize, country, role, hearAboutUs } = req.body as {
     companyName?: string;
     industry?: string;
     companySize?: string;
+    country?: string;
     role?: string;
     hearAboutUs?: string;
   };
@@ -180,6 +181,7 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
         companyName: companyName.trim(),
         industry: industry.trim(),
         companySize: companySize?.trim() || null,
+        country: country?.trim() || null,
       })
       .where(eq(userCompanies.id, userCompanyId));
   }
