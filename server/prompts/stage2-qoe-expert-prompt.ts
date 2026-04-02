@@ -34,6 +34,8 @@ Operating Profit + Depreciation + Amortisation = Reported EBITDA
 
 If depreciation or amortisation figures are not separately identified in the data, state this clearly and use 0 for those values. Do NOT guess or estimate depreciation/amortisation if it is not in the source data.
 
+IMPORTANT: When extracting depreciation, use ONLY the true depreciation lines (depreciation of plant and machinery, depreciation of vehicles, depreciation of equipment, depreciation of motor cars, etc.). Do NOT include disposal losses or disposal gains in the depreciation figure — these are separate line items handled in Step 2 and Step 3 below.
+
 ═══════════════════════════════════════════════════════════
 STEP 2: ADD-BACKS (increase EBITDA)
 ═══════════════════════════════════════════════════════════
@@ -86,6 +88,16 @@ CATEGORY E: Redundant Costs a Buyer Would Eliminate
 Search for: duplicate roles, unnecessary subscriptions, costs related to the sale process itself.
 - Be conservative — only include costs clearly identifiable as redundant
 
+CATEGORY F: Disposal Losses on Fixed Assets
+Search the detailed admin expenses, P&L account summaries, and overheads breakdown for any of the following line items: "loss on disposal", "loss on sale of assets", "loss on fixtures and fittings disposal", "loss on motor cars disposal", "loss on plant disposal", or similar wording.
+- These are one-off accounting entries arising from scrapping or selling fixed assets at below net book value
+- They are NOT cash costs that will recur under new ownership
+- Do NOT confuse with depreciation. Depreciation is recurring. Disposal losses are not.
+- These items often appear only in the detailed P&L summaries or overheads notes, NOT on the face of the statutory P&L — you must search the full data including any overheads_breakdown or exceptionalItems fields
+- If found, include as an add-back with recurrence "one_off" and specify the year
+- Use the exact amount stated in the accounts
+- Defensibility is typically high (8-10) as the figure is taken directly from the accounts and is clearly non-recurring
+
 ═══════════════════════════════════════════════════════════
 STEP 3: DEDUCTIONS (decrease EBITDA)
 ═══════════════════════════════════════════════════════════
@@ -116,6 +128,13 @@ CATEGORY J: Under-Provisioned Bad Debts
 - Check for aged debtors, overdue invoices, or bad debt concerns in the financial data
 - If provisioning appears inadequate relative to debtor quality, estimate a realistic provision
 - Base this on actual debtor data if available, not arbitrary percentages
+
+CATEGORY K: Disposal Gains on Fixed Assets
+Search the detailed admin expenses and P&L summaries for: "profit on disposal", "gain on disposal", "profit on sale of assets", "profit on commercial vehicles disposal", or similar.
+- These are one-off accounting gains that inflated reported profit in the year they occurred
+- They will not recur under new ownership and should be removed from normalised earnings
+- Use the exact amount stated and specify the year
+- Set recurrence to "one_off"
 
 ═══════════════════════════════════════════════════════════
 HANDLING MISSING DATA
@@ -187,7 +206,7 @@ Return ONLY valid JSON. No commentary, markdown, or text outside the JSON.
   "add_backs": [
     {
       "item": "",
-      "category": "owner_salary|one_off_cost|personal_expense|related_party|redundant_cost",
+      "category": "owner_salary|one_off_cost|personal_expense|related_party|redundant_cost|disposal_loss",
       "amount": 0,
       "recurrence": "recurring|one_off",
       "year": null,
@@ -201,7 +220,7 @@ Return ONLY valid JSON. No commentary, markdown, or text outside the JSON.
   "deductions": [
     {
       "item": "",
-      "category": "replacement_salary|missing_management|deferred_maintenance|unsustainable_revenue|bad_debt_provision",
+      "category": "replacement_salary|missing_management|deferred_maintenance|unsustainable_revenue|bad_debt_provision|disposal_gain",
       "amount": 0,
       "recurrence": "recurring|one_off",
       "year": null,
