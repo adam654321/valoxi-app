@@ -8,6 +8,7 @@ import { dealDocuments } from '@shared/schema/deal-documents';
 import { targetCompanies } from '@shared/schema/deals';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
+import { requirePermission } from '../middleware/auth';
 import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock } from '../utils/document-html-builders';
 import { generatePdfFromHtml } from '../utils/pdf-generator';
 
@@ -84,7 +85,7 @@ router.get('/download/:id', asyncHandler(async (req, res) => {
   return buildAndSendDocumentPdf(res, doc);
 }));
 
-router.post('/generate-hot', asyncHandler(async (req, res) => {
+router.post('/generate-hot', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userId = req.session.userId;
   const userCompanyId = req.session.userCompanyId;
   if (!userId || !userCompanyId) {
@@ -116,7 +117,7 @@ router.post('/generate-hot', asyncHandler(async (req, res) => {
   res.status(201).json(doc);
 }));
 
-router.post('/send-offer', asyncHandler(async (req, res) => {
+router.post('/send-offer', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userId = req.session.userId;
   const userCompanyId = req.session.userCompanyId;
   if (!userId || !userCompanyId) {
@@ -236,7 +237,7 @@ const createDocumentSchema = z.object({
   documentData: z.any().optional(),
 });
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const validated = createDocumentSchema.parse(req.body);
   const userId = req.session.userId;
   const userCompanyId = req.session.userCompanyId;
@@ -253,7 +254,7 @@ router.post('/', asyncHandler(async (req, res) => {
   res.status(201).json(doc);
 }));
 
-router.post('/:id/generate', asyncHandler(async (req, res) => {
+router.post('/:id/generate', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userCompanyId = req.session.userCompanyId;
   if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
@@ -265,7 +266,7 @@ router.post('/:id/generate', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-router.post('/:id/send', asyncHandler(async (req, res) => {
+router.post('/:id/send', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userCompanyId = req.session.userCompanyId;
   if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
@@ -276,7 +277,7 @@ router.post('/:id/send', asyncHandler(async (req, res) => {
   res.json(doc);
 }));
 
-router.post('/:id/withdraw', asyncHandler(async (req, res) => {
+router.post('/:id/withdraw', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userCompanyId = req.session.userCompanyId;
   if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
@@ -287,7 +288,7 @@ router.post('/:id/withdraw', asyncHandler(async (req, res) => {
   res.json(doc);
 }));
 
-router.post('/:id/new-version', asyncHandler(async (req, res) => {
+router.post('/:id/new-version', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userId = req.session.userId;
   const userCompanyId = req.session.userCompanyId;
   if (!userId || !userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
