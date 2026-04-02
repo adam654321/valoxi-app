@@ -6,6 +6,7 @@ import { documentsRepository } from '../repositories/documents.repository';
 import { fileStorageService } from '../services/file-storage.service';
 import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { requirePermission } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
 import { sanitizeFilename, sharedFileFilter } from '../utils/upload';
 
@@ -38,7 +39,7 @@ async function serveFile(
   }
 }
 
-router.delete('/clear-all', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/clear-all', requirePermission('canEditAllDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   const userId = req.session?.userId;
   if (!userCompanyId || !userId) throw new UnauthorizedError();
@@ -61,7 +62,7 @@ router.get('/categories', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, categories);
 }));
 
-router.post('/company/:id/upload', uploadLimiter, (req: Request, res: Response) => {
+router.post('/company/:id/upload', uploadLimiter, requirePermission('canUploadDocuments'), (req: Request, res: Response) => {
   upload.single('document')(req, res, async (err) => {
     try {
       const userId = req.session?.userId;
@@ -170,7 +171,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { success: true, document });
 }));
 
-router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id', requirePermission('canEditAllDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const documentId = parseInt(req.params.id);
