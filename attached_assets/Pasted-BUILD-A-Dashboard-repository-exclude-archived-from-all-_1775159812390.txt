@@ -1,0 +1,60 @@
+BUILD A — Dashboard repository: exclude archived from all stats and widgets
+One file only: server/repositories/dashboard.repository.ts
+All changes add eq(targetCompanies.isArchived, false) to the relevant WHERE clause. No logic changes.
+
+Change 1 — getTargetCompanyCount
+Replace:
+ts    const [result] = await db.select({ count: count() }).from(targetCompanies).where(eq(targetCompanies.userCompanyId, userCompanyId));
+With:
+ts    const [result] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
+Change 2 — getTotalContactsCount
+Replace:
+ts    const [result] = await db.select({ count: count() }).from(targetContacts).leftJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id)).where(eq(targetCompanies.userCompanyId, userCompanyId));
+With:
+ts    const [result] = await db.select({ count: count() }).from(targetContacts).leftJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id)).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
+Change 3 — getDashboardMetrics active deal count
+Replace:
+ts    const [activeResult] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`));
+With:
+ts    const [activeResult] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`));
+Change 4 — getDashboardMetrics deal value
+Replace:
+ts    const [valueResult] = await db.select({ total: sql<string>`COALESCE(SUM(${targetCompanies.annualRevenue}), 0)::text` }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`, sql`${targetCompanies.annualRevenue} IS NOT NULL`));
+With:
+ts    const [valueResult] = await db.select({ total: sql<string>`COALESCE(SUM(${targetCompanies.annualRevenue}), 0)::text` }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`, sql`${targetCompanies.annualRevenue} IS NOT NULL`));
+Change 5 — getPipelineOverviewWidget
+Replace:
+ts    const stagesData = await db.select({ stage: targetCompanies.stage, count: count(), avgDays: sql<number>`AVG(EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})))::int` }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`)).groupBy(targetCompanies.stage);
+With:
+ts    const stagesData = await db.select({ stage: targetCompanies.stage, count: count(), avgDays: sql<number>`AVG(EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})))::int` }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`(${targetCompanies.stage} IS NULL OR ${targetCompanies.stage} = '' OR ${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified'))`)).groupBy(targetCompanies.stage);
+Change 6 — getRecentActivitiesWidget
+Replace:
+ts.where(eq(targetCompanies.userCompanyId, userCompanyId)).orderBy(desc(activities.createdAt)).limit(10);
+With:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false))).orderBy(desc(activities.createdAt)).limit(10);
+Change 7 — getHotDealsWidget
+Replace:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`, or(sql`EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})) > 14`, sql`${targetCompanies.stage} IN ('Offer Stage', 'Heads of Terms', 'Due Diligence')`)))
+With:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`, or(sql`EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})) > 14`, sql`${targetCompanies.stage} IN ('Offer Stage', 'Heads of Terms', 'Due Diligence')`)))
+Change 8 — getQuickStatsWidget new deals
+Replace:
+ts    const [newDeals] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`${targetCompanies.createdAt} >= CURRENT_DATE - INTERVAL '30 days'`));
+With:
+ts    const [newDeals] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${targetCompanies.createdAt} >= CURRENT_DATE - INTERVAL '30 days'`));
+Change 9 — getQuickStatsWidget closed deals
+Replace:
+ts    const [closedDeals] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`${targetCompanies.stage} = 'Completion'`, sql`${targetCompanies.stageUpdatedAt} >= CURRENT_DATE - INTERVAL '30 days'`));
+With:
+ts    const [closedDeals] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${targetCompanies.stage} = 'Completion'`, sql`${targetCompanies.stageUpdatedAt} >= CURRENT_DATE - INTERVAL '30 days'`));
+Change 10 — getTeamActivityWidget
+Replace:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`${activities.createdAt} >= CURRENT_DATE - INTERVAL '7 days'`))
+With:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${activities.createdAt} >= CURRENT_DATE - INTERVAL '7 days'`))
+Change 11 — getStageAlertsWidget
+Replace:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`, sql`EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})) > 21`))
+With:
+ts.where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${targetCompanies.stage} NOT IN ('Completion', 'Not Qualified')`, sql`EXTRACT(days FROM (NOW() - ${targetCompanies.stageUpdatedAt})) > 21`))
+Error count should stay at 6. Confirm clean — then paste BUILD B.
