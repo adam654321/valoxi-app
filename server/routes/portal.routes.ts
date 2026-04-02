@@ -4,6 +4,7 @@ import { portalService } from '../services/portal.service';
 import { sendSuccess, sendCreated } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { requirePermission } from '../middleware/auth';
 
 const publicRouter = Router();
 
@@ -26,7 +27,7 @@ authenticatedRouter.get('/tokens', asyncHandler(async (req: Request, res: Respon
   sendSuccess(res, tokens);
 }));
 
-authenticatedRouter.post('/tokens', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/tokens', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -44,7 +45,7 @@ authenticatedRouter.post('/tokens', asyncHandler(async (req: Request, res: Respo
   sendCreated(res, token);
 }));
 
-authenticatedRouter.delete('/tokens/:id', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.delete('/tokens/:id', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
@@ -53,7 +54,7 @@ authenticatedRouter.delete('/tokens/:id', asyncHandler(async (req: Request, res:
   sendSuccess(res, { message: 'Portal link removed successfully. Document history has been preserved.' });
 }));
 
-authenticatedRouter.post('/tokens/:id/reinstate', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/tokens/:id/reinstate', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
@@ -63,7 +64,7 @@ authenticatedRouter.post('/tokens/:id/reinstate', asyncHandler(async (req: Reque
   sendSuccess(res, { message: 'Portal link reinstated and access email sent.' });
 }));
 
-authenticatedRouter.post('/tokens/:id/resend-email', asyncHandler(async (req: Request, res: Response) => {
+authenticatedRouter.post('/tokens/:id/resend-email', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
