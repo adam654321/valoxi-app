@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Shield,
   CreditCard,
+  Settings2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -53,6 +54,7 @@ const navGroups = [
   {
     label: "Account",
     items: [
+      { title: "Account", url: "/account", icon: Settings2 },
       { title: "Billing & Plan", url: "/billing", icon: CreditCard },
     ],
   },
@@ -71,6 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (path === "/contacts" && location === "/contacts") return true;
     if (path === "/portal-management" && location === "/portal-management") return true;
     if (path === "/billing" && location === "/billing") return true;
+    if (path === "/account" && location === "/account") return true;
     return location === path;
   };
 

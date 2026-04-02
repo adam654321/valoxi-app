@@ -35,6 +35,7 @@ const PortalPage = lazy(() => import("@/pages/PortalPage"));
 const PortalManagement = lazy(() => import("@/pages/PortalManagement"));
 const CompanyAccounts = lazy(() => import("@/pages/company-accounts"));
 const Billing = lazy(() => import("@/pages/billing"));
+const AccountPage = lazy(() => import("@/pages/account"));
 const EmailTest = lazy(() => import("@/pages/EmailTest"));
 const WebhookTest = lazy(() => import("@/pages/webhook-test"));
 const FileUploadTest = lazy(() => import("@/pages/file-upload-test"));
@@ -198,6 +199,7 @@ function Router() {
               </Route>
               {/* <Route path="/company-accounts" component={CompanyAccounts} /> */}
               <Route path="/billing" component={Billing} />
+              <Route path="/account" component={AccountPage} />
               <Route component={NotFound} />
             </Switch>
           </Layout>

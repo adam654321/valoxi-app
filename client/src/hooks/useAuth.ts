@@ -10,9 +10,16 @@ export interface AuthUser {
   isSystemAdmin?: boolean;
   onboardingCompleted?: boolean;
   betaNdaSigned?: boolean;
+  permissions?: Record<string, boolean> | null;
   company?: {
     id: number;
     companyName: string;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    industry?: string | null;
+    companySize?: string | null;
+    country?: string | null;
   };
   viewingAs?: {
     userId: number;
