@@ -2,6 +2,7 @@ import { db } from '../db';
 import { pipelineStages } from '@shared/schema/deals';
 import { count } from 'drizzle-orm';
 import { log } from '../vite';
+import { seedSystemConfig } from './seed-system-config';
 
 const DEFAULT_PIPELINE_STAGES = [
   { stageName: 'New Target', stageOrder: 1, description: 'Newly identified acquisition target' },
@@ -27,4 +28,5 @@ export async function seedDefaultPipelineStages(): Promise<void> {
 
   await db.insert(pipelineStages).values(DEFAULT_PIPELINE_STAGES).onConflictDoNothing();
   log('[SEED] Seeded default pipeline stages');
+  await seedSystemConfig();
 }
