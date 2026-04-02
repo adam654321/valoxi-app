@@ -15,6 +15,15 @@ import {
   type TargetCompanyWithStats,
   type TargetCompanyForm,
 } from "@/components/target-companies";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function EnhancedTargetCompanies() {
   const { user } = useAuth();
@@ -23,6 +32,8 @@ export default function EnhancedTargetCompanies() {
   const [showFilters, setShowFilters] = useState(false);
   const [editingCompany, setEditingCompany] = useState<TargetCompanyWithStats | null>(null);
   const [companyToDelete, setCompanyToDelete] = useState<TargetCompanyWithStats | null>(null);
+  const [companyToArchive, setCompanyToArchive] = useState<TargetCompanyWithStats | null>(null);
+  const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
 
   const [filters, setFilters] = useState<SearchFilters>({
     q: "",
@@ -72,6 +83,15 @@ export default function EnhancedTargetCompanies() {
     },
     staleTime: 0,
     gcTime: 0,
+  });
+
+  const { data: archivedCompanies = [] } = useQuery<TargetCompanyWithStats[]>({
+    queryKey: ["/api/v2/target-companies/archived"],
+    queryFn: async () => {
+      const response = await fetch('/api/v2/target-companies/archived', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch archived companies');
+      return response.json();
+    },
   });
 
   const createMutation = useMutation({
@@ -178,6 +198,41 @@ export default function EnhancedTargetCompanies() {
     },
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("PATCH", `/api/v2/target-companies/${id}/archive`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/archived"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/quick-stats"] });
+      setCompanyToArchive(null);
+      toast({ title: "Archived", description: "Company moved to archive." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to archive company", variant: "destructive" });
+    },
+  });
+
+  const unarchiveMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("PATCH", `/api/v2/target-companies/${id}/unarchive`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/archived"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/quick-stats"] });
+      toast({ title: "Reinstated", description: "Company restored to active pipeline." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to reinstate company", variant: "destructive" });
+    },
+  });
+
   const handleFormSubmit = (data: TargetCompanyForm) => {
     if (editingCompany) {
       updateMutation.mutate({ ...data, id: editingCompany.id });
@@ -199,6 +254,14 @@ export default function EnhancedTargetCompanies() {
   const handleDeleteConfirm = (id: number) => {
     deleteMutation.mutate(id);
     setCompanyToDelete(null);
+  };
+
+  const handleArchiveConfirm = (id: number) => {
+    archiveMutation.mutate(id);
+  };
+
+  const handleUnarchive = (company: TargetCompanyWithStats) => {
+    unarchiveMutation.mutate(company.id);
   };
 
   const resetFilters = () => {
@@ -243,63 +306,112 @@ export default function EnhancedTargetCompanies() {
         </p>
       </div>
 
-      <SearchFilterBar
-        filters={filters}
-        setFilters={setFilters}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
-        activeFiltersCount={activeFiltersCount}
-        resetFilters={resetFilters}
-        resultCount={Array.isArray(searchResults) ? searchResults.length : 0}
-      />
+      <div className="flex gap-2 mb-4">
+        <Button
+          size="sm"
+          variant={viewMode === 'active' ? 'default' : 'outline'}
+          onClick={() => setViewMode('active')}
+        >
+          Active {Array.isArray(searchResults) ? `(${searchResults.length})` : ''}
+        </Button>
+        <Button
+          size="sm"
+          variant={viewMode === 'archived' ? 'default' : 'outline'}
+          onClick={() => setViewMode('archived')}
+        >
+          Archived {archivedCompanies.length > 0 ? `(${archivedCompanies.length})` : ''}
+        </Button>
+      </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-1/2 mb-4"></div>
-                  <div className="h-3 bg-muted rounded w-full mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-2/3"></div>
+      {viewMode === 'active' && (
+        <SearchFilterBar
+          filters={filters}
+          setFilters={setFilters}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+          activeFiltersCount={activeFiltersCount}
+          resetFilters={resetFilters}
+          resultCount={Array.isArray(searchResults) ? searchResults.length : 0}
+        />
+      )}
+
+      {viewMode === 'active' ? (
+        isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/2 mb-4"></div>
+                    <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-2/3"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : !Array.isArray(searchResults) || searchResults.length === 0 ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center">
+                <Building2 className="mx-auto h-12 w-12 text-muted-foreground/70" />
+                <h3 className="mt-2 text-sm font-medium text-foreground">No companies found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {activeFiltersCount > 0
+                    ? "Try adjusting your search filters or add your first target company."
+                    : "Get started by adding your first potential acquisition target."
+                  }
+                </p>
+                <div className="mt-6">
+                  <Button onClick={handleAddNew} className="bg-primary hover:bg-blue-700">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Add Target Company
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : !Array.isArray(searchResults) || searchResults.length === 0 ? (
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {searchResults.map((company: TargetCompanyWithStats) => (
+              <CompanyCard
+                key={company.id}
+                company={company}
+                onEdit={handleEdit}
+                onDelete={setCompanyToDelete}
+                isDeletePending={deleteMutation.isPending}
+                onArchive={setCompanyToArchive}
+                isArchivePending={archiveMutation.isPending}
+              />
+            ))}
+          </div>
+        )
+      ) : archivedCompanies.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
               <Building2 className="mx-auto h-12 w-12 text-muted-foreground/70" />
-              <h3 className="mt-2 text-sm font-medium text-foreground">No companies found</h3>
+              <h3 className="mt-2 text-sm font-medium text-foreground">No archived companies</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {activeFiltersCount > 0
-                  ? "Try adjusting your search filters or add your first target company."
-                  : "Get started by adding your first potential acquisition target."
-                }
+                Archived companies will appear here and can be reinstated at any time.
               </p>
-              <div className="mt-6">
-                <Button onClick={handleAddNew} className="bg-primary hover:bg-blue-700">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Add Target Company
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.isArray(searchResults) && searchResults.map((company: TargetCompanyWithStats) => (
+          {archivedCompanies.map((company: TargetCompanyWithStats) => (
             <CompanyCard
               key={company.id}
               company={company}
               onEdit={handleEdit}
               onDelete={setCompanyToDelete}
               isDeletePending={deleteMutation.isPending}
+              onUnarchive={handleUnarchive}
+              isArchivePending={unarchiveMutation.isPending}
             />
           ))}
         </div>
@@ -318,6 +430,26 @@ export default function EnhancedTargetCompanies() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setCompanyToDelete(null)}
       />
+
+      <AlertDialog open={!!companyToArchive} onOpenChange={(open) => { if (!open) setCompanyToArchive(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive company</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archive <strong>{companyToArchive?.companyName}</strong>? It will be removed from your active pipeline but all data is preserved. You can reinstate it at any time from the Archived tab.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiveMutation.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              onClick={() => companyToArchive && handleArchiveConfirm(companyToArchive.id)}
+              disabled={archiveMutation.isPending}
+            >
+              Archive
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
