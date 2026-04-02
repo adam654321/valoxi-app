@@ -47,6 +47,7 @@ import {
   dealMetricsSnapshots,
 } from '@shared/schema';
 import { eq, sql, inArray, count, and } from 'drizzle-orm';
+import { portalRepository } from '../repositories/portal.repository';
 
 export class TargetCompaniesService {
   async getAll(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
@@ -309,6 +310,7 @@ export class TargetCompaniesService {
 
     const company = await targetCompaniesRepository.archive(id, userCompanyId);
     if (!company) throw new NotFoundError('Target company not found');
+    await portalRepository.deactivateTokensForCompany(id);
     return company;
   }
 
