@@ -46,7 +46,7 @@ import {
   dealModelFundingLines,
   dealMetricsSnapshots,
 } from '@shared/schema';
-import { eq, sql, inArray, count } from 'drizzle-orm';
+import { eq, sql, inArray, count, and } from 'drizzle-orm';
 
 export class TargetCompaniesService {
   async getAll(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
@@ -80,7 +80,7 @@ export class TargetCompaniesService {
         const [{ total }] = await db
           .select({ total: count() })
           .from(targetCompanies)
-          .where(eq(targetCompanies.userCompanyId, userCompanyId));
+          .where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
         if (total >= maxTargets) {
           throw new ForbiddenError(
             `You have reached the limit of ${maxTargets} compan${maxTargets === 1 ? 'y' : 'ies'} on your current plan. Please upgrade to add more.`
@@ -294,6 +294,54 @@ export class TargetCompaniesService {
       throw new BadRequestError('Invalid user company ID');
     }
     return await targetCompaniesRepository.search(userCompanyId, params);
+  }
+
+  async getArchived(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
+    return await targetCompaniesRepository.getArchived(userCompanyId);
+  }
+
+  async archive(id: number, userCompanyId: number): Promise<TargetCompany> {
+    if (!id || isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+    const existing = await targetCompaniesRepository.getById(id, userCompanyId);
+    if (!existing) throw new NotFoundError('Target company not found');
+    if (existing.isArchived) throw new BadRequestError('Company is already archived');
+
+    const company = await targetCompaniesRepository.archive(id, userCompanyId);
+    if (!company) throw new NotFoundError('Target company not found');
+    return company;
+  }
+
+  async unarchive(id: number, userCompanyId: number): Promise<TargetCompany> {
+    if (!id || isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+    const existing = await targetCompaniesRepository.getById(id, userCompanyId);
+    if (!existing) throw new NotFoundError('Target company not found');
+    if (!existing.isArchived) throw new BadRequestError('Company is not archived');
+
+    const subscription = await billingService.getSubscription(userCompanyId);
+    if (subscription) {
+      const maxTargets = getMaxActiveTargets(
+        subscription.planKey as PlanKey,
+        subscription.addOnCompanySlots ?? 0,
+        subscription.enterpriseOverrides as Record<string, unknown> | null
+      );
+      if (maxTargets !== null) {
+        const [{ total }] = await db
+          .select({ total: count() })
+          .from(targetCompanies)
+          .where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
+        if (total >= maxTargets) {
+          throw new ForbiddenError(
+            `You have reached the limit of ${maxTargets} active compan${maxTargets === 1 ? 'y' : 'ies'} on your current plan. Please upgrade or archive another company before reinstating this one.`
+          );
+        }
+      }
+    }
+
+    const company = await targetCompaniesRepository.unarchive(id, userCompanyId);
+    if (!company) throw new NotFoundError('Target company not found');
+    return company;
   }
 }
 

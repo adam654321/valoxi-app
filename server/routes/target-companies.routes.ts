@@ -52,6 +52,34 @@ router.get('/filters', asyncHandler(async (req: Request, res: Response) => {
   res.json(filters);
 }));
 
+router.get('/archived', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+
+  const companies = await targetCompaniesService.getArchived(userCompanyId);
+  res.json(companies);
+}));
+
+router.patch('/:id/archive', requirePermission('canDeleteDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const id = parseInt(req.params.id);
+  if (!userCompanyId) throw new UnauthorizedError();
+  if (isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+  const company = await targetCompaniesService.archive(id, userCompanyId);
+  res.json({ message: 'Company archived successfully', company });
+}));
+
+router.patch('/:id/unarchive', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const id = parseInt(req.params.id);
+  if (!userCompanyId) throw new UnauthorizedError();
+  if (isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+  const company = await targetCompaniesService.unarchive(id, userCompanyId);
+  res.json({ message: 'Company reinstated successfully', company });
+}));
+
 router.get('/:id/profile', asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   const userId = req.session?.userId;

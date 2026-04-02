@@ -1,0 +1,107 @@
+Clean. Now step 2b — service and routes together (they're tightly coupled and small).
+
+BUILD STEP 2b of 3 — Service + Routes: archive/unarchive logic and endpoints
+Two files change. No others.
+
+File 1: server/services/target-companies.service.ts
+Change 1 — Add and to the drizzle-orm import
+Replace:
+tsimport { eq, sql, inArray, count } from 'drizzle-orm';
+With:
+tsimport { eq, sql, inArray, count, and } from 'drizzle-orm';
+Change 2 — Fix slot count in create to exclude archived companies
+In the create method, replace:
+ts        const [{ total }] = await db
+          .select({ total: count() })
+          .from(targetCompanies)
+          .where(eq(targetCompanies.userCompanyId, userCompanyId));
+With:
+ts        const [{ total }] = await db
+          .select({ total: count() })
+          .from(targetCompanies)
+          .where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
+Change 3 — Add getArchived, archive, and unarchive service methods
+After the search method and before the closing } of the class, add:
+ts  async getArchived(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
+    return await targetCompaniesRepository.getArchived(userCompanyId);
+  }
+
+  async archive(id: number, userCompanyId: number): Promise<TargetCompany> {
+    if (!id || isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+    const existing = await targetCompaniesRepository.getById(id, userCompanyId);
+    if (!existing) throw new NotFoundError('Target company not found');
+    if (existing.isArchived) throw new BadRequestError('Company is already archived');
+
+    const company = await targetCompaniesRepository.archive(id, userCompanyId);
+    if (!company) throw new NotFoundError('Target company not found');
+    return company;
+  }
+
+  async unarchive(id: number, userCompanyId: number): Promise<TargetCompany> {
+    if (!id || isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+    const existing = await targetCompaniesRepository.getById(id, userCompanyId);
+    if (!existing) throw new NotFoundError('Target company not found');
+    if (!existing.isArchived) throw new BadRequestError('Company is not archived');
+
+    const subscription = await billingService.getSubscription(userCompanyId);
+    if (subscription) {
+      const maxTargets = getMaxActiveTargets(
+        subscription.planKey as PlanKey,
+        subscription.addOnCompanySlots ?? 0,
+        subscription.enterpriseOverrides as Record<string, unknown> | null
+      );
+      if (maxTargets !== null) {
+        const [{ total }] = await db
+          .select({ total: count() })
+          .from(targetCompanies)
+          .where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
+        if (total >= maxTargets) {
+          throw new ForbiddenError(
+            `You have reached the limit of ${maxTargets} active compan${maxTargets === 1 ? 'y' : 'ies'} on your current plan. Please upgrade or archive another company before reinstating this one.`
+          );
+        }
+      }
+    }
+
+    const company = await targetCompaniesRepository.unarchive(id, userCompanyId);
+    if (!company) throw new NotFoundError('Target company not found');
+    return company;
+  }
+
+File 2: server/routes/target-companies.routes.ts
+Change 4 — Add the requirePermission import
+The file already imports requirePermission (added in the RBAC step). No change needed here.
+Change 5 — Add three new routes
+Add the following three routes after the existing router.get('/filters', ...) handler and before router.get('/:id/profile', ...) — they must come before the /:id param routes to avoid collision:
+tsrouter.get('/archived', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+
+  const companies = await targetCompaniesService.getArchived(userCompanyId);
+  res.json(companies);
+}));
+
+router.patch('/:id/archive', requirePermission('canDeleteDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const id = parseInt(req.params.id);
+  if (!userCompanyId) throw new UnauthorizedError();
+  if (isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+  const company = await targetCompaniesService.archive(id, userCompanyId);
+  res.json({ message: 'Company archived successfully', company });
+}));
+
+router.patch('/:id/unarchive', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const id = parseInt(req.params.id);
+  if (!userCompanyId) throw new UnauthorizedError();
+  if (isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+  const company = await targetCompaniesService.unarchive(id, userCompanyId);
+  res.json({ message: 'Company reinstated successfully', company });
+}));
+Note: archive is guarded with canDeleteDeals (Company Admin only). unarchive has no extra permission guard — any authenticated active subscriber can reinstate, but the slot limit is enforced in the service. Adjust if you want to tighten this.
+
+Error count should stay at 6. Confirm clean.
