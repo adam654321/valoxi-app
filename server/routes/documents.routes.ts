@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { documentsService } from '../services/documents.service';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
+import { requirePermission } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
 
 const router = Router();
@@ -35,7 +36,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, document);
 }));
 
-router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', requirePermission('canUploadDocuments'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   const documentId = parseInt(req.params.id);
 
@@ -52,7 +53,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, updatedDocument);
 }));
 
-router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id', requirePermission('canEditAllDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   const documentId = parseInt(req.params.id);
 
