@@ -5,7 +5,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Building2, ArrowRight, Loader2 } from "lucide-react";
+import { useSubscriptionContext, usePlanKey } from "@/context/subscription-context";
+import { useLocation } from "wouter";
 import {
   SearchFilterBar,
   CompanyCard,
@@ -28,12 +30,17 @@ import {
 export default function EnhancedTargetCompanies() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { subscription } = useSubscriptionContext();
+  const currentPlan = usePlanKey();
+  const [, setLocation] = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [editingCompany, setEditingCompany] = useState<TargetCompanyWithStats | null>(null);
   const [companyToDelete, setCompanyToDelete] = useState<TargetCompanyWithStats | null>(null);
   const [companyToArchive, setCompanyToArchive] = useState<TargetCompanyWithStats | null>(null);
   const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
+  const [slotLimitOpen, setSlotLimitOpen] = useState(false);
+  const [companyPendingUnarchive, setCompanyPendingUnarchive] = useState<TargetCompanyWithStats | null>(null);
 
   const [filters, setFilters] = useState<SearchFilters>({
     q: "",
@@ -229,7 +236,27 @@ export default function EnhancedTargetCompanies() {
       toast({ title: "Reinstated", description: "Company restored to active pipeline." });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to reinstate company", variant: "destructive" });
+      if (error?.message?.toLowerCase().includes('limit')) {
+        setSlotLimitOpen(true);
+      } else {
+        toast({ title: "Error", description: error.message || "Failed to reinstate company", variant: "destructive" });
+      }
+    },
+  });
+
+  const addSlotMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/v2/billing/addon", { addonType: "company_slot", quantity: 1 });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
+      setSlotLimitOpen(false);
+      if (companyPendingUnarchive) {
+        unarchiveMutation.mutate(companyPendingUnarchive.id);
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to add slot", description: error.message || "Please try again or visit the billing page.", variant: "destructive" });
     },
   });
 
@@ -261,6 +288,7 @@ export default function EnhancedTargetCompanies() {
   };
 
   const handleUnarchive = (company: TargetCompanyWithStats) => {
+    setCompanyPendingUnarchive(company);
     unarchiveMutation.mutate(company.id);
   };
 
@@ -447,6 +475,67 @@ export default function EnhancedTargetCompanies() {
             >
               Archive
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={slotLimitOpen} onOpenChange={(open) => { if (!open) setSlotLimitOpen(false); }}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 flex-shrink-0">
+                <Building2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <AlertDialogTitle className="text-lg">Company limit reached</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 pt-1">
+                <p className="text-sm text-muted-foreground">
+                  You've used all active company slots on your{" "}
+                  <span className="font-medium text-foreground">
+                    {currentPlan ? currentPlan.charAt(0) + currentPlan.slice(1).toLowerCase() : "current"} plan
+                  </span>
+                  {subscription?.addOnCompanySlots ? ` (including ${subscription.addOnCompanySlots} add-on slot${subscription.addOnCompanySlots !== 1 ? "s" : ""})` : ""}.
+                  To reinstate <span className="font-medium text-foreground">{companyPendingUnarchive?.companyName}</span>, you can:
+                </p>
+
+                <div className="rounded-lg border bg-card p-4 space-y-3">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">Add 1 company slot</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Billed monthly alongside your subscription. Remove it any time from the billing page.
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => addSlotMutation.mutate()}
+                    disabled={addSlotMutation.isPending || unarchiveMutation.isPending}
+                  >
+                    {addSlotMutation.isPending || unarchiveMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    {unarchiveMutation.isPending ? "Reinstating…" : addSlotMutation.isPending ? "Adding slot…" : "Add Slot & Reinstate"}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-xs text-muted-foreground">Need more capacity? Upgrade your plan.</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => { setSlotLimitOpen(false); setLocation("/billing"); }}
+                  >
+                    View Plans <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={addSlotMutation.isPending || unarchiveMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
