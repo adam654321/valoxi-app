@@ -76,12 +76,14 @@ export class TargetCompaniesRepository {
         initialDiscussionDate: targetCompanies.initialDiscussionDate,
         initialDiscussionNotes: targetCompanies.initialDiscussionNotes,
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
+        isArchived: targetCompanies.isArchived,
+        archivedAt: targetCompanies.archivedAt,
         totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
         contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
         primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
       })
       .from(targetCompanies)
-      .where(eq(targetCompanies.userCompanyId, userCompanyId))
+      .where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)))
       .orderBy(desc(targetCompanies.createdAt));
     return result;
   }
@@ -141,6 +143,63 @@ export class TargetCompaniesRepository {
     return (result.rowCount ?? 0) > 0;
   }
 
+  async archive(id: number, userCompanyId: number): Promise<TargetCompany | undefined> {
+    const [company] = await db
+      .update(targetCompanies)
+      .set({ isArchived: true, archivedAt: new Date() })
+      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
+      .returning();
+    return company || undefined;
+  }
+
+  async unarchive(id: number, userCompanyId: number): Promise<TargetCompany | undefined> {
+    const [company] = await db
+      .update(targetCompanies)
+      .set({ isArchived: false, archivedAt: null })
+      .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
+      .returning();
+    return company || undefined;
+  }
+
+  async getArchived(userCompanyId: number): Promise<TargetCompanyWithStats[]> {
+    const result = await db
+      .select({
+        id: targetCompanies.id,
+        userCompanyId: targetCompanies.userCompanyId,
+        companyName: targetCompanies.companyName,
+        industry: targetCompanies.industry,
+        subSector: targetCompanies.subSector,
+        website: targetCompanies.website,
+        phone: targetCompanies.phone,
+        email: targetCompanies.email,
+        address: targetCompanies.address,
+        annualRevenue: targetCompanies.annualRevenue,
+        employeeCount: targetCompanies.employeeCount,
+        yearEstablished: targetCompanies.yearEstablished,
+        description: targetCompanies.description,
+        websiteAnalysis: targetCompanies.websiteAnalysis,
+        websiteAnalysisProcessedAt: targetCompanies.websiteAnalysisProcessedAt,
+        stage: targetCompanies.stage,
+        stageUpdatedAt: targetCompanies.stageUpdatedAt,
+        stageUpdatedBy: targetCompanies.stageUpdatedBy,
+        createdBy: targetCompanies.createdBy,
+        createdAt: targetCompanies.createdAt,
+        initialDiscussionCompleted: targetCompanies.initialDiscussionCompleted,
+        initialDiscussionDate: targetCompanies.initialDiscussionDate,
+        initialDiscussionNotes: targetCompanies.initialDiscussionNotes,
+        initialDiscussionBy: targetCompanies.initialDiscussionBy,
+        isArchived: targetCompanies.isArchived,
+        archivedAt: targetCompanies.archivedAt,
+        totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
+        contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
+        primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName'),
+      })
+      .from(targetCompanies)
+      .where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, true)))
+      .orderBy(desc(targetCompanies.archivedAt));
+    return result;
+  }
+
   async getFilterOptions(userCompanyId: number): Promise<FilterOptions> {
     const industries = await db
       .selectDistinct({ industry: targetCompanies.industry })
@@ -172,7 +231,7 @@ export class TargetCompaniesRepository {
   }
 
   async search(userCompanyId: number, params: SearchParams): Promise<TargetCompanyWithStats[]> {
-    const conditions = [eq(targetCompanies.userCompanyId, userCompanyId)];
+    const conditions = [eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)];
 
     if (params.q) {
       const searchTerm = `%${params.q}%`;
@@ -212,6 +271,8 @@ export class TargetCompaniesRepository {
         initialDiscussionDate: targetCompanies.initialDiscussionDate,
         initialDiscussionNotes: targetCompanies.initialDiscussionNotes,
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
+        isArchived: targetCompanies.isArchived,
+        archivedAt: targetCompanies.archivedAt,
         contactCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('contactCount'),
         primaryContactName: sql<string | null>`(SELECT target_contacts.first_name || ' ' || target_contacts.last_name FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id" AND target_contacts.is_primary = true LIMIT 1)`.as('primaryContactName')
       })
@@ -247,6 +308,8 @@ export class TargetCompaniesRepository {
         initialDiscussionBy: targetCompanies.initialDiscussionBy,
         createdBy: targetCompanies.createdBy,
         createdAt: targetCompanies.createdAt,
+        isArchived: targetCompanies.isArchived,
+        archivedAt: targetCompanies.archivedAt,
         createdByName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`.as('createdByName'),
         userCompanyName: userCompanies.companyName,
         totalContacts: sql<number>`COALESCE((SELECT COUNT(*)::int FROM target_contacts WHERE target_contacts.target_company_id = "target_companies"."id"), 0)`.as('totalContacts'),
