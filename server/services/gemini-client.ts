@@ -1,3 +1,4 @@
+import https from 'https';
 import { db } from '../db';
 import { tokenUsage } from '@shared/schema';
 import { calculateTokenCost } from '../utils/token-cost';
@@ -51,10 +52,11 @@ const DEFAULT_RETRY: Required<Pick<GeminiClientConfig, "maxRetries" | "baseDelay
 };
 
 /**
- * Unified Gemini API client. Uses raw fetch directly to the Gemini REST API,
- * bypassing the @google/genai SDK entirely. This prevents any SDK-level or
- * Node.js HTTP-module-level proxy interception by Replit's AI Integrations
- * system. All calls go directly to https://generativelanguage.googleapis.com
+ * Unified Gemini API client. Uses Node.js native https module directly to the Gemini REST API,
+ * bypassing both the @google/genai SDK and the global fetch entirely.
+ * Native https cannot be patched at the JS layer, preventing Replit's
+ * AI Integrations interceptor from routing calls through its proxy.
+ * All calls go directly to https://generativelanguage.googleapis.com
  * using GOOGLE_GEMINI_API_KEY as a query parameter.
  */
 export class GeminiClient {
@@ -150,27 +152,54 @@ export class GeminiClient {
         },
       };
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
-
-      let res: Response;
-      try {
-        res = await fetch(url, {
+      const data = await new Promise<any>((resolve, reject) => {
+        const body = JSON.stringify(requestBody);
+        const urlObj = new URL(url);
+        const reqOptions = {
+          hostname: urlObj.hostname,
+          path: urlObj.pathname + urlObj.search,
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body),
+          },
+        };
+
+        const timeoutId = setTimeout(() => {
+          req.destroy(new Error('AbortError: request timed out'));
+        }, this.timeoutMs);
+
+        const req = https.request(reqOptions, (resp) => {
+          clearTimeout(timeoutId);
+          let raw = '';
+          resp.on('data', (chunk: Buffer) => { raw += chunk.toString(); });
+          resp.on('end', () => {
+            if (!resp.statusCode || resp.statusCode < 200 || resp.statusCode >= 300) {
+              reject(new Error(`Gemini API error ${resp.statusCode}: ${raw}`));
+              return;
+            }
+            try {
+              resolve(JSON.parse(raw));
+            } catch {
+              reject(new Error(`Gemini API response parse error: ${raw.slice(0, 200)}`));
+            }
+          });
         });
-      } finally {
-        clearTimeout(timeoutId);
-      }
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Gemini API error ${res.status}: ${errText}`);
-      }
+        req.on('error', (err: Error) => {
+          clearTimeout(timeoutId);
+          if (err.message.includes('timed out')) {
+            const abortErr = new Error('AbortError: request timed out');
+            abortErr.name = 'AbortError';
+            reject(abortErr);
+          } else {
+            reject(err);
+          }
+        });
 
-      const data = await res.json();
+        req.write(body);
+        req.end();
+      });
 
       const candidate = data.candidates?.[0];
       const text = candidate?.content?.parts?.map((p: any) => p.text || '').join('') ?? '';
