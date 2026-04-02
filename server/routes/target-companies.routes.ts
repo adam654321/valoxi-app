@@ -5,6 +5,7 @@ import { sendSuccess, sendCreated } from '../utils/response';
 import { UnauthorizedError, BadRequestError, NotFoundError } from '../utils/errors';
 import { insertTargetCompanySchema } from '@shared/schema';
 import { asyncHandler } from '../utils/async-handler';
+import { requirePermission } from '../middleware/auth';
 
 const router = Router();
 
@@ -87,7 +88,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   res.json(company);
 }));
 
-router.post('/', asyncHandler(async (req: Request, res: Response) => {
+router.post('/', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
@@ -107,7 +108,7 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   res.json(company);
 }));
 
-router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id', requirePermission('canDeleteDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   const id = parseInt(req.params.id);
   if (!userCompanyId) throw new UnauthorizedError();
