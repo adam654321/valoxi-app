@@ -1,0 +1,54 @@
+BUILD 3 of 3 — Onboarding frontend: add country selector
+In client/src/pages/onboarding.tsx:
+Change 1 — Add country state
+After const [companySize, setCompanySize] = useState(""); add:
+ts  const [country, setCountry] = useState("");
+Change 2 — Add country to submit payload
+Replace:
+ts    submitMutation.mutate({
+      companyName,
+      industry: industry === "Other" ? `Other: ${industryOther.trim()}` : industry,
+      companySize,
+      role,
+      hearAboutUs: hearAboutUs === "Other" ? `Other: ${hearAboutUsOther.trim()}` : hearAboutUs,
+    });
+With:
+ts    submitMutation.mutate({
+      companyName,
+      industry: industry === "Other" ? `Other: ${industryOther.trim()}` : industry,
+      companySize,
+      country,
+      role,
+      hearAboutUs: hearAboutUs === "Other" ? `Other: ${hearAboutUsOther.trim()}` : hearAboutUs,
+    });
+Change 3 — Add country selector to the form
+Add the following block immediately after the closing </div> of the Company Size field and before the Your Role field:
+tsx            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Country of Operation</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCountry("UK")}
+                  className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                    country === "UK"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="text-lg">🇬🇧</span> United Kingdom
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCountry("US")}
+                  className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                    country === "US"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="text-lg">🇺🇸</span> United States
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">Where are the companies you're looking to acquire based?</p>
+            </div>
+Error count should stay at 6. Confirm clean.

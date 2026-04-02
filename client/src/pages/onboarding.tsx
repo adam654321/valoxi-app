@@ -101,6 +101,7 @@ export default function OnboardingPage() {
   const [industry, setIndustry] = useState("");
   const [industryOther, setIndustryOther] = useState("");
   const [companySize, setCompanySize] = useState("");
+  const [country, setCountry] = useState("");
   const [role, setRole] = useState("");
   const [hearAboutUs, setHearAboutUs] = useState("");
   const [hearAboutUsOther, setHearAboutUsOther] = useState("");
@@ -133,6 +134,7 @@ export default function OnboardingPage() {
       companyName: string;
       industry: string;
       companySize: string;
+      country?: string;
       role: string;
       hearAboutUs: string;
     }) => {
@@ -174,6 +176,7 @@ export default function OnboardingPage() {
       companyName,
       industry: industry === "Other" ? `Other: ${industryOther.trim()}` : industry,
       companySize,
+      country,
       role,
       hearAboutUs: hearAboutUs === "Other" ? `Other: ${hearAboutUsOther.trim()}` : hearAboutUs,
     });
@@ -254,6 +257,35 @@ export default function OnboardingPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Country of Operation</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCountry("UK")}
+                  className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                    country === "UK"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="text-lg">🇬🇧</span> United Kingdom
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCountry("US")}
+                  className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                    country === "US"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="text-lg">🇺🇸</span> United States
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">Where are the companies you're looking to acquire based?</p>
             </div>
 
             <div className="space-y-1.5">
