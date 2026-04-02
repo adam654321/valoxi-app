@@ -1,0 +1,92 @@
+BUILD A — Billing backend: cancel + reactivate routes
+One file: server/routes/billing.routes.ts
+Add these two routes after the remove-seat route and before the claim-promo route:
+tsrouter.post('/cancel', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) return res.status(401).json({ error: 'unauthorized' });
+
+    if (!config.stripe.secretKey) return res.status(500).json({ error: 'stripe_not_configured' });
+
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription?.stripeSubscriptionId) {
+      return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
+    }
+    if (subscription.status === 'canceled') {
+      return res.status(400).json({ error: 'already_canceled', message: 'Subscription is already cancelled.' });
+    }
+    if (subscription.cancelAtPeriodEnd) {
+      return res.status(400).json({ error: 'already_scheduled', message: 'Cancellation is already scheduled.' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+    const updated = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+      cancel_at_period_end: true,
+    });
+
+    await billingRepository.updateByCompanyId(userCompanyId, { cancelAtPeriodEnd: true });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'subscription.cancellation_scheduled',
+      previousStatus: subscription.status as SubscriptionStatus,
+      previousPlanKey: subscription.planKey as PlanKey,
+      newStatus: subscription.status as SubscriptionStatus,
+      newPlanKey: subscription.planKey as PlanKey,
+      payload: { cancelAtPeriodEnd: true, periodEnd: (updated as any).current_period_end ?? null },
+    });
+
+    console.log(`[billing] Cancellation scheduled for company ${userCompanyId}`);
+    return res.status(200).json({
+      success: true,
+      cancelAtPeriodEnd: true,
+      periodEnd: (updated as any).current_period_end
+        ? new Date((updated as any).current_period_end * 1000).toISOString()
+        : null,
+    });
+  } catch (err: any) {
+    console.error('[Billing] Error scheduling cancellation:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to schedule cancellation.' });
+  }
+});
+
+router.post('/reactivate', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+  try {
+    const userCompanyId = req.session.userCompanyId;
+    if (!userCompanyId) return res.status(401).json({ error: 'unauthorized' });
+
+    if (!config.stripe.secretKey) return res.status(500).json({ error: 'stripe_not_configured' });
+
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription?.stripeSubscriptionId) {
+      return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
+    }
+    if (!subscription.cancelAtPeriodEnd) {
+      return res.status(400).json({ error: 'not_scheduled', message: 'No cancellation is scheduled.' });
+    }
+
+    const stripe = new Stripe(config.stripe.secretKey);
+    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+      cancel_at_period_end: false,
+    });
+
+    await billingRepository.updateByCompanyId(userCompanyId, { cancelAtPeriodEnd: false });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'subscription.cancellation_reverted',
+      previousStatus: subscription.status as SubscriptionStatus,
+      previousPlanKey: subscription.planKey as PlanKey,
+      newStatus: subscription.status as SubscriptionStatus,
+      newPlanKey: subscription.planKey as PlanKey,
+      payload: { cancelAtPeriodEnd: false },
+    });
+
+    console.log(`[billing] Cancellation reverted for company ${userCompanyId}`);
+    return res.status(200).json({ success: true, cancelAtPeriodEnd: false });
+  } catch (err: any) {
+    console.error('[Billing] Error reverting cancellation:', err);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to revert cancellation.' });
+  }
+});
+Error count should stay at 6. Confirm clean then paste BUILD B.
