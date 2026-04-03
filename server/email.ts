@@ -1,14 +1,4 @@
-import nodemailer from 'nodemailer';
-
-interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
-}
+import { Resend } from 'resend';
 
 interface EmailOptions {
   to: string | string[];
@@ -18,132 +8,89 @@ interface EmailOptions {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
+  private resend: Resend | null = null;
   private fromEmail: string;
 
   constructor() {
-    this.fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@yourcompany.com';
-    this.setupTransporter();
-  }
-
-  private setupTransporter() {
-    const smtpHost = process.env.SMTP_HOST?.trim();
-    const smtpPort = process.env.SMTP_PORT?.trim();
-    const smtpUser = process.env.SMTP_USER?.trim();
-    const smtpPass = process.env.SMTP_PASS?.trim();
-
-    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-      console.warn('Email service not configured - missing SMTP environment variables');
+    this.fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@send.valoxi.ai';
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('Email service not configured — RESEND_API_KEY missing');
       return;
     }
-
-    const config: EmailConfig = {
-      host: smtpHost,
-      port: parseInt(smtpPort),
-      secure: parseInt(smtpPort) === 465, // true for 465, false for other ports
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    };
-
-    console.log('SMTP configuration loaded successfully');
-
-    this.transporter = nodemailer.createTransport(config);
+    this.resend = new Resend(apiKey);
+    console.log('Resend email service initialised');
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!this.transporter) {
-      console.error('Email transporter not configured');
+    if (!this.resend) {
+      console.error('Resend not configured — email not sent');
       return false;
     }
-
     try {
-      const mailOptions = {
+      const { data, error } = await this.resend.emails.send({
         from: options.from || this.fromEmail,
-        to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+        to: Array.isArray(options.to) ? options.to : [options.to],
         subject: options.subject,
         html: options.html,
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent successfully:', info.messageId);
+      });
+      if (error) {
+        console.error('Resend send error:', error);
+        return false;
+      }
+      console.log('Email sent via Resend:', data?.id);
       return true;
-    } catch (error) {
-      console.error('Failed to send email:', error);
+    } catch (err) {
+      console.error('Resend exception:', err);
       return false;
     }
   }
 
-  // Team invitation email
   async sendTeamInvitation(
-    inviteEmail: string, 
-    inviterName: string, 
+    inviteEmail: string,
+    inviterName: string,
     companyName: string,
     inviteToken: string,
     inviteUrl: string,
     roleName: string
   ): Promise<boolean> {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Team Invitation</title>
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
-            .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-            .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
-            .highlight { background: #f8f9fa; padding: 15px; border-left: 4px solid #667eea; margin: 15px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎉 You're Invited to Join Our Team!</h1>
-            </div>
-            <div class="content">
-              <p>Hello,</p>
-              
-              <p><strong>${inviterName}</strong> has invited you to join the <strong>${companyName}</strong> team on Valoxi.</p>
-              
-              <div class="highlight">
-                <p><strong>Your Role:</strong> ${roleName}</p>
-                <p><strong>Company:</strong> ${companyName}</p>
-              </div>
-              
-              <p>Click the button below to accept your invitation and set up your account:</p>
-              
-              <p style="text-align: center;">
-                <a href="${inviteUrl}" class="button">Accept Invitation & Join Team</a>
-              </p>
-              
-              <p><small><strong>Note:</strong> This invitation link will expire in 7 days. If you need a new invitation, please contact ${inviterName}.</small></p>
-              
-              <p>Welcome to the team!</p>
-              
-              <p>Best regards,<br>
-              The ${companyName} Team</p>
-            </div>
-            <div class="footer">
-              <p>This is an automated email from Valoxi.</p>
-            </div>
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background-color:#0f172a;padding:32px;text-align:center;border-radius:8px 8px 0 0;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Valoxi</h1>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">Hello,</p>
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;"><strong>${inviterName}</strong> has invited you to join the <strong>${companyName}</strong> team on Valoxi.</p>
+          <div style="background-color:#f9fafb;border-radius:8px;padding:16px;margin:20px 0;">
+            <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Role:</strong> ${roleName}</p>
+            <p style="margin:0;color:#374151;font-size:14px;"><strong>Company:</strong> ${companyName}</p>
           </div>
-        </body>
-      </html>
-    `;
-
+          <div style="text-align:center;margin:28px 0;">
+            <a href="${inviteUrl}" style="display:inline-block;background-color:#0f172a;color:#ffffff;text-decoration:none;padding:16px 32px;border-radius:8px;font-size:16px;font-weight:600;">Accept Invitation &rarr;</a>
+          </div>
+          <p style="margin:0;color:#6b7280;font-size:13px;">This invitation expires in 7 days.</p>
+        </td></tr>
+        <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
     return this.sendEmail({
       to: inviteEmail,
-      subject: `🎉 You're invited to join ${companyName}`,
-      html
+      subject: `You're invited to join ${companyName} on Valoxi`,
+      html,
     });
   }
 
-  // Portal access link email
   async sendPortalAccessLink(
     contactEmail: string,
     contactName: string,
@@ -152,83 +99,43 @@ class EmailService {
     customMessage?: string,
     expiresAt?: Date
   ): Promise<boolean> {
-    const expiryText = expiresAt ? 
-      `This secure link expires on ${expiresAt.toLocaleDateString()} at ${expiresAt.toLocaleTimeString()}.` :
-      'This secure link has a limited validity period.';
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Secure Document Portal Access</title>
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-            .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
-            .button { display: inline-block; padding: 15px 30px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-            .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
-            .security-notice { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0; }
-            .custom-message { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔐 Secure Document Portal Access</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${contactName},</p>
-              
-              <p>You now have secure access to our document portal for the ${companyName} transaction.</p>
-              
-              ${customMessage ? `
-                <div class="custom-message">
-                  <p><strong>Message from your deal team:</strong></p>
-                  <p>${customMessage}</p>
-                </div>
-              ` : ''}
-              
-              <p>Use this portal to:</p>
-              <ul>
-                <li>📤 Upload required documents securely</li>
-                <li>📋 View document requirements and status</li>
-                <li>💬 Submit notes and additional information</li>
-                <li>📊 Track your submission progress</li>
-              </ul>
-              
-              <p style="text-align: center;">
-                <a href="${portalUrl}" class="button">Access Document Portal</a>
-              </p>
-              
-              <div class="security-notice">
-                <p><strong>🔒 Security Notice:</strong></p>
-                <p>This is a secure, encrypted portal designed specifically for your transaction. ${expiryText}</p>
-                <p>Do not share this link with anyone else.</p>
-              </div>
-              
-              <p>If you have any questions or need assistance, please contact your deal team directly.</p>
-              
-              <p>Best regards,<br>
-              The ${companyName} Deal Team</p>
-            </div>
-            <div class="footer">
-              <p>This is a secure communication from Valoxi.</p>
-            </div>
+    const expiryText = expiresAt
+      ? `This link expires on ${expiresAt.toLocaleDateString('en-GB')}.`
+      : 'This link has a limited validity period.';
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background-color:#0f172a;padding:32px;text-align:center;border-radius:8px 8px 0 0;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Valoxi</h1>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">Hello ${contactName},</p>
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">You have been given secure access to the document portal for the <strong>${companyName}</strong> transaction.</p>
+          ${customMessage ? `<div style="background-color:#eff6ff;border-left:4px solid #3b82f6;padding:16px;margin:20px 0;border-radius:0 8px 8px 0;"><p style="margin:0;color:#1e40af;font-size:14px;">${customMessage}</p></div>` : ''}
+          <div style="text-align:center;margin:28px 0;">
+            <a href="${portalUrl}" style="display:inline-block;background-color:#0f172a;color:#ffffff;text-decoration:none;padding:16px 32px;border-radius:8px;font-size:16px;font-weight:600;">Access Document Portal &rarr;</a>
           </div>
-        </body>
-      </html>
-    `;
-
+          <p style="margin:0;color:#6b7280;font-size:13px;">${expiryText} Do not share this link.</p>
+        </td></tr>
+        <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
     return this.sendEmail({
       to: contactEmail,
-      subject: `🔐 Secure Document Portal Access - ${companyName}`,
-      html
+      subject: `Document Portal Access — ${companyName}`,
+      html,
     });
   }
 
-  // Portal document received notification (internal)
   async sendDocumentReceivedNotification(
     teamEmails: string[],
     contactName: string,
@@ -237,69 +144,53 @@ class EmailService {
     documentCategory: string,
     submissionNotes?: string
   ): Promise<boolean> {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>New Document Received</title>
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-            .header { background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; padding: 25px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #ffffff; padding: 25px; border: 1px solid #e1e5e9; }
-            .document-details { background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 15px 0; }
-            .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>📄 New Document Received</h1>
-            </div>
-            <div class="content">
-              <p>A new document has been submitted through the external document portal.</p>
-              
-              <div class="document-details">
-                <p><strong>From:</strong> ${contactName}</p>
-                <p><strong>Company:</strong> ${companyName}</p>
-                <p><strong>Document:</strong> ${documentName}</p>
-                <p><strong>Category:</strong> ${documentCategory}</p>
-                ${submissionNotes ? `<p><strong>Notes:</strong> ${submissionNotes}</p>` : ''}
-              </div>
-              
-              <p>The document has been automatically added to your CRM system and is available for review in the target company's document section.</p>
-              
-              <p>Best regards,<br>
-              Valoxi</p>
-            </div>
-            <div class="footer">
-              <p>This is an automated notification from Valoxi.</p>
-            </div>
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background-color:#0f172a;padding:32px;text-align:center;border-radius:8px 8px 0 0;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Valoxi</h1>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">A new document has been submitted via the seller portal.</p>
+          <div style="background-color:#f9fafb;border-radius:8px;padding:16px;margin:20px 0;">
+            <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>From:</strong> ${contactName}</p>
+            <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Company:</strong> ${companyName}</p>
+            <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Document:</strong> ${documentName}</p>
+            <p style="margin:0 0 ${submissionNotes ? '8px' : '0'};color:#374151;font-size:14px;"><strong>Category:</strong> ${documentCategory}</p>
+            ${submissionNotes ? `<p style="margin:0;color:#374151;font-size:14px;"><strong>Notes:</strong> ${submissionNotes}</p>` : ''}
           </div>
-        </body>
-      </html>
-    `;
-
+          <p style="margin:0;color:#6b7280;font-size:14px;">The document is available in the target company's document section.</p>
+        </td></tr>
+        <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
     return this.sendEmail({
       to: teamEmails,
-      subject: `📄 New Document: ${documentName} from ${contactName}`,
-      html
+      subject: `New document received: ${documentName} from ${contactName}`,
+      html,
     });
   }
 
-  // Test email connection
   async testConnection(): Promise<boolean> {
-    if (!this.transporter) {
-      return false;
-    }
-
+    if (!this.resend) return false;
     try {
-      await this.transporter.verify();
-      console.log('SMTP connection verified successfully');
-      return true;
-    } catch (error) {
-      console.error('SMTP connection failed:', error);
+      const { error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: ['delivered@resend.dev'],
+        subject: 'Valoxi connection test',
+        html: '<p>Connection test</p>',
+      });
+      return !error;
+    } catch {
       return false;
     }
   }
