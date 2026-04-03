@@ -28,6 +28,7 @@ export const dealDocuments = pgTable("deal_documents", {
   templateId: integer("template_id").references(() => dealDocumentTemplates.id),
   documentType: varchar("document_type", { length: 50 }).notNull(),
   status: varchar("status", { length: 50 }).default("draft").notNull(),
+  deliveryMethod: varchar('delivery_method', { length: 10 }).default('portal').notNull(),
   version: integer("version").default(1).notNull(),
   parentDocumentId: integer("parent_document_id"),
   documentData: json("document_data"),
