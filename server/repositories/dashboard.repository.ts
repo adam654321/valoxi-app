@@ -7,6 +7,7 @@ import {
   users,
   dashboardPreferences,
   dashboardAlerts,
+  dealDocuments,
   type DashboardPreference,
   type InsertDashboardPreference,
   type DashboardAlert,
@@ -20,6 +21,16 @@ export class DashboardRepository {
 
   async getTotalContactsCount(userCompanyId: number): Promise<number> {
     const [result] = await db.select({ count: count() }).from(targetContacts).leftJoin(targetCompanies, eq(targetContacts.targetCompanyId, targetCompanies.id)).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false)));
+    return result.count;
+  }
+
+  async getTotalDealsCount(userCompanyId: number): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(targetCompanies).where(eq(targetCompanies.userCompanyId, userCompanyId));
+    return result.count;
+  }
+
+  async getOffersSentCount(userCompanyId: number): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(dealDocuments).where(and(eq(dealDocuments.userCompanyId, userCompanyId), eq(dealDocuments.documentType, 'offer_letter'), sql`${dealDocuments.sentAt} IS NOT NULL`));
     return result.count;
   }
 

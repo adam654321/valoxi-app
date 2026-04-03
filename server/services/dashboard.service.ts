@@ -6,9 +6,10 @@ export class DashboardService {
   async getStats(userCompanyId: number) {
     if (!userCompanyId) throw new BadRequestError('User company not found');
     const targetCompanyCount = await dashboardRepository.getTargetCompanyCount(userCompanyId);
-    const totalContactsCount = await dashboardRepository.getTotalContactsCount(userCompanyId);
+    const totalDealsCount = await dashboardRepository.getTotalDealsCount(userCompanyId);
+    const offersSentCount = await dashboardRepository.getOffersSentCount(userCompanyId);
     const metrics = await dashboardRepository.getDashboardMetrics(userCompanyId);
-    return { targetCompanies: targetCompanyCount, activeDeals: metrics.activeDeals, totalContacts: totalContactsCount, dealValue: metrics.totalDealValue };
+    return { targetCompanies: targetCompanyCount, totalDeals: totalDealsCount, offersSent: offersSentCount, dealValue: metrics.totalDealValue };
   }
 
   async getWidgetData(userCompanyId: number, userId: number, widgetType: string) {

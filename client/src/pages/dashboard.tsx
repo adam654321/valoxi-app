@@ -27,8 +27,8 @@ import ActivationChecklist from "@/components/onboarding/ActivationChecklist";
 
 interface DashboardStats {
   targetCompanies: number;
-  activeDeals: number;
-  totalContacts: number;
+  totalDeals: number;
+  offersSent: number;
   dealValue: string;
 }
 
@@ -109,73 +109,81 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Target Companies</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.targetCompanies || 0}</p>
+          <Link href="/target-companies">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Target Companies</p>
+                    <p className="text-2xl font-bold text-foreground">{stats?.targetCompanies || 0}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-blue-50 dark:bg-blue-950 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-blue-600" />
+                  </div>
                 </div>
-                <div className="h-12 w-12 bg-blue-50 dark:bg-blue-950 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-blue-600" />
+                <div className="mt-4">
+                  <span className="text-blue-600 text-sm font-medium">Active acquisition targets</span>
                 </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-blue-600 text-sm font-medium">Ready to track acquisition targets</span>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.activeDeals || 0}</p>
+          <Link href="/target-companies">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Deals</p>
+                    <p className="text-2xl font-bold text-foreground">{stats?.totalDeals || 0}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-green-50 dark:bg-green-950 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-green-600" />
+                  </div>
                 </div>
-                <div className="h-12 w-12 bg-green-50 dark:bg-green-950 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
+                <div className="mt-4">
+                  <span className="text-green-600 text-sm font-medium">All deals including archived</span>
                 </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-green-600 text-sm font-medium">Pipeline ready</span>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Contacts</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.totalContacts || 0}</p>
+          <Link href="/target-companies">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Offers Sent</p>
+                    <p className="text-2xl font-bold text-foreground">{stats?.offersSent || 0}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-purple-50 dark:bg-purple-950 rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-purple-600" />
+                  </div>
                 </div>
-                <div className="h-12 w-12 bg-purple-50 dark:bg-purple-950 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-purple-600" />
+                <div className="mt-4">
+                  <span className="text-purple-600 text-sm font-medium">Offer letters sent</span>
                 </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-purple-600 text-sm font-medium">Network expanding</span>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Deal Value</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.dealValue || '$0'}</p>
+          <Link href="/target-companies">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Deal Value</p>
+                    <p className="text-2xl font-bold text-foreground">{stats?.dealValue || '£0'}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-yellow-50 dark:bg-yellow-950 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-yellow-600" />
+                  </div>
                 </div>
-                <div className="h-12 w-12 bg-yellow-50 dark:bg-yellow-950 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-yellow-600" />
+                <div className="mt-4">
+                  <span className="text-yellow-600 text-sm font-medium">Active pipeline value</span>
                 </div>
-              </div>
-              <div className="mt-4">
-                <span className="text-yellow-600 text-sm font-medium">Value tracking ready</span>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       )}
 
