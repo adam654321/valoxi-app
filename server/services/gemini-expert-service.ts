@@ -28,13 +28,17 @@ export class GeminiExpertService {
     const startTime = Date.now();
     console.log(`[GEMINI_EXPERT] Starting ${expertType} analysis`);
 
+    const resolvedThinkingLevel = expertType === 'deal_structure' ? undefined : "LOW" as const;
+    const resolvedMaxOutputTokens = expertType === 'deal_structure' ? 16384 : undefined;
+
     try {
       const response = await geminiClient.generateContent({
         prompt,
         model,
         temperature: 0,
         responseMimeType: "application/json",
-        thinkingLevel: "LOW",
+        thinkingLevel: resolvedThinkingLevel,
+        maxOutputTokens: resolvedMaxOutputTokens,
         service: `expert_analysis_${expertType}`,
         userId: tracking?.userId,
         userCompanyId: tracking?.userCompanyId,
