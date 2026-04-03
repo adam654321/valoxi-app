@@ -84,7 +84,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     },
   });
 
-  const latestDealModelId: number | undefined = dealModelsData?.[0]?.id;
+  const latestDealModelId: number | undefined = dealModelsData?.data?.[0]?.id;
 
   if (isLoading) return null;
   if (!documents || documents.length === 0) return null;
