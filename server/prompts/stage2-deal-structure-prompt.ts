@@ -79,27 +79,11 @@ FOR EACH STRUCTURE, SPECIFY:
 - Payment triggers and amounts
 - Why this metric was chosen (direct reference to the specific risk)
 
-3. SELLER OBLIGATIONS
-- Handover period (months)
-- Non-compete period and scope
-- Consultancy arrangement if appropriate
-
-4. KEY WARRANTIES & INDEMNITIES
-- Specific indemnities recommended (link to risks identified)
-- Warranty cap (typically % of consideration)
-- Warranty period
-- De minimis and basket thresholds
-
-5. COMPLETION MECHANISM
-- Completion accounts or locked box?
-- Working capital peg (normalised working capital amount)
-
-6. EFFECTIVE PRICE MODELLING
-For each structure, model the effective price under 3 scenarios:
-- Best case: All deferred/earnout targets met, no warranty claims
-- Expected case: Partial achievement, minor adjustments
-- Worst case: No earnout paid, warranty claims made
-Show the effective price the buyer pays in each scenario.
+3. NOTES — write a single plain-text summary covering all of the following:
+- Seller obligations: handover period in months, non-compete duration and scope, any consultancy arrangement
+- Key warranties and indemnities: specific indemnities recommended, warranty cap as % of consideration, warranty period, de minimis and basket thresholds
+- Completion mechanism: completion accounts or locked box, working capital peg amount
+- Risk to buyer: state low, medium, or high and briefly explain the key reasons
 
 STRICT OUTPUT REQUIREMENTS
 Return ONLY valid JSON.
@@ -113,48 +97,26 @@ OUTPUT FORMAT:
   "confidence": "high|medium|low",
   "structures": [
     {
-      "name": "Conservative|Balanced|Competitive",
+      "name": "Conservative Approach|Balanced Approach|Competitive Approach",
       "strategy": "",
+      "risk_to_buyer": "low|medium|high",
       "suitable_when": "",
       "consideration": {
         "total_headline": null,
         "upfront_cash": null,
         "upfront_percent": null,
         "deferred": null,
-        "deferred_schedule": "",
         "earnout_maximum": null,
         "earnout_metric": "",
         "earnout_period_months": null,
         "earnout_rationale": "",
-        "retention_escrow": null,
-        "escrow_release_conditions": ""
+        "retention_escrow": null
       },
-      "seller_obligations": {
-        "handover_period_months": null,
-        "non_compete_months": null,
-        "non_compete_scope": "",
-        "consultancy_arrangement": ""
-      },
-      "warranties_indemnities": {
-        "specific_indemnities": [],
-        "warranty_cap_percent": null,
-        "warranty_period_months": null,
-        "de_minimis": null,
-        "basket": null
-      },
-      "completion_mechanism": {
-        "type": "completion_accounts|locked_box",
-        "working_capital_peg": null,
-        "rationale": ""
-      },
-      "effective_price": {
-        "best_case": null,
-        "expected_case": null,
-        "worst_case": null
-      }
+      "key_conditions": [],
+      "notes": ""
     }
   ],
-  "recommended_structure": "Conservative|Balanced|Competitive",
+  "recommended_structure": "Conservative Approach|Balanced Approach|Competitive Approach",
   "recommendation_rationale": "",
   "negotiation_priorities": [],
   "deal_breaker_terms": [],
