@@ -44,6 +44,7 @@ import {
   CreditCard,
   Loader2,
   Send,
+  Download,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useHasFeature } from "@/context/subscription-context";
@@ -290,6 +291,25 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     },
   });
 
+  const downloadOfferMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
+        targetCompanyId: companyId,
+        documentType: 'offer_letter',
+        dealModelId: selectedModelId,
+      });
+      const data = await res.json();
+      const docId = data?.id ?? data?.data?.id;
+      if (docId) window.location.href = `/api/v2/deal-documents/${docId}/download-word`;
+    },
+    onSuccess: () => {
+      toast({ title: 'Download Started', description: "Offer letter downloading — send it to the seller then return here to record their response." });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const hasFullDealModeller = useHasFeature("fullDealModeller");
 
   if (modelsLoading) {
@@ -389,16 +409,35 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Send Offer Letter</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will generate an offer letter using the current deal model values and send it to the seller's portal.
-                        The seller will be able to Accept, Reject, or Counter the offer.
-                        {'\n\n'}Are you sure you want to proceed?
+                        Choose how to send this offer to the seller.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => sendOfferMutation.mutate()}>
-                        Send Offer
-                      </AlertDialogAction>
+                      <div className="flex flex-col gap-3 w-full">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <AlertDialogAction
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            disabled={sendOfferMutation.isPending}
+                            onClick={() => sendOfferMutation.mutate()}
+                          >
+                            {sendOfferMutation.isPending
+                              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              : <Send className="h-4 w-4 mr-2" />}
+                            Send via Portal
+                          </AlertDialogAction>
+                          <AlertDialogAction
+                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border"
+                            disabled={downloadOfferMutation.isPending}
+                            onClick={() => downloadOfferMutation.mutate()}
+                          >
+                            {downloadOfferMutation.isPending
+                              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              : <Download className="h-4 w-4 mr-2" />}
+                            Download Word Doc
+                          </AlertDialogAction>
+                        </div>
+                        <AlertDialogCancel className="w-full">Cancel</AlertDialogCancel>
+                      </div>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
