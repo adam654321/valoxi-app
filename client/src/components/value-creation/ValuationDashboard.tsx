@@ -157,13 +157,13 @@ export default function ValuationDashboard({
     if (!returnMetrics) return null;
     const m = returnMetrics;
     const items = [
-      { name: 'Entry\nEquity', value: m.entryEquity, isTotal: true, color: 'hsl(215, 20%, 65%)' },
-      { name: 'EBITDA\nGrowth', value: m.ebitdaGrowthValue, isTotal: false, color: 'hsl(142, 71%, 45%)' },
-      { name: 'Multiple\nExpansion', value: m.multipleExpansionValue, isTotal: false, color: 'hsl(199, 89%, 48%)' },
-      { name: 'Debt\nPaydown', value: m.debtPaydownValue, isTotal: false, color: 'hsl(262, 83%, 58%)' },
-      { name: 'Cash\nDist.', value: m.cashDistributionsValue, isTotal: false, color: 'hsl(45, 93%, 47%)' },
-      { name: 'Fees &\nCosts', value: -m.feesDeducted, isTotal: false, color: 'hsl(0, 72%, 51%)' },
-      { name: 'Total\nReturn', value: m.totalReturn, isTotal: true, color: 'hsl(160, 84%, 39%)' },
+      { name: 'Entry Eq.', value: m.entryEquity, isTotal: true, color: 'hsl(215, 20%, 65%)' },
+      { name: 'EBITDA', value: m.ebitdaGrowthValue, isTotal: false, color: 'hsl(142, 71%, 45%)' },
+      { name: 'Multiple', value: m.multipleExpansionValue, isTotal: false, color: 'hsl(199, 89%, 48%)' },
+      { name: 'Debt Pay.', value: m.debtPaydownValue, isTotal: false, color: 'hsl(262, 83%, 58%)' },
+      { name: 'Cash Dist.', value: m.cashDistributionsValue, isTotal: false, color: 'hsl(45, 93%, 47%)' },
+      { name: 'Fees', value: -m.feesDeducted, isTotal: false, color: 'hsl(0, 72%, 51%)' },
+      { name: 'Total', value: m.totalReturn, isTotal: true, color: 'hsl(160, 84%, 39%)' },
     ];
 
     let runningTotal = 0;
@@ -253,7 +253,7 @@ export default function ValuationDashboard({
                   <Percent className="h-3 w-3" /> IRR
                 </p>
                 {sc ? (
-                  <div className="flex items-baseline gap-2 mt-1">
+                  <div className="flex flex-wrap items-baseline gap-1 mt-1">
                     <span className="text-[10px] text-red-600 font-mono">{formatIrr(sc.returns.bear.irr)}</span>
                     <span className={`text-lg font-bold font-mono ${returnMetrics.irr === Infinity ? 'text-green-600' : irrColor(returnMetrics.irr)}`}>{formatIrr(returnMetrics.irr)}</span>
                     <span className="text-[10px] text-green-600 font-mono">{formatIrr(sc.returns.bull.irr)}</span>
@@ -270,7 +270,7 @@ export default function ValuationDashboard({
                   <Layers className="h-3 w-3" /> MOIC
                 </p>
                 {sc ? (
-                  <div className="flex items-baseline gap-2 mt-1">
+                  <div className="flex flex-wrap items-baseline gap-1 mt-1">
                     <span className="text-[10px] text-red-600 font-mono">{formatMoic(sc.returns.bear.moic)}</span>
                     <span className={`text-lg font-bold font-mono ${returnMetrics.moic === Infinity ? 'text-green-600' : moicColor(returnMetrics.moic)}`}>{formatMoic(returnMetrics.moic)}</span>
                     <span className="text-[10px] text-green-600 font-mono">{formatMoic(sc.returns.bull.moic)}</span>
@@ -343,9 +343,9 @@ export default function ValuationDashboard({
           <CardContent className="py-3 px-4">
             <p className="text-xs font-medium text-muted-foreground mb-1">Value Bridge</p>
             <ChartContainer config={chartConfig} className="h-[280px] w-full">
-              <BarChart data={bridgeData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+              <BarChart data={bridgeData} margin={{ top: 25, right: 10, left: 10, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={0} />
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end" height={55} />
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={formatAxis} width={60} />
                 <ChartTooltip
                   content={({ active, payload }) => {
@@ -447,19 +447,19 @@ export default function ValuationDashboard({
                       <p className={`text-[11px] font-semibold ${textColor}`}>{label}</p>
                       <div className="space-y-1.5 text-[11px]">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground whitespace-nowrap">Exit EBITDA</span>
+                          <span className="text-muted-foreground">Exit EBITDA</span>
                           <span className="font-mono font-medium">{formatCurrency(s.exitEbitda)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground whitespace-nowrap">Exit Multiple</span>
+                          <span className="text-muted-foreground">Exit Multiple</span>
                           <span className="font-mono font-medium">{s.exitMultiple.toFixed(1)}x</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground whitespace-nowrap">Exit EV</span>
+                          <span className="text-muted-foreground">Exit EV</span>
                           <span className="font-mono font-medium">{formatCurrency(s.exitEV)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground whitespace-nowrap">Exit Equity</span>
+                          <span className="text-muted-foreground">Exit Equity</span>
                           <span className="font-mono font-semibold">{formatCurrency(s.exitEquity)}</span>
                         </div>
                         <div className="border-t my-1" />

@@ -511,36 +511,36 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="flex w-full">
-            <TabsTrigger value="overview" className="flex items-center gap-2 flex-1">
+          <TabsList className="flex w-full overflow-x-auto">
+            <TabsTrigger value="overview" className="flex items-center gap-2 shrink-0">
               <Building2 className="w-4 h-4" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="contacts" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="contacts" className="flex items-center gap-2 shrink-0">
               <User className="w-4 h-4" />
               Contacts
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="documents" className="flex items-center gap-2 shrink-0">
               <FileText className="w-4 h-4" />
               Documents
             </TabsTrigger>
-            <TabsTrigger value="analysis" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="analysis" className="flex items-center gap-2 shrink-0">
               <BarChart className="w-4 h-4" />
               Analysis
             </TabsTrigger>
-            <TabsTrigger value="deal-modeller" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="deal-modeller" className="flex items-center gap-2 shrink-0">
               <Calculator className="w-4 h-4" />
               Deal Modeller
             </TabsTrigger>
-            <TabsTrigger value="value-creation" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="value-creation" className="flex items-center gap-2 shrink-0">
               <LineChart className="w-4 h-4" />
               Value Creation
             </TabsTrigger>
-            <TabsTrigger value="pipeline" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="pipeline" className="flex items-center gap-2 shrink-0">
               <TrendingUp className="w-4 h-4" />
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="team" className="flex items-center gap-2 flex-1">
+            <TabsTrigger value="team" className="flex items-center gap-2 shrink-0">
               <Users className="w-4 h-4" />
               Team
             </TabsTrigger>
