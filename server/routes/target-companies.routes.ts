@@ -70,7 +70,7 @@ router.patch('/:id/archive', requirePermission('canDeleteDeals'), asyncHandler(a
   res.json({ message: 'Company archived successfully', company });
 }));
 
-router.patch('/:id/unarchive', asyncHandler(async (req: Request, res: Response) => {
+router.patch('/:id/unarchive', requirePermission('canDeleteDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   const id = parseInt(req.params.id);
   if (!userCompanyId) throw new UnauthorizedError();
