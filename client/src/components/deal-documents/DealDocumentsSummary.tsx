@@ -10,7 +10,7 @@ import {
   FileText, Shield, Send, FileCheck, 
   CheckCircle, XCircle, Clock, AlertCircle,
   ChevronDown, ChevronUp, Download, Eye, User, Calendar,
-  Loader2, GitMerge
+  Loader2, GitMerge, FileDown, Lock
 } from 'lucide-react';
 import {
   Dialog,
@@ -63,6 +63,9 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'outlin
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
   const [showHotDialog, setShowHotDialog] = useState(false);
+  const [ndaLoading, setNdaLoading] = useState(false);
+  const [offerLoading, setOfferLoading] = useState(false);
+  const [hotLoading, setHotLoading] = useState(false);
 
   const { data: documents, isLoading } = useQuery<DealDocument[]>({
     queryKey: ['/api/v2/deal-documents/company', targetCompanyId],
@@ -102,6 +105,30 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
 
   const showGenerateHotButton = offerAccepted && !hasActiveHot;
 
+  const ndaAccepted = documents.some(d => d.documentType === 'nda' && d.status === 'accepted');
+  const hasNda = documents.some(d => d.documentType === 'nda');
+  const offerAcceptedAny = documents.some(d => d.documentType === 'offer_letter' && d.status === 'accepted');
+  const hotAccepted = documents.some(d => d.documentType === 'heads_of_terms' && d.status === 'accepted');
+
+  const downloadWord = async (
+    documentType: 'nda' | 'offer_letter' | 'heads_of_terms',
+    setLoading: (v: boolean) => void,
+  ) => {
+    setLoading(true);
+    try {
+      const res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
+        targetCompanyId,
+        documentType,
+      });
+      const data = await res.json();
+      const docId = data?.id ?? data?.data?.id;
+      if (docId) window.location.href = `/api/v2/deal-documents/${docId}/download-word`;
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -111,6 +138,73 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        <div className="rounded-lg border border-dashed border-border p-4 bg-muted/50">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FileDown className="h-4 w-4" />
+              <span className="font-medium text-sm">Send Without Portal</span>
+            </div>
+            <span className="text-xs text-muted-foreground">Download as Word to send by email or post</span>
+          </div>
+
+          {/* NDA row */}
+          <div className="flex items-center justify-between py-2 border-b">
+            <span className="text-sm">Non-Disclosure Agreement</span>
+            {ndaAccepted ? (
+              <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
+                <CheckCircle className="h-3 w-3" /> Signed via portal
+              </Badge>
+            ) : (
+              <Button size="sm" variant="outline" disabled={ndaLoading} onClick={() => downloadWord('nda', setNdaLoading)}>
+                {ndaLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                Download Word
+              </Button>
+            )}
+          </div>
+
+          {/* Offer Letter row */}
+          <div className="flex items-center justify-between py-2 border-b">
+            <span className="text-sm">Offer Letter</span>
+            {offerAcceptedAny ? (
+              <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
+                <CheckCircle className="h-3 w-3" /> Accepted
+              </Badge>
+            ) : !hasNda ? (
+              <Badge variant="outline" className="text-muted-foreground gap-1">
+                <Lock className="h-3 w-3" /> NDA required
+              </Badge>
+            ) : (
+              <Button size="sm" variant="outline" disabled={offerLoading} onClick={() => downloadWord('offer_letter', setOfferLoading)}>
+                {offerLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                Download Word
+              </Button>
+            )}
+          </div>
+
+          {/* Heads of Terms row */}
+          <div className="flex items-center justify-between py-2">
+            <span className="text-sm">Heads of Terms</span>
+            {hotAccepted ? (
+              <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
+                <CheckCircle className="h-3 w-3" /> Accepted
+              </Badge>
+            ) : !offerAcceptedAny ? (
+              <Badge variant="outline" className="text-muted-foreground gap-1">
+                <Lock className="h-3 w-3" /> Offer acceptance required
+              </Badge>
+            ) : (
+              <Button size="sm" variant="outline" disabled={hotLoading} onClick={() => downloadWord('heads_of_terms', setHotLoading)}>
+                {hotLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                Download Word
+              </Button>
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground italic mt-3">
+            Once signed, return to the document history below to record the outcome.
+          </p>
+        </div>
+
         {docTypes.map(({ key, label, icon: Icon }) => {
           const docs = byType[key];
           if (!docs || docs.length === 0) return null;
