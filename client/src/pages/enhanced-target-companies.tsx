@@ -26,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AddTargetCompanyButton } from "@/components/AddTargetCompanyButton";
 
 export default function EnhancedTargetCompanies() {
   const { user } = useAuth();
@@ -327,11 +328,14 @@ export default function EnhancedTargetCompanies() {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-textPrimary">Target Companies</h1>
-        <p className="mt-1 text-textSecondary">
-          Add and manage businesses you're interested in acquiring
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-textPrimary">Target Companies</h1>
+          <p className="mt-1 text-textSecondary">
+            Add and manage businesses you're interested in acquiring
+          </p>
+        </div>
+        <AddTargetCompanyButton />
       </div>
 
       <div className="flex gap-2 mb-4">

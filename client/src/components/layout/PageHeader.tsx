@@ -9,7 +9,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Notifications } from "@/components/notifications";
-import { AddTargetCompanyButton } from "@/components/AddTargetCompanyButton";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const routeLabels: Record<string, string> = {
@@ -69,7 +68,6 @@ export function PageHeader() {
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
         <Notifications />
-        <AddTargetCompanyButton />
       </div>
     </header>
   );
