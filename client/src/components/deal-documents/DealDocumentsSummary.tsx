@@ -20,6 +20,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentResponse {
   id: number;
@@ -62,6 +63,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'outlin
 };
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
+  const { toast } = useToast();
   const [showHotDialog, setShowHotDialog] = useState(false);
   const [ndaLoading, setNdaLoading] = useState(false);
   const [offerLoading, setOfferLoading] = useState(false);
@@ -126,6 +128,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   ) => {
     setLoading(true);
     try {
+      console.log('create-offline request body', JSON.stringify({ targetCompanyId, documentType, dealModelId: latestDealModelId }));
       const res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
         targetCompanyId,
         documentType,
@@ -134,7 +137,9 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
       const data = await res.json();
       const docId = data?.id ?? data?.data?.id;
       if (docId) window.location.href = `/api/v2/deal-documents/${docId}/download-word`;
-    } catch {
+    } catch (err) {
+      console.error('Offline download failed', err);
+      toast({ title: 'Download Failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
