@@ -391,8 +391,8 @@ export default function ValuationDashboard({
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <Card className="lg:col-span-2">
+      <div className="space-y-4">
+        <Card>
           <CardContent className="py-3 px-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">P&L Summary</p>
             <div className="overflow-x-auto">
@@ -435,10 +435,10 @@ export default function ValuationDashboard({
         </Card>
 
         {miniScenarios ? (
-          <Card className="lg:col-span-3">
+          <Card>
             <CardContent className="py-3 px-4">
               <p className="text-xs font-medium text-muted-foreground mb-2">Scenario Summary</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {miniScenarios.map(s => {
                   const borderColor = s.scenario === 'bear' ? 'border-l-red-500' : s.scenario === 'base' ? 'border-l-blue-500' : 'border-l-green-500';
                   const textColor = s.scenario === 'bear' ? 'text-red-600' : s.scenario === 'base' ? 'text-blue-600' : 'text-green-600';
@@ -482,7 +482,7 @@ export default function ValuationDashboard({
             </CardContent>
           </Card>
         ) : (
-          <Card className="lg:col-span-3">
+          <Card>
             <CardContent className="py-8 text-center">
               <Info className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
