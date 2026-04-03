@@ -665,6 +665,32 @@ export class DealDocumentService {
     return doc;
   }
 
+  async createOfflineOfferFromDealModel(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    dealModelId: number;
+    createdBy: number;
+  }) {
+    const doc = await this.createDocument({
+      targetCompanyId: params.targetCompanyId,
+      userCompanyId: params.userCompanyId,
+      documentType: 'offer_letter',
+      createdBy: params.createdBy,
+      dealModelId: params.dealModelId,
+    });
+
+    const offerData = await this.buildOfferDataContext(
+      params.dealModelId,
+      params.targetCompanyId,
+      params.userCompanyId,
+      params.createdBy
+    );
+
+    await this.generateDocumentFile(doc.id, offerData);
+
+    return doc;
+  }
+
   private async buildOfferDataContext(
     dealModelId: number,
     targetCompanyId: number,

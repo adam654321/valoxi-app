@@ -193,14 +193,24 @@ router.post('/create-offline', requirePermission('canCreateOffers'), asyncHandle
 
   const { targetCompanyId, documentType, dealModelId, documentData } = schema.parse(req.body);
 
-  const doc = await dealDocumentService.createDocument({
-    targetCompanyId,
-    documentType,
-    dealModelId,
-    documentData,
-    userCompanyId,
-    createdBy: userId,
-  });
+  let doc;
+  if (documentType === 'offer_letter' && dealModelId) {
+    doc = await dealDocumentService.createOfflineOfferFromDealModel({
+      targetCompanyId,
+      userCompanyId,
+      dealModelId,
+      createdBy: userId,
+    });
+  } else {
+    doc = await dealDocumentService.createDocument({
+      targetCompanyId,
+      documentType,
+      dealModelId,
+      documentData,
+      userCompanyId,
+      createdBy: userId,
+    });
+  }
 
   await db.update(dealDocuments).set({ deliveryMethod: 'offline' }).where(eq(dealDocuments.id, doc.id));
 
