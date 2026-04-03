@@ -1287,7 +1287,7 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
                     <TableCell className="text-right text-sm text-green-600 dark:text-green-400 font-bold font-mono">+{formatCurrency(ab.amount)}</TableCell>
                     <TableCell className="text-sm">{ab.recurrence || ab.recurring || "—"}</TableCell>
                     <TableCell className="text-right text-sm font-mono">{ab.defensibility_score != null ? `${ab.defensibility_score}/10` : ab.defensibility ?? ab.confidence ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{ab.justification || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[280px] leading-relaxed">{ab.justification || "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -1318,7 +1318,7 @@ export function QoEReportView({ data }: { data: Record<string, unknown> }) {
                     <TableCell className="text-right text-sm text-red-600 dark:text-red-400 font-bold font-mono">−{formatCurrency(ded.amount)}</TableCell>
                     <TableCell className="text-sm">{ded.recurrence || ded.recurring || "—"}</TableCell>
                     <TableCell className="text-right text-sm font-mono">{ded.defensibility_score != null ? `${ded.defensibility_score}/10` : ded.defensibility ?? ded.confidence ?? "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{ded.justification || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[280px] leading-relaxed">{ded.justification || "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
