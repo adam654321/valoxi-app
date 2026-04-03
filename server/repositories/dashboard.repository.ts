@@ -98,7 +98,7 @@ export class DashboardRepository {
     const [newDeals] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${targetCompanies.createdAt} >= CURRENT_DATE - INTERVAL '30 days'`));
     const [closedDeals] = await db.select({ count: count() }).from(targetCompanies).where(and(eq(targetCompanies.userCompanyId, userCompanyId), eq(targetCompanies.isArchived, false), sql`${targetCompanies.stage} = 'Completion'`, sql`${targetCompanies.stageUpdatedAt} >= CURRENT_DATE - INTERVAL '30 days'`));
     const [activitiesCount] = await db.select({ count: count() }).from(activities).innerJoin(targetCompanies, eq(activities.targetCompanyId, targetCompanies.id)).where(and(eq(targetCompanies.userCompanyId, userCompanyId), sql`${activities.createdAt} >= CURRENT_DATE - INTERVAL '30 days'`));
-    return { newDealsThisMonth: newDeals.count, closedDealsThisMonth: closedDeals.count, activitiesThisMonth: activitiesCount.count, lastUpdated: new Date() };
+    return { newDeals: newDeals.count, completedDeals: closedDeals.count, totalActivities: activitiesCount.count, avgDealTime: 0, lastUpdated: new Date() };
   }
 
   async getUpcomingRemindersWidget(userId: number): Promise<any> {
