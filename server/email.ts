@@ -77,7 +77,7 @@ class EmailService {
           <p style="margin:0;color:#6b7280;font-size:13px;">This invitation expires in 7 days.</p>
         </td></tr>
         <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi.ai</p>
         </td></tr>
       </table>
     </td></tr>
@@ -122,7 +122,7 @@ class EmailService {
           <p style="margin:0;color:#6b7280;font-size:13px;">${expiryText} Do not share this link.</p>
         </td></tr>
         <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi.ai</p>
         </td></tr>
       </table>
     </td></tr>
@@ -166,7 +166,7 @@ class EmailService {
           <p style="margin:0;color:#6b7280;font-size:14px;">The document is available in the target company's document section.</p>
         </td></tr>
         <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi.ai</p>
         </td></tr>
       </table>
     </td></tr>
