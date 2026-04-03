@@ -103,14 +103,16 @@ export default function CapitalDeploymentSection({ projections, assumptions, bas
   return (
     <Card>
       <div className="px-4 py-3 border-b flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
           <h3 className="text-base font-semibold">Working Capital & Capex</h3>
-          <Badge variant="secondary" className="text-[10px]">
-            5yr Capex: {formatCurrency(summary.totalCapex)}
-          </Badge>
-          <Badge variant="secondary" className="text-[10px]">
-            5yr WC: {formatCurrency(summary.totalWC)}
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant="secondary" className="text-[10px]">
+              5yr Capex: {formatCurrency(summary.totalCapex)}
+            </Badge>
+            <Badge variant="secondary" className="text-[10px]">
+              5yr WC: {formatCurrency(summary.totalWC)}
+            </Badge>
+          </div>
         </div>
         <div className="flex items-center gap-1 border rounded-md p-0.5">
           <Button

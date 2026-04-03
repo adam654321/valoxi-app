@@ -304,10 +304,12 @@ export default function ValuationDashboard({
               <BarChart3 className="h-3 w-3" /> Y{displayYear} EBITDA
             </p>
             {sc ? (
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-[10px] text-red-600 font-mono">{formatCurrency(sc.projections.bear[Math.min(displayYear, sc.projections.bear.length) - 1]?.ebitda ?? 0)}</span>
-                <span className="text-lg font-bold font-mono">{formatCurrency(dy.ebitda)}</span>
-                <span className="text-[10px] text-green-600 font-mono">{formatCurrency(sc.projections.bull[Math.min(displayYear, sc.projections.bull.length) - 1]?.ebitda ?? 0)}</span>
+              <div className="mt-0.5">
+                <p className="text-lg font-bold font-mono">{formatCurrency(dy.ebitda)}</p>
+                <div className="flex gap-2 mt-0.5">
+                  <span className="text-[9px] text-red-600 font-mono">{formatCurrency(sc.projections.bear[Math.min(displayYear, sc.projections.bear.length) - 1]?.ebitda ?? 0)}</span>
+                  <span className="text-[9px] text-green-600 font-mono">{formatCurrency(sc.projections.bull[Math.min(displayYear, sc.projections.bull.length) - 1]?.ebitda ?? 0)}</span>
+                </div>
               </div>
             ) : (
               <p className="text-lg font-bold mt-0.5 font-mono">{formatCurrency(dy.ebitda)}</p>
@@ -446,21 +448,21 @@ export default function ValuationDashboard({
                     <div key={s.scenario} className={`rounded-lg border border-l-4 ${borderColor} p-3 space-y-2`}>
                       <p className={`text-[11px] font-semibold ${textColor}`}>{label}</p>
                       <div className="space-y-1.5 text-[11px]">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit EBITDA</span>
-                          <span className="font-mono font-medium">{formatCurrency(s.exitEbitda)}</span>
+                        <div className="flex justify-between gap-1">
+                          <span className="text-muted-foreground shrink-0">Exit EBITDA</span>
+                          <span className="font-mono font-medium text-[10px] text-right">{formatCurrency(s.exitEbitda)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit Multiple</span>
-                          <span className="font-mono font-medium">{s.exitMultiple.toFixed(1)}x</span>
+                        <div className="flex justify-between gap-1">
+                          <span className="text-muted-foreground shrink-0">Exit Multiple</span>
+                          <span className="font-mono font-medium text-right">{s.exitMultiple.toFixed(1)}x</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit EV</span>
-                          <span className="font-mono font-medium">{formatCurrency(s.exitEV)}</span>
+                        <div className="flex justify-between gap-1">
+                          <span className="text-muted-foreground shrink-0">Exit EV</span>
+                          <span className="font-mono font-medium text-[10px] text-right">{formatCurrency(s.exitEV)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Exit Equity</span>
-                          <span className="font-mono font-semibold">{formatCurrency(s.exitEquity)}</span>
+                        <div className="flex justify-between gap-1">
+                          <span className="text-muted-foreground shrink-0">Exit Equity</span>
+                          <span className="font-mono font-semibold text-[10px] text-right">{formatCurrency(s.exitEquity)}</span>
                         </div>
                         <div className="border-t my-1" />
                         <div className="flex justify-between">

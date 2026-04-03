@@ -511,7 +511,7 @@ export default function TargetCompanyDetail() {
 
         {/* Modern Tabbed Interface */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="flex w-full overflow-x-auto">
+          <TabsList className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden">
             <TabsTrigger value="overview" className="flex items-center gap-2 shrink-0">
               <Building2 className="w-4 h-4" />
               Overview
