@@ -361,3 +361,75 @@ export function buildHoTHtml(data: any): string {
     </div>
   `;
 }
+
+export function buildPhysicalSignatureBlock(documentType: string, docData: any, documentId: number): string {
+  const buyerSignatoryName = docData?.buyerSignatoryName || '';
+  const buyerSignatoryTitle = docData?.buyerSignatoryTitle || '';
+  const buyerCompanyName = docData?.buyerCompanyName || '';
+  const sellerCompanyName = docData?.sellerCompanyName || '';
+
+  const generatedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const docTitleMap: Record<string, string> = {
+    'nda': 'Non-Disclosure Agreement',
+    'offer_letter': 'Offer Letter',
+    'heads_of_terms': 'Heads of Terms',
+  };
+
+  const buyerLabelMap: Record<string, string> = {
+    'nda': 'Disclosing Party (Buyer)',
+    'offer_letter': 'Buyer',
+    'heads_of_terms': 'Buyer',
+  };
+
+  const sellerLabelMap: Record<string, string> = {
+    'nda': 'Receiving Party (Seller)',
+    'offer_letter': 'Seller',
+    'heads_of_terms': 'Seller',
+  };
+
+  const docTitle = docTitleMap[documentType] || 'Agreement';
+  const buyerLabel = buyerLabelMap[documentType] || 'Buyer';
+  const sellerLabel = sellerLabelMap[documentType] || 'Seller';
+
+  const line = (label: string) =>
+    `<p style="margin: 0 0 4px; font-size: 13px;">${label}:</p><div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 16px;"></div>`;
+
+  return `
+    <div style="margin-top: 48px; padding-top: 32px; border-top: 2px solid #333; font-family: Arial, sans-serif;">
+      <h2 style="text-align: center; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">EXECUTION</h2>
+      <p style="text-align: center; font-size: 13px; margin-bottom: 32px;">IN WITNESS WHEREOF, the parties hereto have executed this ${docTitle} as of the date written below.</p>
+      <div style="display: flex; justify-content: space-between; gap: 48px;">
+        <div style="flex: 1;">
+          <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: 600; margin-bottom: 16px;">${buyerLabel}</p>
+          ${line('Signature')}
+          <p style="margin: 0 0 4px; font-size: 13px;">Name:</p>
+          <div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 4px;"></div>
+          ${buyerSignatoryName ? `<p style="font-size: 11px; color: #555; margin: 0 0 16px;">${buyerSignatoryName}</p>` : '<div style="margin-bottom: 16px;"></div>'}
+          <p style="margin: 0 0 4px; font-size: 13px;">Title:</p>
+          <div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 4px;"></div>
+          ${buyerSignatoryTitle ? `<p style="font-size: 11px; color: #555; margin: 0 0 16px;">${buyerSignatoryTitle}</p>` : '<div style="margin-bottom: 16px;"></div>'}
+          <p style="margin: 0 0 4px; font-size: 13px;">Company:</p>
+          <div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 4px;"></div>
+          ${buyerCompanyName ? `<p style="font-size: 11px; color: #555; margin: 0 0 16px;">${buyerCompanyName}</p>` : '<div style="margin-bottom: 16px;"></div>'}
+          ${line('Date')}
+        </div>
+        <div style="flex: 1;">
+          <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: 600; margin-bottom: 16px;">${sellerLabel}</p>
+          ${line('Signature')}
+          <p style="margin: 0 0 4px; font-size: 13px;">Name:</p>
+          <div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 4px;"></div>
+          <div style="margin-bottom: 16px;"></div>
+          <p style="margin: 0 0 4px; font-size: 13px;">Title:</p>
+          <div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 4px;"></div>
+          <div style="margin-bottom: 16px;"></div>
+          <p style="margin: 0 0 4px; font-size: 13px;">Company:</p>
+          <div style="border-bottom: 1px solid #333; width: 100%; height: 32px; margin-bottom: 4px;"></div>
+          ${sellerCompanyName ? `<p style="font-size: 11px; color: #555; margin: 0 0 16px;">${sellerCompanyName}</p>` : '<div style="margin-bottom: 16px;"></div>'}
+          ${line('Date')}
+        </div>
+      </div>
+      <p style="font-size: 11px; color: #aaa; margin-top: 24px; text-align: center;">Document ID: ${documentId} — Generated: ${generatedDate}</p>
+    </div>
+  `;
+}
