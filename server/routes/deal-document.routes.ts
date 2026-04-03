@@ -210,6 +210,7 @@ router.post('/create-offline', requirePermission('canCreateOffers'), asyncHandle
       userCompanyId,
       createdBy: userId,
     });
+    await dealDocumentService.generateDocumentFile(doc.id, {});
   }
 
   await db.update(dealDocuments).set({ deliveryMethod: 'offline' }).where(eq(dealDocuments.id, doc.id));
