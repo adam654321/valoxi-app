@@ -76,6 +76,16 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     },
   });
 
+  const { data: dealModelsData } = useQuery({
+    queryKey: ['/api/v2/deal-models/company', targetCompanyId],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/v2/deal-models/company/${targetCompanyId}`);
+      return res.json();
+    },
+  });
+
+  const latestDealModelId: number | undefined = dealModelsData?.[0]?.id;
+
   if (isLoading) return null;
   if (!documents || documents.length === 0) return null;
 
@@ -119,6 +129,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
       const res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
         targetCompanyId,
         documentType,
+        ...(documentType === 'offer_letter' && latestDealModelId ? { dealModelId: latestDealModelId } : {}),
       });
       const data = await res.json();
       const docId = data?.id ?? data?.data?.id;
