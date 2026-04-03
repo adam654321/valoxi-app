@@ -10,7 +10,7 @@ import {
   FileText, Shield, Send, FileCheck, 
   CheckCircle, XCircle, Clock, AlertCircle,
   ChevronDown, ChevronUp, Download, Eye, User, Calendar,
-  Loader2
+  Loader2, GitMerge
 } from 'lucide-react';
 import {
   Dialog,
@@ -34,6 +34,7 @@ interface DealDocument {
   id: number;
   documentType: string;
   status: string;
+  deliveryMethod?: string;
   version: number;
   createdAt: string;
   sentAt: string | null;
@@ -48,7 +49,7 @@ interface DealDocumentsSummaryProps {
   targetCompanyId: number;
 }
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' | 'secondary'; icon: any; bgColour: string }> = {
+const statusConfig: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' | 'secondary'; icon: any; bgColour: string; textColour?: string }> = {
   draft: { label: 'Draft', variant: 'outline', icon: FileText, bgColour: 'bg-muted' },
   sent: { label: 'Sent — Awaiting Response', variant: 'outline', icon: Clock, bgColour: 'bg-blue-50 dark:bg-blue-950/30' },
   viewed: { label: 'Viewed — Awaiting Response', variant: 'outline', icon: Eye, bgColour: 'bg-blue-50 dark:bg-blue-950/30' },
@@ -56,6 +57,8 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'outlin
   rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle, bgColour: 'bg-red-50 dark:bg-red-950/30' },
   withdrawn: { label: 'Withdrawn', variant: 'outline', icon: AlertCircle, bgColour: 'bg-muted' },
   superseded: { label: 'Superseded', variant: 'outline', icon: Clock, bgColour: 'bg-muted' },
+  countered: { label: 'Countered', variant: 'outline', icon: GitMerge, bgColour: 'bg-amber-50 dark:bg-amber-950/30', textColour: 'text-amber-700 dark:text-amber-300' },
+  downloaded: { label: 'Downloaded', variant: 'outline', icon: Download, bgColour: 'bg-purple-50 dark:bg-purple-950/30', textColour: 'text-purple-700 dark:text-purple-300' },
 };
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
