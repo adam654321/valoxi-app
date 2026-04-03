@@ -151,7 +151,8 @@ export function calculateOfferPrice(
 
 export function calculateFees(
   offerPrice: number,
-  model: DealModelInput
+  model: DealModelInput,
+  totalLoanAmount: number = 0
 ): {
   feeLegalDd: number;
   feeAccountingDd: number;
@@ -168,7 +169,7 @@ export function calculateFees(
 
   const feeLegalDd = calcFee(model.feeLegalDdPercent, model.feeLegalDdType, offerPrice);
   const feeAccountingDd = calcFee(model.feeAccountingDdPercent, model.feeAccountingDdType, offerPrice);
-  const feeLoanArrangement = calcFee(model.feeLoanArrangementPercent, model.feeLoanArrangementType, offerPrice);
+  const feeLoanArrangement = calcFee(model.feeLoanArrangementPercent, model.feeLoanArrangementType, totalLoanAmount);
   const feeDealMaker = calcFee(model.feeDealMakerPercent, model.feeDealMakerType, offerPrice);
 
   const customFeeAmounts: Array<{ label: string; amount: number }> = [];
@@ -300,7 +301,11 @@ export function calculateFullDealModel(
 
   const { enterpriseValue, offerPrice } = calculateOfferPrice(averageAdjustedEbitda, model);
 
-  const fees = calculateFees(offerPrice, model);
+  const totalLoanAmount = fundingLines
+    .filter(l => l.isActive)
+    .reduce((sum, l) => sum + toNum(l.amountUsed), 0);
+
+  const fees = calculateFees(offerPrice, model, totalLoanAmount);
 
   const funding = calculateFundingStack(fundingLines, offerPrice);
 
