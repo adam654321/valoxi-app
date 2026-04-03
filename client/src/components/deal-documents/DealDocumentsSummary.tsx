@@ -419,6 +419,10 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
   const [expanded, setExpanded] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<DealDocument | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState('');
+  const [confirmDate, setConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [confirmNotes, setConfirmNotes] = useState('');
 
   const latest = documents
     .filter(d => d.status !== 'superseded')
@@ -445,6 +449,31 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
     },
   });
 
+  const manualStatusMutation = useMutation({
+    mutationFn: async ({ status, confirmedAt, notes }: { status: string; confirmedAt: string; notes: string }) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${latest.id}/manual-status`, {
+        status,
+        confirmedAt,
+        notes: notes || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents', latest.id] });
+      setShowConfirm(false);
+      setPendingStatus('');
+      setConfirmNotes('');
+    },
+  });
+
+  const openConfirm = (status: string) => {
+    setPendingStatus(status);
+    setConfirmDate(new Date().toISOString().slice(0, 10));
+    setConfirmNotes('');
+    setShowConfirm(true);
+  };
+
   const displayDoc = fullDoc || latest;
   const responses = displayDoc.responses || [];
   const latestResponse = responses[0];
@@ -452,7 +481,8 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
   const status = statusConfig[latest.status] || statusConfig.draft;
   const StatusIcon = status.icon;
 
-  const showSendButton = latest.status === 'draft' && latest.generatedFileUrl;
+  const showSendButton = latest.status === 'draft' && !!latest.generatedFileUrl && latest.deliveryMethod !== 'offline';
+  const isOffline = latest.deliveryMethod === 'offline';
 
   return (
     <>
@@ -478,6 +508,11 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
               <StatusIcon className="h-3 w-3" />
               {status.label}
             </Badge>
+            {isOffline && (
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                Offline
+              </Badge>
+            )}
             <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
@@ -572,7 +607,58 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                   Send to Seller
                 </Button>
               )}
+              {isOffline && (latest.status === 'draft' || latest.status === 'downloaded') && !showConfirm && (
+                <Button size="sm" variant="outline" onClick={() => openConfirm('sent')}>
+                  Mark as Sent
+                </Button>
+              )}
+              {isOffline && latest.status === 'sent' && !showConfirm && (
+                <>
+                  <Button size="sm" variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700" onClick={() => openConfirm('accepted')}>
+                    Accepted
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-700" onClick={() => openConfirm('rejected')}>
+                    Rejected
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" onClick={() => openConfirm('countered')}>
+                    Countered
+                  </Button>
+                </>
+              )}
             </div>
+
+            {showConfirm && (
+              <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-3">
+                <p className="text-sm font-medium capitalize">Confirm: {pendingStatus}</p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Date</Label>
+                  <Input type="date" value={confirmDate} onChange={e => setConfirmDate(e.target.value)} className="h-8 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Notes</Label>
+                  <Textarea
+                    value={confirmNotes}
+                    onChange={e => setConfirmNotes(e.target.value)}
+                    placeholder="Optional notes e.g. sent by email on 3 April"
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={manualStatusMutation.isPending}
+                    onClick={() => manualStatusMutation.mutate({ status: pendingStatus, confirmedAt: confirmDate, notes: confirmNotes })}
+                  >
+                    {manualStatusMutation.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                    {pendingStatus === 'sent' ? 'Confirm Sent' : 'Confirm'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setShowConfirm(false); setPendingStatus(''); setConfirmNotes(''); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {documents.length > 1 && (
               <div className="text-xs text-muted-foreground/70 pt-2 border-t">
