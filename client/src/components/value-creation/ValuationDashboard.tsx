@@ -447,31 +447,32 @@ export default function ValuationDashboard({
                   return (
                     <div key={s.scenario} className={`rounded-lg border border-l-4 ${borderColor} p-3 space-y-2`}>
                       <p className={`text-[11px] font-semibold ${textColor}`}>{label}</p>
-                      <div className="space-y-1.5 text-[11px]">
-                        <div className="flex justify-between gap-1">
-                          <span className="text-muted-foreground shrink-0">Exit EBITDA</span>
-                          <span className="font-mono font-medium text-[10px] text-right">{formatCurrency(s.exitEbitda)}</span>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-[9px] text-muted-foreground">Exit EBITDA</p>
+                          <p className="font-mono font-medium text-[11px] leading-tight">{formatCurrency(s.exitEbitda)}</p>
                         </div>
-                        <div className="flex justify-between gap-1">
-                          <span className="text-muted-foreground shrink-0">Exit Multiple</span>
-                          <span className="font-mono font-medium text-right">{s.exitMultiple.toFixed(1)}x</span>
+                        <div>
+                          <p className="text-[9px] text-muted-foreground">Exit Multiple</p>
+                          <p className="font-mono font-medium text-[11px] leading-tight">{s.exitMultiple.toFixed(1)}x</p>
                         </div>
-                        <div className="flex justify-between gap-1">
-                          <span className="text-muted-foreground shrink-0">Exit EV</span>
-                          <span className="font-mono font-medium text-[10px] text-right">{formatCurrency(s.exitEV)}</span>
+                        <div>
+                          <p className="text-[9px] text-muted-foreground">Exit EV</p>
+                          <p className="font-mono font-medium text-[11px] leading-tight">{formatCurrency(s.exitEV)}</p>
                         </div>
-                        <div className="flex justify-between gap-1">
-                          <span className="text-muted-foreground shrink-0">Exit Equity</span>
-                          <span className="font-mono font-semibold text-[10px] text-right">{formatCurrency(s.exitEquity)}</span>
+                        <div>
+                          <p className="text-[9px] text-muted-foreground">Exit Equity</p>
+                          <p className="font-mono font-semibold text-[11px] leading-tight">{formatCurrency(s.exitEquity)}</p>
                         </div>
-                        <div className="border-t my-1" />
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">IRR</span>
-                          <span className={`font-mono font-semibold ${s.irr === Infinity ? 'text-green-600' : irrColor(s.irr)}`}>{formatIrr(s.irr)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">MOIC</span>
-                          <span className={`font-mono font-semibold ${s.moic === Infinity ? 'text-green-600' : moicColor(s.moic)}`}>{formatMoic(s.moic)}</span>
+                        <div className="border-t pt-2 space-y-1.5">
+                          <div>
+                            <p className="text-[9px] text-muted-foreground">IRR</p>
+                            <p className={`font-mono font-semibold text-[11px] leading-tight ${s.irr === Infinity ? 'text-green-600' : irrColor(s.irr)}`}>{formatIrr(s.irr)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-muted-foreground">MOIC</p>
+                            <p className={`font-mono font-semibold text-[11px] leading-tight ${s.moic === Infinity ? 'text-green-600' : moicColor(s.moic)}`}>{formatMoic(s.moic)}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
