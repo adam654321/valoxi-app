@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Download, 
-  X, 
   ExternalLink,
   Eye,
   BarChart3
@@ -258,13 +257,6 @@ export function DocumentViewer({ document, isOpen, onClose, onDownload, publicFi
                   Open in New Tab
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-              >
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           </div>
         </DialogHeader>
