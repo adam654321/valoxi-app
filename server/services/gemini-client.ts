@@ -37,6 +37,7 @@ export interface GenerateContentOptions {
   responseMimeType?: string;
   inlineData?: { mimeType: string; data: string };
   thinkingLevel?: ThinkingLevel;
+  maxOutputTokens?: number;
   userId?: number;
   userCompanyId?: number;
   dealId?: number;
@@ -141,6 +142,7 @@ export class GeminiClient {
         generationConfig: {
           temperature,
           ...(options.responseMimeType ? { responseMimeType: options.responseMimeType } : {}),
+          ...(options.maxOutputTokens ? { maxOutputTokens: options.maxOutputTokens } : {}),
           ...(options.thinkingLevel ? {
             thinkingConfig: {
               thinkingBudget: options.thinkingLevel === 'MINIMAL' ? 128
