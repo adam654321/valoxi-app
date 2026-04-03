@@ -326,6 +326,8 @@ export class GeminiClient {
   }
 
   private parseJsonWithRecovery(text: string): any | null {
+    const originalText = text;
+
     try {
       return JSON.parse(text);
     } catch {
@@ -353,6 +355,8 @@ export class GeminiClient {
         `[GEMINI_CLIENT] JSON parse failed even after repair. ` +
           `First 500 chars: ${repaired.substring(0, 500)}`
       );
+      console.error(`[GEMINI_CLIENT] GEMINI PARSE FAILURE — RAW RESPONSE`, originalText);
+      console.error(`[GEMINI_CLIENT] GEMINI PARSE FAILURE — FIRST 200 CHARS OF REPAIRED`, repaired.substring(0, 200));
       return null;
     }
   }
