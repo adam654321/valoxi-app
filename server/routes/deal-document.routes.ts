@@ -9,7 +9,7 @@ import { targetCompanies } from '@shared/schema/deals';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError } from '../utils/errors';
 import { requirePermission } from '../middleware/auth';
-import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock } from '../utils/document-html-builders';
+import { buildNdaHtml, buildOfferLetterHtml, buildHoTHtml, buildSignatureBlock, buildPhysicalSignatureBlock } from '../utils/document-html-builders';
 import { generatePdfFromHtml } from '../utils/pdf-generator';
 
 const router = Router();
@@ -177,6 +177,109 @@ router.get('/pending-send', asyncHandler(async (req: Request, res: Response) => 
     .orderBy(desc(dealDocuments.createdAt));
 
   sendSuccess(res, pending);
+}));
+
+router.post('/create-offline', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
+  const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId;
+  if (!userId || !userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const schema = z.object({
+    targetCompanyId: z.number(),
+    documentType: z.enum(['nda', 'offer_letter', 'heads_of_terms']),
+    dealModelId: z.number().optional(),
+    documentData: z.any().optional(),
+  });
+
+  const { targetCompanyId, documentType, dealModelId, documentData } = schema.parse(req.body);
+
+  const doc = await dealDocumentService.createDocument({
+    targetCompanyId,
+    documentType,
+    dealModelId,
+    documentData,
+    userCompanyId,
+    createdBy: userId,
+  });
+
+  await db.update(dealDocuments).set({ deliveryMethod: 'offline' }).where(eq(dealDocuments.id, doc.id));
+
+  return res.status(201).json({ ...doc, deliveryMethod: 'offline' });
+}));
+
+router.get('/:id/download-word', asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+
+  const doc = await dealDocumentService.getDocumentById(id);
+  if (!doc || doc.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
+  if (!doc.documentData) return res.status(404).json({ message: 'Document data not available' });
+
+  const data = doc.documentData as any;
+
+  let bodyHtml: string;
+  if (doc.documentType === 'nda') {
+    bodyHtml = buildNdaHtml(data);
+  } else if (doc.documentType === 'offer_letter') {
+    bodyHtml = buildOfferLetterHtml(data);
+  } else if (doc.documentType === 'heads_of_terms') {
+    bodyHtml = buildHoTHtml(data);
+  } else {
+    return res.status(400).json({ message: 'Unsupported document type' });
+  }
+
+  bodyHtml += buildPhysicalSignatureBlock(doc.documentType, data, doc.id);
+
+  const HTMLtoDOCX = (await import('html-to-docx')).default;
+  const buffer = await HTMLtoDOCX(bodyHtml, null, {
+    table: { row: { cantSplit: true } },
+    footer: false,
+    pageNumber: false,
+  });
+
+  const docTypeNames: Record<string, string> = {
+    nda: 'NDA',
+    offer_letter: 'Offer_Letter',
+    heads_of_terms: 'Heads_of_Terms',
+  };
+  const sellerName = (data?.sellerCompanyName || 'Document').replace(/\s+/g, '_');
+  const filename = `${docTypeNames[doc.documentType] || 'Document'}_${sellerName}_Offline.docx`;
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.send(buffer);
+}));
+
+router.post('/:id/manual-status', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+
+  const doc = await dealDocumentService.getDocumentById(id);
+  if (!doc || doc.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
+
+  const schema = z.object({
+    status: z.enum(['sent', 'accepted', 'rejected', 'countered']),
+    notes: z.string().optional(),
+    confirmedAt: z.string().optional(),
+  });
+
+  const { status, confirmedAt } = schema.parse(req.body);
+  const confirmedDate = confirmedAt ? new Date(confirmedAt) : new Date();
+
+  if (status === 'accepted') {
+    await db.update(dealDocuments).set({ status, respondedAt: confirmedDate }).where(eq(dealDocuments.id, id));
+  } else {
+    await db.update(dealDocuments).set({ status }).where(eq(dealDocuments.id, id));
+  }
+
+  const updated = await dealDocumentService.getDocumentById(id);
+  return sendSuccess(res, updated);
 }));
 
 router.get('/:id/html', asyncHandler(async (req, res) => {
