@@ -1,0 +1,44 @@
+Replit build prompt — Fix duplicate EBITDA adjustment in deal-model-mapping.service.ts
+File: server/services/deal-model-mapping.service.ts
+In the createAdjustmentsFromQoE private method, make the following changes:
+Change 1 — Replace the existing processedDirectorNames declaration at the top of the method:
+Find:
+ts    const processedDirectorNames = new Set<string>();
+Replace with:
+ts    const processedAdjustmentKeys = new Set<string>();
+Change 2 — In the add-backs loop, after the db.insert call, add the key to the set. Find the end of the add-backs insert block (the closing of the await db.insert(dealModelAdjustments).values({...}) call inside the add-backs loop). Directly after that closing );, add:
+ts          processedAdjustmentKeys.add(`add_back:${mapCategory(item.category, 'one_off_cost')}:${amount}`);
+Then remove these lines from the add-backs loop (they reference the old set and won't compile):
+ts          if (mapCategory(item.category, 'one_off_cost') === 'owner_salary_excess') {
+            const name = (item.item || item.description || '').toLowerCase().trim();
+            if (name) processedDirectorNames.add(name);
+          }
+Change 3 — In the deductions loop, after the db.insert call, add the key. Directly after that closing );, add:
+ts          processedAdjustmentKeys.add(`deduction:${mapCategory(item.category, 'replacement_salary')}:${amount}`);
+Then remove these lines from the deductions loop:
+ts          if (mapCategory(item.category, 'replacement_salary') === 'replacement_salary') {
+            const name = (item.item || item.description || '').toLowerCase().trim();
+            if (name) processedDirectorNames.add(name);
+          }
+Change 4 — In the director salary analysis loop, replace the existing duplicate check. Find:
+ts          const directorName = (director.name || '').toLowerCase().trim();
+          if (directorName && processedDirectorNames.has(directorName)) {
+            console.log(`[DEAL_MODEL_MAPPING] Skipping duplicate director salary adjustment for: ${director.name}`);
+            continue;
+          }
+Replace with:
+ts          const adjType = currentSalary > marketRate ? 'add_back' : 'deduction';
+          const adjCategory = currentSalary > marketRate ? 'owner_salary_excess' : 'replacement_salary';
+          const dupKey = `${adjType}:${adjCategory}:${diff}`;
+          if (processedAdjustmentKeys.has(dupKey)) {
+            console.log(`[DEAL_MODEL_MAPPING] Skipping duplicate director salary adjustment: amount=${diff}, category=${adjCategory}`);
+            continue;
+          }
+Note: this block must be placed after the diff calculation (i.e. after const diff = Math.abs(currentSalary - marketRate)) and before the db.insert call.
+After making all changes, confirm:
+
+processedDirectorNames no longer exists anywhere in the file
+processedAdjustmentKeys is used in all three loops
+The dedup check in the director analysis loop references diff, adjType, and adjCategory — all computed before the check
+TypeScript error count remains at 6
+No other files were modified
