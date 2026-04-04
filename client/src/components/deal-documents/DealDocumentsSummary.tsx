@@ -78,6 +78,20 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   const [showOfferResponseConfirm, setShowOfferResponseConfirm] = useState<string | null>(null);
   const [offerConfirmDate, setOfferConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [offerConfirmNotes, setOfferConfirmNotes] = useState('');
+  const [showHotSwitchConfirm, setShowHotSwitchConfirm] = useState(false);
+  const [showHotSentConfirm, setShowHotSentConfirm] = useState(false);
+  const [showHotResponseConfirm, setShowHotResponseConfirm] = useState<string | null>(null);
+  const [showHotTermsForm, setShowHotTermsForm] = useState(false);
+  const [hotTermsAction, setHotTermsAction] = useState<'portal' | 'offline' | null>(null);
+  const [hotConfirmDate, setHotConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [hotConfirmNotes, setHotConfirmNotes] = useState('');
+  const [hotTermsExclusivity, setHotTermsExclusivity] = useState(90);
+  const [hotTermsNonCompete, setHotTermsNonCompete] = useState(2);
+  const [hotTermsNonSolicit, setHotTermsNonSolicit] = useState(2);
+  const [hotTermsWarrantyMonths, setHotTermsWarrantyMonths] = useState(18);
+  const [hotTermsWarrantyMin, setHotTermsWarrantyMin] = useState(5000);
+  const [hotTermsCompletionWeeks, setHotTermsCompletionWeeks] = useState(12);
+  const [hotTermsAdditional, setHotTermsAdditional] = useState('');
 
   const { data: documents, isLoading } = useQuery<DealDocument[]>({
     queryKey: ['/api/v2/deal-documents/company', targetCompanyId],
@@ -112,6 +126,29 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     },
     onError: (err: any) => {
       toast({ title: 'Error', description: err.message || 'Failed to send offer', variant: 'destructive' });
+    },
+  });
+
+  const sendHotPortalMutation = useMutation({
+    mutationFn: async (hotTerms: Record<string, any>) => {
+      const genRes = await apiRequest('POST', '/api/v2/deal-documents/generate-hot', {
+        targetCompanyId,
+        hotTerms,
+      });
+      const genData = await genRes.json();
+      const docId = genData?.id ?? genData?.data?.id;
+      if (!docId) throw new Error('Failed to generate HoT');
+      const sendRes = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return sendRes.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      toast({ title: 'HoT sent to seller portal' });
+      setShowHotTermsForm(false);
+      setHotTermsAction(null);
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message || 'Failed to send HoT', variant: 'destructive' });
     },
   });
 
@@ -630,8 +667,319 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
           </CardContent>
         </Card>
 
-        {/* PROMPT 4 */}
-        <div>{/* Heads of Terms card — to be built in Prompt 4 */}</div>
+        {/* Heads of Terms Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCheck className="h-4 w-4" />
+                <span className="font-medium">Heads of Terms</span>
+              </div>
+              {!offerAccepted && (
+                <Badge variant="outline" className="text-muted-foreground gap-1">
+                  <Lock className="h-3 w-3" /> Locked
+                </Badge>
+              )}
+              {offerAccepted && hotAccepted && !hotIsOffline && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Accepted via portal
+                </Badge>
+              )}
+              {offerAccepted && hotAccepted && hotIsOffline && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Accepted offline
+                </Badge>
+              )}
+              {offerAccepted && !hotAccepted && hotDoc && (hotDoc.status === 'sent' || hotDoc.status === 'viewed') && !hotIsOffline && (
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Awaiting signature
+                </Badge>
+              )}
+              {offerAccepted && !hotAccepted && hotDoc && hotIsOffline && (hotDoc.status === 'draft' || hotDoc.status === 'downloaded') && (
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Downloaded
+                </Badge>
+              )}
+              {offerAccepted && !hotAccepted && hotDoc && hotIsOffline && hotDoc.status === 'sent' && (
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                  Sent
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            {/* State 1: offer not accepted — locked */}
+            {!offerAccepted && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 shrink-0" />
+                <span>Offer Letter must be accepted to unlock Heads of Terms</span>
+              </div>
+            )}
+            {/* State 2: accepted via portal */}
+            {offerAccepted && hotAccepted && !hotIsOffline && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Accepted via portal
+              </Badge>
+            )}
+            {/* State 3: accepted offline */}
+            {offerAccepted && hotAccepted && hotIsOffline && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Accepted offline
+              </Badge>
+            )}
+            {/* State 4: portal HoT sent/viewed, awaiting signature */}
+            {offerAccepted && !hotAccepted && hotDoc && (hotDoc.status === 'sent' || hotDoc.status === 'viewed') && !hotIsOffline && (
+              <div className="space-y-3">
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Awaiting signature
+                </Badge>
+                {!showHotTermsForm && !showHotSwitchConfirm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { setShowHotTermsForm(true); setHotTermsAction('offline'); }}>
+                      <Download className="h-3 w-3 mr-1" />
+                      Download Word
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowHotSwitchConfirm(true)}>
+                      Switch to Offline
+                    </Button>
+                  </div>
+                )}
+                {showHotSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the portal Heads of Terms.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${hotDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowHotSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowHotSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* State 5: offline HoT downloaded/draft */}
+            {offerAccepted && !hotAccepted && hotDoc && hotIsOffline && (hotDoc.status === 'draft' || hotDoc.status === 'downloaded') && (
+              <div className="space-y-3">
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Downloaded
+                </Badge>
+                {!showHotSentConfirm && (
+                  <Button size="sm" variant="default" onClick={() => setShowHotSentConfirm(true)}>
+                    Mark as Sent
+                  </Button>
+                )}
+                {showHotSentConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="hotSentDate" className="text-xs">Date sent</Label>
+                      <Input
+                        id="hotSentDate"
+                        type="date"
+                        className="h-8 text-sm"
+                        value={hotConfirmDate}
+                        onChange={e => setHotConfirmDate(e.target.value)}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Optional notes"
+                      className="text-sm min-h-[60px]"
+                      value={hotConfirmNotes}
+                      onChange={e => setHotConfirmNotes(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${hotDoc.id}/manual-status`, {
+                          status: 'sent',
+                          confirmedAt: hotConfirmDate,
+                          notes: hotConfirmNotes || undefined,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowHotSentConfirm(false);
+                        setHotConfirmNotes('');
+                      }}>
+                        Confirm Sent
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowHotSentConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* State 6: offline HoT sent, awaiting response */}
+            {offerAccepted && !hotAccepted && hotDoc && hotIsOffline && hotDoc.status === 'sent' && (
+              <div className="space-y-3">
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                  Sent
+                </Badge>
+                {!showHotResponseConfirm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700" onClick={() => setShowHotResponseConfirm('accepted')}>
+                      Accepted
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-700" onClick={() => setShowHotResponseConfirm('rejected')}>
+                      Rejected
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" onClick={() => setShowHotResponseConfirm('countered')}>
+                      Countered
+                    </Button>
+                  </div>
+                )}
+                {showHotResponseConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm font-medium capitalize">{showHotResponseConfirm}</p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="hotResponseDate" className="text-xs">Date</Label>
+                      <Input
+                        id="hotResponseDate"
+                        type="date"
+                        className="h-8 text-sm"
+                        value={hotConfirmDate}
+                        onChange={e => setHotConfirmDate(e.target.value)}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Optional notes"
+                      className="text-sm min-h-[60px]"
+                      value={hotConfirmNotes}
+                      onChange={e => setHotConfirmNotes(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${hotDoc.id}/manual-status`, {
+                          status: showHotResponseConfirm,
+                          confirmedAt: hotConfirmDate,
+                          notes: hotConfirmNotes || undefined,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowHotResponseConfirm(null);
+                        setHotConfirmNotes('');
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowHotResponseConfirm(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* State 7: offer accepted, no HoT yet */}
+            {offerAccepted && !hotDoc && (
+              <div className="space-y-3">
+                {!showHotTermsForm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="default" onClick={() => { setShowHotTermsForm(true); setHotTermsAction('portal'); }}>
+                      <Send className="h-3 w-3 mr-1" />
+                      Send via Portal
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setShowHotTermsForm(true); setHotTermsAction('offline'); }}>
+                      <Download className="h-3 w-3 mr-1" />
+                      Download Word
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Inline HoT terms form — shown in State 4 (offline download) and State 7 (either action) */}
+            {offerAccepted && !hotAccepted && showHotTermsForm && (
+              <div className="rounded-md border border-border bg-muted/50 p-3 space-y-3">
+                <p className="text-sm font-medium">Configure Heads of Terms</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Exclusivity Period (days)</Label>
+                    <Input type="number" className="h-8 text-sm" value={hotTermsExclusivity} onChange={e => setHotTermsExclusivity(Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Non-Compete Period (years)</Label>
+                    <Input type="number" className="h-8 text-sm" value={hotTermsNonCompete} onChange={e => setHotTermsNonCompete(Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Non-Solicitation Period (years)</Label>
+                    <Input type="number" className="h-8 text-sm" value={hotTermsNonSolicit} onChange={e => setHotTermsNonSolicit(Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Warranty Claim Period (months)</Label>
+                    <Input type="number" className="h-8 text-sm" value={hotTermsWarrantyMonths} onChange={e => setHotTermsWarrantyMonths(Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Minimum Warranty Claim (£)</Label>
+                    <Input type="number" className="h-8 text-sm" value={hotTermsWarrantyMin} onChange={e => setHotTermsWarrantyMin(Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Target Completion (weeks)</Label>
+                    <Input type="number" className="h-8 text-sm" value={hotTermsCompletionWeeks} onChange={e => setHotTermsCompletionWeeks(Number(e.target.value))} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Additional Conditions</Label>
+                  <Textarea
+                    placeholder="Any additional conditions..."
+                    className="text-sm min-h-[60px]"
+                    value={hotTermsAdditional}
+                    onChange={e => setHotTermsAdditional(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={hotTermsAction === 'portal' ? sendHotPortalMutation.isPending : hotLoading}
+                    onClick={async () => {
+                      const hotTerms = {
+                        exclusivityPeriodDays: hotTermsExclusivity,
+                        nonCompetePeriodYears: hotTermsNonCompete,
+                        nonSolicitPeriodYears: hotTermsNonSolicit,
+                        warrantyClaimPeriodMonths: hotTermsWarrantyMonths,
+                        warrantyMinClaim: hotTermsWarrantyMin,
+                        targetCompletionWeeks: hotTermsCompletionWeeks,
+                        ...(hotTermsAdditional.trim() ? { additionalConditions: hotTermsAdditional.trim() } : {}),
+                      };
+                      if (hotTermsAction === 'portal') {
+                        sendHotPortalMutation.mutate(hotTerms);
+                      } else {
+                        setHotLoading(true);
+                        try {
+                          const res = await apiRequest('POST', '/api/v2/deal-documents/generate-hot-offline', {
+                            targetCompanyId,
+                            hotTerms,
+                          });
+                          const data = await res.json();
+                          const docId = data?.id ?? data?.data?.id;
+                          if (docId) {
+                            window.location.href = `/api/v2/deal-documents/${docId}/download-word`;
+                            queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                          }
+                        } catch (err) {
+                          toast({ title: 'Download Failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+                        } finally {
+                          setHotLoading(false);
+                          setShowHotTermsForm(false);
+                          setHotTermsAction(null);
+                        }
+                      }
+                    }}
+                  >
+                    {(hotTermsAction === 'portal' ? sendHotPortalMutation.isPending : hotLoading) && (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    )}
+                    Confirm Terms
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setShowHotTermsForm(false); setHotTermsAction(null); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {docTypes.map(({ key, label, icon: Icon }) => {
           const docs = byType[key];
