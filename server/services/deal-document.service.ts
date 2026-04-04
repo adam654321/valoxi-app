@@ -641,6 +641,12 @@ export class DealDocumentService {
       doc = await this.createNewVersion(existingOffer.id, params.createdBy, {
         dealModelId: params.dealModelId,
       });
+      if (params.portalTokenId && doc.portalTokenId !== params.portalTokenId) {
+        await db.update(dealDocuments)
+          .set({ portalTokenId: params.portalTokenId })
+          .where(eq(dealDocuments.id, doc.id));
+        doc = { ...doc, portalTokenId: params.portalTokenId };
+      }
     } else {
       const template = await dealDocumentTemplateService.getSystemTemplate('offer_letter');
 
