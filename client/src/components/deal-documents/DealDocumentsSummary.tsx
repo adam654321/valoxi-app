@@ -73,6 +73,11 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   const [showNdaResponseConfirm, setShowNdaResponseConfirm] = useState<string | null>(null);
   const [ndaConfirmDate, setNdaConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [ndaConfirmNotes, setNdaConfirmNotes] = useState('');
+  const [showOfferSwitchConfirm, setShowOfferSwitchConfirm] = useState(false);
+  const [showOfferSentConfirm, setShowOfferSentConfirm] = useState(false);
+  const [showOfferResponseConfirm, setShowOfferResponseConfirm] = useState<string | null>(null);
+  const [offerConfirmDate, setOfferConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [offerConfirmNotes, setOfferConfirmNotes] = useState('');
 
   const { data: documents, isLoading } = useQuery<DealDocument[]>({
     queryKey: ['/api/v2/deal-documents/company', targetCompanyId],
@@ -92,6 +97,23 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   });
 
   const latestDealModelId: number | undefined = dealModelsData?.data?.[0]?.id;
+
+  const sendOfferPortalMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
+        targetCompanyId,
+        dealModelId: latestDealModelId,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      toast({ title: 'Offer sent to seller portal' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message || 'Failed to send offer', variant: 'destructive' });
+    },
+  });
 
   if (isLoading) return null;
 
@@ -381,8 +403,232 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
           </CardContent>
         </Card>
 
-        {/* PROMPT 3 */}
-        <div>{/* Offer Letter card — to be built in Prompt 3 */}</div>
+        {/* Offer Letter Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                <span className="font-medium">Offer Letter</span>
+              </div>
+              {!dealModelExists && (
+                <Badge variant="outline" className="text-muted-foreground gap-1">
+                  <Lock className="h-3 w-3" /> No deal model
+                </Badge>
+              )}
+              {dealModelExists && offerAccepted && !offerIsOffline && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Accepted via portal
+                </Badge>
+              )}
+              {dealModelExists && offerAccepted && offerIsOffline && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Accepted offline
+                </Badge>
+              )}
+              {dealModelExists && !offerAccepted && offerDoc && (offerDoc.status === 'sent' || offerDoc.status === 'viewed') && !offerIsOffline && (
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Awaiting response
+                </Badge>
+              )}
+              {dealModelExists && !offerAccepted && offerDoc && offerIsOffline && (offerDoc.status === 'draft' || offerDoc.status === 'downloaded') && (
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Downloaded
+                </Badge>
+              )}
+              {dealModelExists && !offerAccepted && offerDoc && offerIsOffline && offerDoc.status === 'sent' && (
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                  Sent
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            {/* State 1: no deal model */}
+            {!dealModelExists && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 shrink-0" />
+                <span>Create a deal model in the Deal Modeller tab to send an offer letter</span>
+              </div>
+            )}
+            {/* State 2: accepted via portal */}
+            {dealModelExists && offerAccepted && !offerIsOffline && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Accepted via portal
+              </Badge>
+            )}
+            {/* State 3: accepted offline */}
+            {dealModelExists && offerAccepted && offerIsOffline && (
+              <div className="space-y-1">
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Accepted offline
+                </Badge>
+                <p className="text-xs text-muted-foreground">Heads of Terms is now available.</p>
+              </div>
+            )}
+            {/* State 4: portal offer sent/viewed, awaiting response */}
+            {dealModelExists && !offerAccepted && offerDoc && (offerDoc.status === 'sent' || offerDoc.status === 'viewed') && !offerIsOffline && (
+              <div className="space-y-3">
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Awaiting response
+                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" disabled={offerLoading} onClick={() => downloadWord('offer_letter', setOfferLoading)}>
+                    {offerLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                    Download Word
+                  </Button>
+                  {!showOfferSwitchConfirm && (
+                    <Button size="sm" variant="ghost" onClick={() => setShowOfferSwitchConfirm(true)}>
+                      Switch to Offline
+                    </Button>
+                  )}
+                </div>
+                {showOfferSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the portal offer letter.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${offerDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowOfferSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowOfferSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* State 5: offline offer downloaded/draft */}
+            {dealModelExists && !offerAccepted && offerDoc && offerIsOffline && (offerDoc.status === 'draft' || offerDoc.status === 'downloaded') && (
+              <div className="space-y-3">
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Downloaded
+                </Badge>
+                {!showOfferSentConfirm && (
+                  <Button size="sm" variant="default" onClick={() => setShowOfferSentConfirm(true)}>
+                    Mark as Sent
+                  </Button>
+                )}
+                {showOfferSentConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offerSentDate" className="text-xs">Date sent</Label>
+                      <Input
+                        id="offerSentDate"
+                        type="date"
+                        className="h-8 text-sm"
+                        value={offerConfirmDate}
+                        onChange={e => setOfferConfirmDate(e.target.value)}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Optional notes"
+                      className="text-sm min-h-[60px]"
+                      value={offerConfirmNotes}
+                      onChange={e => setOfferConfirmNotes(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${offerDoc.id}/manual-status`, {
+                          status: 'sent',
+                          confirmedAt: offerConfirmDate,
+                          notes: offerConfirmNotes || undefined,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowOfferSentConfirm(false);
+                        setOfferConfirmNotes('');
+                      }}>
+                        Confirm Sent
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowOfferSentConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Sent — expand the document below to mark as Accepted to unlock Heads of Terms.</p>
+              </div>
+            )}
+            {/* State 6: offline offer sent, awaiting response */}
+            {dealModelExists && !offerAccepted && offerDoc && offerIsOffline && offerDoc.status === 'sent' && (
+              <div className="space-y-3">
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                  Sent
+                </Badge>
+                {!showOfferResponseConfirm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700" onClick={() => setShowOfferResponseConfirm('accepted')}>
+                      Accepted
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-700" onClick={() => setShowOfferResponseConfirm('rejected')}>
+                      Rejected
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" onClick={() => setShowOfferResponseConfirm('countered')}>
+                      Countered
+                    </Button>
+                  </div>
+                )}
+                {showOfferResponseConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm font-medium capitalize">{showOfferResponseConfirm}</p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="offerResponseDate" className="text-xs">Date</Label>
+                      <Input
+                        id="offerResponseDate"
+                        type="date"
+                        className="h-8 text-sm"
+                        value={offerConfirmDate}
+                        onChange={e => setOfferConfirmDate(e.target.value)}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Optional notes"
+                      className="text-sm min-h-[60px]"
+                      value={offerConfirmNotes}
+                      onChange={e => setOfferConfirmNotes(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${offerDoc.id}/manual-status`, {
+                          status: showOfferResponseConfirm,
+                          confirmedAt: offerConfirmDate,
+                          notes: offerConfirmNotes || undefined,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowOfferResponseConfirm(null);
+                        setOfferConfirmNotes('');
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowOfferResponseConfirm(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Mark as Accepted to unlock Heads of Terms.</p>
+              </div>
+            )}
+            {/* State 7: deal model exists but no offer doc yet */}
+            {dealModelExists && !offerDoc && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="default" disabled={sendOfferPortalMutation.isPending} onClick={() => sendOfferPortalMutation.mutate()}>
+                  {sendOfferPortalMutation.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                  <Send className="h-3 w-3 mr-1" />
+                  Send via Portal
+                </Button>
+                <Button size="sm" variant="outline" disabled={offerLoading} onClick={() => downloadWord('offer_letter', setOfferLoading)}>
+                  {offerLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                  Download Word
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* PROMPT 4 */}
         <div>{/* Heads of Terms card — to be built in Prompt 4 */}</div>
