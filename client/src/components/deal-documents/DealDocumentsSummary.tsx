@@ -136,7 +136,10 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
       });
       const data = await res.json();
       const docId = data?.id ?? data?.data?.id;
-      if (docId) window.location.href = `/api/v2/deal-documents/${docId}/download-word`;
+      if (docId) {
+        window.location.href = `/api/v2/deal-documents/${docId}/download-word`;
+        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      }
     } catch (err) {
       console.error('Offline download failed', err);
       toast({ title: 'Download Failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
@@ -439,6 +442,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
   const [pendingStatus, setPendingStatus] = useState('');
   const [confirmDate, setConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [confirmNotes, setConfirmNotes] = useState('');
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
 
   const latest = documents
     .filter(d => d.status !== 'superseded')
@@ -480,6 +484,18 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
       setShowConfirm(false);
       setPendingStatus('');
       setConfirmNotes('');
+    },
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${latest.id}/withdraw`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents', latest.id] });
+      setShowSwitchConfirm(false);
     },
   });
 
@@ -623,6 +639,14 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                   Send to Seller
                 </Button>
               )}
+              {latest.deliveryMethod !== 'offline' && (latest.status === 'sent' || latest.status === 'viewed') && !showSwitchConfirm && (
+                <div className="flex flex-col gap-0.5">
+                  <Button size="sm" variant="ghost" onClick={() => setShowSwitchConfirm(true)}>
+                    Switch to Offline
+                  </Button>
+                  <span className="text-xs text-muted-foreground text-center">Withdraw portal version and download as Word instead</span>
+                </div>
+              )}
               {isOffline && (latest.status === 'draft' || latest.status === 'downloaded') && !showConfirm && (
                 <Button size="sm" variant="outline" onClick={() => openConfirm('sent')}>
                   Mark as Sent
@@ -642,6 +666,26 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
                 </>
               )}
             </div>
+
+            {showSwitchConfirm && (
+              <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-2">
+                <p className="text-sm font-medium">Are you sure? This will withdraw the portal version.</p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => withdrawMutation.mutate()}
+                    disabled={withdrawMutation.isPending}
+                  >
+                    {withdrawMutation.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
+                    Confirm
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setShowSwitchConfirm(false)} disabled={withdrawMutation.isPending}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {showConfirm && (
               <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-3">
