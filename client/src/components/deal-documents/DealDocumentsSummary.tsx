@@ -64,7 +64,6 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'outlin
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
   const { toast } = useToast();
-  const [showHotDialog, setShowHotDialog] = useState(false);
   const [ndaLoading, setNdaLoading] = useState(false);
   const [offerLoading, setOfferLoading] = useState(false);
   const [hotLoading, setHotLoading] = useState(false);
@@ -166,18 +165,9 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     { key: 'heads_of_terms', label: 'Heads of Terms', icon: FileCheck },
   ];
 
-  const hotDocs = byType['heads_of_terms'] || [];
-  const latestHot = hotDocs
-    .filter(d => d.status !== 'superseded')
-    .sort((a, b) => b.version - a.version)[0];
-  const hasActiveHot = latestHot && !['withdrawn', 'rejected'].includes(latestHot.status);
-
   const offerAccepted = (documents || []).some(d => d.documentType === 'offer_letter' && d.status === 'accepted');
 
-  const showGenerateHotButton = offerAccepted && !hasActiveHot;
-
   const ndaAccepted = (documents || []).some(d => d.documentType === 'nda' && d.status === 'accepted');
-  const hasNda = (documents || []).some(d => d.documentType === 'nda');
   const hotAccepted = (documents || []).some(d => d.documentType === 'heads_of_terms' && d.status === 'accepted');
 
   const dealModelExists = latestDealModelId !== undefined;
@@ -995,30 +985,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
           );
         })}
 
-        {/* TODO Stage 4: Gate hotBuilder advanced features for Expert+ once builder is complete. Standard HoT available to all tiers. */}
-        {showGenerateHotButton && (
-            <div className="rounded-lg border border-dashed border-border p-3 bg-muted/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileCheck className="h-5 w-5 text-muted-foreground/70" />
-                  <div>
-                    <p className="font-medium text-sm text-muted-foreground">Heads of Terms</p>
-                    <p className="text-xs text-muted-foreground/70">Offer accepted — ready to generate HoT</p>
-                  </div>
-                </div>
-                <Button size="sm" onClick={() => setShowHotDialog(true)}>
-                  Generate HoT
-                </Button>
-              </div>
-            </div>
-        )}
       </CardContent>
-
-      <HoTConfigDialog
-        open={showHotDialog}
-        onClose={() => setShowHotDialog(false)}
-        targetCompanyId={targetCompanyId}
-      />
     </Card>
   );
 }
