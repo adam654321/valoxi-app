@@ -128,12 +128,17 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   ) => {
     setLoading(true);
     try {
-      console.log('create-offline request body', JSON.stringify({ targetCompanyId, documentType, dealModelId: latestDealModelId }));
-      const res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
-        targetCompanyId,
-        documentType,
-        ...(documentType === 'offer_letter' && latestDealModelId ? { dealModelId: latestDealModelId } : {}),
-      });
+      let res;
+      if (documentType === 'heads_of_terms') {
+        res = await apiRequest('POST', '/api/v2/deal-documents/generate-hot-offline', { targetCompanyId });
+      } else {
+        console.log('create-offline request body', JSON.stringify({ targetCompanyId, documentType, dealModelId: latestDealModelId }));
+        res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
+          targetCompanyId,
+          documentType,
+          ...(documentType === 'offer_letter' && latestDealModelId ? { dealModelId: latestDealModelId } : {}),
+        });
+      }
       const data = await res.json();
       const docId = data?.id ?? data?.data?.id;
       if (docId) {

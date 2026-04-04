@@ -117,6 +117,40 @@ router.post('/generate-hot', requirePermission('canCreateOffers'), asyncHandler(
   res.status(201).json(doc);
 }));
 
+router.post('/generate-hot-offline', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
+  const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId;
+  if (!userId || !userCompanyId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const schema = z.object({
+    targetCompanyId: z.number(),
+    hotTerms: z.object({
+      exclusivityPeriodDays: z.number().optional().default(90),
+      nonCompetePeriodYears: z.number().optional().default(2),
+      nonSolicitPeriodYears: z.number().optional().default(2),
+      warrantyClaimPeriodMonths: z.number().optional().default(18),
+      warrantyMinClaim: z.number().optional().default(5000),
+      additionalConditions: z.string().optional(),
+      targetCompletionWeeks: z.number().optional().default(12),
+    }).optional().default({}),
+  });
+
+  const validated = schema.parse(req.body);
+
+  const doc = await dealDocumentService.createHoTFromAcceptedOffer({
+    targetCompanyId: validated.targetCompanyId,
+    userCompanyId,
+    createdBy: userId,
+    hotTerms: validated.hotTerms,
+  });
+
+  await db.update(dealDocuments).set({ deliveryMethod: 'offline' }).where(eq(dealDocuments.id, doc.id));
+
+  res.status(201).json({ id: doc.id, deliveryMethod: 'offline' });
+}));
+
 router.post('/send-offer', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userId = req.session.userId;
   const userCompanyId = req.session.userCompanyId;
