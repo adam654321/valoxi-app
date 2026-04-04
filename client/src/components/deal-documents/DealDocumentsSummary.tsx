@@ -8,9 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { 
   FileText, Shield, Send, FileCheck, 
-  CheckCircle, XCircle, Clock, AlertCircle,
+  CheckCircle, CheckCircle2, XCircle, Clock, AlertCircle,
   ChevronDown, ChevronUp, Download, Eye, User, Calendar,
-  Loader2, GitMerge, FileDown, Lock
+  Loader2, GitMerge, Lock
 } from 'lucide-react';
 import {
   Dialog,
@@ -68,6 +68,11 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   const [ndaLoading, setNdaLoading] = useState(false);
   const [offerLoading, setOfferLoading] = useState(false);
   const [hotLoading, setHotLoading] = useState(false);
+  const [showNdaSwitchConfirm, setShowNdaSwitchConfirm] = useState(false);
+  const [showNdaSentConfirm, setShowNdaSentConfirm] = useState(false);
+  const [showNdaResponseConfirm, setShowNdaResponseConfirm] = useState<string | null>(null);
+  const [ndaConfirmDate, setNdaConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [ndaConfirmNotes, setNdaConfirmNotes] = useState('');
 
   const { data: documents, isLoading } = useQuery<DealDocument[]>({
     queryKey: ['/api/v2/deal-documents/company', targetCompanyId],
@@ -164,72 +169,223 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="rounded-lg border border-dashed border-border p-4 bg-muted/50">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <FileDown className="h-4 w-4" />
-              <span className="font-medium text-sm">Send Without Portal</span>
+        {/* NDA Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">Non-Disclosure Agreement</span>
+              </div>
+              {ndaAccepted && !ndaIsOffline && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Signed via portal
+                </Badge>
+              )}
+              {ndaAccepted && ndaIsOffline && (
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Signed offline
+                </Badge>
+              )}
+              {!ndaAccepted && ndaDoc && (ndaDoc.status === 'sent' || ndaDoc.status === 'viewed') && !ndaIsOffline && (
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Awaiting signature
+                </Badge>
+              )}
+              {!ndaAccepted && ndaDoc && ndaIsOffline && (ndaDoc.status === 'draft' || ndaDoc.status === 'downloaded') && (
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Downloaded
+                </Badge>
+              )}
+              {!ndaAccepted && ndaDoc && ndaIsOffline && ndaDoc.status === 'sent' && (
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                  Sent
+                </Badge>
+              )}
             </div>
-            <span className="text-xs text-muted-foreground">Download as Word to send by email or post</span>
-          </div>
-
-          {/* NDA row */}
-          <div className="flex items-center justify-between py-2 border-b">
-            <span className="text-sm">Non-Disclosure Agreement</span>
-            {ndaAccepted ? (
-              <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
-                <CheckCircle className="h-3 w-3" /> Signed via portal
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            {/* State 1: accepted via portal */}
+            {ndaAccepted && !ndaIsOffline && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Signed via portal
               </Badge>
-            ) : (
-              <Button size="sm" variant="outline" disabled={ndaLoading} onClick={() => downloadWord('nda', setNdaLoading)}>
-                {ndaLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
-                Download Word
-              </Button>
             )}
-          </div>
-
-          {/* Offer Letter row */}
-          <div className="flex items-center justify-between py-2 border-b">
-            <span className="text-sm">Offer Letter</span>
-            {offerAccepted ? (
-              <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
-                <CheckCircle className="h-3 w-3" /> Accepted
+            {/* State 2: accepted offline */}
+            {ndaAccepted && ndaIsOffline && (
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800 gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Signed offline
               </Badge>
-            ) : !hasNda ? (
-              <Badge variant="outline" className="text-muted-foreground gap-1">
-                <Lock className="h-3 w-3" /> NDA required
-              </Badge>
-            ) : (
-              <Button size="sm" variant="outline" disabled={offerLoading} onClick={() => downloadWord('offer_letter', setOfferLoading)}>
-                {offerLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
-                Download Word
-              </Button>
             )}
-          </div>
-
-          {/* Heads of Terms row */}
-          <div className="flex items-center justify-between py-2">
-            <span className="text-sm">Heads of Terms</span>
-            {hotAccepted ? (
-              <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
-                <CheckCircle className="h-3 w-3" /> Accepted
-              </Badge>
-            ) : !offerAccepted ? (
-              <Badge variant="outline" className="text-muted-foreground gap-1">
-                <Lock className="h-3 w-3" /> Offer acceptance required
-              </Badge>
-            ) : (
-              <Button size="sm" variant="outline" disabled={hotLoading} onClick={() => downloadWord('heads_of_terms', setHotLoading)}>
-                {hotLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
-                Download Word
-              </Button>
+            {/* State 3: portal NDA sent/viewed, awaiting signature */}
+            {!ndaAccepted && ndaDoc && (ndaDoc.status === 'sent' || ndaDoc.status === 'viewed') && !ndaIsOffline && (
+              <div className="space-y-3">
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Awaiting signature
+                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" disabled={ndaLoading} onClick={() => downloadWord('nda', setNdaLoading)}>
+                    {ndaLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                    Download Word
+                  </Button>
+                  {!showNdaSwitchConfirm && (
+                    <Button size="sm" variant="ghost" onClick={() => setShowNdaSwitchConfirm(true)}>
+                      Switch to Offline
+                    </Button>
+                  )}
+                </div>
+                {showNdaSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the portal NDA.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${ndaDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowNdaSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowNdaSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
-          </div>
+            {/* State 4: offline NDA downloaded/draft, needs to be marked as sent */}
+            {!ndaAccepted && ndaDoc && ndaIsOffline && (ndaDoc.status === 'draft' || ndaDoc.status === 'downloaded') && (
+              <div className="space-y-3">
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Downloaded
+                </Badge>
+                {!showNdaSentConfirm && (
+                  <Button size="sm" variant="default" onClick={() => setShowNdaSentConfirm(true)}>
+                    Mark as Sent
+                  </Button>
+                )}
+                {showNdaSentConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ndaSentDate" className="text-xs">Date sent</Label>
+                      <Input
+                        id="ndaSentDate"
+                        type="date"
+                        className="h-8 text-sm"
+                        value={ndaConfirmDate}
+                        onChange={e => setNdaConfirmDate(e.target.value)}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Optional notes"
+                      className="text-sm min-h-[60px]"
+                      value={ndaConfirmNotes}
+                      onChange={e => setNdaConfirmNotes(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${ndaDoc.id}/manual-status`, {
+                          status: 'sent',
+                          confirmedAt: ndaConfirmDate,
+                          notes: ndaConfirmNotes || undefined,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowNdaSentConfirm(false);
+                        setNdaConfirmNotes('');
+                      }}>
+                        Confirm Sent
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowNdaSentConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* State 5: offline NDA sent, awaiting response */}
+            {!ndaAccepted && ndaDoc && ndaIsOffline && ndaDoc.status === 'sent' && (
+              <div className="space-y-3">
+                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+                  Sent
+                </Badge>
+                {!showNdaResponseConfirm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700" onClick={() => setShowNdaResponseConfirm('accepted')}>
+                      Accepted
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-700" onClick={() => setShowNdaResponseConfirm('rejected')}>
+                      Rejected
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" onClick={() => setShowNdaResponseConfirm('countered')}>
+                      Countered
+                    </Button>
+                  </div>
+                )}
+                {showNdaResponseConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm font-medium capitalize">{showNdaResponseConfirm}</p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ndaResponseDate" className="text-xs">Date</Label>
+                      <Input
+                        id="ndaResponseDate"
+                        type="date"
+                        className="h-8 text-sm"
+                        value={ndaConfirmDate}
+                        onChange={e => setNdaConfirmDate(e.target.value)}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Optional notes"
+                      className="text-sm min-h-[60px]"
+                      value={ndaConfirmNotes}
+                      onChange={e => setNdaConfirmNotes(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${ndaDoc.id}/manual-status`, {
+                          status: showNdaResponseConfirm,
+                          confirmedAt: ndaConfirmDate,
+                          notes: ndaConfirmNotes || undefined,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowNdaResponseConfirm(null);
+                        setNdaConfirmNotes('');
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowNdaResponseConfirm(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* State 6: no NDA document at all */}
+            {!ndaDoc && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="default" disabled title="Use the Seller Portal tab to send the NDA">
+                  <Send className="h-3 w-3 mr-1" />
+                  Send via Portal
+                </Button>
+                <Button size="sm" variant="outline" disabled={ndaLoading} onClick={() => downloadWord('nda', setNdaLoading)}>
+                  {ndaLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+                  Download Word
+                </Button>
+              </div>
+            )}
+            {!ndaAccepted && (
+              <p className="text-xs text-muted-foreground">Once signed, return to this section to record the outcome.</p>
+            )}
+          </CardContent>
+        </Card>
 
-          <p className="text-xs text-muted-foreground italic mt-3">
-            Once signed, return to the document history below to record the outcome.
-          </p>
-        </div>
+        {/* PROMPT 3 */}
+        <div>{/* Offer Letter card — to be built in Prompt 3 */}</div>
+
+        {/* PROMPT 4 */}
+        <div>{/* Heads of Terms card — to be built in Prompt 4 */}</div>
 
         {docTypes.map(({ key, label, icon: Icon }) => {
           const docs = byType[key];
