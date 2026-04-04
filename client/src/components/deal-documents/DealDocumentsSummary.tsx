@@ -89,10 +89,9 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   const latestDealModelId: number | undefined = dealModelsData?.data?.[0]?.id;
 
   if (isLoading) return null;
-  if (!documents || documents.length === 0) return null;
 
   const byType: Record<string, DealDocument[]> = {};
-  for (const doc of documents) {
+  for (const doc of (documents || [])) {
     if (!byType[doc.documentType]) byType[doc.documentType] = [];
     byType[doc.documentType].push(doc);
   }
@@ -103,24 +102,27 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     { key: 'heads_of_terms', label: 'Heads of Terms', icon: FileCheck },
   ];
 
-  const offerDocs = byType['offer_letter'] || [];
-  const latestOffer = offerDocs
-    .filter(d => d.status !== 'superseded' && d.status !== 'withdrawn')
-    .sort((a, b) => b.version - a.version)[0];
-  const offerAccepted = latestOffer?.status === 'accepted';
-
   const hotDocs = byType['heads_of_terms'] || [];
   const latestHot = hotDocs
     .filter(d => d.status !== 'superseded')
     .sort((a, b) => b.version - a.version)[0];
   const hasActiveHot = latestHot && !['withdrawn', 'rejected'].includes(latestHot.status);
 
+  const offerAccepted = (documents || []).some(d => d.documentType === 'offer_letter' && d.status === 'accepted');
+
   const showGenerateHotButton = offerAccepted && !hasActiveHot;
 
-  const ndaAccepted = documents.some(d => d.documentType === 'nda' && d.status === 'accepted');
-  const hasNda = documents.some(d => d.documentType === 'nda');
-  const offerAcceptedAny = documents.some(d => d.documentType === 'offer_letter' && d.status === 'accepted');
-  const hotAccepted = documents.some(d => d.documentType === 'heads_of_terms' && d.status === 'accepted');
+  const ndaAccepted = (documents || []).some(d => d.documentType === 'nda' && d.status === 'accepted');
+  const hasNda = (documents || []).some(d => d.documentType === 'nda');
+  const hotAccepted = (documents || []).some(d => d.documentType === 'heads_of_terms' && d.status === 'accepted');
+
+  const dealModelExists = latestDealModelId !== undefined;
+  const ndaDoc = (documents || []).filter(d => d.documentType === 'nda' && d.status !== 'superseded').sort((a, b) => b.version - a.version)[0];
+  const offerDoc = (documents || []).filter(d => d.documentType === 'offer_letter' && d.status !== 'superseded' && d.status !== 'withdrawn').sort((a, b) => b.version - a.version)[0];
+  const hotDoc = (documents || []).filter(d => d.documentType === 'heads_of_terms' && d.status !== 'superseded').sort((a, b) => b.version - a.version)[0];
+  const ndaIsOffline = ndaDoc?.deliveryMethod === 'offline';
+  const offerIsOffline = offerDoc?.deliveryMethod === 'offline';
+  const hotIsOffline = hotDoc?.deliveryMethod === 'offline';
 
   const downloadWord = async (
     documentType: 'nda' | 'offer_letter' | 'heads_of_terms',
@@ -189,7 +191,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
           {/* Offer Letter row */}
           <div className="flex items-center justify-between py-2 border-b">
             <span className="text-sm">Offer Letter</span>
-            {offerAcceptedAny ? (
+            {offerAccepted ? (
               <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
                 <CheckCircle className="h-3 w-3" /> Accepted
               </Badge>
@@ -212,7 +214,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
               <Badge variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 gap-1">
                 <CheckCircle className="h-3 w-3" /> Accepted
               </Badge>
-            ) : !offerAcceptedAny ? (
+            ) : !offerAccepted ? (
               <Badge variant="outline" className="text-muted-foreground gap-1">
                 <Lock className="h-3 w-3" /> Offer acceptance required
               </Badge>
