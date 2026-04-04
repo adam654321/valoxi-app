@@ -904,6 +904,7 @@ export class DealDocumentService {
     userCompanyId: number;
     createdBy: number;
     portalTokenId?: number;
+    generateFile?: boolean;
     hotTerms: {
       exclusivityPeriodDays?: number;
       nonCompetePeriodYears?: number;
@@ -931,11 +932,15 @@ export class DealDocumentService {
 
     const existingHot = await this.getLatestActiveDocument(params.targetCompanyId, 'heads_of_terms');
 
+    const shouldGenerateFile = params.generateFile !== false;
+
     let doc;
     if (existingHot && ['sent', 'viewed', 'countered', 'rejected'].includes(existingHot.status)) {
       doc = await this.createNewVersion(existingHot.id, params.createdBy, {
         dealModelId: acceptedOffer.dealModelId || undefined,
       });
+    } else if (existingHot && existingHot.status === 'draft') {
+      doc = existingHot;
     } else {
       const acceptedTransactionType = (acceptedOffer.documentData as any)?.transactionType || 'share_sale';
       const hotDocumentType = acceptedTransactionType === 'asset_sale'
@@ -1027,7 +1032,13 @@ export class DealDocumentService {
       },
     };
 
-    await this.generateDocumentFile(doc.id, documentData as Partial<DocumentDataContext>);
+    if (shouldGenerateFile) {
+      await this.generateDocumentFile(doc.id, documentData as Partial<DocumentDataContext>);
+    } else {
+      await db.update(dealDocuments)
+        .set({ documentData })
+        .where(eq(dealDocuments.id, doc.id));
+    }
 
     const { track } = await import('./funnel.service');
     track(params.userCompanyId, params.createdBy, 'document.generated', { documentType: 'heads_of_terms' });

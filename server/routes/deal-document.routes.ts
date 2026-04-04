@@ -143,6 +143,7 @@ router.post('/generate-hot-offline', requirePermission('canCreateOffers'), async
     targetCompanyId: validated.targetCompanyId,
     userCompanyId,
     createdBy: userId,
+    generateFile: false,
     hotTerms: validated.hotTerms,
   });
 
