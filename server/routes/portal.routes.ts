@@ -34,13 +34,14 @@ authenticatedRouter.post('/tokens', requirePermission('canCreateDeals'), asyncHa
   const schema = z.object({
     targetCompanyId: z.number(), targetContactId: z.number(), expiresInDays: z.number().optional(),
     allowedActions: z.any().optional(), customMessage: z.string().optional(), timeframeDays: z.number().min(1).max(90).optional(),
+    includeNda: z.boolean().optional(),
   });
   const data = schema.parse(req.body);
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   const token = await portalService.createToken({
     userCompanyId, targetCompanyId: data.targetCompanyId, targetContactId: data.targetContactId,
     createdBy: userId, expiresInDays: data.expiresInDays, allowedActions: data.allowedActions, customMessage: data.customMessage,
-    timeframeDays: data.timeframeDays,
+    timeframeDays: data.timeframeDays, includeNda: data.includeNda,
   }, baseUrl);
   sendCreated(res, token);
 }));

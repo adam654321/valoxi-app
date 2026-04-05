@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, Users, FileText, Clock, Mail, Plus, ChevronRight, ArrowLeft, Building2, AlertTriangle, TimerOff, CalendarPlus, RefreshCw } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -212,6 +213,7 @@ export default function PortalManagement() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null);
   const [showExtendModal, setShowExtendModal] = useState<number | null>(null);
   const [extensionDays, setExtensionDays] = useState<number>(7);
+  const [includeNda, setIncludeNda] = useState<boolean>(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -252,6 +254,7 @@ export default function PortalManagement() {
       targetContactId: number;
       customMessage?: string;
       timeframeDays?: number;
+      includeNda?: boolean;
     }) => {
       const response = await apiRequest('POST', '/api/v2/portal/tokens', data);
       return response.json();
@@ -442,6 +445,7 @@ export default function PortalManagement() {
       targetContactId: selectedContactIds[0],
       customMessage: customMessage.trim() || undefined,
       timeframeDays,
+      includeNda,
     });
   };
 
@@ -650,6 +654,17 @@ export default function PortalManagement() {
                 <p className="text-sm text-muted-foreground">
                   Deadline: {new Date(Date.now() + timeframeDays * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="include-nda"
+                  checked={includeNda}
+                  onCheckedChange={(checked) => setIncludeNda(checked === true)}
+                />
+                <Label htmlFor="include-nda" className="cursor-pointer">
+                  Include NDA — automatically send an NDA to the seller when the portal is created
+                </Label>
               </div>
 
               <div className="space-y-2">

@@ -29,7 +29,7 @@ export class PortalService {
     };
   }
 
-  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; timeframeDays?: number; }, baseUrl?: string): Promise<PortalAccessToken> {
+  async createToken(data: { userCompanyId: number; targetCompanyId: number; targetContactId: number; createdBy: number; expiresInDays?: number; allowedActions?: any; customMessage?: string; timeframeDays?: number; includeNda?: boolean; }, baseUrl?: string): Promise<PortalAccessToken> {
     // Deactivate any existing active tokens for this company to allow new token creation
     await portalRepository.deactivateTokensForCompany(data.targetCompanyId);
     
@@ -54,15 +54,17 @@ export class PortalService {
     });
     
     // Auto-create NDA for the portal (before email so it's ready when seller clicks)
-    try {
-      await dealDocumentService.createNdaForPortal({
-        targetCompanyId: data.targetCompanyId,
-        userCompanyId: data.userCompanyId,
-        portalTokenId: token.id,
-        createdBy: data.createdBy,
-      });
-    } catch (err: any) {
-      console.error('[PORTAL] Failed to auto-create NDA:', err.message);
+    if (data.includeNda !== false) {
+      try {
+        await dealDocumentService.createNdaForPortal({
+          targetCompanyId: data.targetCompanyId,
+          userCompanyId: data.userCompanyId,
+          portalTokenId: token.id,
+          createdBy: data.createdBy,
+        });
+      } catch (err: any) {
+        console.error('[PORTAL] Failed to auto-create NDA:', err.message);
+      }
     }
     
     // Send portal access email asynchronously (don't block token creation)
