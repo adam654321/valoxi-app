@@ -274,6 +274,7 @@ export default function PortalManagement() {
       setSelectedCompanyId(null);
       setSelectedContactIds([]);
       setCustomMessage('');
+      setIncludeNda(true);
     },
     onError: (error: any) => {
       toast({
