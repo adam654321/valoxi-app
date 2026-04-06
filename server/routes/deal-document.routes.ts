@@ -250,6 +250,25 @@ router.post('/create-offline', requirePermission('canCreateOffers'), asyncHandle
 
   await db.update(dealDocuments).set({ deliveryMethod: 'offline' }).where(eq(dealDocuments.id, doc.id));
 
+  if (documentType === 'offer_letter') {
+    const latestDoc = await dealDocumentService.getDocumentById(doc.id);
+    if (latestDoc) {
+      try {
+        await dealDocumentService.upsertCurrentOffer({
+          targetCompanyId,
+          userCompanyId,
+          dealDocumentId: doc.id,
+          dealModelId: dealModelId || null,
+          documentData: latestDoc.documentData,
+          deliveryMethod: 'offline',
+          status: 'sent',
+        });
+      } catch (err) {
+        console.error('[DEAL_DOCS] Failed to upsert current offer for offline send:', err);
+      }
+    }
+  }
+
   return res.status(201).json({ ...doc, deliveryMethod: 'offline' });
 }));
 
@@ -325,6 +344,25 @@ router.post('/:id/manual-status', requirePermission('canCreateOffers'), asyncHan
   }
 
   const updated = await dealDocumentService.getDocumentById(id);
+
+  if (doc.documentType === 'offer_letter' && status === 'accepted') {
+    try {
+      await dealDocumentService.upsertCurrentOffer({
+        targetCompanyId: doc.targetCompanyId,
+        userCompanyId: doc.userCompanyId,
+        dealDocumentId: doc.id,
+        dealModelId: doc.dealModelId || null,
+        documentData: doc.documentData,
+        deliveryMethod: doc.deliveryMethod || 'offline',
+        status: 'accepted',
+        acceptedAt: confirmedDate,
+        acceptedBy: null,
+      });
+    } catch (err) {
+      console.error('[DEAL_DOCS] Failed to upsert current offer on manual accept:', err);
+    }
+  }
+
   return sendSuccess(res, updated);
 }));
 

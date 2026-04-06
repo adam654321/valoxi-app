@@ -1,9 +1,9 @@
 import { db } from '../db';
-import { dealDocuments, dealDocumentResponses, dealDocumentTemplates } from '@shared/schema/deal-documents';
+import { dealDocuments, dealDocumentResponses, dealDocumentTemplates, currentOffers } from '@shared/schema/deal-documents';
 import { documents } from '@shared/schema/documents';
 import { dealModels, dealModelAdjustments, dealModelFundingLines } from '@shared/schema/deal-models';
 import { financialPeriods, incomeStatements } from '@shared/schema/financials';
-import { eq, and, desc, not, inArray } from 'drizzle-orm';
+import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 import { extendPortalTokenForCompany } from './portal-token.service';
 import { buildNdaHtml } from '../utils/document-html-builders';
@@ -99,6 +99,22 @@ export class DealDocumentService {
         sentAt: new Date(),
       })
       .where(eq(dealDocuments.id, documentId));
+
+    if (doc.documentType === 'offer_letter') {
+      try {
+        await this.upsertCurrentOffer({
+          targetCompanyId: doc.targetCompanyId,
+          userCompanyId: doc.userCompanyId,
+          dealDocumentId: doc.id,
+          dealModelId: doc.dealModelId || null,
+          documentData: doc.documentData,
+          deliveryMethod: doc.deliveryMethod || 'portal',
+          status: 'sent',
+        });
+      } catch (upsertErr) {
+        console.error('[DEAL_DOCS] Failed to upsert current offer on send:', upsertErr);
+      }
+    }
 
     const docTypeLabels: Record<string, string> = {
       'nda': 'NDA',
@@ -338,6 +354,24 @@ export class DealDocumentService {
           doc.targetCompanyId,
           'Offer Letter accepted'
         );
+      }
+
+      if (doc.documentType === 'offer_letter') {
+        try {
+          await this.upsertCurrentOffer({
+            targetCompanyId: doc.targetCompanyId,
+            userCompanyId: doc.userCompanyId,
+            dealDocumentId: doc.id,
+            dealModelId: doc.dealModelId || null,
+            documentData: doc.documentData,
+            deliveryMethod: doc.deliveryMethod || 'portal',
+            status: 'accepted',
+            acceptedAt: new Date(),
+            acceptedBy: params.respondentName,
+          });
+        } catch (upsertErr) {
+          console.error('[DEAL_DOCS] Failed to upsert current offer on portal accept:', upsertErr);
+        }
       }
     }
 
@@ -1061,6 +1095,52 @@ export class DealDocumentService {
         )
       )
       .orderBy(desc(dealDocuments.createdAt));
+  }
+
+  async upsertCurrentOffer(params: {
+    targetCompanyId: number;
+    userCompanyId: number;
+    dealDocumentId: number;
+    dealModelId: number | null;
+    documentData: any;
+    deliveryMethod: string;
+    status?: string;
+    acceptedAt?: Date | null;
+    acceptedBy?: string | null;
+  }) {
+    const status = params.status || 'sent';
+    const data = params.documentData as any;
+    await db.insert(currentOffers).values({
+      targetCompanyId: params.targetCompanyId,
+      userCompanyId: params.userCompanyId,
+      dealDocumentId: params.dealDocumentId,
+      dealModelId: params.dealModelId,
+      offerPrice: data?.offerPrice || null,
+      enterpriseValue: data?.enterpriseValue || null,
+      transactionType: data?.transactionType || null,
+      documentData: params.documentData,
+      deliveryMethod: params.deliveryMethod,
+      status,
+      sentAt: status === 'sent' ? new Date() : null,
+      acceptedAt: params.acceptedAt || null,
+      acceptedBy: params.acceptedBy || null,
+    }).onConflictDoUpdate({
+      target: currentOffers.targetCompanyId,
+      set: {
+        dealDocumentId: sql`excluded.deal_document_id`,
+        dealModelId: sql`excluded.deal_model_id`,
+        offerPrice: sql`excluded.offer_price`,
+        enterpriseValue: sql`excluded.enterprise_value`,
+        transactionType: sql`excluded.transaction_type`,
+        documentData: sql`excluded.document_data`,
+        deliveryMethod: sql`excluded.delivery_method`,
+        status: sql`excluded.status`,
+        sentAt: sql`excluded.sent_at`,
+        acceptedAt: sql`excluded.accepted_at`,
+        acceptedBy: sql`excluded.accepted_by`,
+        updatedAt: new Date(),
+      },
+    });
   }
 
   async isNdaAccepted(portalTokenId: number): Promise<boolean> {
