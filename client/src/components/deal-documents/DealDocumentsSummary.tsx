@@ -69,11 +69,15 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
   const [hotLoading, setHotLoading] = useState(false);
   const [showNdaSwitchConfirm, setShowNdaSwitchConfirm] = useState(false);
   const [showNdaSentConfirm, setShowNdaSentConfirm] = useState(false);
+  const [showNdaPortalSwitchConfirm, setShowNdaPortalSwitchConfirm] = useState(false);
+  const [showNdaSentPortalSwitchConfirm, setShowNdaSentPortalSwitchConfirm] = useState(false);
   const [showNdaResponseConfirm, setShowNdaResponseConfirm] = useState<string | null>(null);
   const [ndaConfirmDate, setNdaConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [ndaConfirmNotes, setNdaConfirmNotes] = useState('');
   const [showOfferSwitchConfirm, setShowOfferSwitchConfirm] = useState(false);
   const [showOfferSentConfirm, setShowOfferSentConfirm] = useState(false);
+  const [showOfferPortalSwitchConfirm, setShowOfferPortalSwitchConfirm] = useState(false);
+  const [showOfferSentPortalSwitchConfirm, setShowOfferSentPortalSwitchConfirm] = useState(false);
   const [showOfferResponseConfirm, setShowOfferResponseConfirm] = useState<string | null>(null);
   const [offerConfirmDate, setOfferConfirmDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [offerConfirmNotes, setOfferConfirmNotes] = useState('');
@@ -308,10 +312,32 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                 <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
                   Downloaded
                 </Badge>
-                {!showNdaSentConfirm && (
-                  <Button size="sm" variant="default" onClick={() => setShowNdaSentConfirm(true)}>
-                    Mark as Sent
-                  </Button>
+                {!showNdaSentConfirm && !showNdaPortalSwitchConfirm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="default" onClick={() => setShowNdaSentConfirm(true)}>
+                      Mark as Sent
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowNdaPortalSwitchConfirm(true)}>
+                      Switch to Portal
+                    </Button>
+                  </div>
+                )}
+                {showNdaPortalSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the offline NDA. You can then send it via the seller portal.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${ndaDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowNdaPortalSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowNdaPortalSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 )}
                 {showNdaSentConfirm && (
                   <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
@@ -358,7 +384,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                 <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
                   Sent
                 </Badge>
-                {!showNdaResponseConfirm && (
+                {!showNdaResponseConfirm && !showNdaSentPortalSwitchConfirm && (
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700" onClick={() => setShowNdaResponseConfirm('accepted')}>
                       Accepted
@@ -369,6 +395,26 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                     <Button size="sm" variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" onClick={() => setShowNdaResponseConfirm('countered')}>
                       Countered
                     </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowNdaSentPortalSwitchConfirm(true)}>
+                      Switch to Portal
+                    </Button>
+                  </div>
+                )}
+                {showNdaSentPortalSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the offline NDA marked as sent. You can then send it via the seller portal.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${ndaDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowNdaSentPortalSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowNdaSentPortalSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 )}
                 {showNdaResponseConfirm && (
@@ -535,10 +581,32 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                 <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800">
                   Downloaded
                 </Badge>
-                {!showOfferSentConfirm && (
-                  <Button size="sm" variant="default" onClick={() => setShowOfferSentConfirm(true)}>
-                    Mark as Sent
-                  </Button>
+                {!showOfferSentConfirm && !showOfferPortalSwitchConfirm && (
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="default" onClick={() => setShowOfferSentConfirm(true)}>
+                      Mark as Sent
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowOfferPortalSwitchConfirm(true)}>
+                      Switch to Portal
+                    </Button>
+                  </div>
+                )}
+                {showOfferPortalSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the offline offer letter. You can then send it via the seller portal.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${offerDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowOfferPortalSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowOfferPortalSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 )}
                 {showOfferSentConfirm && (
                   <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
@@ -586,7 +654,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                 <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
                   Sent
                 </Badge>
-                {!showOfferResponseConfirm && (
+                {!showOfferResponseConfirm && !showOfferSentPortalSwitchConfirm && (
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" className="text-green-700 dark:text-green-300 border-green-300 dark:border-green-700" onClick={() => setShowOfferResponseConfirm('accepted')}>
                       Accepted
@@ -597,6 +665,26 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
                     <Button size="sm" variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" onClick={() => setShowOfferResponseConfirm('countered')}>
                       Countered
                     </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowOfferSentPortalSwitchConfirm(true)}>
+                      Switch to Portal
+                    </Button>
+                  </div>
+                )}
+                {showOfferSentPortalSwitchConfirm && (
+                  <div className="rounded-md border border-border bg-muted/50 p-3 space-y-2">
+                    <p className="text-sm">This will withdraw the offline offer letter marked as sent. You can then send it via the seller portal.</p>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        await apiRequest('POST', `/api/v2/deal-documents/${offerDoc.id}/withdraw`, {});
+                        queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+                        setShowOfferSentPortalSwitchConfirm(false);
+                      }}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowOfferSentPortalSwitchConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 )}
                 {showOfferResponseConfirm && (
