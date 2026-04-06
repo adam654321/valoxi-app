@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, integer, boolean, timestamp, json, inet } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, json, jsonb, inet } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { targetCompanies } from './deals';
@@ -42,6 +42,25 @@ export const dealDocuments = pgTable("deal_documents", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const currentOffers = pgTable('current_offers', {
+  id: serial('id').primaryKey(),
+  targetCompanyId: integer('target_company_id').notNull().references(() => targetCompanies.id),
+  userCompanyId: integer('user_company_id').notNull().references(() => userCompanies.id),
+  dealDocumentId: integer('deal_document_id').references(() => dealDocuments.id),
+  dealModelId: integer('deal_model_id'),
+  offerPrice: text('offer_price'),
+  enterpriseValue: text('enterprise_value'),
+  transactionType: varchar('transaction_type', { length: 20 }),
+  documentData: jsonb('document_data'),
+  deliveryMethod: varchar('delivery_method', { length: 10 }),
+  status: varchar('status', { length: 20 }).default('sent'),
+  sentAt: timestamp('sent_at'),
+  acceptedAt: timestamp('accepted_at'),
+  acceptedBy: varchar('accepted_by', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 export const dealDocumentResponses = pgTable("deal_document_responses", {
   id: serial("id").primaryKey(),
   dealDocumentId: integer("deal_document_id").references(() => dealDocuments.id).notNull(),
@@ -77,3 +96,12 @@ export type InsertDealDocument = z.infer<typeof insertDealDocumentSchema>;
 
 export type DealDocumentResponse = typeof dealDocumentResponses.$inferSelect;
 export type InsertDealDocumentResponse = z.infer<typeof insertDealDocumentResponseSchema>;
+
+export const insertCurrentOfferSchema = createInsertSchema(currentOffers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CurrentOffer = typeof currentOffers.$inferSelect;
+export type InsertCurrentOffer = z.infer<typeof insertCurrentOfferSchema>;
