@@ -116,23 +116,51 @@ export class WebsiteAnalysisService {
 
   private parseTextResponse(text: string): WebsiteAnalysisResult {
     const normalize = (value: string): string | null => {
-      const cleaned = value.trim().replace(/\s+/g, ' ');
-      return !cleaned || cleaned.toLowerCase().includes('not available') || cleaned.toLowerCase().includes('not provided') ? null : cleaned;
+      const cleaned = value.trim().replace(/\*\*/g, '').replace(/\s+/g, ' ');
+      if (!cleaned) return null;
+      // Only treat as unavailable if the whole value IS "not available" (not if it's mentioned in passing)
+      const isUnavailable = /^(?:not available|not provided|information not available|n\/a|none|unknown)\.?$/i.test(cleaned);
+      return isUnavailable ? null : cleaned;
     };
 
+    const stripLabel = (content: string): string => content
+      .replace(/^(?:Name of business|Type of industry category|Type of industry|Company Description\s*\/?\s*Summary|Year Established|Registered Address\s*\/?\s*Location\(?s?\)?|Legal Structure)\s*[:\-]?\s*/i, '')
+      .replace(/^\*\*[^*]+\*\*\s*[:\-]?\s*/, '')
+      .trim();
+
     const segments: Record<number, string> = {};
-    const parts = text.split(/(?=\b[1-7][.)]\s)/);
+
+    // Split on any of: "1 ", "1. ", "1) ", "**1.", "**1 " — possibly after line start
+    const parts = text.split(/(?=(?:^|\n)\s*\*{0,2}[1-7][.)]\s)/);
     for (const part of parts) {
-      const match = part.match(/^([1-7])[.)]\s*([\s\S]*)/);
+      // Match number at the very start of the segment, stripping optional markdown bold
+      const match = part.trim().match(/^\*{0,2}([1-7])[.)]\s*\*{0,2}\s*([\s\S]*)/);
       if (match) {
         const num = parseInt(match[1]);
-        const content = match[2].replace(/^(?:Name of business|Type of industry category|Type of industry|Company Description\s*\/?\s*Summary|Year Established|Registered Address\s*\/?\s*Location\(?s?\)?|Legal Structure)\s*[:\-]?\s*/i, '').trim();
+        const content = stripLabel(match[2]);
         segments[num] = content;
       }
     }
 
+    // Fallback: try named-label extraction if number splitting missed fields
+    if (Object.keys(segments).length === 0) {
+      const labelPatterns: Array<[number, RegExp]> = [
+        [1, /(?:Name of business|Business Name)[^:\n]*[:\-]\s*(.+)/i],
+        [2, /(?:Type of industry(?! category)|Industry Type)[^:\n]*[:\-]\s*(.+)/i],
+        [3, /(?:Type of industry category|Industry Category)[^:\n]*[:\-]\s*(.+)/i],
+        [4, /(?:Company Description|Summary)[^:\n]*[:\-]\s*([\s\S]+?)(?=\n\s*\d[.) ]|$)/i],
+        [5, /(?:Year Established|Founded)[^:\n]*[:\-]\s*(.+)/i],
+        [6, /(?:Registered Address|Registered Office|Location)[^:\n]*[:\-]\s*(.+)/i],
+        [7, /(?:Legal Structure)[^:\n]*[:\-]\s*(.+)/i],
+      ];
+      for (const [num, pattern] of labelPatterns) {
+        const m = text.match(pattern);
+        if (m) segments[num] = m[1].trim();
+      }
+    }
+
     return {
-      businessName: normalize(segments[1] || '') ,
+      businessName: normalize(segments[1] || ''),
       industryType: normalize(segments[2] || ''),
       industryCategory: normalize(segments[3] || ''),
       companyDescription: normalize(segments[4] || ''),
