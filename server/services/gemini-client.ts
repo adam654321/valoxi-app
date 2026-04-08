@@ -32,6 +32,7 @@ export type ThinkingLevel = "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
 
 export interface GenerateContentOptions {
   prompt: string;
+  systemInstruction?: string;
   model?: string;
   temperature?: number;
   responseMimeType?: string;
@@ -138,6 +139,7 @@ export class GeminiClient {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
 
       const requestBody: any = {
+        ...(options.systemInstruction ? { system_instruction: { parts: [{ text: options.systemInstruction }] } } : {}),
         contents: [{ role: 'user', parts }],
         generationConfig: {
           temperature,
