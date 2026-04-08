@@ -96,8 +96,9 @@ export class WebsiteAnalysisService {
         return { success: false, error: 'No content in Gemini response', processingTime };
       }
 
-      const rawMarkdown = response.text.trim();
-      const analysis = this.parseTextResponse(rawMarkdown);
+      const rawText = response.text.trim();
+      const analysis = this.parseTextResponse(rawText);
+      const rawMarkdown = this.formatAsMarkdown(analysis);
 
       return { success: true, analysis, rawMarkdown, processingTime };
     } catch (error) {
@@ -114,22 +115,54 @@ export class WebsiteAnalysisService {
   }
 
   private parseTextResponse(text: string): WebsiteAnalysisResult {
-    const extract = (pattern: RegExp): string | null => {
-      const match = text.match(pattern);
-      if (!match) return null;
-      const value = match[1].trim();
-      return value.toLowerCase().includes('not available') || value === '' ? null : value;
+    const normalize = (value: string): string | null => {
+      const cleaned = value.trim().replace(/\s+/g, ' ');
+      return !cleaned || cleaned.toLowerCase().includes('not available') || cleaned.toLowerCase().includes('not provided') ? null : cleaned;
     };
 
+    const segments: Record<number, string> = {};
+    const parts = text.split(/(?=\b[1-7][.)]\s)/);
+    for (const part of parts) {
+      const match = part.match(/^([1-7])[.)]\s*([\s\S]*)/);
+      if (match) {
+        const num = parseInt(match[1]);
+        const content = match[2].replace(/^(?:Name of business|Type of industry category|Type of industry|Company Description\s*\/?\s*Summary|Year Established|Registered Address\s*\/?\s*Location\(?s?\)?|Legal Structure)\s*[:\-]?\s*/i, '').trim();
+        segments[num] = content;
+      }
+    }
+
     return {
-      businessName: extract(/^1[.)]\s*(?:Name of business[:\-]?)?\s*(.+)/im),
-      industryType: extract(/^2[.)]\s*(?:Type of industry[:\-]?)?\s*(.+)/im),
-      industryCategory: extract(/^3[.)]\s*(?:Type of industry category[:\-]?)?\s*(.+)/im),
-      companyDescription: extract(/^4[.)]\s*(?:Company Description\s*\/?\s*Summary[:\-]?)?\s*(.+)/im),
-      yearEstablished: extract(/^5[.)]\s*(?:Year Established[:\-]?)?\s*(.+)/im),
-      registeredAddress: extract(/^6[.)]\s*(?:Registered Address\s*\/?\s*Location\(?s?\)?[:\-]?)?\s*(.+)/im),
-      legalStructure: extract(/^7[.)]\s*(?:Legal Structure[:\-]?)?\s*(.+)/im),
+      businessName: normalize(segments[1] || '') ,
+      industryType: normalize(segments[2] || ''),
+      industryCategory: normalize(segments[3] || ''),
+      companyDescription: normalize(segments[4] || ''),
+      yearEstablished: normalize(segments[5] || ''),
+      registeredAddress: normalize(segments[6] || ''),
+      legalStructure: normalize(segments[7] || ''),
     };
+  }
+
+  private formatAsMarkdown(analysis: WebsiteAnalysisResult): string {
+    const line = (label: string, value: string | null) =>
+      `**${label}:** ${value || 'Not available'}`;
+
+    return [
+      '## Website Analysis',
+      '',
+      line('Business Name', analysis.businessName),
+      '',
+      line('Industry Type', analysis.industryType),
+      '',
+      line('Industry Category', analysis.industryCategory),
+      '',
+      line('Company Description', analysis.companyDescription),
+      '',
+      line('Year Established', analysis.yearEstablished),
+      '',
+      line('Registered Address', analysis.registeredAddress),
+      '',
+      line('Legal Structure', analysis.legalStructure),
+    ].join('\n');
   }
 
   async analyzeAndUpdateCompany(targetCompanyId: number, websiteUrl: string, tracking?: WebsiteTrackingContext): Promise<AnalysisResponse> {
