@@ -6,6 +6,9 @@ import { UnauthorizedError, BadRequestError, NotFoundError } from '../utils/erro
 import { insertTargetCompanySchema } from '@shared/schema';
 import { asyncHandler } from '../utils/async-handler';
 import { requirePermission } from '../middleware/auth';
+import { db } from '../db';
+import { targetCompanies } from '@shared/schema';
+import { and, eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -134,6 +137,27 @@ router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const validatedData = insertTargetCompanySchema.partial().parse(req.body);
   const company = await targetCompaniesService.update(id, validatedData, userCompanyId);
   res.json(company);
+}));
+
+router.patch('/:id/business-info', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const id = parseInt(req.params.id);
+  if (!userCompanyId) throw new UnauthorizedError();
+  if (isNaN(id)) throw new BadRequestError('Invalid target company ID');
+
+  const { description, websiteAnalysis } = req.body;
+
+  const [updated] = await db
+    .update(targetCompanies)
+    .set({
+      description: description ?? null,
+      websiteAnalysis: websiteAnalysis ?? null,
+    })
+    .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
+    .returning();
+
+  if (!updated) throw new NotFoundError('Target company not found');
+  res.json(updated);
 }));
 
 router.delete('/:id', requirePermission('canDeleteDeals'), asyncHandler(async (req: Request, res: Response) => {

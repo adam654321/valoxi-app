@@ -201,6 +201,26 @@ export default function TargetCompanyDetail() {
     },
   });
 
+  const [showEditBusinessInfo, setShowEditBusinessInfo] = useState(false);
+  const [businessInfoDraft, setBusinessInfoDraft] = useState({ description: "", websiteAnalysis: "" });
+
+  const updateBusinessInfoMutation = useMutation({
+    mutationFn: async (data: { description: string; websiteAnalysis: string }) => {
+      return await apiRequest("PATCH", `/api/v2/target-companies/${id}/business-info`, {
+        description: data.description || null,
+        websiteAnalysis: data.websiteAnalysis || null,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", id, "profile"] });
+      setShowEditBusinessInfo(false);
+      toast({ title: "Success", description: "Business information updated successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update business information.", variant: "destructive" });
+    },
+  });
+
   // Add contact mutation using v2 endpoint
   const addContactMutation = useMutation({
     mutationFn: (data: ContactFormData) =>
@@ -677,7 +697,24 @@ export default function TargetCompanyDetail() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Business Information</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Business Information</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setBusinessInfoDraft({
+                          description: company.description || "",
+                          websiteAnalysis: company.websiteAnalysis || "",
+                        });
+                        setShowEditBusinessInfo(true);
+                      }}
+                      title="Edit Business Information"
+                      data-testid="button-edit-business-info"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {company.description && (
@@ -1223,6 +1260,53 @@ export default function TargetCompanyDetail() {
           isPending={updateCompanyMutation.isPending}
         />
       )}
+
+      <Dialog open={showEditBusinessInfo} onOpenChange={setShowEditBusinessInfo}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Business Information</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                value={businessInfoDraft.description}
+                onChange={(e) => setBusinessInfoDraft((d) => ({ ...d, description: e.target.value }))}
+                placeholder="Enter a description of the business..."
+                rows={4}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Website Analysis</label>
+              <p className="text-xs text-muted-foreground">
+                You can enter or paste analysis content here manually. Markdown formatting is supported.
+              </p>
+              <Textarea
+                value={businessInfoDraft.websiteAnalysis}
+                onChange={(e) => setBusinessInfoDraft((d) => ({ ...d, websiteAnalysis: e.target.value }))}
+                placeholder="Enter website analysis content..."
+                rows={10}
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEditBusinessInfo(false)}
+                disabled={updateBusinessInfoMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => updateBusinessInfoMutation.mutate(businessInfoDraft)}
+                disabled={updateBusinessInfoMutation.isPending}
+              >
+                {updateBusinessInfoMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
