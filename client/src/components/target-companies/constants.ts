@@ -29,6 +29,13 @@ export const sectorsData: Record<string, string[]> = {
     "Specialist Care & Complex Needs",
     "Staffing & Recruitment (Care)"
   ],
+  "Childcare": [
+    "After-School & Holiday Clubs",
+    "Day Nurseries & Early Years Settings",
+    "Home-Based Childcare (Childminders)",
+    "Special Educational Needs (SEN) Childcare",
+    "Wraparound Care Services"
+  ],
   "Childcare & Education": [
     "After-School Clubs & Wraparound Care",
     "Day Nurseries & Crèches",
@@ -60,6 +67,13 @@ export const sectorsData: Record<string, string[]> = {
     "Interior Fit-Out & Refurbishment",
     "Scaffolding & Access",
     "Specialist Trades (Roofing, Cladding, etc.)"
+  ],
+  "Education": [
+    "Early Years & Schools",
+    "Educational Technology",
+    "Higher Education",
+    "Private Training & Development",
+    "Vocational & Apprenticeship Training"
   ],
   "Education & Training": [
     "Apprenticeship & Vocational Training",
