@@ -42,23 +42,21 @@ const CompanyCard: React.FC<CompanyCardProps> = ({
       data-testid={`card-company-${company.id}`}
     >
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{company.companyName}</CardTitle>
-            <div className="flex items-center gap-2 mt-1">
-              {company.industry && (
-                <Badge variant="secondary" className="text-xs">
-                  {company.industry}
-                </Badge>
-              )}
-              {company.isArchived && (
-                <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                  Archived
-                </Badge>
-              )}
-            </div>
+        <CardTitle className="text-lg truncate">{company.companyName}</CardTitle>
+        <div className="flex justify-between items-center mt-1">
+          <div className="flex items-center gap-2">
+            {company.industry && (
+              <Badge variant="secondary" className="text-xs">
+                {company.industry}
+              </Badge>
+            )}
+            {company.isArchived && (
+              <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                Archived
+              </Badge>
+            )}
           </div>
-          <div className="flex space-x-1 ml-2">
+          <div className="flex space-x-1">
             {!company.isArchived && (
               <Link href={`/target-companies/${company.id}`}>
                 <Button variant="ghost" size="sm" title="View Details" data-testid={`button-view-${company.id}`}>
