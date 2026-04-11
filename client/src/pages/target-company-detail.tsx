@@ -683,6 +683,53 @@ export default function TargetCompanyDetail() {
                     </div>
                   )}
 
+                  {company.industry && (
+                    <div className="flex items-center gap-3" data-testid="info-industry">
+                      <Building2 className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-muted-foreground">Sector</span>
+                        <div>{company.industry}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {company.subSector && (
+                    <div className="flex items-center gap-3" data-testid="info-sub-sector">
+                      <Building2 className="w-4 h-4 text-muted-foreground opacity-0" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-muted-foreground">Sub-sector</span>
+                        <div>{company.subSector}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {company.annualRevenue && (
+                    <div className="flex items-center gap-3" data-testid="info-annual-revenue">
+                      <DollarSign className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-muted-foreground">Annual Revenue</span>
+                        <div>
+                          {(() => {
+                            const num = parseFloat(company.annualRevenue!);
+                            return isNaN(num)
+                              ? company.annualRevenue
+                              : `£${num.toLocaleString('en-GB')}`;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {company.employeeCount && (
+                    <div className="flex items-center gap-3" data-testid="info-employee-count">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-muted-foreground">Employees</span>
+                        <div>{company.employeeCount.toLocaleString('en-GB')}</div>
+                      </div>
+                    </div>
+                  )}
+
                   {company.yearEstablished && (
                     <div className="flex items-center gap-3" data-testid="info-year-established">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
