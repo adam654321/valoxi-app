@@ -38,7 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator, LineChart } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Mail, Phone, User, MapPin, Globe, Calendar, Users, DollarSign, Building2, ExternalLink, TrendingUp, FileText, RefreshCw, BarChart, CheckCircle, AlertTriangle, BarChart3, ChevronDown, MessageSquare, Loader2, Bell, Clock, StickyNote, RotateCcw, Calculator, LineChart, Pencil } from "lucide-react";
 import ExpertAnalysisDashboard from "@/components/analysis/ExpertAnalysisDashboard";
 import type { TargetCompany, TargetContact } from "@shared/schema";
 import { DealTeamManagement } from "@/components/deal-team-management";
@@ -50,6 +50,9 @@ import DealModeller from "@/components/target-company/DealModeller";
 import ValueCreationModeller from "@/components/target-company/ValueCreationModeller";
 import { useTargetCompany } from "@/hooks/useTargetCompany";
 import { UpgradePrompt } from "@/components/billing";
+import CompanyFormDialog from "@/components/target-companies/company-form-dialog";
+import type { TargetCompanyWithStats } from "@/components/target-companies/types";
+import type { TargetCompanyForm } from "@/components/target-companies/schemas";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -167,6 +170,36 @@ export default function TargetCompanyDetail() {
     profileFetching,
     refetchProfile,
   } = useTargetCompany({ companyId: id });
+
+  const [showEditCompanyForm, setShowEditCompanyForm] = useState(false);
+
+  const updateCompanyMutation = useMutation({
+    mutationFn: async (data: TargetCompanyForm) => {
+      const payload = {
+        companyName: data.companyName,
+        industry: data.sector,
+        subSector: data.subSector || null,
+        website: data.website || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        annualRevenue: data.annualRevenue ? Number(data.annualRevenue) : null,
+        employeeCount: data.employeeCount ? Number(data.employeeCount) : null,
+        yearEstablished: data.yearEstablished ? Number(data.yearEstablished) : null,
+        description: data.description || null,
+      };
+      return await apiRequest("PUT", `/api/v2/target-companies/${id}`, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", id, "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"], exact: false });
+      setShowEditCompanyForm(false);
+      toast({ title: "Success", description: "Company updated successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update company.", variant: "destructive" });
+    },
+  });
 
   // Add contact mutation using v2 endpoint
   const addContactMutation = useMutation({
@@ -551,7 +584,18 @@ export default function TargetCompanyDetail() {
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Company Details</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Company Details</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowEditCompanyForm(true)}
+                      title="Edit Company"
+                      data-testid="button-edit-company-details"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {company.website && (
@@ -1169,6 +1213,16 @@ export default function TargetCompanyDetail() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {company && (
+        <CompanyFormDialog
+          open={showEditCompanyForm}
+          onOpenChange={setShowEditCompanyForm}
+          editingCompany={company as unknown as TargetCompanyWithStats}
+          onSubmit={(data: TargetCompanyForm) => updateCompanyMutation.mutate(data)}
+          isPending={updateCompanyMutation.isPending}
+        />
+      )}
     </div>
   );
 }
