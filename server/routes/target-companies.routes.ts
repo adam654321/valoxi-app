@@ -145,9 +145,6 @@ router.patch('/:id/business-info', asyncHandler(async (req: Request, res: Respon
   if (!userCompanyId) throw new UnauthorizedError();
   if (isNaN(id)) throw new BadRequestError('Invalid target company ID');
 
-  console.log('[BUSINESS-INFO PATCH] raw body keys:', Object.keys(req.body || {}));
-  console.log('[BUSINESS-INFO PATCH] description value:', JSON.stringify(req.body?.description));
-  console.log('[BUSINESS-INFO PATCH] websiteAnalysis length:', req.body?.websiteAnalysis?.length ?? 'undefined');
   const { description, websiteAnalysis } = req.body;
 
   const [updated] = await db
@@ -158,8 +155,6 @@ router.patch('/:id/business-info', asyncHandler(async (req: Request, res: Respon
     })
     .where(and(eq(targetCompanies.id, id), eq(targetCompanies.userCompanyId, userCompanyId)))
     .returning();
-
-  console.log('[BUSINESS-INFO PATCH] updated description:', updated?.description);
 
   if (!updated) throw new NotFoundError('Target company not found');
   res.json(updated);
