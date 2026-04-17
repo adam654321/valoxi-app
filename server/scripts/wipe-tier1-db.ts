@@ -11,6 +11,26 @@
  *   0 = success (dry-run completed, or execute committed)
  *   1 = safety-check failed → rolled back
  *   2 = unexpected error
+ *
+ * ── Notes for later tiers ────────────────────────────────────────────────────
+ * TIER 3 PLANNING (portal_access_tokens):
+ *   portal_access_tokens (currently scoped in Tier 4) has two NOT NULL FKs to
+ *   Tier 3 tables:
+ *     - portal_access_tokens.target_company_id → target_companies.id  (NOT NULL)
+ *     - portal_access_tokens.target_contact_id → target_contacts.id   (NOT NULL)
+ *   These will block the Tier 3 DELETE of target_companies / target_contacts
+ *   if portal_access_tokens is still present. When writing the Tier 3 script,
+ *   move portal_access_tokens DELETE into Tier 3 BEFORE target_contacts and
+ *   target_companies. Its T1/T2 children (portal_activity_log, chase_up_emails,
+ *   chase_up_schedules, external_document_submissions, portal_document_requirements)
+ *   are all already deleted before Tier 3 — safe.
+ *   Row counts (at FK-sweep time): total=17, non-kept=9.
+ *
+ * TIER 3 ZERO-ROW THEORETICAL BLOCKERS (note only, no DELETE needed unless data grows):
+ *   - company_document_requirements.target_company_id → target_companies (0 rows)
+ *   - document_stage_progression.target_company_id    → target_companies (0 rows)
+ *   - portal_analytics.portal_token_id                → portal_access_tokens (0 rows)
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { pool } from '../db';
@@ -189,6 +209,28 @@ const STATEMENTS: Statement[] = [
   },
   {
     id:       10,
+    purpose:  'DELETE document_analysis_results via non-kept documents → target_companies',
+    kind:     'DELETE',
+    expected: 493,
+    countSql: `SELECT COUNT(*) AS n FROM document_analysis_results
+               WHERE document_id IN (
+                 SELECT id FROM documents
+                 WHERE target_company_id IN (
+                   SELECT id FROM target_companies
+                   WHERE user_company_id NOT IN (${KEPT_COMPANY_IDS.join(',')})
+                 )
+               )`,
+    execSql:  `DELETE FROM document_analysis_results
+               WHERE document_id IN (
+                 SELECT id FROM documents
+                 WHERE target_company_id IN (
+                   SELECT id FROM target_companies
+                   WHERE user_company_id NOT IN (${KEPT_COMPANY_IDS.join(',')})
+                 )
+               )`,
+  },
+  {
+    id:       11,
     purpose:  'DELETE file_upload_events via non-kept target_companies',
     kind:     'DELETE',
     expected: 256,
@@ -204,7 +246,7 @@ const STATEMENTS: Statement[] = [
                )`,
   },
   {
-    id:       11,
+    id:       12,
     purpose:  'DELETE stage_history via non-kept target_companies',
     kind:     'DELETE',
     expected: 33,
@@ -220,7 +262,7 @@ const STATEMENTS: Statement[] = [
                )`,
   },
   {
-    id:       12,
+    id:       13,
     purpose:  'DELETE stage1_analysis_events via non-kept target_companies',
     kind:     'DELETE',
     expected: 0,
@@ -236,7 +278,7 @@ const STATEMENTS: Statement[] = [
                )`,
   },
   {
-    id:       13,
+    id:       14,
     purpose:  'DELETE chase_up_emails via non-kept portal_access_tokens',
     kind:     'DELETE',
     expected: 36,
@@ -252,7 +294,7 @@ const STATEMENTS: Statement[] = [
                )`,
   },
   {
-    id:       14,
+    id:       15,
     purpose:  'DELETE chase_up_schedules via non-kept portal_access_tokens',
     kind:     'DELETE',
     expected: 9,
@@ -268,7 +310,7 @@ const STATEMENTS: Statement[] = [
                )`,
   },
   {
-    id:       15,
+    id:       16,
     purpose:  'DELETE portal_communications_log via non-kept portal_link_campaigns',
     kind:     'DELETE',
     expected: 0,
