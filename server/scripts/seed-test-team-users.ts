@@ -1,9 +1,12 @@
 import { db } from '../db';
 import { users } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 
 const TEST_PASSWORD = 'TestUser123!';
+
+// The specific Adam Jones who owns the RBAC test company
+const ADMIN_EMAIL = 'adamjones@me.com';
 
 const TEST_USERS = [
   { firstName: 'Deal', lastName: 'Manager', email: 'test.dealmanager@test.com', userRole: 'deal_manager' },
@@ -17,24 +20,24 @@ const TEST_USERS = [
 async function seedTestTeamUsers() {
   console.log('=== Seeding RBAC Test Team Users ===\n');
 
-  // Find Adam Jones (company admin)
+  // Find Adam Jones by email (specific to the RBAC test company)
   const [adamJones] = await db
     .select()
     .from(users)
-    .where(and(eq(users.firstName, 'Adam'), eq(users.lastName, 'Jones'), eq(users.isCompanyAdmin, true)));
+    .where(eq(users.email, ADMIN_EMAIL));
 
   if (!adamJones) {
-    console.error('[ERROR] Could not find Adam Jones (company admin). Make sure this user exists before running this script.');
+    console.error(`[ERROR] Could not find admin user (${ADMIN_EMAIL}). Make sure this user exists before running this script.`);
     process.exit(1);
   }
 
   const companyId = adamJones.userCompanyId;
   if (!companyId) {
-    console.error('[ERROR] Adam Jones does not have a userCompanyId set.');
+    console.error('[ERROR] Admin user does not have a userCompanyId set.');
     process.exit(1);
   }
 
-  console.log(`[OK] Found Adam Jones (id: ${adamJones.id}), company id: ${companyId}\n`);
+  console.log(`[OK] Found ${adamJones.firstName} ${adamJones.lastName} (id: ${adamJones.id}), company id: ${companyId}\n`);
 
   const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
 
