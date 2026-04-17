@@ -44,12 +44,17 @@ async function seedTestTeamUsers() {
     const [existing] = await db.select().from(users).where(eq(users.email, testUser.email));
 
     if (existing) {
-      // Update to ensure correct company and role
+      // Full upsert: ensure deterministic non-admin state every run
       await db.update(users)
         .set({
+          firstName: testUser.firstName,
+          lastName: testUser.lastName,
+          passwordHash,
           userCompanyId: companyId,
+          role: 'user',
           userRole: testUser.userRole,
           isCompanyAdmin: false,
+          isSystemAdmin: false,
           isActive: true,
           emailVerified: true,
           onboardingCompleted: true,
@@ -92,13 +97,11 @@ async function seedTestTeamUsers() {
   }
 
   console.log('=== Test Users Summary ===\n');
-  console.log(`${'Name'.padEnd(22)} ${'Email'.padEnd(36)} ${'Role'.padEnd(18)} Status`);
-  console.log('-'.repeat(100));
+  console.log(`${'Name'.padEnd(22)} ${'Email'.padEnd(36)} ${'Role'.padEnd(18)} ${'Password'.padEnd(18)} Status`);
+  console.log('-'.repeat(115));
   for (const r of results) {
-    console.log(`${r.name.padEnd(22)} ${r.email.padEnd(36)} ${r.role.padEnd(18)} ${r.status}`);
+    console.log(`${r.name.padEnd(22)} ${r.email.padEnd(36)} ${r.role.padEnd(18)} ${TEST_PASSWORD.padEnd(18)} ${r.status}`);
   }
-
-  console.log(`\nShared test password: ${TEST_PASSWORD}`);
   console.log('\n=== Done ===');
   process.exit(0);
 }
