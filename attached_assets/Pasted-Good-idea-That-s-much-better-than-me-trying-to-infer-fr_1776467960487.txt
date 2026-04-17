@@ -1,0 +1,51 @@
+Good idea. That's much better than me trying to infer from snapshots. Let me write a prompt that asks Replit to do a proper dev-vs-prod comparison for Tier 1 scope.
+
+PROMPT — DEV VS PROD TIER 1 COMPARISON (paste into Replit)
+Read-only. Do not modify any data on either database.
+Adam ran Tier 1 against prod via the SQL Console (two runs — one partial, one with the DO block verification). The DO block raised an exception with non-zero counts, but a follow-up read-only SELECT shows all Tier 1 counts at zero on prod. We need to confirm prod state matches dev state for all Tier 1 affected tables before moving to Tier 2.
+Run the following comparison queries against BOTH the dev database and the prod database. For each row, report dev count, prod count, match/mismatch.
+Step 1: Tier 1 verification counts — all must be zero on both.
+For each, run against both DBs and report side by side:
+a) beta_feedback with user_company_id IS NOT NULL — expected 0 on both
+b) beta_feedback with user_company_id IS NULL — expected 62 on both (matches if UPDATE ran)
+c) system_config with updated_by_user_id IS NOT NULL AND NOT IN (1,2,11,13) — expected 0 on both
+d) dashboard_alerts total — expected 0 on both
+e) team_notifications total — expected 0 on both
+f) funnel_events WHERE user_company_id NOT IN (5,11,13) — expected 0 on both
+g) funnel_events WHERE user_company_id IN (5,11,13) — expected to match between dev and prod
+h) token_usage WHERE user_id NOT IN (1,2,11,13) — expected 0 on both
+i) token_usage WHERE user_id IN (1,2,11,13) — expected to match (±small drift acceptable from live activity)
+j) deal_metrics_snapshots WHERE user_company_id NOT IN (5,11,13) — expected 0 on both
+k) deal_metrics_snapshots WHERE user_company_id IN (5,11,13) — expected to match
+l) portal_activity_log via non-kept portal_access_tokens — expected 0 on both
+m) document_access_log via non-kept documents → target_companies — expected 0 on both
+n) document_analysis_results via non-kept documents → target_companies — expected 0 on both
+o) file_upload_events via non-kept target_companies — expected 0 on both
+p) stage_history via non-kept target_companies — expected 0 on both
+q) stage1_analysis_events via non-kept target_companies — expected 0 on both
+r) chase_up_emails via non-kept portal_access_tokens — expected 0 on both
+s) chase_up_schedules via non-kept portal_access_tokens — expected 0 on both
+t) portal_communications_log via non-kept portal_link_campaigns — expected 0 on both
+Step 2: Kept-row counts for every table Tier 1 touched, on both DBs.
+For each table, report kept count on dev vs kept count on prod:
+
+beta_feedback (total rows — kept + nulled = 62 on both)
+funnel_events kept
+token_usage kept
+deal_metrics_snapshots kept
+portal_activity_log kept (via kept portal_access_tokens)
+document_access_log kept
+document_analysis_results kept
+file_upload_events kept
+stage_history kept
+chase_up_emails kept
+chase_up_schedules kept
+
+Acceptable drift: token_usage kept and funnel_events kept may be slightly higher on prod due to live activity between dev restore and now. Anything else should match exactly.
+Step 3: Report a final verdict:
+
+All non-kept counts are zero on both DBs: Tier 1 confirmed complete on prod.
+All kept counts match (within acceptable drift): Tier 1 state consistent between dev and prod.
+Any mismatch: flag the table, delta, and recommended action.
+
+Do not modify any data. Report back with the side-by-side comparison table and verdict.
