@@ -23,6 +23,18 @@ export interface TeamMember extends User {
   assignedDealsCount: number;
   currentCompanyId: number | null;
   lastLoginFormatted: string | null;
+  permissions: {
+    canManageUsers: boolean;
+    canManageCompany: boolean;
+    canCreateDeals: boolean;
+    canEditAllDeals: boolean;
+    canDeleteDeals: boolean;
+    canUploadDocuments: boolean;
+    canCreateOffers: boolean;
+    canViewFinancials: boolean;
+    canAccessAnalytics: boolean;
+    canExportData: boolean;
+  } | null;
 }
 
 export class TeamRepository {
@@ -85,11 +97,59 @@ export class TeamRepository {
       hearAboutUs: users.hearAboutUs,
       roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
       assignedDealsCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM ${userDealAssignments} WHERE ${userDealAssignments.userId} = ${users.id} AND ${userDealAssignments.isActive} = true), 0)`,
+      permCanManageUsers: userRoles.canManageUsers,
+      permCanManageCompany: userRoles.canManageCompany,
+      permCanCreateDeals: userRoles.canCreateDeals,
+      permCanEditAllDeals: userRoles.canEditAllDeals,
+      permCanDeleteDeals: userRoles.canDeleteDeals,
+      permCanUploadDocuments: userRoles.canUploadDocuments,
+      permCanCreateOffers: userRoles.canCreateOffers,
+      permCanViewFinancials: userRoles.canViewFinancials,
+      permCanAccessAnalytics: userRoles.canAccessAnalytics,
+      permCanExportData: userRoles.canExportData,
     }).from(users)
       .leftJoin(userRoles, eq(users.userRole, userRoles.roleName))
       .where(and(eq(users.userCompanyId, userCompanyId), eq(users.isActive, true)))
       .orderBy(users.createdAt);
-    return members.map((m) => ({ ...m, lastLoginFormatted: m.lastLogin ? new Date(m.lastLogin).toLocaleDateString() : null }));
+    return members.map((m) => {
+      const {
+        permCanManageUsers,
+        permCanManageCompany,
+        permCanCreateDeals,
+        permCanEditAllDeals,
+        permCanDeleteDeals,
+        permCanUploadDocuments,
+        permCanCreateOffers,
+        permCanViewFinancials,
+        permCanAccessAnalytics,
+        permCanExportData,
+        ...rest
+      } = m;
+
+      const roleJoined = [
+        permCanManageUsers, permCanManageCompany, permCanCreateDeals,
+        permCanEditAllDeals, permCanDeleteDeals, permCanUploadDocuments,
+        permCanCreateOffers, permCanViewFinancials, permCanAccessAnalytics,
+        permCanExportData,
+      ].some((v) => v !== null);
+
+      return {
+        ...rest,
+        lastLoginFormatted: m.lastLogin ? new Date(m.lastLogin).toLocaleDateString() : null,
+        permissions: roleJoined ? {
+          canManageUsers: permCanManageUsers ?? false,
+          canManageCompany: permCanManageCompany ?? false,
+          canCreateDeals: permCanCreateDeals ?? false,
+          canEditAllDeals: permCanEditAllDeals ?? false,
+          canDeleteDeals: permCanDeleteDeals ?? false,
+          canUploadDocuments: permCanUploadDocuments ?? false,
+          canCreateOffers: permCanCreateOffers ?? false,
+          canViewFinancials: permCanViewFinancials ?? false,
+          canAccessAnalytics: permCanAccessAnalytics ?? false,
+          canExportData: permCanExportData ?? false,
+        } : null,
+      };
+    });
   }
 
   async updateUserRole(userId: number, role: string, userCompanyId: number): Promise<User | undefined> {

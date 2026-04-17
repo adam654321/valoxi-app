@@ -18,7 +18,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserPlus, Mail, Edit, Trash2, Crown, Shield, Users, RefreshCw, X, ArrowRight, AlertTriangle } from "lucide-react";
+import { UserPlus, Mail, Edit, Trash2, Crown, Shield, Users, RefreshCw, X, ArrowRight, AlertTriangle, ChevronDown, ChevronUp, CheckCircle2, XCircle, DollarSign, BarChart2, FileDown, FileUp, Briefcase, Pencil, Building2 } from "lucide-react";
 import { Link } from "wouter";
 
 import type { UserInvitation, UserRole, TeamMember } from "@shared/schema";
@@ -42,6 +42,7 @@ export default function TeamManagement() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [seatLimitDialog, setSeatLimitDialog] = useState<{ currentSeats: number; maxSeats: number; canPurchaseMore: boolean } | null>(null);
+  const [expandedMemberId, setExpandedMemberId] = useState<number | null>(null);
 
   const { effectiveMaxSeats, consumedSeats } = useSubscriptionContext();
   const canPurchaseSeats = useHasFeature("additionalSeatPurchasing");
@@ -409,8 +410,26 @@ export default function TeamManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {teamMembers?.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
+            {teamMembers?.map((member) => {
+              const isExpanded = expandedMemberId === member.id;
+              const perms = member.permissions;
+              const permissionList = perms ? [
+                { key: 'canManageUsers', label: 'Manage Users', value: perms.canManageUsers, icon: Shield, sensitive: true },
+                { key: 'canViewFinancials', label: 'View Financials', value: perms.canViewFinancials, icon: DollarSign, sensitive: true },
+                { key: 'canManageCompany', label: 'Manage Company', value: perms.canManageCompany, icon: Building2, sensitive: true },
+                { key: 'canCreateDeals', label: 'Create Deals', value: perms.canCreateDeals, icon: Briefcase, sensitive: false },
+                { key: 'canEditAllDeals', label: 'Edit All Deals', value: perms.canEditAllDeals, icon: Pencil, sensitive: false },
+                { key: 'canDeleteDeals', label: 'Delete Deals', value: perms.canDeleteDeals, icon: Trash2, sensitive: false },
+                { key: 'canUploadDocuments', label: 'Upload Documents', value: perms.canUploadDocuments, icon: FileUp, sensitive: false },
+                { key: 'canCreateOffers', label: 'Create Offers', value: perms.canCreateOffers, icon: Mail, sensitive: false },
+                { key: 'canAccessAnalytics', label: 'Access Analytics', value: perms.canAccessAnalytics, icon: BarChart2, sensitive: false },
+                { key: 'canExportData', label: 'Export Data', value: perms.canExportData, icon: FileDown, sensitive: false },
+              ] : [];
+              const sensitiveBadges = permissionList.filter(p => p.sensitive && p.value);
+
+              return (
+              <div key={member.id} className="border rounded-lg bg-card overflow-hidden">
+                <div className="flex items-center justify-between p-4">
                 <div className="flex items-center space-x-4">
                   <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                     <span className="text-sm font-medium text-foreground">
@@ -435,19 +454,35 @@ export default function TeamManagement() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">{member.email}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {member.userRole?.replace('_', ' ') || 'No Role'}
-                      </Badge>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedMemberId(isExpanded ? null : member.id)}
+                            className="inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <Badge variant="outline" className="text-xs capitalize hover:bg-muted transition-colors">
+                              {member.userRole?.replace(/_/g, ' ') || 'No Role'}
+                              {perms && (isExpanded ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />)}
+                            </Badge>
+                          </button>
+                        </TooltipTrigger>
+                        {perms && (
+                          <TooltipContent side="bottom" className="max-w-xs">
+                            <p className="text-xs font-medium mb-1">Click to see permissions</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
                       <Badge variant="outline" className="text-xs">
                         {member.assignedDealsCount || 0} Deals
                       </Badge>
-                      {member.permissions?.canManageUsers && (
-                        <Badge variant="outline" className="text-xs">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Manager
+                      {sensitiveBadges.map(p => (
+                        <Badge key={p.key} variant="secondary" className="text-xs text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/30 dark:border-amber-800">
+                          <p.icon className="h-3 w-3 mr-1" />
+                          {p.label}
                         </Badge>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -558,8 +593,30 @@ export default function TeamManagement() {
                     </AlertDialog>
                   )}
                 </div>
+                </div>
+
+                {isExpanded && perms && (
+                  <div className="border-t bg-muted/30 px-4 py-3">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Permissions</p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                      {permissionList.map((p) => (
+                        <div key={p.key} className="flex items-center gap-2">
+                          {p.value ? (
+                            <CheckCircle2 className={`h-3.5 w-3.5 flex-shrink-0 ${p.sensitive ? 'text-amber-500' : 'text-green-500'}`} />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />
+                          )}
+                          <span className={`text-xs ${p.value ? (p.sensitive ? 'text-amber-700 dark:text-amber-400 font-medium' : 'text-foreground') : 'text-muted-foreground/60'}`}>
+                            {p.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
             {(!teamMembers || teamMembers.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
                 No team members found. Invite your first team member to get started.
