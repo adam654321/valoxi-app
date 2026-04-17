@@ -1,0 +1,40 @@
+PROMPT — TIER 1 EXECUTE ON DEV (PATCHED) (paste into Replit)
+Dry-run reviewed and authorised. Execute on dev.
+Command:
+EXECUTE=true npx tsx server/scripts/wipe-tier1-db.ts
+Report the full console output:
+
+Startup masked DB URL (confirm dev)
+Per-statement pre-count and tolerance check
+Per-statement actual rows affected
+Final summary table with expected / actual / delta / status
+Commit confirmation
+
+After exit 0, run these post-execute verification queries against dev and report:
+SELECT COUNT(*) FROM beta_feedback WHERE user_company_id IS NULL AND user_id IS NULL;
+-- Expected: 62
+SELECT COUNT(*) FROM beta_feedback WHERE user_company_id IS NOT NULL;
+-- Expected: 0
+SELECT COUNT(*) FROM funnel_events WHERE user_company_id NOT IN (5,11,13);
+-- Expected: 0
+SELECT COUNT(*) FROM token_usage WHERE user_id NOT IN (1,2,11,13);
+-- Expected: 0
+SELECT COUNT(*) FROM deal_metrics_snapshots WHERE user_company_id NOT IN (5,11,13);
+-- Expected: 0
+SELECT COUNT(*) FROM portal_activity_log WHERE portal_token_id IN (SELECT id FROM portal_access_tokens WHERE user_company_id NOT IN (5,11,13));
+-- Expected: 0
+SELECT COUNT(*) FROM document_access_log WHERE document_id IN (SELECT id FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)));
+-- Expected: 0
+SELECT COUNT(*) FROM document_analysis_results WHERE document_id IN (SELECT id FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)));
+-- Expected: 0
+SELECT COUNT(*) FROM file_upload_events WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13));
+-- Expected: 0
+SELECT COUNT(*) FROM chase_up_emails WHERE portal_token_id IN (SELECT id FROM portal_access_tokens WHERE user_company_id NOT IN (5,11,13));
+-- Expected: 0
+Also confirm:
+
+Total TS error count is still 17 (no new errors introduced by the patch)
+Dev application still boots cleanly (quick server start check)
+
+If any verification returns non-zero, flag immediately.
+Stop after verification. Do not proceed to Tier 2.
