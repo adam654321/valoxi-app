@@ -1,0 +1,48 @@
+PROMPT — WRITE TIER 1 SCRIPT (paste into Replit, do not run yet)
+Tier 1 scoping confirmed. Write the Tier 1 wipe script now. Do not run it.
+Place the script at server/scripts/wipe-tier1-db.ts.
+Requirements:
+
+Default mode: dry-run. Reports what would be affected, no writes.
+EXECUTE=true env var triggers actual writes.
+Script must work against the DATABASE_URL configured in the current env (dev). Log the masked database name at startup.
+Wrap all Tier 1 UPDATEs and DELETEs in a single transaction (BEGIN ... COMMIT or ROLLBACK).
+For each statement, log: statement purpose, expected affected rows, actual affected rows.
+Safety limit: each DELETE must have an expected row count. Actual affected rows must be within ±10% of expected, or within ±5 rows for small tables (whichever is larger). If outside tolerance, ROLLBACK and report.
+UPDATEs use the same tolerance check (beta_feedback expected 62, system_config expected 0).
+In dry-run mode, use SELECT COUNT(*) with the same WHERE clauses as the actual statements, to report what would be affected without executing.
+At end of script, print a summary: each statement with expected / actual / delta / status (ok / rollback).
+
+Tier 1 statement list with expected affected rows (from the scoping report):
+UPDATEs:
+
+UPDATE beta_feedback SET user_id = NULL, user_company_id = NULL WHERE user_company_id NOT IN (5, 11, 13) — expected: 62
+UPDATE system_config SET updated_by_user_id = NULL WHERE updated_by_user_id IS NOT NULL AND updated_by_user_id NOT IN (1, 2, 11, 13) — expected: 0
+
+DELETEs (in an order that respects any intra-tier FK dependencies; if there are none within Tier 1, order is arbitrary):
+3. DELETE FROM dashboard_alerts WHERE user_company_id NOT IN (5, 11, 13) — expected: 0
+4. DELETE FROM team_notifications WHERE user_company_id NOT IN (5, 11, 13) — expected: 0
+5. DELETE FROM funnel_events WHERE user_company_id NOT IN (5, 11, 13) — expected: 845
+6. DELETE FROM token_usage WHERE user_id NOT IN (1, 2, 11, 13) — expected: 1420
+7. DELETE FROM deal_metrics_snapshots WHERE user_company_id NOT IN (5, 11, 13) — expected: 386
+8. DELETE FROM portal_activity_log WHERE portal_token_id IN (SELECT id FROM portal_access_tokens WHERE user_company_id NOT IN (5, 11, 13)) — expected: 813
+9. DELETE FROM document_access_log WHERE document_id IN (SELECT id FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5, 11, 13))) — expected: 45
+10. DELETE FROM file_upload_events WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5, 11, 13)) — expected: 256
+11. DELETE FROM stage_history WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5, 11, 13)) — expected: 33
+12. DELETE FROM stage1_analysis_events WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5, 11, 13)) — expected: 0
+13. DELETE FROM chase_up_emails WHERE portal_token_id IN (SELECT id FROM portal_access_tokens WHERE user_company_id NOT IN (5, 11, 13)) — expected: 36
+14. DELETE FROM chase_up_schedules WHERE portal_token_id IN (SELECT id FROM portal_access_tokens WHERE user_company_id NOT IN (5, 11, 13)) — expected: 9
+15. DELETE FROM portal_communications_log WHERE campaign_id IN (SELECT id FROM portal_link_campaigns WHERE user_company_id NOT IN (5, 11, 13)) — expected: 0
+Skipped tables (confirmed empty or not applicable):
+
+portal_link_shares (0 rows)
+activities (0 rows)
+platform_costs (0 rows)
+
+Script exit codes:
+
+0 = success (dry-run or execute)
+1 = any safety check failed, rolled back
+2 = unexpected error
+
+After the script compiles, paste the full script for review. Do not execute. Wait for authorisation.
