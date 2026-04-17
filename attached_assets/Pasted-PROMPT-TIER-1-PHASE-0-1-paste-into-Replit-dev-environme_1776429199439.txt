@@ -1,0 +1,38 @@
+PROMPT — TIER 1 PHASE 0 + 1 (paste into Replit, dev environment)
+Read-only assessment. No data changes. No R2 operations. Verify environment, then extract R2 keys that would be deleted.
+Context: dev's R2 environment variables point at the same R2 bucket as prod. We are using dev to drive an R2 cleanup that will affect prod's R2 bucket in a later phase. Adam has authorised this approach. Kept user IDs are 1, 2, 11, 13. Kept user_company IDs are 5, 11, 13.
+PHASE 0 — ENVIRONMENT VERIFICATION
+Step 0.1: Report the R2 environment variables as configured in this dev environment:
+
+R2_ACCOUNT_ID — masked, first 4 chars and last 4 chars only (e.g. abcd...wxyz)
+R2_ACCESS_KEY_ID — same masking
+R2_BUCKET_NAME — full value
+
+Step 0.2: Report DATABASE_URL masked database name. Confirm this is the dev database, not prod.
+PHASE 1 — R2 KEY EXTRACTION (READ-ONLY)
+Step 1.1: Identify all tables holding R2 file references and the FK path to user_company for each. The four known tables are:
+
+documents (file_path) — direct user_company_id
+external_document_submissions (file_path) — confirm FK path
+deal_documents (generated_file_url) — confirm FK path
+file_upload_events (file_url) — confirm FK path
+
+Report the actual FK column or join path for each.
+Step 1.2: For each of the four tables, report:
+
+Total rows
+Rows belonging to kept companies (5, 11, 13)
+Rows belonging to non-kept companies
+Of the non-kept rows, how many have an R2 key (file path NOT LIKE /home/% AND NOT LIKE uploads/% AND NOT NULL)
+Of the non-kept rows, how many have a dead local path
+
+Step 1.3: Build the deduped to-delete R2 key set. Combine R2 keys from all four tables where the row belongs to a non-kept company. Dedupe.
+Step 1.4: Build the kept R2 key set. R2 keys from rows belonging to kept companies (5, 11, 13) across all four tables. Dedupe.
+Step 1.5: Safety check — compute the intersection of to-delete and kept sets. Report the count. Expected: zero. If non-zero, stop and list the overlapping keys.
+Step 1.6: Final report:
+
+Final to-delete R2 key count (deduped, kept-overlap removed)
+First 10 sample to-delete keys
+First 10 sample kept keys
+
+Stop. Do not proceed further. Wait for explicit authorisation from Adam to run the next phase.
