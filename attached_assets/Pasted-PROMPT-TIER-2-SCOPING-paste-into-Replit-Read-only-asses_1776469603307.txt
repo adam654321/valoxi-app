@@ -1,0 +1,43 @@
+PROMPT — TIER 2 SCOPING (paste into Replit)
+Read-only assessment. Do not write the wipe script yet. Tier 2 covers analysis results, deal models, deal documents, value creation, and documents.
+Kept user IDs: 1, 2, 11, 13. Kept user_company IDs: 5, 11, 13.
+Tier 1 is complete on both dev and prod (verified matching). Tier 2 now targets the following tables:
+
+expert_analysis_results
+deal_document_responses
+dd_requirement_documents
+dd_requirement_status
+portal_document_requirements
+external_document_submissions
+deal_documents
+documents
+current_offers
+value_creation_assumptions
+value_creation_synergies
+value_creation_exit_assumptions
+value_creation_scenarios
+deal_model_adjustments
+deal_model_funding_lines
+deal_models
+
+Step 1: For each table above, report:
+A. The exact FK path from the table to user_company_id (direct column, or join path through deal_id / target_company_id / deal_model_id / portal_token_id / scenario_id).
+B. Total row count.
+C. Kept row count.
+D. Non-kept row count.
+E. The proposed DELETE statement.
+Step 2: Intra-tier FK ordering check. The FK sweep earlier identified these required orderings within Tier 2:
+
+value_creation_assumptions, value_creation_synergies → before value_creation_scenarios
+value_creation_exit_assumptions → before deal_models
+value_creation_scenarios → before deal_models
+deal_model_adjustments → before deal_models
+deal_model_funding_lines → before deal_models
+deal_document_responses → before deal_documents
+dd_requirement_documents → before dd_requirement_status
+
+Verify these are still accurate by querying information_schema for NOT NULL FKs between Tier 2 tables. Report any additional ordering requirements I have missed.
+Step 3: External FK blockers. Check for any NOT NULL FK from a non-Tier-2 table pointing at any of the Tier 2 tables in my list above. Report any that would block a Tier 2 DELETE. Specifically, after Tier 1's completion, check whether any remaining tables (Tiers 3, 4, 5, 6) have NOT NULL FKs pointing at Tier 2 tables that would need to be handled in Tier 2 (i.e. deleted earlier than originally planned).
+The most likely culprit is portal_access_tokens (planned for Tier 3, or Tier 4 per original plan) — check whether it has NOT NULL FKs pointing at any Tier 2 table. Specifically check whether the 21 kept deal_documents rows, 98 kept documents rows, or any other kept Tier 2 row is referenced by a non-kept portal_access_token or similar.
+Step 4: Propose final Tier 2 statement order based on findings from steps 1, 2, and 3. Number each statement with its expected row count.
+Do not modify any data. Do not write the script. Report back with the full Tier 2 scoping and I will authorise the next step.
