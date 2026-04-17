@@ -37,9 +37,20 @@ async function buildKeySet(label: string, query: string): Promise<Set<string>> {
   return keys;
 }
 
+function maskEnv(val: string | undefined): string {
+  if (!val) return '(not set)';
+  if (val.length <= 8) return '****';
+  return `${val.slice(0, 4)}...${val.slice(-4)}`;
+}
+
 async function main() {
   console.log('=== TIER 1 PHASE 2 — R2 WIPE ===\n');
-  console.log(`Bucket: ${process.env.R2_BUCKET_NAME ?? 'valoxi-documents'}`);
+
+  // Startup credential log — operator must eyeball these before proceeding
+  console.log('--- R2 CREDENTIALS (masked) ---');
+  console.log(`R2_ACCOUNT_ID:    ${maskEnv(process.env.R2_ACCOUNT_ID)}`);
+  console.log(`R2_ACCESS_KEY_ID: ${maskEnv(process.env.R2_ACCESS_KEY_ID)}`);
+  console.log(`R2_BUCKET_NAME:   ${process.env.R2_BUCKET_NAME ?? 'valoxi-documents'}`);
   console.log(`Kept user_company IDs: ${KEPT_COMPANY_IDS.join(', ')}\n`);
 
   // ── Step 1: Build to-delete key set ─────────────────────────────────────────
@@ -181,17 +192,22 @@ async function main() {
   const keys = [...toDelete];
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    try {
-      await fileStorageService.delete(key);
-      if (!fileStorageService.isObjectStorageKey(key)) {
-        skipped++;
-      } else {
+
+    // Determine skip/delete BEFORE calling the service.
+    // fileStorageService.delete() silently returns void for non-R2 paths,
+    // so we cannot infer skipped vs succeeded from its return value.
+    if (!fileStorageService.isObjectStorageKey(key)) {
+      skipped++;
+      console.warn(`  SKIPPED [${i + 1}]: not an R2 key — ${key}`);
+    } else {
+      try {
+        await fileStorageService.delete(key);
         succeeded++;
+      } catch (err: any) {
+        failed++;
+        failedKeys.push(key);
+        console.error(`  FAILED [${i + 1}]: ${key} — ${err?.message ?? err}`);
       }
-    } catch (err: any) {
-      failed++;
-      failedKeys.push(key);
-      console.error(`  FAILED [${i + 1}]: ${key} — ${err?.message ?? err}`);
     }
 
     if ((i + 1) % 25 === 0 || i + 1 === keys.length) {
