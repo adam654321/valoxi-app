@@ -120,7 +120,6 @@ export class AuthService {
         lastName: user.lastName,
         isSystemAdmin: user.isSystemAdmin ?? false,
         onboardingCompleted: user.onboardingCompleted ?? false,
-        betaNdaSigned: user.betaNdaSigned ?? false,
       },
       company: userCompany || null,
     };

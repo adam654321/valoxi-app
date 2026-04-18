@@ -19,7 +19,6 @@
   import { billingService } from '../services/billing.service';
   import { magicLinkService } from '../services/magic-link.service';
   import { emailApiService } from '../services/email.service';
-  import { buildBetaNdaEmailHtml } from '../templates/beta-nda-email';
   
   const router = Router();
   
@@ -252,7 +251,6 @@
       lastName: result.user.lastName,
       isSystemAdmin: result.user.isSystemAdmin ?? false,
       onboardingCompleted: result.user.onboardingCompleted ?? false,
-      betaNdaSigned: result.user.betaNdaSigned ?? false,
       company: result.company,
       permissions: req.session.permissions ?? null,
       viewingAs: req.session.adminViewingAsUserId
@@ -382,65 +380,6 @@
   
     console.log('[auth] Magic link resent to:', user.email);
     return res.status(200).json({ success: true, message: 'If an account exists for this email, a new link has been sent.' });
-  }));
-  
-  const betaNdaSchema = z.object({
-    signerName: z.string().min(2, 'Please enter your full name'),
-  });
-  
-  router.post('/beta-nda/sign', isAuthenticated, validateCsrfToken, asyncHandler(async (req: Request, res: Response) => {
-    const { signerName } = betaNdaSchema.parse(req.body);
-    const userId = req.session.userId!;
-  
-    const signerIp = (req.ip ?? req.socket.remoteAddress ?? '').replace(/^::ffff:/, '');
-  
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
-  
-    if (!user) throw new UnauthorizedError();
-    if (user.betaNdaSigned) {
-      return sendSuccess(res, { message: 'NDA already signed' });
-    }
-  
-    await db
-      .update(users)
-      .set({
-        betaNdaSigned: true,
-        betaNdaSignedAt: new Date(),
-        betaNdaSignerName: signerName,
-        betaNdaSignerIp: signerIp || null,
-      })
-      .where(eq(users.id, userId));
-  
-    const signedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  
-    await (emailService as any).sendEmail({
-      to: user.email,
-      subject: 'Valoxi Beta NDA — Your signed copy',
-      html: buildBetaNdaEmailHtml({
-        recipientName: `${user.firstName} ${user.lastName}`,
-        signerName,
-        userEmail: user.email,
-        signedDate,
-      }),
-      fromName: 'Valoxi (ShiftOps Consulting Ltd)',
-    });
-  
-    await (emailService as any).sendEmail({
-      to: 'adam@shiftopsconsulting.com',
-      subject: `Beta NDA signed — ${signerName} (${user.email})`,
-      html: buildBetaNdaEmailHtml({
-        recipientName: signerName,
-        signerName,
-        userEmail: user.email,
-        signedDate,
-      }),
-      fromName: 'Valoxi (ShiftOps Consulting Ltd)',
-    });
-  
-    sendSuccess(res, { message: 'NDA signed successfully' });
   }));
   
   export default router;

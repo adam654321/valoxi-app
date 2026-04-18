@@ -80,7 +80,6 @@ async function seedAdmins() {
         emailVerified: true,
         onboardingCompleted: true,
         onboardingStep: 'create_target',
-        betaNdaSigned: true,
         userCompanyId: shiftOpsCompanyId,
       })
       .where(eq(users.email, adamEmail));
@@ -100,7 +99,6 @@ async function seedAdmins() {
       emailVerified: true,
       onboardingCompleted: true,
       onboardingStep: 'create_target',
-      betaNdaSigned: true,
       userCompanyId: shiftOpsCompanyId,
     }).returning();
     console.log(`[OK] ${adamEmail} — created (id: ${newUser.id}), company = ${shiftOpsCompanyId}`);

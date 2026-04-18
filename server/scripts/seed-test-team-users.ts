@@ -62,7 +62,6 @@ async function seedTestTeamUsers() {
           emailVerified: true,
           onboardingCompleted: true,
           onboardingStep: 'create_target',
-          betaNdaSigned: true,
         })
         .where(eq(users.email, testUser.email));
 
@@ -87,7 +86,6 @@ async function seedTestTeamUsers() {
         emailVerified: true,
         onboardingCompleted: true,
         onboardingStep: 'create_target',
-        betaNdaSigned: true,
       });
 
       results.push({

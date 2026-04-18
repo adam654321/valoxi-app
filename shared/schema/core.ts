@@ -38,10 +38,6 @@ export const users = pgTable("users", {
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
   hearAboutUs: varchar("hear_about_us", { length: 100 }),
   jobTitle: varchar("job_title", { length: 100 }),
-  betaNdaSigned: boolean("beta_nda_signed").default(false).notNull(),
-  betaNdaSignedAt: timestamp("beta_nda_signed_at"),
-  betaNdaSignerName: varchar("beta_nda_signer_name", { length: 255 }),
-  betaNdaSignerIp: inet("beta_nda_signer_ip"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

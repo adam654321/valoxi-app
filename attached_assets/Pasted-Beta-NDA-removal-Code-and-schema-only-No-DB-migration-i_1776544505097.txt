@@ -1,0 +1,89 @@
+Beta NDA removal. Code and schema only. No DB migration in this prompt.
+This is a build prompt. Make all the edits listed below in one pass, then report back with the diff summary and the TS error count. Do not generate or run a database migration. The four NDA columns must stay in the DB for now.
+Changes to make:
+
+shared/schema/core.ts
+Remove the four NDA column definitions from the users table (lines 41 to 44):
+
+
+betaNdaSigned
+betaNdaSignedAt
+betaNdaSignerName
+betaNdaSignerIp
+Leave everything else in the users table untouched. Leave insertUserSchema untouched (it will regenerate correctly via createInsertSchema).
+
+
+server/routes/auth.routes.ts
+
+
+Remove the import of buildBetaNdaEmailHtml from ../templates/beta-nda-email (around line 22).
+Remove the betaNdaSigned field from the /me response object (around line 255).
+Remove the entire betaNdaSchema declaration and the whole router.post('/beta-nda/sign', ...) handler block including both sendEmail calls (roughly lines 387 to 440, stop at the closing of that single handler — do not touch anything after it).
+
+
+server/services/auth.service.ts
+
+
+Remove the betaNdaSigned field from the getCurrentUser response (line 123).
+
+
+server/templates/beta-nda-email.ts
+
+
+Delete the entire file.
+
+
+server/scripts/seed-admins.ts
+
+
+Remove the betaNdaSigned: true lines at lines 83 and 103.
+
+
+server/scripts/seed-test-team-users.ts
+
+
+Remove the betaNdaSigned: true lines at lines 65 and 90.
+
+
+client/src/pages/auth/beta-nda.tsx
+
+
+Delete the entire file.
+
+
+client/src/App.tsx
+
+
+Remove the BetaNda lazy import near the top of the file.
+Remove the entire NDA gate block starting at line 94 (the if (import.meta.env.VITE_BETA_MODE === 'true' && user && !user.betaNdaSigned && !user.viewingAs) block and its Suspense/Switch/Route contents).
+Remove the <Route path="/beta-nda" component={BetaNda} /> line inside the authenticated Switch (further down in the same file).
+Leave the BetaFeedbackWidget render and its VITE_BETA_MODE check alone. Not NDA. Not in scope.
+
+
+Do NOT touch:
+
+
+server/routes/beta.routes.ts (plan switcher, separate work item)
+server/routes/beta-feedback.routes.ts (beta feedback, separate)
+client/src/components/BetaFeedbackWidget.tsx
+client/src/pages/billing.tsx VITE_BETA_MODE reference (plan switcher)
+the userCompanies.betaPlanOverride column or anything that references it
+
+After making the edits, do the following and report:
+A. Run the TypeScript check and report the error count. Expected: 17. List any errors that appeared or disappeared compared to the previous baseline.
+B. Grep the whole codebase (client, server, shared, scripts, tests, migrations, docs, attached_assets) for each of these and confirm zero hits remain outside of git history, dist/, and node_modules:
+
+betaNdaSigned
+betaNdaSignedAt
+betaNdaSignerName
+betaNdaSignerIp
+beta_nda_signed
+beta_nda_signed_at
+beta_nda_signer_name
+beta_nda_signer_ip
+beta-nda
+buildBetaNdaEmailHtml
+
+Report any remaining hits and why they remain (for example dist/index.js is a stale built artifact, which is fine).
+C. Start the dev server. Confirm it boots with no errors, /api/v2/auth/me returns a valid response without betaNdaSigned in the payload, and the login page loads.
+D. Do not run drizzle-kit generate or any migration command yet. The DB still has the columns and must stay that way until the next prompt.
