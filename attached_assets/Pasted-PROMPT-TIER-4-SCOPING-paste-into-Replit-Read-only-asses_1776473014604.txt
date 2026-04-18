@@ -1,0 +1,46 @@
+PROMPT — TIER 4 SCOPING (paste into Replit)
+Read-only assessment. Do not write the wipe script yet.
+Tier 3 is complete on both dev and prod (verified matching). Tier 4 targets billing, subscriptions, promo codes, portal-level tables, user invitations, and issue_reports.
+Kept user IDs: 1, 2, 11, 13. Kept user_company IDs: 5, 11, 13.
+Tier 4 tables:
+
+portal_email_templates
+portal_analytics
+portal_link_campaigns
+deal_document_templates (keep is_system=true rows, delete non-kept per-company rows)
+company_document_requirements
+document_stage_progression
+document_requirement_submissions
+user_invitations
+subscription_events
+subscriptions
+addon_purchases
+promo_codes (wipe entirely — all obsolete)
+promo_code_campaigns (wipe entirely — all obsolete)
+issue_reports (wipe all non-kept — 6 rows, never used)
+
+Step 1: For each table, report:
+A. FK path to user_company_id (direct, or indirect via subscription_id, campaign_id, etc).
+B. Total row count.
+C. Kept row count.
+D. Non-kept row count.
+E. Proposed DELETE statement.
+For promo_codes and promo_code_campaigns: report the total count — whole table gets wiped regardless of which rows reference kept companies.
+For deal_document_templates: report breakdown by is_system (true = global templates, keep all), user_company_id IN kept, user_company_id NOT IN kept. The DELETE should only hit NOT-kept, non-system rows.
+Step 2: Intra-tier FK ordering. Identify NOT NULL FKs between Tier 4 tables. At minimum:
+
+subscription_events → before subscriptions
+promo_codes → before promo_code_campaigns (promo_codes.campaign_id NOT NULL FK)
+Anything referencing portal_link_campaigns → before portal_link_campaigns (portal_communications_log was already deleted in T1, but verify no others)
+
+Verify via information_schema.
+Step 3: External FK blockers. Check for any NOT NULL FK from outside Tier 4 pointing at any Tier 4 table. Specifically:
+
+Anything pointing at subscriptions
+Anything pointing at promo_code_campaigns (nothing should; all promo_codes reference it and are being wiped)
+Anything pointing at user_invitations
+Anything pointing at portal_link_campaigns
+
+Also check: subscriptions.promo_code_id — is this nullable? If NOT NULL, we need to consider what happens to the one kept subscription row's promo_code_id when we wipe the promo_code_campaigns table.
+Step 4: Propose final Tier 4 statement order with expected row counts.
+Do not modify any data. Do not write the script. Report back.
