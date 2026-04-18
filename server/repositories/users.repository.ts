@@ -381,6 +381,7 @@ export class UsersRepository {
         onboardingStep: users.onboardingStep,
         onboardingCompletedAt: users.onboardingCompletedAt,
         hearAboutUs: users.hearAboutUs,
+        jobTitle: users.jobTitle,
         roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
         assignedDealsCount: sql<number>`COALESCE((
           SELECT COUNT(*)::int 

@@ -95,6 +95,7 @@ export class TeamRepository {
       onboardingStep: users.onboardingStep,
       onboardingCompletedAt: users.onboardingCompletedAt,
       hearAboutUs: users.hearAboutUs,
+      jobTitle: users.jobTitle,
       roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
       assignedDealsCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM ${userDealAssignments} WHERE ${userDealAssignments.userId} = ${users.id} AND ${userDealAssignments.isActive} = true), 0)`,
       permCanManageUsers: userRoles.canManageUsers,

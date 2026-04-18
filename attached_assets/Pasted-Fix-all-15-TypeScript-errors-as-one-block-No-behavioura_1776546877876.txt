@@ -1,0 +1,25 @@
+Fix all 15 TypeScript errors as one block. No behavioural changes. No runtime code changes beyond adding a single missing SELECT column in two places. Goal is a clean TS baseline of zero errors before Clerk work starts.
+Make all five edits below in one pass, then run the type check and report.
+Edit 1. tsconfig.json
+Add "target": "ES2022" to the compilerOptions. This fixes all 11 downlevelIteration errors in one change (the 10 in server/scripts/wipe-tier1-r2.ts and the 1 in server/services/file-analysis.service.ts). Safe because noEmit is true, so target only affects type checking, not emitted JS. Node 20+ supports ES2022 natively.
+Edit 2. server/repositories/team.repository.ts
+In the getTeamMembers method SELECT object, add this line alongside the other users.* columns:
+jobTitle: users.jobTitle,
+Place it next to hearAboutUs or at the end of the user fields, before the sqlCOALESCE... roleDescription line. The existing map function at line 114 destructures via ...rest so no change to the map body is needed.
+Edit 3. server/repositories/users.repository.ts
+Same fix in its getTeamMembers method. Add to the SELECT:
+jobTitle: users.jobTitle,
+Same placement, next to hearAboutUs or at the end of the user fields. The existing map uses ...member spread so no change to the map body is needed.
+Edit 4. server/types.d.ts (new file)
+Create this file with exactly this content:
+declare module 'html-to-docx';
+Nothing else. It gets picked up automatically via the server/**/* include in tsconfig.
+Edit 5. server/services/promo-code.service.ts
+Around line 222, immediately above the await stripe.invoiceItems.create({ call, add this comment line:
+// @ts-expect-error Stripe InvoiceItemCreateParams overload mismatch. Entire Stripe integration scheduled for rewrite in Clerk+Stripe rebuild. See Valoxi_Action_Log_v9.xlsx item 5.
+Do not try to fix the Stripe types. Do not touch the call itself. This code path is going to be rewritten end to end. The @ts-expect-error directive acts as a tripwire: if the Stripe SDK is ever updated or the call is rewritten in a way that makes the suppression unused, TS will itself raise an error and the comment will need to be removed.
+After making all five edits, do the following and report:
+A. Run npm run check and report the total error count. Expected: 0. If any errors remain, paste the full list with file, line, and error message.
+B. Report the exact diff as a summary: file and line per edit. Not full file contents.
+C. Start the dev server. Confirm it boots with no errors. Hit GET /api/v2/auth/me and the team members endpoint (whichever path team.routes.ts:66 registers) while logged in as one of the four kept users. Report response status codes and confirm the team members response now includes a jobTitle field (even if null).
+D. Do not deploy. Do not push. Do not run db:push or db:generate.

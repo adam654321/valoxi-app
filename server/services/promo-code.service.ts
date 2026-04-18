@@ -220,6 +220,7 @@ class PromoCodeService {
               : `Company ${userCompanyId}`;
             const userEmail = claimingUser?.email || 'unknown';
 
+            // @ts-expect-error Stripe InvoiceItemCreateParams overload mismatch. Entire Stripe integration scheduled for rewrite in Clerk+Stripe rebuild. See Valoxi_Action_Log_v9.xlsx item 5.
             await stripe.invoiceItems.create({
               customer: partnerCustomerId,
               price: partnerPriceId,
