@@ -1,0 +1,88 @@
+Assess prompt for Phase 3. Before I write it, a design question for you to consider while Replit validates — I'll flag it in the prompt and let Replit weigh in on it too.
+The __drizzle_migrations question. Drizzle has a tracking table that drizzle-kit migrate uses to know which migrations have been applied. Your team uses db:push instead of drizzle-kit migrate, so this table doesn't exist on either DB.
+Two paths:
+
+Path A: Create __drizzle_migrations on dev + prod, insert rows for 0000/0001/0002/0003 marked as applied. Belt and braces — if anyone ever accidentally runs drizzle-kit migrate, it skips all four (correctly). Cost: requires computing the right hash per migration (Drizzle compares SHA-256 of SQL file content with its own normalisation). If hashes are wrong, migrate would try to re-apply and fail.
+Path B: Don't create the tracking table. Add a README to migrations/ saying "never run drizzle-kit migrate on this project, push-only". Simpler, but relies on human discipline.
+
+Lean towards Path B for a 4-person founding team, but Replit's closer to the Drizzle mechanics so I'm asking it to weigh in.
+
+Assess before build. Phase 3 Drizzle snapshot reconciliation. Read-only validation. Do not modify any files, do not run db:generate in this prompt, do not touch any DB state.
+Goal is to validate the plan to bring the Drizzle snapshot back into sync with the live DBs (which now match the schema exactly after Phase 1). After this phase, future db:generate runs should produce clean, minimal migrations for Clerk and beyond.
+Current state recap for context.
+
+migrations/meta/_journal.json has 3 entries: 0000, 0001, 0002.
+migrations/ has 0000_opposite_silvermane.sql, 0001_sturdy_stardust.sql, 0002_rapid_betty_ross.sql.
+shared/schema/* defines 77 tables. Live dev and prod DBs have 82 tables (77 schema tables + 4 views + session table managed by connect-pg-simple). These are known and intentional.
+Schema files match DB exactly. No orphaned columns, no orphaned structural tables. Phase 1 is complete on both environments.
+__drizzle_migrations table does not exist on dev or prod. Team has always used db:push, never drizzle-kit migrate.
+
+Proposed Phase 3 plan.
+Step 1. Run npm run db:generate.
+This will produce migrations/0003_<tag>.sql, migrations/meta/0003_snapshot.json, and update migrations/meta/_journal.json with a new idx=3 entry.
+Expected SQL content, based on what the previous generate produced during the drift investigation:
+
+13 CREATE TABLE statements for tables that were added via db:push since 0002: addon_purchases, promo_code_campaigns, promo_codes, subscription_events, subscriptions, magic_links, resend_rate_limits, system_config, deal_metrics_snapshots, beta_feedback, funnel_events, issue_reports, current_offers.
+3 CREATE TYPE ENUM statements: billing_interval, plan_key, subscription_status.
+14 ALTER TABLE ADD COLUMN statements spread across token_usage, user_companies, users, target_companies, documents, deal_models, deal_documents.
+1 ALTER COLUMN DROP NOT NULL on document_access_log.accessed_by.
+FK constraint additions for the new tables.
+
+Expected SQL content that should NOT be present (because Phase 1 already dealt with them):
+
+No DROP COLUMN for any of the 18 orphaned columns we removed.
+No DROP TABLE document_requirement_submissions.
+No DROP CONSTRAINT for the two waiver FK constraints.
+
+Expected snapshot content: 0003_snapshot.json should enumerate all 77 schema-defined tables with current column sets. It should not include the 4 views, the session table, or any of the orphaned columns dropped in Phase 1.
+Step 2. Verify the generated 0003 output.
+Read the generated SQL file and the generated snapshot. Report:
+a. The exact filename of the generated SQL.
+b. The full verbatim SQL content.
+c. A categorised summary of the SQL: count of CREATE TABLE, CREATE TYPE, ALTER TABLE ADD COLUMN, ALTER COLUMN ..., constraint additions, plus anything unexpected.
+d. From 0003_snapshot.json: the total table count, and confirm by name that all 77 schema-defined tables are present. Explicitly check these four tables are NOT present in the snapshot (they should not be): activity_summary, deal_progression, pipeline_summary, stage_1_progress (these are DB views, not tracked by Drizzle), and session (Express middleware table).
+e. Flag any content in the SQL that we did not expect. Any DROP statement, any reference to orphan names, any reference to views, any reference to session.
+f. Flag any content that the previous garbage 0003 (0003_windy_nightshade.sql from the drift investigation) contained that this one does not, or vice versa. Differences should be: this new one has no orphan columns in the snapshot (because they no longer exist), and no DROP statements for them (because schema never defined them). If anything else is different, flag it.
+Step 3. Decide the 0003 SQL handling.
+The generated 0003 SQL cannot be executed against dev or prod because every CREATE TABLE, ADD COLUMN, and ALTER would fail with "already exists" or "column already exists". The question is what to do with the file.
+Option A. Replace the entire contents of the 0003 SQL file with a single multi-line SQL comment explaining:
+
+This migration represents schema drift that was applied via db:push between 0002 and this commit.
+The live dev and prod DBs already contain all the changes described.
+Do not attempt to execute this migration.
+Reference Phase 3 of the Valoxi reconciliation work (date it).
+
+Option B. Delete the 0003 SQL file entirely and leave only the snapshot and journal entry. Drizzle's journal references the SQL filename so this may cause issues on future generates; flag whether this is safe.
+Option C. Leave the SQL as-is (the "garbage" form) but rely on never running drizzle-kit migrate. Safest from a "leave what Drizzle generated" perspective but leaves a landmine file on disk.
+Recommend which option is safest and cleanest given:
+
+The team uses db:push only.
+The SQL must never be executed.
+Future db:generate runs must still work correctly (the next migration 0004 will diff against 0003_snapshot.json).
+
+Step 4. Decide the __drizzle_migrations tracking strategy.
+Two subpaths.
+Path A. Create __drizzle_migrations on both dev and prod, insert rows marking 0000 through 0003 as already applied. This closes the footgun of "someone accidentally runs drizzle-kit migrate". Cost: requires computing the correct hash per migration file. Drizzle uses SHA-256 of the migration SQL content with a specific normalisation (strip statement-breakpoint comments, collapse whitespace, etc). If the hash is wrong, drizzle-kit migrate would think the migration has changed and try to re-run it.
+Path B. Do not create __drizzle_migrations. Add a MIGRATIONS-README.md to the migrations/ folder stating that the project uses db:push only and drizzle-kit migrate must never be run. Relies on documentation and team discipline rather than tooling.
+Please report:
+a. Confirm the exact schema of __drizzle_migrations as Drizzle expects it to exist (columns, types, PK, any indexes). You may need to consult drizzle-kit source or documentation.
+b. Confirm the exact hash algorithm Drizzle uses to identify migrations in __drizzle_migrations. Specifically, what gets hashed (full file content, normalised content, what normalisation). If you are not certain, say so and recommend the safer Path B.
+c. Recommend Path A or Path B based on: safety, effort, team workflow (db:push only), and Clerk work starting imminently.
+Step 5. Verification plan.
+After the reconciliation work lands, we will run npm run db:generate again. Expected result: either no new migration file is generated, or a migration is generated whose SQL is effectively empty (no statements, no DDL, just a statement-breakpoint header). This proves schema and snapshot are in sync.
+Report whether this verification approach is reliable. Specifically: does drizzle-kit generate always produce an empty file when there is no diff, or does it sometimes produce spurious statement-breakpoint-only files? If the latter, what is the correct verification signal.
+Step 6. Sequencing.
+Confirm the proposed order of Phase 3 execution:
+
+Run db:generate to produce 0003 files.
+Review and apply Option A/B/C to the 0003 SQL file.
+Apply Path A or Path B for __drizzle_migrations.
+Run db:generate again to verify clean state.
+Commit the migrations/ changes along with a concise commit message.
+
+If you think the order should be different, flag it.
+Step 7. Anything else.
+a. Any risks with running db:generate against a schema that is now post-cleanup? It should be identical to the previous generate (minus orphan noise) but flag anything unexpected.
+b. Any team workflow implications we should document alongside this, for the next person who opens the migrations/ folder without context.
+c. Any pre-existing Drizzle quirks that could bite us during this reconciliation, especially around the journal file, the snapshot file, or the way db:generate detects prior state.
+Do not execute db:generate in this prompt. Do not modify any files. Do not touch any DB. Pure validation.
