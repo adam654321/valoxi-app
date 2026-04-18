@@ -1,0 +1,59 @@
+Assess before build. Drizzle snapshot drift characterisation. Do not make any edits, do not run generate or push in this prompt. Read-only and exploratory.
+Goal is to produce a complete picture of how far the migrations/meta snapshot has drifted from (a) the schema files in shared/schema and (b) the live dev and prod databases. We need this picture before we can safely reconcile.
+Report the following.
+
+Current migration tracking state.
+
+a. Confirm the current contents of migrations/meta/_journal.json. It should have exactly three entries: 0000, 0001, 0002.
+b. Check whether a __drizzle_migrations table exists in dev and in prod. Run this on dev first, report result, then on prod (via the prod SQL block you hand back to me):
+SELECT schemaname, tablename FROM pg_tables WHERE tablename = '__drizzle_migrations';
+If it exists, report its contents:
+SELECT * FROM __drizzle_migrations ORDER BY created_at;
+If it does not exist, state that clearly. This tells us whether anyone has ever run drizzle-kit migrate against this database, or whether the tracking has been push-only.
+
+Drift comparison A. Schema files vs 0002 snapshot (what would drizzle-kit generate say).
+
+Run npm run db:generate. This will produce a new 0003 migration file and a new 0003_snapshot.json. We will discard the SQL but keep the snapshot and journal entry after review.
+Report:
+a. The full verbatim contents of the generated 0003_*.sql file. Do not truncate.
+b. The generated filename.
+c. A categorised summary of what the SQL contains: tables created, columns added, columns dropped, columns altered, constraints added, constraints dropped, indexes added, defaults changed. Group by category. This is the "drift forward" set.
+
+Drift comparison B. Live dev DB vs 0002 snapshot.
+
+Run this query on the dev DB and report the output verbatim:
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;
+Count the tables. Compare against the 64 tables in 0002_snapshot.json and list:
+a. Tables in dev DB but not in 0002 snapshot (expected drift forward).
+b. Tables in 0002 snapshot but not in dev DB (unexpected, flag immediately if any).
+Then for users specifically, run:
+SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'users' AND table_schema = 'public' ORDER BY ordinal_position;
+Compare the columns against the 15 columns in 0002 snapshot's users entry and list added and removed columns.
+
+Drift comparison C. Live dev DB vs current schema files (orphan check).
+
+This one is important. The question is: does the DB have anything the schema does not? That would be truly orphaned state that generate cannot see.
+a. Take the list of table_name values from step 3 and cross-reference against the tables defined in shared/schema/*.ts files. Report any tables that exist in the DB but are not defined anywhere in shared/schema. If you find any, paste the full column list for each.
+b. For a few high-value tables where drift is likely (users, user_companies, subscriptions, deal_models, documents, token_usage), run the information_schema query to list every column in the DB, then compare against the columns defined in shared/schema for that table. Report any columns in the DB that the schema does not define.
+c. Report whether the schema files define any tables or columns that do not exist in the live dev DB. This would be the inverse orphan case.
+
+Dev vs prod DB comparison.
+
+Run this parity check. On dev, produce:
+SELECT table_name, COUNT(column_name) AS col_count FROM information_schema.columns WHERE table_schema = 'public' GROUP BY table_name ORDER BY table_name;
+Pipe the result into the prod SQL block you produce for me to run. I will compare dev and prod outputs and report back any mismatches. If dev and prod drift from each other, that is a new and more serious problem we need to address before reconciliation.
+
+Initial reconciliation approach recommendation.
+
+Based on what you find, recommend a reconciliation path. The options are roughly:
+Option A. Accept the generated 0003 migration as a baseline marker. Keep the snapshot and journal entry. Replace the SQL file contents with an empty comment explaining the migration represents drift already applied via db:push and should not be run. If __drizzle_migrations exists in the DBs, insert a row for 0003 so future drizzle-kit migrate would skip it. Pro: preserves history. Con: leaves a fake migration in the folder forever.
+Option B. Baseline reset. Delete migrations 0000, 0001, 0002 and their snapshots entirely. Run a fresh drizzle-kit generate that produces a single new 0000 migration representing the entire current schema. Replace its SQL with an empty baseline marker. Pro: clean. Con: loses migration history.
+Option C. Something else you think is safer or cleaner given what you find in steps 1 through 5.
+State which option you recommend and why, based on the actual drift picture. Flag any risks in each option given the findings.
+
+Important gates.
+
+a. Do not touch the generated 0003 files beyond reviewing them. Leave the SQL file and the snapshot in place where generate put them. We will decide what to do with them in the reconciliation prompt.
+b. Do not run db:push under any circumstances in this prompt. Push would try to add things that are already there, or prompt interactively for destructive actions.
+c. Do not run any SQL against prod from Replit. Produce the prod SQL blocks I need for step 1b and step 5 and hand them back to me for manual run against Neon.
+d. If at any point during the investigation you find something unexpected or alarming (prod differs from dev, schema defines something not in DB, major orphan tables), stop investigating and flag it immediately before going further.
