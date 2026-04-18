@@ -208,9 +208,6 @@ export class TargetCompaniesService {
     // 6. Documents
     await db.delete(documents).where(eq(documents.targetCompanyId, id));
 
-    // 7. Document requirement submissions (no schema entry)
-    await db.execute(sql`DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);
-
     // 8. Document stage progression and company document requirements
     await db.delete(documentStageProgression).where(eq(documentStageProgression.targetCompanyId, id));
     await db.delete(companyDocumentRequirements).where(eq(companyDocumentRequirements.targetCompanyId, id));

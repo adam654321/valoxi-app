@@ -1,0 +1,77 @@
+Phase 1 orphan cleanup. Execute the validated plan. Dev only. Prod SQL block produced at the end for Adam to run manually against Neon.
+Step A. Revert the stale 0003 migration files.
+
+Delete migrations/0003_windy_nightshade.sql
+Delete migrations/meta/0003_snapshot.json
+Edit migrations/meta/_journal.json to remove the idx=3 entry, leaving only 0000, 0001, 0002.
+
+Report back the files deleted and paste the final _journal.json contents so I can sanity-check.
+Step B. Remove the stale orphan DELETE from server/services/target-companies.service.ts.
+Remove both of these lines (the numbered comment and the following statement):
+// 7. Document requirement submissions (no schema entry)
+await db.execute(sqlDELETE FROM document_requirement_submissions WHERE target_company_id = ${id});
+Leave surrounding numbered comments as they are (6 -> 8 jump is cosmetic only). Do not renumber anything.
+Step C. Type check.
+Run npm run check. Expect exit code 0 and zero errors. If anything is non-zero, stop and report.
+Step D. Dev cleanup SQL via Replit SQL Console. Staged paste pattern, three stages. Paste each stage separately, select all, Run, review before next.
+Stage 1, pre-check:
+SELECT current_database();
+SELECT COUNT() FROM document_requirement_submissions;
+SELECT COUNT() FROM company_document_requirements;
+SELECT COUNT() FROM portal_document_requirements;
+SELECT COUNT() FROM external_document_submissions;
+SELECT COUNT(*) FROM portal_activity_log;
+Expected: dev DB name, then counts 0, 0, 0, 15, 913. If any count differs, stop and flag.
+Stage 2, cleanup:
+ALTER TABLE "company_document_requirements" DROP CONSTRAINT IF EXISTS "company_document_requirements_waived_by_fkey";
+ALTER TABLE "company_document_requirements" DROP CONSTRAINT IF EXISTS "company_document_requirements_waiver_approved_by_fkey";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "is_waived";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waived_by";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waived_at";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waiver_reason";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waiver_justification";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waiver_approved_by";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "submitted_document_count";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "latest_submission_date";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "submission_notes";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "file_format_restrictions";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "custom_fields";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "workflow_stage";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "auto_approval_rules";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "reminder_settings";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "version_control";
+ALTER TABLE "external_document_submissions" DROP COLUMN IF EXISTS "compliance_status";
+ALTER TABLE "external_document_submissions" DROP COLUMN IF EXISTS "metadata_tags";
+ALTER TABLE "portal_activity_log" DROP COLUMN IF EXISTS "session_data";
+DROP TABLE IF EXISTS "document_requirement_submissions";
+Stage 3, post-check:
+SELECT column_name FROM information_schema.columns WHERE table_name = 'company_document_requirements' AND column_name IN ('is_waived','waived_by','waived_at','waiver_reason','waiver_justification','waiver_approved_by','submitted_document_count','latest_submission_date','submission_notes');
+SELECT column_name FROM information_schema.columns WHERE table_name = 'portal_document_requirements' AND column_name IN ('file_format_restrictions','custom_fields','workflow_stage','auto_approval_rules','reminder_settings','version_control');
+SELECT column_name FROM information_schema.columns WHERE table_name = 'external_document_submissions' AND column_name IN ('compliance_status','metadata_tags');
+SELECT column_name FROM information_schema.columns WHERE table_name = 'portal_activity_log' AND column_name = 'session_data';
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'document_requirement_submissions';
+SELECT table_name, COUNT(column_name) AS col_count FROM information_schema.columns WHERE table_schema = 'public' GROUP BY table_name ORDER BY table_name;
+Expected:
+
+First five SELECTs all return zero rows.
+Final parity list shows 82 tables (was 83).
+company_document_requirements now has 24 columns (was 33).
+portal_document_requirements now has 20 columns (was 26).
+external_document_submissions now has 23 columns (was 25).
+portal_activity_log now has 13 columns (was 14).
+
+If anything differs, report the delta and stop. Do not proceed to smoke test or prod block.
+Step E. Dev smoke test.
+With the dev server running, confirm it boots clean and run:
+
+GET /api/v2/auth/me while logged in as one of the four kept users. Expect 200 or 304.
+Dashboard page load. Expect no errors.
+Any route that hits the target company delete path is not exercised end-to-end in this smoke test, but confirm the server starts with no errors and no Drizzle ORM schema mismatch warnings after the code change.
+
+Report status codes and any relevant log lines.
+Step F. Produce the prod SQL block.
+Output, as a single plain text block ready for me to paste into the Neon console in the three-stage pattern we established, the exact SQL for prod. It should mirror Stage 1, 2, 3 from Step D above, with the same expected results. Clearly mark the three stages so I know where to split the paste.
+Include a current_database() at the top of Stage 1 and the same row-count sanity checks (expected values unchanged from dev). If prod shows different expected values for the baseline row counts, stop and flag before producing the block.
+Step G. Stop.
+Do not attempt to run anything against prod. Do not run db:push or db:generate. Do not touch the migrations folder again. Hand back the prod SQL block and wait.
+Once I have run prod and reported output, we move to Phase 3 (snapshot reconciliation and __drizzle_migrations tracking setup).
