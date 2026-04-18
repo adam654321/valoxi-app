@@ -1,0 +1,61 @@
+Assess before build. Phase 4A Clerk tooling and schema prep. Read-only validation. Do not modify any files, do not install any packages, do not run any SQL.
+We are about to install Clerk SDKs, add a clerk_user_id column to users, and generate the 0004 migration. Zero behavioural change, just groundwork. Before that, please validate the plan and flag anything wrong.
+Proposed plan.
+Step 1. Install packages.
+
+Client: npm install @clerk/react (this is the new package name as of Clerk Core 3, replacing the deprecated @clerk/clerk-react)
+Server: npm install @clerk/express (replaces the EOL'd @clerk/clerk-sdk-node, wraps @clerk/backend)
+
+Step 2. Add Replit Secrets.
+
+VITE_CLERK_PUBLISHABLE_KEY: Adam's Clerk test publishable key (pk_test_...)
+CLERK_SECRET_KEY: Adam's Clerk test secret key (sk_test_...)
+
+Step 3. Schema change. Add to the users table in shared/schema/core.ts:
+clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+Placement: directly after jobTitle and before createdAt for logical grouping with identity fields. Nullable (no .notNull() chained) because existing users don't have a Clerk ID yet.
+Step 4. Generate the 0004 migration.
+Run npm run db:generate. Expected output: a new migrations/0004_<tag>.sql file containing exactly one statement:
+ALTER TABLE "users" ADD COLUMN "clerk_user_id" varchar(255); plus a unique constraint add.
+Plus a new migrations/meta/0004_snapshot.json reflecting the schema state and a new entry in _journal.json.
+Step 5. Apply to dev via Replit SQL Console (three-stage pattern).
+Stage 1 pre-check: confirm current_database is dev, confirm users table has 20 columns (same as post-Phase-1).
+Stage 2: execute the 0004 SQL.
+Stage 3: verify users has 21 columns, new column is nullable, unique constraint present.
+Step 6. Insert tracking row in drizzle.__drizzle_migrations on dev with the SHA-256 of 0004's SQL file content and the when timestamp from _journal.json.
+Step 7. Produce prod SQL block mirroring the same stages plus tracking row insert.
+Step 8. Verify TS error count still 0 and dev server boots clean after package install.
+Please validate and report.
+
+Package name confirmation.
+a. Confirm @clerk/react and @clerk/express are the correct current packages. If the Clerk ecosystem has moved on since this plan was drafted, flag the actual packages to use. Reference the latest published version of each if possible.
+b. Any known peer dependency conflicts with Valoxi's current React 18.3.1, Express 4.21.2, Vite 5.4.19, TypeScript 5.6.3 stack? Flag anything that would require updating a major version elsewhere.
+c. Confirm @clerk/express supports running alongside existing express-session and connect-pg-simple middleware without conflict (we need both to coexist during the dual-path phase 4B).
+Existing Clerk code check.
+Search the entire codebase for any reference to "clerk" (case-insensitive), any Clerk import, any clerkUserId, any clerk_user_id. If there is ANY pre-existing Clerk-related code, flag it immediately before we add more.
+Schema change sanity.
+a. Confirm varchar(255) is the correct type for Clerk user IDs. Clerk user IDs look like user_abc123xyz.... Confirm 255 is comfortably over the maximum length Clerk produces.
+b. Confirm the unique constraint will cleanly coexist with existing users that all have clerk_user_id = NULL. PostgreSQL allows multiple NULLs under a unique constraint by default, so this should be fine, but confirm.
+c. Confirm placement after jobTitle and before createdAt doesn't break any downstream code that enumerates user columns in a specific order (team repositories, etc).
+d. Flag whether the new column needs to appear in any existing SELECT lists or type definitions. My expectation: no, it's pure DB-layer addition at this stage.
+Migration generation expectation.
+a. Confirm npm run db:generate will produce exactly one ALTER TABLE ADD COLUMN plus unique constraint add, nothing else. If drizzle-kit produces anything unexpected (CREATE TABLE, other ALTERs, orphan drops), stop and flag. The snapshot reconciliation in Phase 3 should have made the diff minimal.
+b. Confirm the generated SQL can be run on both dev and prod as-is (unlike the 0003 tombstone which was drift-only).
+c. Estimate the size of the generated SQL file — should be under 500 bytes.
+Replit Secrets approach.
+a. Confirm adding VITE_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY as Replit Secrets will expose them correctly to both the server process and Vite's client build. The VITE_ prefix matters for Vite to inline the value into the client bundle. The server key (no prefix) stays server-side only.
+b. Confirm no .env file needs creating (Replit Secrets handle this directly).
+TS and server boot expectations.
+a. After installing both packages but before using any of their exports, expect npm run check to still show 0 errors.
+b. Confirm neither package has side effects at import time that would break anything. @clerk/express in particular — does it auto-register anything just by being installed, or does it only activate when clerkMiddleware() is called?
+Tracking row approach.
+a. Confirm the existing drizzle.__drizzle_migrations row for 0003 (hash f4afdffe30e72a21615dd3ed0edf6a77721b47d14e76cebc1d0904578acd5ddf, created_at 1776552257498) is still present on dev.
+b. Plan for how we'll compute the 0004 SHA-256 hash: same as Phase 3, SHA-256 of the raw UTF-8 bytes of the generated 0004_<tag>.sql file. No tombstone this time, just the real migration SQL.
+Rollback plan.
+If anything in 4A goes wrong, what's the rollback? Specifically: if the package install fails partway, if the 0004 migration generates something unexpected, if the column add fails on dev, if the column add fails on prod after succeeding on dev. Brief rollback for each.
+Anything else.
+a. Does adding @clerk/react to the client bundle have any meaningful bundle size impact we should be aware of (it does ship a fair amount of code, mostly tree-shakeable but not all). Flag if it's likely to push past any concerning threshold.
+b. Any Clerk configuration we should do in the Clerk Dashboard now, before 4B starts? Specifically: allowed origins for CORS (will need app.valoxi.ai and some localhost:PORT), session duration, etc. Flag what we should set and what can wait.
+c. Any Clerk-specific gotcha you've seen mentioned in docs or examples that we should plan for now rather than discover in 4B.
+
+Do not execute anything. Pure validation. Report findings, then we compose the 4A build prompt.
