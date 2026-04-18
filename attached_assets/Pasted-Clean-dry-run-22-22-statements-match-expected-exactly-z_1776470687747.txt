@@ -1,0 +1,66 @@
+Clean dry-run. 22/22 statements match expected exactly, zero drift, 2,542 rows total. This is about as clean as it gets.
+Quick review
+
+DB confirmed as dev (heli...umdb)
+TS baseline unchanged at 17
+Every statement hits exact expected value (deltas all zero — even cleaner than Tier 1's dry-run which had a +4 drift on token_usage)
+UPDATE totals: 786 (11+221+280+12+249+13)
+DELETE totals: 1,756 (497+19+15+7+0+21+296+62+0+405+0+27+81+174+116+36)
+Combined: 2,542 ✓
+
+The fact that deltas are all zero suggests no live activity has touched any Tier 2 table since scoping — which makes sense because prod is locked down and dev isn't seeing traffic.
+Authorising execute on dev
+
+PROMPT — TIER 2 EXECUTE ON DEV (paste into Replit)
+Dry-run reviewed and authorised. Execute on dev.
+Command:
+EXECUTE=true npx tsx server/scripts/wipe-tier2-db.ts
+Report the full console output:
+
+Startup masked DB URL (confirm dev)
+Per-statement pre-count and tolerance check
+Per-statement actual rows affected
+Final summary table with expected / actual / delta / status
+Commit confirmation
+
+After exit 0, run these post-execute verification queries against dev and report:
+SELECT 'aged_debtors non-kept source_document_id' AS check_name, COUNT() AS remaining FROM aged_debtors WHERE source_document_id IS NOT NULL AND source_document_id IN (SELECT id FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'balance_sheets non-kept source_document_id', COUNT() FROM balance_sheets WHERE source_document_id IS NOT NULL AND source_document_id IN (SELECT id FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'financial_periods non-kept source_document_id', COUNT() FROM financial_periods WHERE source_document_id IS NOT NULL AND source_document_id IN (SELECT id FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'expert_analysis_results non-kept', COUNT() FROM expert_analysis_results WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13))
+UNION ALL
+SELECT 'deal_document_responses non-kept', COUNT() FROM deal_document_responses WHERE deal_document_id IN (SELECT id FROM deal_documents WHERE user_company_id NOT IN (5,11,13))
+UNION ALL
+SELECT 'dd_requirement_documents non-kept', COUNT() FROM dd_requirement_documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13))
+UNION ALL
+SELECT 'dd_requirement_status non-kept', COUNT() FROM dd_requirement_status WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13))
+UNION ALL
+SELECT 'deal_documents non-kept', COUNT() FROM deal_documents WHERE user_company_id NOT IN (5,11,13)
+UNION ALL
+SELECT 'documents non-kept', COUNT() FROM documents WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13))
+UNION ALL
+SELECT 'external_document_submissions non-kept', COUNT() FROM external_document_submissions WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13))
+UNION ALL
+SELECT 'current_offers non-kept', COUNT() FROM current_offers WHERE user_company_id NOT IN (5,11,13)
+UNION ALL
+SELECT 'value_creation_assumptions non-kept', COUNT() FROM value_creation_assumptions WHERE scenario_id IN (SELECT id FROM value_creation_scenarios WHERE deal_model_id IN (SELECT id FROM deal_models WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13))))
+UNION ALL
+SELECT 'value_creation_exit_assumptions non-kept', COUNT() FROM value_creation_exit_assumptions WHERE deal_model_id IN (SELECT id FROM deal_models WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'value_creation_scenarios non-kept', COUNT() FROM value_creation_scenarios WHERE deal_model_id IN (SELECT id FROM deal_models WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'deal_model_adjustments non-kept', COUNT() FROM deal_model_adjustments WHERE deal_model_id IN (SELECT id FROM deal_models WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'deal_model_funding_lines non-kept', COUNT() FROM deal_model_funding_lines WHERE deal_model_id IN (SELECT id FROM deal_models WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13)))
+UNION ALL
+SELECT 'deal_models non-kept', COUNT(*) FROM deal_models WHERE target_company_id IN (SELECT id FROM target_companies WHERE user_company_id NOT IN (5,11,13));
+All 17 checks must return 0. Any non-zero is a flag.
+Also confirm:
+
+Total TS error count is still 17 (no new errors from execution)
+Dev application still boots cleanly
+
+Stop after Tier 2 verification. Do not proceed to Tier 3.
