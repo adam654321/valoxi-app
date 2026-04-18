@@ -1,0 +1,8 @@
+-- Valoxi migration baseline marker (Phase 3 reconciliation)
+-- This migration represents schema drift applied to dev and prod via db:push
+-- between migration 0002 and 2026-04-18. All changes are already live on both
+-- databases. Do NOT execute this migration against any environment.
+-- The drizzle.__drizzle_migrations tracking table records this migration as
+-- already applied on dev and prod. Future drizzle-kit migrate calls will
+-- correctly skip it. The snapshot 0003_snapshot.json is the authoritative
+-- schema baseline for subsequent db:generate runs.
