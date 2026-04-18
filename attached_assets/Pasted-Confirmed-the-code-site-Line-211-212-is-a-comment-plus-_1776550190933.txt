@@ -1,0 +1,104 @@
+Confirmed the code site. Line 211-212 is a comment-plus-statement:
+// 7. Document requirement submissions (no schema entry)
+await db.execute(sql\DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);`
+The comment "no schema entry" is the original author flagging it at the time — clear smoking gun about orphan history. Both lines come out together.
+Logical order for this work: code fix first (so the DELETE isn't pointing at a table we just dropped), then the DB cleanup. Splitting into three phases because it's genuinely complex:
+Phase 1: Delete stale 0003 files, remove the orphan DELETE code line, run cleanup SQL on dev, smoke test, produce prod SQL block.
+Phase 2: You run prod cleanup on Neon.
+Phase 3: Regenerate clean 0003, write baseline marker, create __drizzle_migrations tracking on dev + prod, verify future generate is empty.
+Assess prompt for Phase 1 below. Validation only, no changes.
+
+Assess before build. Phase 1 orphan cleanup. Validation only. Do not modify any files, do not run any SQL that changes state.
+We are about to run the orphan cleanup on dev and produce a prod SQL block for manual run. Before we do, please validate the plan and flag anything wrong.
+Proposed Phase 1 plan.
+Step A. Revert the stale 0003 files that were created during the drift investigation.
+
+Delete migrations/0003_windy_nightshade.sql
+Delete migrations/meta/0003_snapshot.json
+Edit migrations/meta/_journal.json to remove the idx=3 entry, leaving only 0000, 0001, 0002.
+
+Step B. Remove the stale orphan DELETE from server/services/target-companies.service.ts.
+
+Remove both the comment line // 7. Document requirement submissions (no schema entry) and the following await db.execute(sql\DELETE FROM document_requirement_submissions WHERE target_company_id = ${id}`);` line.
+Renumber nothing else. The surrounding numbered comments (// 8., // 9. etc) can stay as-is, or you can renumber them for tidiness if you prefer.
+
+Step C. Type check. Run npm run check. Expect 0 errors. If anything breaks, stop.
+Step D. Dev cleanup SQL. Run via Replit SQL Console against dev, using the staged paste pattern (paste each stage separately, select, Run, review output before next stage) because Neon-style consoles reject explicit BEGIN:
+Stage 1 (pre-check):
+SELECT current_database();
+SELECT COUNT() FROM document_requirement_submissions;
+SELECT COUNT() FROM company_document_requirements;
+SELECT COUNT() FROM portal_document_requirements;
+SELECT COUNT() FROM external_document_submissions;
+SELECT COUNT(*) FROM portal_activity_log;
+Expected: dev DB name, document_requirement_submissions = 0, company_document_requirements = 0, portal_document_requirements = 0, external_document_submissions = 15, portal_activity_log = 913.
+Stage 2 (drop FK constraints then columns then table):
+ALTER TABLE "company_document_requirements" DROP CONSTRAINT IF EXISTS "company_document_requirements_waived_by_fkey";
+ALTER TABLE "company_document_requirements" DROP CONSTRAINT IF EXISTS "company_document_requirements_waiver_approved_by_fkey";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "is_waived";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waived_by";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waived_at";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waiver_reason";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waiver_justification";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "waiver_approved_by";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "submitted_document_count";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "latest_submission_date";
+ALTER TABLE "company_document_requirements" DROP COLUMN IF EXISTS "submission_notes";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "file_format_restrictions";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "custom_fields";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "workflow_stage";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "auto_approval_rules";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "reminder_settings";
+ALTER TABLE "portal_document_requirements" DROP COLUMN IF EXISTS "version_control";
+ALTER TABLE "external_document_submissions" DROP COLUMN IF EXISTS "compliance_status";
+ALTER TABLE "external_document_submissions" DROP COLUMN IF EXISTS "metadata_tags";
+ALTER TABLE "portal_activity_log" DROP COLUMN IF EXISTS "session_data";
+DROP TABLE IF EXISTS "document_requirement_submissions";
+Stage 3 (post-check):
+SELECT column_name FROM information_schema.columns WHERE table_name = 'company_document_requirements' AND column_name IN ('is_waived','waived_by','waived_at','waiver_reason','waiver_justification','waiver_approved_by','submitted_document_count','latest_submission_date','submission_notes');
+SELECT column_name FROM information_schema.columns WHERE table_name = 'portal_document_requirements' AND column_name IN ('file_format_restrictions','custom_fields','workflow_stage','auto_approval_rules','reminder_settings','version_control');
+SELECT column_name FROM information_schema.columns WHERE table_name = 'external_document_submissions' AND column_name IN ('compliance_status','metadata_tags');
+SELECT column_name FROM information_schema.columns WHERE table_name = 'portal_activity_log' AND column_name = 'session_data';
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'document_requirement_submissions';
+SELECT table_name, COUNT(column_name) AS col_count FROM information_schema.columns WHERE table_schema = 'public' GROUP BY table_name ORDER BY table_name;
+Expected: all 5 column-existence queries return zero rows, the table-existence query returns zero rows, and the full parity list shows 82 tables (was 83, lost document_requirement_submissions) with reduced column counts on the four affected tables.
+Expected new column counts after cleanup:
+
+company_document_requirements: 33 - 9 = 24
+portal_document_requirements: 26 - 6 = 20
+external_document_submissions: 25 - 2 = 23
+portal_activity_log: 14 - 1 = 13
+
+Step E. Dev smoke test. Server boots clean, GET /api/v2/auth/me returns 200, the target company delete path (which we just modified) is not exercised end-to-end but at least the file compiles and the server starts.
+Step F. Produce prod SQL block using the same Stage 1/2/3 pattern for Adam to paste into Neon.
+Please validate and report.
+
+FK constraint name confirmation. Run against dev:
+SELECT constraint_name, table_name, column_name FROM information_schema.key_column_usage WHERE table_name = 'company_document_requirements' AND column_name IN ('waived_by','waiver_approved_by');
+
+Confirm the exact FK constraint names. If they are NOT company_document_requirements_waived_by_fkey and company_document_requirements_waiver_approved_by_fkey, report the actual names so we can correct the SQL. The Stage 2 block uses IF EXISTS so a wrong name will no-op rather than error, but we want to KNOW what it should be.
+
+Check for any other FK constraints pointing at any of the 18 columns we are about to drop. Specifically:
+SELECT tc.constraint_name, tc.table_name, kcu.column_name, ccu.table_name AS references_table, ccu.column_name AS references_column FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name WHERE tc.constraint_type = 'FOREIGN KEY' AND ((tc.table_name = 'company_document_requirements' AND kcu.column_name IN ('waived_by','waiver_approved_by')) OR (tc.table_name = 'portal_document_requirements' AND kcu.column_name IN ('submitted_document_id')));
+
+The portal_document_requirements.submitted_document_id FK: Replit's drift audit originally listed submitted_document_id as an orphan, then the orphan investigation corrected this saying it's schema-defined. Double-check this does exist in schema and is NOT one of the columns we are dropping. If the audit correction was wrong, we need to re-evaluate.
+
+Code change sanity. Re-read server/services/target-companies.service.ts around the delete method (line 160 to end of the delete method). Confirm:
+a. Removing the two lines (the numbered comment and the sql execute) leaves the surrounding code structurally intact. No stray braces, no orphaned try/catch, no broken numbering that affects behaviour.
+b. No other method in the file references document_requirement_submissions.
+c. No unit or integration tests under tests/ reference document_requirement_submissions or call this delete method in a way that would break after the removal.
+Migration file revert sanity.
+a. Confirm migrations/0003_windy_nightshade.sql exists.
+b. Confirm migrations/meta/0003_snapshot.json exists.
+c. Confirm migrations/meta/_journal.json currently has 4 entries (0000, 0001, 0002, 0003) and that removing the 0003 entry returns it to exactly the 3-entry state we want.
+Dev cleanup SQL dry-verification.
+a. Confirm no other code anywhere in the codebase references the 21 names being dropped (18 column names + 2 FK constraints + 1 table name). The orphan report already confirmed this but sanity-check once more now that we have the final list.
+b. Confirm the DROP COLUMN / DROP TABLE statements do not trigger CASCADE behaviour on anything in-schema. Specifically: would dropping document_requirement_submissions cascade-delete any FK-linked rows in schema-tracked tables? It should not, because the orphan report said the only FK is self-referential.
+c. Confirm that stage 2 operations all use IF EXISTS so a partial rerun is safe.
+Backlog flag. The 4 confirmed views (activity_summary, deal_progression, pipeline_summary, stage_1_progress) are fine to leave in place. But the stage_1_progress division-by-zero bug Replit surfaced is worth adding to the post-Clerk backlog. Note it but do not fix it.
+
+Also: the session table owned by connect-pg-simple — confirm nothing in Drizzle schema, nothing in migrations will touch it, and that the express-session config is pointing at this table correctly. We just want to rule out any accidental interaction.
+
+Anything else. If you spot any risk, any alternative ordering that is safer, any step that should be split further, or any pre-existing bug that the cleanup would expose, flag it now.
+
+Do not execute any DDL in this prompt. Do not modify any files. Do not touch prod. Pure read-only validation.
