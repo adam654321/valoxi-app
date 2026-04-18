@@ -23,13 +23,21 @@
  * ─────────────────────────────────────────────────────────────────────────────
  *
  * ── Statement ordering rationale ─────────────────────────────────────────────
- * Tier 6 ordering: users deleted FIRST (stmt 1), user_companies SECOND (stmt 2).
+ * Tier 6 ordering: 3 statements in strict order.
+ *   Stmt 1 — DELETE users NOT IN (1,2,11,13)
+ *   Stmt 2 — UPDATE token_usage SET user_company_id = NULL (FK hygiene)
+ *   Stmt 3 — DELETE user_companies NOT IN (5,11,13)
+ *
  * users has two nullable FKs into user_companies:
  *   - users.user_company_id    → user_companies (nullable, ON DELETE NO ACTION)
  *   - users.current_company_id → user_companies (nullable, ON DELETE NO ACTION)
- * After statement 1, the 4 remaining kept users reference only kept
- * user_companies (IDs 5, 5, 11, 13), so statement 2 runs with zero dangling
- * FK issues. There is no FK from user_companies back to users.
+ * After stmt 1 the 4 remaining kept users reference only kept user_companies.
+ *
+ * token_usage.user_company_id is a nullable FK into user_companies. 190 rows
+ * belong to kept user Adam (user_id=1) but carry user_company_id references to
+ * non-kept companies {2,4,6,7,8} from pre-lockdown admin access. These are kept
+ * rows (user_id is kept) so they cannot be deleted — stmt 2 nulls the FK column
+ * to sever the reference before stmt 3 deletes the parent user_companies rows.
  * ─────────────────────────────────────────────────────────────────────────────
  *
  * ── FK blocker verification ───────────────────────────────────────────────────
@@ -53,7 +61,7 @@ const EXECUTE          = process.env.EXECUTE === 'true';
 interface Statement {
   id:       number;
   purpose:  string;
-  kind:     'DELETE';
+  kind:     'UPDATE' | 'DELETE';
   expected: number;
   countSql: string;
   execSql:  string;
@@ -111,7 +119,21 @@ const STATEMENTS: Statement[] = [
 
   {
     id:       2,
-    purpose:  'DELETE non-kept user_companies — runs after users are removed',
+    purpose:  'NULL user_company_id on token_usage for kept users pointing at non-kept user_companies (hygiene: severs FK blocker before DELETE user_companies)',
+    kind:     'UPDATE',
+    expected: 190,
+    countSql: `SELECT COUNT(*) AS n FROM token_usage
+               WHERE user_company_id IS NOT NULL
+                 AND user_company_id NOT IN (${KEPT_COMPANY_IDS.join(',')})`,
+    execSql:  `UPDATE token_usage
+               SET user_company_id = NULL
+               WHERE user_company_id IS NOT NULL
+                 AND user_company_id NOT IN (${KEPT_COMPANY_IDS.join(',')})`,
+  },
+
+  {
+    id:       3,
+    purpose:  'DELETE non-kept user_companies — runs after users and token_usage FK are cleared',
     kind:     'DELETE',
     expected: 26,
     countSql: `SELECT COUNT(*) AS n FROM user_companies
