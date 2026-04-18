@@ -1,0 +1,37 @@
+Good catch, I jumped ahead. Assess prompt below. It walks Replit through the proposed plan edit by edit and asks it to validate against the actual codebase before we touch anything.
+
+Assess before build. Plan validation for the 15 TS error fix. Do not make any edits in this prompt.
+We are about to fix all 15 remaining TypeScript errors as one block so we have a clean baseline before Clerk work starts. Before we run any edits, I want you to validate the plan below against the actual codebase and flag any issues, gotchas, or downstream impacts we may have missed.
+Proposed plan, five edits total:
+Edit 1. tsconfig.json. Add "target": "ES2022" to compilerOptions. Intended to resolve all 11 downlevelIteration errors in one change (10 in server/scripts/wipe-tier1-r2.ts, 1 in server/services/file-analysis.service.ts).
+Edit 2. server/repositories/team.repository.ts. In getTeamMembers SELECT, add jobTitle: users.jobTitle,. Intended to resolve the TeamMember[] type mismatch at line 114.
+Edit 3. server/repositories/users.repository.ts. In getTeamMembers SELECT, add jobTitle: users.jobTitle,. Intended to resolve the TeamMember[] type mismatch at line 397.
+Edit 4. New file server/types.d.ts containing only: declare module 'html-to-docx';. Intended to resolve the missing declaration error in server/routes/deal-document.routes.ts:301.
+Edit 5. server/services/promo-code.service.ts. Add a // @ts-expect-error comment immediately above the stripe.invoiceItems.create(...) call around line 222 with a pointer to the scheduled Stripe rebuild. Intended to suppress the Stripe InvoiceItemCreateParams overload mismatch at line 223. Code path is being fully rewritten in Essential item 5 (Clerk + Stripe rebuild) so we are not investing in a real type fix.
+Please validate each edit and report:
+
+Current TS error count. Confirm it is still 15. If it differs, list the deltas with file, line, and message. Also paste the full current 15-error list so we have it recorded.
+Edit 1 sanity check.
+a. Confirm tsconfig.json currently has no "target" set (so it is defaulting to ES3 for iterator semantics).
+b. Confirm "noEmit": true is set, so changing target has no effect on emitted JS (vite/esbuild handles actual transpilation).
+c. Confirm that setting target to ES2022 will not introduce new TS errors elsewhere in the codebase. Specifically check for any code that relies on ES3-era behaviour, any code that overrides target at file level, and any tests or scripts that assume a specific lib/target combo.
+d. Confirm the 11 iterator errors are all genuine iterator-over-Set or iterator-over-Map cases that ES2022 target will fix, not something else masquerading as a downlevelIteration error.
+Edit 2 and Edit 3 sanity check.
+a. Confirm users.jobTitle exists in the Drizzle users schema and is a nullable varchar(100) (it should be, based on shared/schema/core.ts).
+b. Confirm that adding jobTitle: users.jobTitle to each getTeamMembers SELECT satisfies the TeamMember extends User typing.
+c. List every caller of getTeamMembers across server and client. For each caller, state whether adding jobTitle to the returned row shape could break anything (over-fetch, API response shape change, test fixtures, frontend type mismatches, serialisation). The goal is to confirm this is a purely additive change.
+d. Confirm that both repositories have a getTeamMembers method at roughly the error lines (114 and 397) and flag if either file structure has shifted since the last report.
+Edit 4 sanity check.
+a. Confirm there is currently no server/types.d.ts file. If there is one, report its contents so we can decide whether to add to it rather than create fresh.
+b. Confirm the tsconfig include glob server/**/* will pick up a newly created server/types.d.ts and that its declare module will resolve the import at server/routes/deal-document.routes.ts:301.
+c. Check whether there is a simpler or more conventional location already in use for ambient module declarations (for example a global.d.ts or src/types folder). If there is, flag it.
+Edit 5 sanity check.
+a. Confirm the error at server/services/promo-code.service.ts:223 is the Stripe invoiceItems.create call and that the error message is specifically an InvoiceItemCreateParams overload mismatch.
+b. Confirm that a // @ts-expect-error comment placed immediately above the call will suppress exactly that one error and nothing more (and will itself become an error if the underlying issue is ever resolved, which is the desired behaviour as it acts as a tripwire for the Stripe rebuild).
+c. Confirm no other calls or types in this file will be affected by the suppression.
+Anything else.
+a. Are there any errors we would introduce with these edits that we have not accounted for.
+b. Are there any other TS config changes you would recommend bundling into this one pass while we are touching tsconfig.
+c. Are there any tests under tests/ or vitest specs that would need updating as a consequence of any of the above.
+
+Do not make any edits. Just validate and report. Once we have your response we will either proceed directly to the build prompt or revise the plan based on what you find.
