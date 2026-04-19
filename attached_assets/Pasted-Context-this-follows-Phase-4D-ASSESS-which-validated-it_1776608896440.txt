@@ -1,0 +1,120 @@
+Context: this follows Phase 4D ASSESS which validated items A through H read-only. All changes below are frontend only. Zero backend touch. Light mode only. Flag-off and flag-on behaviour must remain functionally unchanged — this is a purely presentational phase.
+Do not touch any of: server files, client/src/main.tsx, client/src/App.tsx, client/src/hooks/useAuth.ts, client/src/lib/queryClient.ts, client/src/pages/auth/account-setup-pending.tsx, client/src/pages/auth/account-inactive.tsx, tailwind.config.ts, client/src/index.css.
+Do not run any migration. Do not touch prod. No EXECUTE gate needed.
+STEP 1 — create client/src/components/valoxi-logo.tsx
+Default export React functional component ValoxiLogo. No props required.
+Structure: a flex row container with items-center and a small gap (gap-2). Contains:
+
+Inline SVG: width 40, height 40, viewBox "0 0 30 30", fill none, aria-hidden true. Single path: d="M3 5L15 26L27 5H21.5L15 17L8.5 5H3Z", fill "#F97316".
+Span containing "Valoxi" in text-3xl font-bold text-textPrimary tracking-tight.
+
+No size or variant props. No other markup. This component will be reused on four auth pages.
+STEP 2 — create client/src/lib/clerk-appearance.ts
+Export a single named const valoxiClerkAppearance as a plain object with inferred type (do NOT import or annotate with any Clerk type — per assess item D, the Appearance type on v6.4.2 does not enforce variable keys, and an explicit annotation complicates the tsc output unnecessarily).
+Structure:
+export const valoxiClerkAppearance = {
+variables: {
+colorPrimary: "hsl(210, 77%, 46%)",
+colorBackground: "hsl(0, 0%, 100%)",
+colorText: "hsl(212, 25%, 13%)",
+colorTextSecondary: "hsl(215, 16%, 47%)",
+colorInputBackground: "hsl(0, 0%, 100%)",
+colorInputText: "hsl(212, 25%, 13%)",
+colorDanger: "hsl(0, 84%, 60%)",
+borderRadius: "0.5rem",
+fontFamily: "'Inter', system-ui, sans-serif",
+},
+};
+No elements overrides in this phase.
+STEP 3 — modify client/src/pages/auth/login.tsx
+Per assess item A, wrap ValoxiLogo and the tagline in one shared div so space-y-8 on the parent treats them as a single header unit.
+Replace the entire existing header block (the <div className="text-center"> containing the lightning-bolt square, the h1 "Valoxi", and the p tagline) with:
+<div className="text-center flex flex-col items-center gap-2">
+  <ValoxiLogo />
+  <p className="text-sm text-textSecondary">Sign in to your acquisition management platform</p>
+</div>
+Add import { ValoxiLogo } from "@/components/valoxi-logo" at the top of the file. Remove the inline lightning-bolt SVG and the h1 "Valoxi" heading — the logo component now carries both the mark and the wordmark.
+No other changes to login.tsx. ResendMagicLinkSection, the form, the mutation, the outer container — all untouched.
+STEP 4 — modify client/src/pages/auth/register.tsx
+Per assess item B, the heading "Create Your Account" differs from the logo wordmark, so the logo, heading, and tagline must render as one cohesive block. Replace the entire existing header block (lightning-bolt square + h1 "Create Your Account" + p "Join Valoxi") with:
+<div className="text-center flex flex-col items-center gap-2">
+  <ValoxiLogo />
+  <h1 className="mt-4 text-2xl font-bold text-textPrimary">Create Your Account</h1>
+  <p className="text-sm text-textSecondary">Join Valoxi</p>
+</div>
+Note the heading drops from text-3xl to text-2xl because the logo wordmark itself is text-3xl and the page now has a clear hierarchy (brand > page title). Tagline stays text-sm.
+Add import { ValoxiLogo } from "@/components/valoxi-logo" at the top. Remove the inline lightning-bolt SVG.
+No other changes to register.tsx. Form, mutation, invite code handling, outer container — all untouched.
+STEP 5 — modify client/src/pages/auth/sign-in.tsx
+Per assess item C, the existing outer div uses flex (default row direction). We need an inner flex-col wrapper to stack the logo above the Clerk component vertically.
+Full new file contents:
+import { SignIn } from "@clerk/react";
+import { ValoxiLogo } from "@/components/valoxi-logo";
+import { valoxiClerkAppearance } from "@/lib/clerk-appearance";
+export default function SignInPage() {
+return (
+<div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+<div className="flex flex-col items-center gap-6">
+<ValoxiLogo />
+<SignIn
+       appearance={valoxiClerkAppearance}
+       signUpUrl="/sign-up"
+       fallbackRedirectUrl="/"
+       forceRedirectUrl="/"
+     />
+</div>
+</div>
+);
+}
+STEP 6 — modify client/src/pages/auth/sign-up.tsx
+Same pattern as sign-in.tsx. Full new file contents:
+import { SignUp } from "@clerk/react";
+import { ValoxiLogo } from "@/components/valoxi-logo";
+import { valoxiClerkAppearance } from "@/lib/clerk-appearance";
+export default function SignUpPage() {
+return (
+<div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+<div className="flex flex-col items-center gap-6">
+<ValoxiLogo />
+<SignUp
+       appearance={valoxiClerkAppearance}
+       signInUrl="/sign-in"
+       fallbackRedirectUrl="/"
+       forceRedirectUrl="/"
+     />
+</div>
+</div>
+);
+}
+VERIFICATION
+V1. Run npx tsc --noEmit across the full project. Must exit clean.
+V2. Restart the dev server. Confirm no startup errors in the Replit console.
+V3. With CLERK_ENABLED unchanged at false in Secrets, open the dev URL in a browser. Hit / (Login page). Confirm:
+
+The orange V-shape SVG renders to the left of "Valoxi" text at the top of the column
+The tagline "Sign in to your acquisition management platform" renders beneath
+The form below renders unchanged
+No console errors in the browser
+
+V4. Hit /register. Confirm:
+
+Orange V + "Valoxi" logo renders at the top
+"Create Your Account" heading renders below the logo
+"Join Valoxi" tagline renders below the heading
+Form renders unchanged
+No console errors
+
+V5. Do NOT flip the flag. Flag-on visual testing of sign-in.tsx and sign-up.tsx (Clerk-branded pages) requires the flag to be on and is Adam's manual verification step, not part of the Replit build.
+OUTPUT REQUIRED — in this exact order, stop after item 9:
+
+Full contents of client/src/components/valoxi-logo.tsx.
+Full contents of client/src/lib/clerk-appearance.ts.
+Focused diff of client/src/pages/auth/login.tsx showing the import addition and the replaced header block with about three lines of surrounding context.
+Focused diff of client/src/pages/auth/register.tsx showing the import addition and the replaced header block with about three lines of surrounding context.
+Full contents of client/src/pages/auth/sign-in.tsx after modification.
+Full contents of client/src/pages/auth/sign-up.tsx after modification.
+Confirmation line: "tsc clean".
+Confirmation line: "flag-off browser test passed — login and register render correctly with new logo".
+One short paragraph flagging anything you had to change from the plan, or "No deviations from plan." if none.
+
+Stop after item 9. Do not flip the flag.

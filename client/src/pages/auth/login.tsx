@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { ValoxiLogo } from "@/components/valoxi-logo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,14 +54,9 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-primary rounded-xl flex items-center justify-center">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="mt-6 text-3xl font-bold text-textPrimary">Valoxi</h1>
-          <p className="mt-2 text-sm text-textSecondary">Sign in to your acquisition management platform</p>
+        <div className="text-center flex flex-col items-center gap-2">
+          <ValoxiLogo />
+          <p className="text-sm text-textSecondary">Sign in to your acquisition management platform</p>
         </div>
 
         <Card>
