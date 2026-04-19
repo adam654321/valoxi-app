@@ -1,0 +1,172 @@
+PHASE 4C-2 BUILD PROMPT — Logout parity for Clerk (single chunk)
+
+GOAL
+Modify the logout flow so that when CLERK_ENABLED=true the Clerk __session cookie is cleared before the Express session. When CLERK_ENABLED=false, behaviour is byte-for-byte unchanged.
+
+Approach: sequential, Clerk first then Express. Rationale: in server/middleware/auth.ts, tryClerkAuth is called FIRST in isAuthenticated and will re-authenticate via __session regardless of Express state. Parallel execution would allow navigate-on-Express-success with Clerk failed, silently leaving the user authenticated via Clerk cookie. Sequential Clerk-first guarantees Clerk is cleared before we declare success.
+
+STEP 1 — Replace client/src/components/layout/NavUser.tsx
+
+Replace the entire file with the following:
+
+import { useAuth } from "@/hooks/useAuth";
+import { useServerConfig } from "@/hooks/useServerConfig";
+import { useClerk } from "@clerk/react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { LogOut, ChevronsUpDown } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+export function NavUser() {
+  const { user } = useAuth();
+  const { clerkEnabled } = useServerConfig();
+  const { signOut } = useClerk();
+  const { toast } = useToast();
+  const { isMobile } = useSidebar();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      // Clerk first. If this throws, we do not proceed to Express logout.
+      // Rationale: tryClerkAuth runs before session check in isAuthenticated,
+      // so a lingering __session cookie silently re-authenticates the user.
+      if (clerkEnabled) {
+        await signOut();
+      }
+      await apiRequest("POST", "/api/v2/auth/logout");
+    },
+    onSuccess: () => {
+      window.location.href = clerkEnabled ? "/sign-in" : "/login";
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              data-testid="button-profile-menu"
+            >
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.firstName + ' ' + user?.lastName)}&background=3b82f6&color=fff`}
+                  alt={`${user?.firstName} ${user?.lastName}`}
+                />
+                <AvatarFallback className="rounded-lg">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">
+                  {user?.firstName} {user?.lastName}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user?.email}
+                </span>
+              </div>
+              <ChevronsUpDown className="ml-auto size-4" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            side={isMobile ? "bottom" : "right"}
+            align="end"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="p-0 font-normal">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.firstName + ' ' + user?.lastName)}&background=3b82f6&color=fff`}
+                    alt={`${user?.firstName} ${user?.lastName}`}
+                  />
+                  <AvatarFallback className="rounded-lg">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">
+                    {user?.firstName} {user?.lastName}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user?.email}
+                  </span>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              data-testid="menu-item-logout"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>{logoutMutation.isPending ? "Logging out..." : "Log out"}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+Notes on the diff
+- Three new imports at the top: useServerConfig, useClerk, and they replace nothing (additive).
+- Two new hook calls inside the function: useServerConfig for the clerkEnabled flag, useClerk for signOut.
+- mutationFn is now async and awaits signOut() conditionally before the Express POST.
+- Redirect target becomes conditional: /sign-in when flag on, /login when flag off.
+- All dropdown/trigger/menu JSX is byte-for-byte identical to the existing file. Do not touch that markup.
+
+STEP 2 — Type check
+
+Run:
+npm run check
+
+Expect zero new errors. Key things that could go wrong:
+- useClerk import fails: the package export path should be "@clerk/react" exactly. Do not change to "@clerk/clerk-react" or similar.
+- signOut signature mismatch: we call signOut() with no arguments which matches the first overload. If tsc complains, read the error and report it, do not attempt to fix.
+
+If tsc reports new errors, stop and paste the errors back. Do not guess at fixes.
+
+STEP 3 — Boot verification
+
+Restart the dev server (stop, run). Wait for "serving on port 5000".
+
+Expect no new startup errors or warnings.
+
+STEP 4 — Flag-off regression test
+
+With CLERK_ENABLED=false (current state), in a browser:
+1. Log in via the normal Valoxi session login at /
+2. Confirm dashboard loads
+3. Click the profile menu, click Log out
+4. Expected: redirected to /login, normal Valoxi login page renders, session cookie sid is cleared
+
+This is the regression check. If flag-off behaviour is not byte-for-byte identical to before this change, stop and report.
+
+Do NOT perform flag-on testing in this prompt. That is a separate manual test session which Adam runs (same pattern as 4C-1 final verification).
+
+REPORT BACK
+Confirm: tsc clean, server boots, flag-off logout redirects to /login and clears session. That is all that is needed.

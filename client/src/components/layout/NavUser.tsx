@@ -1,4 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useServerConfig } from "@/hooks/useServerConfig";
+import { useClerk } from "@clerk/react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -20,13 +22,23 @@ import {
 
 export function NavUser() {
   const { user } = useAuth();
+  const { clerkEnabled } = useServerConfig();
+  const { signOut } = useClerk();
   const { toast } = useToast();
   const { isMobile } = useSidebar();
 
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/v2/auth/logout"),
+    mutationFn: async () => {
+      // Clerk first. If this throws, we do not proceed to Express logout.
+      // Rationale: tryClerkAuth runs before session check in isAuthenticated,
+      // so a lingering __session cookie silently re-authenticates the user.
+      if (clerkEnabled) {
+        await signOut();
+      }
+      await apiRequest("POST", "/api/v2/auth/logout");
+    },
     onSuccess: () => {
-      window.location.href = "/login";
+      window.location.href = clerkEnabled ? "/sign-in" : "/login";
     },
     onError: () => {
       toast({
