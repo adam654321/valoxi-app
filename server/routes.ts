@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { createSessionMiddleware } from "./middleware/session";
+import { clerkMiddleware } from '@clerk/express';
 import { attachCsrfToken } from "./middleware/csrf";
 import { registerModularRoutes } from "./routes/index";
 import { generalLimiter } from './middleware/rate-limit';
@@ -9,6 +10,7 @@ import { pool } from "./db";
 export async function registerRoutes(app: Express): Promise<Server> {
   app.set('trust proxy', 1);
   app.use(createSessionMiddleware(pool));
+  app.use(clerkMiddleware());
   app.use(attachCsrfToken);
   app.use('/api/', generalLimiter);
   registerModularRoutes(app);
