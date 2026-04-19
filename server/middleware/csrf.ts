@@ -13,6 +13,10 @@ export function validateCsrfToken(req: Request, res: Response, next: NextFunctio
     return next();
   }
 
+  if (req.clerkAuthenticated === true) {
+    return next();
+  }
+
   const headerToken = req.headers['x-csrf-token'] as string | undefined;
   const sessionToken = req.session.csrfToken;
 

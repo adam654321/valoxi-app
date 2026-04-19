@@ -4,6 +4,7 @@ import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import type { UserRole } from '@shared/schema';
 import { rolesService } from '../services/roles.service';
+import { tryClerkAuth } from './clerk-auth';
 
 const PERMISSIONS_TTL_MS = 5 * 60 * 1000;
 
@@ -141,6 +142,33 @@ function isPermissionsCacheValid(req: Request): boolean {
 }
 
 export async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  const clerkResult = await tryClerkAuth(req);
+
+  if (clerkResult && 'error' in clerkResult) {
+    if (clerkResult.error === 'CLERK_USER_NOT_LINKED') {
+      return res.status(403).json({
+        success: false,
+        error: 'CLERK_USER_NOT_LINKED',
+        message: 'Your account is being set up. Please wait a moment and refresh.',
+      });
+    }
+    if (clerkResult.error === 'CLERK_USER_INACTIVE') {
+      return res.status(401).json({
+        success: false,
+        error: 'CLERK_USER_INACTIVE',
+        message: 'This account is no longer active. Contact support.',
+      });
+    }
+  }
+
+  if (clerkResult && 'localUserId' in clerkResult) {
+    req.session.userId = clerkResult.localUserId;
+    req.session.userCompanyId = clerkResult.userCompanyId ?? undefined;
+    req.clerkAuthenticated = true;
+    return next();
+  }
+
+  // Fall through to existing session-based auth.
   if (!req.session.userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
