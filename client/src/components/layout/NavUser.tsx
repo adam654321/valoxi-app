@@ -30,17 +30,17 @@ export function NavUser() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       if (clerkEnabled) {
-        // Callback form: runs after Clerk clears __session, before Clerk navigates.
-        // Express logout inside the callback ensures sid is destroyed before redirect.
-        // Explicit redirectUrl overrides the Clerk Dashboard "after sign-out" config.
-        await signOut(
-          async () => {
-            await apiRequest("POST", "/api/v2/auth/logout");
-          },
-          { redirectUrl: "/sign-in" }
-        );
-        // Clerk handles the browser navigation after the callback resolves.
-        // Code below this line will not execute in the flag-on path.
+        // Callback form with explicit in-callback navigation.
+        // Order inside callback: Express logout (clears sid), then navigate.
+        // signOut() has already cleared __session before the callback runs.
+        // We do NOT pass redirectUrl — @clerk/react ignores it when a callback
+        // is present, which caused the previous iteration to hang on no-navigation.
+        await signOut(async () => {
+          await apiRequest("POST", "/api/v2/auth/logout");
+          window.location.href = "/sign-in";
+        });
+        // Execution does not continue past signOut in practice because the
+        // callback navigates, but leaving as-is for type correctness.
       } else {
         await apiRequest("POST", "/api/v2/auth/logout");
       }
