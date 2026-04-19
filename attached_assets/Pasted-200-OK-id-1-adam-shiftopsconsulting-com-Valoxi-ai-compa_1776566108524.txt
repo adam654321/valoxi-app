@@ -1,0 +1,36 @@
+200 OK. id 1, adam@shiftopsconsulting.com, Valoxi.ai company, full system admin permissions. Clerk auth works end-to-end.
+That JWT in your curl authenticated via Clerk → tryClerkAuth matched user_3CYYvy5cU2Dg42uIp9yR2L7ItZC to users.id=1 → populated req.session.userId=1 → /me returned the full user payload. Every piece of the dual-path chain fired correctly.
+Phase 4B-3 core path proven. Remaining bits:
+
+Remove the [clerk-auth DEBUG] diagnostic logs
+Test JIT rejection (valid JWT, user NOT linked → expect 403)
+Flip CLERK_ENABLED back to false, restart
+
+
+Cleanup + JIT test prompt. Paste into Replit.
+Phase 4B-3 cleanup and JIT rejection test. Two small steps.
+Step 1. Remove diagnostic logging from server/middleware/clerk-auth.ts.
+Revert the tryClerkAuth function body to its original shape — remove all console.log lines that start with [clerk-auth DEBUG]. The function should be back to:
+export async function tryClerkAuth(req: Request): Promise<ClerkAuthResult> {
+if (!CLERK_ENABLED) return null;
+const auth = getAuth(req);
+const clerkUserId = auth?.userId;
+if (!clerkUserId) return null;
+const [user] = await db
+.select({ id: users.id, userCompanyId: users.userCompanyId, isActive: users.isActive })
+.from(users)
+.where(eq(users.clerkUserId, clerkUserId));
+if (!user) return { error: 'CLERK_USER_NOT_LINKED' };
+if (!user.isActive) return { error: 'CLERK_USER_INACTIVE' };
+return { localUserId: user.id, userCompanyId: user.userCompanyId };
+}
+TS check. Restart server.
+Step 2. JIT rejection test instructions for Adam.
+a. In the incognito Clerk Account Portal, sign out of the current session.
+b. Sign up fresh with a throwaway email that does NOT match any Valoxi user. Something like test-jit-anything@example.com.
+c. Confirm the webhook log line: [clerk-webhook] user.created: no matching user for test-jit-anything@example.com (Clerk user_xxxxx) — awaiting invitation flow
+d. Grab the new session JWT via browser devtools: copy(document.cookie.split(';').find(c => c.includes('__session')).split('=')[1])
+e. Curl /me with that JWT within 30 seconds:
+curl -s -H "Authorization: Bearer PASTE_JWT_HERE" https://85fb53ef-8f2a-4b29-b64b-c651f49dfeb5-00-2ooxl8jy2uoof.kirk.replit.dev/api/v2/auth/me
+f. Expected response: 403 with body {"success":false,"error":"CLERK_USER_NOT_LINKED","message":"Your account is being set up. Please wait a moment and refresh."}
+Step 3. After JIT test passes, flip CLERK_ENABLED back to false in Replit Secrets and restart the server. Phase 4B-3 is then complete.
