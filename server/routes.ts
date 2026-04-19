@@ -10,7 +10,7 @@ import { pool } from "./db";
 export async function registerRoutes(app: Express): Promise<Server> {
   app.set('trust proxy', 1);
   app.use(createSessionMiddleware(pool));
-  app.use(clerkMiddleware());
+  app.use('/api/v2', clerkMiddleware());
   app.use(attachCsrfToken);
   app.use('/api/', generalLimiter);
   registerModularRoutes(app);
