@@ -1,0 +1,49 @@
+ASSESS ONLY for Pre-req 2 Cycle 1 waitlist schema. No edits. No DB writes. No drizzle-kit generate.
+Step 1. Confirm the target file
+Open shared/schema/core.ts and confirm the userInvitations table is defined there (it was previously confirmed at line ~70-something). The plan is to add the new waitlist table to the same file, immediately after userInvitations, because waitlist entries are conceptually similar: pre-user records that may become users. Report whether this placement is sensible or flag a reason to use a new file instead.
+Step 2. Check current imports in core.ts
+Report the current import line for drizzle-orm/pg-core in core.ts. The new waitlist table will need uuid added to that import list. Confirm uuid is not already imported. Also confirm text, integer, varchar, timestamp are already imported (they should be).
+Step 3. Verify Drizzle feature support for the project version
+Read package.json to find the installed drizzle-orm and drizzle-kit versions. Report both.
+Then confirm these Drizzle ORM features are supported at those versions:
+a) uuid('col').primaryKey().defaultRandom() — should generate uuid DEFAULT gen_random_uuid() PRIMARY KEY in SQL
+b) text('col').array().notNull() — should generate text[] NOT NULL
+c) Table-level check constraint syntax — report the exact Drizzle syntax supported in the installed version for adding a CHECK constraint to a column. In recent versions it is imported as check from drizzle-orm/pg-core and used inside the second callback arg of pgTable. Confirm or flag the correct syntax.
+Step 4. Report the proposed schema definition
+Produce the exact Drizzle TypeScript code for the new waitlist table. Use the imports and patterns already established in core.ts. The schema should match this spec:
+Columns:
+
+id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+full_name text NOT NULL
+email text NOT NULL UNIQUE
+phone text NULLABLE
+acquisition_journey text NOT NULL
+target_deal_size text NOT NULL
+sectors text[] NOT NULL
+sectors_other text NULLABLE
+acquisitions_completed text NOT NULL
+created_at timestamptz NOT NULL DEFAULT now()
+cohort text NOT NULL DEFAULT '5D'
+discount_tier text NOT NULL DEFAULT 'standard'
+status varchar(20) NOT NULL DEFAULT 'new'
+status_changed_at timestamp NULLABLE
+status_changed_by integer NULLABLE REFERENCES users(id)
+invited_user_id integer NULLABLE REFERENCES users(id)
+
+Constraints:
+
+PRIMARY KEY on id
+UNIQUE on email
+CHECK (status IN ('new','approved','invited','declined'))
+
+Indexes:
+
+UNIQUE index on email (already from unique constraint)
+Index on status
+Index on created_at DESC
+
+Also produce the insert schema (createInsertSchema) and types (Waitlist, InsertWaitlist) following the existing core.ts patterns.
+Step 5. Produce the expected generated migration SQL preview
+Without running drizzle-kit generate, produce a preview of the SQL you expect drizzle-kit to emit when generate runs against this schema. This is for sanity checking before Cycle 2 generates it for real. Include the CREATE TABLE, the CHECK constraint, the unique email constraint, and the two additional indexes.
+Flag any concerns, surprises, or ambiguities about Drizzle syntax, Postgres type choices, or FK references to users(id) that we should resolve before Cycle 2.
+Do not proceed to Cycle 2. Wait for the build prompt.
