@@ -84,11 +84,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
+                <svg
+                  className="size-8 shrink-0"
+                  viewBox="0 0 30 30"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path d="M3 5L15 26L27 5H21.5L15 17L8.5 5H3Z" fill="#F97316" />
+                </svg>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Valoxi</span>
                   <span className="truncate text-xs text-muted-foreground">Enterprise</span>
