@@ -38,6 +38,7 @@ export const users = pgTable("users", {
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
   hearAboutUs: varchar("hear_about_us", { length: 100 }),
   jobTitle: varchar("job_title", { length: 100 }),
+  clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
