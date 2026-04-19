@@ -1,0 +1,92 @@
+Assess before build. Phase 4B-2 Clerk auth middleware and dual-path isAuthenticated. Read-only validation. Do not modify any files, do not install packages.
+Goal: add Clerk JWT verification alongside the existing session-based auth, gated behind a CLERK_ENABLED feature flag. When the flag is off (default), zero behavioural change. When on, isAuthenticated tries Clerk first and falls back to session. CSRF is skipped for Clerk-authenticated requests because JWT bearer tokens are their own anti-CSRF mechanism.
+Proposed plan.
+Step 1. Wire clerkMiddleware() globally in server/routes.ts.
+Mount @clerk/express's clerkMiddleware() immediately after the session middleware and before attachCsrfToken. clerkMiddleware is always mounted (not gated on CLERK_ENABLED) because it is a no-op when no Authorization header or Clerk cookie is present. Its job is to populate req.auth so downstream code can read it via getAuth(req).
+Proposed order in server/routes.ts registerRoutes:
+
+app.set('trust proxy', 1)
+app.use(createSessionMiddleware(pool))
+app.use(clerkMiddleware()) — new
+app.use(attachCsrfToken)
+app.use('/api/', generalLimiter)
+registerModularRoutes(app)
+
+Step 2. Create server/middleware/clerk-auth.ts.
+New file exporting a helper function tryClerkAuth(req) that:
+
+Returns null if CLERK_ENABLED !== 'true'
+Returns null if getAuth(req).userId is null (no token or invalid token)
+Looks up the users table by clerkUserId = getAuth(req).userId
+If a matching user is found and isActive, returns { localUserId, userCompanyId }
+If no matching user is found (Clerk JWT valid but no DB row), returns { error: 'CLERK_USER_NOT_LINKED' } — the JIT rejection per the Phase 4B decision
+
+Signature:
+tryClerkAuth(req): Promise<{ localUserId: number; userCompanyId: number | null } | { error: 'CLERK_USER_NOT_LINKED' } | null>
+Step 3. Modify server/middleware/auth.ts isAuthenticated.
+Update isAuthenticated to be dual-path:
+
+Call tryClerkAuth(req).
+If result has { localUserId }: populate req.session.userId, req.session.userCompanyId, set (req as any).clerkAuthenticated = true, call next().
+If result is { error: 'CLERK_USER_NOT_LINKED' }: return 403 with the error code and a clear message like "Account not provisioned. Contact support."
+If result is null: fall through to the existing session-based check unchanged.
+
+Do not modify isSystemAdmin, requirePermission, refreshSessionPermissions, or any other function in auth.ts. Only isAuthenticated changes.
+Step 4. Modify server/middleware/csrf.ts validateCsrfToken.
+Skip CSRF validation if (req as any).clerkAuthenticated === true. Add the check at the top of the function, after the GET/HEAD/OPTIONS shortcut. JWT bearer auth is itself anti-CSRF because JWTs are sent via Authorization header, not cookies, and cannot be forged cross-site by a browser.
+Step 5. Type declaration additions.
+Add TypeScript declarations so req.clerkAuthenticated is typed correctly. Either extend the Express Request interface via declaration merging in a .d.ts file, or use a dedicated interface. Report the cleanest approach given the existing type setup in the project.
+Step 6. Verification.
+a. TS check: expect 0 errors.
+b. Server boot: expect clean boot with clerkMiddleware mounted. No Clerk-related warnings or errors.
+c. CLERK_ENABLED=false (current default): verify existing session auth works. Log in as a kept user, hit /api/v2/auth/me, expect 200 with the user object.
+d. CLERK_ENABLED=true, no Authorization header: hit /api/v2/auth/me with a valid session cookie but no Bearer token, expect 200 (tryClerkAuth returns null, falls through to session).
+e. CLERK_ENABLED=true, no session cookie, no Authorization header: expect 401 (both paths fail).
+No end-to-end Clerk JWT testing in this phase — deferred to 4B-3 or 4C when we have a way to obtain tokens.
+Please validate and report.
+
+clerkMiddleware mount placement.
+a. Confirm mounting clerkMiddleware() immediately after the session middleware and before attachCsrfToken is the correct order. Specifically: is there any interaction between clerkMiddleware's handling and the session cookie handling we should be aware of?
+b. Confirm clerkMiddleware() is safe to mount unconditionally (not gated on CLERK_ENABLED). It should be a no-op when no Authorization header is present.
+c. Confirm clerkMiddleware() does not interfere with the /api/v2/webhooks/clerk route (which uses raw body parsing) or the /api/v2/billing/webhook/stripe route. These are public endpoints that should not care about Clerk auth state.
+d. Confirm getAuth(req) from @clerk/express will return { userId: null } (or similar) when no auth is resolved, not throw an exception.
+tryClerkAuth helper design.
+a. Confirm the proposed signature and return type are sound. Specifically: is returning a discriminated union (null | { localUserId, userCompanyId } | { error: string }) the right pattern for the three outcomes?
+b. Confirm looking up the user via users.clerkUserId = clerkUserId using the new unique column is the right approach. Any concerns about the query running on every authenticated request?
+c. Should we cache the Clerk → local user mapping in memory to avoid hitting the DB on every request? My lean: no, not yet. Keep it simple in 4B-2. Optimise in a later backlog item if needed.
+d. Confirm the helper correctly handles the case where isActive is false on the matched user (should this be treated as CLERK_USER_NOT_LINKED or as authenticated-but-inactive?). Current session flow destroys the session and returns 401 for inactive users. My lean: treat inactive Clerk-matched users the same way — return null or a distinct error code that the caller can convert to 401.
+Dual-path isAuthenticated logic.
+a. Confirm the proposed flow is correct: Clerk-first, JIT-reject on valid-Clerk-but-no-DB-match, fall-through on no-Clerk.
+b. Confirm that setting req.session.userId and req.session.userCompanyId after Clerk auth is safe given the existing view-as mode middleware (injectViewAsIdentity). When a Clerk user has no adminViewingAsUserId in their session, injectViewAsIdentity should pass through harmlessly.
+c. Confirm the existing session.destroy() behaviour for inactive users doesn't interfere with Clerk-authenticated requests. If a Clerk user's local row is marked inactive, we should return an appropriate error without destroying session state that might belong to a different user flow.
+CSRF skip for Clerk-authenticated requests.
+a. Confirm the security reasoning is sound: JWT bearer tokens sent via Authorization header cannot be forged cross-site by a browser (no cookie inclusion), so CSRF is mitigated by the auth mechanism itself.
+b. Confirm the check placement: (req as any).clerkAuthenticated === true as the second short-circuit after the GET/HEAD/OPTIONS check.
+c. Any edge case we should worry about? Specifically: a request that somehow gets req.clerkAuthenticated = true set but is not actually Clerk-authenticated. Should the flag be tamper-proof (e.g., a Symbol key instead of a plain string)? My lean: plain string is fine given it's only set by our own middleware.
+Type declaration approach.
+a. What is the cleanest way to extend the Express Request type with clerkAuthenticated: boolean? Options:
+
+Add to the existing express-session declare block in server/middleware/session.ts
+New declare block in server/middleware/clerk-auth.ts
+Add to server/types.d.ts (the file we created in Phase 1 for html-to-docx)
+Recommend based on code style in this project.
+
+
+CLERK_ENABLED env var handling.
+a. Confirm reading process.env.CLERK_ENABLED and comparing to the string 'true' is the right pattern (matching existing BETA_MODE pattern in server/routes/beta.routes.ts line 17).
+b. Any risk of runtime surprises if CLERK_ENABLED is set to 'True' or 'TRUE' or '1'? Consider normalising or strict-matching. My lean: strict match on 'true', document it, move on.
+Webhook route interaction.
+a. Confirm the clerkMiddleware() mount does not interfere with the Clerk webhook handler at /api/v2/webhooks/clerk. The webhook endpoint itself doesn't rely on getAuth — it verifies the Svix signature directly. But clerkMiddleware will run on the request. Confirm this causes no issue (e.g., clerkMiddleware shouldn't try to read the raw buffer body).
+Interaction with existing middlewares.
+a. The /api/v2 prefix has blockWritesInViewAsMode and injectViewAsIdentity applied globally. For a Clerk-authenticated request: by the time these run, isAuthenticated has already populated req.session.userId from the Clerk path. Confirm this doesn't break view-as mode for system admins (who will eventually use Clerk auth).
+b. requireActiveSubscription middleware reads req.session.userCompanyId to check the subscription. Our Clerk path populates this same field. Confirm nothing else needs updating.
+c. requirePermission reads req.session.permissions. These are populated via refreshSessionPermissions which reads userId from session. Since our Clerk path populates session.userId, the permissions refresh should work transparently on first permission check. Confirm.
+Testing strategy for flag-off behaviour.
+a. Confirm the flag-off test plan (CLERK_ENABLED unset or 'false' → existing session auth unchanged) is sufficient to verify no regression for Adam and Viv's daily use.
+b. Any unit or integration test we should add now rather than defer?
+Anything else.
+a. Any @clerk/express-specific gotchas we should know about for the mount-and-use pattern. Specifically: does clerkMiddleware() assume certain Express version behaviour, or depend on request augmentation that might conflict with anything in the current stack?
+b. Is there any reason to add a /api/v2/auth/clerk-test diagnostic endpoint that returns getAuth(req) contents for debugging? Or is that unnecessary.
+c. Any risk of Clerk SDK calls making network requests on every auth check? getAuth is typically local (decoding the JWT with cached Clerk public keys), but confirm.
+
+Do not execute anything. Pure validation. Report findings, then we compose the 4B-2 build prompt (which will be chunked into 2-3 sub-steps to keep the feedback loop tight).
