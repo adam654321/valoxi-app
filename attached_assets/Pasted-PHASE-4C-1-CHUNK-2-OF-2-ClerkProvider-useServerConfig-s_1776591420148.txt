@@ -1,0 +1,283 @@
+PHASE 4C-1 CHUNK 2 OF 2 — ClerkProvider, useServerConfig, sign-in and sign-up pages, Router wiring
+
+GOAL
+Wrap the React app in ClerkProvider, add a useServerConfig hook that reads /api/v2/public/config, and register lazy-loaded /sign-in and /sign-up routes conditionally on clerkEnabled. Flag stays off so user-visible behaviour is unchanged except for the existence of these routes returning NotFound while off. This chunk is frontend only.
+
+Prerequisite
+VITE_CLERK_PUBLISHABLE_KEY must be set in Replit Secrets before restarting the dev server, or Vite will throw at startup. If it is not yet set, stop and report back.
+
+STEP 1 — Wrap main.tsx in ClerkProvider
+
+Replace the entire contents of client/src/main.tsx with:
+
+FILE: client/src/main.tsx
+
+import { createRoot } from "react-dom/client";
+import { ClerkProvider } from "@clerk/react";
+import App from "./App";
+import "./index.css";
+
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY. Set it in Replit Secrets and restart.");
+}
+
+createRoot(document.getElementById("root")!).render(
+  <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <App />
+  </ClerkProvider>,
+);
+
+Do not nest ClerkProvider inside ThemeProvider or QueryClientProvider. It sits at the very outside.
+
+STEP 2 — Create useServerConfig hook
+
+FILE: client/src/hooks/useServerConfig.ts
+
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
+
+export interface ServerConfig {
+  clerkEnabled: boolean;
+}
+
+export function useServerConfig() {
+  const { data, isLoading, error } = useQuery<ServerConfig | null>({
+    queryKey: ["/api/v2/public/config"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    select: (response: any) => response?.data ?? response,
+    staleTime: Infinity,
+    retry: 1,
+  });
+
+  return {
+    config: data ?? null,
+    clerkEnabled: data?.clerkEnabled ?? false,
+    isLoading,
+    error,
+  };
+}
+
+STEP 3 — Create sign-in and sign-up pages
+
+FILE: client/src/pages/auth/sign-in.tsx
+
+import { SignIn } from "@clerk/react";
+
+export default function SignInPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <SignIn
+        signUpUrl="/sign-up"
+        fallbackRedirectUrl="/"
+        forceRedirectUrl="/"
+      />
+    </div>
+  );
+}
+
+FILE: client/src/pages/auth/sign-up.tsx
+
+import { SignUp } from "@clerk/react";
+
+export default function SignUpPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <SignUp
+        signInUrl="/sign-in"
+        fallbackRedirectUrl="/"
+        forceRedirectUrl="/"
+      />
+    </div>
+  );
+}
+
+Notes
+- fallbackRedirectUrl and forceRedirectUrl are the v6 prop names. Do not use afterSignInUrl or afterSignUpUrl on these components.
+- Styling is intentionally minimal. Clerk's appearance theming is a separate pass.
+
+STEP 4 — Update client/src/App.tsx
+
+Two edits:
+
+EDIT 1: Add the import for useServerConfig alongside the existing useAuth import near the top of the file. Find this line:
+
+import { useAuth } from "@/hooks/useAuth";
+
+Add immediately after it:
+
+import { useServerConfig } from "@/hooks/useServerConfig";
+
+EDIT 2: Add lazy imports for the Clerk pages. Find the group of lazy imports beginning with:
+
+const Register = lazy(() => import("@/pages/auth/register"));
+
+Add these two lines immediately after the Register line:
+
+const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
+const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
+
+EDIT 3: Update the Router function. Replace the current Router function in its entirety with the version below. The only changes from the existing code are: destructure isLoading as authLoading, call useServerConfig to get clerkEnabled and configLoading, block on both, and conditionally add the two Clerk routes inside the unauthenticated Switch after the invite route and before the root route.
+
+function Router() {
+  const { isAuthenticated, isLoading: authLoading, isSystemAdmin, user } = useAuth();
+  const { clerkEnabled, isLoading: configLoading } = useServerConfig();
+
+  if (authLoading || configLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <Switch>
+          <Route path="/portal/:token" component={PortalPage} />
+          <Route path="/invite/:token" component={AcceptInvitation} />
+          {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
+          {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
+          <Route path="/" component={Login} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/auth/magic" component={MagicLinkPage} />
+          <Route path="/auth/link-expired" component={LinkExpiredPage} />
+          <Route path="/accept-invitation" component={AcceptInvitation} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    );
+  }
+
+  // Onboarding gate — redirect users who haven't completed onboarding.
+  // Skip when admin is in view-as mode: they should land on the normal app,
+  // and the amber exit banner must remain accessible.
+  if (user && user.onboardingCompleted === false && !user.viewingAs) {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <Switch>
+          <Route path="/onboarding" component={OnboardingPage} />
+          <Route>{() => <Redirect to="/onboarding" />}</Route>
+        </Switch>
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Switch>
+        <Route path="/portal/:token" component={PortalPage} />
+        <Route path="/invite/:token" component={AcceptInvitation} />
+
+        <Route path="/admin/companies/:id">
+          {() => (
+            <AdminRoute>
+              <AdminLayout>
+                <AdminCompanyDetail />
+              </AdminLayout>
+            </AdminRoute>
+          )}
+        </Route>
+
+        <Route path="/admin/:rest*">
+          {() => (
+            <AdminRoute>
+              <AdminLayout>
+                <Switch>
+                  <Route path="/admin" component={AdminOverview} />
+                  <Route path="/admin/token-usage" component={AdminTokenUsage} />
+                  <Route path="/admin/costs" component={AdminCosts} />
+                  <Route path="/admin/companies/:id" component={AdminCompanyDetail} />
+                  <Route path="/admin/companies" component={AdminCompanies} />
+                  <Route path="/admin/users" component={AdminUsers} />
+                  <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
+                  <Route path="/admin/subscriptions" component={AdminSubscriptions} />
+                  <Route path="/admin/issue-reports" component={AdminIssueReports} />
+                  <Route path="/admin/funnel" component={AdminFunnel} />
+                  <Route path="/admin/referral-invoice" component={AdminReferralInvoice} />
+                  <Route path="/admin/promo-codes" component={AdminPromoCodes} />
+                  <Route path="/admin/settings" component={AdminSettings} />
+                  <Route path="/admin/feedback" component={AdminFeedback} />
+                  <Route path="/admin/database" component={AdminDatabase} />
+                  <Route component={NotFound} />
+                </Switch>
+              </AdminLayout>
+            </AdminRoute>
+          )}
+        </Route>
+        <Route path="/admin">
+          {() => (
+            <AdminRoute>
+              <AdminLayout>
+                <AdminOverview />
+              </AdminLayout>
+            </AdminRoute>
+          )}
+        </Route>
+
+        <Route path="/auth/magic" component={MagicLinkPage} />
+        <Route path="/auth/link-expired" component={LinkExpiredPage} />
+        <Route path="/onboarding" component={OnboardingPage} />
+        <Route path="/login">{() => <Redirect to="/" />}</Route>
+        <Route path="/register">{() => <Redirect to="/" />}</Route>
+
+        <Route>
+          <Layout>
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/pipeline" component={Pipeline} />
+              <Route path="/target-companies" component={EnhancedTargetCompanies} />
+              <Route path="/target-companies/:id" component={TargetCompanyDetail} />
+              <Route path="/contacts" component={Contacts} />
+              <Route path="/team" component={TeamManagement} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/notifications" component={NotificationsPage} />
+              <Route path="/portal-management" component={PortalManagement} />
+              <Route path="/email-test">
+                {isSystemAdmin ? <EmailTest /> : <Redirect to="/" />}
+              </Route>
+              <Route path="/webhook-test">
+                {isSystemAdmin ? <WebhookTest /> : <Redirect to="/" />}
+              </Route>
+              <Route path="/file-upload-test">
+                {isSystemAdmin ? <FileUploadTest /> : <Redirect to="/" />}
+              </Route>
+              {/* <Route path="/company-accounts" component={CompanyAccounts} /> */}
+              <Route path="/billing" component={Billing} />
+              <Route path="/account" component={AccountPage} />
+              <Route component={NotFound} />
+            </Switch>
+          </Layout>
+        </Route>
+      </Switch>
+      {import.meta.env.VITE_BETA_MODE === 'true' && <BetaFeedbackWidget />}
+    </Suspense>
+  );
+}
+
+Do not touch the App function at the bottom of the file. ClerkProvider is mounted in main.tsx, not here.
+
+STEP 5 — Type check
+
+Run:
+npm run check
+
+Expected: no new errors. If tsc reports new errors, stop and report them back. Common suspects would be a missing import or a typo in the useServerConfig destructure.
+
+STEP 6 — Boot verification
+
+Restart the dev server.
+
+Expected:
+- No startup errors
+- Vite compiles successfully
+- In the browser, loading / still shows the existing Login page exactly as before
+- DevTools Network tab shows a GET /api/v2/public/config returning 200 with clerkEnabled: false
+- DevTools Network tab shows two or three outbound Clerk calls (JWKS, session probe). This is expected and harmless.
+- Visiting /sign-in in the browser returns the NotFound page (because clerkEnabled is false and the route is not registered)
+
+Do not flip CLERK_ENABLED. Functional Clerk testing comes between 4C-1 and 4C-2 and is a separate session.
+
+Report back with the Network panel screenshot or a short confirmation of the above.

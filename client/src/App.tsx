@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { useServerConfig } from "@/hooks/useServerConfig";
 import ErrorBoundary from "@/components/error-boundary";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SubscriptionProvider } from "@/context/subscription-context";
@@ -17,6 +18,8 @@ import Login from "@/pages/auth/login";
 import AcceptInvitation from "@/pages/accept-invitation";
 
 const Register = lazy(() => import("@/pages/auth/register"));
+const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
+const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
 const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
 const MagicLinkPage = lazy(() => import("@/pages/auth/magic-link"));
@@ -64,9 +67,10 @@ const LoadingSpinner = () => (
 );
 
 function Router() {
-  const { isAuthenticated, isLoading, isSystemAdmin, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, isSystemAdmin, user } = useAuth();
+  const { clerkEnabled, isLoading: configLoading } = useServerConfig();
 
-  if (isLoading) {
+  if (authLoading || configLoading) {
     return <LoadingSpinner />;
   }
 
@@ -76,6 +80,8 @@ function Router() {
         <Switch>
           <Route path="/portal/:token" component={PortalPage} />
           <Route path="/invite/:token" component={AcceptInvitation} />
+          {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
+          {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
           <Route path="/" component={Login} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
