@@ -1,0 +1,60 @@
+PROMPT 2B. Pre-req 2 Cycle 2 build, part 2 of 2. Apply ETL to dev. DESTRUCTIVE on dev DB only. Prod untouched.
+Step 1. Apply the transformed SQL to dev
+Execute the contents of attached_assets/waitlist_rows_transformed.sql against the dev database.
+Use whatever mechanism you have available: a Node/TSX one-shot script using the existing db client (server/db.ts), psql if available, or a direct pool.query from a short script in scripts/. Do not modify the transformed SQL file.
+Report the number of rows inserted (should be 46). Report any SQL errors.
+Step 2. Verify row count and basic integrity
+Run these read-only SELECTs against dev and report the results.
+2a) Total row count:
+SELECT COUNT(1) AS total FROM waitlist;
+Expected: 46.
+2b) Status distribution:
+SELECT status, COUNT(1) FROM waitlist GROUP BY status;
+Expected: one row, status='new', count=46.
+2c) Cohort and discount_tier distribution:
+SELECT cohort, discount_tier, COUNT(1) FROM waitlist GROUP BY cohort, discount_tier;
+Expected: one row, cohort='5D', discount_tier='standard', count=46.
+2d) Confirm no duplicate emails:
+SELECT email, COUNT(1) AS c FROM waitlist GROUP BY email HAVING COUNT(1) > 1;
+Expected: zero rows.
+2e) Earliest and latest created_at:
+SELECT MIN(created_at) AS earliest, MAX(created_at) AS latest FROM waitlist;
+Expected: earliest ≈ 2026-04-16 14:06:53 (Dee ludlow), latest ≈ 2026-04-19 18:16:42 (Luis Jardim). Report actual.
+Step 3. Spot-check the three critical rows
+3a) Kevin Griffiths (empty sectors array edge case):
+SELECT full_name, email, sectors, sectors_other FROM waitlist WHERE email = 'kevin@ygm.group';
+Expected: sectors = '{}' (empty text array), sectors_other = 'Various'. Report both.
+3b) Simone (dedupe confirmation):
+SELECT full_name, email, created_at, array_length(sectors, 1) AS sector_count FROM waitlist WHERE email = 'simone_garbutt@hotmail.com';
+Expected: exactly one row. created_at around 2026-04-16 17:04:18. sector_count = 9. Report actual.
+3c) Adam (known reference row):
+SELECT full_name, email, phone, target_deal_size FROM waitlist WHERE email = 'adam@shiftopsconsulting.com';
+Expected: full_name = 'Adam Auty', phone = '+447766770822', target_deal_size = '£2M – £5M'. Report actual.
+Step 4. Idempotency test
+Re-run the same ETL script a second time. The ON CONFLICT (id) DO NOTHING clause should make this a no-op.
+Report:
+
+The result of the re-run (SQL output)
+Then verify the row count is still 46:
+
+SELECT COUNT(1) AS total_after_rerun FROM waitlist;
+Expected: 46 (unchanged). If this comes back as anything else, stop and flag.
+Step 5. Workflow fields default check
+Confirm the 4 workflow columns correctly took their defaults on all imported rows:
+SELECT
+COUNT(1) FILTER (WHERE status = 'new') AS status_new,
+COUNT(1) FILTER (WHERE status_changed_at IS NULL) AS changed_at_null,
+COUNT(1) FILTER (WHERE status_changed_by IS NULL) AS changed_by_null,
+COUNT(1) FILTER (WHERE invited_user_id IS NULL) AS invited_null
+FROM waitlist;
+Expected: all four counts = 46.
+Final report for Prompt 2B:
+
+Insert execution output (row count inserted, any errors)
+Step 2 results (total, status, cohort, no dupes, earliest/latest)
+Step 3 spot-check results for Kevin, Simone, Adam
+Step 4 idempotency re-run output and confirmation row count is still 46
+Step 5 workflow fields default check
+Any deviations
+
+Do not touch prod. Prod schema + ETL is a separate cycle.
