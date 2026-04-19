@@ -1,0 +1,100 @@
+I have enough context. Writing the 4B-3 assess prompt.
+One subtle thing I want to flag upfront: Clerk users can have multiple email addresses (primary + additional). Our email-match logic should use the primary email only. Clerk exposes a primary_email_address_id field on the user object that points at the specific email entry in the email_addresses array. We'll match on that, not the first element.
+
+Assess before build. Phase 4B-3 Clerk webhook event handlers and /me verification. Read-only validation. Do not modify any files, do not run any SQL.
+Goal: extend the Clerk webhook handler to actually process user.created, user.updated, user.deleted events. Then verify /me works under both auth paths and that the JIT rejection fires correctly when a valid Clerk JWT arrives without a matching clerk_user_id.
+Proposed plan.
+Step 1. Extend server/routes/webhooks.routes.ts with three event handlers.
+After signature verification passes, dispatch on evt.type:
+case 'user.created':
+Read primary email from the Clerk payload. The Clerk user object has evt.data.primary_email_address_id (string) and evt.data.email_addresses (array of { id, email_address, ... }). Find the entry whose id matches primary_email_address_id and use its email_address.
+Look up users by email (case-insensitive via LOWER() or sql template with lower()).
+If no match found: log "[clerk-webhook] user.created: no matching user for <email> (Clerk id: <clerkUserId>) — awaiting invitation flow" and return 200.
+If match found but isActive is false: log conflict and return 200 without linking (defensive — inactive accounts should not be silently reactivated by a Clerk sign-up).
+If match found, isActive is true, clerk_user_id is null: UPDATE users SET clerk_user_id = <clerkUserId> WHERE id = <matched_id>. Log "[clerk-webhook] user.created: linked user <id> (<email>) to Clerk <clerkUserId>".
+If match found, isActive is true, clerk_user_id equals incoming Clerk id: no-op idempotent. Log "[clerk-webhook] user.created: user <id> already linked, skipping".
+If match found, isActive is true, clerk_user_id is a different Clerk id than incoming: log "[clerk-webhook] user.created: CONFLICT — user <id> already linked to Clerk <existingId>, incoming <newId> — skipping". Do not overwrite. Return 200 (so Clerk doesn't retry).
+case 'user.updated':
+Read first_name and last_name from evt.data.
+Look up users by clerk_user_id = evt.data.id.
+If found: UPDATE firstName and lastName if either changed. Log "[clerk-webhook] user.updated: synced user <id>".
+If not found: log "[clerk-webhook] user.updated: no user linked to Clerk <clerkUserId>" and return 200. This happens for a Clerk user that signed up but is awaiting 4D invitation metadata.
+case 'user.deleted':
+Clerk's delete payload has evt.data.id and evt.data.deleted (boolean). Read evt.data.id.
+Look up users by clerk_user_id = evt.data.id.
+If found: UPDATE isActive = false. Log "[clerk-webhook] user.deleted: soft-deleted user <id>".
+If not found: log "[clerk-webhook] user.deleted: no user linked to Clerk <clerkUserId>" and return 200.
+default:
+Log "[clerk-webhook] received unexpected event type <type>" and return 200. Clerk shouldn't send events we didn't subscribe to, but be defensive.
+All handlers return 200 with { received: true } (matching existing pattern) to prevent Clerk retries.
+Step 2. Verify /me under both auth paths.
+No code change to /me. The dual-path isAuthenticated populates req.session.userId transparently, so /me should work identically for session-auth and Clerk-auth requests.
+Verification plan:
+a. CLERK_ENABLED=false (current default). Hit /me via a logged-in browser session. Expect 200 with the user object. Confirm response shape includes the fields returned by auth.service.getCurrentUser (id, email, firstName, lastName, isSystemAdmin, onboardingCompleted, company, permissions, viewingAs).
+b. CLERK_ENABLED=true with a valid Clerk JWT for a user that IS linked (clerk_user_id populated). Expect 200 with the same shape. To set this up for testing:
+
+Adam creates a Clerk user in the Clerk Dashboard using his real email (adam@shiftopsconsulting.com). Alternatively, sign up via the Clerk Account Portal at evolving-polliwog-62.clerk.accounts.dev.
+That Clerk sign-up fires a user.created webhook. Our handler matches by email and links adam's local users row to the new Clerk user ID.
+After linking, Adam obtains a Clerk session token (from browser devtools after signing in to the Account Portal, or via Clerk's dashboard).
+Hit /me with Authorization: Bearer <token>. Expect 200.
+
+c. CLERK_ENABLED=true with a valid Clerk JWT for a user that is NOT linked. Expect 403 with CLERK_USER_NOT_LINKED error code.
+Step 3. Logging pattern.
+All webhook event handler logs use the "[clerk-webhook] <event>: <action>" prefix for grep-ability. Match the existing [billing-webhook] pattern in billing.routes.ts.
+Step 4. Idempotency.
+Each handler is idempotent by construction. user.created checks existing link state before writing. user.updated only writes if fields differ. user.deleted setting isActive=false on an already-inactive user is a no-op. The svix-id deduplication Replit suggested deferring to 4B-3 is still deferred — the inherent idempotency of the handlers themselves is sufficient for 4B-3, and we can add svix-id tracking later if a specific problem emerges.
+Please validate and report.
+
+Clerk webhook payload shapes.
+a. Confirm the user.created event payload shape. Specifically: evt.type === 'user.created', evt.data is the user object, evt.data.id is the Clerk user ID (format user_xxxxxxx), evt.data.email_addresses is an array, evt.data.primary_email_address_id is a string ID that identifies the primary email within that array. Each email_addresses entry has id and email_address. Confirm by referencing Clerk docs or @clerk/backend types.
+b. Confirm user.updated has the same shape with updated fields reflected in evt.data.
+c. Confirm user.deleted has evt.data.id but the data structure is sparser (the user is deleted, so email_addresses may be empty or missing). Confirm we can reliably extract evt.data.id.
+Email matching.
+a. Confirm the emails in users.email are stored case-sensitively or lowercased at write time. Check a few entries to see if email strings are all lowercase or mixed. If mixed, we need case-insensitive matching via lower() in the WHERE clause.
+b. Confirm the SQL template syntax for case-insensitive match that matches existing patterns in the codebase. Example from auth.routes.ts line 322 uses sqlLOWER(${users.email}) = LOWER(${email.trim()}) — confirm this is the right pattern to reuse.
+c. Confirm the email trim handling. Clerk may send emails with whitespace? Unlikely but check.
+Idempotency.
+a. Confirm the user.created linking logic handles all five sub-cases correctly:
+
+no match
+match inactive
+match active, unlinked
+match active, same clerk_user_id (re-delivery)
+match active, different clerk_user_id (conflict)
+b. Confirm user.updated is safely idempotent — firing twice with identical data does nothing harmful.
+c. Confirm user.deleted is safely idempotent — firing twice on an already-soft-deleted user is a no-op.
+
+
+Interaction with existing session-authenticated users.
+a. If adam@shiftopsconsulting.com is signed into Valoxi via the existing session AND also creates a Clerk user with the same email, the user.created webhook will link his existing users row to the new clerk_user_id. His session continues to work because isAuthenticated's Clerk path only activates when CLERK_ENABLED=true AND Authorization header is present. Confirm no adverse interaction.
+b. Specifically: after linking via webhook, does anything in the running session change? No, because the session cookie flow doesn't read clerk_user_id. The link is purely a DB field that gets read only when a future Clerk-authenticated request arrives. Confirm.
+/me verification approach.
+a. Confirm /me in auth.routes.ts currently returns the fields expected: id, email, firstName, lastName, isSystemAdmin, onboardingCompleted, company, permissions, viewingAs. Given Phase 1 removed the betaNdaSigned field from the response, confirm that's already gone from the /me handler.
+b. Confirm auth.service.getCurrentUser returns the same shape (no stale betaNdaSigned references).
+c. Confirm there are no other places in the auth flow that reference betaNdaSigned (we think Phase 1 caught them all but double-check given we're touching auth territory again).
+JIT rejection testing.
+a. Confirm how Adam obtains a valid Clerk JWT for testing. Options:
+
+Sign in to Clerk Account Portal (evolving-polliwog-62.clerk.accounts.dev), copy session token from cookies
+Use Clerk Dashboard's Sessions tab to inspect active session and get the JWT
+Use Clerk's impersonation feature if available on dev tier
+Recommend the simplest path.
+b. Confirm the curl command shape for hitting /me with Bearer token. Specifically: does the JWT go in Authorization: Bearer <jwt>, and does Clerk also set a __session cookie that getAuth might read instead? Confirm which is expected.
+c. Confirm CLERK_ENABLED toggle approach for testing. Adam toggles the Replit secret value, restarts the dev server, tests, flips back, restarts again. Any way to test without a restart?
+
+
+Logging considerations.
+a. Confirm the proposed logging pattern. All logs use console.log with "[clerk-webhook] <event_type>: <detail>" prefix. Errors use console.error. No structured logging needed for 4B-3.
+b. Confirm that logs from inside the webhook handler are visible in Replit's normal console output (they should be, since it's just console.log).
+Error handling.
+a. If a DB query inside a webhook handler throws, we should catch, log, and return 500 so Clerk retries. Confirm that's the right approach. Alternatively, some argue for swallowing the error and returning 200 to avoid retry storms. My lean: return 500 on genuine DB failures so Clerk retries with backoff, but return 200 for expected no-match scenarios. Confirm this distinction is cleanly codable.
+b. If the webhook hits a conflict (different clerk_user_id already linked), we return 200 and skip. Confirm the log at the conflict line is loud enough for Adam to notice on manual review.
+Webhook retries and deliveries.
+a. Clerk uses Svix. Retry behaviour: exponential backoff on 5xx, a few attempts over 24-48 hours. On 4xx (including our 400 signature failure), no retries. On 2xx, delivered and no retries. Confirm the retry behaviour matches this understanding.
+b. Confirm the svix-id header remains stable across retries of the same event delivery, so future deduplication via svix-id tracking is viable.
+Anything else.
+a. Any @clerk/express specific TypeScript types we should import for the event payloads to avoid any. Specifically: WebhookEvent, UserJSON from @clerk/backend. Recommend the cleanest typing approach.
+b. Any risk of the webhook being called for sessions of our 4 existing users before they've been linked? No, because Clerk only fires user.created on new Clerk sign-ups. Our existing users have no Clerk accounts yet, so no events fire. Confirm.
+c. Is there value in adding a simple /api/v2/webhooks/clerk/test endpoint that's admin-only and simulates events for local testing? My lean: no, Clerk Dashboard's "Send Example" button plus creating a real Clerk user is enough. Skip.
+
+Do not execute anything. Pure validation. Report findings, then we compose the 4B-3 build prompt (chunked into 2-3 sub-steps).
