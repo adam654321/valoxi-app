@@ -130,8 +130,8 @@
   
     if (!promoApplied && result.company?.id) {
       try {
-        const trialEndsAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-        await billingService.createTrialSubscription(result.company.id, 3, trialEndsAt);
+        const trialEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await billingService.createTrialSubscription(result.company.id, 1, trialEndsAt);
       } catch (err) {
         console.error('[REGISTRATION] Failed to create trial subscription:', err);
       }
