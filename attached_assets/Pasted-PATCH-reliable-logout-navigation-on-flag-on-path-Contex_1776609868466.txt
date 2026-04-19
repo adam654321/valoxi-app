@@ -1,0 +1,40 @@
+PATCH — reliable logout navigation on flag-on path
+Context: Clerk's signOut({ redirectUrl }) in @clerk/react@6.4.2 does not reliably navigate on wouter apps. Symptom is that clicking Log out clears cookies but does not navigate — the user stays on the dashboard until another interaction triggers a re-render. Fix is to make the navigation explicit via window.location.href, mirroring the flag-off path.
+Two file changes. Zero backend touch. No assess needed.
+STEP 1 — modify client/src/components/layout/NavUser.tsx
+Inside logoutMutation.mutationFn, change the flag-on branch from:
+if (clerkEnabled) {
+  await signOut({ redirectUrl: "/sign-in" });
+}
+to:
+if (clerkEnabled) {
+  await signOut();
+  window.location.href = "/sign-in";
+}
+No other changes to this file. The flag-off onSuccess branch (window.location.href = "/login") stays exactly as-is. Update the inline comment above the Clerk call to reflect the new behaviour, e.g. "// Clerk clears __session, then explicit navigation to /sign-in to avoid redirectUrl reliability issues in v6.4.2."
+STEP 2 — modify client/src/pages/auth/account-inactive.tsx
+Inside logoutMutation.mutationFn, change the flag-on branch from:
+if (clerkEnabled) {
+  await signOut({ redirectUrl: "/sign-in" });
+} else {
+  window.location.href = "/login";
+}
+to:
+if (clerkEnabled) {
+  await signOut();
+  window.location.href = "/sign-in";
+} else {
+  window.location.href = "/login";
+}
+No other changes.
+VERIFICATION
+V1. npx tsc --noEmit — must be clean.
+V2. Restart dev server. No startup errors.
+V3. Flag-off regression: with CLERK_ENABLED=false, sign in via /login, click Log out in NavUser, confirm redirected to /login. Unchanged behaviour.
+V4. Do not flag-on test in Replit — Adam will verify flag-on manually after build completes (sign in via /sign-in, click Log out, confirm immediate navigation to /sign-in).
+OUTPUT REQUIRED — stop after item 4:
+
+Focused diff of client/src/components/layout/NavUser.tsx showing the flag-on branch change with about three lines of surrounding context.
+Focused diff of client/src/pages/auth/account-inactive.tsx showing the flag-on branch change with about three lines of surrounding context.
+"tsc clean" confirmation.
+"flag-off regression passed — NavUser logout redirects to /login correctly" confirmation.

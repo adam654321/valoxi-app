@@ -14,7 +14,8 @@ export default function AccountInactive() {
     mutationFn: async () => {
       await apiRequest("POST", "/api/v2/auth/logout");
       if (clerkEnabled) {
-        await signOut({ redirectUrl: "/sign-in" });
+        await signOut();
+        window.location.href = "/sign-in";
       } else {
         window.location.href = "/login";
       }

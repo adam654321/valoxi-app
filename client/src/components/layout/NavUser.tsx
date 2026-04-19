@@ -32,11 +32,10 @@ export function NavUser() {
       // Express first: destroy sid server-side. Runs to completion before Clerk.
       await apiRequest("POST", "/api/v2/auth/logout");
       if (clerkEnabled) {
-        // Clerk clears __session and navigates to /sign-in.
-        // Dashboard "after sign-out" is also set to /sign-in as belt-and-braces
-        // in case the SDK version does not honour this option.
-        await signOut({ redirectUrl: "/sign-in" });
-        // Navigation handled by Clerk. Code below does not execute in this path.
+        // Clerk clears __session, then explicit navigation to /sign-in to avoid
+        // redirectUrl reliability issues in v6.4.2.
+        await signOut();
+        window.location.href = "/sign-in";
       }
     },
     onSuccess: () => {
