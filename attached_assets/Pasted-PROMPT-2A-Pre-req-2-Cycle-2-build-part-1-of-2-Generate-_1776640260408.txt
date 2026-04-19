@@ -1,0 +1,59 @@
+PROMPT 2A. Pre-req 2 Cycle 2 build, part 1 of 2. Generate the transformed ETL SQL and run pre-flight verification. Non-destructive. No DB writes.
+Pre-step. Confirm the source file
+Read attached_assets/waitlist_rows__2_.sql (or whatever path the user dropped the Supabase export at) and confirm it exists. Report:
+
+Exact file path
+Byte count
+Number of INSERT statements in the file (should be 1)
+Number of VALUES tuples (should be 46)
+
+If the file is not at the expected path, stop and ask.
+Step 1. Create the transformation script
+Create a small one-shot TypeScript script at scripts/etl-waitlist-transform.ts that:
+a) Reads the source file at attached_assets/waitlist_rows__2_.sql (adjust path if different)
+b) Applies three transformations in order:
+
+Replace \+00 suffix on timestamp literals. Use regex: /(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?)\+00/g replaced with $1. Track count of replacements.
+Replace literal ARRAY[] with ARRAY[]::text[]. Track count of replacements.
+Append  ON CONFLICT (id) DO NOTHING immediately before the closing semicolon. Use a replace anchored at the final ;.
+c) Writes the transformed SQL to attached_assets/waitlist_rows_transformed.sql
+d) Prints to stdout:
+Source byte count and transformed byte count
+Number of +00 suffixes stripped (expected: 46)
+Number of ARRAY[] fixes applied (expected: 1)
+Whether the ON CONFLICT (id) DO NOTHING clause was appended successfully (expected: true)
+Number of VALUES tuples in the output (should still be 46)
+
+The script should not connect to any database. It is a pure text transformation.
+Step 2. Run the transformation script
+Run: npx tsx scripts/etl-waitlist-transform.ts
+Report the full stdout output.
+Step 3. Sanity-check the transformed SQL
+Read the transformed file attached_assets/waitlist_rows_transformed.sql and report:
+a) The first 500 characters of the file (to see the INSERT header and first tuple)
+b) The last 500 characters of the file (to confirm ON CONFLICT clause is at the end)
+c) Count unique emails present in the file. Expected: 46. Shell approach that works:
+grep -oE "'[^']+@[^']+'" attached_assets/waitlist_rows_transformed.sql | sort -u | wc -l
+d) Confirm zero occurrences of the string +00 remain in the file:
+grep -c "+00" attached_assets/waitlist_rows_transformed.sql || true
+Expected: 0
+e) Confirm one occurrence of ARRAY[]::text[] in the file:
+grep -c "ARRAY[]::text[]" attached_assets/waitlist_rows_transformed.sql
+Expected: 1
+f) Confirm one occurrence of ON CONFLICT (id) DO NOTHING in the file:
+grep -c "ON CONFLICT (id) DO NOTHING" attached_assets/waitlist_rows_transformed.sql
+Expected: 1
+Step 4. Dev DB pre-flight
+Confirm the dev waitlist table is still empty before we apply:
+SELECT COUNT(1) AS current_rows FROM waitlist;
+Expected: 0.
+Final report for Prompt 2A:
+
+Source file path and byte count
+Transformation script stdout (counts of replacements made)
+First 500 chars and last 500 chars of transformed file
+Results of sanity-check queries (unique emails 46, no +00, one ARRAY[]::text[], one ON CONFLICT)
+Dev waitlist row count (expected 0)
+Any deviations from expected
+
+Do not apply the SQL to the database. Wait for Prompt 2B.
