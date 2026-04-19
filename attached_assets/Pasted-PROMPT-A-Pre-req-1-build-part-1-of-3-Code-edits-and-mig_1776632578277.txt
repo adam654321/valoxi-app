@@ -1,0 +1,34 @@
+PROMPT A. Pre-req 1 build, part 1 of 3. Code edits and migration file generation. Non-destructive. No DB writes.
+Step 1. Code changes
+1a) In shared/schema/core.ts, line 24, change the passwordHash definition.
+Before:
+passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+After:
+passwordHash: varchar("password_hash", { length: 255 }),
+1b) In server/services/auth.service.ts, login method, insert a null-hash guard immediately after the existing if (!user) check and before the bcrypt.compare call. New block:
+if (!user.passwordHash) {
+throw new UnauthorizedError('Invalid credentials');
+}
+1c) In server/routes/account.routes.ts, PATCH /password handler, insert a null-hash guard immediately after the existing if (!user) check and before the bcrypt.compare call. Confirm BadRequestError is already imported at the top of the file before editing. New block:
+if (!user.passwordHash) {
+throw new BadRequestError('This account uses single sign-on and does not have a password to change.');
+}
+1d) In server/routes/admin.routes.ts, POST /verify-credentials handler, insert a null-hash guard immediately after the existing if (!user?.isSystemAdmin) block and before the bcrypt.compare call. Match the existing res.status().json() pattern in this handler:
+if (!user.passwordHash) {
+return res.status(401).json({ success: false, message: 'Invalid credentials' });
+}
+No other edits. No register method change. No repository changes.
+Step 2. Generate migration and type-check
+2a) Read package.json scripts to find the drizzle-kit generate command. Run it. Report the exact command used and the full output.
+2b) Report the full contents of the newly created migration file under migrations/0005_*.sql. Expected content is exactly one statement:
+ALTER TABLE "users" ALTER COLUMN "password_hash" DROP NOT NULL;
+If the file contains anything beyond that, stop and report. Do not proceed.
+2c) Run tsc in noEmit mode. Report any errors. Expected: clean.
+Final report for Prompt A
+Produce a summary with:
+
+Before/after snippet for each of the four code edits, by file
+Migration filename (0005_<random>.sql) and full SQL content
+tsc result (clean, or full error list)
+
+Do not apply the migration. Do not run live tests. Wait for Prompt B.

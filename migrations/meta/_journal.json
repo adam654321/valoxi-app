@@ -36,6 +36,13 @@
       "when": 1776558324137,
       "tag": "0004_abnormal_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776632628047,
+      "tag": "0005_vengeful_turbo",
+      "breakpoints": true
     }
   ]
 }

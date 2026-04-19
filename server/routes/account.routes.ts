@@ -84,6 +84,10 @@ router.patch('/password', asyncHandler(async (req: Request, res: Response) => {
 
   if (!user) throw new UnauthorizedError();
 
+  if (!user.passwordHash) {
+    throw new BadRequestError('This account uses single sign-on and does not have a password to change.');
+  }
+
   const isValid = await bcrypt.compare(data.currentPassword, user.passwordHash);
   if (!isValid) throw new BadRequestError('Current password is incorrect');
 

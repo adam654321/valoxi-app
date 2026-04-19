@@ -851,6 +851,9 @@ router.post('/verify-credentials', asyncHandler(async (req: Request, res: Respon
   if (!user?.isSystemAdmin) {
     return res.status(403).json({ success: false, message: 'Not authorised' });
   }
+  if (!user.passwordHash) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     return res.status(401).json({ success: false, message: 'Invalid credentials' });
