@@ -3,7 +3,6 @@
   import { eq, sql } from 'drizzle-orm';
   import { authService } from '../services/auth.service';
   import { sendSuccess, sendCreated } from '../utils/response';
-  import { UnauthorizedError } from '../utils/errors';
   import { isAuthenticated, refreshSessionPermissions } from '../middleware/auth';
   import { validateCsrfToken } from '../middleware/csrf';
   import { asyncHandler } from '../utils/async-handler';
@@ -232,12 +231,9 @@
     });
   });
   
-  router.get('/me', asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.session?.userId;
-    if (!userId) {
-      throw new UnauthorizedError();
-    }
-  
+  router.get('/me', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.session.userId!;
+
     const result = await authService.getCurrentUser(userId);
   
     if (!req.session.permissionsCachedAt) {
