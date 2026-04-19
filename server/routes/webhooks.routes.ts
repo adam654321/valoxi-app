@@ -1,9 +1,115 @@
 import { Router, type Request, type Response } from 'express';
 import { Webhook } from 'svix';
+import { eq, sql } from 'drizzle-orm';
+import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
+import { db } from '../db';
+import { users } from '@shared/schema';
 
 const router = Router();
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
+
+function getPrimaryEmail(data: UserJSON): string | undefined {
+  if (!data.primary_email_address_id) return undefined;
+  const entry = data.email_addresses?.find((e) => e.id === data.primary_email_address_id);
+  return entry?.email_address;
+}
+
+async function handleUserCreated(data: UserJSON): Promise<void> {
+  const clerkUserId = data.id;
+  const email = getPrimaryEmail(data);
+
+  if (!email) {
+    console.log(`[clerk-webhook] user.created: no primary email on payload for Clerk ${clerkUserId}, skipping`);
+    return;
+  }
+
+  const [match] = await db
+    .select({ id: users.id, clerkUserId: users.clerkUserId, isActive: users.isActive })
+    .from(users)
+    .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
+
+  if (!match) {
+    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}) — awaiting invitation flow`);
+    return;
+  }
+
+  if (!match.isActive) {
+    console.log(`[clerk-webhook] user.created: matched user ${match.id} is inactive, skipping link for Clerk ${clerkUserId}`);
+    return;
+  }
+
+  if (match.clerkUserId === null) {
+    await db.update(users).set({ clerkUserId }).where(eq(users.id, match.id));
+    console.log(`[clerk-webhook] user.created: linked user ${match.id} (${email}) to Clerk ${clerkUserId}`);
+    return;
+  }
+
+  if (match.clerkUserId === clerkUserId) {
+    console.log(`[clerk-webhook] user.created: user ${match.id} already linked to Clerk ${clerkUserId}, skipping`);
+    return;
+  }
+
+  console.error(`[clerk-webhook] user.created: CONFLICT — user ${match.id} already linked to Clerk ${match.clerkUserId}, incoming ${clerkUserId} — skipping`);
+}
+
+async function handleUserUpdated(data: UserJSON): Promise<void> {
+  const clerkUserId = data.id;
+
+  const [match] = await db
+    .select({ id: users.id, firstName: users.firstName, lastName: users.lastName })
+    .from(users)
+    .where(eq(users.clerkUserId, clerkUserId));
+
+  if (!match) {
+    console.log(`[clerk-webhook] user.updated: no user linked to Clerk ${clerkUserId}`);
+    return;
+  }
+
+  const update: { firstName?: string; lastName?: string } = {};
+
+  if (data.first_name !== null && data.first_name !== undefined && data.first_name !== match.firstName) {
+    update.firstName = data.first_name;
+  }
+  if (data.last_name !== null && data.last_name !== undefined && data.last_name !== match.lastName) {
+    update.lastName = data.last_name;
+  }
+
+  if (Object.keys(update).length === 0) {
+    console.log(`[clerk-webhook] user.updated: no changes for user ${match.id} (Clerk ${clerkUserId})`);
+    return;
+  }
+
+  await db.update(users).set(update).where(eq(users.id, match.id));
+  console.log(`[clerk-webhook] user.updated: synced user ${match.id} (Clerk ${clerkUserId})`);
+}
+
+async function handleUserDeleted(data: DeletedObjectJSON): Promise<void> {
+  const clerkUserId = data.id;
+
+  if (!clerkUserId) {
+    console.warn('[clerk-webhook] user.deleted: missing id on payload, skipping');
+    return;
+  }
+
+  const [match] = await db
+    .select({ id: users.id, isActive: users.isActive })
+    .from(users)
+    .where(eq(users.clerkUserId, clerkUserId));
+
+  if (!match) {
+    console.log(`[clerk-webhook] user.deleted: no user linked to Clerk ${clerkUserId}`);
+    return;
+  }
+
+  if (!match.isActive) {
+    console.log(`[clerk-webhook] user.deleted: user ${match.id} already inactive, skipping`);
+    return;
+  }
+
+  await db.update(users).set({ isActive: false }).where(eq(users.id, match.id));
+  console.log(`[clerk-webhook] user.deleted: soft-deleted user ${match.id} (Clerk ${clerkUserId})`);
+}
 
 router.post('/clerk', async (req: Request, res: Response) => {
   if (!WEBHOOK_SECRET) {
@@ -21,25 +127,40 @@ router.post('/clerk', async (req: Request, res: Response) => {
   }
 
   const wh = new Webhook(WEBHOOK_SECRET);
-  let evt: any;
+  let evt: WebhookEvent;
   try {
     const payload = (req.body as Buffer).toString();
     evt = wh.verify(payload, {
       'svix-id': svixId,
       'svix-timestamp': svixTimestamp,
       'svix-signature': svixSignature,
-    });
+    }) as WebhookEvent;
   } catch (err) {
     console.error('[clerk-webhook] signature verification failed:', err);
     return res.status(400).json({ error: 'invalid_signature' });
   }
 
-  const eventType = evt?.type ?? 'unknown';
-  const userId = evt?.data?.id ?? 'unknown';
-  console.log(`[clerk-webhook] received ${eventType} for user ${userId}`);
+  console.log(`[clerk-webhook] received ${evt.type} for id ${(evt.data as { id?: string }).id ?? 'unknown'}`);
 
-  // Event handlers will be added in Phase 4B-3.
-  // For now, acknowledge all events.
+  try {
+    switch (evt.type) {
+      case 'user.created':
+        await handleUserCreated(evt.data);
+        break;
+      case 'user.updated':
+        await handleUserUpdated(evt.data);
+        break;
+      case 'user.deleted':
+        await handleUserDeleted(evt.data);
+        break;
+      default:
+        console.log(`[clerk-webhook] received unexpected event type ${(evt as { type: string }).type}, ignoring`);
+    }
+  } catch (err) {
+    console.error(`[clerk-webhook] handler error for ${evt.type}:`, err);
+    return res.status(500).json({ error: 'handler_failed' });
+  }
+
   return res.status(200).json({ received: true });
 });
 
