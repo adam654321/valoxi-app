@@ -20,6 +20,8 @@ import AcceptInvitation from "@/pages/accept-invitation";
 const Register = lazy(() => import("@/pages/auth/register"));
 const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
 const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
+const AccountSetupPending = lazy(() => import("@/pages/auth/account-setup-pending"));
+const AccountInactive = lazy(() => import("@/pages/auth/account-inactive"));
 const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
 const MagicLinkPage = lazy(() => import("@/pages/auth/magic-link"));
@@ -67,11 +69,27 @@ const LoadingSpinner = () => (
 );
 
 function Router() {
-  const { isAuthenticated, isLoading: authLoading, isSystemAdmin, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, isSystemAdmin, user, authError } = useAuth();
   const { clerkEnabled, isLoading: configLoading } = useServerConfig();
 
   if (authLoading || configLoading) {
     return <LoadingSpinner />;
+  }
+
+  if (authError === "CLERK_USER_NOT_LINKED") {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <AccountSetupPending />
+      </Suspense>
+    );
+  }
+
+  if (authError === "CLERK_USER_INACTIVE") {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <AccountInactive />
+      </Suspense>
+    );
   }
 
   if (!isAuthenticated) {

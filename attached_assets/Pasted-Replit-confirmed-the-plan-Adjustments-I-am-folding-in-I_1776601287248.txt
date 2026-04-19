@@ -1,0 +1,96 @@
+Replit confirmed the plan. Adjustments I am folding in:
+
+Item G: widen retry to 4 attempts with 1000/2000/3000/4000ms delays (~10s total) to absorb Svix first-attempt variability.
+Item I: include the if (clerkEnabled) guard on the inactive page's Clerk signOut call for defensive parity with NavUser.
+Item H: mid-session flag flip is noted for ops runbook only. Not in scope for 4C-3.
+
+Here is the Phase 4C-3 build prompt. Paste into Replit as is.
+
+PHASE 4C-3 BUILD — error state UI for Clerk auth failures
+Context: this follows Phase 4C-3 ASSESS which validated all items A through I read-only. All changes below are frontend only. Zero backend changes. Flag-off behaviour must remain byte-for-byte unchanged from the end of 4C-2.
+Do not touch any of: server/middleware/auth.ts, server/middleware/clerk-auth.ts, server/routes/auth.routes.ts, server/routes/webhooks.routes.ts, client/src/lib/queryClient.ts, client/src/main.tsx, client/src/hooks/useServerConfig.ts, client/src/components/layout/NavUser.tsx.
+Do not run any migration. Do not alter any Replit Secret. Do not touch prod. No EXECUTE gate needed because no destructive operations are performed.
+STEP 1 — create both new auth pages
+File 1a: client/src/pages/auth/account-setup-pending.tsx
+Default export React component AccountSetupPending. Outer container matches client/src/pages/auth/sign-in.tsx: min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background.
+Inside, a centred max-w-md card (rounded-lg border bg-card p-8 text-center). Contents in order:
+
+A spinner (animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto) above the heading.
+Heading h1: "Setting up your account".
+Paragraph: short, plain UK English, explains this usually takes a few seconds and the page will refresh automatically. No em dashes.
+Button labelled "Retry now". On click, calls queryClient.invalidateQueries({ queryKey: ['/api/v2/auth/me'] }). Import queryClient from @/lib/queryClient. Use the existing Button component from @/components/ui/button.
+Muted paragraph below the button: "Still stuck? " followed by an anchor to mailto:support@valoxi.ai labelled "Contact support". Use text-muted-foreground.
+
+No Clerk SDK calls on this page. No sign-out button. No destructive actions.
+File 1b: client/src/pages/auth/account-inactive.tsx
+Default export React component AccountInactive. Same outer container styling as File 1a.
+Inside, a centred max-w-md card. Contents in order:
+
+Heading h1: "This account is no longer active".
+Paragraph: plain UK English. Explains the account has been disabled and the user should contact support if they believe this is an error. No em dashes.
+Button labelled "Sign out" (or "Signing out..." while pending). Wire to a useMutation whose mutationFn does exactly:
+first: await apiRequest("POST", "/api/v2/auth/logout")
+then: if (clerkEnabled) { await signOut({ redirectUrl: "/sign-in" }) } else { window.location.href = "/login" }
+This mirrors the pattern in client/src/components/layout/NavUser.tsx exactly. The clerkEnabled guard is defensive parity per assess item I.
+On mutation error, show a toast (useToast from @/hooks/use-toast) with variant destructive and description "Could not sign out. Please try again." Do not redirect on error.
+Muted paragraph below: anchor to mailto:support@valoxi.ai labelled "Contact support".
+
+Imports required: apiRequest from @/lib/queryClient; useClerk from @clerk/react; useServerConfig from @/hooks/useServerConfig; useMutation from @tanstack/react-query; useToast from @/hooks/use-toast; Button from @/components/ui/button.
+After creating both files, run npx tsc --noEmit. Must be clean. If not clean, fix and re-run before proceeding.
+STEP 2 — modify client/src/hooks/useAuth.ts
+Replace the useQuery call with a custom inline queryFn. Preserve the AuthUser interface, the csrfFetched ref, the csrfFetched useEffect, the select transform, and every existing return field. Add one new return field: authError.
+New queryFn behaviour (all inline inside useAuth, not using getQueryFn):
+
+fetch('/api/v2/auth/me', { credentials: 'include' })
+if res.ok, return await res.json()
+otherwise read body via await res.text(), try JSON.parse into parsed
+if parsed.error === 'CLERK_USER_NOT_LINKED' or parsed.error === 'CLERK_USER_INACTIVE': build a new Error using parsed.message (fallback "Authentication error"), set err.status = res.status, set err.code = parsed.error, throw
+else if res.status === 401: return null (preserves the existing unauthenticated-returns-to-login behaviour for every other 401)
+else: build Error using parsed.message or a fallback, set err.status = res.status, throw (no code)
+
+Retry config on the useQuery call:
+
+retry: (failureCount, error) => (error as any)?.code === 'CLERK_USER_NOT_LINKED' && failureCount < 4
+retryDelay: (attempt) => [1000, 2000, 3000, 4000][attempt] ?? 4000
+
+Derive authError from error.code:
+
+authError: 'CLERK_USER_NOT_LINKED' | 'CLERK_USER_INACTIVE' | null
+if (error as any)?.code === 'CLERK_USER_NOT_LINKED' then 'CLERK_USER_NOT_LINKED'
+else if (error as any)?.code === 'CLERK_USER_INACTIVE' then 'CLERK_USER_INACTIVE'
+else null
+
+Return object must include: user, isLoading, isAuthenticated, isSystemAdmin, error, authError. Do not remove any existing field. Do not rename any existing field.
+After modifying, run npx tsc --noEmit. Must be clean.
+STEP 3 — modify client/src/App.tsx
+Two surgical changes to this file only.
+3a. Alongside the existing SignInPage and SignUpPage lazy imports at the top of the file, add:
+const AccountSetupPending = lazy(() => import("@/pages/auth/account-setup-pending"));
+const AccountInactive = lazy(() => import("@/pages/auth/account-inactive"));
+3b. Inside the Router function, destructure authError from useAuth alongside the existing fields. Between the existing (authLoading || configLoading) early return and the existing (!isAuthenticated) branch, insert two conditional returns in this order:
+if (authError === 'CLERK_USER_NOT_LINKED') return Suspense with LoadingSpinner fallback wrapping AccountSetupPending.
+if (authError === 'CLERK_USER_INACTIVE') return Suspense with LoadingSpinner fallback wrapping AccountInactive.
+No other changes to App.tsx. The onboarding gate, admin routes, authenticated Layout, and BetaFeedbackWidget block must remain untouched.
+After modifying, run npx tsc --noEmit. Must be clean.
+VERIFICATION — do not skip any item
+V1. npx tsc --noEmit across the full project, clean exit.
+V2. Restart the dev server. Confirm no startup errors in the Replit console.
+V3. With CLERK_ENABLED unchanged (currently false in Secrets), run a manual browser test in incognito against the dev URL:
+
+Load root. Confirm Login page renders exactly as today.
+Log in with a working test account. Confirm dashboard loads and /api/v2/auth/me returns a user object.
+Click the NavUser logout. Confirm it lands back on Login and the session is cleared.
+
+V4. Capture the raw JSON body of the authenticated GET /api/v2/auth/me call from step V3 using the browser devtools Network tab. Paste it into the output.
+V5. Do not flip CLERK_ENABLED in this build. Flag-on end-to-end testing for the two new error states requires deliberate test-user setup (a Clerk account with an unmatched email, and a separate Valoxi row with isActive=false linked to a Clerk user). That is a separate test pass, not part of 4C-3 build.
+OUTPUT REQUIRED — in this exact order, stop after item 7:
+
+Full contents of client/src/pages/auth/account-setup-pending.tsx.
+Full contents of client/src/pages/auth/account-inactive.tsx.
+Full contents of client/src/hooks/useAuth.ts after modification (whole file, not a diff).
+A focused diff of client/src/App.tsx showing the lazy import additions, the authError destructure, and the two new early returns with about three lines of surrounding context each. No whole-file dump.
+Confirmation line: "tsc clean".
+Confirmation line: "flag-off browser test passed" plus the raw JSON body captured in V4.
+One short paragraph flagging anything you had to change from the plan, or "No deviations from plan." if none.
+
+Stop after item 7. Do not flip the flag. Do not run migrations. Do not touch prod.
