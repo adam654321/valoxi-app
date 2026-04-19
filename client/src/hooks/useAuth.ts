@@ -60,7 +60,7 @@ export function useAuth() {
     },
     select: (response: any) => response?.data || response,
     retry: (failureCount, error) =>
-      (error as any)?.code === "CLERK_USER_NOT_LINKED" && failureCount < 4,
+      (error as any)?.code === "CLERK_USER_NOT_LINKED" && failureCount < 5,
     retryDelay: (attempt) => ([1000, 2000, 3000, 4000][attempt] ?? 4000),
   });
 
