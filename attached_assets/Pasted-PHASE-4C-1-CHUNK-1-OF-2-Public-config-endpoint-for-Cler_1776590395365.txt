@@ -1,0 +1,67 @@
+PHASE 4C-1 CHUNK 1 OF 2 — Public config endpoint for Clerk flag
+
+GOAL
+Expose a single unauthenticated endpoint at GET /api/v2/public/config that returns whether Clerk auth is enabled. Frontend will use this to decide whether to register Clerk sign-in and sign-up routes. CLERK_ENABLED stays false in Secrets. This chunk is backend only.
+
+STEP 1 — Create server/routes/public.routes.ts
+
+FILE: server/routes/public.routes.ts
+
+import { Router } from 'express';
+import { asyncHandler } from '../utils/async-handler';
+import { sendSuccess } from '../utils/response';
+
+const router = Router();
+
+router.get(
+  '/config',
+  asyncHandler(async (_req, res) => {
+    sendSuccess(res, {
+      clerkEnabled: process.env.CLERK_ENABLED === 'true',
+    });
+  }),
+);
+
+export default router;
+
+Notes
+- Router-level path is /config. Mount path below is /api/v2/public, giving the final URL /api/v2/public/config.
+- No isAuthenticated, no validateCsrfToken, no rate limiter beyond the generalLimiter that is already global on /api/.
+- clerkEnabled is computed on every request. Flag reads at request time, not module load time, so a Secrets change after restart is picked up without a code change.
+
+STEP 2 — Register the route in server/routes/index.ts
+
+Add the import alongside the other route imports, grouped with the public-prefixed routes:
+
+import publicConfigRoutes from './public.routes';
+
+Inside registerModularRoutes, add this line. Place it near the other /api/v2/public/* mounts for consistency. A sensible location is immediately after the webhooksRoutes registration and before the billingWebhookRoutes line, since it is an unauthenticated public route with no middleware:
+
+  app.use('/api/v2/public/config', publicConfigRoutes);
+
+Do not wrap with isAuthenticated, validateCsrfToken or portalLimiter. It is intentionally bare.
+
+STEP 3 — Type check
+
+Run:
+npm run check
+
+Expected: no new errors introduced by these changes. If tsc reports unrelated pre-existing errors, note them in your reply but do not attempt to fix anything outside the three lines above.
+
+STEP 4 — Boot verification
+
+Restart the dev server (Replit's Run button or kill and npm run dev).
+
+Expected log output: the usual startup lines plus eventually "serving on port 5000" with no new errors or warnings. No Clerk-related output should appear.
+
+STEP 5 — Smoke-test the endpoint
+
+Run:
+curl -s https://85fb53ef-8f2a-4b29-b64b-c651f49dfeb5-00-2ooxl8jy2uoof.kirk.replit.dev/api/v2/public/config
+
+Expected response:
+{"success":true,"data":{"clerkEnabled":false}}
+
+If clerkEnabled comes back as true, check the Replit Secrets pane. CLERK_ENABLED should not be present or should be set to anything other than the literal string "true".
+
+Do not run any other tests. Do not flip the flag. Do not proceed to chunk 2. Report back with the curl output.
