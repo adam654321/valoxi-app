@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, serial, varchar, text, integer, boolean, timestamp, inet, unique, numeric, date, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, inet, unique, numeric, date, jsonb, uuid, check, index } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -82,6 +82,30 @@ export const userInvitations = pgTable("user_invitations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Waitlist entries — pre-user acquisition records
+export const waitlist = pgTable("waitlist", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  acquisitionJourney: text("acquisition_journey").notNull(),
+  targetDealSize: text("target_deal_size").notNull(),
+  sectors: text("sectors").array().notNull(),
+  sectorsOther: text("sectors_other"),
+  acquisitionsCompleted: text("acquisitions_completed").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  cohort: text("cohort").notNull().default("5D"),
+  discountTier: text("discount_tier").notNull().default("standard"),
+  status: varchar("status", { length: 20 }).notNull().default("new"),
+  statusChangedAt: timestamp("status_changed_at"),
+  statusChangedBy: integer("status_changed_by").references(() => users.id),
+  invitedUserId: integer("invited_user_id").references(() => users.id),
+}, (table) => ({
+  waitlistStatusCheck: check("waitlist_status_check", sql`${table.status} IN ('new','approved','invited','declined')`),
+  waitlistStatusIdx: index("waitlist_status_idx").on(table.status),
+  waitlistCreatedAtIdx: index("waitlist_created_at_idx").on(table.createdAt),
+}));
+
 // User roles with permissions
 export const userRoles = pgTable("user_roles", {
   id: serial("id").primaryKey(),
@@ -129,6 +153,14 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
   createdAt: true,
 });
 
+export const insertWaitlistSchema = createInsertSchema(waitlist).omit({
+  id: true,
+  createdAt: true,
+  statusChangedAt: true,
+  statusChangedBy: true,
+  invitedUserId: true,
+});
+
 // Types
 export type InsertUserCompany = z.infer<typeof insertUserCompanySchema>;
 export type UserCompany = typeof userCompanies.$inferSelect;
@@ -146,6 +178,9 @@ export type UserInvitation = typeof userInvitations.$inferSelect;
 
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
+
+export type InsertWaitlist = z.infer<typeof insertWaitlistSchema>;
+export type Waitlist = typeof waitlist.$inferSelect;
 
 // Token usage tracking
 export const tokenUsage = pgTable("token_usage", {

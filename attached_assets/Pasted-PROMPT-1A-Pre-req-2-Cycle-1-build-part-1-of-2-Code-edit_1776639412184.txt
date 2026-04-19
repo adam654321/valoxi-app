@@ -1,0 +1,80 @@
+PROMPT 1A. Pre-req 2 Cycle 1 build, part 1 of 2. Code edits and migration file generation. Non-destructive. No DB writes.
+Step 1. Update imports in shared/schema/core.ts
+Current import line (line 2):
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, inet, unique, numeric, date, jsonb } from 'drizzle-orm/pg-core';
+Add three symbols: uuid, check, index. Maintain alphabetical ordering within the import list if the file convention is alphabetical, otherwise append.
+Step 2. Add waitlist table definition to shared/schema/core.ts
+Insert the new waitlist table immediately after the userInvitations table definition (currently ends at line 83) and before the userRoles table definition (currently starts at line 85). Also append the insert schema and types alongside, following the existing patterns in the file (grouped with other insert schemas and types, not immediately after the table definition).
+The waitlist table definition:
+export const waitlist = pgTable("waitlist", {
+id: uuid("id").primaryKey().defaultRandom(),
+fullName: text("full_name").notNull(),
+email: text("email").notNull().unique(),
+phone: text("phone"),
+acquisitionJourney: text("acquisition_journey").notNull(),
+targetDealSize: text("target_deal_size").notNull(),
+sectors: text("sectors").array().notNull(),
+sectorsOther: text("sectors_other"),
+acquisitionsCompleted: text("acquisitions_completed").notNull(),
+createdAt: timestamp("created_at").notNull().defaultNow(),
+cohort: text("cohort").notNull().default("5D"),
+discountTier: text("discount_tier").notNull().default("standard"),
+status: varchar("status", { length: 20 }).notNull().default("new"),
+statusChangedAt: timestamp("status_changed_at"),
+statusChangedBy: integer("status_changed_by").references(() => users.id),
+invitedUserId: integer("invited_user_id").references(() => users.id),
+}, (table) => ({
+waitlistStatusCheck: check("waitlist_status_check", sql${table.status} IN ('new','approved','invited','declined')),
+waitlistStatusIdx: index("waitlist_status_idx").on(table.status),
+waitlistCreatedAtIdx: index("waitlist_created_at_idx").on(table.createdAt),
+}));
+Insert schema and types to add alongside the existing patterns:
+export const insertWaitlistSchema = createInsertSchema(waitlist).omit({
+id: true,
+createdAt: true,
+statusChangedAt: true,
+statusChangedBy: true,
+invitedUserId: true,
+});
+export type InsertWaitlist = z.infer<typeof insertWaitlistSchema>;
+export type Waitlist = typeof waitlist.$inferSelect;
+Note: statusChangedAt, statusChangedBy, invitedUserId are also omitted from the insert schema because they are internal workflow fields, not user-supplied on insert. Only the public waitlist endpoint will ever insert rows, and it must not accept these fields from the client.
+Confirm sql is already imported from 'drizzle-orm' (line 1 of core.ts). Confirm createInsertSchema is already imported from 'drizzle-zod'. No other imports should need to change.
+Step 3. Generate migration and type-check
+3a) Run npm run db:generate. Report the full command output and the newly created migration filename under migrations/. Expected filename: 0006_<random-word-pair>.sql.
+3b) Report the full contents of the new migration file. Compare against this expected SQL preview:
+CREATE TABLE "waitlist" (
+"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+"full_name" text NOT NULL,
+"email" text NOT NULL,
+"phone" text,
+"acquisition_journey" text NOT NULL,
+"target_deal_size" text NOT NULL,
+"sectors" text[] NOT NULL,
+"sectors_other" text,
+"acquisitions_completed" text NOT NULL,
+"created_at" timestamp DEFAULT now() NOT NULL,
+"cohort" text DEFAULT '5D' NOT NULL,
+"discount_tier" text DEFAULT 'standard' NOT NULL,
+"status" varchar(20) DEFAULT 'new' NOT NULL,
+"status_changed_at" timestamp,
+"status_changed_by" integer,
+"invited_user_id" integer,
+CONSTRAINT "waitlist_email_unique" UNIQUE("email"),
+CONSTRAINT "waitlist_status_check" CHECK (status IN ('new','approved','invited','declined'))
+);
+Plus FK constraints on status_changed_by and invited_user_id referencing users(id), plus indexes on status and created_at.
+The key item to verify: created_at must be timestamp DEFAULT now() NOT NULL, not timestamp with time zone DEFAULT now() NOT NULL. If the generator emits timestamp with time zone, stop and flag.
+If the generated SQL deviates from expected in any material way (missing CHECK, missing indexes, wrong column types, timezone added to timestamp), stop and report. Do not proceed.
+3c) Run npx tsc --noEmit. Expected: clean.
+Final report for Prompt 1A:
+
+Import line before and after
+Full waitlist table TypeScript block as inserted
+Insert schema and types block as inserted
+Migration filename
+Full migration SQL content
+Any deviations from the expected SQL preview
+tsc result
+
+Do not apply the migration. Wait for Prompt 1B.

@@ -43,6 +43,13 @@
       "when": 1776632628047,
       "tag": "0005_vengeful_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776639458374,
+      "tag": "0006_tiresome_wraith",
+      "breakpoints": true
     }
   ]
 }
