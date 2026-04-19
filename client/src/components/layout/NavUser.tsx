@@ -29,16 +29,27 @@ export function NavUser() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Clerk first. If this throws, we do not proceed to Express logout.
-      // Rationale: tryClerkAuth runs before session check in isAuthenticated,
-      // so a lingering __session cookie silently re-authenticates the user.
       if (clerkEnabled) {
-        await signOut();
+        // Callback form: runs after Clerk clears __session, before Clerk navigates.
+        // Express logout inside the callback ensures sid is destroyed before redirect.
+        // Explicit redirectUrl overrides the Clerk Dashboard "after sign-out" config.
+        await signOut(
+          async () => {
+            await apiRequest("POST", "/api/v2/auth/logout");
+          },
+          { redirectUrl: "/sign-in" }
+        );
+        // Clerk handles the browser navigation after the callback resolves.
+        // Code below this line will not execute in the flag-on path.
+      } else {
+        await apiRequest("POST", "/api/v2/auth/logout");
       }
-      await apiRequest("POST", "/api/v2/auth/logout");
     },
     onSuccess: () => {
-      window.location.href = clerkEnabled ? "/sign-in" : "/login";
+      // Only reached in the flag-off path. Flag-on navigation is handled by Clerk.
+      if (!clerkEnabled) {
+        window.location.href = "/login";
+      }
     },
     onError: () => {
       toast({
