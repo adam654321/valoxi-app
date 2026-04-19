@@ -29,6 +29,13 @@
       "when": 1776552257498,
       "tag": "0003_parallel_redwing",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776558324137,
+      "tag": "0004_abnormal_cloak",
+      "breakpoints": true
     }
   ]
 }
