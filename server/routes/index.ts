@@ -92,7 +92,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, issueReportsRoutes);
   app.use('/api/v2/webhooks', webhooksRoutes);
-  app.use('/api/v2/public/config', publicConfigRoutes);
+  app.use('/api/v2/public', publicConfigRoutes);
   app.use('/api/v2/billing', billingWebhookRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingAdminRoutes);
