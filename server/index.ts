@@ -12,6 +12,7 @@ process.on('SIGHUP', () => {
 
 const app = express();
 app.use('/api/v2/billing/webhook/stripe', express.raw({ type: 'application/json' }));
+app.use('/api/v2/webhooks/clerk', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 

@@ -28,6 +28,7 @@ import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
 import billingRoutes, { billingWebhookRoutes } from './billing.routes';
+import webhooksRoutes from './webhooks.routes';
 import billingAdminRoutes from './billing-admin.routes';
 import issueReportsRoutes from './issue-reports.routes';
 import onboardingRoutes from './onboarding.routes';
@@ -89,6 +90,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/value-creation', isAuthenticated, validateCsrfToken, requireFeature('valueCreationModule'), valueCreationRoutes);
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, issueReportsRoutes);
+  app.use('/api/v2/webhooks', webhooksRoutes);
   app.use('/api/v2/billing', billingWebhookRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingAdminRoutes);
