@@ -179,9 +179,9 @@
               <p>Here's how to get started:</p>
               <div class="steps">
                 <ol>
-                  <li><strong>Add your first target company</strong> — enter the business you're looking to acquire</li>
-                  <li><strong>Upload financial documents</strong> — add their accounts or financial statements</li>
-                  <li><strong>Generate your first expert analysis</strong> — let the AI produce a full commercial due diligence report</li>
+                  <li><strong>Add your first target company</strong>. Enter the business you're looking to acquire</li>
+                  <li><strong>Upload financial documents</strong>. Add their accounts or financial statements</li>
+                  <li><strong>Generate your first expert analysis</strong>. Let the AI produce a full commercial due diligence report</li>
                 </ol>
               </div>
               <p style="text-align: center;">
@@ -190,7 +190,7 @@
               <p>Best regards,<br>The Valoxi Team</p>
             </div>
             <div class="footer">
-              <p>Valoxi — Acquire Smarter, Faster.</p>
+              <p>Valoxi. Acquire Smarter, Faster.</p>
             </div>
           </div>
         </body>
@@ -199,7 +199,7 @@
   
     await emailService.sendEmail({
       to: email,
-      subject: "Welcome to Valoxi — let's run your first deal",
+      subject: "Welcome to Valoxi. Let's run your first deal",
       html,
     });
     console.log(`[REGISTRATION] Welcome email sent to ${email}`);
