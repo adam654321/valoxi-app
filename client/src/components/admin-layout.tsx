@@ -15,6 +15,7 @@ import {
   Settings,
   MessageSquareText,
   Database,
+  ClipboardList,
 } from "lucide-react";
 
 const adminNav = [
@@ -27,6 +28,7 @@ const adminNav = [
   { title: "Platform Costs", url: "/admin/costs", icon: DollarSign },
   { title: "Companies", url: "/admin/companies", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Waitlist", url: "/admin/waitlist", icon: ClipboardList },
   { title: "Webhook Events", url: "/admin/webhook-events", icon: Webhook },
   { title: "Promo Codes", url: "/admin/promo-codes", icon: Tag },
   { title: "5D Invoice", url: "/admin/referral-invoice", icon: Receipt },
