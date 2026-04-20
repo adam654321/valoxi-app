@@ -1,0 +1,45 @@
+Phase 6A Cycle 1 assess. Read-only audit of all Stripe integration points. Do not modify files. Do not change env vars. Do not run migrations. Do not install packages. Produce an evidence report only.
+Purpose. We are preparing to swap from a placeholder Stripe account to the real ADJV LLC account. Before we rotate any env vars, I need a complete inventory of every Stripe reference in the codebase so we know what will rotate cleanly, what will hold a stale client across the rotation, and what hardcoded IDs will break the moment env vars change.
+Step 1. Grep the entire codebase for Stripe references. Exclude node_modules, .git, dist, playwright-report, test-results, and any backup SQL files from every search. Run these greps:
+grep for "STRIPE_" uppercase to find every env var reference
+grep for "new Stripe(" to find every client instantiation
+grep for "stripe\." lowercase with the dot to find every API call
+grep for "ma_" to find every Stripe lookup key pattern
+grep for "config.stripe" to find every indirect reference via server config
+Step 2. For each match, capture the file path, line number, and enough surrounding context to explain what it does. Classify into four tables.
+Table A, env var reads. Columns:
+
+Env var name
+File path
+Line number
+Used for, in plain English
+Reaches env via config.ts (good) or directly via process.env (risky if inside module-scope Stripe client)
+
+Table B, Stripe client instantiations. Columns:
+
+File path
+Line number
+Module-scope (instantiated at top of file at load time) or function-scope (lazy, inside a handler or method)
+What triggers the usage
+
+Table C, Stripe API calls. Columns:
+
+File path
+Line number
+Stripe method (e.g. customers.update, subscriptions.retrieve, checkout.sessions.create)
+What it does in plain English
+
+Table D, lookup keys and hardcoded IDs. Columns:
+
+Literal string value
+Where referenced (file and line)
+What it points to (which plan, interval, currency, addon type, or if it is a hardcoded coupon or price ID from the current placeholder Stripe account)
+
+Step 3. Summary paragraph at the end listing:
+
+Total distinct STRIPE_ env vars in use
+Count of module-scope Stripe client instantiations (these hold a stale client across env rotation unless the process restarts)
+Any hardcoded Stripe coupon or price IDs (these will break on the account swap and must be moved to env or database)
+Any files or code paths that touch Stripe that look like they should be on my list but are not obvious from the greps
+
+Deliverable. Four markdown tables plus the summary, posted to chat. No file edits. No code changes. No proposals for fixes yet.
