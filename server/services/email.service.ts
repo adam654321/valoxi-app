@@ -1,6 +1,8 @@
 import { emailService as legacyEmailService } from '../email';
 import { emailRepository } from '../repositories/email.repository';
 import { NotFoundError, BadRequestError } from '../utils/errors';
+import { escapeHtml } from '../utils/html';
+import { config } from '../config';
 
 interface SendInvitationResult { success: boolean; message: string }
 interface SendPortalLinkResult { success: boolean; message: string }
@@ -141,6 +143,66 @@ export class EmailApiService {
     const success = await (legacyEmailService as any).sendEmail({
       to,
       subject: 'Welcome to Valoxi — click here to access your account',
+      html,
+    });
+    return { success, message: success ? 'Welcome email sent' : 'Failed to send welcome email' };
+  }
+
+  async sendOnboardingWelcome(params: {
+    to: string;
+    firstName: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName } = params;
+    const appUrl = config.baseUrl;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to Valoxi</title>
+          <style>
+            .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+            .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
+            .button { display: inline-block; padding: 14px 32px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+            .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
+            .steps { background: #f0f7ff; padding: 20px; border-radius: 6px; margin: 20px 0; }
+            .steps ol { margin: 0; padding-left: 20px; }
+            .steps li { margin-bottom: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Welcome to Valoxi</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${escapeHtml(firstName)},</p>
+              <p>Your account is set up and your free trial has started. You now have access to the full Valoxi platform.</p>
+              <p>Here's how to get started:</p>
+              <div class="steps">
+                <ol>
+                  <li><strong>Add your first target company</strong>. Enter the business you're looking to acquire</li>
+                  <li><strong>Upload financial documents</strong>. Add their accounts or financial statements</li>
+                  <li><strong>Generate your first expert analysis</strong>. Let the AI produce a full commercial due diligence report</li>
+                </ol>
+              </div>
+              <p style="text-align: center;">
+                <a href="${appUrl}" class="button">Open Valoxi</a>
+              </p>
+              <p>Best regards,<br>The Valoxi Team</p>
+            </div>
+            <div class="footer">
+              <p>Valoxi. Acquire Smarter, Faster.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: "Welcome to Valoxi. Let's run your first deal",
       html,
     });
     return { success, message: success ? 'Welcome email sent' : 'Failed to send welcome email' };

@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
 import { db } from '../db';
 import { users } from '@shared/schema';
+import { emailApiService } from '../services/email.service';
 
 const router = Router();
 
@@ -25,12 +26,18 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
   }
 
   const [match] = await db
-    .select({ id: users.id, clerkUserId: users.clerkUserId, isActive: users.isActive })
+    .select({
+      id: users.id,
+      clerkUserId: users.clerkUserId,
+      isActive: users.isActive,
+      firstName: users.firstName,
+      welcomeEmailSentAt: users.welcomeEmailSentAt,
+    })
     .from(users)
     .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
 
   if (!match) {
-    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}) — awaiting invitation flow`);
+    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}), awaiting invitation flow`);
     return;
   }
 
@@ -39,18 +46,28 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     return;
   }
 
+  let linked = false;
+
   if (match.clerkUserId === null) {
     await db.update(users).set({ clerkUserId }).where(eq(users.id, match.id));
     console.log(`[clerk-webhook] user.created: linked user ${match.id} (${email}) to Clerk ${clerkUserId}`);
+    linked = true;
+  } else if (match.clerkUserId === clerkUserId) {
+    console.log(`[clerk-webhook] user.created: user ${match.id} already linked to Clerk ${clerkUserId}`);
+    linked = true;
+  } else {
+    console.error(`[clerk-webhook] user.created: CONFLICT, user ${match.id} already linked to Clerk ${match.clerkUserId}, incoming ${clerkUserId}, skipping`);
     return;
   }
 
-  if (match.clerkUserId === clerkUserId) {
-    console.log(`[clerk-webhook] user.created: user ${match.id} already linked to Clerk ${clerkUserId}, skipping`);
-    return;
+  if (linked && match.welcomeEmailSentAt === null) {
+    await emailApiService.sendOnboardingWelcome({
+      to: email,
+      firstName: match.firstName || 'there',
+    });
+    await db.update(users).set({ welcomeEmailSentAt: new Date() }).where(eq(users.id, match.id));
+    console.log(`[clerk-webhook] user.created: welcome email sent to ${email} for user ${match.id}`);
   }
-
-  console.error(`[clerk-webhook] user.created: CONFLICT — user ${match.id} already linked to Clerk ${match.clerkUserId}, incoming ${clerkUserId} — skipping`);
 }
 
 async function handleUserUpdated(data: UserJSON): Promise<void> {

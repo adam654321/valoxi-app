@@ -1,0 +1,164 @@
+Cycle 4 build. Migrate welcome email trigger from /register handler to Clerk webhook. Three file edits, one logical change. Apply in the order below.
+STEP 1. Add new method to emailApiService
+Open server/services/email.service.ts.
+1a. Add two new imports. The existing top-of-file imports end with this line:
+import { NotFoundError, BadRequestError } from '../utils/errors';
+Immediately after that line, add these two lines:
+import { escapeHtml } from '../utils/html';
+import { config } from '../config';
+1b. Add a new method to the EmailApiService class named sendOnboardingWelcome. Insert it immediately BEFORE the existing sendPaymentLinkedEmail method. The method body below is the inline sendWelcomeEmail body from auth.routes.ts lines 157-212, adapted to the emailApiService pattern (params object, returns SendInvitationResult, uses legacyEmailService). The em dashes have already been cleaned in Cycle 1 so the text is correct.
+Method body to insert verbatim:
+async sendOnboardingWelcome(params: {
+to: string;
+firstName: string;
+}): Promise<SendInvitationResult> {
+const { to, firstName } = params;
+const appUrl = config.baseUrl;
+const html = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to Valoxi</title>
+      <style>
+        .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
+        .button { display: inline-block; padding: 14px 32px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
+        .steps { background: #f0f7ff; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .steps ol { margin: 0; padding-left: 20px; }
+        .steps li { margin-bottom: 8px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Welcome to Valoxi</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${escapeHtml(firstName)},</p>
+          <p>Your account is set up and your free trial has started. You now have access to the full Valoxi platform.</p>
+          <p>Here's how to get started:</p>
+          <div class="steps">
+            <ol>
+              <li><strong>Add your first target company</strong>. Enter the business you're looking to acquire</li>
+              <li><strong>Upload financial documents</strong>. Add their accounts or financial statements</li>
+              <li><strong>Generate your first expert analysis</strong>. Let the AI produce a full commercial due diligence report</li>
+            </ol>
+          </div>
+          <p style="text-align: center;">
+            <a href="${appUrl}" class="button">Open Valoxi</a>
+          </p>
+          <p>Best regards,<br>The Valoxi Team</p>
+        </div>
+        <div class="footer">
+          <p>Valoxi. Acquire Smarter, Faster.</p>
+        </div>
+      </div>
+    </body>
+  </html>
+`;
+
+const success = await (legacyEmailService as any).sendEmail({
+  to,
+  subject: "Welcome to Valoxi. Let's run your first deal",
+  html,
+});
+return { success, message: success ? 'Welcome email sent' : 'Failed to send welcome email' };
+}
+After insertion, verify tsc clean. Do NOT proceed to Step 2 if tsc errors.
+STEP 2. Remove inline sendWelcomeEmail and call site from auth.routes.ts
+Open server/routes/auth.routes.ts.
+2a. Remove the call site at lines 106-108, which is exactly:
+sendWelcomeEmail(validatedData.email, validatedData.firstName).catch(err =>
+  console.error('[REGISTRATION] Failed to send welcome email:', err)
+);
+Delete these three lines entirely. The blank line that surrounded them can stay or be collapsed, whichever keeps the surrounding indentation clean.
+2b. Delete the entire inline function definition starting at line 157 (async function sendWelcomeEmail) through to and including the closing brace. The function spans from async function sendWelcomeEmail(email: string, firstName: string) { through the await emailService.sendEmail(...) block and the trailing console.log and closing }. Remove the function in its entirety.
+2c. Remove three now-unused imports from the top of the file:
+- import { escapeHtml } from '../utils/html';
+- import { config } from '../config';
+- import { emailService } from '../email';
+Per the assess, these three are used only by the inline function being removed.
+After deletions, verify tsc clean. Do NOT proceed to Step 3 if tsc errors.
+STEP 3. Restructure handleUserCreated in webhooks.routes.ts
+Open server/routes/webhooks.routes.ts.
+3a. Add one import. The existing imports at the top include:
+import { users } from '@shared/schema';
+Add this import on a new line after the existing imports block (immediately before const router = Router();):
+import { emailApiService } from '../services/email.service';
+3b. Rewrite the handleUserCreated function body. The current body (lines 18-54) handles the three clerkUserId branches each with its own return. Replace it with the new structure below, which uses a linked flag so both the "just linked" and "already linked" paths fall through to a common welcome-email-if-not-sent check. The conflict branch still returns without sending.
+Replace the current handleUserCreated function body (from async function handleUserCreated(data: UserJSON): Promise<void> { through its closing }) with this:
+async function handleUserCreated(data: UserJSON): Promise<void> {
+const clerkUserId = data.id;
+const email = getPrimaryEmail(data);
+if (!email) {
+console.log([clerk-webhook] user.created: no primary email on payload for Clerk ${clerkUserId}, skipping);
+return;
+}
+const [match] = await db
+.select({
+id: users.id,
+clerkUserId: users.clerkUserId,
+isActive: users.isActive,
+firstName: users.firstName,
+welcomeEmailSentAt: users.welcomeEmailSentAt,
+})
+.from(users)
+.where(sqlLOWER(${users.email}) = LOWER(${email.trim()}));
+if (!match) {
+console.log([clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}), awaiting invitation flow);
+return;
+}
+if (!match.isActive) {
+console.log([clerk-webhook] user.created: matched user ${match.id} is inactive, skipping link for Clerk ${clerkUserId});
+return;
+}
+let linked = false;
+if (match.clerkUserId === null) {
+await db.update(users).set({ clerkUserId }).where(eq(users.id, match.id));
+console.log([clerk-webhook] user.created: linked user ${match.id} (${email}) to Clerk ${clerkUserId});
+linked = true;
+} else if (match.clerkUserId === clerkUserId) {
+console.log([clerk-webhook] user.created: user ${match.id} already linked to Clerk ${clerkUserId});
+linked = true;
+} else {
+console.error([clerk-webhook] user.created: CONFLICT, user ${match.id} already linked to Clerk ${match.clerkUserId}, incoming ${clerkUserId}, skipping);
+return;
+}
+if (linked && match.welcomeEmailSentAt === null) {
+await emailApiService.sendOnboardingWelcome({
+to: email,
+firstName: match.firstName || 'there',
+});
+await db.update(users).set({ welcomeEmailSentAt: new Date() }).where(eq(users.id, match.id));
+console.log([clerk-webhook] user.created: welcome email sent to ${email} for user ${match.id});
+}
+}
+Note. I have dropped the em dashes from the existing console.log strings while doing this restructure, because the new function body replaces the old one wholesale and re-introducing the em dashes would be a regression against the no-em-dashes rule. Confirm the new text contains zero em dashes.
+3c. Verify tsc clean.
+STEP 4. Full verify
+Run npm run check to confirm tsc is clean across the whole codebase.
+Grep the three touched files for the em dash character U+2014. Zero matches expected in email.service.ts and webhooks.routes.ts. In auth.routes.ts zero matches expected (Cycle 1 already cleaned it).
+Grep the whole codebase for sendWelcomeEmail. Expected remaining matches:
+
+server/routes/billing.routes.ts calling emailApiService.sendWelcomeEmail (the unrelated promo-card method, untouched)
+server/services/email.service.ts method definition of sendWelcomeEmail (the unrelated promo-card method, untouched)
+
+Zero matches expected for the old inline function.
+Grep the whole codebase for sendOnboardingWelcome. Expected matches:
+
+server/services/email.service.ts method definition
+server/routes/webhooks.routes.ts call site
+
+REPORT BACK with:
+
+Unified diff of all three files
+tsc result after each step and final
+Em dash grep results for the three files
+sendWelcomeEmail grep results
+sendOnboardingWelcome grep results
+
+Do not apply anything to DB. Do not deploy to prod. Do not restart the server unless tsx watcher fails.
