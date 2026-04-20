@@ -1,0 +1,73 @@
+Cycle 6a build. Add sendWaitlistInvitation method to emailApiService using the locked copy. Single file, single method addition.
+OPEN server/services/email.service.ts.
+Insert the following new method inside the EmailApiService class, immediately AFTER the sendOnboardingWelcome method (added in Cycle 4) and BEFORE the sendPaymentLinkedEmail method. Paste the method body verbatim.
+async sendWaitlistInvitation(params: {
+to: string;
+firstName: string;
+invitedEmail: string;
+inviteUrl: string;
+}): Promise<SendInvitationResult> {
+const { to, firstName, invitedEmail, inviteUrl } = params;
+const safeFirstName = escapeHtml(firstName);
+const safeInvitedEmail = escapeHtml(invitedEmail);
+
+const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Valoxi access is approved</title>
+<style>
+.container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+.header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+.content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
+.button { display: inline-block; padding: 14px 32px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+.footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
+.warning { background: #fff8e1; padding: 20px; border-left: 4px solid #f59e0b; border-radius: 6px; margin: 20px 0; }
+.warning p { margin: 0 0 10px 0; }
+.warning p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>Your Valoxi access is approved</h1>
+</div>
+<div class="content">
+<p>Hi ${safeFirstName},</p>
+<p>Good news. The Valoxi team has approved your access.</p>
+<p>Valoxi is the AI-powered M&amp;A platform for UK SME acquisitions. You can run target company analysis, build deal models, manage due diligence, and generate deal documents.</p>
+<p style="text-align: center;">
+<a href="${inviteUrl}" class="button">Set up your account</a>
+</p>
+<div class="warning">
+<p><strong>Important. Sign up using this email address: ${safeInvitedEmail}</strong></p>
+<p>You can sign up with a password, or with Google, Microsoft, or LinkedIn. Whichever method you choose, make sure the email on the account is ${safeInvitedEmail}.</p>
+<p>If you sign up with a different email, your account will not be linked to your approved access and you will need to request a new invitation.</p>
+</div>
+<p>Your 24 hour free trial starts the moment you sign up.</p>
+<p>This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai">support@valoxi.ai</a> for a new one.</p>
+<p>Best regards,<br>The Valoxi Team</p>
+</div>
+<div class="footer">
+<p>Valoxi. Acquire Smarter, Faster.</p>
+</div>
+</div>
+</body>
+</html>`;
+const success = await (legacyEmailService as any).sendEmail({
+  to,
+  subject: 'Your Valoxi access is approved',
+  html,
+});
+return { success, message: success ? 'Waitlist invitation sent' : 'Failed to send waitlist invitation' };
+}
+Note: the method uses escapeHtml for firstName and invitedEmail. Confirm escapeHtml is already imported at the top of email.service.ts (it was added in Cycle 4). If not, add it.
+VERIFY
+Run npm run check. Expect clean.
+Grep the file for sendWaitlistInvitation. Expected: one match (the method definition).
+Grep the file for U+2014 em dash. Expected: one match only, the pre-existing one at line 145 in the sendWelcomeEmail method (the Resend-style promo card, from earlier housekeeping flag list). Confirm no new em dashes introduced.
+Grep the file for Your Valoxi access is approved. Expected: two matches (HTML title and subject line).
+Grep the file for escapeHtml to confirm it's imported. If not imported, add:
+import { escapeHtml } from '../utils/html';
+REPORT BACK with unified diff, tsc result, and the four grep outputs.
