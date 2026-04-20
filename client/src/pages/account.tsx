@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useServerConfig } from "@/hooks/useServerConfig";
+import { useClerk } from "@clerk/react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -40,6 +42,8 @@ interface UserProfile {
 
 export default function AccountPage() {
   const { user } = useAuth();
+  const { clerkEnabled } = useServerConfig();
+  const { openUserProfile } = useClerk();
   const { toast } = useToast();
   const canEditCompany = user?.permissions?.canManageCompany ?? false;
   const company = user?.company;
@@ -190,33 +194,50 @@ export default function AccountPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Lock className="h-4 w-4" />Change Password</CardTitle>
-              <CardDescription>Enter your current password to set a new one.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>Current Password</Label>
-                <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>New Password</Label>
-                <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 8 characters" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Confirm New Password</Label>
-                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat new password" />
-              </div>
-              <Button
-                onClick={() => passwordMutation.mutate()}
-                disabled={passwordMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
-              >
-                {passwordMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Change Password
-              </Button>
-            </CardContent>
-          </Card>
+          {clerkEnabled ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><Lock className="h-4 w-4" />Password and Security</CardTitle>
+                <CardDescription>Manage your password, connected accounts, and active sessions.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Password and security settings are managed through Clerk, our authentication provider. Click below to update your password, review connected accounts, or manage your active sessions.
+                </p>
+                <Button onClick={() => openUserProfile()}>
+                  Manage Password and Security
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><Lock className="h-4 w-4" />Change Password</CardTitle>
+                <CardDescription>Enter your current password to set a new one.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Current Password</Label>
+                  <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>New Password</Label>
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 8 characters" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Confirm New Password</Label>
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat new password" />
+                </div>
+                <Button
+                  onClick={() => passwordMutation.mutate()}
+                  disabled={passwordMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
+                >
+                  {passwordMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Change Password
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="company" className="space-y-6">
