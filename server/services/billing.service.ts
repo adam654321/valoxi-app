@@ -72,7 +72,7 @@ class BillingService {
 
     const subscription = await billingRepository.create({
       userCompanyId,
-      planKey: 'CORE',
+      planKey: 'PROFESSIONAL',
       status: 'trialing',
       trialStart: now,
       trialEnd,
@@ -83,12 +83,12 @@ class BillingService {
       userCompanyId,
       eventType: 'trial.started',
       newStatus: 'trialing',
-      newPlanKey: 'CORE',
+      newPlanKey: 'PROFESSIONAL',
       payload: { trialDays },
     });
 
     const { track } = await import('./funnel.service');
-    track(userCompanyId, null, 'trial.started', { planKey: 'CORE', trialDays });
+    track(userCompanyId, null, 'trial.started', { planKey: 'PROFESSIONAL', trialDays });
 
     return subscription;
   }
