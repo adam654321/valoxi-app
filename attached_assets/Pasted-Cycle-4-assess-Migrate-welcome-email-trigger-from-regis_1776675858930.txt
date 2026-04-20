@@ -1,0 +1,85 @@
+Cycle 4 assess. Migrate welcome email trigger from /register handler to Clerk webhook. READ ONLY, do not make any code changes. Report back with findings.
+PROPOSED CHANGE SUMMARY
+Three file edits, one logical change:
+
+server/services/email.service.ts: Add a new method emailApiService.sendOnboardingWelcome({ to, firstName }) that contains the inline sendWelcomeEmail HTML body from auth.routes.ts. Name chosen to avoid collision with the existing sendWelcomeEmail method (which is the Resend-style promo/trial card version).
+server/routes/auth.routes.ts: Delete the inline async function sendWelcomeEmail and the single call to it inside the /register handler. Remove now-unused imports (config, emailService, escapeHtml) if they are only used by the inline function.
+server/routes/webhooks.routes.ts:
+(a) Extend the SELECT in handleUserCreated to also fetch firstName and welcomeEmailSentAt.
+(b) Restructure the three clerkUserId branches so both "just linked" and "already linked" fall through to a common post-link exit.
+(c) At the post-link exit, check if welcomeEmailSentAt IS NULL. If NULL, call emailApiService.sendOnboardingWelcome, then UPDATE welcomeEmailSentAt = NOW() on success. If the email send throws, let the error propagate so the outer catch returns 500 and Clerk retries.
+
+PROPOSED handleUserCreated RESTRUCTURE
+Current flow:
+
+No email → skip
+No match → skip
+Inactive → skip
+clerkUserId NULL → UPDATE, return
+clerkUserId same → skip, return
+clerkUserId different → conflict, return
+
+New flow:
+
+No email → skip
+No match → skip
+Inactive → skip
+clerkUserId NULL → UPDATE, mark linked
+clerkUserId same → mark linked
+clerkUserId different → conflict, return (no welcome)
+If linked and welcomeEmailSentAt IS NULL:
+
+Call emailApiService.sendOnboardingWelcome({ to: email, firstName: match.firstName || 'there' })
+On success, UPDATE welcomeEmailSentAt = NOW() WHERE id = match.id
+On failure, throw (outer catch returns 500, Clerk retries)
+
+
+
+PROPOSED emailApiService.sendOnboardingWelcome
+Signature:
+async sendOnboardingWelcome(params: { to: string; firstName: string }): Promise<SendInvitationResult>
+Body: port the inline HTML from auth.routes.ts sendWelcomeEmail verbatim (post Cycle 1 em dash cleanup). Uses config.baseUrl for the link target, uses escapeHtml for firstName, uses legacyEmailService.sendEmail as the underlying sender (same pattern as other methods in this file).
+ASSESS QUESTIONS for Replit
+
+Confirm that in server/routes/auth.routes.ts, the imports config (from '../config'), emailService (from '../email'), and escapeHtml (from '../utils/html') are used ONLY inside the inline sendWelcomeEmail function. Grep the file for each of these three identifiers and paste every line they appear on. If any of the three is used elsewhere, flag it so we know not to remove that import.
+Confirm no other file imports the inline sendWelcomeEmail function from auth.routes.ts. It is declared as async function sendWelcomeEmail(email: string, firstName: string) without export, so it should be private to the file, but confirm via grep across the codebase for sendWelcomeEmail to catch anything surprising.
+Confirm the only current call site for the inline sendWelcomeEmail is inside the /register handler at approximately this form:
+
+sendWelcomeEmail(validatedData.email, validatedData.firstName).catch(err =>
+console.error('[REGISTRATION] Failed to send welcome email:', err)
+);
+Paste the exact 3-4 lines so I can script the removal precisely.
+
+Confirm that in server/services/email.service.ts, there is no existing method named sendOnboardingWelcome, so the new method name is free.
+Confirm the existing emailApiService.sendWelcomeEmail method signature matches what I described:
+
+async sendWelcomeEmail(params: { to: string; firstName: string; planKey: string; magicLink: string; freeMonths: number; trialDays: number }): Promise<SendInvitationResult>
+And confirm that method is currently called from at least one other place in the codebase (so I know not to rename or remove it). Paste all call sites for emailApiService.sendWelcomeEmail.
+
+Confirm the current SELECT in handleUserCreated is exactly:
+
+const [match] = await db
+.select({ id: users.id, clerkUserId: users.clerkUserId, isActive: users.isActive })
+.from(users)
+.where(sqlLOWER(${users.email}) = LOWER(${email.trim()}));
+And confirm users.firstName and users.welcomeEmailSentAt are both available on the users schema (they should be, from Cycle 3 work).
+
+Confirm the outer wrapper in the webhook route returns status 500 on any thrown error from handleUserCreated:
+
+} catch (err) {
+console.error([clerk-webhook] handler error for ${evt.type}:, err);
+return res.status(500).json({ error: 'handler_failed' });
+}
+This is the retry mechanism we rely on. Confirm it's in place unchanged.
+
+Check whether @clerk/backend types or any other part of the webhook file would object to us including firstName and welcomeEmailSentAt in the select, based on the current imports. Specifically, confirm the users import at the top of webhooks.routes.ts is from @shared/schema (which re-exports core.ts) and includes the full users table definition.
+One design question. Should the webhook handler proceed even if firstName on our DB record is NULL? Current design uses match.firstName || 'there' as the fallback, matching the locked copy spec ("firstName with fallback 'there'"). Confirm this fallback is acceptable for the welcome email (not just the invitation email). My read of the inline template is that firstName is used in the greeting "Hi ${firstName}," and nowhere else, so 'there' is a safe fallback.
+List any concerns about the plan. In particular:
+
+Any concern with using new Date() for welcomeEmailSentAt via Drizzle set? (Alternative is sqlNOW(), both produce the same effect.)
+Any concern that the /register handler is called in practice at all given clerk_only gate? If not, deleting the inline sendWelcomeEmail is effectively dead code cleanup.
+Any concern with error propagation from handleUserCreated causing the whole webhook to 500 instead of just logging and moving on?
+
+
+
+REPORT BACK with the ten answers. No file changes, no command execution. Read-only.
