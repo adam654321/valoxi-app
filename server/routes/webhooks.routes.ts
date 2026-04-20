@@ -5,6 +5,7 @@ import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
 import { db } from '../db';
 import { users } from '@shared/schema';
 import { emailApiService } from '../services/email.service';
+import { billingService } from '../services/billing.service';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
       isActive: users.isActive,
       firstName: users.firstName,
       welcomeEmailSentAt: users.welcomeEmailSentAt,
+      userCompanyId: users.userCompanyId,
     })
     .from(users)
     .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
@@ -58,6 +60,18 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
   } else {
     console.error(`[clerk-webhook] user.created: CONFLICT, user ${match.id} already linked to Clerk ${match.clerkUserId}, incoming ${clerkUserId}, skipping`);
     return;
+  }
+
+  if (linked && match.userCompanyId !== null) {
+    const existingSubscription = await billingService.getSubscription(match.userCompanyId);
+    if (existingSubscription === null) {
+      await billingService.createTrialSubscription(match.userCompanyId, 1);
+      console.log(`[clerk-webhook] user.created: 24h trial subscription created for user ${match.id} (company ${match.userCompanyId})`);
+    } else {
+      console.log(`[clerk-webhook] user.created: trial subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping`);
+    }
+  } else if (linked && match.userCompanyId === null) {
+    console.warn(`[clerk-webhook] user.created: user ${match.id} has no userCompanyId, cannot create trial subscription`);
   }
 
   if (linked && match.welcomeEmailSentAt === null) {
