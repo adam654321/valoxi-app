@@ -39,6 +39,7 @@ export const users = pgTable("users", {
   hearAboutUs: varchar("hear_about_us", { length: 100 }),
   jobTitle: varchar("job_title", { length: 100 }),
   clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+  welcomeEmailSentAt: timestamp("welcome_email_sent_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -1,0 +1,33 @@
+Cycle 3 build. Add welcomeEmailSentAt column to users table. Single logical change, schema only, no code logic yet.
+STEP 1 EDIT SCHEMA
+Open shared/schema/core.ts. Find the users table definition. Locate these two consecutive lines near the end of the table:
+clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+createdAt: timestamp("created_at").defaultNow(),
+Insert one new line between them so the final result reads:
+clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+welcomeEmailSentAt: timestamp("welcome_email_sent_at"),
+createdAt: timestamp("created_at").defaultNow(),
+Preserve the indentation style used by the surrounding lines. Do not touch any other part of the file. Do not change insertUserSchema.
+STEP 2 GENERATE MIGRATION
+Run:
+npm run db:generate
+Paste the full contents of the newly generated migration file back. Expected filename is migrations/0007_<randomword>.sql. Expected contents:
+ALTER TABLE "users" ADD COLUMN "welcome_email_sent_at" timestamp;
+If the generated SQL contains anything other than that single ALTER TABLE ADD COLUMN statement, stop and report. In particular, flag any unexpected statements touching other tables, any changes to the users table other than this column addition, or any DROP or RENAME statements.
+STEP 3 VERIFY TSC CLEAN
+Run:
+npm run check
+Confirm zero errors. If there are errors specifically referencing welcomeEmailSentAt or the users table, stop and report. Any unrelated pre-existing errors can be noted but do not need fixing in this cycle.
+STEP 4 DEV APPLY, STAGED
+Do not execute yet. Produce the three staged SQL blocks I will paste into the Neon dev console myself. I expect them to look like this, but write them out based on the actual generated filename and column details:
+Pre-check, confirm column does not exist yet:
+SELECT COUNT(1) FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'welcome_email_sent_at';
+Expected: 0
+Apply:
+(paste the contents of the generated migration file here)
+Post-check, confirm column exists and is nullable:
+SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'welcome_email_sent_at';
+Expected: welcome_email_sent_at | timestamp without time zone | YES | NULL
+REPORT BACK
+Unified diff of the schema change, full contents of the generated migration file, tsc result, and the three staged dev SQL blocks. Do not execute any SQL yet. Do not deploy to prod.
+I will review, apply to dev Neon myself, confirm, then stage prod.
