@@ -1,0 +1,26 @@
+ASSESS QUESTIONS for Replit
+
+Confirm the current state of client/src/App.tsx admin route block. Paste the section from <Route path="/admin/:rest*"> through its closing tag so we can see where to insert the /admin/waitlist route.
+Confirm the current state of client/src/components/admin-layout.tsx adminNav array. We are adding one new entry. Suggested position: directly after "Users" since it is a related user-lifecycle concern. Paste the adminNav array as it currently exists, confirm the icon to use. My suggestion: ClipboardList from lucide-react (a list-with-checkmarks icon appropriate for "waitlist"). Alternative suggestions: Mail, UserCheck, Sparkles. Report what you think fits best with the existing nav icons.
+Confirm shadcn/ui Tabs component is available in the codebase. Grep for @/components/ui/tabs. Paste one example of how it's used in an existing admin page so the Cycle 7 page matches that pattern.
+Confirm shadcn/ui Checkbox component is available. Grep for @/components/ui/checkbox. If not present, we'll use a plain HTML input type="checkbox" with Tailwind styling, which is equally fine.
+Confirm the current state of the Cycle 6c response shapes. Query:
+GET /api/v2/admin/waitlist?status=new&limit=5
+Paste the response body. In particular, confirm what date fields look like (ISO string? Date object JSON-stringified?) and what the sectors array shape is.
+Confirm no existing file client/src/pages/admin/waitlist.tsx. Grep for the filepath and report.
+The status filter tabs show counts. Option A: compute counts client-side from the full 46-entry fetch. Option B: make a separate fetch per tab. Option C: add a new /summary endpoint on the admin-waitlist router.
+My recommendation is Option A since all 46 fit in one fetch comfortably. Confirm this is acceptable.
+Date formatting. Some options:
+
+"20 April 2026"
+"2 days ago"
+"20 Apr 2026, 14:32"
+
+My recommendation: relative time for recent entries (under 30 days, "2 days ago"), absolute date for older. Check if date-fns is installed (it was used elsewhere in the codebase) and confirm formatDistanceToNow and format are both available.
+Name parsing in the details modal. The table shows fullName directly. In the modal, should we also show the parsed firstName and lastName for entries that have been invited (the split that the backend used)? My recommendation: no, just show the original fullName. The split happens at invite time and the user can edit it in their profile later. Confirm.
+Invited status display. For already-invited entries, the details modal should show the invited_user_id resolved to something useful (email of the new user). This requires either a separate fetch to /api/v2/admin/users/:id or a join on the backend. For this cycle, display the invited_user_id as a raw number with a "View user" link to /admin/users. Admin can click through. Confirm acceptable, or specify if you want the inline resolution.
+Confirm what happens when an admin clicks Invite on an 'approved' entry. Same per-row invite flow as for 'new' entries? (POST /invite works on both 'new' and 'approved' statuses per Cycle 6d logic.) Yes/no.
+Bulk invite size limit. Is there an upper cap? 46 entries is small, but if someone selects all 46 and hits Invite, the UI will loop 46 times and send 46 emails. My recommendation: soft cap of 20 per batch, with a warning if more are selected. Can be bypassed with a "confirm anyway" button. Confirm or override.
+List any concerns about the plan.
+
+REPORT BACK with the 13 answers. Most are lightweight. Adam will review and approve design decisions (questions 1, 2, 7, 8, 9, 10, 11, 12, 13), and Replit will answer the structural questions (1-6).
