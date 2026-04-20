@@ -27,6 +27,7 @@ import dealDocumentRoutes, { publicDealDocumentRoutes } from './deal-document.ro
 import dueDiligenceRoutes from './due-diligence.routes';
 import valueCreationRoutes from './value-creation.routes';
 import adminRoutes from './admin.routes';
+import adminWaitlistRoutes from './admin-waitlist.routes';
 import billingRoutes, { billingWebhookRoutes } from './billing.routes';
 import webhooksRoutes from './webhooks.routes';
 import publicConfigRoutes from './public.routes';
@@ -90,6 +91,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/public/deal-documents', portalLimiter, publicDealDocumentRoutes);
   app.use('/api/v2/due-diligence', isAuthenticated, validateCsrfToken, requireActiveSubscription, dueDiligenceRoutes);
   app.use('/api/v2/value-creation', isAuthenticated, validateCsrfToken, requireFeature('valueCreationModule'), valueCreationRoutes);
+  app.use('/api/v2/admin/waitlist', isAuthenticated, validateCsrfToken, isSystemAdmin, adminWaitlistRoutes);
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, issueReportsRoutes);
   app.use('/api/v2/webhooks', webhooksRoutes);

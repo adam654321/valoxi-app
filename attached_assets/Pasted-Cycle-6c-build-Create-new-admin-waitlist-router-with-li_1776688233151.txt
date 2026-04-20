@@ -1,0 +1,81 @@
+Cycle 6c build. Create new admin-waitlist router with list, get-by-id, approve, and decline endpoints. Register in routes/index.ts. Two files touched, no transaction logic yet.
+STEP 1. Create new file server/routes/admin-waitlist.routes.ts
+Create the file with exactly this content:
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import { asyncHandler } from '../utils/async-handler';
+import { sendSuccess } from '../utils/response';
+import { waitlistRepository } from '../repositories/waitlist.repository';
+const router = Router();
+const listQuerySchema = z.object({
+status: z.enum(['new', 'approved', 'invited', 'declined']).optional(),
+limit: z.coerce.number().int().min(1).max(200).optional(),
+offset: z.coerce.number().int().min(0).optional(),
+});
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+const filters = listQuerySchema.parse(req.query);
+const rows = await waitlistRepository.list(filters);
+sendSuccess(res, rows);
+}));
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
+const row = await waitlistRepository.getById(req.params.id);
+if (!row) {
+return res.status(404).json({ success: false, message: 'Waitlist entry not found' });
+}
+sendSuccess(res, row);
+}));
+router.post('/:id/approve', asyncHandler(async (req: Request, res: Response) => {
+const adminUserId = req.session.userId!;
+const row = await waitlistRepository.getById(req.params.id);
+if (!row) {
+return res.status(404).json({ success: false, message: 'Waitlist entry not found' });
+}
+if (row.status === 'invited') {
+return res.status(409).json({ success: false, message: 'Cannot approve an entry that has already been invited' });
+}
+const updated = await waitlistRepository.updateStatus(req.params.id, 'approved', adminUserId);
+console.log([admin-waitlist] action=approve waitlistId=${req.params.id} adminUserId=${adminUserId});
+sendSuccess(res, updated);
+}));
+router.post('/:id/decline', asyncHandler(async (req: Request, res: Response) => {
+const adminUserId = req.session.userId!;
+const row = await waitlistRepository.getById(req.params.id);
+if (!row) {
+return res.status(404).json({ success: false, message: 'Waitlist entry not found' });
+}
+if (row.status === 'invited') {
+return res.status(409).json({ success: false, message: 'Cannot decline an entry that has already been invited' });
+}
+const updated = await waitlistRepository.updateStatus(req.params.id, 'declined', adminUserId);
+console.log([admin-waitlist] action=decline waitlistId=${req.params.id} adminUserId=${adminUserId});
+sendSuccess(res, updated);
+}));
+export default router;
+Note: the POST /:id/invite endpoint is deliberately NOT included in this file yet. That is Cycle 6d. Leave a clean cut here.
+Rationale for the approve/decline guards: status === 'invited' is a terminal state. An already-invited entry cannot logically be approved or declined because the user row has been created. Admin intent in that case should be to handle the user row directly, not the waitlist row.
+STEP 2. Register the router in server/routes/index.ts
+Open server/routes/index.ts. Near the top of the file, find the imports for admin routes:
+import adminRoutes from './admin.routes';
+Immediately after that line, add:
+import adminWaitlistRoutes from './admin-waitlist.routes';
+Then find the admin route registration line:
+app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
+Insert the new waitlist registration IMMEDIATELY BEFORE it. Per the Q7 assess finding: mounting on the specific sibling path first means /api/v2/admin/waitlist/* is caught before falling through to adminRoutes.
+app.use('/api/v2/admin/waitlist', isAuthenticated, validateCsrfToken, isSystemAdmin, adminWaitlistRoutes);
+app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
+STEP 3. Verify
+Run npm run check. Expect clean.
+Grep server/routes/admin-waitlist.routes.ts for U+2014 em dash. Expected: zero.
+Grep server directory for admin-waitlist string. Expected: two matches - the import in routes/index.ts and the file itself (if grep includes filenames).
+Grep server directory for adminWaitlistRoutes. Expected: two matches (import, usage).
+Grep server directory for /api/v2/admin/waitlist. Expected: one match (the app.use registration).
+STEP 4. Server restart reminder
+This adds a new sub-router registration, which is exactly the scenario you flagged in the handover: the tsx watcher does not always reload routes/index.ts changes. After Replit reports build complete, if new routes are not reachable, restart the Replit workflow manually.
+Smoke test (once deployed to dev):
+curl on the dev URL:
+GET /api/v2/admin/waitlist?status=new with admin session cookie → expect 200 with an array of waitlist entries (there should be 46 from the ETL).
+GET /api/v2/admin/waitlist/<some-uuid-from-the-list> → expect 200 with a single entry.
+POST /api/v2/admin/waitlist/<uuid>/approve → expect 200, row status updates to 'approved'.
+POST /api/v2/admin/waitlist/<uuid>/decline → expect 200, row status updates to 'declined' (on a different uuid).
+Verify via SELECT from waitlist table that status, status_changed_at, status_changed_by are populated on the mutated rows.
+REPORT BACK with unified diff (both files), tsc result, the four grep outputs, and confirmation whether the server restart was needed after the changes.
