@@ -1,0 +1,48 @@
+Cycle 4 dev smoke test. Prove the welcome email trigger fires correctly on Clerk webhook user.created. Run all DB work directly against the dev database. Do not deploy to prod. Do not touch prod DB.
+Step 1. Prep a matched pending-Clerk user in dev
+Insert a user_company row:
+INSERT INTO user_companies (company_name) VALUES ('Cycle 4 Smoke Test Co') RETURNING id;
+Capture the returned company id. Then insert the user:
+INSERT INTO users (email, first_name, last_name, user_company_id, is_active, onboarding_completed, is_system_admin) VALUES ('adamauty84@gmail.com', 'Adam', 'Auty', <company_id>, true, false, false) RETURNING id, email, clerk_user_id, welcome_email_sent_at;
+Confirm the returned row has clerk_user_id NULL and welcome_email_sent_at NULL. Report the user id and company id back to Adam, then pause and wait for Adam to confirm step 2 is complete.
+Step 2. Adam signs up via Clerk on dev
+Adam will sign up at the dev app with adamauty84@gmail.com, which triggers Clerk's user.created webhook. Wait for Adam to say "signed up" before proceeding.
+Step 3. Verify the link and the timestamp
+Run:
+SELECT id, email, clerk_user_id, welcome_email_sent_at FROM users WHERE id = <captured_user_id>;
+Expected: clerk_user_id populated with a Clerk ID string, welcome_email_sent_at populated with a timestamp near now. Paste the row back.
+Tail the dev server logs for lines tagged [clerk-webhook] user.created and report what appeared. Expected sequence:
+
+linked user <id> (adamauty84@gmail.com) to Clerk <clerkUserId>
+welcome email sent to adamauty84@gmail.com for user <id>
+
+Adam will check his adamauty84@gmail.com inbox for the welcome email and confirm it arrived (noting whether it landed in inbox or junk). Wait for that confirmation before proceeding to step 4.
+Step 4. Prove the retry guard
+After Adam confirms the welcome email arrived, Adam will trigger a redelivery from the Clerk dashboard Webhooks page. Wait for Adam to say "redelivered" before running the checks.
+After the redelivery, run:
+SELECT welcome_email_sent_at FROM users WHERE id = <captured_user_id>;
+Expected: identical timestamp to step 3. Paste back.
+Tail logs. Expected log line:
+
+user <id> already linked to Clerk <clerkUserId>
+
+And ABSENT:
+
+welcome email sent to ...
+
+Adam will confirm no second email arrived in his inbox.
+Step 5. Clean up
+Once all checks pass and Adam approves, delete the test data:
+DELETE FROM users WHERE id = <captured_user_id>;
+DELETE FROM user_companies WHERE id = <captured_company_id>;
+Post-check:
+SELECT COUNT(1) FROM users WHERE id = <captured_user_id>;
+SELECT COUNT(1) FROM user_companies WHERE id = <captured_company_id>;
+Both zero.
+Report back with:
+
+The two inserted ids
+The row and log output from step 3
+The row and log output from step 4 proving timestamp unchanged
+Confirmation of the cleanup result
+Note: Adam will separately report inbox / junk placement of the welcome email
