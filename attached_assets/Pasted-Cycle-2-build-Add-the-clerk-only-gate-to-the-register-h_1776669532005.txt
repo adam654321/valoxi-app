@@ -1,0 +1,42 @@
+Cycle 2 build. Add the clerk_only gate to the /register handler in server/routes/auth.routes.ts. Single logical change. Do not touch any other file.
+EDIT
+Inside the POST /register route handler, locate the three lines that currently read:
+const { systemConfigService } = await import('../services/system-config.service');
+const registrationMode = await systemConfigService.getConfig('registration_mode');
+const isInviteOnly = registrationMode === 'invite_only';
+Replace those three lines with:
+const { systemConfigService } = await import('../services/system-config.service');
+const registrationMode = await systemConfigService.getConfig('registration_mode');
+if (registrationMode === 'clerk_only') {
+return res.status(403).json({
+success: false,
+error: 'signup_disabled',
+message: 'Signup is by invitation only. Please use the invitation link sent to you by the Valoxi team. If you do not have one, contact support@valoxi.ai.',
+});
+}
+const isInviteOnly = registrationMode === 'invite_only';
+Preserve the exact indentation style used by the surrounding code in the file. The rest of the handler stays untouched. No other file changes.
+VERIFY
+Confirm tsc clean.
+Confirm the file contains the new block by searching for the string 'signup_disabled' in server/routes/auth.routes.ts. Should appear exactly once.
+Confirm no em dashes are in the new block.
+Confirm registration_mode still behaves correctly for the three other value cases:
+
+When value is 'invite_only', flow continues to the existing promo code check below
+When value is 'open' (current dev state), flow falls through both branches to authService.register
+When value is null or any other string, same behaviour as 'open'
+
+Do not flip the config value yet. Do not touch system_config. Do not restart the server unless the tsx watcher fails to pick up the change.
+Once applied, report back with the unified diff and confirmation of the four verify checks.
+
+After the build lands, separate step for you
+Once the diff looks clean and tsc is happy, verify the code is live by hitting dev twice.
+Smoke test 1 with registration_mode still set to 'open'. Curl /api/v2/auth/register with a throwaway email. Should succeed as today (201 Created). This proves the gate is not false-positive firing.
+Smoke test 2, flip dev system_config to clerk_only. Use the existing admin endpoint (since setConfigSchema already accepts the value):
+POST /api/v2/admin/system-config
+body: { "key": "registration_mode", "value": "clerk_only" }
+Or direct Neon SQL if you prefer the manual path:
+UPDATE system_config SET value = 'clerk_only', updated_at = NOW(), updated_by_user_id = 1 WHERE key = 'registration_mode';
+Then curl /api/v2/auth/register again. Should return 403 with error 'signup_disabled' and the support@valoxi.ai message.
+Once dev is confirmed blocked, same SQL on prod via Neon console (manual, per your rule), then curl app.valoxi.ai/api/v2/auth/register to confirm 403 on prod.
+Ready for Cycle 3 (welcomeEmailSentAt schema addition) once Cycle 2 is confirmed end-to-end.

@@ -44,6 +44,13 @@
   
     const { systemConfigService } = await import('../services/system-config.service');
     const registrationMode = await systemConfigService.getConfig('registration_mode');
+    if (registrationMode === 'clerk_only') {
+      return res.status(403).json({
+        success: false,
+        error: 'signup_disabled',
+        message: 'Signup is by invitation only. Please use the invitation link sent to you by the Valoxi team. If you do not have one, contact support@valoxi.ai.',
+      });
+    }
     const isInviteOnly = registrationMode === 'invite_only';
   
     if (isInviteOnly) {
