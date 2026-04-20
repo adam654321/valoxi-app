@@ -314,6 +314,53 @@ export class EmailApiService {
     return { success, message: success ? 'Magic link email sent' : 'Failed to send magic link email' };
   }
 
+  async sendAdminSignInLink(params: {
+    to: string;
+    firstName: string;
+    signInUrl: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, signInUrl } = params;
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+        <tr>
+          <td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">A Valoxi administrator has generated a one-time sign-in link for your account. Click the button below to access Valoxi.</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${signInUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Sign in to Valoxi</a>
+            </div>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px;">This link expires in 24 hours and can only be used once.</p>
+            <p style="margin: 0; color: #6b7280; font-size: 13px;">If you did not expect this email, you can safely ignore it.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
+            <p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi access link',
+      html,
+    });
+    return { success, message: success ? 'Access link sent' : 'Failed to send access link' };
+  }
+
   async sendRenewalWarningEmail(params: {
     to: string;
     firstName: string;

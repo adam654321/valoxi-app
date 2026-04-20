@@ -4,8 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Loader2, KeyRound, Eye } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 export default function AdminUsers() {
   const { toast } = useToast();
   const [resetTarget, setResetTarget] = useState<{ id: number; name: string } | null>(null);
-  const [newPassword, setNewPassword] = useState("");
 
   const { data: users, isLoading } = useQuery<any>({
     queryKey: ["/api/v2/admin/users"],
@@ -22,17 +19,16 @@ export default function AdminUsers() {
   });
 
   const resetMutation = useMutation({
-    mutationFn: async ({ userId, newPassword }: { userId: number; newPassword: string }) => {
-      const res = await apiRequest("POST", `/api/v2/admin/users/${userId}/reset-password`, { newPassword });
+    mutationFn: async ({ userId }: { userId: number }) => {
+      const res = await apiRequest("POST", `/api/v2/admin/users/${userId}/reset-password`);
       return res.json();
     },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Password has been reset." });
+    onSuccess: (data) => {
+      toast({ title: "Success", description: data?.data?.message || "Sign-in link sent." });
       setResetTarget(null);
-      setNewPassword("");
     },
     onError: (error) => {
-      toast({ title: "Error", description: error.message || "Failed to reset password.", variant: "destructive" });
+      toast({ title: "Error", description: error.message || "Failed to send sign-in link.", variant: "destructive" });
     },
   });
 
@@ -113,7 +109,7 @@ export default function AdminUsers() {
                           variant="ghost"
                           size="sm"
                           onClick={() => setResetTarget({ id: u.id, name: `${u.firstName} ${u.lastName}` })}
-                          title="Reset password"
+                          title="Send sign-in link"
                         >
                           <KeyRound className="h-4 w-4" />
                         </Button>
@@ -127,35 +123,23 @@ export default function AdminUsers() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!resetTarget} onOpenChange={(open) => { if (!open) { setResetTarget(null); setNewPassword(""); } }}>
+      <Dialog open={!!resetTarget} onOpenChange={(open) => { if (!open) setResetTarget(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
+            <DialogTitle>Send Sign-in Link</DialogTitle>
             <DialogDescription>
-              Set a new password for <strong>{resetTarget?.name}</strong>. They will be logged out of all sessions.
+              This will send a one-time sign-in link to <strong>{resetTarget?.name}</strong>. The link expires in 24 hours.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                placeholder="At least 8 characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-          </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button
-              onClick={() => resetTarget && resetMutation.mutate({ userId: resetTarget.id, newPassword })}
-              disabled={newPassword.length < 8 || resetMutation.isPending}
+              onClick={() => resetTarget && resetMutation.mutate({ userId: resetTarget.id })}
+              disabled={resetMutation.isPending}
             >
-              {resetMutation.isPending ? "Resetting..." : "Reset Password"}
+              {resetMutation.isPending ? "Sending..." : "Send Link"}
             </Button>
           </DialogFooter>
         </DialogContent>

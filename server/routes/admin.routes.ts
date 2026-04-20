@@ -13,10 +13,10 @@ import { adminService } from '../services/admin.service';
 import { systemConfigService } from '../services/system-config.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
-import { passwordResetService } from '../services/password-reset.service';
 import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
 import { magicLinkService } from '../services/magic-link.service';
 import { emailApiService } from '../services/email.service';
+import { clerkClient } from '@clerk/express';
 
 const router = Router();
 
@@ -136,15 +136,69 @@ router.get('/webhook-events', asyncHandler(async (req: Request, res: Response) =
   sendSuccess(res, data);
 }));
 
-const adminResetPasswordSchema = z.object({
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-});
-
 router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: Response) => {
   const userId = Number(req.params.id);
-  const { newPassword } = adminResetPasswordSchema.parse(req.body);
-  await passwordResetService.adminResetPassword(userId, newPassword);
-  sendSuccess(res, { message: 'Password has been reset successfully.' });
+  if (isNaN(userId)) {
+    return res.status(400).json({ success: false, message: 'Invalid user ID' });
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      clerkUserId: users.clerkUserId,
+      isActive: users.isActive,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+  if (!user.isActive) {
+    return res.status(400).json({ success: false, message: 'User is inactive' });
+  }
+  if (!user.clerkUserId) {
+    return res.status(400).json({
+      success: false,
+      message: 'This user has not set up Clerk access yet. Ask them to sign up via the Clerk sign-up page first.',
+    });
+  }
+
+  let signInToken;
+  try {
+    signInToken = await clerkClient.signInTokens.createSignInToken({
+      userId: user.clerkUserId,
+      expiresInSeconds: 86400,
+    });
+  } catch (err: any) {
+    console.error(`[admin] Clerk sign-in token creation failed for user ${user.id}:`, err);
+    if (err?.status === 404 || err?.statusCode === 404) {
+      return res.status(400).json({
+        success: false,
+        message: 'User not found in Clerk. Their Clerk account may have been deleted.',
+      });
+    }
+    throw err;
+  }
+
+  const emailResult = await emailApiService.sendAdminSignInLink({
+    to: user.email,
+    firstName: user.firstName || 'there',
+    signInUrl: signInToken.url,
+  });
+
+  if (!emailResult.success) {
+    console.error(`[admin] Sign-in link email delivery failed for user ${user.id} (${user.email})`);
+    return res.status(500).json({
+      success: false,
+      message: 'Sign-in token was created but email delivery failed. Please try again.',
+    });
+  }
+
+  console.log(`[admin] Sign-in link sent to user ${user.id} (${user.email}) by admin ${req.session.userId}`);
+  sendSuccess(res, { success: true, message: `Sign-in link sent to ${user.email}` });
 }));
 
 router.get('/subscriptions', asyncHandler(async (req: Request, res: Response) => {
