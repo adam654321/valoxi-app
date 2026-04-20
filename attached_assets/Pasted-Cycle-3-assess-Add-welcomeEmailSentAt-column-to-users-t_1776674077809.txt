@@ -1,0 +1,50 @@
+Cycle 3 assess. Add welcomeEmailSentAt column to users table. READ ONLY, do not make any code changes or run any commands. Report back with the findings.
+PROPOSED CHANGE
+Add a single nullable timestamp column to the users table, named welcomeEmailSentAt in TypeScript and welcome_email_sent_at in SQL. Purpose: guard against Clerk webhook retry double-fires of the welcome email. Set once per user when the welcome email is successfully sent. Nullable because all existing users pre-date this column and will read NULL, which is safe.
+Column spec:
+
+Name: welcomeEmailSentAt (camelCase), welcome_email_sent_at (snake_case)
+Type: timestamp, no timezone (matches existing columns in this table)
+Nullable: yes
+Default: none
+Position: inserted after clerkUserId, before createdAt
+
+The Drizzle schema edit in shared/schema/core.ts will insert one new line between the existing clerkUserId and createdAt lines:
+clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+welcomeEmailSentAt: timestamp("welcome_email_sent_at"),
+createdAt: timestamp("created_at").defaultNow(),
+No insertUserSchema change needed because it already omits columns that default or are system-managed, and welcomeEmailSentAt is set by the webhook handler, not by a user create.
+ASSESS QUESTIONS for Replit to answer
+
+Confirm the current tail of the users table definition in shared/schema/core.ts matches:
+
+clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+createdAt: timestamp("created_at").defaultNow(),
+Paste the five lines leading up to and including createdAt.
+
+Confirm the existing insertUserSchema in shared/schema/core.ts is:
+
+export const insertUserSchema = createInsertSchema(users).omit({
+id: true,
+createdAt: true,
+});
+Confirm this will not need updating when welcomeEmailSentAt is added, because the column is nullable and system-managed.
+
+Confirm the next migration filename will be 0007_<randomword>.sql (since the last is 0006_tiresome_wraith.sql). Do not actually run db:generate, just confirm the numbering.
+Confirm the drizzle.config.ts schema path is "./shared/schema.ts" and that shared/schema.ts re-exports from shared/schema/index.ts. This establishes that editing shared/schema/core.ts will be picked up by db:generate without any other file change.
+Run a quick search to confirm no existing code references welcomeEmailSentAt or welcome_email_sent_at anywhere in the codebase. We need a clean slate so the build can introduce this identifier with no collisions.
+List any concerns about the plan. In particular:
+
+Is there any existing users table change in flight on a branch not yet merged?
+Any reason to name the column differently?
+Any concern with the column position (between clerkUserId and createdAt)?
+
+
+
+EXPECTED BUILD STEPS (do not run yet, just confirm the plan is sound)
+a. Add the new line to shared/schema/core.ts users table
+b. Run npm run db:generate which will produce migrations/0007_<randomword>.sql
+c. Paste the generated SQL back in full so I can review before any DB apply
+d. Once approved, apply to dev Neon via pre-check, apply, post-check staged paste
+e. Prod apply is deferred, I will stage it once dev is confirmed
+Report back with the six answers. No file changes, no command execution. Read-only.
