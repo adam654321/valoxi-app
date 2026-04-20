@@ -1,0 +1,33 @@
+Cycle 1 assess and build combined. Em dash cleanup in inline sendWelcomeEmail function in server/routes/auth.routes.ts. No DB work, no new routes, no migration. One logical change: replace five em dash characters with full stops to align with the no-em-dashes rule. Pure string substitution, zero behavioural effect.
+ASSESS FIRST
+Open server/routes/auth.routes.ts. Find the async function sendWelcomeEmail(email: string, firstName: string). It sits below the /register route handler, roughly from line 140 onwards. Confirm the five em dashes (U+2014) are present at these exact locations before making any changes:
+
+HTML template, first list item: Add your first target company</strong> — enter the business you're looking to acquire
+HTML template, second list item: Upload financial documents</strong> — add their accounts or financial statements
+HTML template, third list item: Generate your first expert analysis</strong> — let the AI produce a full commercial due diligence report
+HTML template, footer paragraph: Valoxi — Acquire Smarter, Faster.
+sendEmail call, subject line: Welcome to Valoxi — let's run your first deal
+
+If any of those five are missing, or the surrounding text differs from what is described above, stop and report back. Do not proceed to BUILD.
+BUILD
+Make exactly these five replacements inside the sendWelcomeEmail function body only. Do not touch any other part of the file.
+Replacement 1
+From: Add your first target company</strong> — enter the business you're looking to acquire
+To:   Add your first target company</strong>. Enter the business you're looking to acquire
+Replacement 2
+From: Upload financial documents</strong> — add their accounts or financial statements
+To:   Upload financial documents</strong>. Add their accounts or financial statements
+Replacement 3
+From: Generate your first expert analysis</strong> — let the AI produce a full commercial due diligence report
+To:   Generate your first expert analysis</strong>. Let the AI produce a full commercial due diligence report
+Replacement 4
+From: Valoxi — Acquire Smarter, Faster.
+To:   Valoxi. Acquire Smarter, Faster.
+Replacement 5
+From: Welcome to Valoxi — let's run your first deal
+To:   Welcome to Valoxi. Let's run your first deal
+VERIFY
+After applying, search the sendWelcomeEmail function body for the em dash character U+2014. There should be zero matches inside the function.
+Also run a search across the whole server/routes/auth.routes.ts file for U+2014. Report any remaining instances elsewhere in the file but do not touch them in this cycle.
+Confirm the file type-checks clean. The tsx watcher should pick up the change automatically because auth.routes.ts is a leaf route file, not routes/index.ts. No server restart required. No migration. No deploy notes.
+Report back the full unified diff once applied.
