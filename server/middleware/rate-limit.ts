@@ -77,3 +77,13 @@ export const uploadLimiter = rateLimit({
   },
   message: { message: 'Too many uploads, please try again later.' },
 });
+
+export const waitlistLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skip: isLocalhost,
+  message: { message: 'Too many waitlist submissions, please try again later.' },
+});

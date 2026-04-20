@@ -30,6 +30,7 @@ import adminRoutes from './admin.routes';
 import billingRoutes, { billingWebhookRoutes } from './billing.routes';
 import webhooksRoutes from './webhooks.routes';
 import publicConfigRoutes from './public.routes';
+import publicWaitlistRoutes from './public-waitlist.routes';
 import billingAdminRoutes from './billing-admin.routes';
 import issueReportsRoutes from './issue-reports.routes';
 import onboardingRoutes from './onboarding.routes';
@@ -39,7 +40,7 @@ import betaRoutes from './beta.routes';
 import accountRoutes from './account.routes';
 import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode, injectViewAsIdentity } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
-import { portalLimiter, analysisTriggerLimiter } from '../middleware/rate-limit';
+import { portalLimiter, analysisTriggerLimiter, waitlistLimiter } from '../middleware/rate-limit';
 import { requireActiveSubscription, requireFeature } from '../middleware/subscription';
 
 export function registerModularRoutes(app: Express) {
@@ -92,6 +93,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, issueReportsRoutes);
   app.use('/api/v2/webhooks', webhooksRoutes);
+  app.use('/api/v2/public/waitlist', waitlistLimiter, publicWaitlistRoutes);
   app.use('/api/v2/public', publicConfigRoutes);
   app.use('/api/v2/billing', billingWebhookRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingRoutes);
