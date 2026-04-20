@@ -1,0 +1,81 @@
+Cycle 5 build. Extend waitlistRepository with list, getById, updateStatus, markInvited methods. Single file edit.
+STEP 1. Update imports in server/repositories/waitlist.repository.ts
+Current import line:
+import { eq } from 'drizzle-orm';
+Replace with:
+import { eq, and, desc } from 'drizzle-orm';
+Confirm the import { waitlist, type Waitlist, type InsertWaitlist } from '@shared/schema'; line stays unchanged.
+STEP 2. Add four new methods to the WaitlistRepository class
+The class currently contains getByEmail and create. Add the four new methods inside the class, after create, in this order: list, getById, updateStatus, markInvited. The resulting class body should be:
+async getByEmail(email: string): Promise<Waitlist | undefined> {
+const [row] = await db.select().from(waitlist).where(eq(waitlist.email, email));
+return row || undefined;
+}
+async create(data: InsertWaitlist): Promise<Waitlist> {
+const [row] = await db.insert(waitlist).values(data).returning();
+return row;
+}
+async list(filters: { status?: string; limit?: number; offset?: number } = {}): Promise<Waitlist[]> {
+const conditions = [];
+if (filters.status) {
+conditions.push(eq(waitlist.status, filters.status));
+}
+const where = conditions.length > 0 ? and(...conditions) : undefined;
+const limit = Math.min(filters.limit ?? 50, 200);
+const offset = filters.offset ?? 0;
+return await db
+.select()
+.from(waitlist)
+.where(where)
+.orderBy(desc(waitlist.createdAt))
+.limit(limit)
+.offset(offset);
+}
+async getById(id: string): Promise<Waitlist | undefined> {
+const [row] = await db.select().from(waitlist).where(eq(waitlist.id, id));
+return row || undefined;
+}
+async updateStatus(
+id: string,
+status: 'new' | 'approved' | 'invited' | 'declined',
+adminUserId: number
+): Promise<Waitlist | undefined> {
+if (status === 'invited') {
+throw new Error('Use markInvited to transition to invited status, not updateStatus');
+}
+const [row] = await db
+.update(waitlist)
+.set({
+status,
+statusChangedAt: new Date(),
+statusChangedBy: adminUserId,
+})
+.where(eq(waitlist.id, id))
+.returning();
+return row || undefined;
+}
+async markInvited(
+id: string,
+adminUserId: number,
+invitedUserId: number
+): Promise<Waitlist | undefined> {
+const [row] = await db
+.update(waitlist)
+.set({
+status: 'invited',
+statusChangedAt: new Date(),
+statusChangedBy: adminUserId,
+invitedUserId,
+})
+.where(eq(waitlist.id, id))
+.returning();
+return row || undefined;
+}
+The existing export const waitlistRepository = new WaitlistRepository(); line at the bottom of the file stays unchanged.
+Note on updateStatus guard: I've added a throw for status === 'invited' as an extra safety rail, so that accidental misuse surfaces immediately rather than silently producing a half-populated invited row (no invitedUserId). This matches the concern flagged in the assess.
+STEP 3. Verify
+Run npm run check. Expect clean.
+Grep the file for waitlistRepository class method names we just added. Expected: definition-only matches (no external call sites yet, confirmed in assess).
+Grep the full server directory for waitlistRepository.list, waitlistRepository.getById, waitlistRepository.updateStatus, waitlistRepository.markInvited. Expected: zero matches for each. These get their first callers in Cycle 6.
+Grep the file for U+2014 em dash. Zero expected.
+REPORT BACK with unified diff, tsc result, and the grep results.
