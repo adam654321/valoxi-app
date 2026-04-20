@@ -183,10 +183,12 @@ router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: 
     throw err;
   }
 
+  const signInUrlWithRedirect = new URL(signInToken.url);
+  signInUrlWithRedirect.searchParams.set('redirect_url', config.baseUrl);
   const emailResult = await emailApiService.sendAdminSignInLink({
     to: user.email,
     firstName: user.firstName || 'there',
-    signInUrl: signInToken.url,
+    signInUrl: signInUrlWithRedirect.toString(),
   });
 
   if (!emailResult.success) {

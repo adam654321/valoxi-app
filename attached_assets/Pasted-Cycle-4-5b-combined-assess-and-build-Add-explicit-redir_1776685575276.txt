@@ -1,0 +1,40 @@
+Cycle 4.5b combined assess and build. Add explicit redirect_url to the Clerk sign-in token URL so the admin-sent link always lands back in the Valoxi app regardless of Clerk dashboard config. Single logical change, one file.
+ASSESS FIRST
+Open server/routes/admin.routes.ts. Find the POST /users/:id/reset-password handler that was rewired in Cycle 4.5. Confirm it currently passes signInToken.url directly to emailApiService.sendAdminSignInLink:
+const emailResult = await emailApiService.sendAdminSignInLink({
+  to: user.email,
+  firstName: user.firstName || 'there',
+  signInUrl: signInToken.url,
+});
+Confirm config is not currently imported at the top of the file. If it is, note it. We will import from '../config' for the baseUrl value.
+If the handler or structure differs from the above, stop and report.
+BUILD
+1a. Add import at the top of server/routes/admin.routes.ts. Insert after the existing import block (next to where db and config objects are imported), add:
+import { config } from '../config';
+If config is already imported for Stripe or other use, skip this step.
+1b. Replace the three-line sendAdminSignInLink call with four lines that construct an explicit redirect URL:
+From:
+const emailResult = await emailApiService.sendAdminSignInLink({
+  to: user.email,
+  firstName: user.firstName || 'there',
+  signInUrl: signInToken.url,
+});
+To:
+const signInUrlWithRedirect = new URL(signInToken.url);
+signInUrlWithRedirect.searchParams.set('redirect_url', config.baseUrl);
+const emailResult = await emailApiService.sendAdminSignInLink({
+  to: user.email,
+  firstName: user.firstName || 'there',
+  signInUrl: signInUrlWithRedirect.toString(),
+});
+This appends a redirect_url query parameter to Clerk's sign-in ticket URL. The config.baseUrl resolves to:
+
+https://app.valoxi.ai on prod
+The Replit dev URL on dev
+Based on APP_URL, REPLIT_DOMAINS, REPLIT_DEV_DOMAIN fallback chain in server/config.ts
+
+VERIFY
+Run npm run check. Expect clean.
+Grep the file for signInToken.url to confirm the direct reference is gone. Expected: zero matches (it is now referenced via the URL constructor).
+Grep for redirect_url in server/routes/admin.routes.ts. Expected: one match (the .searchParams.set line).
+REPORT BACK with unified diff, tsc result, and the two grep results.
