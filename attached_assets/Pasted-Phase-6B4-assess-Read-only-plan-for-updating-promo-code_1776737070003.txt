@@ -1,0 +1,97 @@
+Phase 6B4 assess. Read-only plan for updating promo_code_campaigns rows to point at the new ADJV Stripe coupon IDs. Do not modify any data. Do not run any INSERT, UPDATE, or DELETE statements. Plan only.
+Context. Three new coupons exist in the ADJV Stripe test account with IDs:
+
+Standard 5D community: YBzQWYzq (15% forever)
+Early Bird: 8GXzaftB (20% forever)
+5D New Member ongoing: cEGIKCtT (15% forever, applied after 6-month free period ends)
+
+The promo_code_campaigns table holds a stripe_coupon_id column which is referenced at promo code claim time by promo-code.service.ts line around 196 (stripe.customers.update with coupon field) and also by the billing cron at billing.cron.ts around line 154 (the free-months transition that applies the community discount coupon after the free period ends). Currently the column values are placeholders from the old Stripe account and need to be rotated to the new ADJV coupon IDs.
+Step 1. Query the current state. Run these SELECT statements and report the raw output:
+select id, name, referral_source, free_months_total, stripe_coupon_id, code_prefix, max_uses_per_code, expires_at, created_at, created_by_user_id
+from promo_code_campaigns
+order by id;
+select count(*) as total from promo_code_campaigns;
+select referral_source, count(*) as campaigns, count(distinct stripe_coupon_id) as unique_coupons
+from promo_code_campaigns
+group by referral_source
+order by referral_source;
+Report the raw rows so I can see the current state. Do not summarise, paste the actual row contents.
+Step 2. Referential integrity check. The promo_codes table references promo_code_campaigns.id via campaign_id. Run:
+select campaign_id, count(*) as code_count, count(claimed_at) as claimed_count
+from promo_codes
+group by campaign_id
+order by campaign_id;
+This tells us which campaigns have codes already issued or claimed. If a campaign has claimed codes, updating its stripe_coupon_id is still safe (the claim-time coupon application is at new-customer time, not retrospective), but it is worth knowing.
+Step 3. Mapping plan. Map each existing campaign row to its target new coupon ID.
+For each current row, identify:
+
+Current name and referral_source.
+Current stripe_coupon_id.
+Intended new stripe_coupon_id from this list:
+
+referral_source '5d_community' where free_months_total = 0 maps to Standard 5D community, YBzQWYzq.
+referral_source '5d_community' where free_months_total > 0 maps to 5D New Member ongoing, cEGIKCtT. Note the free-months branch: for these campaigns, the stripe_coupon_id is the POST-free-period coupon, because during the free period the user is not paying Stripe anything anyway, and the coupon only becomes relevant at month 6+.
+referral_source 'early_bird' maps to Early Bird, 8GXzaftB.
+Any other referral_source value: flag it and ask.
+
+
+
+Step 4. Missing campaigns. Per locked decision 3.3, three promo types exist: Standard 5D, Early Bird, 5D New Member (which uses the same referral_source '5d_community' but with free_months_total > 0). If any of these are missing from the current table, list them with the values they would need to be inserted with:
+Template for INSERT if needed (do not run, just draft):
+Standard 5D (if missing):
+
+name: Standard 5D community
+referral_source: 5d_community
+free_months_total: 0
+stripe_coupon_id: YBzQWYzq
+code_prefix: 5DC (or whatever pattern matches existing conventions, check against current rows)
+max_uses_per_code: 1
+expires_at: null
+
+Early Bird (if missing):
+
+name: Early Bird
+referral_source: early_bird
+free_months_total: 0
+stripe_coupon_id: 8GXzaftB
+code_prefix: EB (or adjust to match conventions)
+max_uses_per_code: 1
+expires_at: null
+
+5D New Member (if missing):
+
+name: 5D New Member
+referral_source: 5d_community
+free_months_total: 6
+stripe_coupon_id: cEGIKCtT
+code_prefix: 5DNM (or adjust to match conventions)
+max_uses_per_code: 1
+expires_at: null
+
+Step 5. Proposed operations.
+Break into two explicit sections:
+5a. Updates needed: for each existing row that needs stripe_coupon_id changed, show the proposed UPDATE statement in the form:
+update promo_code_campaigns set stripe_coupon_id = '<new_id>' where id = <row_id>; -- <campaign_name>
+5b. Inserts needed: for each campaign type missing from the table, show the proposed INSERT statement. Use only the columns that match the current schema (check against an existing row for reference).
+Step 6. Risk and rollback.
+Risks:
+
+Running the UPDATE against a row that has already-claimed promo codes does not retroactively change the Stripe side (Stripe customers already had the old coupon applied at claim time). It only affects future claims. Low risk.
+Running an INSERT with a referral_source string that the service code does not expect could cause silent failures downstream. Confirm the exact strings '5d_community' and 'early_bird' match how claimCode in promo-code.service.ts checks referral_source.
+
+Rollback plan: note what the current stripe_coupon_id values were before the UPDATE so they can be reverted if needed. Include them in the deliverable.
+Step 7. Adam-actions. List any non-SQL manual actions needed, such as:
+
+Generating new promo codes for any newly-inserted campaigns (likely 1 code each for dev testing, more for real use).
+Deciding whether existing codes on updated campaigns are still valid to hand out to new beta testers, or whether they should be marked used and replaced.
+
+Deliverable. One chat response with:
+
+Current state of promo_code_campaigns table (raw rows from Step 1 and 2).
+Mapping plan (Step 3 as a table).
+Missing campaigns list (Step 4).
+Proposed UPDATE and INSERT statements (Step 5, ready to run on approval).
+Risks and rollback data (Step 6).
+Adam-actions (Step 7).
+
+No changes to any table. Nothing is destructive. This is purely a plan.
