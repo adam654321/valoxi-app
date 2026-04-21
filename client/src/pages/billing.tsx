@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -445,6 +445,12 @@ export default function BillingPage() {
   const effectivePlan = (status === 'canceled' || !subscription) ? null : currentPlan;
   const currentPlanIndex = getPlanIndex(effectivePlan);
   const hasStripeCustomer = !!subscription?.stripeCustomerId;
+  const isInFreePeriod = !!(
+    subscription &&
+    subscription.freeMonthsTotal > 0 &&
+    subscription.freeMonthsStartedAt &&
+    !subscription.stripeSubscriptionId
+  );
   const trialDays = status === "trialing" ? getTrialDaysRemaining(subscription?.trialEnd) : null;
   const periodEndDate = subscription?.currentPeriodEnd
     ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -707,7 +713,7 @@ export default function BillingPage() {
             </div>
           </div>
 
-          {isActiveOrComped && (
+          {(isActiveOrComped || isInFreePeriod) && (
             <>
               <Separator />
               <div>
@@ -742,17 +748,37 @@ export default function BillingPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button
-                          onClick={() =>
-                            addonMutation.mutate({ addonType: "company_slot", quantity: parseInt(slotQuantity) })
-                          }
-                          disabled={addonMutation.isPending}
-                        >
-                          {addonMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : null}
-                          Add Slots
-                        </Button>
+                        {isInFreePeriod ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span tabIndex={0}>
+                                  <Button disabled>
+                                    {addonMutation.isPending ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : null}
+                                    Add Slots
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Addons available after your free period ends.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <Button
+                            onClick={() =>
+                              addonMutation.mutate({ addonType: "company_slot", quantity: parseInt(slotQuantity) })
+                            }
+                            disabled={addonMutation.isPending}
+                          >
+                            {addonMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : null}
+                            Add Slots
+                          </Button>
+                        )}
                       </div>
                       {currentSlots > 0 && (
                         <div className="flex items-center justify-between pt-2 border-t">
@@ -807,17 +833,37 @@ export default function BillingPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <Button
-                            onClick={() =>
-                              addonMutation.mutate({ addonType: "seat", quantity: parseInt(seatQuantity) })
-                            }
-                            disabled={addonMutation.isPending}
-                          >
-                            {addonMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : null}
-                            Add Seats
-                          </Button>
+                          {isInFreePeriod ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span tabIndex={0}>
+                                    <Button disabled>
+                                      {addonMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : null}
+                                      Add Seats
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Addons available after your free period ends.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <Button
+                              onClick={() =>
+                                addonMutation.mutate({ addonType: "seat", quantity: parseInt(seatQuantity) })
+                              }
+                              disabled={addonMutation.isPending}
+                            >
+                              {addonMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : null}
+                              Add Seats
+                            </Button>
+                          )}
                         </div>
                         {currentSeats > 0 && (
                           <div className="flex items-center justify-between pt-2 border-t">

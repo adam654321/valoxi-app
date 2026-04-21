@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
-import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
+import { promoCodeService, computeFreeMonthsElapsed, getFreePeriodState } from '../services/promo-code.service';
 import { magicLinkService } from '../services/magic-link.service';
 import { db } from '../db';
 import { webhookEvents, users, userCompanies } from '@shared/schema/core';
@@ -971,35 +971,53 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
       return res.status(400).json({ error: 'no_subscription', message: 'No active subscription found.' });
     }
 
+    const freePeriod = getFreePeriodState(subscription);
+    if (freePeriod.isActive && !subscription.stripeSubscriptionId) {
+      console.log(`[billing] addon purchase blocked for company ${userCompanyId}: active free period, ${freePeriod.remainingMonths} months remaining, no Stripe subscription`);
+      return res.status(400).json({
+        error: 'addon_blocked_free_period',
+        message: 'Addons are not available during your free period. They will be available once you enter payment details at the end of your free period.',
+      });
+    }
+
+    if (!subscription.stripeSubscriptionId) {
+      console.log(`[billing] addon purchase blocked for company ${userCompanyId}: no Stripe subscription and not in active free period (suggests data inconsistency)`);
+      return res.status(400).json({
+        error: 'addon_blocked_no_subscription',
+        message: 'Addons require an active paid subscription. Please contact support if you believe this is an error.',
+      });
+    }
+
     const existing = addonType === 'company_slot'
       ? (subscription.addOnCompanySlots ?? 0)
       : (subscription.additionalSeats ?? 0);
     const newTotal = existing + quantity;
 
-    if (subscription.stripeSubscriptionId && config.stripe.secretKey) {
-      const stripe = new Stripe(config.stripe.secretKey);
-      const lookupKey = ADDON_LOOKUP_KEYS[addonType];
-      const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
-      if (!prices.data.length) {
-        return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
-      }
+    if (!config.stripe.secretKey) {
+      return res.status(500).json({ error: 'stripe_not_configured' });
+    }
+    const stripe = new Stripe(config.stripe.secretKey);
+    const lookupKey = ADDON_LOOKUP_KEYS[addonType];
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+    if (!prices.data.length) {
+      return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
+    }
 
-      const existingItems = await stripe.subscriptionItems.list({ subscription: subscription.stripeSubscriptionId });
-      const existingItem = existingItems.data.find(
-        (item) => item.price.lookup_key === lookupKey
-      );
+    const existingItems = await stripe.subscriptionItems.list({ subscription: subscription.stripeSubscriptionId });
+    const existingItem = existingItems.data.find(
+      (item) => item.price.lookup_key === lookupKey
+    );
 
-      if (existingItem) {
-        await stripe.subscriptionItems.update(existingItem.id, {
-          quantity: (existingItem.quantity ?? 0) + quantity,
-        });
-      } else {
-        await stripe.subscriptionItems.create({
-          subscription: subscription.stripeSubscriptionId,
-          price: prices.data[0].id,
-          quantity,
-        });
-      }
+    if (existingItem) {
+      await stripe.subscriptionItems.update(existingItem.id, {
+        quantity: (existingItem.quantity ?? 0) + quantity,
+      });
+    } else {
+      await stripe.subscriptionItems.create({
+        subscription: subscription.stripeSubscriptionId,
+        price: prices.data[0].id,
+        quantity,
+      });
     }
 
     const updateData: Record<string, unknown> = addonType === 'company_slot'

@@ -5,7 +5,7 @@ import { db } from '../db';
 import { config } from '../config';
 import { promoCodes, promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
 import { users } from '@shared/schema/core';
-import type { PromoCode, PromoCodeCampaign } from '@shared/schema/billing';
+import type { PromoCode, PromoCodeCampaign, Subscription } from '@shared/schema/billing';
 
 function generateRandomCode(length: number): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -336,4 +336,24 @@ export function isFiveDNewMember(campaign: {
   freeMonthsTotal: number;
 }): boolean {
   return campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 6;
+}
+
+export interface FreePeriodState {
+  isActive: boolean;
+  elapsedMonths: number;
+  remainingMonths: number;
+}
+
+export function getFreePeriodState(subscription: Subscription): FreePeriodState {
+  if (subscription.freeMonthsTotal <= 0 || !subscription.freeMonthsStartedAt) {
+    return { isActive: false, elapsedMonths: 0, remainingMonths: 0 };
+  }
+  const elapsed = computeFreeMonthsElapsed(subscription.freeMonthsStartedAt);
+  const remaining = Math.max(0, subscription.freeMonthsTotal - elapsed);
+  const isActive = elapsed < subscription.freeMonthsTotal;
+  return {
+    isActive,
+    elapsedMonths: elapsed,
+    remainingMonths: remaining,
+  };
 }
