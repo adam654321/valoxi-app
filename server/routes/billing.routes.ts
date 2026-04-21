@@ -37,6 +37,7 @@ function deriveBillingInterval(lookupKey: string): BillingInterval {
 
 async function logWebhookEvent(
   eventType: string,
+  stripeEventId: string | null,
   payload: unknown,
   status: string,
   error?: string
@@ -44,6 +45,7 @@ async function logWebhookEvent(
   try {
     await db.insert(webhookEvents).values({
       source: 'stripe',
+      stripeEventId,
       eventType,
       payload: payload as Record<string, unknown>,
       status,
@@ -80,6 +82,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
 
   const existing = await billingRepository.getEventByStripeId(event.id);
   if (existing) {
+    await logWebhookEvent(event.type, event.id, event.data.object, 'skipped');
     return res.status(200).json({ received: true, skipped: true });
   }
 
@@ -98,7 +101,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
 
           if (!customerEmail) {
             console.error('[webhook] New signup checkout completed but no email found');
-            await logWebhookEvent(event.type, event.data.object, 'error', 'no_customer_email');
+            await logWebhookEvent(event.type, event.id, event.data.object, 'error', 'no_customer_email');
             break;
           }
 
@@ -188,7 +191,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           }
         }
 
-        await logWebhookEvent(event.type, event.data.object, 'processed');
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
         break;
       }
 
@@ -237,7 +240,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           );
         }
 
-        await logWebhookEvent(event.type, event.data.object, 'processed');
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
         break;
       }
 
@@ -254,7 +257,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           );
         }
 
-        await logWebhookEvent(event.type, event.data.object, 'processed');
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
         break;
       }
 
@@ -291,7 +294,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           }
         }
 
-        await logWebhookEvent(event.type, event.data.object, 'processed');
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
         break;
       }
 
@@ -320,7 +323,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           }
         }
 
-        await logWebhookEvent(event.type, event.data.object, 'processed');
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
         break;
       }
 
@@ -337,26 +340,45 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
 
         if (subscriptionId) {
           const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
-          if (matchingSub && matchingSub.billingInterval === 'year') {
-            const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
-            if (adminEmail) {
-              const renewalDate = invoice.period_end
-                ? new Date(invoice.period_end * 1000)
-                : new Date();
-              const amountDue = invoice.amount_due ?? 0;
-              await emailApiService.sendRenewalWarningEmail({
-                to: adminEmail.email,
-                firstName: adminEmail.firstName,
-                planKey: matchingSub.planKey,
+          if (matchingSub) {
+            const renewalDate = invoice.period_end
+              ? new Date(invoice.period_end * 1000)
+              : new Date();
+            const amountDue = invoice.amount_due ?? 0;
+
+            if (matchingSub.billingInterval === 'year') {
+              const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+              if (adminEmail) {
+                await emailApiService.sendRenewalWarningEmail({
+                  to: adminEmail.email,
+                  firstName: adminEmail.firstName,
+                  planKey: matchingSub.planKey,
+                  renewalDate,
+                  amountDue,
+                  currency: matchingSub.currency ?? 'usd',
+                });
+                console.log(`[billing] Renewal warning email sent to ${adminEmail.email} for company ${matchingSub.userCompanyId}`);
+              }
+            }
+
+            await billingRepository.logEvent({
+              userCompanyId: matchingSub.userCompanyId,
+              stripeEventId: event.id,
+              eventType: 'invoice.upcoming',
+              previousStatus: matchingSub.status,
+              previousPlanKey: matchingSub.planKey,
+              newStatus: matchingSub.status,
+              newPlanKey: matchingSub.planKey,
+              payload: {
                 renewalDate,
                 amountDue,
                 currency: matchingSub.currency ?? 'usd',
-              });
-              console.log(`[billing] Renewal warning email sent to ${adminEmail.email} for company ${matchingSub.userCompanyId}`);
-            }
+                billingInterval: matchingSub.billingInterval,
+              },
+            });
           }
         }
-        await logWebhookEvent(event.type, event.data.object, 'processed');
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
         break;
       }
 
@@ -367,7 +389,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
     return res.status(200).json({ received: true });
   } catch (err: any) {
     console.error(`[Billing] Error processing ${event.type}:`, err);
-    await logWebhookEvent(event.type, event.data.object, 'error', err.message);
+    await logWebhookEvent(event.type, event.id, event.data.object, 'error', err.message);
     return res.status(200).json({ received: true });
   }
 });

@@ -83,7 +83,15 @@ export class BillingRepository {
     return row;
   }
 
-  async logEvent(data: InsertSubscriptionEvent): Promise<SubscriptionEvent> {
+  async logEvent(data: InsertSubscriptionEvent): Promise<SubscriptionEvent | null> {
+    if (data.stripeEventId) {
+      const [row] = await db
+        .insert(subscriptionEvents)
+        .values(data)
+        .onConflictDoNothing({ target: subscriptionEvents.stripeEventId })
+        .returning();
+      return row ?? null;
+    }
     const [row] = await db.insert(subscriptionEvents).values(data).returning();
     return row;
   }

@@ -219,13 +219,16 @@ export const platformCosts = pgTable("platform_costs", {
 export const webhookEvents = pgTable("webhook_events", {
   id: serial("id").primaryKey(),
   source: varchar("source", { length: 100 }).notNull(),
+  stripeEventId: varchar("stripe_event_id", { length: 255 }),
   eventType: varchar("event_type", { length: 100 }).notNull(),
   payload: jsonb("payload").notNull().default({}),
   status: varchar("status", { length: 20 }).notNull().default("received"),
   error: text("error"),
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  stripeEventIdIdx: index("webhook_events_stripe_event_id_idx").on(table.stripeEventId),
+}));
 
 // Password reset tokens
 export const passwordResetTokens = pgTable("password_reset_tokens", {

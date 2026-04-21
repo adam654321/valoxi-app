@@ -1,0 +1,297 @@
+PHASE 6D1 BUILD - webhook envelope + idempotency + lifecycle audit
+
+This is the build for 6D1 based on the assess output. Apply the changes below
+exactly. Do not deviate. Do not deploy to prod.
+
+Pre-flight (read-only)
+Before editing, grep for callers and confirm scope. Paste output verbatim.
+
+  1. grep -rn "logWebhookEvent(" server/ shared/ client/
+  2. grep -rn "billingRepository.logEvent(" server/ shared/
+  3. grep -rn "\.logEvent(" server/services/
+  4. Confirm: no caller of billingRepository.logEvent uses the returned row.
+     If any caller does use it, STOP and report before continuing.
+
+Change 1 - schema: add stripe_event_id to webhook_events
+
+File: shared/schema/core.ts
+
+Locate the webhookEvents pgTable definition (around line 218-228). Replace the
+entire export const webhookEvents = pgTable(...) block with:
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: serial("id").primaryKey(),
+  source: varchar("source", { length: 100 }).notNull(),
+  stripeEventId: varchar("stripe_event_id", { length: 255 }),
+  eventType: varchar("event_type", { length: 100 }).notNull(),
+  payload: jsonb("payload").notNull().default({}),
+  status: varchar("status", { length: 20 }).notNull().default("received"),
+  error: text("error"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  stripeEventIdIdx: index("webhook_events_stripe_event_id_idx").on(table.stripeEventId),
+}));
+
+If "index" is not already imported from drizzle-orm/pg-core in this file, add it
+to the existing pgTable import line. Do not duplicate the import.
+
+Change 2 - migration SQL (EXECUTE=true gate)
+
+Run against dev Neon only. EXECUTE=false by default. Show the SQL, ask before
+running, and only proceed if EXECUTE=true.
+
+  ALTER TABLE webhook_events
+  ADD COLUMN IF NOT EXISTS stripe_event_id varchar(255);
+
+  CREATE INDEX IF NOT EXISTS webhook_events_stripe_event_id_idx
+  ON webhook_events (stripe_event_id);
+
+After running, confirm with:
+
+  \d webhook_events
+
+Change 3 - writer: logWebhookEvent
+
+File: server/routes/billing.routes.ts (lines 38-56)
+
+Replace the existing logWebhookEvent function with:
+
+async function logWebhookEvent(
+  eventType: string,
+  stripeEventId: string | null,
+  payload: unknown,
+  status: string,
+  error?: string
+) {
+  try {
+    await db.insert(webhookEvents).values({
+      source: 'stripe',
+      stripeEventId,
+      eventType,
+      payload: payload as Record<string, unknown>,
+      status,
+      error: error ?? null,
+      processedAt: new Date(),
+    });
+  } catch (err) {
+    console.error('[Billing] Failed to log webhook event:', err);
+  }
+}
+
+Change 4 - update every logWebhookEvent call site
+
+In server/routes/billing.routes.ts, update every call to logWebhookEvent to use
+the new 4-or-5-arg signature, inserting event.id as the second argument.
+
+Pattern:
+  Old: await logWebhookEvent(event.type, event.data.object, 'processed');
+  New: await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+
+  Old: await logWebhookEvent(event.type, event.data.object, 'error', err.message);
+  New: await logWebhookEvent(event.type, event.id, event.data.object, 'error', err.message);
+
+There should be at least 6 call sites in billing.routes.ts (5 lifecycle handlers
+plus 1 outer catch, possibly more in checkout.session.completed). Update all of
+them. After editing, run:
+
+  grep -n "logWebhookEvent(" server/routes/billing.routes.ts
+
+and confirm every call has 4 or 5 arguments and the second arg is event.id (or
+a string variable known to be the Stripe event id).
+
+Change 5 - add skipped-duplicate logging at route level
+
+File: server/routes/billing.routes.ts (lines 81-84)
+
+Replace the existing duplicate-check block:
+
+  const existing = await billingRepository.getEventByStripeId(event.id);
+  if (existing) {
+    return res.status(200).json({ received: true, skipped: true });
+  }
+
+with:
+
+  const existing = await billingRepository.getEventByStripeId(event.id);
+  if (existing) {
+    await logWebhookEvent(event.type, event.id, event.data.object, 'skipped');
+    return res.status(200).json({ received: true, skipped: true });
+  }
+
+This means duplicate Stripe deliveries now leave a trail in webhook_events
+instead of vanishing. The unique-index protection on subscription_events still
+holds, this is observability only.
+
+Change 6 - ON CONFLICT DO NOTHING on subscription_events writer
+
+File: server/repositories/billing.repository.ts (lines 86-89)
+
+Replace the existing logEvent function:
+
+  async logEvent(data: InsertSubscriptionEvent): Promise<SubscriptionEvent> {
+    const [row] = await db.insert(subscriptionEvents).values(data).returning();
+    return row;
+  }
+
+with:
+
+  async logEvent(data: InsertSubscriptionEvent): Promise<SubscriptionEvent | null> {
+    if (data.stripeEventId) {
+      const [row] = await db
+        .insert(subscriptionEvents)
+        .values(data)
+        .onConflictDoNothing({ target: subscriptionEvents.stripeEventId })
+        .returning();
+      return row ?? null;
+    }
+    const [row] = await db.insert(subscriptionEvents).values(data).returning();
+    return row;
+  }
+
+If your Drizzle version's onConflictDoNothing signature differs (some versions
+take no target arg for column-level uniques, since the unique constraint is
+auto-detected), drop the target argument and use plain
+.onConflictDoNothing().returning(). Pick whichever compiles. Do not change
+behaviour beyond that.
+
+Change 7 - invoice.upcoming audit row
+
+File: server/routes/billing.routes.ts (lines 327-361)
+
+Inside the matchingSub block of the invoice.upcoming case, after the
+emailApiService.sendRenewalWarningEmail call (and the existing console.log),
+and before the closing braces of the matchingSub branch, add an audit-row
+write so this lifecycle event is captured in subscription_events.
+
+Locate this block:
+
+  if (matchingSub && matchingSub.billingInterval === 'year') {
+    const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+    if (adminEmail) {
+      const renewalDate = invoice.period_end
+        ? new Date(invoice.period_end * 1000)
+        : new Date();
+      const amountDue = invoice.amount_due ?? 0;
+      await emailApiService.sendRenewalWarningEmail({
+        to: adminEmail.email,
+        firstName: adminEmail.firstName,
+        planKey: matchingSub.planKey,
+        renewalDate,
+        amountDue,
+        currency: matchingSub.currency ?? 'usd',
+      });
+      console.log(`[billing] Renewal warning email sent to ${adminEmail.email} for company ${matchingSub.userCompanyId}`);
+    }
+  }
+
+Replace it with:
+
+  if (matchingSub) {
+    const renewalDate = invoice.period_end
+      ? new Date(invoice.period_end * 1000)
+      : new Date();
+    const amountDue = invoice.amount_due ?? 0;
+
+    if (matchingSub.billingInterval === 'year') {
+      const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+      if (adminEmail) {
+        await emailApiService.sendRenewalWarningEmail({
+          to: adminEmail.email,
+          firstName: adminEmail.firstName,
+          planKey: matchingSub.planKey,
+          renewalDate,
+          amountDue,
+          currency: matchingSub.currency ?? 'usd',
+        });
+        console.log(`[billing] Renewal warning email sent to ${adminEmail.email} for company ${matchingSub.userCompanyId}`);
+      }
+    }
+
+    await billingRepository.logEvent({
+      userCompanyId: matchingSub.userCompanyId,
+      stripeEventId: event.id,
+      eventType: 'invoice.upcoming',
+      previousStatus: matchingSub.status,
+      previousPlanKey: matchingSub.planKey,
+      newStatus: matchingSub.status,
+      newPlanKey: matchingSub.planKey,
+      payload: {
+        renewalDate,
+        amountDue,
+        currency: matchingSub.currency ?? 'usd',
+        billingInterval: matchingSub.billingInterval,
+      },
+    });
+  }
+
+Note: the audit row is written for both monthly and annual subs (audit covers
+all upcoming renewals). The renewal email is only sent for annual subs, same
+behaviour as before.
+
+Server restart
+After all edits compile cleanly, restart the server. billing.routes.ts is
+mounted from server/routes/index.ts, so a restart is required to pick up the
+new handler code and writer signature.
+
+Post-build verification
+
+  1. Confirm code compiles. Paste any TypeScript errors verbatim before
+     proceeding.
+
+  2. Run dev DB checks:
+
+     \d webhook_events
+     SELECT indexname FROM pg_indexes WHERE tablename = 'webhook_events';
+     SELECT COUNT(1) FROM webhook_events;
+     SELECT COUNT(1) FROM subscription_events;
+
+  3. Trigger one event of each lifecycle type, then resend each twice
+     to confirm idempotency. Substitute the dev endpoint id (we_xxx) for
+     STRIPE_WEBHOOK_ENDPOINT_ID. If the endpoint id is not known, use:
+
+     stripe webhook_endpoints list
+
+     and pick the dev URL.
+
+     stripe trigger customer.subscription.updated
+     stripe trigger customer.subscription.deleted
+     stripe trigger invoice.paid
+     stripe trigger invoice.payment_failed
+     stripe trigger invoice.upcoming
+
+     For each event id Stripe returned, resend twice:
+     stripe events resend evt_xxx --webhook-endpoint we_xxx
+     stripe events resend evt_xxx --webhook-endpoint we_xxx
+
+  4. Post-trigger DB checks:
+
+     SELECT stripe_event_id, COUNT(1) FROM subscription_events
+     WHERE stripe_event_id IS NOT NULL
+     GROUP BY stripe_event_id HAVING COUNT(1) > 1;
+     -- Expect zero rows.
+
+     SELECT event_type, status, COUNT(1) FROM webhook_events
+     WHERE created_at > NOW() - INTERVAL '15 minutes'
+     GROUP BY event_type, status ORDER BY event_type, status;
+     -- Expect status=processed for first delivery, status=skipped for resends.
+
+     SELECT id, stripe_event_id, event_type, status, created_at
+     FROM webhook_events
+     ORDER BY created_at DESC LIMIT 20;
+     -- Confirm stripe_event_id column is populated with evt_xxx for new rows.
+
+     SELECT event_type, COUNT(1) FROM subscription_events
+     WHERE stripe_event_id IS NOT NULL
+       AND processed_at > NOW() - INTERVAL '15 minutes'
+     GROUP BY event_type ORDER BY event_type;
+     -- Confirm invoice.upcoming appears (assuming the trigger event matched
+     -- a real subscription in dev DB).
+
+Constraints
+  - Dev only. Do not deploy to prod.
+  - One logical change set: idempotency + envelope observability + invoice.upcoming
+    audit. No additional refactoring.
+  - Plain UK English. No em dashes in any new code comments or log strings.
+  - If anything diverges from the plan above, stop and report rather than
+    improvising.
