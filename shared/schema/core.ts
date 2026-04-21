@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, serial, varchar, text, integer, boolean, timestamp, inet, unique, numeric, date, jsonb, uuid, check, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, inet, unique, numeric, date, jsonb, uuid, check, index, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -40,6 +40,9 @@ export const users = pgTable("users", {
   jobTitle: varchar("job_title", { length: 100 }),
   clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
   welcomeEmailSentAt: timestamp("welcome_email_sent_at"),
+  assignedPromoCampaignId: integer("assigned_promo_campaign_id"),
+  assignedByAdminId: integer("assigned_by_admin_id").references((): AnyPgColumn => users.id),
+  assignedAt: timestamp("assigned_at", { withTimezone: true }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
