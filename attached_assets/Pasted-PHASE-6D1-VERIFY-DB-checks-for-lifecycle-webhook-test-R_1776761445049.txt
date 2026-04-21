@@ -1,0 +1,93 @@
+PHASE 6D1 VERIFY - DB checks for lifecycle webhook test
+
+Read-only. No edits.
+
+Context: I just ran 4 stripe trigger commands plus 2 resends of each (8 resends total)
+against the dev webhook endpoint. Triggers fired ~30-45 min ago. Resends just finished.
+Each unique evt_xxx should have hit the endpoint 3 times: 1 from trigger (status=processed),
+2 from resend (status=skipped, because the route-level dedup catches them).
+
+The 4 evt_xxx ids are:
+  evt_1TOZsv2N2rRCsCfr77nicGYG  customer.subscription.updated
+  evt_1TOZt72N2rRCsCfrndydYXU5  customer.subscription.deleted
+  evt_1TOZtK2N2rRCsCfr5mdrbONH  invoice.paid
+  evt_1TOZtU2N2rRCsCfr0WD6Fy07  invoice.payment_failed
+
+Note: invoice.upcoming was not tested because Stripe CLI does not support triggering it.
+Code review will cover that one.
+
+Run all queries below and paste output verbatim.
+
+Query 1 - webhook_events for the 4 specific evt_xxx ids
+
+  SELECT stripe_event_id, event_type, status, COUNT(1)
+  FROM webhook_events
+  WHERE stripe_event_id IN (
+    'evt_1TOZsv2N2rRCsCfr77nicGYG',
+    'evt_1TOZt72N2rRCsCfrndydYXU5',
+    'evt_1TOZtK2N2rRCsCfr5mdrbONH',
+    'evt_1TOZtU2N2rRCsCfr0WD6Fy07'
+  )
+  GROUP BY stripe_event_id, event_type, status
+  ORDER BY stripe_event_id, status;
+
+  Expected: each evt_xxx has 1 row at status=processed and 2 rows at status=skipped.
+
+Query 2 - all webhook_events in the last hour, ordered
+
+  SELECT id, stripe_event_id, event_type, status, created_at
+  FROM webhook_events
+  WHERE created_at > NOW() - INTERVAL '1 hour'
+  ORDER BY created_at DESC LIMIT 50;
+
+  Expected: every row has a non-null stripe_event_id starting with evt_.
+  Confirms the new column is being populated by the writer.
+
+Query 3 - status breakdown for the test window
+
+  SELECT event_type, status, COUNT(1)
+  FROM webhook_events
+  WHERE created_at > NOW() - INTERVAL '1 hour'
+  GROUP BY event_type, status
+  ORDER BY event_type, status;
+
+  Expected: lifecycle events show both processed and skipped counts.
+  Cascaded events (e.g. customer.created, payment_intent.succeeded) may also appear,
+  which is fine.
+
+Query 4 - subscription_events idempotency check
+
+  SELECT stripe_event_id, COUNT(1)
+  FROM subscription_events
+  WHERE stripe_event_id IS NOT NULL
+  GROUP BY stripe_event_id
+  HAVING COUNT(1) > 1;
+
+  Expected: ZERO ROWS. ON CONFLICT DO NOTHING must hold.
+  If this returns rows, idempotency is broken.
+
+Query 5 - subscription_events writes from this test
+
+  SELECT id, stripe_event_id, event_type, processed_at
+  FROM subscription_events
+  WHERE processed_at > NOW() - INTERVAL '1 hour'
+  ORDER BY processed_at DESC LIMIT 20;
+
+  Note: stripe trigger uses fresh sub_xxx that do not exist in dev DB,
+  so most lifecycle events will hit the "no matching subscription" branch and
+  will NOT write to subscription_events. This query is mostly informational.
+  Zero rows here is expected and not a problem.
+
+Query 6 - server log inspection
+
+  Scan the dev server console output for the last hour. Confirm:
+  - No "Failed to log webhook event" errors.
+  - No unhandled Promise rejections.
+  - No TypeScript runtime errors thrown from any of the lifecycle handlers.
+  - For each delivery, an entry should exist showing the route received the event.
+
+  Paste any anomalous log lines verbatim. If clean, say "no anomalies".
+
+Report
+  Paste outputs of Query 1-5 verbatim, plus the Query 6 summary.
+  No interpretation needed. I will diagnose from the raw output.
