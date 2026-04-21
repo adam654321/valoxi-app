@@ -1,0 +1,70 @@
+PHASE 6D2 TEST PHASE 3 (retry) - verify Day 0 dunning
+
+Read-only.
+
+Adam re-triggered the dunning path by pinning declining card pm_1TOb5G2N2rRCsCfrKWgfa0Rw
+to sub_1TOUG42N2rRCsCfrdzdaN9WB and forcing billing_cycle_anchor=now. Stripe
+should generate and attempt-pay a fresh prorated invoice, the charge fails on
+the declining card, invoice.payment_failed fires for the real sub.
+
+Run all queries below, paste output verbatim.
+
+Query 1 - confirm webhook(s) received in last 10 minutes
+
+  SELECT id, stripe_event_id, event_type, status, created_at
+  FROM webhook_events
+  WHERE created_at > NOW() - INTERVAL '10 minutes'
+  ORDER BY created_at;
+
+  Expected: a flurry of events from the billing cycle anchor reset, including
+  customer.subscription.updated and invoice.payment_failed (the one we care
+  about). Possibly invoice.created, invoice.finalized, invoice.paid (NO if
+  card declines), customer.subscription.updated.
+
+Query 2 - confirm sub flipped to past_due with timestamp stamped
+
+  SELECT id, status, past_due_since, dunning_day7_email_sent_at
+  FROM subscriptions WHERE id = 30;
+
+  Expected: status=past_due, past_due_since IS NOT NULL (within last
+  ~10 minutes), dunning_day7_email_sent_at IS NULL.
+
+Query 3 - THE KEY CHECK: confirm dunning.day0_sent audit row exists
+
+  SELECT id, stripe_event_id, event_type, previous_status, new_status,
+         processed_at, payload
+  FROM subscription_events
+  WHERE user_company_id = 30
+    AND event_type = 'dunning.day0_sent'
+    AND processed_at > NOW() - INTERVAL '10 minutes';
+
+  Expected: 1 row, previous_status=active (or trialing if order differs),
+  new_status=past_due, payload contains the stripe event id.
+
+Query 4 - full audit timeline for sub 30 in last 10 min
+
+  SELECT id, stripe_event_id, event_type, previous_status, new_status,
+         processed_at
+  FROM subscription_events
+  WHERE user_company_id = 30
+    AND processed_at > NOW() - INTERVAL '10 minutes'
+  ORDER BY processed_at;
+
+  Expected (rough order, may vary by Stripe delivery sequencing):
+    subscription.renewed (from customer.subscription.updated active)
+    invoice.payment_failed (the past_due transition)
+    dunning.day0_sent (the day-0 email audit)
+
+Query 5 - server log scan, last 10 minutes
+
+  Confirm:
+  - invoice.payment_failed handler executed
+  - admin_comped guard log did NOT appear
+  - No errors related to email send
+  - Resend confirmation log line present (or whatever the existing email
+    success logging looks like)
+
+  Paste anomalies, or "no anomalies".
+
+Adam will separately confirm the day-0 email arrived in adamauty@me.com inbox.
+Subject expected: "Payment failed for your Valoxi PROFESSIONAL plan"
