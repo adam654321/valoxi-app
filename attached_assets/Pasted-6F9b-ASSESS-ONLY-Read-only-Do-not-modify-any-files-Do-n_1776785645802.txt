@@ -1,0 +1,91 @@
+6F9b ASSESS ONLY. Read-only. Do not modify any files. Do not run any SQL.
+
+Goal of 6F9b (do not build yet): remove the two remaining callers of promoCodeService.claimCode so claimCode itself can be deleted.
+
+Two callers:
+A. server/routes/auth.routes.ts:116 - registration typed-code claim path.
+B. server/routes/billing.routes.ts:163 - checkout.session.completed webhook isNewSignup branch.
+
+Context: 6F9a removed the billing page typed-code UI and the /claim-promo endpoint and stripped promoCodeId from new checkout metadata, so the webhook branch at 163 is already unplugged for new sessions. 6C1 previously flagged the isNewSignup branch as dead code to delete. 6F9b is a natural home for that cleanup.
+
+Critical assumption to verify in this assess: the auth registration typed-code path is obsolete under the Clerk + invite-assignment model. If registration still needs a typed-code capability for any real user flow, 6F9b shrinks to webhook-only and claimCode survives. We need to know before designing the build.
+
+Produce a verbatim change plan. Work through the eleven points below in order. Paste VERBATIM quotes with file paths and line numbers.
+
+1. Paste the full context around server/routes/auth.routes.ts:116 (call to claimCode). Show at least 40 lines before and 20 after, enough to understand the handler this call sits inside. Include the route path, HTTP method, auth middleware, and what happens conditionally on claimCode success/failure.
+
+2. Identify the handler name and route path of the auth.routes.ts function that calls claimCode. Is it POST /register, POST /signup, POST /invitations/accept, or something else?
+
+3. Check whether the route identified in Point 2 is still mounted. Grep server/routes/index.ts for the router import and its app.use() line. Confirm whether the route is publicly reachable today, or whether it was already unplugged as part of 6C2 (delete /auth/register endpoint per handover).
+
+4. If the route is still mounted, identify any client-side callers. Grep client/src/ for the route path. List each hit.
+
+5. Paste the isNewSignup webhook branch in full from server/routes/billing.routes.ts. The 6F9 assess Point 7 showed lines 91-196; paste fresh because we need exact current post-6F9a state. Specifically confirm whether `if (promoCodeId)` at line 162 still routes into the claimCode call at 163, and whether the surrounding isNewSignup block reads any OTHER data that needs preserving when we delete it (user creation, subscription insertion, welcome email, etc).
+
+6. Within the isNewSignup block, trace every side effect and list them in order:
+   - user_companies insert
+   - users insert (with random temp password)
+   - subscriptions insert
+   - claimCode call (the one we're removing)
+   - seedDefaultPipelineStages call
+   - magic link generation
+   - welcome email send
+
+All of these collectively constitute the "sign up through Stripe checkout and land in the app" path. Per handover 6C1/6C2, this whole path is obsolete because Clerk now owns signup. Confirm which of these side effects happen elsewhere now:
+  - User creation: Clerk webhook handleUserCreated (6F4 touched this).
+  - Subscription creation: handleUserCreated via createTrialSubscription or createFiveDNewMemberTrial (6F4).
+  - Welcome email: sendOnboardingWelcome in handleUserCreated.
+  - Pipeline stages: seedDefaultPipelineStages. Confirm whether this still fires elsewhere, OR whether removing the webhook branch orphans it.
+
+Report on pipeline stages seeding specifically: find every call site of seedDefaultPipelineStages in server/. If this is the ONLY call site, 6F9b's branch deletion would stop pipeline seeding entirely. That would be a regression. We'd need to move the call into handleUserCreated.
+
+7. Check whether the !isNewSignup branch at billing.routes.ts:181-192 still needs the metadata.promoCodeId variable read earlier at line 96. If no code in the !isNewSignup branch references it, the line 96 read itself can be deleted along with the isNewSignup branch.
+
+8. Confirm the current state of /auth/register endpoint (handover 6C2 deferred this). Has it been removed? If not, it could still be a live mount.
+
+9. Paste promoCodeService.claimCode one final time from post-6F9a state to confirm it hasn't already been renamed, moved, or otherwise touched.
+
+10. Check promoCodeService for any other methods used only by the two soon-to-be-removed callers. If validateCode is only called from within claimCode (from 6F5 assess Point 3 it appears to be the case), we may want to remove it too. Report on each method in PromoCodeService and whether it has callers outside the class.
+
+11. Check whether the promo_codes and promo_code_campaigns table imports in promo-code.service.ts would still be needed after claimCode and validateCode are deleted. resolveCheckoutCoupon (6F5) also reads promoCodeCampaigns. getWaitlistPromoCopy and isFiveDNewMember take plain objects, not DB queries. Confirm which schema imports survive.
+
+Output format:
+
+SECTION A - VERBATIM EXISTING STATE
+One subsection per point 1 through 11.
+
+SECTION B - PROPOSED 6F9b BUILD PLAN
+
+B1 - Auth registration cleanup
+- If Point 3 confirms the route is unmounted (6C2 already shipped): no change needed in auth.routes.ts; just note it's dead and delete the handler body along with the claimCode call.
+- If the route is still mounted and has live callers (Point 4): STOP and escalate. 6F9b cannot delete claimCode until the registration typed-code capability is retired by product decision.
+- Propose exact deletion based on findings.
+
+B2 - Webhook isNewSignup branch removal
+- Delete the entire `if (isNewSignup) { ... }` block inside checkout.session.completed (lines 99-180 per 6F9 assess).
+- Delete line 96 (const promoCodeId = ...) ONLY if Point 7 confirms no remaining reference.
+- Preserve the !isNewSignup branch at lines 181-192 (handles the normal existing-user Stripe checkout completion).
+- Preserve the logWebhookEvent call at line 194.
+- If seedDefaultPipelineStages is orphaned by this deletion (Point 6), propose where it gets called from instead, OR confirm it's already called elsewhere.
+
+B3 - Remove promoCodeService.claimCode
+- Delete the full claimCode method.
+- Delete validateCode if Point 10 confirms it's an internal helper only used by claimCode.
+- Clean up unused imports in promo-code.service.ts per Point 11.
+
+B4 - Remove ClaimResult interface if it's no longer referenced
+- If claimCode was the only method returning ClaimResult, delete the interface.
+
+B5 - Test coverage
+- After build, grep server/ one more time for 'claimCode' to confirm zero references remain.
+
+SECTION C - RISKS AND UNKNOWNS
+- Pipeline stages seeding regression (Point 6).
+- Any live consumer of the registration endpoint that is NOT in client/src/ (could be documentation, internal tools, or legacy flows).
+- In-flight Stripe sessions with isNewSignup=true metadata: what happens when they hit the webhook post-deletion?
+- Whether validateCode is exported and used anywhere outside promoCodeService (unlikely but worth checking).
+
+SECTION D - BUILD SIZE ESTIMATE
+State whether 6F9b should be one build prompt or split further.
+
+Do not modify any files. Do not run any SQL. This is assess only.
