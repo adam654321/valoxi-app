@@ -1,0 +1,73 @@
+Phase 6B4 correction. Remove the duplicate "5DC" campaign created manually via the admin UI, and generate one test code per proper campaign for 6B5 smoke testing. Dev database only. Single transaction.
+Before running, confirm the dev database is targeted. If anything shows prod, stop.
+sqlbegin;
+
+-- Step 1: Confirm current state before touching anything.
+-- Expected: 4 campaigns (3 from 6B4 insert, 1 from Adam's manual 5DC creation).
+select id, name, referral_source, free_months_total, stripe_coupon_id, code_prefix, created_by_user_id
+from promo_code_campaigns
+order by id;
+
+select p.id, p.campaign_id, p.code, c.name as campaign_name
+from promo_codes p
+inner join promo_code_campaigns c on c.id = p.campaign_id
+order by p.id;
+
+-- Step 2: Delete the duplicate "5DC" campaign.
+-- Identify by exact name match. Child codes first to avoid FK issues.
+delete from promo_codes
+where campaign_id in (
+  select id from promo_code_campaigns where name = '5DC'
+);
+
+delete from promo_code_campaigns where name = '5DC';
+
+-- Step 3: Generate one test code per proper campaign.
+-- Codes follow the charset pattern ABCDEFGHJKLMNPQRSTUVWXYZ23456789 (5 chars after the prefix).
+-- Hand-picked values for dev predictability. Real production codes will be randomly generated.
+insert into promo_codes (campaign_id, code, max_uses, expires_at)
+values
+  ((select id from promo_code_campaigns where name = 'Standard 5D community'), '5DC-K7X2P', 1, null),
+  ((select id from promo_code_campaigns where name = 'Early Bird'), 'EB-M9A4R', 1, null),
+  ((select id from promo_code_campaigns where name = '5D New Member'), '5DNM-T3Q8F', 1, null);
+
+-- Step 4: Verify final state before commit.
+select c.id, c.name, c.referral_source, c.free_months_total, c.stripe_coupon_id, c.post_free_period_coupon_id, c.code_prefix,
+       count(p.id) as code_count
+from promo_code_campaigns c
+left join promo_codes p on p.campaign_id = c.id
+group by c.id, c.name, c.referral_source, c.free_months_total, c.stripe_coupon_id, c.post_free_period_coupon_id, c.code_prefix
+order by c.id;
+
+select p.code, p.campaign_id, p.uses_count, p.max_uses, c.name as campaign_name
+from promo_codes p
+inner join promo_code_campaigns c on c.id = p.campaign_id
+order by p.id;
+
+-- Step 5: If final state shows exactly 3 campaigns with 1 code each, commit. If anything looks off, rollback.
+commit;
+Validation after commit.
+Check 1. Three campaigns total.
+sqlselect count(*) from promo_code_campaigns;
+Expected: 3.
+Check 2. Three codes total, one per campaign.
+sqlselect count(*) as total_codes, count(distinct campaign_id) as distinct_campaigns from promo_codes;
+Expected: total_codes=3, distinct_campaigns=3.
+Check 3. Exact code strings landed.
+sqlselect code from promo_codes order by code;
+Expected: 5DC-K7X2P, 5DNM-T3Q8F, EB-M9A4R.
+Check 4. No orphan codes pointing at a deleted campaign.
+sqlselect count(*) from promo_codes p left join promo_code_campaigns c on c.id = p.campaign_id where c.id is null;
+Expected: 0.
+Check 5. Admin page visual verification (in an authenticated browser). Load /admin/promo-codes. Expected:
+
+Campaigns section: 3 rows, no "5DC" row, each shows Generated 1 Claimed 0 Remaining 1.
+Code List: 3 codes (5DC-K7X2P, EB-M9A4R, 5DNM-T3Q8F), all Unclaimed.
+
+Deliverable:
+
+Raw output of the Step 1 SELECTs (pre-state).
+Raw output of the Step 4 SELECTs (post-state, pre-commit).
+Confirmation the commit succeeded.
+Each check 1 to 5 PASS or FAIL.
+Confirmation 6B4 correction is complete.
