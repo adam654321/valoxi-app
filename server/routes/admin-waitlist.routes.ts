@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess } from '../utils/response';
 import { db } from '../db';
-import { waitlist, users, userCompanies, userCompanyMemberships } from '@shared/schema';
+import { waitlist, users, userCompanies, userCompanyMemberships, promoCodeCampaigns } from '@shared/schema';
 import { waitlistRepository } from '../repositories/waitlist.repository';
 import { emailApiService } from '../services/email.service';
 import { config } from '../config';
@@ -60,9 +60,34 @@ router.post('/:id/decline', asyncHandler(async (req: Request, res: Response) => 
   sendSuccess(res, updated);
 }));
 
+const inviteWaitlistSchema = z.object({
+  promoCodeCampaignId: z.number().int().positive().optional().nullable(),
+});
+
 router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
-  const adminUserId = req.session.userId!;
+  const adminUserId = req.session.userId;
+  if (!adminUserId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Admin session is missing user context',
+    });
+  }
+  const body = inviteWaitlistSchema.parse(req.body ?? {});
+  const promoCodeCampaignId = body.promoCodeCampaignId ?? null;
   const waitlistId = req.params.id;
+
+  if (promoCodeCampaignId !== null) {
+    const [campaign] = await db
+      .select({ id: promoCodeCampaigns.id })
+      .from(promoCodeCampaigns)
+      .where(eq(promoCodeCampaigns.id, promoCodeCampaignId));
+    if (!campaign) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid promo campaign id: ${promoCodeCampaignId}`,
+      });
+    }
+  }
 
   let result: { userId: number; userCompanyId: number; email: string; firstName: string };
 
@@ -125,6 +150,9 @@ router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
           role: 'user',
           userRole: 'company_admin',
           isCompanyAdmin: true,
+          assignedPromoCampaignId: promoCodeCampaignId,
+          assignedByAdminId: promoCodeCampaignId ? adminUserId : null,
+          assignedAt: promoCodeCampaignId ? new Date() : null,
         })
         .returning({ id: users.id });
 
@@ -197,7 +225,7 @@ router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
   }
 
   console.log(
-    `[admin-waitlist] action=invite waitlistId=${waitlistId} adminUserId=${adminUserId} targetUserId=${result.userId} targetCompanyId=${result.userCompanyId}`
+    `[admin-waitlist] action=invite waitlistId=${waitlistId} adminUserId=${adminUserId} targetUserId=${result.userId} targetCompanyId=${result.userCompanyId} promoCodeCampaignId=${promoCodeCampaignId ?? 'none'}`
   );
 
   sendSuccess(res, {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { formatDistanceToNow, format, differenceInDays } from "date-fns";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ThumbsUp, ThumbsDown, Send, Eye, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,12 @@ interface WaitlistRow {
   statusChangedAt: string | null;
   statusChangedBy: number | null;
   invitedUserId: number | null;
+}
+
+interface PromoCampaignOption {
+  id: number;
+  name: string;
+  referralSource: string;
 }
 
 const STATUS_LABELS: Record<WaitlistStatus | "all", string> = {
@@ -105,6 +112,7 @@ export default function AdminWaitlist() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [detailsRow, setDetailsRow] = useState<WaitlistRow | null>(null);
   const [bulkProgress, setBulkProgress] = useState<BulkProgress | null>(null);
+  const [selectedPromoCampaignId, setSelectedPromoCampaignId] = useState<string>("none");
 
   const { data: rows, isLoading, error, refetch } = useQuery<WaitlistRow[]>({
     queryKey: ["/api/v2/admin/waitlist"],
@@ -114,6 +122,15 @@ export default function AdminWaitlist() {
       return body?.data ?? [];
     },
   });
+
+  const { data: campaignsData } = useQuery<{ success: boolean; data: PromoCampaignOption[] }>({
+    queryKey: ["/api/v2/admin/promo-campaigns"],
+  });
+  const promoCampaigns = campaignsData?.data ?? [];
+
+  useEffect(() => {
+    setSelectedPromoCampaignId("none");
+  }, [confirmAction]);
 
   const counts = useMemo(() => {
     const base: Record<"all" | WaitlistStatus, number> = {
@@ -195,8 +212,10 @@ export default function AdminWaitlist() {
   });
 
   const inviteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiRequest("POST", `/api/v2/admin/waitlist/${id}/invite`);
+    mutationFn: async ({ id, promoCodeCampaignId }: { id: string; promoCodeCampaignId?: number }) => {
+      const res = await apiRequest("POST", `/api/v2/admin/waitlist/${id}/invite`, {
+        promoCodeCampaignId,
+      });
       return res.json();
     },
     onSuccess: (data: any) => {
@@ -209,13 +228,15 @@ export default function AdminWaitlist() {
     },
   });
 
-  const runBulkInvite = async (targetRows: WaitlistRow[]) => {
+  const runBulkInvite = async (targetRows: WaitlistRow[], promoCodeCampaignId?: number) => {
     setBulkProgress({ current: 0, total: targetRows.length, succeeded: 0, failed: [] });
     for (let i = 0; i < targetRows.length; i++) {
       const row = targetRows[i];
       setBulkProgress((p) => p ? { ...p, current: i + 1 } : p);
       try {
-        const res = await apiRequest("POST", `/api/v2/admin/waitlist/${row.id}/invite`);
+        const res = await apiRequest("POST", `/api/v2/admin/waitlist/${row.id}/invite`, {
+          promoCodeCampaignId,
+        });
         if (res.ok) {
           setBulkProgress((p) => p ? { ...p, succeeded: p.succeeded + 1 } : p);
         } else {
@@ -240,10 +261,18 @@ export default function AdminWaitlist() {
     if (!confirmAction) return;
     if (confirmAction.type === "approve") approveMutation.mutate(confirmAction.row.id);
     else if (confirmAction.type === "decline") declineMutation.mutate(confirmAction.row.id);
-    else if (confirmAction.type === "invite") inviteMutation.mutate(confirmAction.row.id);
+    else if (confirmAction.type === "invite") {
+      inviteMutation.mutate({
+        id: confirmAction.row.id,
+        promoCodeCampaignId: selectedPromoCampaignId === "none" ? undefined : Number(selectedPromoCampaignId),
+      });
+    }
     else if (confirmAction.type === "bulkInvite") {
       setConfirmAction(null);
-      runBulkInvite(confirmAction.rows);
+      runBulkInvite(
+        confirmAction.rows,
+        selectedPromoCampaignId === "none" ? undefined : Number(selectedPromoCampaignId)
+      );
     }
   };
 
@@ -436,6 +465,22 @@ export default function AdminWaitlist() {
                   Send the invitation email to <strong>{confirmAction.row.fullName}</strong> at <strong>{confirmAction.row.email}</strong>? This will create their user record and send the email immediately.
                 </DialogDescription>
               </DialogHeader>
+              <div className="space-y-2 py-2">
+                <label className="text-sm font-medium">Promo campaign</label>
+                <Select value={selectedPromoCampaignId} onValueChange={setSelectedPromoCampaignId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {promoCampaigns.map((campaign) => (
+                      <SelectItem key={campaign.id} value={String(campaign.id)}>
+                        {campaign.name} ({campaign.referralSource})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <DialogFooter>
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                 <Button onClick={executeConfirm} disabled={inviteMutation.isPending}>
@@ -477,6 +522,22 @@ export default function AdminWaitlist() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+              <div className="space-y-2 py-2">
+                <label className="text-sm font-medium">Promo campaign</label>
+                <Select value={selectedPromoCampaignId} onValueChange={setSelectedPromoCampaignId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {promoCampaigns.map((campaign) => (
+                      <SelectItem key={campaign.id} value={String(campaign.id)}>
+                        {campaign.name} ({campaign.referralSource})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <DialogFooter>
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
