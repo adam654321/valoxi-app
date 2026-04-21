@@ -1,0 +1,80 @@
+Phase 6B4 build. Align promo_code_campaigns with the new ADJV coupon IDs. Single transaction, DELETE the orphan test row (id=5 and its 10 child codes) plus INSERT three production campaigns (Standard 5D community, Early Bird, 5D New Member). Dev database only. Not touching prod.
+Before you run anything, confirm you are pointing at the dev database. If the connection string shows prod, stop.
+Safety. Everything runs in a single transaction. If anything fails, the whole thing rolls back and the table is untouched. Use the following exact SQL.
+sqlbegin;
+
+-- Step 1: Delete the test campaign id=5 and its 10 child codes.
+-- Child rows first, in case there is no ON DELETE CASCADE.
+delete from promo_codes where campaign_id = 5;
+delete from promo_code_campaigns where id = 5;
+
+-- Step 2: Insert Campaign A — Standard 5D community.
+insert into promo_code_campaigns
+  (name, referral_source, free_months_total, stripe_coupon_id, post_free_period_coupon_id, code_prefix, max_uses_per_code, expires_at, created_by_user_id)
+values
+  ('Standard 5D community', '5d_community', 0, 'YBzQWYzq', null, '5DC', 1, null, 1);
+
+-- Step 3: Insert Campaign B — Early Bird.
+insert into promo_code_campaigns
+  (name, referral_source, free_months_total, stripe_coupon_id, post_free_period_coupon_id, code_prefix, max_uses_per_code, expires_at, created_by_user_id)
+values
+  ('Early Bird', 'early_bird', 0, '8GXzaftB', null, 'EB', 1, null, 1);
+
+-- Step 4: Insert Campaign C — 5D New Member.
+-- post_free_period_coupon_id = cEGIKCtT (same as claim-time) for belt-and-braces re-apply at month 6 transition.
+insert into promo_code_campaigns
+  (name, referral_source, free_months_total, stripe_coupon_id, post_free_period_coupon_id, code_prefix, max_uses_per_code, expires_at, created_by_user_id)
+values
+  ('5D New Member', '5d_community', 6, 'cEGIKCtT', 'cEGIKCtT', '5DNM', 1, null, 1);
+
+-- Step 5: Verify before commit. Show the final state.
+select id, name, referral_source, free_months_total, stripe_coupon_id, post_free_period_coupon_id, code_prefix, max_uses_per_code, expires_at, created_by_user_id
+from promo_code_campaigns
+order by id;
+
+-- Step 6: Count remaining promo_codes rows. Should be 0.
+select count(*) as remaining_codes from promo_codes;
+
+-- Step 7: If the SELECT output looks right, commit. If anything looks wrong, rollback.
+commit;
+Notes on values:
+
+created_by_user_id = 1. Matches the pattern of the existing test row (also created by user id 1, which is Adam). Acceptable for system-inserted campaigns.
+code_prefix values (5DC, EB, 5DNM) follow the uppercase short-prefix pattern from the existing Test row. They drive what codes look like when generated: 5DC-AB3XY, EB-K7MPQ, 5DNM-9JXHR.
+max_uses_per_code = 1. Standard for one-user-one-code assignment.
+expires_at = null. No expiry. Campaigns stay live until Adam decides otherwise.
+
+Validation after the commit:
+Check 1. Re-run the same SELECT to confirm three rows persisted.
+select id, name, referral_source, free_months_total, stripe_coupon_id, post_free_period_coupon_id
+from promo_code_campaigns
+order by id;
+Expected: three rows, id values will be whatever Postgres auto-assigns (likely 6, 7, 8 since the test row was id=5), correct coupon IDs, correct post_free_period_coupon_id (null, null, cEGIKCtT).
+Check 2. Run this to confirm the stripe_coupon_id values match the ADJV Stripe account exactly.
+select stripe_coupon_id from promo_code_campaigns order by id;
+Expected output: YBzQWYzq, 8GXzaftB, cEGIKCtT. Character-for-character match (case-sensitive, no whitespace).
+Check 3. Re-confirm promo_codes is empty.
+select count(*) from promo_codes;
+Expected: 0.
+Check 4. Stripe connectivity cross-check (manual, via browser).
+Load /admin/promo-codes in the browser as admin. Expected:
+
+Three campaigns visible in the Campaigns section (if that section exists on the page, otherwise look for campaign-level data in whatever section the page renders).
+Stripe Coupons table still shows the three coupons from Stripe (unchanged).
+
+Check 5. Referential integrity spot-check.
+select c.id as campaign_id, c.name, c.stripe_coupon_id, c.post_free_period_coupon_id,
+count(p.id) as code_count
+from promo_code_campaigns c
+left join promo_codes p on p.campaign_id = c.id
+group by c.id, c.name, c.stripe_coupon_id, c.post_free_period_coupon_id
+order by c.id;
+Expected: three rows, each with code_count = 0 (codes will be generated separately by Adam via the admin UI).
+Deliverable:
+
+Raw output of the SELECT inside the transaction (step 5 of the SQL block).
+Confirmation that the commit succeeded.
+Raw output of each check 1 to 5.
+Confirmation that 6B4 is complete, or a clear note it is not and why.
+
+Do NOT generate any promo codes as part of this build. That step happens separately after Adam confirms the campaign rows look right.
