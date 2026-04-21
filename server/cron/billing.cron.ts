@@ -3,14 +3,143 @@ import Stripe from 'stripe';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
-import { eq, and, gt, isNull, isNotNull, lt } from 'drizzle-orm';
+import { eq, and, gt, isNull, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { subscriptions, promoCodes, promoCodeCampaigns } from '@shared/schema/billing';
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
 import { emailService } from '../email';
+import { emailApiService } from '../services/email.service';
 import { userCompanies } from '@shared/schema/core';
 
+async function runDunningDay7ReminderJob(): Promise<void> {
+  const now = Date.now();
+  const from = new Date(now - 8 * 24 * 60 * 60 * 1000);
+  const to = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+  const candidates = await db
+    .select({ subscription: subscriptions, company: userCompanies })
+    .from(subscriptions)
+    .innerJoin(userCompanies, eq(subscriptions.userCompanyId, userCompanies.id))
+    .where(
+      and(
+        eq(subscriptions.status, 'past_due'),
+        isNotNull(subscriptions.pastDueSince),
+        isNull(subscriptions.dunningDay7EmailSentAt),
+        lte(subscriptions.pastDueSince, to),
+        gt(subscriptions.pastDueSince, from)
+      )
+    );
+
+  console.log(`[billing-cron] Day-7 dunning: ${candidates.length} candidate(s)`);
+
+  for (const row of candidates) {
+    const sub = row.subscription;
+    try {
+      const latest = await billingRepository.getByCompanyId(sub.userCompanyId);
+      if (
+        !latest ||
+        latest.status !== 'past_due' ||
+        latest.dunningDay7EmailSentAt ||
+        !latest.pastDueSince ||
+        latest.pastDueSince > to ||
+        latest.pastDueSince <= from
+      ) continue;
+
+      const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+      if (!adminEmail) {
+        console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping day-7 reminder`);
+        continue;
+      }
+
+      await emailApiService.sendDunningDay7Email({
+        to: adminEmail.email,
+        firstName: adminEmail.firstName || 'there',
+        planKey: latest.planKey,
+      });
+      await billingRepository.updateByCompanyId(sub.userCompanyId, {
+        dunningDay7EmailSentAt: new Date(),
+      });
+      await billingRepository.logEvent({
+        userCompanyId: sub.userCompanyId,
+        eventType: 'dunning.day7_sent',
+        previousStatus: latest.status,
+        previousPlanKey: latest.planKey,
+        newStatus: latest.status,
+        newPlanKey: latest.planKey,
+        payload: { pastDueSince: latest.pastDueSince },
+      });
+    } catch (err) {
+      console.error(`[billing-cron] Day-7 dunning failed for company ${sub.userCompanyId}:`, err);
+    }
+  }
+}
+
+async function runDunningCancellationJob(): Promise<void> {
+  const stripe = new Stripe(config.stripe.secretKey);
+  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+  const candidates = await db
+    .select({ subscription: subscriptions })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, 'past_due'),
+        isNotNull(subscriptions.pastDueSince),
+        lte(subscriptions.pastDueSince, cutoff)
+      )
+    );
+
+  console.log(`[billing-cron] Day-14 dunning auto-cancel: ${candidates.length} candidate(s)`);
+
+  for (const row of candidates) {
+    const sub = row.subscription;
+    try {
+      const latest = await billingRepository.getByCompanyId(sub.userCompanyId);
+      if (
+        !latest ||
+        latest.status !== 'past_due' ||
+        !latest.pastDueSince ||
+        latest.pastDueSince > cutoff ||
+        !latest.stripeSubscriptionId
+      ) continue;
+
+      // Write audit BEFORE Stripe cancel so customer.subscription.deleted
+      // handler can detect it via hasRecentEvent.
+      await billingRepository.logEvent({
+        userCompanyId: sub.userCompanyId,
+        eventType: 'dunning.auto_cancel_requested',
+        previousStatus: latest.status,
+        previousPlanKey: latest.planKey,
+        newStatus: 'canceled',
+        newPlanKey: latest.planKey,
+        payload: {
+          stripeSubscriptionId: latest.stripeSubscriptionId,
+          pastDueSince: latest.pastDueSince,
+          graceDays: 14,
+        },
+      });
+
+      await stripe.subscriptions.cancel(latest.stripeSubscriptionId);
+      console.log(`[billing-cron] Stripe sub ${latest.stripeSubscriptionId} cancelled (dunning) for company ${sub.userCompanyId}`);
+      // Local status flip and email both happen on the resulting
+      // customer.subscription.deleted webhook.
+    } catch (err) {
+      console.error(`[billing-cron] Day-14 dunning cancel failed for company ${sub.userCompanyId}:`, err);
+    }
+  }
+}
+
 export function initializeBillingCron(): void {
+  cron.schedule('0 4 * * *', async () => {
+    console.log('[billing-cron] Starting daily dunning checks (day 7 reminders + day 14 auto-cancel)...');
+    await runDunningDay7ReminderJob();
+    await runDunningCancellationJob();
+  }, {
+    timezone: 'Europe/London',
+  });
+
+  console.log('[billing-cron] Daily dunning checks scheduled at 04:00 London');
+
   cron.schedule('5 9 * * *', async () => {
     const stripe = new Stripe(config.stripe.secretKey);
     console.log('[billing-cron] Starting daily trial expiry check...');

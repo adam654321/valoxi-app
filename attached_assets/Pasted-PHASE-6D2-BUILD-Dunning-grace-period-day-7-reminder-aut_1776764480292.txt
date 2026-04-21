@@ -1,0 +1,457 @@
+PHASE 6D2 BUILD - Dunning grace period + day-7 reminder + auto-cancel
+
+This is the build for 6D2 based on the assess. Apply the changes below
+exactly. Dev only. Do not deploy to prod.
+
+Pre-flight (read-only)
+
+  1. grep -rn "dunning\|past_due_since\|pastDueSince" server/ shared/
+  2. grep -rn "admin_comped" server/ shared/
+  3. Confirm baseline:
+     SELECT COUNT(1) FROM subscriptions WHERE status = 'past_due';
+     SELECT id, user_company_id, status, stripe_subscription_id
+     FROM subscriptions WHERE id = 30;
+  Paste output of all three.
+
+Locked answers to assess open questions
+  Q1: admin_comped is HARD-GUARDED out of past_due transitions. Add explicit
+      check in the invoice.payment_failed handler.
+  Q2: Cancellation email moves OUT of the cron and INTO the
+      customer.subscription.deleted webhook handler, gated on an audit-row
+      check (only fire if a recent dunning.auto_cancel_requested row exists
+      for this sub). This way the email only fires after the Stripe cancel
+      genuinely succeeded and the webhook confirmed it.
+  Q3: Cron runs at Europe/London 04:00 to match existing billing cron rhythm.
+
+Change 1 - Schema migration
+
+File: shared/schema/billing.ts
+Locate the subscriptions pgTable definition (lines 10-39).
+
+Find:
+
+   currentPeriodStart: timestamp("current_period_start"),
+   currentPeriodEnd: timestamp("current_period_end"),
+   trialStart: timestamp("trial_start"),
+
+Replace with:
+
+   currentPeriodStart: timestamp("current_period_start"),
+   currentPeriodEnd: timestamp("current_period_end"),
+   pastDueSince: timestamp("past_due_since"),
+   dunningDay7EmailSentAt: timestamp("dunning_day7_email_sent_at"),
+   trialStart: timestamp("trial_start"),
+
+Then write the migration script as planned in the assess
+(server/scripts/add-dunning-columns.ts) with the EXECUTE=true gate.
+
+After writing the script, STOP and ask before running. Then on EXECUTE=true:
+
+  EXECUTE=true npx tsx server/scripts/add-dunning-columns.ts
+
+Verify:
+  \d subscriptions
+  Should show two new nullable timestamp columns.
+
+Change 2 - updateSubscriptionStatus state machine
+
+File: server/services/billing.service.ts
+Locate the updateSubscriptionStatus function (lines 142-193).
+
+Find:
+
+     if (data.cancelAtPeriodEnd !== undefined) updateData.cancelAtPeriodEnd = data.cancelAtPeriodEnd;
+
+     const subscription = await billingRepository.updateByCompanyId(userCompanyId, updateData);
+
+Replace with:
+
+     if (data.cancelAtPeriodEnd !== undefined) updateData.cancelAtPeriodEnd = data.cancelAtPeriodEnd;
+
+     // Dunning lifecycle: stamp past_due_since on first entry to past_due,
+     // clear it (and the day-7 email gate) on recovery to active or terminal canceled.
+     if (data.status === 'past_due' && previousStatus !== 'past_due') {
+       updateData.pastDueSince = new Date();
+       updateData.dunningDay7EmailSentAt = null;
+     }
+     if (data.status === 'active' || data.status === 'canceled') {
+       updateData.pastDueSince = null;
+       updateData.dunningDay7EmailSentAt = null;
+     }
+
+     const subscription = await billingRepository.updateByCompanyId(userCompanyId, updateData);
+
+This handles the common case (entered past_due once, then either pays or
+gets cancelled). It also handles the edge of customer.subscription.updated
+firing past_due (line 211 in billing.routes.ts) since updateSubscriptionStatus
+is the single chokepoint.
+
+Change 3 - admin_comped guard on invoice.payment_failed handler
+
+File: server/routes/billing.routes.ts
+Locate the invoice.payment_failed handler (around lines 297-324).
+
+Find:
+
+        if (subscriptionId) {
+          const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
+
+          if (matchingSub) {
+            await billingService.updateSubscriptionStatus(
+              matchingSub.userCompanyId,
+              { status: 'past_due' },
+              event.id
+            );
+          }
+        }
+
+Replace with:
+
+        if (subscriptionId) {
+          const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
+
+          if (matchingSub && matchingSub.status !== 'admin_comped') {
+            await billingService.updateSubscriptionStatus(
+              matchingSub.userCompanyId,
+              { status: 'past_due' },
+              event.id
+            );
+
+            // Day 0 dunning email. Idempotent because Stripe redelivery is
+            // short-circuited by the route-level dedup at lines 81-85, which
+            // checks subscription_events.stripe_event_id.
+            const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+            if (adminEmail) {
+              await emailApiService.sendPaymentFailedEmail({
+                to: adminEmail.email,
+                firstName: adminEmail.firstName || 'there',
+                planKey: matchingSub.planKey,
+              });
+              await billingRepository.logEvent({
+                userCompanyId: matchingSub.userCompanyId,
+                eventType: 'dunning.day0_sent',
+                previousStatus: matchingSub.status,
+                previousPlanKey: matchingSub.planKey,
+                newStatus: 'past_due',
+                newPlanKey: matchingSub.planKey,
+                payload: { stripeEventId: event.id },
+              });
+            }
+          } else if (matchingSub && matchingSub.status === 'admin_comped') {
+            console.log(`[billing] invoice.payment_failed for admin_comped sub ${matchingSub.id} (company ${matchingSub.userCompanyId}) - guard active, no past_due transition`);
+          }
+        }
+
+Change 4 - customer.subscription.deleted handler fires cancellation email
+
+File: server/routes/billing.routes.ts
+Locate the customer.subscription.deleted handler (around lines 243-258).
+
+Find:
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        const matchingSub = await billingRepository.getByStripeSubscriptionId(subscription.id);
+
+        if (matchingSub) {
+          await billingService.updateSubscriptionStatus(
+            matchingSub.userCompanyId,
+            { status: 'canceled' },
+            event.id
+          );
+        }
+
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+        break;
+      }
+
+Replace with:
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        const matchingSub = await billingRepository.getByStripeSubscriptionId(subscription.id);
+
+        if (matchingSub) {
+          // Capture if this cancellation was triggered by our dunning cron
+          // BEFORE flipping status (the audit row is recent and queryable).
+          const wasDunningCancel = await billingRepository.hasRecentEvent(
+            matchingSub.userCompanyId,
+            'dunning.auto_cancel_requested',
+            10 * 60 * 1000  // 10 minute window
+          );
+
+          await billingService.updateSubscriptionStatus(
+            matchingSub.userCompanyId,
+            { status: 'canceled' },
+            event.id
+          );
+
+          // Fire the cancellation email only when the cancel was dunning-driven.
+          // For user-initiated cancels (portal, admin), other code paths handle
+          // their own messaging.
+          if (wasDunningCancel) {
+            const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+            if (adminEmail) {
+              await emailApiService.sendDunningCancellationEmail({
+                to: adminEmail.email,
+                firstName: adminEmail.firstName || 'there',
+                planKey: matchingSub.planKey,
+              });
+              await billingRepository.logEvent({
+                userCompanyId: matchingSub.userCompanyId,
+                eventType: 'dunning.cancellation_email_sent',
+                previousStatus: 'past_due',
+                previousPlanKey: matchingSub.planKey,
+                newStatus: 'canceled',
+                newPlanKey: matchingSub.planKey,
+                payload: { stripeEventId: event.id, sentAt: new Date() },
+              });
+            }
+          }
+        }
+
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+        break;
+      }
+
+Change 5 - new repository method hasRecentEvent
+
+File: server/repositories/billing.repository.ts
+Add a new method to billingRepository (place it after the existing logEvent
+method, alphabetically grouped with other event helpers):
+
+  async hasRecentEvent(
+    userCompanyId: number,
+    eventType: string,
+    withinMs: number
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - withinMs);
+    const [row] = await db
+      .select({ id: subscriptionEvents.id })
+      .from(subscriptionEvents)
+      .where(
+        and(
+          eq(subscriptionEvents.userCompanyId, userCompanyId),
+          eq(subscriptionEvents.eventType, eventType),
+          gte(subscriptionEvents.processedAt, since)
+        )
+      )
+      .limit(1);
+    return !!row;
+  }
+
+Confirm `gte` is imported from drizzle-orm at the top of the file. If not,
+add to the existing drizzle-orm import line.
+
+Change 6 - email methods
+
+File: server/services/email.service.ts
+Add three new methods to EmailApiService class. Follow the exact style and
+shape of the existing sendRenewalWarningEmail method (lines 426-493) as the
+template: inline HTML, legacyEmailService.sendEmail, return
+{ success, message }.
+
+Method 1: sendPaymentFailedEmail
+  Subject: "Payment failed for your Valoxi {planLabel} plan"
+  Body should: explain the failure, reassure that we will retry automatically,
+  ask the user to update their payment method, link to /account or /billing
+  (whichever the codebase uses for billing settings, check existing
+  sendRenewalWarningEmail for the pattern). Mention the 14-day grace period.
+
+Method 2: sendDunningDay7Email
+  Subject: "Your Valoxi {planLabel} plan will be cancelled in 7 days"
+  Body: tell them payment is still failing, give them 7 more days to fix it,
+  link to billing settings, polite urgent tone (not aggressive).
+
+Method 3: sendDunningCancellationEmail
+  Subject: "Your Valoxi {planLabel} subscription has been cancelled"
+  Body: tell them subscription is cancelled, data preserved for 30 days
+  (matches Action Log Item 15 architecture decision), reactivation path
+  (sign back in and re-subscribe), no scolding tone.
+
+All three: plain UK English, NO em dashes, no exclamation marks beyond one
+per email max.
+
+Change 7 - new dunning cron jobs
+
+File: server/cron/billing.cron.ts
+
+Add imports if not already present:
+  import { lte, gt, isNull, isNotNull, sql } from 'drizzle-orm';
+  import { emailApiService } from '../services/email.service';
+
+Add two new functions following the existing per-row pattern:
+
+async function runDunningDay7ReminderJob(): Promise<void> {
+  const now = Date.now();
+  const from = new Date(now - 8 * 24 * 60 * 60 * 1000);
+  const to = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+  const candidates = await db
+    .select({ subscription: subscriptions, company: userCompanies })
+    .from(subscriptions)
+    .innerJoin(userCompanies, eq(subscriptions.userCompanyId, userCompanies.id))
+    .where(
+      and(
+        eq(subscriptions.status, 'past_due'),
+        isNotNull(subscriptions.pastDueSince),
+        isNull(subscriptions.dunningDay7EmailSentAt),
+        lte(subscriptions.pastDueSince, to),
+        gt(subscriptions.pastDueSince, from)
+      )
+    );
+
+  console.log(`[billing-cron] Day-7 dunning: ${candidates.length} candidate(s)`);
+
+  for (const row of candidates) {
+    const sub = row.subscription;
+    try {
+      const latest = await billingRepository.getByCompanyId(sub.userCompanyId);
+      if (
+        !latest ||
+        latest.status !== 'past_due' ||
+        latest.dunningDay7EmailSentAt ||
+        !latest.pastDueSince ||
+        latest.pastDueSince > to ||
+        latest.pastDueSince <= from
+      ) continue;
+
+      const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+      if (!adminEmail) {
+        console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping day-7 reminder`);
+        continue;
+      }
+
+      await emailApiService.sendDunningDay7Email({
+        to: adminEmail.email,
+        firstName: adminEmail.firstName || 'there',
+        planKey: latest.planKey,
+      });
+      await billingRepository.updateByCompanyId(sub.userCompanyId, {
+        dunningDay7EmailSentAt: new Date(),
+      });
+      await billingRepository.logEvent({
+        userCompanyId: sub.userCompanyId,
+        eventType: 'dunning.day7_sent',
+        previousStatus: latest.status,
+        previousPlanKey: latest.planKey,
+        newStatus: latest.status,
+        newPlanKey: latest.planKey,
+        payload: { pastDueSince: latest.pastDueSince },
+      });
+    } catch (err) {
+      console.error(`[billing-cron] Day-7 dunning failed for company ${sub.userCompanyId}:`, err);
+    }
+  }
+}
+
+async function runDunningCancellationJob(): Promise<void> {
+  const stripe = new Stripe(config.stripe.secretKey);
+  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+  const candidates = await db
+    .select({ subscription: subscriptions })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, 'past_due'),
+        isNotNull(subscriptions.pastDueSince),
+        lte(subscriptions.pastDueSince, cutoff)
+      )
+    );
+
+  console.log(`[billing-cron] Day-14 dunning auto-cancel: ${candidates.length} candidate(s)`);
+
+  for (const row of candidates) {
+    const sub = row.subscription;
+    try {
+      const latest = await billingRepository.getByCompanyId(sub.userCompanyId);
+      if (
+        !latest ||
+        latest.status !== 'past_due' ||
+        !latest.pastDueSince ||
+        latest.pastDueSince > cutoff ||
+        !latest.stripeSubscriptionId
+      ) continue;
+
+      // Write audit BEFORE Stripe cancel so customer.subscription.deleted
+      // handler can detect it via hasRecentEvent.
+      await billingRepository.logEvent({
+        userCompanyId: sub.userCompanyId,
+        eventType: 'dunning.auto_cancel_requested',
+        previousStatus: latest.status,
+        previousPlanKey: latest.planKey,
+        newStatus: 'canceled',
+        newPlanKey: latest.planKey,
+        payload: {
+          stripeSubscriptionId: latest.stripeSubscriptionId,
+          pastDueSince: latest.pastDueSince,
+          graceDays: 14,
+        },
+      });
+
+      await stripe.subscriptions.cancel(latest.stripeSubscriptionId);
+      console.log(`[billing-cron] Stripe sub ${latest.stripeSubscriptionId} cancelled (dunning) for company ${sub.userCompanyId}`);
+      // Local status flip and email both happen on the resulting
+      // customer.subscription.deleted webhook.
+    } catch (err) {
+      console.error(`[billing-cron] Day-14 dunning cancel failed for company ${sub.userCompanyId}:`, err);
+    }
+  }
+}
+
+Then schedule both inside initializeBillingCron, in the same Europe/London
+timezone block as the existing daily checks. Recommend 04:00 London for the
+new combined dunning run, to keep it well clear of the 09:00 cluster:
+
+  cron.schedule('0 4 * * *', async () => {
+    console.log('[billing-cron] Starting daily dunning checks (day 7 reminders + day 14 auto-cancel)...');
+    await runDunningDay7ReminderJob();
+    await runDunningCancellationJob();
+  }, {
+    timezone: 'Europe/London',
+  });
+
+Order matters: day-7 reminder runs FIRST so a sub at exactly day-14 boundary
+gets the reminder it might have missed before being cancelled.
+
+Server restart required after billing.cron.ts edits.
+
+Post-build verification
+
+  1. tsc clean (best-effort, ignore pre-existing):
+     npx tsc --noEmit 2>&1 | tail -10
+
+  2. Restart server. Confirm cron init log:
+     "[billing-cron] Daily dunning checks scheduled at 04:00 London"
+     (or similar, whatever the existing cron init logs look like)
+
+  3. Schema check:
+     \d subscriptions
+     Confirm past_due_since and dunning_day7_email_sent_at columns exist,
+     both timestamp, both nullable.
+
+  4. Functional checks come from a separate test cycle. Adam will time-travel
+     a real dev sub through each phase. Do not try to test cron behaviour
+     end-to-end now; just confirm the code compiles and the server runs
+     clean.
+
+  5. Paste:
+     - Pre-flight grep outputs.
+     - Migration command and result.
+     - tsc tail.
+     - Server startup log lines covering cron init.
+     - \d subscriptions output.
+     - Any anomalies. If none, say "no anomalies".
+
+Constraints
+  - Dev only. Do not deploy to prod.
+  - One logical change set: dunning lifecycle (schema + state machine
+    + admin_comped guard + day-0 email + day-7 cron + day-14 cron + cancel
+    email on deletion webhook + new repo method + 3 new email methods).
+  - Plain UK English. No em dashes anywhere in new code, comments, log
+    lines, email subjects, or email bodies.
+  - If anything diverges from this plan or you find a structural problem,
+    STOP and report. Do not improvise.

@@ -246,11 +246,42 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
         const matchingSub = await billingRepository.getByStripeSubscriptionId(subscription.id);
 
         if (matchingSub) {
+          // Capture if this cancellation was triggered by our dunning cron
+          // BEFORE flipping status (the audit row is recent and queryable).
+          const wasDunningCancel = await billingRepository.hasRecentEvent(
+            matchingSub.userCompanyId,
+            'dunning.auto_cancel_requested',
+            10 * 60 * 1000
+          );
+
           await billingService.updateSubscriptionStatus(
             matchingSub.userCompanyId,
             { status: 'canceled' },
             event.id
           );
+
+          // Fire the cancellation email only when the cancel was dunning-driven.
+          // For user-initiated cancels (portal, admin), other code paths handle
+          // their own messaging.
+          if (wasDunningCancel) {
+            const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+            if (adminEmail) {
+              await emailApiService.sendDunningCancellationEmail({
+                to: adminEmail.email,
+                firstName: adminEmail.firstName || 'there',
+                planKey: matchingSub.planKey,
+              });
+              await billingRepository.logEvent({
+                userCompanyId: matchingSub.userCompanyId,
+                eventType: 'dunning.cancellation_email_sent',
+                previousStatus: 'past_due',
+                previousPlanKey: matchingSub.planKey,
+                newStatus: 'canceled',
+                newPlanKey: matchingSub.planKey,
+                payload: { stripeEventId: event.id, sentAt: new Date() },
+              });
+            }
+          }
         }
 
         await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
@@ -310,12 +341,35 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
         if (subscriptionId) {
           const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
 
-          if (matchingSub) {
+          if (matchingSub && matchingSub.status !== 'admin_comped') {
             await billingService.updateSubscriptionStatus(
               matchingSub.userCompanyId,
               { status: 'past_due' },
               event.id
             );
+
+            // Day 0 dunning email. Idempotent because Stripe redelivery is
+            // short-circuited by the route-level dedup at lines 81-85, which
+            // checks subscription_events.stripe_event_id.
+            const adminEmail = await billingRepository.getAdminEmailForCompany(matchingSub.userCompanyId);
+            if (adminEmail) {
+              await emailApiService.sendPaymentFailedEmail({
+                to: adminEmail.email,
+                firstName: adminEmail.firstName || 'there',
+                planKey: matchingSub.planKey,
+              });
+              await billingRepository.logEvent({
+                userCompanyId: matchingSub.userCompanyId,
+                eventType: 'dunning.day0_sent',
+                previousStatus: matchingSub.status,
+                previousPlanKey: matchingSub.planKey,
+                newStatus: 'past_due',
+                newPlanKey: matchingSub.planKey,
+                payload: { stripeEventId: event.id },
+              });
+            }
+          } else if (matchingSub && matchingSub.status === 'admin_comped') {
+            console.log(`[billing] invoice.payment_failed for admin_comped sub ${matchingSub.id} (company ${matchingSub.userCompanyId}) - guard active, no past_due transition`);
           }
         }
 

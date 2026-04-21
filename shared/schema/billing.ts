@@ -17,6 +17,8 @@ export const subscriptions = pgTable("subscriptions", {
   billingInterval: billingIntervalEnum("billing_interval").default('month'),
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),
+  pastDueSince: timestamp("past_due_since"),
+  dunningDay7EmailSentAt: timestamp("dunning_day7_email_sent_at"),
   trialStart: timestamp("trial_start"),
   trialEnd: timestamp("trial_end"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),

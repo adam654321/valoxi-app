@@ -491,6 +491,150 @@ export class EmailApiService {
     });
     return { success, message: success ? 'Renewal warning email sent' : 'Failed to send renewal warning email' };
   }
+
+  async sendPaymentFailedEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, billingUrl } = params;
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const manageBillingUrl = billingUrl || `${appUrl}/billing`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">We could not collect payment for your <strong>${planLabel}</strong> plan.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">We will retry payment automatically. Your account has a 14 day grace period, so please update your payment method as soon as you can.</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
+            </div>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">If you have already updated your card, no further action is needed.</p>
+          </td>
+        </tr>
+        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Payment failed for your Valoxi ${planLabel} plan`,
+      html,
+    });
+    return { success, message: success ? 'Payment failed email sent' : 'Failed to send payment failed email' };
+  }
+
+  async sendDunningDay7Email(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, billingUrl } = params;
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const manageBillingUrl = billingUrl || `${appUrl}/billing`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Payment is still failing for your <strong>${planLabel}</strong> plan.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">Your plan will be cancelled in 7 days unless payment succeeds. Please update your payment method to keep your account active.</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
+            </div>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">We will keep retrying automatically during the grace period.</p>
+          </td>
+        </tr>
+        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Your Valoxi ${planLabel} plan will be cancelled in 7 days`,
+      html,
+    });
+    return { success, message: success ? 'Day 7 dunning email sent' : 'Failed to send day 7 dunning email' };
+  }
+
+  async sendDunningCancellationEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, billingUrl } = params;
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const manageBillingUrl = billingUrl || `${appUrl}/billing`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your <strong>${planLabel}</strong> subscription has been cancelled because payment could not be collected during the grace period.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">Your data is preserved for 30 days. You can sign back in and re-subscribe when you are ready to reactivate your account.</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
+            </div>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">If you need help, reply to this email and we will help you get back in.</p>
+          </td>
+        </tr>
+        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Your Valoxi ${planLabel} subscription has been cancelled`,
+      html,
+    });
+    return { success, message: success ? 'Dunning cancellation email sent' : 'Failed to send dunning cancellation email' };
+  }
 }
 
 export const emailApiService = new EmailApiService();

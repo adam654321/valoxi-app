@@ -167,6 +167,17 @@ class BillingService {
     if (data.currentPeriodEnd !== undefined) updateData.currentPeriodEnd = data.currentPeriodEnd;
     if (data.cancelAtPeriodEnd !== undefined) updateData.cancelAtPeriodEnd = data.cancelAtPeriodEnd;
 
+    // Dunning lifecycle: stamp past_due_since on first entry to past_due,
+    // clear it (and the day-7 email gate) on recovery to active or terminal canceled.
+    if (data.status === 'past_due' && previousStatus !== 'past_due') {
+      updateData.pastDueSince = new Date();
+      updateData.dunningDay7EmailSentAt = null;
+    }
+    if (data.status === 'active' || data.status === 'canceled') {
+      updateData.pastDueSince = null;
+      updateData.dunningDay7EmailSentAt = null;
+    }
+
     const subscription = await billingRepository.updateByCompanyId(userCompanyId, updateData);
 
     const eventTypeMap: Record<string, string> = {

@@ -1,4 +1,4 @@
-import { eq, and, desc, or, lt, sql } from 'drizzle-orm';
+import { eq, and, desc, or, lt, sql, gte } from 'drizzle-orm';
 import { db } from '../db';
 import {
   subscriptions,
@@ -94,6 +94,26 @@ export class BillingRepository {
     }
     const [row] = await db.insert(subscriptionEvents).values(data).returning();
     return row;
+  }
+
+  async hasRecentEvent(
+    userCompanyId: number,
+    eventType: string,
+    withinMs: number
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - withinMs);
+    const [row] = await db
+      .select({ id: subscriptionEvents.id })
+      .from(subscriptionEvents)
+      .where(
+        and(
+          eq(subscriptionEvents.userCompanyId, userCompanyId),
+          eq(subscriptionEvents.eventType, eventType),
+          gte(subscriptionEvents.processedAt, since)
+        )
+      )
+      .limit(1);
+    return !!row;
   }
 
   async getEventsByCompanyId(
