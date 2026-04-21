@@ -1,0 +1,91 @@
+Phase 6C assess. Read-only plan for checkout cleanup and USD simplification. Do not modify any files. Do not run anything. Produce a plan document only.
+Purpose. Per 6B1 decisions, the ADJV Stripe account only holds USD prices (no GBP). The codebase still has GBP branches throughout: LOOKUP_KEY_MAP lookup keys, currency body param defaults in checkout and upgrade, currency fallbacks in webhook handlers, INVOICE_RATE_CENTS ternary in upgrade-preview and upgrade, and probably client-side sends of currency in request bodies. 6C strips GBP from dev code entirely. Prod is not touched (prod still has the old Stripe account until 6H cutover).
+Also includes fixing a stale pricing constant: INVOICE_RATE_CENTS USD is currently 6525 but should be 7395 per locked decision 3.8 ($73.95/mo, which is Core $87 minus 15% Standard 5D discount).
+Step 1. Read current state. Report the following verbatim so I can confirm nothing has drifted:
+server/routes/billing.routes.ts:
+a) The LOOKUP_KEY_MAP constant (around line 280 to 300, the big object mapping PlanKey, interval, currency to lookup keys).
+b) The /checkout endpoint body parsing and currency resolution (around line 475 to 495).
+c) The /upgrade-preview endpoint's currency handling and INVOICE_RATE_CENTS ternary (around line 370 to 420).
+d) The /upgrade endpoint's currency handling and INVOICE_RATE_CENTS ternary (around line 540 to 580).
+e) The checkout.session.completed webhook handler's sessionCurrency fallback (early in the file, around line 150).
+f) The invoice.upcoming webhook handler's matchingSub.currency fallback (around line 280).
+shared/schema/billing.ts:
+g) The subscriptions table currency column definition, including default.
+client/src/:
+h) Run: grep -rn "currency" client/src/pages/billing.tsx client/src/pages/register.tsx client/src/pages/landing.tsx 2>/dev/null
+i) Any other client file that includes the string "gbp" or sends currency in fetch request bodies. Run: grep -rn "currency.*gbp|currency.*GBP|£|PoundSterling" client/src/
+j) Report any hits including filename and line.
+Step 2. File-by-file change plan. For each file, produce columns: file path, line range affected, current code snippet, proposed code snippet.
+server/routes/billing.routes.ts:
+Change 2a. Simplify LOOKUP_KEY_MAP. Replace the triple-nested Record with a two-level structure (PlanKey × interval → lookup key, drop the currency dimension entirely). The values use the USD lookup keys since those are the only ones that exist in the ADJV account:
+Proposed:
+typescriptconst LOOKUP_KEY_MAP: Record<PlanKey, Record<'month' | 'year', string>> = {
+  CORE: { month: 'ma_core_monthly_usd', year: 'ma_core_annual_usd' },
+  PROFESSIONAL: { month: 'ma_professional_monthly_usd', year: 'ma_professional_annual_usd' },
+  EXPERT: { month: 'ma_expert_monthly_usd', year: 'ma_expert_annual_usd' },
+};
+Note: the type should be Record<PlanKey, Record<'month' | 'year', string>> not the previous Record<string, Record<string, Record<string, string>>>. Enterprise is intentionally absent (invoice-only).
+Change 2b. /checkout endpoint. Remove the currency body param and all currency branching. The lookupKey lookup simplifies to LOOKUP_KEY_MAP[planKey]?.[billingInterval]. The request body parsing type removes currency. Flag any downstream references to currency in the same handler that need adjusting (e.g., if currency is written onto the subscription row via metadata or elsewhere, keep it as 'usd' literal or remove entirely depending on use).
+Change 2c. /upgrade-preview endpoint. Remove the currency query param parsing. LOOKUP_KEY_MAP access simplifies. INVOICE_RATE_CENTS ternary collapses to a constant:
+Proposed:
+typescriptconst INVOICE_RATE_CENTS = 7395;
+The surrounding subCurrency references (e.g., for the response body's currency field) should be removed or hard-coded to 'usd'. The response body currently always returns currency: 'gbp' anyway (line around 435) which is a pre-existing bug. Flag it and include the fix: hard-code currency: 'usd' in the response.
+Change 2d. /upgrade endpoint. Same pattern as 2c. Remove currency body param, simplify LOOKUP_KEY_MAP access, collapse INVOICE_RATE_CENTS ternary to 7395, remove subCurrency symbol ternary in the console.log (just use '$'), hard-code any response currency to 'usd'.
+Change 2e. checkout.session.completed webhook. Remove the sessionCurrency fallback logic, write 'usd' directly onto the subscription insert. Or, since Stripe returns the actual session currency, keep that value but drop the 'gbp' fallback (replace with 'usd').
+Change 2f. invoice.upcoming webhook. Replace matchingSub.currency ?? 'gbp' with matchingSub.currency ?? 'usd'.
+shared/schema/billing.ts:
+Change 2g. The subscriptions.currency column. If the default is 'gbp', change the default to 'usd'. Report the exact current definition so I can assess whether a schema migration is needed (it would be for prod, not for dev where we can let new inserts pick up the new default).
+Client-side files:
+Change 2h. Report all findings from the grep in Step 1h and 1i and propose changes for each. Common patterns I expect:
+
+Fetch POST body that includes currency: 'gbp' or currency: userCurrency - remove the currency field from the body entirely.
+UI elements that display £ amounts from the API - change to $.
+Currency toggle or selector in the UI - remove (we are USD-only now).
+
+Step 3. Downstream implications. Identify:
+a) Prod impact. List exactly what breaks for prod if we deploy this code before the 6H cutover. Prod still has the old Stripe account with GBP prices. If the deployed code only looks up USD lookup keys, all prod checkouts and upgrades fail with price_not_found. Flag this as a release blocker: 6C code cannot ship to prod until 6H is executed (new ADJV live-mode prices exist in prod's Stripe account and a migration script has flipped existing subscription.currency values from 'gbp' to 'usd'). This means 6C changes stay on dev only.
+b) Existing dev subscriptions. Some dev rows in subscriptions may have currency='gbp'. After 6C ships, what happens when they try to upgrade? The /upgrade endpoint's INVOICE_RATE_CENTS no longer reads currency, so pro-rata credit works. But matchingSub.currency='gbp' might flow through to response bodies (which used to be 'gbp' anyway). No breakage, just inconsistent data. Suggest: small dev-only SQL to UPDATE subscriptions SET currency='usd' WHERE currency='gbp' as part of 6C cleanup.
+c) Tests. Any tests that reference the three-dimensional LOOKUP_KEY_MAP shape or send currency='gbp' in request bodies will break. Grep for tests that touch LOOKUP_KEY_MAP or pass currency in Stripe-related test fixtures.
+d) Enterprise plan. LOOKUP_KEY_MAP intentionally has no Enterprise entry (invoice-only). The new Record<PlanKey, ...> type needs to match this. Confirm Enterprise is excluded somewhere or the type handles Enterprise → no lookup via optional chaining.
+Step 4. Risk assessment.
+Low risk:
+
+LOOKUP_KEY_MAP shape change. Compile-time caught.
+INVOICE_RATE_CENTS value update. Pure math correction, the new value is the intended one.
+Currency fallback default changes. Webhooks only set the value, they do not rely on the old value elsewhere.
+
+Medium risk:
+
+Client-side currency removal. If any deployed client code still sends currency='gbp' in request bodies after 6C ships, the server ignores the field (since we remove it from request parsing) and uses USD. No breakage but stale client-server mismatch possible.
+Default change on subscriptions.currency column. If schema is typed as 'gbp' default, new inserts will default to 'usd'. Backward compatible.
+
+High risk:
+
+Premature prod deployment. Already flagged. 6C must not reach prod until 6H cutover.
+
+Step 5. Validation plan.
+a) TypeScript: npx tsc --noEmit. Expected zero errors.
+b) Grep check: zero matches for the following in server/ and client/src/:
+
+ma_core_monthly_gbp, ma_core_annual_gbp, ma_professional_monthly_gbp, ma_professional_annual_gbp, ma_expert_monthly_gbp, ma_expert_annual_gbp
+'gbp' string literal (or "gbp" double-quoted) as a fallback default (review any remaining matches to confirm they are not defaults)
+INVOICE_RATE_CENTS with a ternary (should be a flat const 7395)
+currency: 'gbp' or currency: "gbp" as a literal default
+c) Server startup: no errors, cron lines still present.
+d) Dev smoke tests (Adam in browser):
+/billing page loads and shows USD pricing consistently throughout.
+Upgrade path still works (already proven via the adamauty@me.com test, just re-run once after 6C).
+Addon purchase still works (already proven, re-run once).
+e) DB spot-check: select currency, count(*) from subscriptions group by currency; confirm mostly 'usd' post-cleanup.
+
+Step 6. Adam post-build actions.
+In order:
+
+Run the dev SQL: update subscriptions set currency='usd' where currency='gbp'; (only if Step 3b confirms there are any such rows on dev).
+Load /billing in browser, confirm all amounts show in USD.
+Run an upgrade end-to-end (can be adamauty@me.com again) and confirm the subscription row's currency is 'usd' afterwards.
+Confirm no client warnings or network errors in the browser console related to currency.
+Do NOT deploy to prod. Prod stays on the current code until Phase 6H cutover.
+
+Deliverable. One chat response with sections matching the six steps. Code snippets quoted verbatim where requested. No changes made to any files.
+Success criteria. After reading the output, I can write the Phase 6C build prompt with no further clarifications needed. I know exactly what changes, what risks to watch, and which dev-only SQL needs to run alongside the code changes.
