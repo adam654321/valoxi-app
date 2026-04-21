@@ -79,12 +79,6 @@ app.use((req, res, next) => {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       console.warn('[billing] WARNING: STRIPE_WEBHOOK_SECRET not set — webhooks will not be verified');
     }
-    if (!process.env.STRIPE_PARTNER_CUSTOMER_5D) {
-      console.warn('[billing] WARNING: STRIPE_PARTNER_CUSTOMER_5D not set — partner invoicing will not work');
-    }
-    if (!process.env.STRIPE_PARTNER_PRICE_5D) {
-      console.warn('[billing] WARNING: STRIPE_PARTNER_PRICE_5D not set — partner invoicing will not work');
-    }
     initializeChaseUpCron();
     initializeBillingCron();
     initializeBackupCron();

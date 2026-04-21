@@ -4,7 +4,6 @@ import { eq, and, sql, lt, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { config } from '../config';
 import { promoCodes, promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
-import { users } from '@shared/schema/core';
 import type { PromoCode, PromoCodeCampaign } from '@shared/schema/billing';
 
 function generateRandomCode(length: number): string {
@@ -202,38 +201,6 @@ class PromoCodeService {
         }
       }
 
-      if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal > 0) {
-        try {
-          const partnerCustomerId = config.stripe.partnerCustomer5d;
-          const partnerPriceId = config.stripe.partnerPrice5d;
-          if (partnerCustomerId && partnerPriceId) {
-            const invoiceMonths = campaign.freeMonthsTotal;
-            const activationDate = new Date().toISOString().split('T')[0];
-
-            const [claimingUser] = await db
-              .select({ firstName: users.firstName, lastName: users.lastName, email: users.email })
-              .from(users)
-              .where(eq(users.userCompanyId, userCompanyId));
-
-            const userName = claimingUser
-              ? `${claimingUser.firstName || ''} ${claimingUser.lastName || ''}`.trim() || claimingUser.email
-              : `Company ${userCompanyId}`;
-            const userEmail = claimingUser?.email || 'unknown';
-
-            // @ts-expect-error Stripe InvoiceItemCreateParams overload mismatch. Entire Stripe integration scheduled for rewrite in Clerk+Stripe rebuild. See Valoxi_Action_Log_v9.xlsx item 5.
-            await stripe.invoiceItems.create({
-              customer: partnerCustomerId,
-              price: partnerPriceId,
-              quantity: invoiceMonths,
-              description: `${invoiceMonths}-month Core access — ${userName} (${userEmail}) — activated ${activationDate}`,
-            });
-
-            console.log(`[5D Partner] Invoice item created for ${userEmail} — ${invoiceMonths} months`);
-          }
-        } catch (err) {
-          console.error('[5D Partner] Failed to create partner invoice item (non-blocking):', err);
-        }
-      }
 
       try {
         const { track } = await import('./funnel.service');
