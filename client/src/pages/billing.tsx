@@ -369,7 +369,6 @@ export default function BillingPage() {
   const [seatQuantity, setSeatQuantity] = useState("1");
 
   const [promoOpen, setPromoOpen] = useState(false);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
 
@@ -394,21 +393,6 @@ export default function BillingPage() {
     },
     onError: (error: any) => {
       setPromoError(error.message || "Failed to apply promo code. Please try again.");
-    },
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/v2/billing/cancel");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/v2/billing/subscription"] });
-      setCancelDialogOpen(false);
-      toast({ title: "Cancellation scheduled", description: "Your access continues until the end of your billing period." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed to cancel", description: error.message || "Please try again.", variant: "destructive" });
     },
   });
 
@@ -556,7 +540,10 @@ export default function BillingPage() {
                 <div className="flex-1">
                   <p className="font-semibold text-amber-800 dark:text-amber-300">Cancellation scheduled</p>
                   <p className="text-sm text-muted-foreground">
-                    Your access continues until{periodEndDate ? ` ${periodEndDate}` : " the end of your billing period"}. After that you'll lose platform access — your data is preserved.
+                    Your access continues until{periodEndDate ? ` ${periodEndDate}` : " the end of your billing period"}. After that you'll lose platform access. Your data is preserved.
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You can also manage this in the Stripe billing portal below.
                   </p>
                 </div>
                 <Button
@@ -890,9 +877,9 @@ export default function BillingPage() {
                   <div className="flex items-center gap-3">
                     <ExternalLink className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium text-foreground">Billing Portal</p>
+                      <p className="font-medium text-foreground">Manage billing in Stripe</p>
                       <p className="text-sm text-muted-foreground">
-                        Manage your subscription, update payment methods, or view invoices in the Stripe billing portal.
+                        Update your payment method, view invoices, edit billing details, or cancel your subscription. Cancellation takes effect at the end of your billing period.
                       </p>
                     </div>
                   </div>
@@ -904,7 +891,7 @@ export default function BillingPage() {
                     {portalMutation.isPending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : null}
-                    Open Billing Portal
+                    Manage in Stripe
                   </Button>
                 </CardContent>
               </Card>
@@ -1020,60 +1007,6 @@ export default function BillingPage() {
               </Button>
             </CardContent>
           </Card>
-          {isActiveOrComped && status !== 'admin_comped' && !subscription?.cancelAtPeriodEnd && hasStripeCustomer && (
-            <>
-              <Separator />
-              <Card className="border-dashed">
-                <CardContent className="flex items-center justify-between py-5">
-                  <div>
-                    <p className="font-medium text-foreground">Cancel subscription</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your access continues until {periodEndDate ?? "the end of your billing period"}. You can reverse this any time before then.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="text-destructive border-destructive/30 hover:bg-destructive/10 flex-shrink-0"
-                    onClick={() => setCancelDialogOpen(true)}
-                  >
-                    Cancel subscription
-                  </Button>
-                </CardContent>
-              </Card>
-            </>
-          )}
-
-          <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
-                <AlertDialogDescription asChild>
-                  <div className="space-y-3 text-sm text-muted-foreground">
-                    <p>
-                      Your access will continue until{periodEndDate ? ` ${periodEndDate}` : " the end of your billing period"}. After that:
-                    </p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>You'll lose access to your deals, documents, and AI analysis</li>
-                      <li>Your data will be preserved — nothing is deleted</li>
-                      <li>You can resubscribe at any time to restore full access</li>
-                    </ul>
-                    <p className="font-medium text-foreground">You can reverse this before your access ends.</p>
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={cancelMutation.isPending}>Keep my subscription</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive hover:bg-destructive/90"
-                  onClick={() => cancelMutation.mutate()}
-                  disabled={cancelMutation.isPending}
-                >
-                  {cancelMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Yes, cancel at period end
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </>
       )}
       <AlertDialog open={!!upgradePreview} onOpenChange={(open) => { if (!open) cancelUpgrade(); }}>

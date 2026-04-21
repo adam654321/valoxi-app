@@ -1,0 +1,134 @@
+PHASE 6E BUILD - Remove in-app cancel UI, refresh portal card copy
+
+Stripe Dashboard portal config has already been completed by Adam (test
+mode features, branding, return URL all set). The backend portal route
+and the frontend portal button were already shipped during 6B. This cycle
+is the small follow-up: remove the in-app cancel card so cancellation
+flows through Stripe portal and captures reasons, then update the portal
+card copy.
+
+Pre-flight (read-only)
+
+  1. View client/src/pages/billing.tsx lines 1020-1080 to confirm the cancel
+     card block matches what the assess showed (lines 1023-1044) plus the
+     surrounding cancel dialog usage.
+
+  2. grep -n "setCancelDialogOpen\|cancelDialogOpen\|cancelMutation\|/cancel" client/src/pages/billing.tsx
+     Find all references to the cancel UI state, the dialog component, and
+     the cancel mutation. Paste output verbatim.
+
+  3. grep -rn "POST.*'/cancel'\|router.post.*cancel" server/routes/billing.routes.ts
+     Confirm the /cancel server route still exists. Paste line.
+
+Decision (already made)
+  Server-side POST /api/v2/billing/cancel route is KEPT for now. It powers
+  edge cases (admin-driven cancel, future API integrations, future
+  reactivation flow at /reactivate). Only the FRONTEND in-app cancel UI is
+  removed so users have to go through Stripe portal.
+
+Change A - remove the cancel card from billing.tsx
+
+  File: client/src/pages/billing.tsx
+  Locate lines 1023-1044 (the cancel card block starting with
+  {isActiveOrComped && status !== 'admin_comped' && !subscription?.cancelAtPeriodEnd && hasStripeCustomer && (
+   ... and ending after the </Card>).
+
+  Remove the entire block including its surrounding <> Separator </> if
+  present.
+
+  ALSO: locate and remove any associated:
+  - cancelDialogOpen state declaration (likely at top of component)
+  - Cancel dialog component JSX (likely lower in the file)
+  - cancelMutation definition (likely near portalMutation)
+  - Any imports that become unused after removal (e.g. if a Dialog or
+    AlertDialog component was only used by the cancel UI)
+
+  Use the grep output from pre-flight step 2 to find each location.
+  Show what you remove and why.
+
+Change B - update the portal card copy
+
+  File: client/src/pages/billing.tsx
+  Locate the existing Billing Portal card at lines 885-912.
+
+  Find:
+              <p className="font-medium text-foreground">Billing Portal</p>
+              <p className="text-sm text-muted-foreground">
+                Manage your subscription, update payment methods, or view invoices in the Stripe billing portal.
+              </p>
+
+  Replace with:
+              <p className="font-medium text-foreground">Manage billing in Stripe</p>
+              <p className="text-sm text-muted-foreground">
+                Update your payment method, view invoices, edit billing details, or cancel your subscription. Cancellation takes effect at the end of your billing period.
+              </p>
+
+  Find:
+            Open Billing Portal
+
+  Replace with:
+            Manage in Stripe
+
+Change C - thin reactivation note (optional, only if cancelAtPeriodEnd state UI exists)
+
+  Some flows show a "Subscription will end on [date]" banner when
+  subscription.cancelAtPeriodEnd is true. If such a banner exists in
+  billing.tsx, add a one-line note pointing users back to Stripe portal
+  to reactivate (or to support if no reactivate flow available yet).
+
+  Search:
+    grep -n "cancelAtPeriodEnd" client/src/pages/billing.tsx
+
+  If a banner exists, show its current state and propose the addition.
+  If no such banner exists, skip Change C.
+
+Post-build verification
+
+  1. Restart server. Confirm clean startup.
+
+  2. tsc check (if your environment supports it, otherwise rely on runtime):
+       npx tsc --noEmit 2>&1 | tail -10
+     Pre-existing errors are fine, just confirm no NEW errors from removed
+     imports / unused state.
+
+  3. Visit /billing in dev. Confirm:
+     - Manage Billing card now reads "Manage in Stripe" with updated copy
+     - In-app Cancel subscription card no longer appears (for any sub state)
+     - No console errors from removed components
+     - Page renders cleanly
+
+  4. Show me the final version of the Billing Portal card block + a grep
+     to confirm cancel-related UI is gone:
+       grep -n "cancel\|Cancel" client/src/pages/billing.tsx
+
+     Some matches will remain (e.g. reading subscription.cancelAtPeriodEnd
+     for display state) - those are FINE. What should be gone:
+     - setCancelDialogOpen / cancelDialogOpen state
+     - The Cancel subscription card
+     - The Cancel dialog component JSX
+     - cancelMutation
+
+End-to-end functional test
+
+  Defer until Adam creates a fresh sub via real checkout (which must come
+  before any test of Stripe portal anyway since the destroyed sub from 6D2
+  Phase 5 left no active sub on Stripe).
+
+  Test sequence at that point:
+    a. Click "Manage in Stripe" -> portal opens in new redirect
+    b. In portal: update card -> verify webhooks fire, no breakage
+    c. In portal: cancel subscription -> reason capture screen appears,
+       pick a reason, confirm
+    d. Return to /billing -> banner shows cancellation pending at period end
+    e. Verify customer.subscription.updated webhook arrived with
+       cancel_at_period_end=true
+    f. Verify subscriptions.cancelAtPeriodEnd=true in DB
+
+Constraints
+  - Dev only.
+  - Plain UK English. No em dashes in any new code, comments, or copy.
+  - Single coordinated change set: cancel card removal + portal card copy
+    refresh. No other refactoring.
+  - If anything diverges from this plan or you find that the cancel UI
+    structure is more complex than the assess showed (e.g. the cancel
+    flow is shared with another component), STOP and report.
