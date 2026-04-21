@@ -262,3 +262,10 @@ export function getWaitlistPromoCopy(campaign: {
   }
   return null;
 }
+
+export function isFiveDNewMember(campaign: {
+  referralSource: string;
+  freeMonthsTotal: number;
+}): boolean {
+  return campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 6;
+}
