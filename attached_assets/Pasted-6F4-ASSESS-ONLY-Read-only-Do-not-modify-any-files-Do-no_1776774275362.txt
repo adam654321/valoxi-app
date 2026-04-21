@@ -1,0 +1,96 @@
+6F4 ASSESS ONLY. Read-only. Do not modify any files. Do not run any SQL.
+
+Goal of 6F4 (do not build yet): when the Clerk user.created webhook fires and the associated users row has assigned_promo_campaign_id pointing at a campaign whose mapping yields the 5D New Member treatment (referral_source = '5d_community' AND free_months_total = 6), create a local-DB trial subscription with:
+- status: 'trialing'
+- planKey: 'CORE'
+- trialEndsAt: now + 6 months
+- freeMonthsStartedAt: now
+- freeMonthsTotal: 6
+- no Stripe customer, no Stripe subscription, no Stripe checkout
+
+For every other user (no campaign assigned, Standard 5D, Early Bird, or unknown), the default 24-hour Professional trial path currently in place is preserved byte-for-byte.
+
+Produce a verbatim change plan. Work through the twelve points below in order.
+
+1. Locate the Clerk user.created webhook handler. The handover places it at server/routes/webhooks.routes.ts. Paste the entire handler including its route path, signature verification, event type dispatch, and any sub-functions it calls. Include line numbers.
+
+2. Inside the user.created handler, identify every write it performs today:
+   - Does it create or update a users row? If create, how does it reconcile with users already inserted by the admin waitlist invite flow from 6F2 (which inserts the users row before Clerk signup happens)?
+   - Does it create a subscription row?
+   - Does it create a Stripe customer?
+   - Does it send an email?
+   - Does it write anything else (user_company_memberships, audit logs)?
+   Quote each write call.
+
+3. Locate the current default trial creation logic (24-hour Professional trial). Paste the exact code. Note whether it lives inline in webhooks.routes.ts, in billing.service.ts, in a dedicated trial service, or elsewhere. Note the exact values written: status, planKey, trialEndsAt duration, and any freeMonths* fields. Flag whether freeMonthsStartedAt and freeMonthsTotal are currently written on the Professional trial path (they should be null/0 for non-5D users).
+
+4. Confirm the subscriptions table schema. Paste the entire table definition from shared/schema/billing.ts. Specifically note:
+   - Is freeMonthsStartedAt a column? Is freeMonthsTotal a column? Is trialEndsAt a column? Paste each if present.
+   - What is the status column type (varchar? enum?) and what values does the codebase use elsewhere ('trialing', 'active', 'past_due', 'canceled', 'admin_comped')? List every status value referenced in the backend.
+   - What is the planKey column type and what values are used (enum? varchar? PlanKey type)?
+   - What columns are NOT NULL? Specifically whether stripeCustomerId, stripeSubscriptionId, stripePriceId are nullable. This is critical because 5D New Member trials have no Stripe identifiers at creation time.
+
+5. Check whether PlanKey and status values come from a shared TypeScript union type. Paste the type declaration and its import path.
+
+6. Trace the relationship between users.id and subscriptions. Is subscriptions keyed by userId or userCompanyId? The handover mentions "Viv has no subscription row at all so needs an INSERT not UPDATE" when migrated, suggesting subscriptions is 1:1 with userCompanyId (not users). Quote the FK from shared/schema/billing.ts and confirm.
+
+7. Identify how the webhook knows which local users row to attach the Clerk user to. Does it:
+   - Look up by email (users.email = clerk.email)?
+   - Look up by clerk_user_id (users.clerk_user_id set at invite time)?
+   - Create a new users row if none found?
+   Quote the lookup code. This matters because 6F2 writes assigned_promo_campaign_id at invite time, and 6F4 must read it from the same row at Clerk signup time.
+
+8. Identify the userCompanyId that should own the 5D New Member trial subscription. When the admin waitlist invite created the user in 6F2, it also created a userCompanies row ("Pending Setup"). Confirm whether that userCompanyId is the one the subscription should attach to, or whether there is a separate flow that creates a real company record later.
+
+9. Check whether there is a function that creates the default trial today, for potential reuse or wrapping. Candidate names: createTrialSubscription, startProfessionalTrial, initializeSubscription, createDefaultSubscription. Search billing.service.ts, subscriptions service, and webhooks.routes.ts. If a function exists, paste it. If the trial is created inline, note that the 6F4 build will need to extract or branch at that call site.
+
+10. Check all downstream code that reads subscription.status === 'trialing' or subscription.planKey === 'CORE'. Specifically entitlements, subscription middleware, billing page rendering. We need to confirm that a trialing/CORE subscription with no Stripe identifiers will:
+    - Grant Core-tier access via entitlements
+    - Not crash any code path that assumes stripeCustomerId is present
+    - Not trigger any Stripe webhook assumptions
+    Quote the key branches in server/middleware/subscription.ts and shared/entitlements.ts.
+
+11. Check the existing trial expiry cron (server/cron/billing.cron.ts). Confirm it already handles trialing subscriptions with trialEndsAt in the past. Quote the relevant branch. Note: 6F8 will extend this to send the enter-payment-details email for 5D New Member users at month 5 and month 6. For 6F4 we need to confirm the cron will not incorrectly cancel or flip the new 6-month trial prematurely (e.g. if it assumes trialEndsAt means 24 hours).
+
+12. Confirm the Clerk webhook idempotency posture. Clerk can deliver user.created twice. If the handler runs twice for the same user, does the 6F4 trial creation get duplicated? Quote whatever dedup mechanism exists (unique constraint on subscriptions.userCompanyId, ON CONFLICT, explicit check before insert, idempotency table, etc). If no dedup exists, flag it loudly as a risk.
+
+Output format:
+
+SECTION A - VERBATIM EXISTING STATE
+One subsection per point 1 through 12. Direct quotes, file paths, line numbers only.
+
+SECTION B - PROPOSED 6F4 BUILD PLAN
+
+B1 - Branching logic in the Clerk user.created handler
+- Exact location of the branch (inline in webhooks.routes.ts or in a helper).
+- How the handler looks up assigned_promo_campaign_id on the users row (by clerk_user_id, by email, or via the users row already loaded earlier in the handler).
+- How the handler resolves the campaign row to decide 5D New Member vs default.
+- Recommended: reuse getWaitlistPromoCopy from 6F3, or add a companion helper isFiveDNewMember(campaign) that returns boolean. Pick one and justify.
+
+B2 - 5D New Member trial creation
+- Exact INSERT into subscriptions with all required columns.
+- trialEndsAt computation: now + 6 calendar months (use date-fns addMonths or equivalent already present in the codebase, do not reinvent).
+- freeMonthsStartedAt: now
+- freeMonthsTotal: 6
+- All Stripe identifier columns set to null explicitly.
+- userCompanyId resolved per Point 8 findings.
+
+B3 - Default trial path (untouched)
+- Confirm with exact line references that when the branch condition is false, the existing trial creation code path executes unchanged.
+
+B4 - Idempotency
+- Propose the dedup mechanism for 6F4. If Point 12 surfaced a unique constraint on userCompanyId, lean on it with ON CONFLICT DO NOTHING. If not, propose a pre-INSERT existence check inside a transaction, or an explicit schema migration to add the constraint (which would be a separate cycle 6F4a).
+
+SECTION C - RISKS AND UNKNOWNS
+- Any column in subscriptions that is NOT NULL and has no sensible value for a 5D New Member trial (Stripe identifiers, current_period_start, current_period_end).
+- Any downstream code that would crash on a subscription with null Stripe identifiers.
+- Whether the cron job at Point 11 needs modification in 6F4 itself, or can safely wait until 6F8.
+- Whether userCompanyId resolution at Point 8 is stable: the "Pending Setup" company from 6F2 might be replaced by a real company name during onboarding, and we need to confirm the subscription row travels with the userCompanyId correctly.
+- Clerk webhook retry behaviour and any interaction with the existing isNewSignup branch flagged in the handover for deletion in 6C1.
+
+SECTION D - BUILD SIZE ESTIMATE
+State whether 6F4 should be:
+- One build prompt (6F4), or
+- Split into 6F4a (schema guard / idempotency constraint if needed) then 6F4b (handler logic).
+
+Do not modify any files. Do not run any SQL. This is assess only.
