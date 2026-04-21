@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import Stripe from 'stripe';
+import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
 import { eq, and, gt, isNull, isNotNull, lt } from 'drizzle-orm';
@@ -9,10 +10,9 @@ import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/pr
 import { emailService } from '../email';
 import { userCompanies } from '@shared/schema/core';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 export function initializeBillingCron(): void {
   cron.schedule('5 9 * * *', async () => {
+    const stripe = new Stripe(config.stripe.secretKey);
     console.log('[billing-cron] Starting daily trial expiry check...');
     try {
       const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
@@ -124,6 +124,7 @@ export function initializeBillingCron(): void {
   console.log('[billing-cron] Community free month decrement scheduled for 1st of each month at 9:10 AM UK time');
 
   cron.schedule('15 9 * * *', async () => {
+    const stripe = new Stripe(config.stripe.secretKey);
     console.log('[billing-cron] Starting daily free months check (warning + transition)...');
     try {
       const activeFreeMonthSubs = await db

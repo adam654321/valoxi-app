@@ -2,11 +2,10 @@ import { randomBytes } from 'crypto';
 import Stripe from 'stripe';
 import { eq, and, sql, lt, isNull } from 'drizzle-orm';
 import { db } from '../db';
+import { config } from '../config';
 import { promoCodes, promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
 import { users } from '@shared/schema/core';
 import type { PromoCode, PromoCodeCampaign } from '@shared/schema/billing';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 function generateRandomCode(length: number): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -135,6 +134,7 @@ class PromoCodeService {
     stripeCustomerId: string | null
   ): Promise<ClaimResult> {
     try {
+      const stripe = new Stripe(config.stripe.secretKey);
       const validation = await this.validateCode(code);
       if (!validation.valid || !validation.campaign || !validation.promoCode) {
         return { success: false, reason: validation.reason || 'Invalid code' };
@@ -204,8 +204,8 @@ class PromoCodeService {
 
       if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal > 0) {
         try {
-          const partnerCustomerId = process.env.STRIPE_PARTNER_CUSTOMER_5D;
-          const partnerPriceId = process.env.STRIPE_PARTNER_PRICE_5D;
+          const partnerCustomerId = config.stripe.partnerCustomer5d;
+          const partnerPriceId = config.stripe.partnerPrice5d;
           if (partnerCustomerId && partnerPriceId) {
             const invoiceMonths = campaign.freeMonthsTotal;
             const activationDate = new Date().toISOString().split('T')[0];
