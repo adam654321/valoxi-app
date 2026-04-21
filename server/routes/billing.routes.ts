@@ -144,7 +144,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
             }).returning();
 
             const trialEndsAt = promoCodeId ? null : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-            const sessionCurrency = (session as any).currency || 'gbp';
+            const sessionCurrency = (session as any).currency || 'usd';
             await db.insert(subscriptions).values({
               userCompanyId: userCompany.id,
               stripeCustomerId: session.customer as string,
@@ -350,7 +350,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
                 planKey: matchingSub.planKey,
                 renewalDate,
                 amountDue,
-                currency: matchingSub.currency ?? 'gbp',
+                currency: matchingSub.currency ?? 'usd',
               });
               console.log(`[billing] Renewal warning email sent to ${adminEmail.email} for company ${matchingSub.userCompanyId}`);
             }
@@ -373,19 +373,10 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
 });
 
 const VALID_PLAN_KEYS: PlanKey[] = ['CORE', 'PROFESSIONAL', 'EXPERT'];
-const LOOKUP_KEY_MAP: Record<string, Record<string, Record<string, string>>> = {
-  CORE: {
-    month: { gbp: 'ma_core_monthly_gbp', usd: 'ma_core_monthly_usd' },
-    year: { gbp: 'ma_core_annual_gbp', usd: 'ma_core_annual_usd' },
-  },
-  PROFESSIONAL: {
-    month: { gbp: 'ma_professional_monthly_gbp', usd: 'ma_professional_monthly_usd' },
-    year: { gbp: 'ma_professional_annual_gbp', usd: 'ma_professional_annual_usd' },
-  },
-  EXPERT: {
-    month: { gbp: 'ma_expert_monthly_gbp', usd: 'ma_expert_monthly_usd' },
-    year: { gbp: 'ma_expert_annual_gbp', usd: 'ma_expert_annual_usd' },
-  },
+const LOOKUP_KEY_MAP: Record<string, Record<'month' | 'year', string>> = {
+  CORE: { month: 'ma_core_monthly_usd', year: 'ma_core_annual_usd' },
+  PROFESSIONAL: { month: 'ma_professional_monthly_usd', year: 'ma_professional_annual_usd' },
+  EXPERT: { month: 'ma_expert_monthly_usd', year: 'ma_expert_annual_usd' },
 };
 
 router.get('/subscription', isAuthenticated, async (req: Request, res: Response) => {
@@ -461,8 +452,7 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
       return res.status(200).json({ isNewSubscription: true });
     }
 
-    const currency = (req.query.currency === 'usd') ? 'usd' : 'gbp';
-    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year'];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination' });
     }
@@ -507,8 +497,7 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
     if (existingSub.freeMonthsTotal > 0 && existingSub.freeMonthsStartedAt && !existingSub.communityDiscountCouponId) {
       const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
       unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
-      const subCurrency = existingSub.currency ?? 'usd';
-      const INVOICE_RATE_CENTS = subCurrency === 'gbp' ? 5025 : 6525;
+      const INVOICE_RATE_CENTS = 7395;
       freePeriodCredit = unusedFreeMonths * INVOICE_RATE_CENTS;
     }
 
@@ -521,7 +510,7 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
       chargeAmount: Math.max(0, upcomingInvoice.amount_due ?? (chargeAmount - creditAmount)),
       nextInvoiceDate: periodEnd,
       nextInvoiceAmount: recurringPrice,
-      currency: 'gbp',
+      currency: 'usd',
       freePeriodCredit,
       unusedFreeMonths,
     });
@@ -635,12 +624,11 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(500).json({ error: 'stripe_not_configured' });
     }
 
-    const { planKey, billingInterval, promoCodeId, isNewSignup, currency: reqCurrency } = req.body as {
+    const { planKey, billingInterval, promoCodeId, isNewSignup } = req.body as {
       planKey: PlanKey;
       billingInterval: 'month' | 'year';
       promoCodeId?: string;
       isNewSignup?: boolean;
-      currency?: string;
     };
 
     if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
@@ -651,8 +639,6 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
     }
 
-    const currency = reqCurrency === 'usd' ? 'usd' : 'gbp';
-
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
 
     if (
@@ -662,7 +648,7 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       return res.status(200).json({ requiresUpgrade: true });
     }
 
-    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year'];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
     }
@@ -732,7 +718,7 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       return res.status(500).json({ error: 'stripe_not_configured' });
     }
 
-    const { planKey, billingInterval, currency: reqCurrency } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year'; currency?: string };
+    const { planKey, billingInterval } = req.body as { planKey: PlanKey; billingInterval: 'month' | 'year' };
 
     if (!planKey || !VALID_PLAN_KEYS.includes(planKey)) {
       return res.status(400).json({ error: 'invalid_plan', message: 'Plan must be CORE, PROFESSIONAL, or EXPERT.' });
@@ -742,14 +728,12 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       return res.status(400).json({ error: 'invalid_interval', message: 'Billing interval must be month or year.' });
     }
 
-    const currency = reqCurrency === 'usd' ? 'usd' : 'gbp';
-
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
     if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
       return res.status(400).json({ error: 'no_active_subscription', message: 'No active Stripe subscription found. Use checkout for new subscriptions.' });
     }
 
-    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year']?.[currency];
+    const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year'];
     if (!lookupKey) {
       return res.status(400).json({ error: 'invalid_combination', message: 'Invalid plan and interval combination.' });
     }
@@ -771,16 +755,14 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
       const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
       const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
       if (unusedFreeMonths > 0 && existingSub.stripeCustomerId) {
-        const subCurrency = existingSub.currency ?? 'usd';
-        const INVOICE_RATE_CENTS = subCurrency === 'gbp' ? 5025 : 6525;
+        const INVOICE_RATE_CENTS = 7395;
         const creditAmount = unusedFreeMonths * INVOICE_RATE_CENTS;
         await stripe.customers.createBalanceTransaction(existingSub.stripeCustomerId, {
           amount: -creditAmount,
-          currency: subCurrency,
+          currency: 'usd',
           description: `Pro-rata credit for ${unusedFreeMonths} unused free month(s) from community referral`,
         });
-        const symbol = subCurrency === 'gbp' ? '£' : '$';
-        console.log(`[billing] Applied ${symbol}${(creditAmount / 100).toFixed(2)} free-period credit for company ${userCompanyId} (${unusedFreeMonths} months)`);
+        console.log(`[billing] Applied $${(creditAmount / 100).toFixed(2)} free-period credit for company ${userCompanyId} (${unusedFreeMonths} months)`);
 
         await billingRepository.updateByCompanyId(userCompanyId, {
           freeMonthsTotal: elapsed,

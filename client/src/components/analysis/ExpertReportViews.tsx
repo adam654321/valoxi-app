@@ -2853,7 +2853,7 @@ export function CoreAnalysisSummaryView({ results }: { results: CoreExpertResult
           </div>
           <a href="/billing">
             <button className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-8 py-3 text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm">
-              Upgrade to Professional — from £127/mo
+              Upgrade to Professional — from $167/mo
             </button>
           </a>
           <p className="text-xs text-muted-foreground mt-3">No commitment. Cancel anytime.</p>

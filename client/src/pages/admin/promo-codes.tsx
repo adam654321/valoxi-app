@@ -53,7 +53,7 @@ interface PromoCodeRow {
 
 function formatDiscount(coupon: StripeCoupon): string {
   if (coupon.percentOff) return `${coupon.percentOff}% off`;
-  if (coupon.amountOff) return `£${(coupon.amountOff / 100).toFixed(2)} off`;
+  if (coupon.amountOff) return `$${(coupon.amountOff / 100).toFixed(2)} off`;
   return "—";
 }
 

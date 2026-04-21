@@ -33,7 +33,7 @@ export const subscriptions = pgTable("subscriptions", {
   communityDiscountCouponId: varchar("community_discount_coupon_id", { length: 50 }),
   freeMonthsWarningEmailSentAt: timestamp("free_months_warning_email_sent_at"),
   trialEndsAt: timestamp("trial_ends_at"),
-  currency: varchar("currency", { length: 3 }).default('gbp'),
+  currency: varchar("currency", { length: 3 }).default('usd'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -59,7 +59,7 @@ export const addonPurchases = pgTable("addon_purchases", {
   quantity: integer("quantity").notNull().default(1),
   stripePaymentRef: varchar("stripe_payment_ref", { length: 255 }),
   unitPriceMinorUnit: integer("unit_price_minor_unit").notNull(),
-  currency: varchar("currency", { length: 3 }).notNull().default('gbp'),
+  currency: varchar("currency", { length: 3 }).notNull().default('usd'),
   purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
 });
 

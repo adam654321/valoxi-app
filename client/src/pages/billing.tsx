@@ -44,10 +44,7 @@ import {
 } from "lucide-react";
 import type { PlanKey } from "@shared/schema/billing";
 
-const formatGBP = (pence: number) => `£${(pence / 100).toFixed(2)}`;
 const formatUSD = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-const formatCurrency = (minorUnits: number, currency: string) =>
-  currency === 'usd' ? formatUSD(minorUnits) : formatGBP(minorUnits);
 
 interface UpgradePreview {
   currentPlan: string;
@@ -251,7 +248,6 @@ export default function BillingPage() {
       const res = await apiRequest("POST", "/api/v2/billing/checkout", {
         planKey,
         billingInterval: interval,
-        currency: 'usd',
       });
       return res.json() as Promise<{ checkoutUrl?: string; requiresUpgrade?: boolean }>;
     },
@@ -274,7 +270,6 @@ export default function BillingPage() {
       const res = await apiRequest("POST", "/api/v2/billing/upgrade", {
         planKey,
         billingInterval: interval,
-        currency: 'usd',
       });
       return res.json() as Promise<{ upgraded?: boolean; error?: string; message?: string }>;
     },
@@ -740,7 +735,7 @@ export default function BillingPage() {
                       <CardDescription>
                         {currentSlots > 0
                           ? `You currently have ${currentSlots} additional slot${currentSlots !== 1 ? "s" : ""} — total capacity: ${totalCompanyCapacity} companies`
-                          : `Your plan includes ${basePlanLimits ?? "unlimited"} company slots. Add more at £9 per slot/month.`}
+                          : `Your plan includes ${basePlanLimits ?? "unlimited"} company slots. Add more at $9 per slot/month.`}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -754,7 +749,7 @@ export default function BillingPage() {
                             <SelectContent>
                               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                                 <SelectItem key={n} value={String(n)}>
-                                  {n} slot{n > 1 ? "s" : ""} — £{n * 9}/mo
+                                  {n} slot{n > 1 ? "s" : ""} — ${n * 9}/mo
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -804,8 +799,8 @@ export default function BillingPage() {
                         </div>
                         <CardDescription>
                           {currentSeats > 0
-                            ? `You currently have ${currentSeats} additional seat${currentSeats !== 1 ? "s" : ""} — total team size: ${1 + currentSeats}. Cost: £${currentSeats * 100}/month`
-                            : "Add team members to collaborate on deals. £100 per seat/month."}
+                            ? `You currently have ${currentSeats} additional seat${currentSeats !== 1 ? "s" : ""} — total team size: ${1 + currentSeats}. Cost: $${currentSeats * 100}/month`
+                            : "Add team members to collaborate on deals. $100 per seat/month."}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -819,7 +814,7 @@ export default function BillingPage() {
                               <SelectContent>
                                 {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                                   <SelectItem key={n} value={String(n)}>
-                                    {n} seat{n > 1 ? "s" : ""} — £{n * 100}/mo
+                                    {n} seat{n > 1 ? "s" : ""} — ${n * 100}/mo
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -867,7 +862,7 @@ export default function BillingPage() {
                           <CardTitle className="text-base">Invite Your Team</CardTitle>
                         </div>
                         <CardDescription>
-                          Collaborating on a deal? Upgrade to Professional to add team members from £100/seat/month.
+                          Collaborating on a deal? Upgrade to Professional to add team members from $100/seat/month.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -1107,26 +1102,26 @@ export default function BillingPage() {
                   <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-md border border-green-200 dark:border-green-800">
                     <Gift className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-green-700 dark:text-green-400">
-                      Community referral credit: <span className="font-semibold">{formatGBP(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
+                      Community referral credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
                     </p>
                   </div>
                 )}
 
                 {upgradePreview && upgradePreview.creditAmount > 0 && (
                   <p className="text-sm">
-                    Unused time credit: <span className="font-medium text-green-600">{formatGBP(upgradePreview.creditAmount)}</span> will be applied to your account
+                    Unused time credit: <span className="font-medium text-green-600">{formatUSD(upgradePreview.creditAmount)}</span> will be applied to your account
                   </p>
                 )}
 
                 {upgradePreview && (
                   <p className="text-sm">
-                    Amount due today: <span className="font-semibold text-foreground">{formatGBP(upgradePreview.chargeAmount)}</span>
+                    Amount due today: <span className="font-semibold text-foreground">{formatUSD(upgradePreview.chargeAmount)}</span>
                   </p>
                 )}
 
                 {upgradePreview && (
                   <p className="text-sm">
-                    Your next invoice of <span className="font-medium">{formatGBP(upgradePreview.nextInvoiceAmount)}</span> will be on{" "}
+                    Your next invoice of <span className="font-medium">{formatUSD(upgradePreview.nextInvoiceAmount)}</span> will be on{" "}
                     {new Date(upgradePreview.nextInvoiceDate).toLocaleDateString("en-GB", {
                       day: "numeric",
                       month: "long",
