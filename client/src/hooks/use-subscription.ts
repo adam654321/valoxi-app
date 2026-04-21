@@ -10,6 +10,17 @@ interface SubscriptionResponse {
   features: TierFeatures | null;
   effectiveMaxSeats: number | null;
   consumedSeats: number;
+  assignedPromoCampaign?: {
+    id: number;
+    name: string;
+    referralSource: string;
+    freeMonthsTotal: number;
+  } | null;
+  freePeriodState?: {
+    isActive: boolean;
+    elapsedMonths: number;
+    remainingMonths: number;
+  } | null;
 }
 
 export function useSubscription() {
@@ -28,6 +39,8 @@ export function useSubscription() {
     features: data?.features ?? null,
     effectiveMaxSeats: data?.effectiveMaxSeats ?? null,
     consumedSeats: data?.consumedSeats ?? 0,
+    assignedPromoCampaign: data?.assignedPromoCampaign ?? null,
+    freePeriodState: data?.freePeriodState ?? null,
     isLoading,
     isError,
   };

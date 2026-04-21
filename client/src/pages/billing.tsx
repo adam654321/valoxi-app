@@ -162,8 +162,25 @@ function getTrialDaysRemaining(trialEnd: string | Date | null | undefined): numb
   return diff > 0 ? diff : 0;
 }
 
+function getAssignedCampaignBenefit(campaign: {
+  referralSource: string;
+  freeMonthsTotal: number;
+} | null | undefined): string | null {
+  if (!campaign) return null;
+  if (campaign.referralSource === 'early_bird') {
+    return "You have 20 percent off your Valoxi subscription for life, on any paid plan. The discount applies automatically to every invoice.";
+  }
+  if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 6) {
+    return "You have 6 months of Valoxi Core free. After your free period ends, 15 percent off applies to whatever plan you choose, for life.";
+  }
+  if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 0) {
+    return "You have 15 percent off your Valoxi subscription for life, on any paid plan. The discount applies automatically to every invoice.";
+  }
+  return null;
+}
+
 export default function BillingPage() {
-  const { subscription, isLoading, isError } = useSubscriptionContext();
+  const { subscription, isLoading, isError, assignedPromoCampaign, freePeriodState } = useSubscriptionContext();
   const currentPlan = usePlanKey();
   const { toast } = useToast();
   const [location] = useLocation();
@@ -173,6 +190,13 @@ export default function BillingPage() {
   const PLANS = getPlans('usd');
   const [verifyingSession, setVerifyingSession] = useState(false);
   const verifyAttempted = useRef(false);
+  const benefitText = getAssignedCampaignBenefit(assignedPromoCampaign);
+  const isFiveDNewMember =
+    assignedPromoCampaign?.referralSource === '5d_community' &&
+    assignedPromoCampaign?.freeMonthsTotal === 6;
+  const showFreePeriodLine = isFiveDNewMember && !!freePeriodState?.isActive;
+  const showUpgradeCreditAnnotation =
+    isFiveDNewMember && !!freePeriodState?.isActive && (freePeriodState.remainingMonths ?? 0) > 0;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -487,6 +511,23 @@ export default function BillingPage() {
         </div>
       ) : (
         <>
+          {benefitText && (
+            <Card className="border-primary/40 bg-primary/5">
+              <CardContent className="flex items-start gap-3 py-4">
+                <Gift className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Your Valoxi benefit</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{benefitText}</p>
+                  {showFreePeriodLine && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Free Core period: month {(freePeriodState!.elapsedMonths) + 1} of {assignedPromoCampaign!.freeMonthsTotal}. {freePeriodState!.remainingMonths} month{freePeriodState!.remainingMonths === 1 ? '' : 's'} remaining.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {redirectedForSubscription && (!subscription || status === 'canceled') && (
             <Card className="border-destructive bg-destructive/5">
               <CardContent className="flex items-center gap-4 py-4">
@@ -655,6 +696,11 @@ export default function BillingPage() {
                           </p>
                         )}
                       </div>
+                      {showUpgradeCreditAnnotation && (plan.key === 'PROFESSIONAL' || plan.key === 'EXPERT') && (
+                        <p className="text-xs text-primary mt-2">
+                          Includes ${(freePeriodState!.remainingMonths * 73.95).toFixed(2)} upgrade credit for your {freePeriodState!.remainingMonths} unused free month{freePeriodState!.remainingMonths === 1 ? '' : 's'}.
+                        </p>
+                      )}
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
                       <ul className="space-y-2.5 flex-1 mb-6">
@@ -944,7 +990,7 @@ export default function BillingPage() {
             </>
           )}
 
-          {!subscription?.promoCodeId && (
+          {!subscription?.promoCodeId && !assignedPromoCampaign && (
             <Collapsible open={promoOpen} onOpenChange={setPromoOpen}>
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-center py-2">

@@ -11,7 +11,7 @@ import { promoCodeService, computeFreeMonthsElapsed, getFreePeriodState } from '
 import { magicLinkService } from '../services/magic-link.service';
 import { db } from '../db';
 import { webhookEvents, users, userCompanies } from '@shared/schema/core';
-import { subscriptions } from '@shared/schema/billing';
+import { subscriptions, promoCodeCampaigns } from '@shared/schema/billing';
 import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
 import { isAuthenticated, isSystemAdmin } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
@@ -463,6 +463,43 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
       return res.status(200).json({ subscription: null, limits: null, features: null });
     }
 
+    // Load the current user's assigned promo campaign, if any.
+    const userId = req.session.userId;
+    let assignedPromoCampaign: {
+      id: number;
+      name: string;
+      referralSource: string;
+      freeMonthsTotal: number;
+    } | null = null;
+
+    if (userId) {
+      const [userRow] = await db
+        .select({ assignedPromoCampaignId: users.assignedPromoCampaignId })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (userRow?.assignedPromoCampaignId) {
+        const [campaign] = await db
+          .select({
+            id: promoCodeCampaigns.id,
+            name: promoCodeCampaigns.name,
+            referralSource: promoCodeCampaigns.referralSource,
+            freeMonthsTotal: promoCodeCampaigns.freeMonthsTotal,
+          })
+          .from(promoCodeCampaigns)
+          .where(eq(promoCodeCampaigns.id, userRow.assignedPromoCampaignId));
+        if (campaign) {
+          assignedPromoCampaign = campaign;
+        }
+      }
+    }
+
+    // Derive free-period state when the subscription carries free months.
+    const freePeriodState =
+      result.subscription.freeMonthsTotal > 0
+        ? getFreePeriodState(result.subscription)
+        : null;
+
     const { getMaxSeats } = await import('@shared/entitlements');
     const effectiveMaxSeats = getMaxSeats(
       result.subscription.planKey as PlanKey,
@@ -489,7 +526,13 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
       consumedSeats = 0;
     }
 
-    return res.status(200).json({ ...result, effectiveMaxSeats, consumedSeats });
+    return res.status(200).json({
+      ...result,
+      effectiveMaxSeats,
+      consumedSeats,
+      assignedPromoCampaign,
+      freePeriodState,
+    });
   } catch (err: any) {
     console.error('[Billing] Error fetching subscription:', err);
     return res.status(500).json({ error: 'internal_error', message: 'Failed to fetch subscription.' });

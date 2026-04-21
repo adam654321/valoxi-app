@@ -9,6 +9,17 @@ interface SubscriptionContextValue {
   features: TierFeatures | null;
   effectiveMaxSeats: number | null;
   consumedSeats: number;
+  assignedPromoCampaign?: {
+    id: number;
+    name: string;
+    referralSource: string;
+    freeMonthsTotal: number;
+  } | null;
+  freePeriodState?: {
+    isActive: boolean;
+    elapsedMonths: number;
+    remainingMonths: number;
+  } | null;
   isLoading: boolean;
   isError: boolean;
 }

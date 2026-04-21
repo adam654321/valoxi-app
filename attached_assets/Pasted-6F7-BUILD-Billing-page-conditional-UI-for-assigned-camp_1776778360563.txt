@@ -1,0 +1,254 @@
+6F7 BUILD. Billing page conditional UI for assigned-campaign users. Backend endpoint extension plus frontend benefit banner, free-period status line, Pro/Expert upgrade credit annotation, and hiding of the legacy typed-promo Collapsible when the user has an assigned campaign. Dev only. Do not deploy.
+
+Implement exactly as written.
+
+---
+
+STEP 0: verify before editing
+
+Do not modify any files.
+
+0a. Paste the current import block at the top of server/routes/billing.routes.ts. Confirm that users (from @shared/schema/core), promoCodeCampaigns (from @shared/schema/billing), and getFreePeriodState (from '../services/promo-code.service') are already in scope. Some may have been added in 6F5 or 6F6.
+
+0b. Paste the current /subscription handler in full (server/routes/billing.routes.ts:454-492 per 6F7 assess). We need the exact structure before inserting new fields.
+
+0c. Paste lines 165 to 210 of client/src/pages/billing.tsx. We need to see the existing useSubscriptionContext / useSubscription hook usage and confirm what fields are destructured today.
+
+0d. Paste the definition of Subscription type from shared/schema/billing.ts (the $inferSelect export) and confirm that the useSubscription hook's SubscriptionResponse type is in client/src/hooks/use-subscription.ts.
+
+If any of 0a through 0d cannot be found, STOP and report.
+
+---
+
+STEP 1: backend - extend GET /api/v2/billing/subscription
+
+Edit server/routes/billing.routes.ts, inside the /subscription handler (around line 454-492).
+
+1a. Imports. Based on Step 0a, add whichever of these are missing:
+- users from '@shared/schema/core' (already present per 6F5)
+- promoCodeCampaigns from '@shared/schema/billing'
+- getFreePeriodState from '../services/promo-code.service'
+- eq from 'drizzle-orm' (already present)
+
+1b. Inside the /subscription handler, immediately after the existing block:
+
+    const result = await billingService.getEntitlements(userCompanyId);
+    if (!result) {
+      return res.status(200).json({ subscription: null, limits: null, features: null });
+    }
+
+Add this block BEFORE the existing getMaxSeats import line:
+
+    // Load the current user's assigned promo campaign, if any.
+    const userId = req.session.userId;
+    let assignedPromoCampaign: {
+      id: number;
+      name: string;
+      referralSource: string;
+      freeMonthsTotal: number;
+    } | null = null;
+
+    if (userId) {
+      const [userRow] = await db
+        .select({ assignedPromoCampaignId: users.assignedPromoCampaignId })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (userRow?.assignedPromoCampaignId) {
+        const [campaign] = await db
+          .select({
+            id: promoCodeCampaigns.id,
+            name: promoCodeCampaigns.name,
+            referralSource: promoCodeCampaigns.referralSource,
+            freeMonthsTotal: promoCodeCampaigns.freeMonthsTotal,
+          })
+          .from(promoCodeCampaigns)
+          .where(eq(promoCodeCampaigns.id, userRow.assignedPromoCampaignId));
+        if (campaign) {
+          assignedPromoCampaign = campaign;
+        }
+      }
+    }
+
+    // Derive free-period state when the subscription carries free months.
+    const freePeriodState =
+      result.subscription.freeMonthsTotal > 0
+        ? getFreePeriodState(result.subscription)
+        : null;
+
+1c. Update the final JSON return. Change:
+
+    return res.status(200).json({ ...result, effectiveMaxSeats, consumedSeats });
+
+To:
+
+    return res.status(200).json({
+      ...result,
+      effectiveMaxSeats,
+      consumedSeats,
+      assignedPromoCampaign,
+      freePeriodState,
+    });
+
+1d. Do not modify anything else in this handler. Effective-max-seats, consumed-seats, error handling all stay identical.
+
+---
+
+STEP 2: update client subscription response type
+
+Edit client/src/hooks/use-subscription.ts.
+
+2a. Extend the SubscriptionResponse interface:
+
+interface SubscriptionResponse {
+  subscription: Subscription | null;
+  limits: TierLimits | null;
+  features: TierFeatures | null;
+  effectiveMaxSeats: number | null;
+  consumedSeats: number;
+  assignedPromoCampaign?: {
+    id: number;
+    name: string;
+    referralSource: string;
+    freeMonthsTotal: number;
+  } | null;
+  freePeriodState?: {
+    isActive: boolean;
+    elapsedMonths: number;
+    remainingMonths: number;
+  } | null;
+}
+
+Both fields are declared optional (?) so existing consumers and any stale cached responses from pre-6F7 continue to typecheck.
+
+2b. If the subscription context (client/src/context/subscription-context.tsx) has its own type that surfaces these fields to consumers via useSubscriptionContext, update that type similarly. If the context just passes the raw SubscriptionResponse, no change needed.
+
+Report which case applies in Step 5.
+
+---
+
+STEP 3: frontend - billing page edits
+
+Edit client/src/pages/billing.tsx.
+
+3a. Extend the useSubscriptionContext destructuring at the top of BillingPage. Current (per 0c):
+
+  const { subscription, isLoading, isError } = useSubscriptionContext();
+
+Change to:
+
+  const { subscription, isLoading, isError, assignedPromoCampaign, freePeriodState } = useSubscriptionContext();
+
+If the context only exposes { subscription, isLoading, isError } and not the other two fields, expose them in subscription-context.tsx as well. Pass them through from the raw query response.
+
+3b. Add a helper function near the top of the file (after the existing imports/constants/interfaces, before the BillingPage component):
+
+function getAssignedCampaignBenefit(campaign: {
+  referralSource: string;
+  freeMonthsTotal: number;
+} | null | undefined): string | null {
+  if (!campaign) return null;
+  if (campaign.referralSource === 'early_bird') {
+    return "You have 20 percent off your Valoxi subscription for life, on any paid plan. The discount applies automatically to every invoice.";
+  }
+  if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 6) {
+    return "You have 6 months of Valoxi Core free. After your free period ends, 15 percent off applies to whatever plan you choose, for life.";
+  }
+  if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 0) {
+    return "You have 15 percent off your Valoxi subscription for life, on any paid plan. The discount applies automatically to every invoice.";
+  }
+  return null;
+}
+
+Note the wording differs from the invitation email: past tense "you have" rather than "you've been assigned", and "to every invoice" rather than "when you subscribe", because on the billing page the user already has the discount, not just the promise of one.
+
+3c. Derive local flags near the top of the BillingPage component body, after the existing useState declarations:
+
+  const benefitText = getAssignedCampaignBenefit(assignedPromoCampaign);
+  const isFiveDNewMember =
+    assignedPromoCampaign?.referralSource === '5d_community' &&
+    assignedPromoCampaign?.freeMonthsTotal === 6;
+  const showFreePeriodLine = isFiveDNewMember && !!freePeriodState?.isActive;
+  const showUpgradeCreditAnnotation =
+    isFiveDNewMember && !!freePeriodState?.isActive && (freePeriodState.remainingMonths ?? 0) > 0;
+
+3d. Insert the benefit banner. In the JSX return, inside the else branch (after the isLoading check), directly ABOVE the existing `{redirectedForSubscription && (!subscription || status === 'canceled') && ...}` block, insert:
+
+          {benefitText && (
+            <Card className="border-primary/40 bg-primary/5">
+              <CardContent className="flex items-start gap-3 py-4">
+                <Gift className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Your Valoxi benefit</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{benefitText}</p>
+                  {showFreePeriodLine && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Free Core period: month {(freePeriodState!.elapsedMonths) + 1} of {assignedPromoCampaign!.freeMonthsTotal}. {freePeriodState!.remainingMonths} month{freePeriodState!.remainingMonths === 1 ? '' : 's'} remaining.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+The banner uses primary colour styling (matches Valoxi brand) rather than the amber/destructive variants reserved for account-state warnings. Gift icon already imported per 0c.
+
+3e. Add upgrade credit annotation to Pro and Expert cards. Inside the PLANS.map block in the plan grid (around lines 627-710 per the assess), inside CardHeader immediately after the existing pt-2 price block and before the closing </CardHeader>, add:
+
+                      {showUpgradeCreditAnnotation && (plan.key === 'PROFESSIONAL' || plan.key === 'EXPERT') && (
+                        <p className="text-xs text-primary mt-2">
+                          Includes ${(freePeriodState!.remainingMonths * 73.95).toFixed(2)} upgrade credit for your {freePeriodState!.remainingMonths} unused free month{freePeriodState!.remainingMonths === 1 ? '' : 's'}.
+                        </p>
+                      )}
+
+Core card never shows this (user is already on free Core, no credit applies to Core).
+
+3f. Hide the legacy typed-promo Collapsible when the user has an assigned campaign. The Collapsible currently renders inside `{!subscription?.promoCodeId && ...}` per 0c (Point 9 of the assess). Change the condition to:
+
+          {!subscription?.promoCodeId && !assignedPromoCampaign && (
+
+This keeps it visible for legacy users who claimed via typed code (existing flow) but hides it for invite-assignment users. Full removal is 6F9.
+
+3g. Do not modify any other part of billing.tsx. Keep plan card behaviour, upgrade preview dialog, portal button, addon UI, trial warning banners, access-ended banner all intact.
+
+---
+
+STEP 4: verification
+
+4a. Restart dev server if HMR does not pick up backend changes. Confirm no compile errors.
+
+4b. Throwaway tsx simulation of the backend. Write a temporary script at server/scripts/tmp-6f7-simulate.ts that:
+- For each of three disposable users (no campaign, Standard 5D, 5D New Member with active free period), calls the equivalent of the /subscription handler end to end by invoking billingService.getEntitlements and then the new assigned-campaign/freePeriodState resolution inline.
+- Prints the resulting JSON for each.
+- Cleans up and self-deletes.
+
+Expected:
+- No campaign user: assignedPromoCampaign null, freePeriodState null.
+- Standard 5D user: assignedPromoCampaign { id 9, name "Standard 5D community", referralSource "5d_community", freeMonthsTotal 0 }, freePeriodState null (subscription.freeMonthsTotal = 0).
+- 5D New Member user in active free period: assignedPromoCampaign { id 11, ..., freeMonthsTotal 6 }, freePeriodState { isActive true, elapsedMonths 0, remainingMonths 6 } (or whatever the test subscription's freeMonthsStartedAt implies).
+
+4c. Frontend visual check. If you can load /billing as a test user with an assigned campaign (temp SQL update on your own user row to set assigned_promo_campaign_id = 9 or 11, then revert after check), confirm:
+- Benefit banner renders above any other billing card, with gift icon, primary styling, correct copy for the campaign.
+- For 5D New Member with active free period: free-period status line appears below benefit copy.
+- For 5D New Member with active free period: Pro and Expert cards show upgrade credit annotation. Core card does not.
+- The legacy typed-promo Collapsible is hidden.
+- Revert the SQL change.
+
+If manual frontend check isn't feasible, add it to the verify-next-real-session list.
+
+4d. Code-path check for users without assigned campaign. Load /billing as any normal user (no assigned_promo_campaign_id). Confirm no banner renders, no regression in existing plan card layout, legacy Collapsible still visible (assuming no promoCodeId).
+
+---
+
+STEP 5: report back
+
+1. Step 0 verbatim findings.
+2. Step 1 backend edit: paste the /subscription handler after edits.
+3. Step 2 type edit: paste the updated SubscriptionResponse and note whether subscription-context.tsx required a parallel update.
+4. Step 3 frontend edits: paste the benefit banner JSX, the upgrade annotation JSX, the Collapsible condition change, and the new helper + derived flags.
+5. Step 4b simulation results for all three paths.
+6. Step 4c frontend visual check (done or deferred).
+7. Confirm throwaway script deleted.
+8. Confirm exactly three files modified (four if subscription-context.tsx needed updating): billing.routes.ts, use-subscription.ts, billing.tsx, optionally subscription-context.tsx.
+
+Do not proceed to 6F8. Stop after 6F7 verification.
