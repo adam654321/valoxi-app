@@ -4,6 +4,7 @@ import { eq, and, sql, lt, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { config } from '../config';
 import { promoCodes, promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
+import { users } from '@shared/schema/core';
 import type { PromoCode, PromoCodeCampaign } from '@shared/schema/billing';
 
 function generateRandomCode(length: number): string {
@@ -89,6 +90,73 @@ class PromoCodeService {
 
     const inserted = await db.insert(promoCodes).values(codes).returning();
     return inserted;
+  }
+
+  async resolveCheckoutCoupon(userId: number): Promise<{ stripeCouponId: string } | null> {
+    const [user] = await db
+      .select({
+        id: users.id,
+        userCompanyId: users.userCompanyId,
+        assignedPromoCampaignId: users.assignedPromoCampaignId,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user || user.assignedPromoCampaignId === null) {
+      return null;
+    }
+
+    const [campaign] = await db
+      .select()
+      .from(promoCodeCampaigns)
+      .where(eq(promoCodeCampaigns.id, user.assignedPromoCampaignId));
+
+    if (!campaign) {
+      console.warn(`[promo-code] resolveCheckoutCoupon: user ${userId} has assigned_promo_campaign_id=${user.assignedPromoCampaignId} but campaign row missing`);
+      return null;
+    }
+
+    const isNewMember = isFiveDNewMember(campaign);
+
+    if (!isNewMember) {
+      return { stripeCouponId: campaign.stripeCouponId };
+    }
+
+    // 5D New Member path. Need subscription to decide free-period state.
+    if (user.userCompanyId === null) {
+      return null;
+    }
+
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userCompanyId, user.userCompanyId));
+
+    // No subscription row: user has not completed signup-triggered trial creation. Skip.
+    if (!subscription) {
+      return null;
+    }
+
+    // Active free period: skip. Free period users should not be hitting Stripe checkout per spec 3.5.
+    if (
+      subscription.status === 'trialing' &&
+      subscription.freeMonthsTotal > 0 &&
+      subscription.freeMonthsStartedAt !== null
+    ) {
+      const elapsed = computeFreeMonthsElapsed(subscription.freeMonthsStartedAt);
+      if (elapsed < subscription.freeMonthsTotal) {
+        return null;
+      }
+    }
+
+    // Post-free-period 5D New Member. Must have a post_free_period_coupon_id.
+    if (!campaign.postFreePeriodCouponId) {
+      throw new Error(
+        `[promo-code] resolveCheckoutCoupon: campaign ${campaign.id} (${campaign.name}) is 5D New Member but has no post_free_period_coupon_id. Fix campaign config.`
+      );
+    }
+
+    return { stripeCouponId: campaign.postFreePeriodCouponId };
   }
 
   async validateCode(code: string): Promise<ValidationResult> {

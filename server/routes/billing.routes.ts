@@ -713,6 +713,22 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
 
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
 
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    let resolvedCoupon: { stripeCouponId: string } | null;
+    try {
+      resolvedCoupon = await promoCodeService.resolveCheckoutCoupon(userId);
+    } catch (err: any) {
+      console.error('[Billing] resolveCheckoutCoupon failed:', err);
+      return res.status(500).json({
+        error: 'coupon_resolution_failed',
+        message: err?.message || 'Could not resolve assigned promo campaign.',
+      });
+    }
+
     if (
       existingSub?.stripeSubscriptionId &&
       (existingSub.status === 'active' || existingSub.status === 'trialing')
@@ -731,11 +747,28 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
     const newSignup = isNewSignup === true;
     let customerId: string | undefined | null = existingSub?.stripeCustomerId;
 
-    if (!customerId && !newSignup) {
+    const mustCreateCustomerUpfront = !!resolvedCoupon || !newSignup;
+
+    if (!customerId && mustCreateCustomerUpfront) {
       const customer = await stripe.customers.create({
         metadata: { userCompanyId: String(userCompanyId) },
       });
       customerId = customer.id;
+    }
+
+    if (resolvedCoupon && customerId) {
+      try {
+        await stripe.customers.update(customerId, {
+          coupon: resolvedCoupon.stripeCouponId,
+        } as any);
+        console.log(`[Billing] attached customer-level coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId} (userCompanyId=${userCompanyId})`);
+      } catch (err: any) {
+        console.error(`[Billing] Failed to attach coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId}:`, err);
+        return res.status(500).json({
+          error: 'coupon_attach_failed',
+          message: 'Could not apply assigned discount. Please contact support.',
+        });
+      }
     }
 
     const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
@@ -748,13 +781,14 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       line_items: [{ price: prices.data[0].id, quantity: 1 }],
       success_url: `${baseUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/billing?canceled=true`,
-      allow_promotion_codes: true,
+      ...(resolvedCoupon ? {} : { allow_promotion_codes: true }),
       metadata: {
         userCompanyId: String(userCompanyId),
         planKey,
         billingInterval,
         promoCodeId: promoCodeId || '',
         isNewSignup: newSignup ? 'true' : 'false',
+        assignedCampaignCouponId: resolvedCoupon?.stripeCouponId || '',
       },
     };
 

@@ -1,0 +1,254 @@
+6F5 BUILD. Auto-apply the user's assigned campaign coupon to Stripe Checkout by attaching it to the Stripe customer. Dev only. Do not deploy.
+
+Implement exactly as written. Do not deviate.
+
+---
+
+STEP 0: verify before editing
+
+Do not modify any files in Step 0. Confirm and paste:
+
+0a. That req.session.userId is defined as an optional number on the SessionData interface (expected at server/middleware/session.ts per 6F2 assess). Paste the interface lines.
+
+0b. The full body of promoCodeService.claimCode from server/services/promo-code.service.ts. We saw partial verbatim in the 6F5 assess (lines 130-231 around the Stripe coupon update). Paste the full method including what it writes to the subscriptions table (specifically whether it updates communityDiscountCouponId, promoCodeId, or postFreePeriodCouponId on the subscription row).
+
+0c. The import block at the top of server/routes/billing.routes.ts. We need to confirm which users/subscriptions schema imports are already present.
+
+If any of 0a through 0c cannot be found, STOP and report.
+
+---
+
+STEP 1: add resolveCheckoutCoupon method to PromoCodeService
+
+Edit server/services/promo-code.service.ts. Add the following method to the PromoCodeService class, directly BEFORE the existing validateCode method (which sits around line 94):
+
+  async resolveCheckoutCoupon(userId: number): Promise<{ stripeCouponId: string } | null> {
+    const [user] = await db
+      .select({
+        id: users.id,
+        userCompanyId: users.userCompanyId,
+        assignedPromoCampaignId: users.assignedPromoCampaignId,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user || user.assignedPromoCampaignId === null) {
+      return null;
+    }
+
+    const [campaign] = await db
+      .select()
+      .from(promoCodeCampaigns)
+      .where(eq(promoCodeCampaigns.id, user.assignedPromoCampaignId));
+
+    if (!campaign) {
+      console.warn(`[promo-code] resolveCheckoutCoupon: user ${userId} has assigned_promo_campaign_id=${user.assignedPromoCampaignId} but campaign row missing`);
+      return null;
+    }
+
+    const isNewMember = isFiveDNewMember(campaign);
+
+    if (!isNewMember) {
+      return { stripeCouponId: campaign.stripeCouponId };
+    }
+
+    // 5D New Member path. Need subscription to decide free-period state.
+    if (user.userCompanyId === null) {
+      return null;
+    }
+
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userCompanyId, user.userCompanyId));
+
+    // No subscription row: user has not completed signup-triggered trial creation. Skip.
+    if (!subscription) {
+      return null;
+    }
+
+    // Active free period: skip. Free period users should not be hitting Stripe checkout per spec 3.5.
+    if (
+      subscription.status === 'trialing' &&
+      subscription.freeMonthsTotal > 0 &&
+      subscription.freeMonthsStartedAt !== null
+    ) {
+      const elapsed = computeFreeMonthsElapsed(subscription.freeMonthsStartedAt);
+      if (elapsed < subscription.freeMonthsTotal) {
+        return null;
+      }
+    }
+
+    // Post-free-period 5D New Member. Must have a post_free_period_coupon_id.
+    if (!campaign.postFreePeriodCouponId) {
+      throw new Error(
+        `[promo-code] resolveCheckoutCoupon: campaign ${campaign.id} (${campaign.name}) is 5D New Member but has no post_free_period_coupon_id. Fix campaign config.`
+      );
+    }
+
+    return { stripeCouponId: campaign.postFreePeriodCouponId };
+  }
+
+Imports to verify at the top of the file: users (from @shared/schema/core), subscriptions (already imported per assess Point 3), promoCodeCampaigns (already imported), eq (already imported). If users is not already imported, add it from '@shared/schema/core'.
+
+Do not modify any other method in this file.
+
+---
+
+STEP 2: edit the checkout handler
+
+Edit server/routes/billing.routes.ts, inside the POST /checkout handler.
+
+2a. Add the userId guard and coupon resolution. Immediately after the existing line:
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+
+Insert this block BEFORE the existing `if (existingSub?.stripeSubscriptionId ...)` requiresUpgrade check:
+
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+
+    let resolvedCoupon: { stripeCouponId: string } | null;
+    try {
+      resolvedCoupon = await promoCodeService.resolveCheckoutCoupon(userId);
+    } catch (err: any) {
+      console.error('[Billing] resolveCheckoutCoupon failed:', err);
+      return res.status(500).json({
+        error: 'coupon_resolution_failed',
+        message: err?.message || 'Could not resolve assigned promo campaign.',
+      });
+    }
+
+2b. Modify customer creation to force upfront creation when a coupon needs attaching. Replace the existing block (lines 731-739):
+
+    const newSignup = isNewSignup === true;
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
+
+    if (!customerId && !newSignup) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+With:
+
+    const newSignup = isNewSignup === true;
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
+
+    const mustCreateCustomerUpfront = !!resolvedCoupon || !newSignup;
+
+    if (!customerId && mustCreateCustomerUpfront) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+    if (resolvedCoupon && customerId) {
+      try {
+        await stripe.customers.update(customerId, {
+          coupon: resolvedCoupon.stripeCouponId,
+        } as any);
+        console.log(`[Billing] attached customer-level coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId} (userCompanyId=${userCompanyId})`);
+      } catch (err: any) {
+        console.error(`[Billing] Failed to attach coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId}:`, err);
+        return res.status(500).json({
+          error: 'coupon_attach_failed',
+          message: 'Could not apply assigned discount. Please contact support.',
+        });
+      }
+    }
+
+2c. Modify the checkoutParams to conditionally drop allow_promotion_codes when a coupon is auto-applied. Replace the existing block (lines 746-759):
+
+    const checkoutParams: any = {
+      mode: 'subscription',
+      line_items: [{ price: prices.data[0].id, quantity: 1 }],
+      success_url: `${baseUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/billing?canceled=true`,
+      allow_promotion_codes: true,
+      metadata: {
+        userCompanyId: String(userCompanyId),
+        planKey,
+        billingInterval,
+        promoCodeId: promoCodeId || '',
+        isNewSignup: newSignup ? 'true' : 'false',
+      },
+    };
+
+With:
+
+    const checkoutParams: any = {
+      mode: 'subscription',
+      line_items: [{ price: prices.data[0].id, quantity: 1 }],
+      success_url: `${baseUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/billing?canceled=true`,
+      ...(resolvedCoupon ? {} : { allow_promotion_codes: true }),
+      metadata: {
+        userCompanyId: String(userCompanyId),
+        planKey,
+        billingInterval,
+        promoCodeId: promoCodeId || '',
+        isNewSignup: newSignup ? 'true' : 'false',
+        assignedCampaignCouponId: resolvedCoupon?.stripeCouponId || '',
+      },
+    };
+
+2d. Do not modify the existing trial_period_days subscription_data block (lines 767-770). Do not modify the customer_creation: 'always' branch; it remains for the dead-code newSignup path but is now effectively unreachable whenever a coupon resolves (because mustCreateCustomerUpfront forces the customer to exist).
+
+---
+
+STEP 3: verification
+
+3a. Restart dev server if HMR does not pick up both files. Confirm no compile errors.
+
+3b. Throwaway script simulation. Write a temporary script at server/scripts/tmp-6f5-simulate.ts that:
+
+- Creates (or reuses) four disposable users, each in their own disposable user_company row, representing:
+  (i)   No assigned campaign (control)
+  (ii)  Standard 5D (campaign id 9)
+  (iii) Early Bird (campaign id 10)
+  (iv)  5D New Member (campaign id 11), with a trialing CORE subscription, freeMonthsStartedAt = now, freeMonthsTotal = 6
+  (v)   5D New Member (campaign id 11), post-free-period: freeMonthsStartedAt = 7 months ago, freeMonthsTotal = 6
+- For each, calls promoCodeService.resolveCheckoutCoupon(userId) directly.
+- Prints the result for each.
+- Cleans up the temporary users, user_companies, and subscriptions rows.
+- Script deleted from codebase after run.
+
+Expected results:
+  (i)   null
+  (ii)  { stripeCouponId: '<Standard 5D campaign 9 stripeCouponId>' }
+  (iii) { stripeCouponId: '<Early Bird campaign 10 stripeCouponId>' }
+  (iv)  null (active free period)
+  (v)   { stripeCouponId: '<campaign 11 postFreePeriodCouponId>' } OR thrown error if postFreePeriodCouponId is null on campaign 11
+
+If (v) throws the expected configuration error, report it clearly. That is correct behaviour. It means campaign 11's postFreePeriodCouponId needs to be populated in Stripe admin before 6F5 is usable for post-free-period 5D New Member users. That is a 6H config step, not a code defect.
+
+3c. Real dev checkout smoke test (deferrable). If you can trigger a real dev checkout as a user assigned to Standard 5D or Early Bird, do so with a Stripe test card and verify in Stripe dashboard:
+- The customer has the expected coupon attached.
+- The hosted Checkout page does not show a "promotion code" input.
+- The resulting subscription has the discount applied.
+
+If you cannot trigger a real checkout in this session, mark 3c as deferred to the next real-browser session and add it to the verify-next-real-session list.
+
+3d. Check that the legacy /claim-promo endpoint still works unchanged. Do not test it now; just confirm you did not touch it. 6F9 removes it later.
+
+---
+
+STEP 4: report back
+
+1. Step 0a, 0b, 0c verbatim findings.
+2. Confirm Step 1 helper added. Paste its full body as actually inserted.
+3. Confirm Step 2a, 2b, 2c edits. Paste the edited checkout handler region from the userId guard through the end of checkoutParams construction.
+4. Throwaway script results for paths (i) through (v). Report verbatim.
+5. Idempotency check: running resolveCheckoutCoupon twice for the same user returns the same result and does not mutate anything (it is a read-only function). Confirm.
+6. Status of the dev checkout smoke test (done, deferred, or not attempted).
+7. Confirm throwaway script deleted.
+8. Confirm exactly two files modified: promo-code.service.ts, billing.routes.ts.
+
+Known gap to record (not a blocker): 6F5 does not mirror the applied coupon to subscription.communityDiscountCouponId. claimCode does this for the legacy typed-code flow. A future cycle (6F9 cleanup or 6H) should add this for invite-assignment parity. Do not address it in 6F5.
+
+Do not proceed to 6F6. Stop after 6F5 verification.
