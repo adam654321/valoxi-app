@@ -1,0 +1,37 @@
+ASSESS ONLY. DO NOT EDIT ANY FILES. DO NOT RUN ANY COMMANDS THAT CHANGE STATE. READ AND REPORT VERBATIM.
+
+Context: In the previous session we shipped cycle 6F9a (which removes the legacy typed-promo code entry flow from the billing page and removes the POST /claim-promo endpoint), verified it, then rolled back on a Replit checkpoint. Before re-shipping I need to confirm the codebase is in the pre-6F9a state and understand exactly what the rollback restored.
+
+Report each item below with verbatim source and exact line numbers. Do not summarise. Do not paraphrase. If a section is absent, state "ABSENT" explicitly and do not guess why.
+
+File 1: client/src/pages/billing.tsx
+
+1a. Imports block. Quote lines 1 through the end of the import block verbatim with line numbers.
+
+1b. Any useState declarations containing the identifiers promoOpen, promoCode, or promoError (or similar promo-related state). Quote verbatim with line numbers.
+
+1c. Any useMutation (or similar) hook assigned to a variable whose name contains "promo" (for example promoClaimMutation). Quote the full declaration verbatim with line numbers.
+
+1d. Any JSX using the Collapsible component that wraps a typed promo code input. Quote the entire JSX block verbatim with line numbers, including the opening and closing tags.
+
+1e. Any reference to a /claim-promo endpoint from inside this file (for example in a fetch or mutation body). Quote verbatim with line numbers.
+
+File 2: server/routes/billing.routes.ts
+
+2a. Any route handler registered at path "/claim-promo" or any string containing "claim-promo". Quote the entire handler body verbatim with line numbers, including route registration and handler function.
+
+2b. Any import statement referencing promo-code-service, promo-code.service, or similar, and note whether that import is used outside the /claim-promo handler. Quote verbatim with line numbers.
+
+2c. The full list of route registrations in this file (just the router.get, router.post, router.patch, router.delete lines with paths). Quote verbatim with line numbers.
+
+Also report:
+
+3a. Output of: git log -10 --oneline on the current branch. Quote verbatim.
+
+3b. Output of: git status. Quote verbatim.
+
+3c. The current Replit checkpoint name or timestamp if visible.
+
+3d. Any uncommitted changes to billing.tsx or billing.routes.ts. If present, quote the diff verbatim.
+
+Do not interpret. Do not propose changes. Return raw source and raw command output only.
