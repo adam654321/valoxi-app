@@ -4,8 +4,10 @@ import { eq, sql } from 'drizzle-orm';
 import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
 import { db } from '../db';
 import { users } from '@shared/schema';
+import { promoCodeCampaigns } from '@shared/schema/billing';
 import { emailApiService } from '../services/email.service';
 import { billingService } from '../services/billing.service';
+import { isFiveDNewMember } from '../services/promo-code.service';
 
 const router = Router();
 
@@ -34,6 +36,7 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
       firstName: users.firstName,
       welcomeEmailSentAt: users.welcomeEmailSentAt,
       userCompanyId: users.userCompanyId,
+      assignedPromoCampaignId: users.assignedPromoCampaignId,
     })
     .from(users)
     .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
@@ -65,7 +68,22 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
   if (linked && match.userCompanyId !== null) {
     const existingSubscription = await billingService.getSubscription(match.userCompanyId);
     if (existingSubscription === null) {
-      await billingService.createTrialSubscription(match.userCompanyId, 1);
+      let use5DNewMemberTrial = false;
+      if (match.assignedPromoCampaignId) {
+        const [campaign] = await db
+          .select()
+          .from(promoCodeCampaigns)
+          .where(eq(promoCodeCampaigns.id, match.assignedPromoCampaignId));
+        if (campaign && isFiveDNewMember(campaign)) {
+          use5DNewMemberTrial = true;
+        }
+      }
+
+      if (use5DNewMemberTrial) {
+        await billingService.createFiveDNewMemberTrial(match.userCompanyId);
+      } else {
+        await billingService.createTrialSubscription(match.userCompanyId, 1);
+      }
       console.log(`[clerk-webhook] user.created: 24h trial subscription created for user ${match.id} (company ${match.userCompanyId})`);
     } else {
       console.log(`[clerk-webhook] user.created: trial subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping`);

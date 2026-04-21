@@ -93,6 +93,38 @@ class BillingService {
     return subscription;
   }
 
+  async createFiveDNewMemberTrial(userCompanyId: number): Promise<Subscription> {
+    const now = new Date();
+    const trialEnd = new Date(now);
+    trialEnd.setMonth(trialEnd.getMonth() + 6);
+
+    const subscription = await billingRepository.create({
+      userCompanyId,
+      planKey: 'CORE',
+      status: 'trialing',
+      trialStart: now,
+      trialEnd,
+      trialEndsAt: trialEnd,
+      freeMonthsStartedAt: now,
+      freeMonthsTotal: 6,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'trial.started',
+      newStatus: 'trialing',
+      newPlanKey: 'CORE',
+      payload: { trialDays: null, freeMonthsTotal: 6, variant: '5d_new_member' },
+    });
+
+    const { track } = await import('./funnel.service');
+    track(userCompanyId, null, 'trial.started', { planKey: 'CORE', freeMonthsTotal: 6, variant: '5d_new_member' });
+
+    console.log(`[billing] created 5D New Member trial userCompanyId=${userCompanyId} trialEndsAt=${trialEnd.toISOString()}`);
+
+    return subscription;
+  }
+
   async activateSubscription(
     userCompanyId: number,
     data: {
