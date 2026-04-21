@@ -1,0 +1,97 @@
+6F8 ASSESS ONLY. Read-only. Do not modify any files. Do not run any SQL.
+
+Goal of 6F8 (do not build yet): wire the full lifecycle of the 5D New Member 6-month free period through the existing daily cron. Three distinct behaviours to add or fix:
+
+A. Month 5 warning email. On the day free-period users reach 5 months elapsed (of 6), send an "enter payment details" email asking them to add a card so their Core subscription continues. Use freeMonthsWarningEmailSentAt (spec section 3.5 describes "existing warning cron" but we need to verify the field and the cron are wired to 5D New Member 6-month trials, not just old-style 1-month free trials). Idempotent.
+
+B. Month 6 terminal transition. On the day free-period users reach 6 months elapsed with no Stripe customer yet (i.e. they did not enter payment details), flip status to canceled, stamp canceledAt, preserve data per Item 15's 30-day preservation policy. Send the cancellation email. The existing trial expiry cron at billing.cron.ts:143-207 already does this for Professional 24-hour trials via billingService.expireTrial; we need to confirm it fires the same path for trialEndsAt-reached 5D New Member subscriptions, OR whether we need a dedicated branch.
+
+C. Post-free-period coupon swap fix. The free-period coupon cron at billing.cron.ts:267-320 currently resolves the post-free-period coupon via sub.promoCodeId. For 6F4-created 5D New Member users there is no promoCodeId (invite-assignment doesn't use typed codes). Fix: resolve via users.assigned_promo_campaign_id as a fallback when sub.promoCodeId is null. This is blocker-level for 5D New Member users reaching month 6 who DID enter payment details (i.e. they have a Stripe customer), because without the fix, their 15% perpetual coupon never gets applied.
+
+Additional: grace window decision for 6-month terminal flip. Handover Q4 left this open with a recommendation of 3 days. Propose and justify.
+
+Produce a verbatim change plan. Work through the fourteen points below in order. Paste VERBATIM quotes with file paths and line numbers.
+
+1. Paste server/cron/billing.cron.ts in full. This is a critical file and every branch matters for 6F8. Include all scheduled jobs: the 09:05 trial expiry job, the free-period expiry/coupon-swap job, the 04:00 dunning day-7 reminder, the dunning day-14 cancellation, and any others. Paste ALL of them verbatim with line numbers.
+
+2. Confirm whether the subscriptions table has freeMonthsWarningEmailSentAt. The 6F7 assess Point 8 showed it in the schema. Paste the exact schema line. Confirm it is nullable and defaults to null.
+
+3. Locate sendRenewalWarningEmail in server/services/email.service.ts (mentioned in 6F3 assess Point 3 around line 426). Paste the full method. Determine whether it is the correct email for a 5D New Member month-5 warning, or whether we need a new method sendFreePeriodPaymentRequiredEmail. The distinction matters because the content is different: month-5 is "your free period ends soon, add payment to continue" not "your subscription renews soon".
+
+4. Paste billingService.expireTrial from server/services/billing.service.ts (referenced in 6F4 Step 0c). Confirm what it does: does it flip status to canceled, stamp canceledAt, clear any fields, send any email? For 5D New Member month-6 we need the exact same end state as a normal trial expiry.
+
+5. Paste the existing trial expiry cron block at billing.cron.ts:143-207 in full. Confirm the query filter: does it pick up ALL trialing subscriptions with trialEndsAt in the past, regardless of freeMonthsTotal? If yes, 5D New Member trials will be caught automatically. If the query has a filter that excludes free-period subs, flag it.
+
+6. Paste the existing free-period coupon swap cron at billing.cron.ts:267-320. Specifically confirm:
+- Does it run in the same scheduled job as trial expiry, or a separate job?
+- Does its query filter pick up users who have entered Stripe payment details (stripeCustomerId != null) but are past their free period, OR does it also cover users without Stripe customers (which would incorrectly try to swap coupons on users who never gave card details)?
+- How does it resolve the post-free-period coupon id today?
+
+7. Identify how users.assigned_promo_campaign_id can be joined into the cron queries. The subscriptions table is keyed by userCompanyId. The assigned campaign lives on the users table. A company can have multiple users in theory; in practice, per the 6F2 invite flow, there is one user per company at invite time (userCompanyId belongs to that user). We need to decide how the cron resolves "this company's assigned campaign." Options:
+  (a) JOIN users ON users.userCompanyId = subscriptions.userCompanyId. Pick the first/only user. Risk: companies with multiple users later.
+  (b) Use the users row whose userCompanyId == subscriptions.userCompanyId AND isCompanyAdmin=true. More defensive but assumes the invite-assigned user is always the company admin.
+  (c) Store assigned_promo_campaign_id on the subscriptions row directly at 6F4 time (denormalised, single source of truth per subscription).
+Recommend one in Section B. Option (c) might be cleanest but adds a schema migration to 6F8.
+
+8. Identify every place in the codebase that currently references sub.promoCodeId for the purpose of resolving a campaign or coupon. Grep server/ for 'promoCodeId' and 'promo_code_id'. List each hit with file path and line number. This tells us the blast radius of the fallback fix in point C above. Some may need the same users.assigned_promo_campaign_id fallback (e.g. upgrade-preview free-period credit calculation at billing.routes.ts:569-574, which gates on !existingSub.communityDiscountCouponId but doesn't read promoCodeId).
+
+9. Check whether the existing free-period-warning cron (if any) exists today. Grep billing.cron.ts for 'freeMonthsWarningEmailSentAt' and 'warning'. If no warning cron exists, confirm that 6F8 is creating it from scratch. If one exists, paste it.
+
+10. Check whether there is any "add payment details" flow today that 5D New Member users can navigate to. This is the UX destination the month-5 email must link to. Options:
+  (a) /billing page (existing 6F7 work has the plan cards; clicking "Get Started" on Core triggers checkout, which via 6F5 attaches the post-free-period 15% coupon at customer level). This is probably right.
+  (b) A dedicated "continue after free period" page. Does not exist.
+Confirm and propose.
+
+11. Check the cancellation email flow. sendDunningCancellationEmail (6D2) is gated by a dunning.auto_cancel_requested audit event from the day-14 cron. For 5D New Member month-6 cancellation the cause is different (free period ended, no payment) so we probably need a distinct email. Paste sendDunningCancellationEmail and propose either (i) a new method sendFreePeriodCancellationEmail, or (ii) reusing sendDunningCancellationEmail with a variant parameter.
+
+12. Confirm Item 15's 30-day data preservation mechanic. The handover mentions it, Completed entry #90 cross-cycle coupling note mentions email-match resurrection. Paste whatever is currently in place (a cron job, a DB soft-delete pattern, documentation). If nothing is in place yet, flag that 6F8's cancellation flow must set a canceledAt timestamp so a future data-wipe cron can find these rows, but the actual wipe cron is not 6F8's job.
+
+13. Confirm the Core cap decision from Action Log Item 21. Current entitlements show maxActiveTargets: 5 for Core, not 3. If 5D New Member users will hit the Core cap during their free period, it affects messaging. Report current entitlement values only; do not propose changes (out of scope).
+
+14. Confirm cron timezone and scheduling. The dunning crons run at 04:00 Europe/London per handover. The trial expiry cron runs at 09:05 (billing.cron.ts:143 per prior output). Confirm both are correct and note whether 6F8's new warning and terminal-flip jobs should run in either existing slot or a new slot.
+
+Output format:
+
+SECTION A - VERBATIM EXISTING STATE
+One subsection per point 1 through 14.
+
+SECTION B - PROPOSED 6F8 BUILD PLAN
+
+B1 - Month-5 warning email
+- New method sendFreePeriodPaymentRequiredEmail or reuse of sendRenewalWarningEmail. Recommend one.
+- New cron job OR extension of existing one. Scheduling.
+- Query: find subscriptions where freeMonthsTotal > 0 AND freeMonthsStartedAt != null AND computeFreeMonthsElapsed = freeMonthsTotal - 1 AND freeMonthsWarningEmailSentAt IS NULL.
+- Stamp freeMonthsWarningEmailSentAt on successful send. Idempotent.
+- Link target in email: /billing.
+
+B2 - Month-6 terminal flip (if no Stripe customer)
+- Query: find subscriptions where freeMonthsTotal > 0 AND freeMonthsStartedAt != null AND computeFreeMonthsElapsed >= freeMonthsTotal AND stripeCustomerId IS NULL AND status = 'trialing'.
+- For each: call billingService.expireTrial (which handles the canceled transition). OR call a new billingService.expireFreePeriodTrial if expireTrial's behaviour differs.
+- Send sendFreePeriodCancellationEmail.
+- Propose whether the existing trial expiry cron at billing.cron.ts:143-207 already handles this correctly (since 5D New Member subs are status='trialing' with trialEndsAt populated) or whether we need an explicit new branch.
+- Grace window: locked recommendation or variants.
+
+B3 - Post-free-period coupon swap fix (the actual blocker)
+- Amend the free-period coupon swap cron at billing.cron.ts:267-320 to fall back to users.assigned_promo_campaign_id -> promoCodeCampaigns.postFreePeriodCouponId when sub.promoCodeId is null.
+- Propose the join approach per Point 7 recommendation.
+- Ensure the fix is read-only safe (doesn't try to swap coupons for users who never gave Stripe customer details).
+
+B4 - Cancellation email
+- Recommend new method vs reused with variant.
+- Copy stays locked (plain UK English, no em dashes, 30-day data preservation + email-match resurrection).
+
+B5 - Test scripts retained
+- Match the 6D2 pattern: add test-free-period-warning.ts and test-free-period-cancellation.ts similar to existing test-dunning-day7.ts. These let 6F8 be verified without waiting 5 calendar months.
+
+SECTION C - RISKS AND UNKNOWNS
+- What happens for 5D New Member users who DID enter payment details at month 5 (Stripe customer + subscription created mid-free-period via Checkout post-warning): do they still need the coupon swap cron to flip 100% to 15% automatically? They don't have a 100% coupon on them today (we skipped the addon mid-free-period path per 6F6 / backlog #51), so they just need the 15% to attach at first Checkout, which 6F5 already does via postFreePeriodCouponId. Confirm the logic chain.
+- Users who enter payment details AFTER month 6: are they still our users? Per spec 3.5 "at month 6 they must enter payment details or status flips to canceled (data preserved)". If terminal flip runs before they can re-add payment details, spec Item 15's "30-day email-match resurrection" is the path back. Confirm this is the intended flow and not a bug.
+- Multiple users per company edge case (Point 7).
+- Whether the warning + terminal cron should run in the same 09:05 slot as trial expiry or a separate slot.
+
+SECTION D - BUILD SIZE ESTIMATE
+State whether 6F8 should be:
+- One build prompt.
+- Split into 6F8a (coupon swap fix — blocker), 6F8b (warning cron), 6F8c (terminal flip + cancellation email).
+
+Do not modify any files. Do not run any SQL. This is assess only.
