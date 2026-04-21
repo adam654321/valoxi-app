@@ -1,0 +1,410 @@
+Phase 6A5 build Part 2 of 2. Client-side rebrand of the referral-invoice page to 5D Subsidy Report, USD currency, no Stripe invoice generation. One file changes. Twelve edit blocks. No new files, no packages. Dev only.
+Safety rule. If any Find block below does not match the file state exactly (including whitespace), stop and report. Do not guess.
+File: client/src/pages/admin/referral-invoice.tsx (12 edits).
+Edit 1. Replace the top import block and INVOICE_RATE constant.
+Find:
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+AlertDialog,
+AlertDialogAction,
+AlertDialogCancel,
+AlertDialogContent,
+AlertDialogDescription,
+AlertDialogFooter,
+AlertDialogHeader,
+AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Download, Copy, Users, PoundSterling, TrendingUp, Tag, Loader2, FileText, ExternalLink } from "lucide-react";
+const INVOICE_RATE = 50.25;
+Replace with:
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { Download, Copy, Users, DollarSign, TrendingUp, Tag, Loader2 } from "lucide-react";
+const INVOICE_RATE = 73.95;
+Net effect: removed useMutation, apiRequest, AlertDialog block, PoundSterling, FileText, ExternalLink. Added DollarSign. INVOICE_RATE changed from 50.25 GBP to 73.95 USD.
+Edit 2. Remove the three PartnerInvoice interfaces.
+Find:
+interface PartnerInvoiceItem {
+id: string;
+description: string;
+amount: number;
+currency: string;
+quantity: number;
+}
+interface PartnerInvoicePreview {
+itemCount: number;
+totalAmount: number;
+currency: string;
+items: PartnerInvoiceItem[];
+}
+interface PartnerInvoiceResult {
+invoiceId: string;
+invoiceUrl: string;
+total: number;
+currency: string;
+}
+Replace with nothing (delete the entire 21-line block, including the trailing blank line before the function component begins).
+Edit 3. Remove dialog state, both mutations, and formatAmount helper. This is a single contiguous block.
+Find:
+const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+const [previewData, setPreviewData] = useState<PartnerInvoicePreview | null>(null);
+const [invoiceResult, setInvoiceResult] = useState<PartnerInvoiceResult | null>(null);
+const [showResultDialog, setShowResultDialog] = useState(false);
+const previewMutation = useMutation({
+mutationFn: async () => {
+const res = await apiRequest("POST", "/api/v2/admin/partner-invoice/preview");
+return res.json();
+},
+onSuccess: (data: { success: boolean; data: PartnerInvoicePreview }) => {
+if (data.data.itemCount === 0) {
+toast({ title: "No pending items", description: "There are no pending invoice items for the partner account." });
+return;
+}
+setPreviewData(data.data);
+setShowPreviewDialog(true);
+},
+onError: () => {
+toast({ title: "Error", description: "Failed to fetch pending invoice items.", variant: "destructive" });
+},
+});
+const generateMutation = useMutation({
+mutationFn: async () => {
+const res = await apiRequest("POST", "/api/v2/admin/partner-invoice/generate");
+return res.json();
+},
+onSuccess: (data: { success: boolean; data: PartnerInvoiceResult }) => {
+setShowPreviewDialog(false);
+setInvoiceResult(data.data);
+setShowResultDialog(true);
+},
+onError: () => {
+toast({ title: "Error", description: "Failed to generate invoice.", variant: "destructive" });
+},
+});
+const formatAmount = (amount: number, currency: string) => {
+const symbol = currency === 'usd' ? '$' : '£';
+return ${symbol}${(amount / 100).toFixed(2)};
+};
+const monthOptions = getMonthOptions();
+Replace with:
+const monthOptions = getMonthOptions();
+Net effect: 41 lines removed, monthOptions sits where previewState/mutations/formatAmount used to begin.
+Edit 4. Update CSV header label inside handleExportCsv.
+Find:
+const header = "Company Name,Email,Plan,Free Period Start,Months Elapsed,Months Remaining,Invoice Amount\n";
+Replace with:
+const header = "Company Name,Email,Plan,Free Period Start,Months Elapsed,Months Remaining,Subsidy Amount\n";
+Edit 5. Update CSV filename inside handleExportCsv.
+Find:
+a.download = `5d-invoice-${month}.csv`;
+Replace with:
+a.download = `5d-subsidy-${month}.csv`;
+Edit 6. Update handleCopyInvoiceText lines array and toast description.
+Find:
+const lines = [
+  `5D Community Invoice — ${monthLabel}`,
+  `Source: ${invoice.source}`,
+  `Rate: £${INVOICE_RATE.toFixed(2)}/member/month`,
+  "",
+  `Total Members on Free Period: ${summary.totalMembersOnFreePeriod}`,
+  `Total Invoice Amount: £${summary.totalInvoiceAmount.toFixed(2)}`,
+  "",
+  "Members:",
+  ...activeMembers.map(
+    (m) =>
+      `  ${m.companyName || "Unknown"} (${m.email || "N/A"}) — ${m.planKey} — Elapsed: ${m.monthsElapsed}m, Remaining: ${m.monthsRemaining}m — £${m.invoiceAmount.toFixed(2)}`
+  ),
+  "",
+  `Total: £${summary.totalInvoiceAmount.toFixed(2)}`,
+];
+
+navigator.clipboard.writeText(lines.join("\n")).then(() => {
+  toast({ title: "Copied", description: "Invoice text copied to clipboard." });
+});
+Replace with:
+const lines = [
+  `5D Community Subsidy Report — ${monthLabel}`,
+  `Source: ${invoice.source}`,
+  `Rate: $${INVOICE_RATE.toFixed(2)}/member/month`,
+  "",
+  `Total Members on Free Period: ${summary.totalMembersOnFreePeriod}`,
+  `Total Subsidy Amount: $${summary.totalInvoiceAmount.toFixed(2)}`,
+  "",
+  "Members:",
+  ...activeMembers.map(
+    (m) =>
+      `  ${m.companyName || "Unknown"} (${m.email || "N/A"}) — ${m.planKey} — Elapsed: ${m.monthsElapsed}m, Remaining: ${m.monthsRemaining}m — $${m.invoiceAmount.toFixed(2)}`
+  ),
+  "",
+  `Total: $${summary.totalInvoiceAmount.toFixed(2)}`,
+];
+
+navigator.clipboard.writeText(lines.join("\n")).then(() => {
+  toast({ title: "Copied", description: "Subsidy text copied to clipboard." });
+});
+Net effect: all GBP symbols in copy-text body become USD. Heading changed from "5D Community Invoice" to "5D Community Subsidy Report". Toast message text updated. Em dashes preserved.
+Edit 7. Update page heading and subtitle.
+Find:
+      <h1 className="text-2xl font-bold text-foreground">5D Invoice Report</h1>
+      <p className="text-sm text-muted-foreground mt-1">
+        Monthly invoice for community referral free-period members.
+      </p>
+Replace with:
+      <h1 className="text-2xl font-bold text-foreground">5D Subsidy Report</h1>
+      <p className="text-sm text-muted-foreground mt-1">
+        Monthly subsidy report for community referral free-period members.
+      </p>
+Edit 8. Update summary cards: PoundSterling to DollarSign icon, Total Invoice Amount to Total Subsidy Amount, both GBP symbols to USD. This covers the two summary cards that reference currency.
+Find:
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <PoundSterling className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-2xl font-bold">£{summary.totalInvoiceAmount.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Total Invoice Amount</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-5 w-5 text-amber-600" />
+            <div>
+              <p className="text-2xl font-bold">£{summary.avgPerMember.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Avg per Member</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+Replace with:
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <DollarSign className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-2xl font-bold">${summary.totalInvoiceAmount.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Total Subsidy Amount</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-5 w-5 text-amber-600" />
+            <div>
+              <p className="text-2xl font-bold">${summary.avgPerMember.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Avg per Member</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+Edit 9. Remove Generate Partner Invoice button, rename Copy Invoice Text.
+Find:
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={activeMembers.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopyInvoiceText} disabled={!summary}>
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Invoice Text
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => previewMutation.mutate()}
+            disabled={previewMutation.isPending}
+          >
+            {previewMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4 mr-2" />
+            )}
+            Generate Partner Invoice
+          </Button>
+        </div>
+Replace with:
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={activeMembers.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopyInvoiceText} disabled={!summary}>
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Subsidy Text
+          </Button>
+        </div>
+Edit 10. Rename table column header.
+Find:
+              <TableHead className="text-right">This Month's Invoice</TableHead>
+Replace with:
+              <TableHead className="text-right">This Month's Subsidy</TableHead>
+Edit 11. Update table row amount cell from GBP to USD.
+Find:
+                  <TableCell className="text-right font-medium">£{m.invoiceAmount.toFixed(2)}</TableCell>
+Replace with:
+                  <TableCell className="text-right font-medium">${m.invoiceAmount.toFixed(2)}</TableCell>
+Edit 12. Update footer totals block and rename "Total Invoice" to "Total Subsidy". Also GBP to USD in both places.
+Find:
+      {activeMembers.length > 0 && summary && (
+        <div className="flex justify-end mt-4 pt-4 border-t">
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Total Invoice</p>
+            <p className="text-xl font-bold">£{summary.totalInvoiceAmount.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">
+              {summary.totalMembersOnFreePeriod} member{summary.totalMembersOnFreePeriod !== 1 ? "s" : ""} × £{INVOICE_RATE.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+Replace with:
+      {activeMembers.length > 0 && summary && (
+        <div className="flex justify-end mt-4 pt-4 border-t">
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Total Subsidy</p>
+            <p className="text-xl font-bold">${summary.totalInvoiceAmount.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">
+              {summary.totalMembersOnFreePeriod} member{summary.totalMembersOnFreePeriod !== 1 ? "s" : ""} × ${INVOICE_RATE.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+Edit 13. Remove both AlertDialog components (preview dialog and result dialog) at the bottom of the component JSX.
+Find (note the leading blank line, important for clean trailing cleanup):
+  <AlertDialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+    <AlertDialogContent className="max-w-lg">
+      <AlertDialogHeader>
+        <AlertDialogTitle>Generate Partner Invoice</AlertDialogTitle>
+        <AlertDialogDescription>
+          {previewData && (
+            <div className="space-y-3 mt-2">
+              <p className="text-sm">
+                <strong>{previewData.itemCount}</strong> pending item{previewData.itemCount !== 1 ? "s" : ""} totalling{" "}
+                <strong>{formatAmount(previewData.totalAmount, previewData.currency)}</strong>
+              </p>
+              <div className="max-h-48 overflow-y-auto border rounded p-2 space-y-1">
+                {previewData.items.map((item) => (
+                  <p key={item.id} className="text-xs text-muted-foreground">
+                    {item.description} — {formatAmount(item.amount, item.currency)}
+                  </p>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This will create a draft invoice in Stripe. You can review it before sending.
+              </p>
+            </div>
+          )}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction
+          onClick={() => generateMutation.mutate()}
+          disabled={generateMutation.isPending}
+        >
+          {generateMutation.isPending ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : null}
+          Confirm
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+  <AlertDialog open={showResultDialog} onOpenChange={setShowResultDialog}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Invoice Created</AlertDialogTitle>
+        <AlertDialogDescription>
+          {invoiceResult && (
+            <div className="space-y-2 mt-2">
+              <p className="text-sm">
+                Invoice <strong>{invoiceResult.invoiceId}</strong> created for{" "}
+                <strong>{formatAmount(invoiceResult.total, invoiceResult.currency)}</strong>.
+              </p>
+              <p className="text-sm">Review in Stripe before sending.</p>
+              {invoiceResult.invoiceUrl && (
+                
+                  href={invoiceResult.invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View in Stripe
+                </a>
+              )}
+            </div>
+          )}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogAction>Done</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+</div>
+);
+}
+Replace with:
+</div>
+);
+}
+Net effect: both AlertDialog components removed, the closing div and return statement preserved. Trailing newline at end of file preserved.
+Validation. Run all checks in order. Report results for each.
+Check 1. TypeScript.
+Run: npx tsc --noEmit
+Expected: zero errors. Any error blocker. Most likely failure: a surviving reference to a removed symbol (PartnerInvoicePreview, PartnerInvoiceResult, PoundSterling, apiRequest, formatAmount, previewMutation, generateMutation, etc.) somewhere the edits missed.
+Check 2. Grep for removed client-side identifiers.
+Run: grep -rn "PartnerInvoicePreview|PartnerInvoiceResult|PartnerInvoiceItem|PoundSterling|formatAmount|previewMutation|generateMutation|showPreviewDialog|showResultDialog|partner-invoice/preview|partner-invoice/generate|Generate Partner Invoice|5D Invoice Report|Copy Invoice Text|Total Invoice|5d-invoice-" client/src/
+Expected: zero matches.
+Check 3. Client build sanity.
+Run: npm run build (or whatever the existing client build command is in package.json, likely vite build) if quick, or just confirm that npx vite build passes. If the build command is slow or non-trivial, skip this and rely on Check 1.
+Check 4. File inspection.
+Read client/src/pages/admin/referral-invoice.tsx top to bottom. Confirm:
+a) Top imports have useQuery only (no useMutation), no apiRequest, no AlertDialog block, lucide row includes DollarSign and no PoundSterling, FileText, or ExternalLink.
+b) INVOICE_RATE is 73.95.
+c) No PartnerInvoice interfaces defined.
+d) No dialog state declared, no mutations, no formatAmount helper.
+e) Page heading is "5D Subsidy Report".
+f) Summary card shows DollarSign icon, "$" prefix on amounts, label "Total Subsidy Amount".
+g) Button row has only Export CSV and Copy Subsidy Text. No Generate Partner Invoice button.
+h) Table header column is "This Month's Subsidy".
+i) Table row amounts use $ prefix.
+j) Footer totals: "Total Subsidy", "$" prefix, rate shown as "× $73.95".
+k) File ends with the component closing brace and no AlertDialog components after it.
+Check 5. Admin page browser smoke test.
+Load /admin/referral-invoice in the browser as an admin user. Confirm visually:
+
+Page heading: "5D Subsidy Report"
+Summary cards: green dollar-sign icon, "Total Subsidy Amount" label
+No "Generate Partner Invoice" button
+"Export CSV" and "Copy Subsidy Text" buttons visible
+If there are members on free period, amounts show with $ prefix and the total row says "Total Subsidy" with "× $73.95"
+If the source filter is changed, the page refreshes without error
+
+If no members are on free period in dev data, the table will show "No members on free period for this month" which is expected.
+Deliverable. One summary reply:
+
+Lines changed count.
+Each check numbered 1 to 5 with PASS, FAIL, or SKIPPED.
+For any FAIL, full error output and the file state at the point of failure.
+Confirmation that 6A5 Part 2 is complete, or a clear note it is not and why.
+
+Do not proceed further until I have reviewed.
