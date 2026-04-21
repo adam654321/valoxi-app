@@ -17,7 +17,6 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import AcceptInvitation from "@/pages/accept-invitation";
 
-const Register = lazy(() => import("@/pages/auth/register"));
 const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
 const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
 const AccountSetupPending = lazy(() => import("@/pages/auth/account-setup-pending"));
@@ -103,7 +102,7 @@ function Router() {
           {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
           <Route path="/" component={Login} />
           <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
+          <Route path="/register">{() => <Redirect to="/login" />}</Route>
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/auth/magic" component={MagicLinkPage} />

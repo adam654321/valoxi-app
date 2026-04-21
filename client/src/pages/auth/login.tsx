@@ -131,14 +131,16 @@ export default function Login() {
                 </Button>
 
                 <div className="text-center">
-                  <span className="text-sm text-textSecondary">Don't have an account? </span>
-                  <button
-                    type="button"
-                    onClick={() => setLocation("/register")}
-                    className="font-medium text-primary hover:text-blue-500 transition-colors"
-                  >
-                    Sign up
-                  </button>
+                  <span className="text-sm text-textSecondary">
+                    Access to Valoxi is by invitation only. Contact{" "}
+                    <a
+                      href="mailto:support@valoxi.ai"
+                      className="font-medium text-primary hover:text-blue-500 transition-colors"
+                    >
+                      support@valoxi.ai
+                    </a>
+                    .
+                  </span>
                 </div>
               </form>
             </Form>

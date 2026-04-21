@@ -2,152 +2,22 @@
   import { z } from 'zod';
   import { eq, sql } from 'drizzle-orm';
   import { authService } from '../services/auth.service';
-  import { sendSuccess, sendCreated } from '../utils/response';
+  import { sendSuccess } from '../utils/response';
   import { isAuthenticated, refreshSessionPermissions } from '../middleware/auth';
-  import { validateCsrfToken } from '../middleware/csrf';
   import { asyncHandler } from '../utils/async-handler';
   import { passwordResetService } from '../services/password-reset.service';
   import { authLimiter } from '../middleware/rate-limit';
   import { db } from '../db';
   import { users } from '@shared/schema/core';
-  import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
-  import { promoCodeService } from '../services/promo-code.service';
-  import { billingService } from '../services/billing.service';
   import { magicLinkService } from '../services/magic-link.service';
   import { emailApiService } from '../services/email.service';
   
   const router = Router();
   
-  const registerSchema = z.object({
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
-    email: z.string().email('Invalid email format'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string().min(8),
-    companyName: z.string().min(1, 'Company name is required'),
-    promoCode: z.string().optional(),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
-  
   const loginSchema = z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(1, 'Password is required'),
   });
-  
-  router.post('/register', authLimiter, asyncHandler(async (req: Request, res: Response) => {
-    const validatedData = registerSchema.parse(req.body);
-  
-    const { systemConfigService } = await import('../services/system-config.service');
-    const registrationMode = await systemConfigService.getConfig('registration_mode');
-    if (registrationMode === 'clerk_only') {
-      return res.status(403).json({
-        success: false,
-        error: 'signup_disabled',
-        message: 'Signup is by invitation only. Please use the invitation link sent to you by the Valoxi team. If you do not have one, contact support@valoxi.ai.',
-      });
-    }
-    const isInviteOnly = registrationMode === 'invite_only';
-  
-    if (isInviteOnly) {
-      const code = validatedData.promoCode?.trim();
-      if (!code) {
-        return res.status(403).json({
-          success: false,
-          error: 'invite_required',
-          message: 'Access to Valoxi is currently by invitation only. Please enter your invitation code to continue.',
-        });
-      }
-  
-      const validation = await promoCodeService.validateCode(code);
-      if (!validation.valid) {
-        const reason = validation.reason || '';
-        let errorCode = 'invalid_code';
-        let errorMessage = 'This code is invalid. Please check and try again.';
-  
-        if (reason.includes('already been used')) {
-          errorCode = 'code_used';
-          errorMessage = 'This code has already been used. Each code is single-use only.';
-        } else if (reason.includes('expired')) {
-          errorCode = 'code_expired';
-          errorMessage = 'This code has expired.';
-        }
-  
-        return res.status(403).json({
-          success: false,
-          error: errorCode,
-          message: errorMessage,
-        });
-      }
-    }
-  
-    const result = await authService.register({
-      email: validatedData.email,
-      password: validatedData.password,
-      firstName: validatedData.firstName,
-      lastName: validatedData.lastName,
-      companyName: validatedData.companyName,
-    });
-  
-    req.session.userId = result.user.id;
-    req.session.userCompanyId = result.company?.id;
-    await refreshSessionPermissions(req);
-  
-    if (result.company?.id) {
-      seedDefaultPipelineStages().catch(err =>
-        console.error('[REGISTRATION] Failed to seed pipeline stages:', err)
-      );
-    }
-  
-
-  
-    if (result.company?.id) {
-      const { track } = await import('../services/funnel.service');
-      track(result.company.id, result.user.id, 'user.registered', { sector: validatedData.companyName });
-    }
-  
-    let promoApplied = false;
-    let promoError: string | undefined;
-    let discountDescription: string | undefined;
-  
-    if (validatedData.promoCode && validatedData.promoCode.trim() && result.company?.id) {
-      try {
-        const claimResult = await promoCodeService.claimCode(
-          validatedData.promoCode,
-          result.company.id,
-          null
-        );
-        if (claimResult.success) {
-          promoApplied = true;
-          discountDescription = claimResult.discountDescription;
-        } else {
-          promoError = claimResult.reason || 'Could not apply promo code';
-        }
-      } catch (err) {
-        console.error('[REGISTRATION] Promo code claim error:', err);
-        promoError = 'Could not apply promo code';
-      }
-    }
-  
-    if (!promoApplied && result.company?.id) {
-      try {
-        const trialEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        await billingService.createTrialSubscription(result.company.id, 1, trialEndsAt);
-      } catch (err) {
-        console.error('[REGISTRATION] Failed to create trial subscription:', err);
-      }
-    }
-  
-    sendCreated(res, {
-      message: 'User created successfully',
-      user: result.user,
-      company: result.company,
-      promoApplied,
-      promoError,
-      discountDescription,
-    });
-  }));
   
   
   router.post('/login', authLimiter, asyncHandler(async (req: Request, res: Response) => {
