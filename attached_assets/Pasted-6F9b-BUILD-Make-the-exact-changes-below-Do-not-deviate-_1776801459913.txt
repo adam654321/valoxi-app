@@ -1,0 +1,236 @@
+6F9b BUILD. Make the exact changes below. Do not deviate. Do not add commentary or extra refactoring.
+
+Two files change: server/routes/webhooks.routes.ts and server/routes/billing.routes.ts.
+
+Goal: (a) relocate seedDefaultPipelineStages from the billing webhook isNewSignup branch into handleUserCreated so it fires for every new Clerk-linked user, (b) delete the now-dead isNewSignup webhook branch, (c) remove isNewSignup plumbing from /checkout so no future session can set it.
+
+===========================================================================
+CHANGE 1 of 5: webhooks.routes.ts - add seedDefaultPipelineStages import
+===========================================================================
+
+File: server/routes/webhooks.routes.ts
+
+Find the existing import block near the top of the file. Add this import next to the other route/service imports:
+
+import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
+
+Place it with the other imports from '../scripts/' or '../services/' if any exist, otherwise group it sensibly with the other internal imports.
+
+===========================================================================
+CHANGE 2 of 5: webhooks.routes.ts - call seedDefaultPipelineStages in handleUserCreated
+===========================================================================
+
+File: server/routes/webhooks.routes.ts
+Function: handleUserCreated (around lines 22-103 per assess)
+
+Locate the subscription creation block at lines 82-86:
+
+      if (use5DNewMemberTrial) {
+        await billingService.createFiveDNewMemberTrial(match.userCompanyId);
+      } else {
+        await billingService.createTrialSubscription(match.userCompanyId, 1);
+      }
+      console.log(`[clerk-webhook] user.created: 24h trial subscription created for user ${match.id} (company ${match.userCompanyId})`);
+
+Immediately after this block (after the console.log at line 87), and still inside the `if (existingSubscription === null)` branch, add the pipeline seed call:
+
+      try {
+        await seedDefaultPipelineStages();
+        console.log(`[clerk-webhook] user.created: default pipeline stages seeded for company ${match.userCompanyId}`);
+      } catch (err) {
+        console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
+      }
+
+Rationale: wrapped in try/catch so a seed failure does not block user linking or subsequent welcome email. Matches the fire-and-forget tolerance the old webhook branch did not have (it was an unwrapped await), which is a small hardening win.
+
+===========================================================================
+CHANGE 3 of 5: billing.routes.ts - delete isNewSignup webhook branch
+===========================================================================
+
+File: server/routes/billing.routes.ts
+Location: inside the checkout.session.completed case, approximately lines 91-196
+
+Current state (from assess point 5):
+
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userCompanyId = parseInt(session.metadata?.userCompanyId ?? '0', 10);
+        const planKey = (session.metadata?.planKey as PlanKey) ?? 'CORE';
+        const billingInterval = (session.metadata?.billingInterval as BillingInterval) ?? 'month';
+        const promoCodeId = session.metadata?.promoCodeId || '';
+        const isNewSignup = session.metadata?.isNewSignup === 'true';
+
+        if (isNewSignup) {
+          [... large block, lines 99-180, delete entirely ...]
+        } else {
+          if (userCompanyId && session.customer && session.subscription) {
+            await billingService.activateSubscription(userCompanyId, {
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+              planKey,
+              billingInterval,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(),
+            });
+          }
+        }
+
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+        break;
+      }
+
+Replace the entire case body with:
+
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userCompanyId = parseInt(session.metadata?.userCompanyId ?? '0', 10);
+        const planKey = (session.metadata?.planKey as PlanKey) ?? 'CORE';
+        const billingInterval = (session.metadata?.billingInterval as BillingInterval) ?? 'month';
+
+        if (userCompanyId && session.customer && session.subscription) {
+          await billingService.activateSubscription(userCompanyId, {
+            stripeCustomerId: session.customer as string,
+            stripeSubscriptionId: session.subscription as string,
+            planKey,
+            billingInterval,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(),
+          });
+        }
+
+        await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+        break;
+      }
+
+Notes:
+- Deleted: promoCodeId read (old line 96), isNewSignup read (old line 97), entire if (isNewSignup) { ... } else { ... } wrapper (old lines 99-192).
+- Preserved: userCompanyId, planKey, billingInterval reads, activateSubscription call, logWebhookEvent call, break.
+
+===========================================================================
+CHANGE 4 of 5: billing.routes.ts - strip isNewSignup from /checkout POST route
+===========================================================================
+
+File: server/routes/billing.routes.ts
+Location: router.post('/checkout', ...), approximately lines 731-855
+
+4a. Request body destructure at approximately line 742:
+
+Current:
+
+    const { planKey, billingInterval, isNewSignup } = req.body as {
+      planKey: PlanKey;
+      billingInterval: 'month' | 'year';
+      isNewSignup?: boolean;
+    };
+
+Replace with:
+
+    const { planKey, billingInterval } = req.body as {
+      planKey: PlanKey;
+      billingInterval: 'month' | 'year';
+    };
+
+4b. newSignup derivation and mustCreateCustomerUpfront at approximately lines 789-791:
+
+Current:
+
+    const newSignup = isNewSignup === true;
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
+
+    const mustCreateCustomerUpfront = !!resolvedCoupon || !newSignup;
+
+    if (!customerId && mustCreateCustomerUpfront) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+Replace with:
+
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+Rationale: under the Clerk invite-assignment flow, every checkout user must have a Stripe customer created upfront (either existing or freshly created). The old conditional was only needed to support the isNewSignup path where customer_creation was deferred to Stripe.
+
+4c. Checkout params metadata at approximately lines 827-834:
+
+Current:
+
+      metadata: {
+        userCompanyId: String(userCompanyId),
+        planKey,
+        billingInterval,
+        isNewSignup: newSignup ? 'true' : 'false',
+        assignedCampaignCouponId: resolvedCoupon?.stripeCouponId || '',
+      },
+
+Replace with:
+
+      metadata: {
+        userCompanyId: String(userCompanyId),
+        planKey,
+        billingInterval,
+        assignedCampaignCouponId: resolvedCoupon?.stripeCouponId || '',
+      },
+
+4d. Checkout params customer attachment at approximately lines 836-840:
+
+Current:
+
+    if (newSignup) {
+      checkoutParams.customer_creation = 'always';
+    } else if (customerId) {
+      checkoutParams.customer = customerId;
+    }
+
+Replace with:
+
+    if (customerId) {
+      checkoutParams.customer = customerId;
+    }
+
+===========================================================================
+CHANGE 5 of 5: billing.routes.ts - clean up now-orphaned imports
+===========================================================================
+
+File: server/routes/billing.routes.ts
+
+After Changes 3 and 4, several imports will be orphaned. Audit each of the imports listed below. For each one, grep the remainder of billing.routes.ts for all usages. If it has zero remaining usages, delete the import line. If it has any usage, leave the import as is.
+
+Imports to audit:
+- import crypto from 'crypto';
+- import bcrypt from 'bcrypt';
+- userCompanies (from '@shared/schema/core')
+- magicLinkService (from '../services/magic-link.service')
+
+Expected result based on the assess: crypto, bcrypt, userCompanies, and magicLinkService were all only used inside the deleted isNewSignup branch. All four should be deletable. Verify with a grep before deleting each one. If any grep returns a non-deleted-branch hit, leave that import in place and note it in the completion summary.
+
+Do NOT delete these imports (they have legitimate remaining usage outside the deleted branch):
+- users (used by /subscription handler)
+- subscriptions (used across multiple handlers)
+- promoCodeCampaigns (used by /subscription handler)
+- emailApiService (used across webhook and other handlers)
+- promoCodeService (used for resolveCheckoutCoupon and getFreePeriodState)
+
+===========================================================================
+POST-CHANGE VERIFICATION (REQUIRED, run all)
+===========================================================================
+
+V1. Grep server/ for 'isNewSignup'. Expected zero matches outside of webhook event log history.
+V2. Grep server/ for 'seedDefaultPipelineStages'. Expected hits: scripts/seed-pipeline-stages.ts (definition), webhooks.routes.ts (new import and new call), admin.routes.ts (existing dynamic import), auth.routes.ts (existing import and call, untouched this cycle).
+V3. Confirm billing.routes.ts line count has reduced by roughly 80-90 lines (isNewSignup branch was large).
+V4. Run `tsc --noEmit` or equivalent type check. Expected zero new errors. Report any errors encountered verbatim.
+V5. Restart the dev server if not already auto-restarted. Confirm /api/v2/billing/subscription still returns 200 for an authed user (quick smoke).
+V6. Paste verbatim the final state of handleUserCreated, showing the new seedDefaultPipelineStages call in place.
+V7. Paste verbatim the final state of the checkout.session.completed case block.
+V8. Paste verbatim the final state of the /checkout POST route body.
+V9. Report the list of imports you deleted and any you left in place with rationale.
+
+Report completion with all nine verifications. Do not close the cycle until every verification has been explicitly reported.

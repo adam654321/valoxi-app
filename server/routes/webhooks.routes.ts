@@ -8,6 +8,7 @@ import { promoCodeCampaigns } from '@shared/schema/billing';
 import { emailApiService } from '../services/email.service';
 import { billingService } from '../services/billing.service';
 import { isFiveDNewMember } from '../services/promo-code.service';
+import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 
 const router = Router();
 
@@ -85,6 +86,12 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
         await billingService.createTrialSubscription(match.userCompanyId, 1);
       }
       console.log(`[clerk-webhook] user.created: 24h trial subscription created for user ${match.id} (company ${match.userCompanyId})`);
+      try {
+        await seedDefaultPipelineStages();
+        console.log(`[clerk-webhook] user.created: default pipeline stages seeded for company ${match.userCompanyId}`);
+      } catch (err) {
+        console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
+      }
     } else {
       console.log(`[clerk-webhook] user.created: trial subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping`);
     }
