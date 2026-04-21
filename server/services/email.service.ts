@@ -213,10 +213,20 @@ export class EmailApiService {
     firstName: string;
     invitedEmail: string;
     inviteUrl: string;
+    promoBenefitSentence?: string | null;
+    trialLineOverride?: string | null;
   }): Promise<SendInvitationResult> {
-    const { to, firstName, invitedEmail, inviteUrl } = params;
+    const { to, firstName, invitedEmail, inviteUrl, promoBenefitSentence, trialLineOverride } = params;
     const safeFirstName = escapeHtml(firstName);
     const safeInvitedEmail = escapeHtml(invitedEmail);
+    const trimmedBenefit = promoBenefitSentence?.trim();
+    const promoBenefitHtml = trimmedBenefit
+      ? `<div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 6px; margin: 20px 0; color: #1e3a8a;"><p style="margin: 0;">${escapeHtml(trimmedBenefit)}</p></div>`
+      : '';
+    const trimmedTrialOverride = trialLineOverride?.trim();
+    const trialLineText = trimmedTrialOverride
+      ? escapeHtml(trimmedTrialOverride)
+      : 'Your 24 hour free trial starts the moment you sign up.';
 
     const html = `<!DOCTYPE html>
 <html>
@@ -244,6 +254,7 @@ export class EmailApiService {
 <p>Hi ${safeFirstName},</p>
 <p>Good news. The Valoxi team has approved your access.</p>
 <p>Valoxi is the AI-powered M&amp;A platform for UK SME acquisitions. You can run target company analysis, build deal models, manage due diligence, and generate deal documents.</p>
+${promoBenefitHtml}
 <p style="text-align: center;">
 <a href="${inviteUrl}" class="button">Set up your account</a>
 </p>
@@ -252,7 +263,7 @@ export class EmailApiService {
 <p>You can sign up with a password, or with Google, Microsoft, or LinkedIn. Whichever method you choose, make sure the email on the account is ${safeInvitedEmail}.</p>
 <p>If you sign up with a different email, your account will not be linked to your approved access and you will need to request a new invitation.</p>
 </div>
-<p>Your 24 hour free trial starts the moment you sign up.</p>
+<p>${trialLineText}</p>
 <p>This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai">support@valoxi.ai</a> for a new one.</p>
 <p>Best regards,<br>The Valoxi Team</p>
 </div>

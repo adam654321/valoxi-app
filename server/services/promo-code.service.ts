@@ -232,3 +232,33 @@ class PromoCodeService {
 }
 
 export const promoCodeService = new PromoCodeService();
+
+export interface WaitlistPromoCopy {
+  benefitSentence: string;
+  trialLineOverride: string | null;
+}
+
+export function getWaitlistPromoCopy(campaign: {
+  referralSource: string;
+  freeMonthsTotal: number;
+}): WaitlistPromoCopy | null {
+  if (campaign.referralSource === 'early_bird') {
+    return {
+      benefitSentence: "You've been assigned 20 percent off your Valoxi subscription for life, on any paid plan. The discount applies automatically when you subscribe.",
+      trialLineOverride: null,
+    };
+  }
+  if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 6) {
+    return {
+      benefitSentence: "You've been given 6 months of Valoxi Core free, starting when you sign up. After your free period ends, 15 percent off applies to whatever plan you choose, for life.",
+      trialLineOverride: "Your 6 month free period of Valoxi Core starts the moment you sign up.",
+    };
+  }
+  if (campaign.referralSource === '5d_community' && campaign.freeMonthsTotal === 0) {
+    return {
+      benefitSentence: "You've been assigned 15 percent off your Valoxi subscription for life, on any paid plan. The discount applies automatically when you subscribe.",
+      trialLineOverride: null,
+    };
+  }
+  return null;
+}

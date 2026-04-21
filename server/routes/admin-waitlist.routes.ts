@@ -7,6 +7,7 @@ import { db } from '../db';
 import { waitlist, users, userCompanies, userCompanyMemberships, promoCodeCampaigns } from '@shared/schema';
 import { waitlistRepository } from '../repositories/waitlist.repository';
 import { emailApiService } from '../services/email.service';
+import { getWaitlistPromoCopy } from '../services/promo-code.service';
 import { config } from '../config';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
@@ -76,17 +77,19 @@ router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
   const promoCodeCampaignId = body.promoCodeCampaignId ?? null;
   const waitlistId = req.params.id;
 
+  let campaignRow: typeof promoCodeCampaigns.$inferSelect | null = null;
   if (promoCodeCampaignId !== null) {
-    const [campaign] = await db
-      .select({ id: promoCodeCampaigns.id })
+    const [found] = await db
+      .select()
       .from(promoCodeCampaigns)
       .where(eq(promoCodeCampaigns.id, promoCodeCampaignId));
-    if (!campaign) {
+    if (!found) {
       return res.status(400).json({
         success: false,
         message: `Invalid promo campaign id: ${promoCodeCampaignId}`,
       });
     }
+    campaignRow = found;
   }
 
   let result: { userId: number; userCompanyId: number; email: string; firstName: string };
@@ -209,12 +212,15 @@ router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
 
   // Step 10: send invitation email (OUTSIDE transaction)
   const inviteUrl = `${config.baseUrl}/sign-up`;
+  const promoCopy = campaignRow ? getWaitlistPromoCopy(campaignRow) : null;
   try {
     await emailApiService.sendWaitlistInvitation({
       to: result.email,
       firstName: result.firstName || 'there',
       invitedEmail: result.email,
       inviteUrl,
+      promoBenefitSentence: promoCopy?.benefitSentence ?? null,
+      trialLineOverride: promoCopy?.trialLineOverride ?? null,
     });
   } catch (emailErr) {
     console.error(
