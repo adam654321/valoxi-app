@@ -290,6 +290,33 @@ class BillingService {
     return subscription;
   }
 
+  async expireFreePeriodTrial(userCompanyId: number): Promise<Subscription | null> {
+    const existing = await billingRepository.getByCompanyId(userCompanyId);
+    if (!existing) return null;
+
+    const now = new Date();
+    const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
+      status: 'canceled',
+      canceledAt: now,
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'referral.free_period_expired',
+      previousStatus: existing.status as SubscriptionStatus,
+      previousPlanKey: existing.planKey as PlanKey,
+      newStatus: 'canceled',
+      newPlanKey: existing.planKey as PlanKey,
+      payload: {
+        freeMonthsTotal: existing.freeMonthsTotal,
+        freeMonthsStartedAt: existing.freeMonthsStartedAt,
+        reason: 'no_payment_details',
+      },
+    });
+
+    return subscription;
+  }
+
   async purchaseAddonSlots(
     userCompanyId: number,
     addonType: 'company_slot' | 'seat',

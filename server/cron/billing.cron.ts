@@ -9,7 +9,7 @@ import { subscriptions, promoCodes, promoCodeCampaigns } from '@shared/schema/bi
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
 import { emailService } from '../email';
 import { emailApiService } from '../services/email.service';
-import { userCompanies } from '@shared/schema/core';
+import { userCompanies, users } from '@shared/schema/core';
 
 export async function runDunningDay7ReminderJob(): Promise<void> {
   const now = Date.now();
@@ -285,9 +285,83 @@ export function initializeBillingCron(): void {
 
         if (elapsed >= sub.freeMonthsTotal) {
           try {
+            // Classify the transition path based on subscription state and campaign assignment.
+            const hasStripeCustomer = !!sub.stripeCustomerId;
+            const isFiveDNewMemberSub = sub.freeMonthsTotal === 6;
+
+            // Path A: 5D New Member user with no Stripe customer AND status still trialing.
+            // They never entered payment details during the free period. Terminal flip to canceled,
+            // send cancellation email, let Item 15's 30-day preservation window take over.
+            if (isFiveDNewMemberSub && !hasStripeCustomer && sub.status === 'trialing') {
+              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+              const endDate = new Date(sub.freeMonthsStartedAt);
+              endDate.setMonth(endDate.getMonth() + sub.freeMonthsTotal);
+              const restoreByDate = new Date();
+              restoreByDate.setDate(restoreByDate.getDate() + 30);
+
+              await billingService.expireFreePeriodTrial(sub.userCompanyId);
+
+              if (adminEmail) {
+                try {
+                  await emailApiService.sendFreePeriodCancellationEmail({
+                    to: adminEmail.email,
+                    firstName: adminEmail.firstName || 'there',
+                    endDate,
+                    restoreByDate,
+                  });
+                } catch (emailErr) {
+                  console.error(`[billing-cron] Failed to send 5D New Member cancellation email for company ${sub.userCompanyId}:`, emailErr);
+                }
+              } else {
+                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, terminal flip completed but cancellation email skipped`);
+              }
+
+              // Stamp communityDiscountCouponId so this row is excluded from future cron passes.
+              await billingRepository.updateByCompanyId(sub.userCompanyId, {
+                communityDiscountCouponId: 'none',
+              });
+
+              transitionCount++;
+              console.log(`[billing-cron] 5D New Member terminal flip for company ${sub.userCompanyId} (no payment details added)`);
+              continue;
+            }
+
+            // Paths B and C: coupon swap paths (user has Stripe customer, needs post-free-period coupon).
+            // Resolve couponId from either sub.promoCodeId (legacy typed-code claim) OR the company admin's
+            // users.assigned_promo_campaign_id (6F2 invite-assignment). Invite-assignment wins when both
+            // are present, because that reflects the current promotional truth.
             let couponId: string | null = null;
 
-            if (sub.promoCodeId) {
+            // Fallback resolver: users.assigned_promo_campaign_id -> promoCodeCampaigns.postFreePeriodCouponId.
+            // This is the blocker fix for 5D New Member users who entered payment details mid-free-period.
+            try {
+              const [adminUser] = await db
+                .select({ assignedPromoCampaignId: users.assignedPromoCampaignId })
+                .from(users)
+                .where(
+                  and(
+                    eq(users.userCompanyId, sub.userCompanyId),
+                    eq(users.isCompanyAdmin, true),
+                    eq(users.isActive, true)
+                  )
+                )
+                .limit(1);
+
+              if (adminUser?.assignedPromoCampaignId) {
+                const [campaign] = await db
+                  .select()
+                  .from(promoCodeCampaigns)
+                  .where(eq(promoCodeCampaigns.id, adminUser.assignedPromoCampaignId));
+                if (campaign?.postFreePeriodCouponId) {
+                  couponId = campaign.postFreePeriodCouponId;
+                }
+              }
+            } catch (assignLookupErr) {
+              console.error(`[billing-cron] Failed to resolve assigned-campaign coupon for company ${sub.userCompanyId}:`, assignLookupErr);
+            }
+
+            // Legacy path: if no assigned campaign resolved it, try sub.promoCodeId.
+            if (!couponId && sub.promoCodeId) {
               try {
                 const [promoCode] = await db
                   .select()
@@ -303,7 +377,7 @@ export function initializeBillingCron(): void {
                   }
                 }
               } catch (lookupErr) {
-                console.error(`[billing-cron] Failed to look up campaign coupon for company ${sub.userCompanyId}:`, lookupErr);
+                console.error(`[billing-cron] Failed to look up typed-code campaign coupon for company ${sub.userCompanyId}:`, lookupErr);
               }
             }
 
@@ -334,23 +408,28 @@ export function initializeBillingCron(): void {
               console.error('[billing-cron] Failed to track funnel event:', err);
             }
 
-            try {
-              await (emailService as any).sendEmail({
-                to: company.email,
-                subject: 'Your free period has ended — community discount now active',
-                html: `
-                  <h2>Your free period has ended</h2>
-                  <p>Hi ${company.companyName || 'there'},</p>
-                  <p>Your ${sub.freeMonthsTotal}-month free period has now ended. Your ongoing community discount has been applied automatically — no action needed on your part.</p>
-                  <p>Thank you for being part of the community!</p>
-                `,
-              });
-            } catch (emailErr) {
-              console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
+            // Only send the legacy "discount now active" email when we actually applied a coupon AND
+            // the user has a Stripe customer. 5D New Member with Stripe customer gets this too
+            // because the coupon IS now applied and this is factually accurate.
+            if (couponId && sub.stripeCustomerId) {
+              try {
+                await (emailService as any).sendEmail({
+                  to: company.email,
+                  subject: 'Your free period has ended, community discount now active',
+                  html: `
+                    <h2>Your free period has ended</h2>
+                    <p>Hi ${company.companyName || 'there'},</p>
+                    <p>Your ${sub.freeMonthsTotal}-month free period has now ended. Your ongoing community discount has been applied automatically, no action needed on your part.</p>
+                    <p>Thank you for being part of the community.</p>
+                  `,
+                });
+              } catch (emailErr) {
+                console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
+              }
             }
 
             transitionCount++;
-            console.log(`[billing-cron] Transitioned company ${sub.userCompanyId} from free period to community discount`);
+            console.log(`[billing-cron] Transitioned company ${sub.userCompanyId} from free period: couponApplied=${couponId ?? 'none'}, hasStripeCustomer=${hasStripeCustomer}`);
           } catch (err) {
             console.error(`[billing-cron] Failed to transition company ${sub.userCompanyId}:`, err);
           }

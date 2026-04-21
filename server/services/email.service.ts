@@ -555,6 +555,62 @@ ${promoBenefitHtml}
     return { success, message: success ? 'Free-period payment-required email sent' : 'Failed to send free-period payment-required email' };
   }
 
+  async sendFreePeriodCancellationEmail(params: {
+    to: string;
+    firstName: string;
+    endDate: Date;
+    restoreByDate: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, endDate, restoreByDate } = params;
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const formatDate = (d: Date) => `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    const endDateStr = formatDate(endDate);
+    const restoreByDateStr = formatDate(restoreByDate);
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const signupUrl = `${appUrl}/sign-up`;
+
+    const safeFirstName = escapeHtml(firstName);
+    const safeEndDate = escapeHtml(endDateStr);
+    const safeRestoreByDate = escapeHtml(restoreByDateStr);
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Your Valoxi Core free period has ended</title></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
+        <tr>
+          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+            <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px; font-weight: 600;">Your Valoxi Core free period has ended</h2>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${safeFirstName},</p>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your 6 month free period of Valoxi Core ended on <strong>${safeEndDate}</strong> and your access has now paused because no payment details were added.</p>
+            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your data is preserved for 30 days. You can restore everything by signing back in with the same email and completing signup before <strong>${safeRestoreByDate}</strong>. After that date the account will be closed.</p>
+            <p style="margin: 0 0 24px; color: #1f2937; font-size: 16px;">If you want to continue with Valoxi, use the link below with the same email address.</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${signupUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Restore your account</a>
+            </div>
+            <p style="margin: 24px 0 0; color: #1f2937; font-size: 16px;">Thanks,<br>The Valoxi team</p>
+          </td>
+        </tr>
+        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi Core free period has ended',
+      html,
+    });
+    return { success, message: success ? 'Free-period cancellation email sent' : 'Failed to send free-period cancellation email' };
+  }
+
   async sendPaymentFailedEmail(params: {
     to: string;
     firstName: string;
