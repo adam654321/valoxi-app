@@ -1,0 +1,99 @@
+6F6 ASSESS ONLY. Read-only. Do not modify any files. Do not run any SQL.
+
+Goal of 6F6 (do not build yet): when a 5D New Member user (local-DB trial, no Stripe customer, inside 6-month free period) attempts to buy a company-slot addon or a team-seat addon, the backend:
+  1. Creates a Stripe customer for that user.
+  2. Creates a Stripe subscription for Core with a 100% coupon lasting the remaining free-period months.
+  3. Attaches the addon line item with normal pricing, billed from day one.
+  4. Records the resulting stripeCustomerId and stripeSubscriptionId on the local subscriptions row.
+  5. After the free period ends, the 100% coupon lapses and the 15% perpetual post-free-period coupon takes over (see 6F5 helper for the coupon-lookup pattern).
+
+Out of scope for 6F6: the 100%-for-remaining-months coupon creation in Stripe (assume it exists as a Stripe coupon with duration=repeating, duration_in_months=N). If the per-N coupons do not exist in Stripe yet, 6F6 flags this as a config prerequisite, not a code blocker.
+
+Out of scope for 6F6: Standard 5D, Early Bird, and non-assigned users. They already have normal addon flows that work with the existing coupon-on-customer mechanic shipped in 6F5's customer.update pattern.
+
+Produce a verbatim change plan. Work through the thirteen points below in order. Paste VERBATIM with file paths and line numbers. Do not summarise.
+
+1. Locate the addon purchase endpoints. There should be at least two: one for company slots (addon price id STRIPE_ADDON_SLOT_PRICE or similar), one for team seats (STRIPE_ADDON_SEAT_PRICE or similar). Paste each handler in full, including its route path, auth, Zod validation, and Stripe call.
+
+2. Trace the current flow end to end for a user WITH an existing Stripe customer and subscription:
+   - Does the handler call stripe.subscriptions.update to add a line item, or stripe.invoiceItems.create, or stripe.subscriptionItems.create?
+   - Does it update local subscription row? Which fields?
+   - Quote the full path.
+
+3. Trace the current flow for a user WITHOUT a Stripe customer (new subscriber buying an addon before a plan). If this path does not exist today, say so explicitly. If it does exist, paste it.
+
+4. Paste the billingService method used when slot/seat counts change (purchaseAddonSlots from 6F5 assess Point 11 is one, find the seat equivalent). Confirm what Stripe operations it performs vs what it leaves to the caller.
+
+5. Locate the 5D New Member free-period detection logic we need to reuse. promoCodeService.resolveCheckoutCoupon already does an active-free-period check internally. For 6F6, we need a named helper that returns (isActiveFreePeriod: boolean, remainingMonths: number) so the handler can both detect and compute the duration for the 100% coupon. Check whether such a helper exists. If not, propose adding it to promo-code.service.ts.
+
+6. Paste the entire subscriptions schema from shared/schema/billing.ts. Specifically confirm the presence and types of: freeMonthsTotal, freeMonthsStartedAt, promoCodeId, referralSource, communityDiscountCouponId, stripeCustomerId, stripeSubscriptionId, stripePriceId. This is a full re-read because 6F6 is going to mutate several of these on the 5D-transition-to-Stripe path.
+
+7. Locate existing Stripe coupon IDs that could serve as "100% off for N months" for N = 1 through 6. In Stripe dashboard via the existing STRIPE_SECRET_KEY, list active coupons with percent_off=100 and duration=repeating. Report the coupons found and their durations. If no such coupons exist, flag as a 6H config prerequisite (coupons 100off-1m through 100off-6m need to be created in Stripe).
+
+8. Identify how the handler gets the Stripe Core monthly price id (needed because the 5D New Member user is on Core). Is it via LOOKUP_KEY_MAP? Via env var? Hardcoded? Paste the pattern.
+
+9. Trace what happens to the local subscription row when a 5D New Member user transitions to a real Stripe subscription mid-free-period. Specifically:
+   - Do we keep freeMonthsTotal and freeMonthsStartedAt populated (useful for historical reporting and post-free-period coupon swap logic)?
+   - Do we change planKey? (Stays CORE, the user just now has a Stripe sub attached.)
+   - Do we change status? (Stays trialing until Stripe confirms? Flips to active immediately?)
+   - Do we stamp stripeCustomerId and stripeSubscriptionId?
+   - What else?
+   Propose the post-transition row state. Justify.
+
+10. Check the existing Stripe webhook handler (server/routes/billing.routes.ts POST /webhook/stripe) for how it handles subscription.created for an existing local row. Specifically, does the webhook's subscription.created handler look up the local row by metadata.userCompanyId, by stripeCustomerId, or by stripeSubscriptionId? Paste the handler.
+
+11. Identify the risk window between (a) creating the Stripe customer, (b) creating the Stripe subscription with coupon and addon, (c) writing stripeCustomerId/stripeSubscriptionId to the local row. If (a) and (b) succeed but (c) fails, we have a Stripe customer + sub with no local reference, and the webhook will reconcile (if it can). If (a) succeeds and (b) fails, we have an orphan Stripe customer. Propose ordering and error handling.
+
+12. Post-free-period swap. Per spec 3.4 and 3.6, once the free period ends, the 100% coupon lapses automatically (Stripe handles this via duration_in_months), and the 15% perpetual coupon takes over. But Stripe does not automatically swap coupons on a customer. Options:
+    (a) Attach the 15% coupon to the customer immediately at addon purchase time. The 100% coupon stacks on the subscription via discounts, and when it expires, the customer-level 15% applies. Need to verify Stripe allows subscription-level and customer-level discounts to coexist.
+    (b) Attach only the 100% coupon, and rely on the existing free-period-expiry cron (6F8) to swap in the 15% coupon when the 100% lapses.
+   Report which Stripe coupon discount stacking behaviour is documented, then propose one approach. Flag if neither is clean.
+
+13. Frontend side of addon purchase. Locate the UI that initiates it. Likely on the billing page or an "Add slot" / "Add seat" button. Paste the client-side submit code. We need to know if any confirmation modal exists for 5D New Member users (e.g. "This will start your billing relationship with Stripe and end the no-card-required period for addons. Your Core subscription remains free for the remaining months."), or if 6F6 needs to add one.
+
+Output format:
+
+SECTION A - VERBATIM EXISTING STATE
+One subsection per point 1 through 13. Direct quotes, file paths, line numbers only.
+
+SECTION B - PROPOSED 6F6 BUILD PLAN
+
+B1 - Helper in promo-code.service.ts
+- New function: computeFreePeriodState(subscription): { isActive: boolean, monthsRemaining: number }
+- Reuses computeFreeMonthsElapsed.
+- Returns monthsRemaining = max(0, freeMonthsTotal - elapsed).
+- Callable from addon handler and from resolveCheckoutCoupon (refactor the latter to use it).
+
+B2 - Addon handler branch for 5D New Member
+- Load user + subscription.
+- If active free period (B1 helper), enter 5D-to-Stripe transition path:
+  - Create Stripe customer with metadata.userCompanyId.
+  - Look up the coupon id for "100% off for monthsRemaining months" via an env-var map or a coupon-by-duration lookup (depends on Point 7).
+  - Look up the 15% post-free-period coupon from the user's assigned campaign (i.e. campaign.postFreePeriodCouponId).
+  - Decide coupon stacking per Point 12 recommendation.
+  - Create Stripe subscription: Core price + addon price (slot or seat), with appropriate discounts / coupon attachments.
+  - Write local row mutations per Point 9 proposal.
+- If not active free period, fall through to the existing addon flow unchanged.
+
+B3 - Idempotency
+- What happens if the user clicks "Add slot" twice in quick succession? Currently the local subscription row has a UNIQUE constraint on user_company_id (confirmed in 6F4 Step 0d), so the second call cannot double-insert a sub row, but it could double-create a Stripe customer or subscription. Propose guard.
+
+B4 - Frontend
+- If no confirmation modal exists today (Point 13), propose copy.
+- If one exists, propose the edits.
+- The modal should only appear for users in active free period.
+
+SECTION C - RISKS AND UNKNOWNS
+- 100% coupons for durations 1 through 6 exist or do not exist (Point 7).
+- Stacking behaviour of subscription-level + customer-level coupons in Stripe.
+- Webhook reconciliation between Stripe subscription.created and the local row.
+- What happens if the user has already consumed some free months when they purchase an addon (fewer months remaining means a different coupon). Confirm the N-months coupon is picked dynamically, not statically.
+- Any Stripe rate limiting concern with creating customer + subscription in rapid succession.
+
+SECTION D - BUILD SIZE ESTIMATE
+State whether 6F6 should be:
+- One build prompt.
+- Split into 6F6a (helper + addon handler backend) and 6F6b (frontend modal).
+- Split further if the addon flow has two distinct handlers (slot + seat) that diverge enough to need separate passes.
+
+Do not modify any files. Do not run any SQL. This is assess only.
