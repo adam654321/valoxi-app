@@ -1,0 +1,28 @@
+Phase 6A2 assess. Read-only refactor plan for Stripe client instantiation. Do not modify any files. Do not install packages. Do not run migrations. Do not change env vars. Produce a plan document only.
+Purpose. Phase 6A1 audit found two module-scope Stripe client instantiations plus three direct process.env reads that bypass our central config. These will hold stale clients across env rotation unless the Node process fully restarts, which is fragile. Phase 6A2 will refactor them to lazy function-scope clients reading through config.stripe. Before we write the refactor, I need you to produce the precise plan.
+The files and lines to cover (from the 6A1 audit, for context, please re-verify by reading the code directly):
+server/services/promo-code.service.ts line 9: module-scope new Stripe(process.env.STRIPE_SECRET_KEY!).
+server/services/promo-code.service.ts line 207: direct process.env.STRIPE_PARTNER_CUSTOMER_5D read.
+server/services/promo-code.service.ts line 208: direct process.env.STRIPE_PARTNER_PRICE_5D read.
+server/cron/billing.cron.ts line 12: module-scope new Stripe(process.env.STRIPE_SECRET_KEY!).
+Note on 5D partner references. The STRIPE_PARTNER_CUSTOMER_5D and STRIPE_PARTNER_PRICE_5D env vars are being removed entirely in Phase 6A5 because the 5D Capital Partners settlement is moving off Stripe to a Mercury to Mercury transfer. Phase 6A2 is the refactor step only. So your plan should cover both: how those two reads should be rewritten to use config.stripe.partnerCustomer5d and config.stripe.partnerPrice5d in the short window before Phase 6A5, so that 6A2 leaves the file in a consistent state that 6A5 can then simply delete. Alternatively, if you think it is cleaner to leave those two lines exactly as they are and let Phase 6A5 delete the whole partner block, argue the case.
+Step 1. Read the full content of these files and report back:
+server/services/promo-code.service.ts (full file)
+server/cron/billing.cron.ts (full file)
+server/config.ts (just the stripe config block, to confirm the field shape)
+server/routes/billing.routes.ts (just the top 60 lines to see how function-scope Stripe clients are currently built, as the reference pattern)
+server/routes/admin.routes.ts (just lines 330 to 350, same reason)
+Step 2. Propose a refactor pattern. Three options, you must consider all three and recommend one.
+Option A. Inline lazy pattern. Each function that needs Stripe creates a local client: const stripe = new Stripe(config.stripe.secretKey). Follows the pattern already used in billing.routes.ts function handlers.
+Option B. Shared helper function. Create server/lib/stripe-client.ts exporting a getStripeClient() helper that instantiates fresh per call. All consumers import and call getStripeClient() when they need Stripe.
+Option C. Memoised shared helper. Same as B, but the helper caches the client after first instantiation. If the config has changed (via a restart signal or explicit reset), reinstantiate. More complex but avoids per-request object creation.
+Recommendation criteria: which option matches the existing codebase pattern, which is simplest to reason about, which is safest across env rotation without needing process restart (recognising that in practice we will always restart after env rotation), and which minimises lines of change.
+Step 3. For your recommended option, produce a file-by-file change plan. Columns: file path, line range affected, current code snippet (quoted, 3 to 5 lines of context), proposed code snippet (quoted, same format). No changes applied yet, just the proposed diffs.
+Step 4. List downstream implications. Any imports that will change, any type signatures that will shift, any test files that reference these modules and would need updating. Also flag whether tsc passes after the changes you propose (you can reason about this without running it).
+Step 5. Risk assessment. Three categories:
+Low risk. What we are confident will not break.
+Medium risk. What might need manual verification after the build.
+High risk. What absolutely must be tested end-to-end before we consider 6A2 done.
+Step 6. Propose the build-step validation checklist. What exactly do we run or check after the 6A2 build to confirm it worked? List specific commands, specific endpoints to hit, specific log lines to look for.
+Deliverable. A single chat response with sections matching the six steps. Markdown formatting fine. Keep it focused, actionable, no filler.
+Success criteria. After reading your output, I can write the Phase 6A2 build prompt with no further clarifications needed. I know exactly what files change, what lines, what the before and after look like, what could go wrong, and how to confirm it worked.
