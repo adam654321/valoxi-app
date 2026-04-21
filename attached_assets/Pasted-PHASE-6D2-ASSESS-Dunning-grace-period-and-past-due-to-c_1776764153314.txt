@@ -1,0 +1,179 @@
+PHASE 6D2 ASSESS - Dunning grace period and past_due to canceled transition
+
+Read-only. Do not edit. Do not run migrations. Produce a verbatim change plan
+at the end.
+
+Background
+6D1 shipped: invoice.payment_failed flips subscription to past_due, invoice.paid
+flips back to active. Both verified via Stripe CLI triggers and one real-sub
+test against sub_1TOUG42N2rRCsCfrdzdaN9WB.
+
+What 6D2 must add
+A complete dunning lifecycle for past_due subscriptions:
+(1) After 14 days in past_due, automatic flip to canceled. This is the grace
+    period decision (Q1 from the working spec, locked at 14 days for UK SME B2B).
+(2) Customer notifications at the right moments: initial failure (day 0),
+    day 7 reminder, day 14 final notice with cancellation confirmation.
+(3) Self-recovery: if invoice.paid arrives during the grace window, sub flips
+    back to active and notifications stop. Already works in principle since 6D1
+    but needs verifying end to end.
+(4) Audit row in subscription_events for the auto-cancel transition so the
+    reason is queryable later.
+
+Out of scope for 6D2
+- Customer portal: 6E
+- Changing Stripe Smart Retry schedule: configured Stripe-side, not in code
+- Card update self-service flow: 6E
+- 5D New Member trial-end logic: 6F8
+- Migration: 6H
+
+What I need you to inspect
+
+A. Existing invoice.payment_failed handler
+   File: server/routes/billing.routes.ts
+   Lines: around 298-325
+   Already inspected during 6D1. Confirm it still flips status to 'past_due'
+   via updateSubscriptionStatus and writes the subscription_events audit.
+   Show the current state verbatim.
+
+B. Existing invoice.paid handler
+   File: server/routes/billing.routes.ts
+   Lines: around 261-296
+   Same: confirm it flips status to 'active' and writes audit. Critically,
+   confirm the handler does not require previous_status='active' or any
+   guard that would block recovery from past_due. Show the relevant code.
+
+C. updateSubscriptionStatus state machine
+   File: server/services/billing.service.ts
+   Lines: around 142-193
+   Confirm the eventTypeMap entry for past_due is 'invoice.payment_failed'
+   and for active is 'subscription.renewed'. Confirm there is no implicit
+   guard that prevents transitions like past_due to canceled or past_due
+   to active.
+
+D. Subscriptions schema - need a past_due_since timestamp or equivalent
+   File: shared/schema/billing.ts
+   Show the full subscriptions table definition.
+   Critical question: how would the new cron determine how long a sub has
+   been in past_due? Options:
+   (i) Add a new past_due_since timestamp column on subscriptions, set when
+       updateSubscriptionStatus transitions to past_due, cleared when back to
+       active. Cron filters WHERE status='past_due' AND past_due_since < now() - 14 days.
+   (ii) Query subscription_events for the latest invoice.payment_failed
+       eventType per userCompanyId where the sub is currently past_due.
+       No schema change but expensive query.
+   (iii) Use subscriptions.updated_at if it transitions atomically with status.
+       Risky: any other update touches updated_at.
+   Recommend option (i) for cleanliness. Confirm the schema change needed.
+
+E. Existing cron infrastructure
+   File: server/cron/billing.cron.ts
+   Show the entire file. What scheduler is used (node-cron, BullMQ, simple
+   setInterval, Replit cron)? What jobs already exist? What is the existing
+   cadence pattern (daily / hourly)? Where is the file imported from
+   (server/index.ts or similar)?
+
+F. Existing email infrastructure
+   File: server/services/email.service.ts (or wherever Resend lives)
+   Show the existing payment-related email methods if any. Does
+   sendPaymentFailedEmail exist? sendDunningReminderEmail? sendCancellationEmail?
+   What is the EmailApiService class shape so the new methods slot in
+   consistently? Show one existing method signature for pattern reference.
+   Also: is there a from-address pattern (no-reply@valoxi.ai or similar) that
+   the new dunning emails should match?
+
+G. Multi-tenant safety check
+   File: server/cron/billing.cron.ts
+   When the new auto-cancel cron runs, it must scope the cancel only to the
+   relevant userCompanyId. Confirm the existing cron pattern does its DB
+   writes per-company (not as a global UPDATE). If it bulk-updates, flag
+   the pattern needed for the new job.
+
+H. Stripe-side cancel-at-period-end vs immediate cancel
+   When dunning expires, should the auto-cancel call Stripe's
+   subscriptions.cancel API on the Stripe sub too, or only flip the local
+   DB? If only local DB, the Stripe sub keeps trying to charge the card on
+   Smart Retries forever. If we cancel on Stripe too, no further retries.
+   Recommend: cancel on Stripe (terminate the dunning loop) and let the
+   resulting customer.subscription.deleted webhook flip the local DB
+   (already handled at billing.routes.ts:244-259). This avoids dual-source-
+   of-truth issues. Show the Stripe SDK call pattern used elsewhere in the
+   codebase for reference (search for stripe.subscriptions.cancel or
+   stripe.subscriptions.update with cancel_at_period_end).
+
+I. Notification cadence definition
+   For the assess, just confirm the design:
+   - Day 0 (immediate on invoice.payment_failed): "Payment failed, please
+     update your card. We will retry automatically."
+   - Day 7 (cron-fired): "Your account will be cancelled in 7 days unless
+     payment succeeds. Please update your card."
+   - Day 14 (cron-fired, immediately after the cancel): "Your subscription
+     has been cancelled. Your data is preserved for 30 days. Reactivate
+     by updating your payment method."
+   And confirm: the cron should not duplicate emails on retry. Need a
+   timestamp like dunning_email_day7_sent_at to gate this, or a check
+   against subscription_events for prior eventType='dunning.day7_sent'.
+
+J. Search for related existing code
+   grep -rn "past_due\|pastDue\|dunning\|grace" server/ shared/
+
+   Flag anything that looks at risk or duplicates the new design.
+
+K. Edge cases worth flagging
+   (1) What about admin_comped subs? Should they ever flip to past_due?
+   (2) What about trialing subs with cancel_at_period_end=true? Different
+       cancel path, must not interact with dunning.
+   (3) What if invoice.paid arrives at day 13 while the cron is mid-flight
+       on day 14? Race condition between cron auto-cancel and webhook
+       reactivation. How does updateSubscriptionStatus serialise these?
+
+Change plan format
+At the end, give me a verbatim change plan with these sections:
+
+  1. Schema change - exact ALTER TABLE for the past_due_since column (or
+     whichever option from D you pick), Drizzle schema diff, EXECUTE=true gate
+     for the migration.
+
+  2. updateSubscriptionStatus change - extend the function so it sets
+     past_due_since when transitioning to past_due, and clears it on transition
+     to active or canceled. Show the exact diff.
+
+  3. New cron job - file path (likely server/cron/billing.cron.ts), exact
+     function shape, daily cadence (recommend 04:00 UTC to avoid daytime user
+     traffic), scoping by userCompanyId, the SQL query that finds the
+     candidates, the Stripe SDK call to cancel, the email send call, the
+     audit row write to subscription_events.
+
+  4. Day 7 reminder cron (or merged into daily cron with a different filter):
+     find subs in past_due where past_due_since is between 7 and 8 days ago
+     and the day-7 email has not been sent. Send the email, write audit row.
+
+  5. Email methods - exact signatures to add to EmailApiService:
+     sendPaymentFailedEmail (immediate, called from webhook),
+     sendDunningDay7Email (called from cron),
+     sendDunningCancellationEmail (called from cron after cancel).
+     Use existing email method as the style template.
+
+  6. Webhook handler change - invoice.payment_failed handler at lines 298-325
+     needs to also fire sendPaymentFailedEmail. Confirm the email is sent
+     idempotently (do not re-fire if Stripe redelivers the same evt).
+
+  7. Multi-tenant safety pattern - exact transaction or per-row update
+     pattern for the cron, matching the existing codebase style.
+
+  8. Test plan - a sequence using stripe trigger + manual DB time-travel
+     (UPDATE subscriptions SET past_due_since = NOW() - INTERVAL '14 days'
+     WHERE id = X) to validate:
+     (a) past_due_since gets set on payment_failed,
+     (b) day 7 reminder fires once and only once,
+     (c) day 14 cron flips to canceled, calls Stripe, sends email, writes audit,
+     (d) recovery: invoice.paid during grace flips back to active and clears
+         past_due_since.
+
+Constraints
+  - Read-only.
+  - Show file paths and line numbers for every code block quoted.
+  - If anything is ambiguous or there are open design choices, list as open
+    questions at the bottom rather than guessing.
+  - Replit is ground truth. If your output disagrees with my notes, your
+    output wins.
