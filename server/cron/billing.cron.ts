@@ -11,7 +11,7 @@ import { emailService } from '../email';
 import { emailApiService } from '../services/email.service';
 import { userCompanies } from '@shared/schema/core';
 
-async function runDunningDay7ReminderJob(): Promise<void> {
+export async function runDunningDay7ReminderJob(): Promise<void> {
   const now = Date.now();
   const from = new Date(now - 8 * 24 * 60 * 60 * 1000);
   const to = new Date(now - 7 * 24 * 60 * 60 * 1000);
@@ -74,7 +74,7 @@ async function runDunningDay7ReminderJob(): Promise<void> {
   }
 }
 
-async function runDunningCancellationJob(): Promise<void> {
+export async function runDunningCancellationJob(): Promise<void> {
   const stripe = new Stripe(config.stripe.secretKey);
   const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 

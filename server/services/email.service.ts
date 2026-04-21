@@ -534,7 +534,7 @@ export class EmailApiService {
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
-      subject: `Payment failed for your Valoxi ${planLabel} plan`,
+      subject: `Payment failed for your Valoxi ${planKey} plan`,
       html,
     });
     return { success, message: success ? 'Payment failed email sent' : 'Failed to send payment failed email' };
@@ -582,7 +582,7 @@ export class EmailApiService {
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
-      subject: `Your Valoxi ${planLabel} plan will be cancelled in 7 days`,
+      subject: `Action needed: your Valoxi ${planKey} subscription will be cancelled in 7 days`,
       html,
     });
     return { success, message: success ? 'Day 7 dunning email sent' : 'Failed to send day 7 dunning email' };
@@ -614,7 +614,7 @@ export class EmailApiService {
           <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
             <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
             <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your <strong>${planLabel}</strong> subscription has been cancelled because payment could not be collected during the grace period.</p>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">Your data is preserved for 30 days. You can sign back in and re-subscribe when you are ready to reactivate your account.</p>
+            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">Your data is preserved for 30 days. You can sign back in with the same email address and re-subscribe when you are ready to reactivate your account.</p>
             <div style="text-align: center; margin: 28px 0;">
               <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
             </div>
@@ -630,7 +630,7 @@ export class EmailApiService {
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
-      subject: `Your Valoxi ${planLabel} subscription has been cancelled`,
+      subject: `Your Valoxi ${planKey} subscription has been cancelled`,
       html,
     });
     return { success, message: success ? 'Dunning cancellation email sent' : 'Failed to send dunning cancellation email' };
