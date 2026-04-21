@@ -197,14 +197,10 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        // Stripe v20: current_period_start/end remain on Stripe.Subscription
-        // but are deprecated in favour of SubscriptionItem. Cast retained as
-        // a narrow extension for the period fields accessed below.
-        const subData = event.data.object as Stripe.Subscription & {
-          current_period_start?: number;
-          current_period_end?: number;
-        };
-        const lookupKey = subscription.items.data[0]?.price?.lookup_key ?? '';
+        // Stripe v20: current_period_start/end moved from Subscription to
+        // SubscriptionItem. Read from primary item.
+        const primaryItem = subscription.items.data[0];
+        const lookupKey = primaryItem?.price?.lookup_key ?? '';
         const planKey = derivePlanKeyFromLookupKey(lookupKey);
 
         const matchingSub = await billingRepository.getByStripeSubscriptionId(subscription.id);
@@ -220,11 +216,11 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
             unpaid: 'past_due',
           };
 
-          const periodStart = subData.current_period_start
-            ? new Date(subData.current_period_start * 1000)
+          const periodStart = primaryItem?.current_period_start
+            ? new Date(primaryItem.current_period_start * 1000)
             : undefined;
-          const periodEnd = subData.current_period_end
-            ? new Date(subData.current_period_end * 1000)
+          const periodEnd = primaryItem?.current_period_end
+            ? new Date(primaryItem.current_period_end * 1000)
             : undefined;
 
           await billingService.updateSubscriptionStatus(
@@ -1099,15 +1095,15 @@ router.post('/cancel', isAuthenticated, validateCsrfToken, async (req: Request, 
       previousPlanKey: subscription.planKey as PlanKey,
       newStatus: subscription.status as SubscriptionStatus,
       newPlanKey: subscription.planKey as PlanKey,
-      payload: { cancelAtPeriodEnd: true, periodEnd: (updated as any).current_period_end ?? null },
+      payload: { cancelAtPeriodEnd: true, periodEnd: updated.items.data[0]?.current_period_end ?? null },
     });
 
     console.log(`[billing] Cancellation scheduled for company ${userCompanyId}`);
     return res.status(200).json({
       success: true,
       cancelAtPeriodEnd: true,
-      periodEnd: (updated as any).current_period_end
-        ? new Date((updated as any).current_period_end * 1000).toISOString()
+      periodEnd: updated.items.data[0]?.current_period_end
+        ? new Date(updated.items.data[0].current_period_end * 1000).toISOString()
         : null,
     });
   } catch (err: any) {
