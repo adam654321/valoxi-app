@@ -274,6 +274,7 @@ class BillingService {
 
     const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
       status: 'canceled',
+      canceledAt: new Date(),
     });
 
     await billingRepository.logEvent({

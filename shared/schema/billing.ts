@@ -38,6 +38,7 @@ export const subscriptions = pgTable("subscriptions", {
   currency: varchar("currency", { length: 3 }).default('usd'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
 });
 
 export const subscriptionEvents = pgTable("subscription_events", {

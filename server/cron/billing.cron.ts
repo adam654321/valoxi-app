@@ -145,7 +145,7 @@ export function initializeBillingCron(): void {
     console.log('[billing-cron] Starting daily trial expiry check...');
     try {
       const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
-      const trialing = expiring.filter((s) => s.status === 'trialing' && (
+      const trialing = expiring.filter((s) => s.status === 'trialing' && s.freeMonthsTotal === 0 && (
         (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
         (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
       ));
@@ -157,7 +157,8 @@ export function initializeBillingCron(): void {
           and(
             isNotNull(subscriptions.trialEndsAt),
             lt(subscriptions.trialEndsAt, new Date()),
-            eq(subscriptions.status, 'trialing')
+            eq(subscriptions.status, 'trialing'),
+            eq(subscriptions.freeMonthsTotal, 0)
           )
         );
 
@@ -167,6 +168,7 @@ export function initializeBillingCron(): void {
           allExpiring.push(sub);
         }
       }
+      console.log(`[billing-cron] Trial expiry: processing ${allExpiring.length} non-free-period trial(s). Free-period trials handled by separate cron at 09:15.`);
 
       let count = 0;
 

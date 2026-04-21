@@ -1,0 +1,233 @@
+6F8a BUILD. Prevent silent cancellation of 5D New Member 6-month trials by the 09:05 trial expiry cron, and add canceledAt column to subscriptions for future Item 15 data wipe signalling. Dev only. Do not deploy.
+
+Scope:
+1. Schema migration: add subscriptions.canceledAt (timestamptz, nullable).
+2. Migration script following the add-dunning-columns.ts / add-user-promo-assignment-columns.ts pattern.
+3. One-line filter addition to the trial expiry cron to exclude subscriptions with freeMonthsTotal > 0.
+4. Update billingService.expireTrial to stamp canceledAt on the transition.
+
+Implement exactly as written.
+
+---
+
+STEP 0: verify before editing
+
+0a. Paste the current subscriptions table schema from shared/schema/billing.ts (first 45 lines, the export const subscriptions block in full).
+
+0b. Paste the current billingService.expireTrial method from server/services/billing.service.ts. We saw the outline in the 6F8 assess but we need exact context for editing.
+
+0c. Paste the current trial expiry cron query block at server/cron/billing.cron.ts:143-207. Exact line numbers may have shifted since assess.
+
+0d. Confirm the UNIQUE constraint on subscriptions.user_company_id is still present and list any other constraints on the table. Read-only:
+
+SELECT conname, pg_get_constraintdef(oid) AS definition
+FROM pg_constraint
+WHERE conrelid = 'public.subscriptions'::regclass
+ORDER BY conname;
+
+If any of 0a-0d cannot be found, STOP.
+
+---
+
+STEP 1: schema edit in shared/schema/billing.ts
+
+1a. Add canceledAt to the subscriptions table definition. Insert between the existing updatedAt line (around line 40) and the closing brace, OR between trialEndsAt and currency, whichever grouping makes more sense in context of how other timestamps are clustered. Choose the cleanest location based on Step 0a findings.
+
+The line to add:
+
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
+
+Use withTimezone: true for consistency with other newer audit timestamps (past_due_since, assignedAt).
+
+Do not modify any other column.
+
+---
+
+STEP 2: create migration script at server/scripts/add-subscriptions-canceled-at-column.ts
+
+Full contents:
+
+import { sql } from 'drizzle-orm';
+import { db } from '../db';
+
+const EXECUTE = process.env.EXECUTE === 'true';
+
+async function main() {
+  console.log(`Mode: ${EXECUTE ? 'EXECUTE - writes will be committed' : 'DRY-RUN - no writes'}`);
+
+  const statement = sql`
+    ALTER TABLE subscriptions
+    ADD COLUMN IF NOT EXISTS canceled_at timestamptz;
+  `;
+
+  if (!EXECUTE) {
+    console.log('Would run: ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS canceled_at timestamptz;');
+    return;
+  }
+
+  await db.execute(statement);
+  console.log('subscriptions.canceled_at column added');
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+
+---
+
+STEP 3: run the migration
+
+3a. Dry run:
+npx tsx server/scripts/add-subscriptions-canceled-at-column.ts
+
+Expect:
+Mode: DRY-RUN - no writes
+Would run: ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS canceled_at timestamptz;
+
+3b. Real run:
+EXECUTE=true npx tsx server/scripts/add-subscriptions-canceled-at-column.ts
+
+Expect:
+Mode: EXECUTE - writes will be committed
+subscriptions.canceled_at column added
+
+3c. Verification query:
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'subscriptions'
+  AND column_name = 'canceled_at';
+
+Expect exactly one row: canceled_at, timestamp with time zone, YES.
+
+---
+
+STEP 4: update billingService.expireTrial in server/services/billing.service.ts
+
+Current expireTrial (per 6F8 assess Section A Point 4):
+
+  async expireTrial(userCompanyId: number): Promise<Subscription | null> {
+    const existing = await billingRepository.getByCompanyId(userCompanyId);
+    if (!existing) return null;
+
+    const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
+      status: 'canceled',
+    });
+
+    await billingRepository.logEvent({
+      userCompanyId,
+      eventType: 'trial.expired',
+      previousStatus: existing.status as SubscriptionStatus,
+      previousPlanKey: existing.planKey as PlanKey,
+      newStatus: 'canceled',
+      newPlanKey: existing.planKey as PlanKey,
+      payload: { trialEnd: existing.trialEnd },
+    });
+
+    return subscription;
+  }
+
+Replace the updateByCompanyId call:
+
+    const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
+      status: 'canceled',
+    });
+
+With:
+
+    const subscription = await billingRepository.updateByCompanyId(userCompanyId, {
+      status: 'canceled',
+      canceledAt: new Date(),
+    });
+
+Do not modify any other part of expireTrial or any other method in billing.service.ts.
+
+If billingRepository.updateByCompanyId has a narrow input type that excludes canceledAt, surface the exact type in Step 5 so we can fix it in a follow-on. Do NOT edit it blindly here.
+
+---
+
+STEP 5: add the filter to the trial expiry cron in server/cron/billing.cron.ts
+
+5a. Update the direct query at lines 153-162 (numbers approximate). Current:
+
+      const trialEndsAtExpired = await db
+        .select()
+        .from(subscriptions)
+        .where(
+          and(
+            isNotNull(subscriptions.trialEndsAt),
+            lt(subscriptions.trialEndsAt, new Date()),
+            eq(subscriptions.status, 'trialing')
+          )
+        );
+
+Add one predicate to exclude free-period subs. Use eq(subscriptions.freeMonthsTotal, 0), because the column is NOT NULL and defaults to 0. 5D New Member subs have freeMonthsTotal = 6.
+
+      const trialEndsAtExpired = await db
+        .select()
+        .from(subscriptions)
+        .where(
+          and(
+            isNotNull(subscriptions.trialEndsAt),
+            lt(subscriptions.trialEndsAt, new Date()),
+            eq(subscriptions.status, 'trialing'),
+            eq(subscriptions.freeMonthsTotal, 0)
+          )
+        );
+
+5b. Also apply the same filter to the earlier branch at lines 147-151:
+
+      const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
+      const trialing = expiring.filter((s) => s.status === 'trialing' && (
+        (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
+        (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
+      ));
+
+Change the filter callback to also exclude free-period subs:
+
+      const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
+      const trialing = expiring.filter((s) => s.status === 'trialing' && s.freeMonthsTotal === 0 && (
+        (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
+        (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
+      ));
+
+5c. Add a console log line inside the cron body, immediately after the allExpiring construction, to document the filter:
+
+      console.log(`[billing-cron] Trial expiry: processing ${allExpiring.length} non-free-period trial(s). Free-period trials handled by separate cron at 09:15.`);
+
+5d. Do not modify any other part of the cron file in this cycle. 6F8b and 6F8c will rewrite the 09:15 free-months cron.
+
+---
+
+STEP 6: verification
+
+6a. Restart dev server. Confirm no compile errors.
+
+6b. Throwaway tsx simulation at server/scripts/tmp-6f8a-simulate.ts:
+- Create two disposable subscriptions rows with status='trialing':
+  (i) Control: freeMonthsTotal=0, trialEndsAt=1 hour ago. Should be picked up.
+  (ii) 5D New Member: freeMonthsTotal=6, trialEndsAt=1 hour ago. Should be EXCLUDED.
+- Run the same SELECT query as the cron uses (lines 153-162 post-edit).
+- Assert: control id is in result, 5D New Member id is NOT.
+- Clean up both rows. Script self-deletes.
+
+6c. Additional test: call billingService.expireTrial on a disposable row and verify canceledAt is stamped in the DB.
+
+6d. Confirm the free-months cron (09:15 job) still runs unmodified. It is rewritten in 6F8b and 6F8c, not here.
+
+---
+
+STEP 7: report back
+
+1. Step 0 findings.
+2. Confirm schema edit (show before/after in billing.ts).
+3. Confirm migration script created and ran. Paste dry-run + execute output. Paste verification query result.
+4. Confirm expireTrial edited. Paste the post-edit method. Report if billingRepository.updateByCompanyId accepted the new canceledAt field without type errors.
+5. Confirm both cron filters added (5a and 5b). Paste the post-edit block.
+6. Simulation results from 6b (i) included, (ii) excluded.
+7. Stamping test 6c: post-expire SQL result showing canceledAt populated.
+8. Confirm throwaway script deleted.
+9. Confirm exactly four files touched: shared/schema/billing.ts, new migration script, server/services/billing.service.ts, server/cron/billing.cron.ts.
+
+Do not proceed to 6F8b. Stop after 6F8a verification.
