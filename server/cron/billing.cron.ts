@@ -356,27 +356,76 @@ export function initializeBillingCron(): void {
           }
         } else if (isFreePeriodEndingSoon(sub.freeMonthsStartedAt, sub.freeMonthsTotal) && !sub.freeMonthsWarningEmailSentAt) {
           try {
-            try {
-              await (emailService as any).sendEmail({
-                to: company.email,
-                subject: 'Your free period is ending soon',
-                html: `
-                  <h2>Your free period is ending soon</h2>
-                  <p>Hi ${company.companyName || 'there'},</p>
-                  <p>Your ${sub.freeMonthsTotal}-month free period will end next month. After that, your ongoing community discount will be applied automatically.</p>
-                  <p>No action is needed — we just wanted to give you a heads up!</p>
-                `,
+            // Classify: 5D New Member (6 month free period) vs legacy community (other free periods).
+            // 5D New Member users need an "enter payment details" email. Legacy community users
+            // get the existing "no action needed" email because their discount auto-applies.
+            const isFiveDNewMemberSub = sub.freeMonthsTotal === 6;
+
+            if (isFiveDNewMemberSub) {
+              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+              if (!adminEmail) {
+                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping 5D New Member free-period warning`);
+                continue;
+              }
+
+              const endDate = new Date(sub.freeMonthsStartedAt);
+              endDate.setMonth(endDate.getMonth() + sub.freeMonthsTotal);
+
+              try {
+                await emailApiService.sendFreePeriodPaymentRequiredEmail({
+                  to: adminEmail.email,
+                  firstName: adminEmail.firstName || 'there',
+                  endDate,
+                });
+              } catch (emailErr) {
+                console.error(`[billing-cron] Failed to send 5D New Member warning email for company ${sub.userCompanyId}:`, emailErr);
+              }
+
+              await billingRepository.updateByCompanyId(sub.userCompanyId, {
+                freeMonthsWarningEmailSentAt: new Date(),
               });
-            } catch (emailErr) {
-              console.error(`[billing-cron] Failed to send warning email for company ${sub.userCompanyId}:`, emailErr);
+
+              await billingRepository.logEvent({
+                userCompanyId: sub.userCompanyId,
+                eventType: 'referral.free_period_warning_sent',
+                previousStatus: sub.status as any,
+                previousPlanKey: sub.planKey as any,
+                newStatus: sub.status as any,
+                newPlanKey: sub.planKey as any,
+                payload: {
+                  variant: '5d_new_member',
+                  freeMonthsTotal: sub.freeMonthsTotal,
+                  elapsed,
+                  endDate: endDate.toISOString(),
+                },
+              });
+
+              warningCount++;
+              console.log(`[billing-cron] Sent 5D New Member payment-required warning to company ${sub.userCompanyId}`);
+            } else {
+              // Legacy community path: existing "no action needed" email.
+              try {
+                await (emailService as any).sendEmail({
+                  to: company.email,
+                  subject: 'Your free period is ending soon',
+                  html: `
+                    <h2>Your free period is ending soon</h2>
+                    <p>Hi ${company.companyName || 'there'},</p>
+                    <p>Your ${sub.freeMonthsTotal}-month free period will end next month. After that, your ongoing community discount will be applied automatically.</p>
+                    <p>No action is needed, we just wanted to give you a heads up.</p>
+                  `,
+                });
+              } catch (emailErr) {
+                console.error(`[billing-cron] Failed to send legacy warning email for company ${sub.userCompanyId}:`, emailErr);
+              }
+
+              await billingRepository.updateByCompanyId(sub.userCompanyId, {
+                freeMonthsWarningEmailSentAt: new Date(),
+              });
+
+              warningCount++;
+              console.log(`[billing-cron] Sent legacy free period warning email to company ${sub.userCompanyId}`);
             }
-
-            await billingRepository.updateByCompanyId(sub.userCompanyId, {
-              freeMonthsWarningEmailSentAt: new Date(),
-            });
-
-            warningCount++;
-            console.log(`[billing-cron] Sent free period warning email to company ${sub.userCompanyId}`);
           } catch (err) {
             console.error(`[billing-cron] Failed to process warning for company ${sub.userCompanyId}:`, err);
           }
