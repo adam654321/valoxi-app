@@ -1,0 +1,109 @@
+PHASE 6D-FOLLOWUP-1 ASSESS - Stripe v20 period date extraction
+
+Read-only. Do not edit. Produce a verbatim change plan at the end.
+
+Background
+During 6D1 verification, an end-to-end test against real dev sub
+sub_1TOUG42N2rRCsCfrdzdaN9WB confirmed that subscriptions.current_period_start
+and subscriptions.current_period_end are NOT being updated when Stripe sends
+customer.subscription.updated. Q4 of the verification showed period_start
+2026-04-21 02:41:51 and period_end 2026-04-21 02:44:43, both stale from
+original creation, despite Stripe billing_cycle_anchor being 1776912111
+(23 Apr 02:41 UTC) and items[0].current_period_start/end being current.
+
+Hypothesis: Stripe API version 2026-03-25.dahlia (used by ADJV) deprecated
+the top-level Subscription.current_period_start and .current_period_end
+fields. They now live on subscription_item.current_period_start and .end.
+The handler at billing.routes.ts:200-203 uses a type cast to read them off
+the top level, gets undefined, and silently skips the period date update via
+the ternary at lines 220-225.
+
+What I need you to inspect
+
+A. customer.subscription.updated handler
+   File: server/routes/billing.routes.ts
+   Lines: 195-242
+   Show the full handler verbatim. Confirm the type cast and the ternary
+   that produce undefined. Trace what updateSubscriptionStatus does with
+   undefined period dates (does it skip the field, or does it overwrite
+   with null?).
+
+B. invoice.paid handler
+   File: server/routes/billing.routes.ts
+   Lines: 261-296
+   Show the full handler verbatim. The handler reads invoice.period_start
+   and invoice.period_end. Confirm whether those fields are still present
+   on Stripe.Invoice in API v20 (2026-03-25.dahlia), or whether they were
+   also moved. Same check on any other handler that reads period dates.
+
+C. Stripe SDK type definitions
+   Look at the installed @types/stripe or stripe package node_modules to
+   confirm the Stripe v20 type definitions:
+   - Does Stripe.Subscription still expose current_period_start and
+     current_period_end? Or are they removed from the type?
+   - Does Stripe.Subscription.Item (subscription_item) expose
+     current_period_start and current_period_end?
+   - Does Stripe.Invoice still expose period_start and period_end?
+   Paste the relevant type definition lines with file path.
+
+D. Live raw payload check
+   The 6D1 test already showed that the actual JSON payload from Stripe
+   for sub_1TOUG42N2rRCsCfrdzdaN9WB has:
+   - No top-level current_period_start or current_period_end on the
+     subscription object.
+   - items.data[0].current_period_start = 1776739311
+   - items.data[0].current_period_end = 1776912111
+   Confirm this matches what the SDK types say.
+
+E. updateSubscriptionStatus behaviour
+   File: server/services/billing.service.ts
+   Lines: 142-193
+   Confirm the conditional update logic: when currentPeriodStart or
+   currentPeriodEnd is undefined, the field is excluded from the update
+   payload (so the existing DB value is preserved, not overwritten).
+   This is important because the fix should pass actual values, not
+   null, when items[0] also has no period info (edge case).
+
+F. Other call sites that might have the same bug
+   Search for all reads of current_period_start and current_period_end
+   across the server/ directory. Flag any that read from the top-level
+   subscription object via a v20-deprecated path:
+
+   grep -rn "current_period_start\|currentPeriodStart" server/ shared/
+   grep -rn "current_period_end\|currentPeriodEnd" server/ shared/
+
+   Show the matches and flag any that look at risk.
+
+Change plan format
+At the end, give me a verbatim change plan with these sections:
+
+  1. Root cause confirmation - one paragraph confirming or correcting
+     my hypothesis based on the SDK types and live payload.
+
+  2. Scope of fix - list every handler and every helper function that
+     needs to change, with file paths and line numbers.
+
+  3. Exact code change for each location - find/replace blocks. Pattern
+     should be: read from subscription.items.data[0].current_period_start
+     (or .end) instead of the top-level cast. Handle the edge case where
+     items.data is empty (defensive: leave period dates undefined).
+
+  4. invoice.paid handler verdict - whether invoice.period_start and
+     period_end are still on Stripe.Invoice in v20 and need no change,
+     or whether they also moved.
+
+  5. Test plan - exact sequence to validate the fix:
+     (a) re-run the same metadata-update test against
+         sub_1TOUG42N2rRCsCfrdzdaN9WB,
+     (b) confirm subscriptions.current_period_start and
+         current_period_end now match the items[0] values from the
+         resent payload,
+     (c) confirm subscription_events still writes one row with no
+         duplicates.
+
+Constraints
+  - Read-only.
+  - Show file paths and line numbers for every code block quoted.
+  - Replit is ground truth. If your output disagrees with my notes,
+    your output wins.
+  - If any code is ambiguous, list as open question rather than guessing.
