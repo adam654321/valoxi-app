@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useClerk } from "@clerk/react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -70,6 +71,7 @@ type ContactForm = z.infer<typeof contactSchema>;
 
 export default function Contacts() {
   const { user } = useAuth();
+  const { signOut } = useClerk();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [showContactForm, setShowContactForm] = useState(false);
@@ -237,8 +239,31 @@ export default function Contacts() {
   const primaryContacts = filteredContacts.filter(c => c.isPrimary);
   const otherContacts = filteredContacts.filter(c => !c.isPrimary);
 
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        await apiRequest("POST", "/api/v2/auth/logout");
+      } catch (err) {
+        console.warn('[contacts] Server logout failed, continuing with Clerk signOut', err);
+      }
+      try {
+        await signOut();
+      } catch (err) {
+        console.warn('[contacts] Clerk signOut failed', err);
+      }
+      window.location.href = "/login";
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = () => {
-    window.location.href = "/api/v2/auth/logout";
+    logoutMutation.mutate();
   };
 
   if (isLoading) {

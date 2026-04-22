@@ -1,0 +1,319 @@
+Clerk auth resilience — DEFENSIVE UX. BUILD. Make the exact changes below in the order given. Do not deviate.
+
+Goal: give users stuck in any Clerk-adjacent dead-end state a visible, working "Sign out and start over" escape. Fix the contacts.tsx logout 404. Pre-emptively clear stuck Clerk sessions when the user arrives at /sign-in with a partial cookie.
+
+Four files change:
+- client/src/pages/auth/account-setup-pending.tsx (add Sign out + Start over button)
+- client/src/pages/contacts.tsx (fix logout 404)
+- client/src/pages/auth/sign-in.tsx (pre-flight clear stuck session)
+- client/src/pages/auth/login.tsx (optional: add link to /sign-in as a hint — only if clerk is enabled)
+
+===========================================================================
+CHANGE 1 of 4: AccountSetupPending — add escape hatch
+===========================================================================
+
+File: client/src/pages/auth/account-setup-pending.tsx
+
+Current file is 27 lines. Replace entirely with:
+
+import { useMutation } from "@tanstack/react-query";
+import { useClerk } from "@clerk/react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+
+export default function AccountSetupPending() {
+  const { signOut } = useClerk();
+  const { toast } = useToast();
+
+  const clerkEnabled = import.meta.env.VITE_CLERK_ENABLED === 'true';
+
+  const signOutMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        await apiRequest("POST", "/api/v2/auth/logout");
+      } catch (err) {
+        console.warn('[account-setup-pending] Server logout failed, continuing with Clerk signOut', err);
+      }
+      if (clerkEnabled) {
+        await signOut();
+      }
+      window.location.href = "/login";
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Sign-out failed",
+        description: err?.message || "Please try again or clear your browser cookies.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="max-w-md w-full rounded-lg border bg-card p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+        <h1 className="text-xl font-semibold mb-3">Setting up your account</h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          Your account is being linked. This usually takes a few seconds. The page will refresh
+          automatically once setup is complete.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] })
+            }
+          >
+            Retry now
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => signOutMutation.mutate()}
+            disabled={signOutMutation.isPending}
+          >
+            {signOutMutation.isPending ? "Signing out..." : "Sign out and start over"}
+          </Button>
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Still stuck?{" "}
+          <a href="mailto:support@valoxi.ai" className="underline">
+            Contact support
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+Note: this escape calls BOTH server /logout AND clerk signOut(), then hard-navigates to /login (the non-Clerk fallback). That path is known to work regardless of Clerk state.
+
+Note on VITE_CLERK_ENABLED: check whether this env variable is already exposed to the client. If not (if only CLERK_ENABLED exists server-side), report that back and we'll decide whether to expose it or use a different signal (e.g. checking if Clerk is in the app at all by a try/catch around useClerk). If the variable does not exist, assume clerkEnabled=true for now (production behaviour) since this is pre-launch.
+
+===========================================================================
+CHANGE 2 of 4: contacts.tsx — fix logout 404
+===========================================================================
+
+File: client/src/pages/contacts.tsx
+
+Line 240-241 current:
+  const handleLogout = () => {
+    window.location.href = "/api/v2/auth/logout";
+  };
+
+Replace with the proper mutation pattern matching NavUser.tsx:
+
+  const { signOut } = useClerk();
+  const clerkEnabled = import.meta.env.VITE_CLERK_ENABLED === 'true';
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/v2/auth/logout");
+      if (clerkEnabled) {
+        await signOut();
+        window.location.href = "/sign-in";
+      }
+    },
+    onSuccess: () => {
+      if (!clerkEnabled) {
+        window.location.href = "/login";
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+Add imports at the top if not already present:
+  import { useMutation } from "@tanstack/react-query";
+  import { useClerk } from "@clerk/react";
+  import { apiRequest } from "@/lib/queryClient";
+  import { useToast } from "@/hooks/use-toast";
+
+Note: the onClick for the button that calls handleLogout should also reflect the loading state. Find the button (search for handleLogout onClick in the file) and add disabled={logoutMutation.isPending} if not already present.
+
+===========================================================================
+CHANGE 3 of 4: sign-in.tsx — pre-flight clear stuck session
+===========================================================================
+
+File: client/src/pages/auth/sign-in.tsx
+
+Replace the current 19-line file with:
+
+import { useEffect, useState } from "react";
+import { SignIn } from "@clerk/react";
+import { useClerk, useAuth as useClerkAuth } from "@clerk/react";
+import { ValoxiLogo } from "@/components/valoxi-logo";
+import { valoxiClerkAppearance } from "@/lib/clerk-appearance";
+import { Button } from "@/components/ui/button";
+
+export default function SignInPage() {
+  const { signOut } = useClerk();
+  const { isSignedIn, isLoaded } = useClerkAuth();
+  const [preflightComplete, setPreflightComplete] = useState(false);
+
+  // Pre-flight: if a Clerk session exists when the user lands on /sign-in,
+  // that is a stuck state (they should not see /sign-in if they are signed in;
+  // they should be on /). Clear the session before rendering the Clerk component.
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const checkStuckSession = async () => {
+      if (isSignedIn) {
+        try {
+          // Verify with our backend whether the Clerk session resolves to a linked user.
+          const res = await fetch("/api/v2/auth/me", { credentials: "include" });
+          if (!res.ok) {
+            // Clerk says signed in but backend does not agree. Clear the stuck state.
+            console.warn('[sign-in] Stuck Clerk session detected (Clerk signed in, backend not linked). Clearing.');
+            await signOut();
+          }
+        } catch (err) {
+          console.warn('[sign-in] Backend check failed, clearing Clerk session defensively', err);
+          await signOut();
+        }
+      }
+      setPreflightComplete(true);
+    };
+
+    checkStuckSession();
+  }, [isLoaded, isSignedIn, signOut]);
+
+  const handleStartOver = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('[sign-in] signOut failed', err);
+    }
+    window.location.reload();
+  };
+
+  if (!isLoaded || !preflightComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <ValoxiLogo />
+        <SignIn
+          appearance={valoxiClerkAppearance}
+          signUpUrl="/sign-up"
+          forceRedirectUrl="/"
+          fallbackRedirectUrl="/"
+        />
+        <div className="flex flex-col items-center gap-2 mt-2 text-sm text-muted-foreground">
+          <button
+            type="button"
+            onClick={handleStartOver}
+            className="underline hover:text-foreground"
+          >
+            Having trouble? Start over
+          </button>
+          <span>
+            or use the{" "}
+            <a href="/login" className="underline hover:text-foreground">
+              classic login
+            </a>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Note on the "classic login" link: /login still works as a Clerk-free fallback (Express session auth). This gives any stuck user an immediate escape hatch. It will stop working if/when /login is retired, but that is not in scope for this cycle.
+
+===========================================================================
+CHANGE 4 of 4: sign-up.tsx — add same Start over button (minimal change)
+===========================================================================
+
+File: client/src/pages/auth/sign-up.tsx
+
+Replace the 19-line file with:
+
+import { SignUp } from "@clerk/react";
+import { useClerk } from "@clerk/react";
+import { ValoxiLogo } from "@/components/valoxi-logo";
+import { valoxiClerkAppearance } from "@/lib/clerk-appearance";
+
+export default function SignUpPage() {
+  const { signOut } = useClerk();
+
+  const handleStartOver = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('[sign-up] signOut failed', err);
+    }
+    window.location.href = "/login";
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <ValoxiLogo />
+        <SignUp
+          appearance={valoxiClerkAppearance}
+          signInUrl="/sign-in"
+          forceRedirectUrl="/"
+          fallbackRedirectUrl="/"
+        />
+        <div className="flex flex-col items-center gap-2 mt-2 text-sm text-muted-foreground">
+          <button
+            type="button"
+            onClick={handleStartOver}
+            className="underline hover:text-foreground"
+          >
+            Having trouble? Start over
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Note: no pre-flight check on sign-up because a fresh sign-up should be starting from zero session. If they have one already, they should be on sign-in, not sign-up. The Start over button is enough here.
+
+===========================================================================
+POST-CHANGE VERIFICATION (REQUIRED, run all)
+===========================================================================
+
+V1. Restart dev server. Confirm clean start.
+
+V2. Grep client/src/ for 'window.location.href = "/api/v2/auth/logout"'. Expected zero hits (the bad GET is removed).
+
+V3. Grep client/src/ for 'Having trouble? Start over'. Expected exactly two hits (sign-in.tsx and sign-up.tsx).
+
+V4. Grep client/src/ for 'Sign out and start over'. Expected exactly one hit (account-setup-pending.tsx).
+
+V5. Grep client/src/ for 'preflightComplete'. Expected exactly one hit (sign-in.tsx).
+
+V6. Paste the final state of client/src/pages/auth/sign-in.tsx verbatim.
+
+V7. Paste the final state of client/src/pages/auth/sign-up.tsx verbatim.
+
+V8. Paste the final state of client/src/pages/auth/account-setup-pending.tsx verbatim.
+
+V9. Paste the lines in client/src/pages/contacts.tsx showing the new handleLogout + logoutMutation (should be ~25 lines).
+
+V10. Browser smoke: open /sign-in in an incognito window. Confirm the page loads, shows the Clerk sign-in form, and shows the "Having trouble? Start over" and "classic login" links below.
+
+V11. Browser smoke: deliberately create a stuck state. Sign up with a fake email (no invite), land on AccountSetupPending. Confirm both buttons render ("Retry now" and "Sign out and start over"). Click "Sign out and start over". Confirm browser lands on /login with no Clerk session cookie remaining. You can verify cookie removal via DevTools → Application → Cookies; __session should not be present.
+
+V12. Browser smoke: in contacts.tsx, click the logout button (wherever it is in the UI). Confirm it logs out cleanly via the mutation path, not by hitting a 404.
+
+V13. Grep client/src/ for 'VITE_CLERK_ENABLED'. Report whether the env variable is currently defined anywhere in code (client-side). If not, report this explicitly — we will decide how to gate the clerkEnabled flag on the client.
+
+Report completion with all 13 verifications. Do not close the cycle until all verifications have been explicitly reported.
