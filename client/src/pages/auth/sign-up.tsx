@@ -12,7 +12,7 @@ export default function SignUpPage() {
     } catch (err) {
       console.error('[sign-up] signOut failed', err);
     }
-    window.location.href = "/login";
+    window.location.href = "/sign-in";
   };
 
   return (

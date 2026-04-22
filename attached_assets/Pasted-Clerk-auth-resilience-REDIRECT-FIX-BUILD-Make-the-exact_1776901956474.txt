@@ -1,0 +1,131 @@
+Clerk auth resilience — REDIRECT FIX. BUILD. Make the exact changes below. Do not deviate.
+
+Goal: correct the post-sign-out redirect target. Clerk-authed users have no Express password hash, so sending them to /login is a dead end. All "Sign out and start over" exits must route to /sign-in (Clerk) so the user can re-enter via their actual auth source. Also remove the "classic login" fallback link from /sign-in, which was a wrong suggestion — it cannot recover a Clerk user.
+
+Three files change:
+- client/src/pages/auth/account-setup-pending.tsx (redirect target /login -> /sign-in)
+- client/src/pages/contacts.tsx (redirect target /login -> /sign-in)
+- client/src/pages/auth/sign-in.tsx (remove the "classic login" link; keep "Having trouble? Start over" calling window.location.reload())
+- client/src/pages/auth/sign-up.tsx (redirect target /login -> /sign-in)
+
+===========================================================================
+CHANGE 1 of 4: account-setup-pending.tsx
+===========================================================================
+
+File: client/src/pages/auth/account-setup-pending.tsx
+
+Locate the line inside signOutMutation's mutationFn:
+
+  window.location.href = "/login";
+
+Replace with:
+
+  window.location.href = "/sign-in";
+
+===========================================================================
+CHANGE 2 of 4: contacts.tsx
+===========================================================================
+
+File: client/src/pages/contacts.tsx
+
+Locate the line inside logoutMutation's mutationFn:
+
+  window.location.href = "/login";
+
+Replace with:
+
+  window.location.href = "/sign-in";
+
+===========================================================================
+CHANGE 3 of 4: sign-in.tsx
+===========================================================================
+
+File: client/src/pages/auth/sign-in.tsx
+
+Locate the JSX block currently containing both the "Having trouble? Start over" button and the "classic login" span with link. Currently:
+
+        <div className="flex flex-col items-center gap-2 mt-2 text-sm text-muted-foreground">
+          <button
+            type="button"
+            onClick={handleStartOver}
+            className="underline hover:text-foreground"
+          >
+            Having trouble? Start over
+          </button>
+          <span>
+            or use the{" "}
+            <a href="/login" className="underline hover:text-foreground">
+              classic login
+            </a>
+          </span>
+        </div>
+
+Replace with (remove the span and classic login anchor entirely):
+
+        <div className="flex flex-col items-center gap-2 mt-2 text-sm text-muted-foreground">
+          <button
+            type="button"
+            onClick={handleStartOver}
+            className="underline hover:text-foreground"
+          >
+            Having trouble? Start over
+          </button>
+        </div>
+
+Note: handleStartOver calls signOut() then window.location.reload(). The reload on /sign-in is correct — it reloads the same Clerk sign-in page with a cleared session. No redirect target change needed here.
+
+===========================================================================
+CHANGE 4 of 4: sign-up.tsx
+===========================================================================
+
+File: client/src/pages/auth/sign-up.tsx
+
+Locate handleStartOver. Currently:
+
+  const handleStartOver = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('[sign-up] signOut failed', err);
+    }
+    window.location.href = "/login";
+  };
+
+Replace with:
+
+  const handleStartOver = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('[sign-up] signOut failed', err);
+    }
+    window.location.href = "/sign-in";
+  };
+
+===========================================================================
+POST-CHANGE VERIFICATION (REQUIRED, run all)
+===========================================================================
+
+V1. Grep client/src/ for 'window.location.href = "/login"'. Expected zero hits in the following files: account-setup-pending.tsx, contacts.tsx, sign-up.tsx. Report any remaining hits (if the same string appears in unrelated files like Login.tsx redirects, list them but they are out of scope).
+
+V2. Grep client/src/ for 'window.location.href = "/sign-in"'. Expected at least three hits: account-setup-pending.tsx, contacts.tsx, sign-up.tsx.
+
+V3. Grep client/src/ for 'classic login'. Expected zero hits. The span and anchor have been removed from sign-in.tsx.
+
+V4. Grep client/src/ for 'href="/login"' (quoted variant, as an href attribute). Report all hits for review. This is informational; not all /login links should necessarily be removed in this cycle, but we want an inventory.
+
+V5. Paste final state of client/src/pages/auth/sign-in.tsx lines that contain the Start over button and any surrounding JSX (typically 10-15 lines).
+
+V6. Paste final state of client/src/pages/auth/sign-up.tsx handleStartOver function (5 lines).
+
+V7. Paste final state of client/src/pages/auth/account-setup-pending.tsx signOutMutation block (the mutationFn body, about 15 lines).
+
+V8. Paste final state of client/src/pages/contacts.tsx logoutMutation block (the mutationFn body, about 15 lines).
+
+V9. Restart dev server. Confirm clean start.
+
+V10. Browser smoke: reproduce the stuck AccountSetupPending state (sign up with fake email, land on AccountSetupPending). Click "Sign out and start over". Confirm browser lands on /sign-in, not /login. Confirm the Clerk __session cookie is gone in DevTools.
+
+V11. Browser smoke: on /sign-in, confirm the "Having trouble? Start over" link is visible, and the "classic login" link is gone.
+
+Report completion with all 11 verifications.

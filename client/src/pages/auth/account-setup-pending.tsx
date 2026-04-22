@@ -20,7 +20,7 @@ export default function AccountSetupPending() {
       } catch (err) {
         console.warn('[account-setup-pending] Clerk signOut failed', err);
       }
-      window.location.href = "/login";
+      window.location.href = "/sign-in";
     },
     onError: (err: any) => {
       toast({

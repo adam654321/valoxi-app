@@ -78,12 +78,6 @@ export default function SignInPage() {
           >
             Having trouble? Start over
           </button>
-          <span>
-            or use the{" "}
-            <a href="/login" className="underline hover:text-foreground">
-              classic login
-            </a>
-          </span>
         </div>
       </div>
     </div>

@@ -251,7 +251,7 @@ export default function Contacts() {
       } catch (err) {
         console.warn('[contacts] Clerk signOut failed', err);
       }
-      window.location.href = "/login";
+      window.location.href = "/sign-in";
     },
     onError: () => {
       toast({
