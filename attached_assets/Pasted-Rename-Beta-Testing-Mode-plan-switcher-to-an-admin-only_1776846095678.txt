@@ -1,0 +1,59 @@
+Rename "Beta Testing Mode" plan switcher to an admin-only tool. ASSESS ONLY. Read-only. Do not modify any files.
+
+Goal: remove the beta-mode env gate and rebrand the plan tier switcher as a system-admin-only diagnostic tool. Post-build, the switcher must be invisible and unreachable for non-admin users regardless of BETA_MODE env value, and visible and usable for system admins on dev AND prod.
+
+Report each of the following with verbatim source and exact line numbers. Do not summarise.
+
+1. server/routes/beta.routes.ts
+   1a. Full file verbatim with line numbers.
+   1b. Confirm the /switch-plan route has these two gates: process.env.BETA_MODE check, systemConfigService.getConfig('beta_tier_switch_enabled') check. Quote each gate line verbatim.
+   1c. Confirm no isSystemAdmin middleware or user role check exists in this file. Quote the router.post line to show current middleware chain.
+
+2. server/routes/index.ts
+   2a. The import line for betaRoutes. Quote verbatim with line number.
+   2b. The app.use mount for /api/v2/beta. Quote verbatim with full middleware chain visible.
+   2c. Confirm isSystemAdmin middleware is imported in this file and state where it comes from (import line verbatim). This will be needed for the build.
+
+3. client/src/pages/billing.tsx
+   3a. The isBetaMode derivation (expected around "const isBetaMode = import.meta.env.VITE_BETA_MODE"). Quote verbatim with line number.
+   3b. The betaConfig useQuery block (expected to hit /api/v2/beta/config). Quote verbatim with line numbers.
+   3c. The betaTierSwitchEnabled derivation. Quote verbatim with line number.
+   3d. The betaSwitchMutation declaration. Quote verbatim with line numbers.
+   3e. The JSX block that renders the beta switcher card (starts with {betaTierSwitchEnabled && ..., includes "Beta Testing Mode" title, FlaskConical icon, and the BETA badge). Quote the entire JSX block verbatim with line numbers, including opening and closing tags.
+   3f. Confirm useAuth hook is already imported in this file. If yes, quote the import line. If no, state ABSENT.
+
+4. client/src/hooks/useAuth.ts (or wherever useAuth lives)
+   4a. Quote the return object verbatim. Confirm whether isSystemAdmin is one of the returned fields. If not, state exactly what field indicates admin status (e.g., user.isSystemAdmin nested, user.role==='admin', etc).
+
+5. client/src/pages/admin/settings.tsx
+   5a. The "Beta Features" section heading and description. Quote verbatim with line numbers.
+   5b. The "Plan Tier Self-Switch" Card component verbatim with line numbers.
+   5c. The betaTierSwitchEnabled derivation from configs. Quote verbatim with line number.
+
+6. Env and config audit
+   6a. Grep server/ for BETA_MODE (not VITE_BETA_MODE, that's client). List every hit with file path and line number. We need to know if anything other than beta.routes.ts reads it.
+   6b. Grep client/src/ for VITE_BETA_MODE. List every hit. Same reason.
+   6c. Grep the whole repo for 'beta_tier_switch_enabled'. List every hit.
+   6d. Grep the whole repo for 'beta_feedback_enabled'. This is a separate feature (the feedback widget), not being changed, but we need to confirm renaming beta_tier_switch_enabled doesn't accidentally touch this one.
+
+7. Icon and copy check
+   7a. Confirm FlaskConical is currently imported in billing.tsx. Quote the import.
+   7b. Search lucide-react imports in billing.tsx for icons that could replace FlaskConical for an admin tool (e.g., Wrench, Settings, ShieldCheck, Cog). List what's already imported and available for reuse without a new import.
+
+8. Proposed changes summary
+   Based on findings above, list the exact edits required per file. For each:
+   - File path
+   - Operation (delete, replace, add)
+   - Line range if applicable
+   - Before and after where relevant
+
+9. Risks and unknowns
+   9a. Any caller of /api/v2/beta/switch-plan outside client/src/pages/billing.tsx? Grep client/src/ for '/beta/switch-plan'. List hits.
+   9b. Any caller of /api/v2/beta/config outside billing.tsx? Same grep.
+   9c. If any non-billing-page caller exists, the rename/gate change will break them. Flag explicitly.
+   9d. userCompanies.betaPlanOverride column: is it referenced anywhere besides beta.routes.ts and billing.service.ts? Grep. If yes, rename considerations apply; if no, column name can stay (internal-only, no impact).
+
+10. Build size estimate
+    Based on findings, state whether this is one build prompt or needs splitting.
+
+Do not modify any files. Do not run any SQL. Assess only.
