@@ -38,6 +38,7 @@ import onboardingRoutes from './onboarding.routes';
 import explainRoutes from './explain.routes';
 import betaFeedbackRoutes from './beta-feedback.routes';
 import betaRoutes from './beta.routes';
+import adminToolsRoutes from './admin-tools.routes';
 import accountRoutes from './account.routes';
 import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode, injectViewAsIdentity } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
@@ -104,5 +105,6 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/explain', isAuthenticated, validateCsrfToken, requireActiveSubscription, explainRoutes);
   app.use('/api/v2/beta-feedback', isAuthenticated, validateCsrfToken, betaFeedbackRoutes);
   app.use('/api/v2/beta', isAuthenticated, validateCsrfToken, betaRoutes);
+  app.use('/api/v2/admin-tools', isAuthenticated, validateCsrfToken, isSystemAdmin, adminToolsRoutes);
   app.use('/api/v2/account', isAuthenticated, validateCsrfToken, accountRoutes);
 }
