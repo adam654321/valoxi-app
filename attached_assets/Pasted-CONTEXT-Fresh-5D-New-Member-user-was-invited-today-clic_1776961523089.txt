@@ -1,0 +1,108 @@
+CONTEXT
+Fresh 5D New Member user was invited today, clicked through Valoxi dialog (which showed correct $443.70 credit), and hit Stripe Checkout. Checkout displayed "183 days free" trial extension despite yesterday's fix adding a !hasFreeMonthState guard to the trial_period_days block in POST /checkout. Need to establish WHERE the trial is coming from before attempting another fix. Four possible sources: (1) our code fired despite the guard, (2) the Stripe Price has recurring.trial_period_days default, (3) some other code path sets subscription_data.trial_period_days or trial_end, (4) the customer has some default trial setting.
+
+GOAL
+Run four read-only checks and paste all results. Do not modify any code. Do not create new resources in Stripe.
+
+CHECK 1 — Paranoia: confirm the fix from earlier is still in billing.routes.ts.
+
+  grep -n "hasFreeMonthState" server/routes/billing.routes.ts
+
+Expected: exactly 2 matches (const declaration, usage in if condition).
+
+Then paste lines around the hasFreeMonthState const through the closing brace of the trial-extension if block. Expected to see `&& !hasFreeMonthState` in the if condition.
+
+CHECK 2 — Find the newly-upgraded test user and their Stripe IDs.
+
+Run SQL:
+  SELECT u.id AS user_id, u.email, u.user_company_id, u.created_at AS user_created,
+         s.stripe_customer_id, s.stripe_subscription_id, s.free_months_total, 
+         s.community_discount_coupon_id, s.status, s.plan_key, s.updated_at
+  FROM users u
+  LEFT JOIN subscriptions s ON s.user_company_id = u.user_company_id
+  WHERE u.email ILIKE '%5d%' OR u.email ILIKE '%test%' OR u.created_at > NOW() - INTERVAL '2 hours'
+  ORDER BY u.created_at DESC LIMIT 10;
+
+Paste all rows. Identify which row corresponds to the user who just upgraded (newest with community_discount_coupon_id = 'upgraded_early' and non-null stripe_subscription_id).
+
+CHECK 3 — Use the Stripe SDK to inspect the subscription and its creating checkout session.
+
+Write a temporary diagnostic script at server/scripts/tmp-diag-trial.ts. Do NOT add it to any routes. Runs once via tsx then is deleted. Script must:
+
+  import Stripe from 'stripe';
+  import { config } from '../config';
+  
+  const stripe = new Stripe(config.stripe.secretKey!);
+  
+  const SUBSCRIPTION_ID = '<paste stripe_subscription_id from CHECK 2>';
+  const CUSTOMER_ID = '<paste stripe_customer_id from CHECK 2>';
+  
+  async function main() {
+    // 1. Fetch the subscription — does it have trial_end/trial_start?
+    const sub = await stripe.subscriptions.retrieve(SUBSCRIPTION_ID);
+    console.log('SUB trial_start:', sub.trial_start);
+    console.log('SUB trial_end:', sub.trial_end);
+    console.log('SUB status:', sub.status);
+    console.log('SUB metadata:', JSON.stringify(sub.metadata));
+    console.log('SUB created:', new Date(sub.created * 1000).toISOString());
+    
+    // 2. Find the most recent checkout session for this customer
+    const sessions = await stripe.checkout.sessions.list({ 
+      customer: CUSTOMER_ID, 
+      limit: 3 
+    });
+    for (const s of sessions.data) {
+      console.log('---');
+      console.log('SESSION id:', s.id, 'created:', new Date(s.created * 1000).toISOString());
+      console.log('SESSION mode:', s.mode, 'status:', s.status);
+      // subscription_data is not on the session response by default; we need to look at the sub link
+      console.log('SESSION subscription:', s.subscription);
+      console.log('SESSION amount_total:', s.amount_total);
+      console.log('SESSION metadata:', JSON.stringify(s.metadata));
+    }
+    
+    // 3. Fetch the Pro Monthly price — does it have a default trial_period_days?
+    const prices = await stripe.prices.list({ 
+      lookup_keys: ['ma_professional_monthly_usd'], 
+      active: true, 
+      limit: 1,
+      expand: ['data.product']
+    });
+    if (prices.data.length) {
+      const p = prices.data[0];
+      console.log('---');
+      console.log('PRICE id:', p.id);
+      console.log('PRICE recurring:', JSON.stringify(p.recurring));
+      console.log('PRICE product:', (p.product as any).id, 'name:', (p.product as any).name);
+      console.log('PRICE product metadata:', JSON.stringify((p.product as any).metadata));
+    }
+    
+    // 4. Fetch the customer — do they have any default trial config?
+    const customer = await stripe.customers.retrieve(CUSTOMER_ID);
+    if (customer && !customer.deleted) {
+      console.log('---');
+      console.log('CUSTOMER balance:', (customer as any).balance);
+      console.log('CUSTOMER metadata:', JSON.stringify((customer as any).metadata));
+    }
+  }
+  
+  main().catch(e => { console.error(e); process.exit(1); });
+
+Run with: npx tsx server/scripts/tmp-diag-trial.ts
+Paste the full output.
+Then delete the script: rm server/scripts/tmp-diag-trial.ts
+
+CHECK 4 — Grep the whole server codebase for any other places that might set trial_period_days or trial_end.
+
+  grep -rn "trial_period_days\|trial_end" server/ shared/ --include="*.ts"
+
+Paste all matches. Flag any match outside billing.routes.ts, billing.service.ts, and schema definitions.
+
+RETURN
+- CHECK 1 grep output and code block
+- CHECK 2 SQL result rows
+- CHECK 3 script output (all console.log lines)
+- CHECK 4 grep output
+- Confirmation that the temp script was deleted
+
+Do not attempt any fix. Do not modify any runtime code. Just gather evidence.
