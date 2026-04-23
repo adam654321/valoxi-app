@@ -33,7 +33,6 @@ import webhooksRoutes from './webhooks.routes';
 import publicConfigRoutes from './public.routes';
 import publicWaitlistRoutes from './public-waitlist.routes';
 import billingAdminRoutes from './billing-admin.routes';
-import issueReportsRoutes from './issue-reports.routes';
 import onboardingRoutes from './onboarding.routes';
 import explainRoutes from './explain.routes';
 import betaFeedbackRoutes from './beta-feedback.routes';
@@ -94,7 +93,6 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/value-creation', isAuthenticated, validateCsrfToken, requireFeature('valueCreationModule'), valueCreationRoutes);
   app.use('/api/v2/admin/waitlist', isAuthenticated, validateCsrfToken, isSystemAdmin, adminWaitlistRoutes);
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
-  app.use('/api/v2/issue-reports', isAuthenticated, validateCsrfToken, requireActiveSubscription, issueReportsRoutes);
   app.use('/api/v2/webhooks', webhooksRoutes);
   app.use('/api/v2/public/waitlist', waitlistLimiter, publicWaitlistRoutes);
   app.use('/api/v2/public', publicConfigRoutes);

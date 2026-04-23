@@ -51,7 +51,6 @@ const AdminUsers = lazy(() => import("@/pages/admin/users"));
 const AdminWaitlist = lazy(() => import("@/pages/admin/waitlist"));
 const AdminWebhookEvents = lazy(() => import("@/pages/admin/webhook-events"));
 const AdminSubscriptions = lazy(() => import("@/pages/admin/subscriptions"));
-const AdminIssueReports = lazy(() => import("@/pages/admin/issue-reports"));
 const AdminFunnel = lazy(() => import("@/pages/admin/funnel"));
 const AdminPromoCodes = lazy(() => import("@/pages/admin/promo-codes"));
 const AdminReferralInvoice = lazy(() => import("@/pages/admin/referral-invoice"));
@@ -158,7 +157,6 @@ function Router() {
                   <Route path="/admin/waitlist" component={AdminWaitlist} />
                   <Route path="/admin/webhook-events" component={AdminWebhookEvents} />
                   <Route path="/admin/subscriptions" component={AdminSubscriptions} />
-                  <Route path="/admin/issue-reports" component={AdminIssueReports} />
                   <Route path="/admin/funnel" component={AdminFunnel} />
                   <Route path="/admin/referral-invoice" component={AdminReferralInvoice} />
                   <Route path="/admin/promo-codes" component={AdminPromoCodes} />
@@ -217,7 +215,7 @@ function Router() {
           </Layout>
         </Route>
       </Switch>
-      {import.meta.env.VITE_BETA_MODE === 'true' && <BetaFeedbackWidget />}
+      <BetaFeedbackWidget />
     </Suspense>
   );
 }

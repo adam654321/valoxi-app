@@ -13,6 +13,7 @@ import { MessageSquarePlus, Loader2, CheckCircle2, ImagePlus, X } from "lucide-r
 const TYPE_OPTIONS = [
   { value: "bug", label: "Bug", emoji: "🐛" },
   { value: "suggestion", label: "Suggestion", emoji: "💡" },
+  { value: "support", label: "Support", emoji: "🛟" },
   { value: "comment", label: "Comment", emoji: "💬" },
   { value: "other", label: "Other", emoji: "📝" },
 ] as const;
@@ -24,7 +25,7 @@ const SEVERITY_OPTIONS = [
   { value: "critical", label: "Critical" },
 ] as const;
 
-type FeedbackType = "bug" | "comment" | "suggestion" | "other";
+type FeedbackType = "bug" | "comment" | "suggestion" | "support" | "other";
 type Severity = "low" | "medium" | "high" | "critical";
 
 export function BetaFeedbackWidget() {
@@ -40,12 +41,12 @@ export function BetaFeedbackWidget() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: betaConfig } = useQuery<{ data: { feedbackEnabled: boolean; tierSwitchEnabled: boolean } }>({
+  const { data: betaConfig } = useQuery<{ data: { issueReportingEnabled: boolean; tierSwitchEnabled: boolean } }>({
     queryKey: ["/api/v2/beta/config"],
     staleTime: 60000,
   });
 
-  const feedbackEnabled = betaConfig?.data?.feedbackEnabled ?? false;
+  const issueReportingEnabled = betaConfig?.data?.issueReportingEnabled ?? false;
 
   const handleOpen = () => {
     setPageUrl(window.location.href);
@@ -124,7 +125,7 @@ export function BetaFeedbackWidget() {
     },
   });
 
-  if (!feedbackEnabled) return null;
+  if (!issueReportingEnabled) return null;
 
   return (
     <>
@@ -132,12 +133,13 @@ export function BetaFeedbackWidget() {
         <TooltipTrigger asChild>
           <button
             onClick={handleOpen}
-            className="fixed bottom-20 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg transition-colors hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-amber-600 dark:hover:bg-amber-700"
+            className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-orange-600 dark:hover:bg-orange-700"
+            aria-label="Report an issue"
           >
             <MessageSquarePlus className="h-4 w-4" />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="left">Beta Feedback</TooltipContent>
+        <TooltipContent side="left">Report an issue</TooltipContent>
       </Tooltip>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -146,17 +148,17 @@ export function BetaFeedbackWidget() {
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <CheckCircle2 className="h-12 w-12 text-green-500" />
               <p className="text-lg font-semibold text-foreground">Thank you!</p>
-              <p className="text-sm text-muted-foreground">Your feedback has been submitted.</p>
+              <p className="text-sm text-muted-foreground">Your report has been submitted.</p>
             </div>
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>Beta Feedback</DialogTitle>
+                <DialogTitle>Report an issue</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-2 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Type</Label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-5 gap-2">
                     {TYPE_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
@@ -277,7 +279,7 @@ export function BetaFeedbackWidget() {
                   disabled={!title.trim() || !description.trim() || mutation.isPending}
                 >
                   {mutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  Send Feedback
+                  Submit
                 </Button>
               </DialogFooter>
             </>

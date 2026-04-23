@@ -13,7 +13,6 @@ import {
   Receipt,
   Tag,
   Settings,
-  MessageSquareText,
   Database,
   ClipboardList,
 } from "lucide-react";
@@ -22,8 +21,7 @@ const adminNav = [
   { title: "Overview", url: "/admin", icon: LayoutDashboard },
   { title: "Token Usage", url: "/admin/token-usage", icon: Coins },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
-  { title: "Issue Reports", url: "/admin/issue-reports", icon: Flag },
-  { title: "Beta Feedback", url: "/admin/feedback", icon: MessageSquareText },
+  { title: "Issue Reports", url: "/admin/feedback", icon: Flag },
   { title: "Funnel", url: "/admin/funnel", icon: TrendingUp },
   { title: "Platform Costs", url: "/admin/costs", icon: DollarSign },
   { title: "Companies", url: "/admin/companies", icon: Building2 },

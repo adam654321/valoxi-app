@@ -7,7 +7,7 @@ import { db } from '../db';
 import { config } from '../config';
 import { subscriptions, promoCodeCampaigns, promoCodes } from '@shared/schema/billing';
 import { userCompanies, users } from '@shared/schema/core';
-import { issueReports, funnelEvents, betaFeedback } from '@shared/schema/dashboard';
+import { funnelEvents, betaFeedback } from '@shared/schema/dashboard';
 import type { PlanKey, SubscriptionStatus } from '@shared/schema/billing';
 import { adminService } from '../services/admin.service';
 import { systemConfigService } from '../services/system-config.service';
@@ -284,56 +284,6 @@ router.get('/subscriptions/summary', asyncHandler(async (req: Request, res: Resp
   });
 }));
 
-router.get('/issue-reports', asyncHandler(async (req: Request, res: Response) => {
-  const conditions = [];
-  if (req.query.status) {
-    conditions.push(eq(issueReports.status, req.query.status as string));
-  }
-
-  const rows = await db
-    .select({
-      id: issueReports.id,
-      userId: issueReports.userId,
-      userEmail: users.email,
-      companyName: userCompanies.companyName,
-      pageUrl: issueReports.pageUrl,
-      title: issueReports.title,
-      description: issueReports.description,
-      severity: issueReports.severity,
-      status: issueReports.status,
-      adminNotes: issueReports.adminNotes,
-      createdAt: issueReports.createdAt,
-    })
-    .from(issueReports)
-    .leftJoin(users, eq(issueReports.userId, users.id))
-    .leftJoin(userCompanies, eq(issueReports.userCompanyId, userCompanies.id))
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(issueReports.createdAt))
-    .limit(100);
-
-  sendSuccess(res, rows);
-}));
-
-router.patch('/issue-reports/:id', asyncHandler(async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const updateSchema = z.object({
-    status: z.enum(['open', 'in_progress', 'resolved']),
-    adminNotes: z.string().optional(),
-  });
-  const validated = updateSchema.parse(req.body);
-
-  const [updated] = await db
-    .update(issueReports)
-    .set(validated)
-    .where(eq(issueReports.id, id))
-    .returning({ id: issueReports.id, status: issueReports.status });
-
-  if (!updated) {
-    return res.status(404).json({ success: false, message: 'Report not found' });
-  }
-
-  sendSuccess(res, updated);
-}));
 
 router.get('/stripe-coupons', asyncHandler(async (req: Request, res: Response) => {
   if (!config.stripe.secretKey) {

@@ -22,7 +22,7 @@ export default function AdminSettings() {
 
   const configs = data?.data ?? [];
   const currentMode = configs.find((c) => c.key === "registration_mode")?.value ?? "invite_only";
-  const betaFeedbackEnabled = configs.find((c) => c.key === "beta_feedback_enabled")?.value !== "false";
+  const issueReportingEnabled = configs.find((c) => c.key === "issue_reporting_enabled")?.value !== "false";
   const betaTierSwitchEnabled = configs.find((c) => c.key === "beta_tier_switch_enabled")?.value !== "false";
 
   const mutation = useMutation({
@@ -142,29 +142,29 @@ export default function AdminSettings() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className={`transition-all ${betaFeedbackEnabled ? "border-amber-400/40" : ""}`}>
+            <Card className={`transition-all ${issueReportingEnabled ? "border-amber-400/40" : ""}`}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${betaFeedbackEnabled ? "bg-amber-500/10" : "bg-muted"}`}>
-                      <MessageSquare className={`h-5 w-5 ${betaFeedbackEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
+                    <div className={`p-2 rounded-lg ${issueReportingEnabled ? "bg-amber-500/10" : "bg-muted"}`}>
+                      <MessageSquare className={`h-5 w-5 ${issueReportingEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">Feedback Widget</span>
-                        {betaFeedbackEnabled && (
+                        <span className="font-medium text-foreground">Issue Reporting</span>
+                        {issueReportingEnabled && (
                           <Badge className="text-xs bg-amber-500/15 text-amber-600 border-amber-400/30">Active</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Floating feedback button on every page for testers to report bugs and suggestions.
+                        Orange launcher button on every authenticated page. Users can report issues, bugs, or request support.
                       </p>
                     </div>
                   </div>
                   <Switch
-                    checked={betaFeedbackEnabled}
+                    checked={issueReportingEnabled}
                     onCheckedChange={(checked) =>
-                      mutation.mutate({ key: "beta_feedback_enabled", value: checked ? "true" : "false" })
+                      mutation.mutate({ key: "issue_reporting_enabled", value: checked ? "true" : "false" })
                     }
                     disabled={mutation.isPending}
                   />

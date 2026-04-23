@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ReportIssueButton } from "@/components/layout/ReportIssueButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscriptionContext } from "@/context/subscription-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -131,7 +130,6 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </SidebarInset>
-      <ReportIssueButton />
     </SidebarProvider>
   );
 }
