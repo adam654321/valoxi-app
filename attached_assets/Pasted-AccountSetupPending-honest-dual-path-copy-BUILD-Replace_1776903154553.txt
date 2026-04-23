@@ -1,0 +1,224 @@
+AccountSetupPending — honest dual-path copy. BUILD. Replace the file.
+
+Goal: acknowledge that this page has two possible causes (linking in progress for an invited user, OR no invite exists) without assuming one or the other. Give users a retry path AND an invite/support path, both visible.
+
+One file changes:
+- client/src/pages/auth/account-setup-pending.tsx
+
+===========================================================================
+Replace the entire file with:
+===========================================================================
+
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useClerk } from "@clerk/react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Copy, Check, ExternalLink, Loader2 } from "lucide-react";
+
+const SUPPORT_EMAIL = "support@valoxi.ai";
+const VALOXI_WEBSITE = "https://valoxi.ai/#register";
+
+export default function AccountSetupPending() {
+  const { signOut } = useClerk();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  const signOutMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        await apiRequest("POST", "/api/v2/auth/logout");
+      } catch (err) {
+        console.warn('[account-setup-pending] Server logout failed, continuing with Clerk signOut', err);
+      }
+      try {
+        await signOut();
+      } catch (err) {
+        console.warn('[account-setup-pending] Clerk signOut failed', err);
+      }
+      window.location.href = "/sign-in";
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Sign-out failed",
+        description: err?.message || "Please try again or clear your browser cookies.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(SUPPORT_EMAIL);
+      setCopied(true);
+      toast({
+        title: "Email copied",
+        description: "Support email copied to your clipboard.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Could not copy",
+        description: `Please copy this manually: ${SUPPORT_EMAIL}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+      <div className="max-w-md w-full rounded-lg border bg-card p-8">
+        {!showHelp ? (
+          <>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+              <h1 className="text-xl font-semibold mb-3">Setting up your account</h1>
+              <p className="text-sm text-muted-foreground mb-6">
+                If you were invited by an admin, your account is being linked and this page should refresh automatically within a few seconds.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/me"] })
+                }
+              >
+                Try again
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowHelp(true)}
+              >
+                I was not invited, or this is taking too long
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-center">
+              <h1 className="text-xl font-semibold mb-3">Valoxi is invite only</h1>
+              <p className="text-sm text-muted-foreground mb-6">
+                If you were not invited by an admin, or your setup has been stuck for more than a minute, here is how to get in.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/30 p-4">
+                <p className="text-sm font-medium mb-2">Want to request access?</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Register your interest on our website. We will send you login details as soon as possible.
+                </p>
+                
+                  href={VALOXI_WEBSITE}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm underline text-primary hover:text-primary/80"
+                >
+                  Go to valoxi.ai
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+
+              <div className="rounded-md border bg-muted/30 p-4">
+                <p className="text-sm font-medium mb-2">Were you invited but still stuck?</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Email our support team and we will sort it out.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-sm bg-background border rounded px-2 py-1.5 select-all">
+                    {SUPPORT_EMAIL}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyEmail}
+                    className="shrink-0"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 mr-1" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowHelp(false)}
+                >
+                  Back to retry
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => signOutMutation.mutate()}
+                  disabled={signOutMutation.isPending}
+                >
+                  {signOutMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Signing out...
+                    </>
+                  ) : (
+                    "Sign out"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+===========================================================================
+Design notes:
+===========================================================================
+
+- Default view (showHelp=false): optimistic case. Spinner + "Setting up your account" + primary Try again + secondary "I was not invited, or this is taking too long". This matches the legitimate retryable case where invited users land briefly during the webhook race. They see the reassuring spinner, click Try again, and it usually resolves.
+
+- Escape view (showHelp=true): user has self-identified as either not invited or stuck too long. Now we stop pretending linking is in progress and give them the two real paths: register interest on valoxi.ai, or email support if they were invited but stuck. Plus Sign out to start fresh.
+
+- The Try again button stays as the first action because automatic query retries (5 attempts over 10s) usually resolve invited users before this page appears. If the page does appear, giving them a manual retry handles cases where the webhook is just slow.
+
+- Sign out is demoted to a ghost button on the second view because it's the nuclear option. Most users on the escape view will want "register interest" or "email support" rather than sign out.
+
+===========================================================================
+POST-CHANGE VERIFICATION
+===========================================================================
+
+V1. Grep client/src/ for 'Setting up your account'. Expected exactly one hit (account-setup-pending.tsx, in the default view).
+
+V2. Grep client/src/ for 'Valoxi is invite only'. Expected exactly one hit (account-setup-pending.tsx, in the help view).
+
+V3. Grep client/src/ for 'I was not invited'. Expected exactly one hit.
+
+V4. Grep client/src/ for 'navigator.clipboard.writeText'. Expected at least one hit.
+
+V5. Paste the final state of client/src/pages/auth/account-setup-pending.tsx verbatim.
+
+V6. Restart dev server. Confirm clean start.
+
+V7. Browser smoke: reproduce the stuck state (sign up via /sign-up with a fake email).
+
+  - On initial render, confirm spinner + "Setting up your account" + "Try again" + "I was not invited, or this is taking too long" buttons.
+  - Click "I was not invited". Confirm the page transitions to the escape view with "Valoxi is invite only" title, two help cards, "Back to retry" and "Sign out" buttons.
+  - Click "Back to retry". Confirm the page returns to the spinner view.
+  - Click "I was not invited" again. Click "Copy" next to the support email. Confirm button changes to "Copied" with checkmark, toast fires, and clipboard contains support@valoxi.ai.
+  - Click "Sign out". Confirm redirect to /sign-in and __session cookie cleared.
+  - Re-enter the stuck state, click "I was not invited" then "Go to valoxi.ai". Confirm new tab opens to valoxi.ai/#register, stuck page stays in original tab.
+
+V8. Report any unexpected behaviour.
+
+Report completion with all 8 verifications.
