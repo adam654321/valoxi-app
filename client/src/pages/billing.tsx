@@ -429,7 +429,7 @@ export default function BillingPage() {
 
   const status = subscription?.status ?? null;
   const isActiveOrComped = status === "active" || status === "admin_comped";
-  const effectivePlan = (status === 'canceled' || !subscription) ? null : currentPlan;
+  const effectivePlan = (status === 'canceled' || status === 'trialing' || !subscription) ? null : currentPlan;
   const currentPlanIndex = getPlanIndex(effectivePlan);
   const hasStripeCustomer = !!subscription?.stripeCustomerId;
   const isInFreePeriod = !!(
@@ -632,7 +632,7 @@ export default function BillingPage() {
               {PLANS.map((plan) => {
                 const planIndex = getPlanIndex(plan.key);
                 const isCurrent = effectivePlan === plan.key;
-                const isUpgrade = planIndex > currentPlanIndex;
+                const isUpgrade = planIndex > currentPlanIndex && currentPlanIndex >= 0;
                 const isDowngrade = planIndex < currentPlanIndex && currentPlanIndex >= 0;
                 const price = billingInterval === "year" ? plan.annualPrice : plan.monthlyPrice;
 
