@@ -9,6 +9,7 @@ const DEFAULT_SYSTEM_CONFIG: { key: string; value: string }[] = [
   { key: 'analysis_queue_concurrency', value: '2' },
   { key: 'expert_analysis_enabled', value: 'true' },
   { key: 'beta_mode', value: 'true' },
+  { key: 'issue_reporting_enabled', value: 'true' },
 ];
 
 export async function seedSystemConfig(): Promise<void> {

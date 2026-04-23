@@ -28,7 +28,7 @@ const upload = multer({
 });
 
 const createFeedbackSchema = z.object({
-  type: z.enum(['bug', 'comment', 'suggestion', 'other']),
+  type: z.enum(['bug', 'comment', 'suggestion', 'support', 'other']),
   severity: z.enum(['low', 'medium', 'high', 'critical']).optional().nullable(),
   title: z.string().min(1).max(255),
   description: z.string().min(1),
@@ -37,9 +37,9 @@ const createFeedbackSchema = z.object({
 });
 
 router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
-  const enabled = await systemConfigService.getConfig('beta_feedback_enabled');
+  const enabled = await systemConfigService.getConfig('issue_reporting_enabled');
   if (enabled === 'false') {
-    return res.status(403).json({ success: false, message: 'Beta feedback is currently disabled' });
+    return res.status(403).json({ success: false, message: 'Issue reporting is currently disabled' });
   }
 
   const body = createFeedbackSchema.parse(req.body);
@@ -89,8 +89,8 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
 
   try {
     await emailService.sendEmail({
-      to: 'adam@shiftopsconsulting.com',
-      subject: `[Beta Feedback] ${body.type.toUpperCase()}: ${escapeHtml(body.title)}`,
+      to: config.issueReportRecipient,
+      subject: `[Valoxi Issue] ${body.type.toUpperCase()}: ${escapeHtml(body.title)}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -107,7 +107,7 @@ router.post('/', upload.single('screenshot'), asyncHandler(async (req, res) => {
           <body>
             <div class="container">
               <div class="header">
-                <h1>Beta Feedback Received</h1>
+                <h1>Valoxi Issue Report</h1>
               </div>
               <div class="content">
                 <div class="details">

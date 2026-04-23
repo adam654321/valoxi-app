@@ -6,14 +6,14 @@ import { sendSuccess } from '../utils/response';
 const router = Router();
 
 router.get('/config', asyncHandler(async (_req, res) => {
-  const [tierSwitchEnabled, feedbackEnabled] = await Promise.all([
+  const [tierSwitchEnabled, issueReportingEnabled] = await Promise.all([
     systemConfigService.getConfig('beta_tier_switch_enabled'),
-    systemConfigService.getConfig('beta_feedback_enabled'),
+    systemConfigService.getConfig('issue_reporting_enabled'),
   ]);
 
   sendSuccess(res, {
     tierSwitchEnabled: tierSwitchEnabled !== 'false',
-    feedbackEnabled: feedbackEnabled !== 'false',
+    issueReportingEnabled: issueReportingEnabled !== 'false',
   });
 }));
 

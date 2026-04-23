@@ -51,6 +51,8 @@ export const config = {
     secret: process.env.SESSION_SECRET || '',
   },
 
+  issueReportRecipient: process.env.ISSUE_REPORT_RECIPIENT || 'support@valoxi.ai',
+
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || '',
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',

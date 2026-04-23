@@ -643,7 +643,7 @@ router.get('/system-config', asyncHandler(async (req: Request, res: Response) =>
 }));
 
 const setConfigSchema = z.object({
-  key: z.enum(['registration_mode', 'beta_feedback_enabled', 'beta_tier_switch_enabled']),
+  key: z.enum(['registration_mode', 'issue_reporting_enabled', 'beta_tier_switch_enabled']),
   value: z.string().min(1),
 });
 
