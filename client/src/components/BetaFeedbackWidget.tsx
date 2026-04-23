@@ -11,11 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { MessageSquarePlus, Loader2, CheckCircle2, ImagePlus, X } from "lucide-react";
 
 const TYPE_OPTIONS = [
-  { value: "bug", label: "Bug", emoji: "🐛" },
-  { value: "suggestion", label: "Suggestion", emoji: "💡" },
-  { value: "support", label: "Support", emoji: "🛟" },
-  { value: "comment", label: "Comment", emoji: "💬" },
-  { value: "other", label: "Other", emoji: "📝" },
+  { value: "bug", label: "Bug", emoji: "🐛", titlePlaceholder: "Brief summary of the bug" },
+  { value: "suggestion", label: "Suggestion", emoji: "💡", titlePlaceholder: "Brief summary of your suggestion" },
+  { value: "support", label: "Support", emoji: "🛟", titlePlaceholder: "Tell us what you need help with" },
+  { value: "comment", label: "Comment", emoji: "💬", titlePlaceholder: "Brief summary of your comment" },
+  { value: "other", label: "Other", emoji: "📝", titlePlaceholder: "Brief summary of your feedback" },
 ] as const;
 
 const SEVERITY_OPTIONS = [
@@ -47,6 +47,7 @@ export function BetaFeedbackWidget() {
   });
 
   const issueReportingEnabled = betaConfig?.data?.issueReportingEnabled ?? false;
+  const currentTypeOption = TYPE_OPTIONS.find((opt) => opt.value === type) ?? TYPE_OPTIONS[0];
 
   const handleOpen = () => {
     setPageUrl(window.location.href);
@@ -155,7 +156,7 @@ export function BetaFeedbackWidget() {
               <DialogHeader>
                 <DialogTitle>Report an issue</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-2 overflow-y-auto flex-1">
+              <div className="space-y-4 py-2 pr-2 overflow-y-auto flex-1">
                 <div className="space-y-1.5">
                   <Label className="text-sm">Type</Label>
                   <div className="grid grid-cols-5 gap-2">
@@ -164,14 +165,14 @@ export function BetaFeedbackWidget() {
                         key={opt.value}
                         type="button"
                         onClick={() => setType(opt.value)}
-                        className={`rounded-md border px-2 py-2 text-center transition-colors ${
+                        className={`flex flex-col items-center justify-center min-h-[60px] rounded-md border px-1 py-2 text-center transition-colors ${
                           type === opt.value
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-background text-muted-foreground hover:bg-muted"
                         }`}
                       >
-                        <p className="text-base">{opt.emoji}</p>
-                        <p className="text-xs font-medium">{opt.label}</p>
+                        <p className="text-base leading-none">{opt.emoji}</p>
+                        <p className="text-[11px] font-medium leading-tight mt-1 break-words">{opt.label}</p>
                       </button>
                     ))}
                   </div>
@@ -200,7 +201,7 @@ export function BetaFeedbackWidget() {
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value.slice(0, 255))}
-                    placeholder="Brief summary of your feedback"
+                    placeholder={currentTypeOption.titlePlaceholder}
                     maxLength={255}
                   />
                   <p className="text-xs text-muted-foreground text-right">{title.length}/255</p>

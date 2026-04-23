@@ -1,0 +1,149 @@
+ISSUE REPORTER POLISH - PROMPT C (revised). BUILD. Four small fixes to client/src/components/BetaFeedbackWidget.tsx only. No other files touched.
+
+CONTEXT: Prompts A and B shipped successfully. Widget is live on every authenticated page. Three polish issues surfaced in browser testing:
+1. The modal's internal scrollbar (on the overflow-y-auto content area) clips the rightmost type button ("Other" shows as "ther"), and squeezes the whole type grid
+2. The "Suggestion" label overhangs its cell at the smaller cell width caused by the scrollbar
+3. The title input placeholder is generic ("Brief summary of your feedback") regardless of selected type
+
+Scope: 4 changes, all in one file.
+
+===========================================================================
+CHANGE 1 of 4: Reserve scrollbar space in the modal content
+===========================================================================
+
+Find this exact line (inside the <Dialog>, beneath <DialogHeader>):
+
+              <div className="space-y-4 py-2 overflow-y-auto flex-1">
+
+Replace with:
+
+              <div className="space-y-4 py-2 pr-2 overflow-y-auto flex-1">
+
+This adds 8px of right padding inside the scrollable container so the form content (and the type grid in particular) stops before the scrollbar track.
+
+===========================================================================
+CHANGE 2 of 4: Add titlePlaceholder to each TYPE_OPTIONS entry
+===========================================================================
+
+Find this exact block:
+
+const TYPE_OPTIONS = [
+  { value: "bug", label: "Bug", emoji: "🐛" },
+  { value: "suggestion", label: "Suggestion", emoji: "💡" },
+  { value: "support", label: "Support", emoji: "🛟" },
+  { value: "comment", label: "Comment", emoji: "💬" },
+  { value: "other", label: "Other", emoji: "📝" },
+] as const;
+
+Replace with:
+
+const TYPE_OPTIONS = [
+  { value: "bug", label: "Bug", emoji: "🐛", titlePlaceholder: "Brief summary of the bug" },
+  { value: "suggestion", label: "Suggestion", emoji: "💡", titlePlaceholder: "Brief summary of your suggestion" },
+  { value: "support", label: "Support", emoji: "🛟", titlePlaceholder: "Tell us what you need help with" },
+  { value: "comment", label: "Comment", emoji: "💬", titlePlaceholder: "Brief summary of your comment" },
+  { value: "other", label: "Other", emoji: "📝", titlePlaceholder: "Brief summary of your feedback" },
+] as const;
+
+===========================================================================
+CHANGE 3 of 4: Wire the placeholder into the title Input
+===========================================================================
+
+3a. Add a derived variable inside the component body. Place it right after this line:
+
+  const issueReportingEnabled = betaConfig?.data?.issueReportingEnabled ?? false;
+
+Insert this new line directly below that one:
+
+  const currentTypeOption = TYPE_OPTIONS.find((opt) => opt.value === type) ?? TYPE_OPTIONS[0];
+
+3b. Update the title Input placeholder. Find this exact line:
+
+                    placeholder="Brief summary of your feedback"
+
+Replace with:
+
+                    placeholder={currentTypeOption.titlePlaceholder}
+
+===========================================================================
+CHANGE 4 of 4: Tighten the type button cells so labels fit cleanly
+===========================================================================
+
+Find this exact block (the type button inside the grid map):
+
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setType(opt.value)}
+                        className={`rounded-md border px-2 py-2 text-center transition-colors ${
+                          type === opt.value
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <p className="text-base">{opt.emoji}</p>
+                        <p className="text-xs font-medium">{opt.label}</p>
+                      </button>
+
+Replace with:
+
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setType(opt.value)}
+                        className={`flex flex-col items-center justify-center min-h-[60px] rounded-md border px-1 py-2 text-center transition-colors ${
+                          type === opt.value
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <p className="text-base leading-none">{opt.emoji}</p>
+                        <p className="text-[11px] font-medium leading-tight mt-1 break-words">{opt.label}</p>
+                      </button>
+
+What changed:
+- Horizontal padding px-2 reduced to px-1 (gives 4px more label width per cell)
+- Label text size reduced from text-xs (12px) to text-[11px] to comfortably fit "Suggestion"
+- Added flex flex-col items-center justify-center for consistent vertical centring
+- Added min-h-[60px] so cells stay equal height even if a future label wraps
+- Added leading-none on the emoji and leading-tight on the label for tighter vertical spacing
+- Added break-words on the label as a safety net
+
+===========================================================================
+POST-CHANGE VERIFICATION (run all, paste all)
+===========================================================================
+
+V1. Grep BetaFeedbackWidget.tsx for 'pr-2 overflow-y-auto'. Expected: exactly 1 hit.
+
+V2. Grep BetaFeedbackWidget.tsx for 'titlePlaceholder'. Expected: exactly 6 hits (5 in TYPE_OPTIONS + 1 in the Input placeholder prop).
+
+V3. Grep BetaFeedbackWidget.tsx for 'Brief summary of your feedback'. Expected: exactly 1 hit (the "other" type entry).
+
+V4. Grep BetaFeedbackWidget.tsx for 'Tell us what you need help with'. Expected: exactly 1 hit (the "support" type entry).
+
+V5. Grep BetaFeedbackWidget.tsx for 'placeholder="Brief summary of your feedback"'. Expected: ZERO hits.
+
+V6. Grep BetaFeedbackWidget.tsx for 'min-h-[60px]'. Expected: exactly 1 hit.
+
+V7. Grep BetaFeedbackWidget.tsx for 'text-xs font-medium"'. Expected: ZERO hits.
+
+V8. Paste the final state of the TYPE_OPTIONS array.
+
+V9. Paste the final state of the overflow-y-auto div line (Change 1 result).
+
+V10. Paste the final state of the type button block (the ~14 lines replaced in Change 4).
+
+V11. Paste the final state of the title Input (the 6-line block showing the placeholder prop).
+
+V12. Restart dev server. Confirm clean start, no TypeScript errors.
+
+V13. Browser smoke test:
+     (a) Open the widget on any authenticated page
+     (b) Confirm all 5 type buttons render on a single row, with equal heights, no overhanging "Suggestion" label, and "Other" fully readable (not clipped by the scrollbar)
+     (c) With "Bug" selected, confirm title placeholder reads "Brief summary of the bug"
+     (d) Click "Suggestion", confirm placeholder changes to "Brief summary of your suggestion"
+     (e) Click "Support", confirm placeholder changes to "Tell us what you need help with"
+     (f) Click "Comment", confirm placeholder changes to "Brief summary of your comment"
+     (g) Click "Other", confirm placeholder changes to "Brief summary of your feedback"
+
+V14. Report completion with every V1 through V13 answered, PASS or FAIL against each.
