@@ -1,0 +1,507 @@
+5D NEW MEMBER UPGRADE CREDIT — BUILD. Four code changes, plus test data prep, plus verification. Make the exact changes below. Do not deviate.
+
+Goal: when a 5D New Member user clicks "Get Started" on any paid plan during their active free period, they should (1) receive a pro-rata balance credit for their unused free months at the $73.95/month rate, (2) have the 15% post-free-period coupon applied to their new Stripe subscription, (3) have their free period cleanly terminated in the DB so cron jobs do not double-process.
+
+Mirror the existing credit pattern from the /upgrade route (verified in A8 of the assessment) into the /checkout path. Remove the active-free-period-returns-null guard in resolveCheckoutCoupon so the coupon flows through correctly. Surface a preview in the UI so users see the credit before they commit.
+
+Scope: 4 files change. No files deleted. Two SQL statements for test data.
+
+===========================================================================
+STEP 0: Test data prep (SQL, run first so we have something to test against)
+===========================================================================
+
+0a. Clean up the stale 5D user from earlier testing. Run this SQL against dev Neon:
+
+DELETE FROM subscription_events WHERE user_company_id = 74;
+DELETE FROM subscriptions WHERE user_company_id = 74;
+
+(We keep user 71 and their user_company row intact; only the subscription artifacts are removed.)
+
+0b. Seed a fresh 5D New Member user in active free-period state for testing. Run:
+
+-- Reset user 71 so we can reuse for testing
+UPDATE users 
+SET assigned_promo_campaign_id = 11
+WHERE id = 71;
+
+-- Create a clean subscription row for user_company_id 74 in active free-period state
+INSERT INTO subscriptions (
+  user_company_id, 
+  plan_key, 
+  status, 
+  trial_start, 
+  trial_end, 
+  trial_ends_at, 
+  free_months_started_at, 
+  free_months_total,
+  created_at,
+  updated_at
+) VALUES (
+  74,
+  'CORE',
+  'trialing',
+  NOW() - INTERVAL '45 days',                -- simulated signup 45 days ago
+  NOW() + INTERVAL '135 days',               -- 6 month trial minus 45 days
+  NOW() + INTERVAL '135 days',
+  NOW() - INTERVAL '45 days',                -- free period started 45 days ago (elapsed = 1 month)
+  6,
+  NOW() - INTERVAL '45 days',
+  NOW()
+);
+
+-- Confirm the row
+SELECT id, user_company_id, status, plan_key, free_months_total, free_months_started_at,
+       stripe_customer_id, stripe_subscription_id, community_discount_coupon_id
+FROM subscriptions WHERE user_company_id = 74;
+
+Expected: status=trialing, free_months_total=6, free_months_started_at ~45 days ago, stripe_customer_id=NULL, stripe_subscription_id=NULL, community_discount_coupon_id=NULL.
+
+This puts adamauty@me.com at elapsed=1 month, unused=5 months of free Core. Expected credit on upgrade: 5 × $73.95 = $369.75.
+
+===========================================================================
+CHANGE 1 of 4: server/services/promo-code.service.ts
+===========================================================================
+
+Remove the active-free-period guard in resolveCheckoutCoupon. The guard's original assumption ("free period users should not be hitting Stripe checkout per spec 3.5") is being invalidated by this change. 5D New Member users can now deliberately exit free period early via checkout, and when they do, they should receive the post-free-period coupon on their new subscription.
+
+Find this exact block in resolveCheckoutCoupon (lines 126-138 approx):
+
+    // Active free period: skip. Free period users should not be hitting Stripe checkout per spec 3.5.
+    if (
+      subscription.status === 'trialing' &&
+      subscription.freeMonthsTotal > 0 &&
+      subscription.freeMonthsStartedAt !== null
+    ) {
+      const elapsed = computeFreeMonthsElapsed(subscription.freeMonthsStartedAt);
+      if (elapsed < subscription.freeMonthsTotal) {
+        return null;
+      }
+    }
+
+Replace the entire block with:
+
+    // 5D New Member users always receive the post-free-period coupon on checkout:
+    // - During free period: user is deliberately exiting early; /checkout applies a balance credit separately
+    // - After free period ends naturally: cron has already applied the coupon to any existing Stripe sub;
+    //   if they then create a fresh sub via /checkout, they still get the coupon attached
+
+Leave everything before and after this block unchanged. The function will now always return postFreePeriodCouponId for 5D New Member users regardless of free-period state.
+
+===========================================================================
+CHANGE 2 of 4: server/routes/billing.routes.ts — /upgrade-preview handler
+===========================================================================
+
+Currently /upgrade-preview returns { isNewSubscription: true } when there is no Stripe subscription. We need to split that case: for free-period-exit scenarios, return a real preview with credit info so the client dialog can show it.
+
+Find this exact block inside the /upgrade-preview handler (around line 360):
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+
+    if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
+      return res.status(200).json({ isNewSubscription: true });
+    }
+
+Replace with:
+
+    const existingSub = await billingRepository.getByCompanyId(userCompanyId);
+
+    // Detect free-period exit: user in active 5D free period clicking Get Started.
+    // Return a synthetic preview with credit info instead of the generic isNewSubscription flag,
+    // so the client can show the confirmation dialog with credit breakdown.
+    if (
+      existingSub &&
+      existingSub.freeMonthsTotal > 0 &&
+      existingSub.freeMonthsStartedAt &&
+      !existingSub.stripeSubscriptionId &&
+      !existingSub.communityDiscountCouponId &&
+      existingSub.status === 'trialing'
+    ) {
+      const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
+      const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
+
+      if (unusedFreeMonths > 0) {
+        const INVOICE_RATE_CENTS = 7395;
+        const freePeriodCredit = unusedFreeMonths * INVOICE_RATE_CENTS;
+
+        const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year'];
+        if (!lookupKey) {
+          return res.status(400).json({ error: 'invalid_combination' });
+        }
+        const stripe = new Stripe(config.stripe.secretKey);
+        const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+        if (!prices.data.length) {
+          return res.status(400).json({ error: 'price_not_found' });
+        }
+        const recurringPrice = prices.data[0].unit_amount ?? 0;
+
+        // 15% off applied via post-free-period coupon
+        const discountedFirstInvoice = Math.round(recurringPrice * 0.85);
+        const chargeAfterCredit = Math.max(0, discountedFirstInvoice - freePeriodCredit);
+
+        return res.status(200).json({
+          isFreePeriodExit: true,
+          currentPlan: existingSub.planKey,
+          currentInterval: existingSub.billingInterval,
+          newPlan: planKey,
+          newInterval: billingInterval,
+          creditAmount: 0,
+          chargeAmount: chargeAfterCredit,
+          nextInvoiceDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          nextInvoiceAmount: discountedFirstInvoice,
+          currency: 'usd',
+          freePeriodCredit,
+          unusedFreeMonths,
+        });
+      }
+    }
+
+    if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
+      return res.status(200).json({ isNewSubscription: true });
+    }
+
+Leave everything after this block unchanged.
+
+===========================================================================
+CHANGE 3 of 4: server/routes/billing.routes.ts — /checkout handler
+===========================================================================
+
+Add the credit logic into /checkout. Mirror the /upgrade pattern but run BEFORE Stripe session creation. Position: after the customer creation block and before the prices lookup.
+
+Find this exact block inside the /checkout handler (around lines 700-712):
+
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+
+Replace with:
+
+    let customerId: string | undefined | null = existingSub?.stripeCustomerId;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        metadata: { userCompanyId: String(userCompanyId) },
+      });
+      customerId = customer.id;
+    }
+
+    // Free-period exit: apply pro-rata credit for unused free months, mark free period as
+    // exited so cron jobs skip this row going forward. Mirrors the /upgrade credit pattern
+    // but fires from /checkout because free-period users have no Stripe subscription yet.
+    if (
+      existingSub &&
+      existingSub.freeMonthsTotal > 0 &&
+      existingSub.freeMonthsStartedAt &&
+      !existingSub.stripeSubscriptionId &&
+      !existingSub.communityDiscountCouponId &&
+      existingSub.status === 'trialing' &&
+      customerId
+    ) {
+      const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
+      const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
+
+      if (unusedFreeMonths > 0) {
+        const INVOICE_RATE_CENTS = 7395;
+        const creditAmount = unusedFreeMonths * INVOICE_RATE_CENTS;
+
+        try {
+          await stripe.customers.createBalanceTransaction(customerId, {
+            amount: -creditAmount,
+            currency: 'usd',
+            description: `Pro-rata credit for ${unusedFreeMonths} unused free month(s) — upgraded during free period`,
+          });
+          console.log(`[billing] Applied $${(creditAmount / 100).toFixed(2)} free-period credit at checkout for company ${userCompanyId} (${unusedFreeMonths} months)`);
+
+          await billingRepository.updateByCompanyId(userCompanyId, {
+            stripeCustomerId: customerId,
+            freeMonthsTotal: elapsed,
+            communityDiscountCouponId: 'upgraded_early',
+          });
+
+          await billingRepository.logEvent({
+            userCompanyId,
+            eventType: 'referral.free_period_upgraded_early',
+            previousStatus: existingSub.status as SubscriptionStatus,
+            previousPlanKey: existingSub.planKey as PlanKey,
+            newStatus: existingSub.status as SubscriptionStatus,
+            newPlanKey: planKey,
+            payload: {
+              unusedFreeMonths,
+              creditAmountCents: creditAmount,
+              elapsed,
+              originalFreeMonthsTotal: existingSub.freeMonthsTotal,
+            },
+          });
+        } catch (creditErr: any) {
+          console.error(`[billing] Failed to apply free-period credit for company ${userCompanyId}:`, creditErr);
+          return res.status(500).json({
+            error: 'credit_application_failed',
+            message: 'Could not apply your free-period credit. Please try again or contact support.',
+          });
+        }
+      } else {
+        // Free period ended but DB not yet transitioned (cron hasn't run or missed this row).
+        // Stamp the marker so cron skips going forward.
+        await billingRepository.updateByCompanyId(userCompanyId, {
+          stripeCustomerId: customerId,
+          communityDiscountCouponId: 'upgraded_early',
+        });
+      }
+    } else if (!existingSub?.stripeCustomerId && customerId) {
+      // Ensure the new customer ID is persisted even for non-free-period first-time checkouts
+      // so activateSubscription has the customerId available via the subscription row.
+      await billingRepository.updateByCompanyId(userCompanyId, {
+        stripeCustomerId: customerId,
+      });
+    }
+
+    const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+
+Leave everything before and after this block unchanged.
+
+IMPORTANT: confirm that `computeFreeMonthsElapsed` is already imported at the top of billing.routes.ts. The assessment showed it is used in /upgrade-preview, so the import exists. Do NOT duplicate it.
+
+Also confirm `SubscriptionStatus` and `PlanKey` are already imported (both used by other log event calls in this file). Do NOT duplicate.
+
+===========================================================================
+CHANGE 4 of 4: client/src/pages/billing.tsx — preview dialog + checkout branching
+===========================================================================
+
+4a. Extend the UpgradePreview interface to include the new isFreePeriodExit flag. Find:
+
+interface UpgradePreview {
+  currentPlan: string;
+  currentInterval: string;
+  newPlan: string;
+  newInterval: string;
+  creditAmount: number;
+  chargeAmount: number;
+  nextInvoiceDate: string;
+  nextInvoiceAmount: number;
+  currency: string;
+  freePeriodCredit?: number;
+  unusedFreeMonths?: number;
+}
+
+Replace with:
+
+interface UpgradePreview {
+  currentPlan: string;
+  currentInterval: string;
+  newPlan: string;
+  newInterval: string;
+  creditAmount: number;
+  chargeAmount: number;
+  nextInvoiceDate: string;
+  nextInvoiceAmount: number;
+  currency: string;
+  freePeriodCredit?: number;
+  unusedFreeMonths?: number;
+  isFreePeriodExit?: boolean;
+}
+
+4b. Update handlePlanAction to treat isFreePeriodExit as a path that opens the dialog, not a direct checkout. Find:
+
+  const handlePlanAction = async (planKey: PlanKey, interval: "month" | "year") => {
+    setPreviewLoading(planKey);
+    try {
+      const previewRes = await fetch(`/api/v2/billing/upgrade-preview?planKey=${planKey}&billingInterval=${interval}`, {
+        credentials: "include",
+      });
+      const previewData = await previewRes.json() as (UpgradePreview & { isNewSubscription?: boolean });
+
+      if (previewData.isNewSubscription) {
+        checkoutMutation.mutate({ planKey, interval });
+        return;
+      }
+
+      setUpgradePreview(previewData);
+      setPendingUpgrade({ planKey, interval });
+    } catch {
+      checkoutMutation.mutate({ planKey, interval });
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
+
+Replace with:
+
+  const handlePlanAction = async (planKey: PlanKey, interval: "month" | "year") => {
+    setPreviewLoading(planKey);
+    try {
+      const previewRes = await fetch(`/api/v2/billing/upgrade-preview?planKey=${planKey}&billingInterval=${interval}`, {
+        credentials: "include",
+      });
+      const previewData = await previewRes.json() as (UpgradePreview & { isNewSubscription?: boolean });
+
+      if (previewData.isNewSubscription) {
+        checkoutMutation.mutate({ planKey, interval });
+        return;
+      }
+
+      // Free-period exits and normal upgrades both open the preview dialog.
+      // confirmUpgrade branches on isFreePeriodExit to choose checkout vs upgrade.
+      setUpgradePreview(previewData);
+      setPendingUpgrade({ planKey, interval });
+    } catch {
+      checkoutMutation.mutate({ planKey, interval });
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
+
+(No functional change in the handler itself; we're relying on the preview payload's isFreePeriodExit flag rather than adding client-side detection.)
+
+4c. Update confirmUpgrade to branch based on isFreePeriodExit. Find:
+
+  const confirmUpgrade = () => {
+    if (!pendingUpgrade) return;
+    upgradeMutation.mutate(pendingUpgrade);
+    setUpgradePreview(null);
+    setPendingUpgrade(null);
+  };
+
+Replace with:
+
+  const confirmUpgrade = () => {
+    if (!pendingUpgrade) return;
+    if (upgradePreview?.isFreePeriodExit) {
+      checkoutMutation.mutate(pendingUpgrade);
+    } else {
+      upgradeMutation.mutate(pendingUpgrade);
+    }
+    setUpgradePreview(null);
+    setPendingUpgrade(null);
+  };
+
+4d. Update the AlertDialog content to show a clearer message when this is a free-period exit. Find the green credit banner that currently renders only when freePeriodCredit > 0:
+
+                {upgradePreview && (upgradePreview.freePeriodCredit ?? 0) > 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-md border border-green-200 dark:border-green-800">
+                    <Gift className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      Community referral credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
+                    </p>
+                  </div>
+                )}
+
+Replace with:
+
+                {upgradePreview && (upgradePreview.freePeriodCredit ?? 0) > 0 && (
+                  <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-md border border-green-200 dark:border-green-800">
+                    <Gift className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-green-700 dark:text-green-400">
+                      {upgradePreview.isFreePeriodExit ? (
+                        <>
+                          <p className="font-semibold">You're ending your free Core period early.</p>
+                          <p className="mt-1">
+                            Credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance and deducted from upcoming invoices. Your 15% lifetime discount stays with you on your new plan.
+                          </p>
+                        </>
+                      ) : (
+                        <p>
+                          Community referral credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+Leave the rest of the AlertDialog (Amount due today, next invoice, annual-to-monthly warning) unchanged. They already render correctly from the payload.
+
+===========================================================================
+POST-CHANGE VERIFICATION (run all, paste all)
+===========================================================================
+
+V1. Grep server/services/promo-code.service.ts for the literal string "Active free period: skip". Expected: ZERO hits.
+
+V2. Grep server/services/promo-code.service.ts for the literal string "Free period users should not be hitting". Expected: ZERO hits.
+
+V3. Grep server/routes/billing.routes.ts for the literal string "isFreePeriodExit". Expected: at least 1 hit (in /upgrade-preview response).
+
+V4. Grep server/routes/billing.routes.ts for the literal string "upgraded_early". Expected: at least 2 hits (one in /upgrade, one in /checkout new block).
+
+V5. Grep server/routes/billing.routes.ts for the literal string "referral.free_period_upgraded_early". Expected: exactly 1 hit (in the new log event in /checkout).
+
+V6. Grep client/src/pages/billing.tsx for the literal string "isFreePeriodExit". Expected: at least 3 hits (interface field, preview payload check in confirmUpgrade, dialog JSX conditional).
+
+V7. Paste the final state of server/services/promo-code.service.ts resolveCheckoutCoupon function in full.
+
+V8. Paste the final state of server/routes/billing.routes.ts /checkout handler from "let customerId" line through to the "const prices" line (the block including all new code).
+
+V9. Paste the final state of client/src/pages/billing.tsx confirmUpgrade function.
+
+V10. Restart dev server. Confirm clean start, no TypeScript errors, no unresolved imports.
+
+V11. Browser smoke test. Sign in as adamauty@me.com (user 71, the seeded test user).
+
+   (a) Navigate to /billing
+   (b) Confirm the orange "Your Valoxi benefit" banner shows the 5D New Member benefit text
+   (c) Confirm the free-period status line shows "Free Core period: month 2 of 6. 4 months remaining." (approximately — exact numbers depend on elapsed calculation)
+   (d) Click "Get Started" on the Professional Monthly card
+   (e) Confirm a dialog opens titled "Confirm Plan Change" with:
+       - Current: CORE (or similar)
+       - New: PROFESSIONAL (Monthly)
+       - Green credit panel reading "You're ending your free Core period early" with credit amount ~$369.75 (5 unused months × $73.95) and 5 unused months
+       - Amount due today shown (small positive or zero after credit)
+       - Next invoice amount shown
+   (f) Click "Confirm Upgrade"
+   (g) Browser redirects to Stripe Checkout
+   (h) Confirm Checkout shows:
+       - Professional Monthly price
+       - 15% discount applied
+       - "Add promotion code" input NOT visible (suppressed by coupon)
+   (i) Complete with test card 4242 4242 4242 4242, any future expiry, any CVC, any UK postcode
+   (j) Redirected back to /billing
+   (k) "Payment successful" toast
+
+V12. Post-checkout SQL verification:
+
+SELECT id, user_company_id, status, plan_key, free_months_total, free_months_started_at,
+       stripe_customer_id, stripe_subscription_id, community_discount_coupon_id, updated_at
+FROM subscriptions WHERE user_company_id = 74;
+
+Expected:
+- status = 'active'
+- plan_key = 'PROFESSIONAL'
+- free_months_total = 1 (elapsed, the value set when credit was issued, not 6)
+- free_months_started_at = unchanged
+- stripe_customer_id = populated (cus_...)
+- stripe_subscription_id = populated (sub_...)
+- community_discount_coupon_id = 'upgraded_early'
+
+V13. Stripe dashboard verification (test mode):
+   (a) Find the customer for adamauty@me.com
+   (b) Confirm customer balance shows a positive credit remaining (should be ~$369.75 - $141.95 = ~$227.80 after first invoice absorbs some)
+   (c) Open the subscription
+   (d) Confirm it shows a "Community Discount" coupon applied (15% off)
+   (e) Confirm the first invoice shows a credit line absorbing part or all of the $141.95
+
+V14. Verify subscription_events log:
+
+SELECT event_type, previous_status, new_status, previous_plan_key, new_plan_key, processed_at
+FROM subscription_events 
+WHERE user_company_id = 74
+ORDER BY processed_at DESC 
+LIMIT 10;
+
+Expected to include a 'referral.free_period_upgraded_early' event from the new credit block.
+
+V15. Cron interaction check: the 09:15 cron will run tomorrow morning. Confirm the fix prevents double-processing by running the cron's query manually now:
+
+SELECT id, user_company_id, free_months_total, free_months_started_at, community_discount_coupon_id
+FROM subscriptions
+WHERE free_months_total > 0 
+  AND community_discount_coupon_id IS NULL;
+
+Expected: user_company_id = 74 should NOT appear (because communityDiscountCouponId is now 'upgraded_early', not NULL). Confirm no rows or only unrelated rows.
+
+V16. Report completion with V1 through V15 PASS or FAIL against each.
+
+After V16, STOP. Do not proceed with any additional changes.

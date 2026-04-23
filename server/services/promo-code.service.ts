@@ -121,17 +121,10 @@ class PromoCodeService {
       return null;
     }
 
-    // Active free period: skip. Free period users should not be hitting Stripe checkout per spec 3.5.
-    if (
-      subscription.status === 'trialing' &&
-      subscription.freeMonthsTotal > 0 &&
-      subscription.freeMonthsStartedAt !== null
-    ) {
-      const elapsed = computeFreeMonthsElapsed(subscription.freeMonthsStartedAt);
-      if (elapsed < subscription.freeMonthsTotal) {
-        return null;
-      }
-    }
+    // 5D New Member users always receive the post-free-period coupon on checkout:
+    // - During free period: user is deliberately exiting early; /checkout applies a balance credit separately
+    // - After free period ends naturally: cron has already applied the coupon to any existing Stripe sub;
+    //   if they then create a fresh sub via /checkout, they still get the coupon attached
 
     // Post-free-period 5D New Member. Must have a post_free_period_coupon_id.
     if (!campaign.postFreePeriodCouponId) {

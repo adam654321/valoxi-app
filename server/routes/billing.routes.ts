@@ -473,6 +473,56 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
 
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
 
+    // Detect free-period exit: user in active 5D free period clicking Get Started.
+    // Return a synthetic preview with credit info instead of the generic isNewSubscription flag,
+    // so the client can show the confirmation dialog with credit breakdown.
+    if (
+      existingSub &&
+      existingSub.freeMonthsTotal > 0 &&
+      existingSub.freeMonthsStartedAt &&
+      !existingSub.stripeSubscriptionId &&
+      !existingSub.communityDiscountCouponId &&
+      existingSub.status === 'trialing'
+    ) {
+      const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
+      const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
+
+      if (unusedFreeMonths > 0) {
+        const INVOICE_RATE_CENTS = 7395;
+        const freePeriodCredit = unusedFreeMonths * INVOICE_RATE_CENTS;
+
+        const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year'];
+        if (!lookupKey) {
+          return res.status(400).json({ error: 'invalid_combination' });
+        }
+        const stripe = new Stripe(config.stripe.secretKey);
+        const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+        if (!prices.data.length) {
+          return res.status(400).json({ error: 'price_not_found' });
+        }
+        const recurringPrice = prices.data[0].unit_amount ?? 0;
+
+        // 15% off applied via post-free-period coupon
+        const discountedFirstInvoice = Math.round(recurringPrice * 0.85);
+        const chargeAfterCredit = Math.max(0, discountedFirstInvoice - freePeriodCredit);
+
+        return res.status(200).json({
+          isFreePeriodExit: true,
+          currentPlan: existingSub.planKey,
+          currentInterval: existingSub.billingInterval,
+          newPlan: planKey,
+          newInterval: billingInterval,
+          creditAmount: 0,
+          chargeAmount: chargeAfterCredit,
+          nextInvoiceDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          nextInvoiceAmount: discountedFirstInvoice,
+          currency: 'usd',
+          freePeriodCredit,
+          unusedFreeMonths,
+        });
+      }
+    }
+
     if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
       return res.status(200).json({ isNewSubscription: true });
     }
@@ -702,6 +752,76 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
         metadata: { userCompanyId: String(userCompanyId) },
       });
       customerId = customer.id;
+    }
+
+    // Free-period exit: apply pro-rata credit for unused free months, mark free period as
+    // exited so cron jobs skip this row going forward. Mirrors the /upgrade credit pattern
+    // but fires from /checkout because free-period users have no Stripe subscription yet.
+    if (
+      existingSub &&
+      existingSub.freeMonthsTotal > 0 &&
+      existingSub.freeMonthsStartedAt &&
+      !existingSub.stripeSubscriptionId &&
+      !existingSub.communityDiscountCouponId &&
+      existingSub.status === 'trialing' &&
+      customerId
+    ) {
+      const elapsed = computeFreeMonthsElapsed(existingSub.freeMonthsStartedAt);
+      const unusedFreeMonths = Math.max(0, existingSub.freeMonthsTotal - elapsed);
+
+      if (unusedFreeMonths > 0) {
+        const INVOICE_RATE_CENTS = 7395;
+        const creditAmount = unusedFreeMonths * INVOICE_RATE_CENTS;
+
+        try {
+          await stripe.customers.createBalanceTransaction(customerId, {
+            amount: -creditAmount,
+            currency: 'usd',
+            description: `Pro-rata credit for ${unusedFreeMonths} unused free month(s) — upgraded during free period`,
+          });
+          console.log(`[billing] Applied $${(creditAmount / 100).toFixed(2)} free-period credit at checkout for company ${userCompanyId} (${unusedFreeMonths} months)`);
+
+          await billingRepository.updateByCompanyId(userCompanyId, {
+            stripeCustomerId: customerId,
+            freeMonthsTotal: elapsed,
+            communityDiscountCouponId: 'upgraded_early',
+          });
+
+          await billingRepository.logEvent({
+            userCompanyId,
+            eventType: 'referral.free_period_upgraded_early',
+            previousStatus: existingSub.status as SubscriptionStatus,
+            previousPlanKey: existingSub.planKey as PlanKey,
+            newStatus: existingSub.status as SubscriptionStatus,
+            newPlanKey: planKey,
+            payload: {
+              unusedFreeMonths,
+              creditAmountCents: creditAmount,
+              elapsed,
+              originalFreeMonthsTotal: existingSub.freeMonthsTotal,
+            },
+          });
+        } catch (creditErr: any) {
+          console.error(`[billing] Failed to apply free-period credit for company ${userCompanyId}:`, creditErr);
+          return res.status(500).json({
+            error: 'credit_application_failed',
+            message: 'Could not apply your free-period credit. Please try again or contact support.',
+          });
+        }
+      } else {
+        // Free period ended but DB not yet transitioned (cron hasn't run or missed this row).
+        // Stamp the marker so cron skips going forward.
+        await billingRepository.updateByCompanyId(userCompanyId, {
+          stripeCustomerId: customerId,
+          communityDiscountCouponId: 'upgraded_early',
+        });
+      }
+    } else if (!existingSub?.stripeCustomerId && customerId) {
+      // Ensure the new customer ID is persisted even for non-free-period first-time checkouts
+      // so activateSubscription has the customerId available via the subscription row.
+      await billingRepository.updateByCompanyId(userCompanyId, {
+        stripeCustomerId: customerId,
+      });
     }
 
     const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });

@@ -55,6 +55,7 @@ interface UpgradePreview {
   currency: string;
   freePeriodCredit?: number;
   unusedFreeMonths?: number;
+  isFreePeriodExit?: boolean;
 }
 
 const PLAN_ORDER: PlanKey[] = ["CORE", "PROFESSIONAL", "EXPERT"];
@@ -243,6 +244,8 @@ export default function BillingPage() {
         return;
       }
 
+      // Free-period exits and normal upgrades both open the preview dialog.
+      // confirmUpgrade branches on isFreePeriodExit to choose checkout vs upgrade.
       setUpgradePreview(previewData);
       setPendingUpgrade({ planKey, interval });
     } catch {
@@ -254,7 +257,11 @@ export default function BillingPage() {
 
   const confirmUpgrade = () => {
     if (!pendingUpgrade) return;
-    upgradeMutation.mutate(pendingUpgrade);
+    if (upgradePreview?.isFreePeriodExit) {
+      checkoutMutation.mutate(pendingUpgrade);
+    } else {
+      upgradeMutation.mutate(pendingUpgrade);
+    }
     setUpgradePreview(null);
     setPendingUpgrade(null);
   };
@@ -1041,9 +1048,20 @@ export default function BillingPage() {
                 {upgradePreview && (upgradePreview.freePeriodCredit ?? 0) > 0 && (
                   <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-md border border-green-200 dark:border-green-800">
                     <Gift className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-green-700 dark:text-green-400">
-                      Community referral credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
-                    </p>
+                    <div className="text-sm text-green-700 dark:text-green-400">
+                      {upgradePreview.isFreePeriodExit ? (
+                        <>
+                          <p className="font-semibold">You're ending your free Core period early.</p>
+                          <p className="mt-1">
+                            Credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance and deducted from upcoming invoices. Your 15% lifetime discount stays with you on your new plan.
+                          </p>
+                        </>
+                      ) : (
+                        <p>
+                          Community referral credit: <span className="font-semibold">{formatUSD(upgradePreview.freePeriodCredit!)}</span> ({upgradePreview.unusedFreeMonths} unused free month{upgradePreview.unusedFreeMonths !== 1 ? "s" : ""}) will be applied to your Stripe balance
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
