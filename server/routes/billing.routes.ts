@@ -849,7 +849,13 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       checkoutParams.customer = customerId;
     }
 
-    if (existingSub?.trialEndsAt && !existingSub.promoCodeId && existingSub.status === 'trialing') {
+    // Trial extension applies only to standard 14-day trials. Free-period (5D) users
+    // receive their remaining period as a customer balance credit in the free-period-exit
+    // block above, and MUST NOT additionally receive a Stripe trial extension or the
+    // benefits stack. The existing !promoCodeId guard misses this case because 5D
+    // free-month state sits on users.assignedPromoCampaignId, not subscriptions.promoCodeId.
+    const hasFreeMonthState = !!(existingSub?.freeMonthsTotal && existingSub.freeMonthsTotal > 0 && existingSub?.freeMonthsStartedAt);
+    if (existingSub?.trialEndsAt && !existingSub.promoCodeId && existingSub.status === 'trialing' && !hasFreeMonthState) {
       const remainingMs = existingSub.trialEndsAt.getTime() - Date.now();
       const remainingDays = Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
       checkoutParams.subscription_data = { trial_period_days: remainingDays };
