@@ -1,0 +1,131 @@
+ISSUE REPORTER REBUILD — PRE-BUILD ASSESSMENT. READ-ONLY. DO NOT MODIFY ANY FILES.
+
+Purpose: report current state of 12 files, one service, one admin page, one database table, and three env vars before finalising the build prompts. Paste the requested output verbatim. Do not fix, refactor, or rename anything during this assessment. Do not run migrations.
+
+===========================================================================
+PART 1: BACKEND FILES
+===========================================================================
+
+A1. server/config.ts
+- Paste the full file contents.
+- Confirm yes/no: is there an existing top-level field named issueReportRecipient?
+- Confirm yes/no: is there an existing nested namespace named email?
+
+A2. server/routes/beta-feedback.routes.ts
+- Paste lines 1 to 55 (imports, multer setup, Zod schema, config key lookup).
+- Find the POST handler that sends the feedback email. Paste the whole email send block from the "await emailService.sendEmail" call through to the end of its template literal.
+- Confirm yes/no: is the email recipient a hardcoded literal (e.g. 'adam@shiftopsconsulting.com')?
+- Confirm yes/no: does the email subject literal currently start with "[Beta Feedback]"?
+
+A3. server/routes/beta.routes.ts
+- Paste the full file contents.
+- Confirm yes/no: does the /config handler read the key 'beta_feedback_enabled' and return a field literally named 'feedbackEnabled'?
+
+A4. server/routes/admin.routes.ts
+- Find the Zod schema for the /system-config POST endpoint (search for setConfigSchema or similar). Paste the schema definition and the POST handler that uses it.
+- Grep the entire server/ directory for the literal string beta_feedback_enabled. Report file path and line number for every hit.
+
+A5. server/scripts/seed-system-config.ts
+- Paste the full file contents.
+- Confirm yes/no: is the literal string beta_feedback_enabled present in the DEFAULT_SYSTEM_CONFIG array?
+
+A6. server/services/system-config.service.ts
+- Paste the getConfig and setConfig function definitions (just those two, not the whole file).
+- Confirm how unknown keys are handled (lazy-created on setConfig, or error out).
+
+A7. Dev Neon SQL. Run this exact query and paste the raw result:
+  SELECT key, value FROM system_config WHERE key IN ('beta_feedback_enabled', 'issue_reporting_enabled') ORDER BY key;
+
+A8. Dev Neon SQL. Run this exact query and paste the raw result:
+  SELECT COUNT(*) AS total_rows FROM issue_reports;
+
+===========================================================================
+PART 2: FRONTEND FILES
+===========================================================================
+
+B1. client/src/components/BetaFeedbackWidget.tsx
+- Paste lines 1 to 60 (imports, TYPE_OPTIONS, FeedbackType union, query setup, feedbackEnabled variable).
+- Find the launcher button block (search for the fixed-position round button). Paste the 20 lines surrounding it.
+- Find the DialogHeader block that sets the dialog title. Paste those 5 lines.
+- Report: current launcher background colour class, current launcher position (bottom-N right-N), current tooltip text.
+
+B2. client/src/components/layout.tsx
+- Paste the full file contents.
+- Confirm yes/no: is ReportIssueButton imported and rendered?
+- Confirm yes/no: is BetaFeedbackWidget imported or rendered in this file?
+
+B3. client/src/components/layout/ReportIssueButton.tsx
+- Confirm yes/no: does the file exist?
+- If yes, paste the first 25 lines.
+- Grep client/src for the literal string ReportIssueButton. Report every hit with file path and line number.
+
+B4. client/src/pages/admin/issue-reports.tsx
+- Confirm yes/no: does the file exist?
+- If yes, paste the first 30 lines and report approximate total line count.
+
+B5. client/src/App.tsx
+- Paste the full file contents.
+- Confirm yes/no: is BetaFeedbackWidget imported at the top?
+- Confirm yes/no: is BetaFeedbackWidget rendered anywhere in the file?
+- If rendered, paste the 3 lines around the render site and report whether it is gated by VITE_BETA_MODE or any other conditional.
+- Confirm yes/no: is there a Route for /admin/issue-reports? If yes, paste the Route line.
+- Confirm yes/no: is AdminIssueReports imported via lazy()? If yes, paste the import line.
+
+B6. client/src/components/admin-layout.tsx
+- Paste the adminNav array definition verbatim (the full array).
+- Confirm yes/no: are there both an "Issue Reports" entry and a "Beta Feedback" entry?
+
+B7. client/src/pages/admin/settings.tsx
+- Paste lines 1 to 60.
+- Find any block that references beta_feedback_enabled or betaFeedbackEnabled. Paste the full Card component that contains the Feedback Widget toggle.
+
+B8. client/src/pages/admin/feedback.tsx
+- Grep this file for feedbackEnabled. Paste any hit with context (3 lines around).
+- Confirm yes/no: does this file depend on the /api/v2/beta/config response shape?
+
+===========================================================================
+PART 3: CROSS-CUTTING GREPS
+===========================================================================
+
+C1. Grep client/src/ (not node_modules) for the literal feedbackEnabled. Report file path and line number for every hit.
+
+C2. Grep server/ for the literal feedbackEnabled. Report file path and line number for every hit.
+
+C3. Grep client/src/ for the literal VITE_BETA_MODE. Report every hit with file path and line number.
+
+C4. Grep server/ for the literal VITE_BETA_MODE. Report every hit with file path and line number.
+
+===========================================================================
+PART 4: ENVIRONMENT
+===========================================================================
+
+E1. Dev Replit Secrets: is ISSUE_REPORT_RECIPIENT set? If yes, paste the value. If no, confirm unset.
+
+E2. Dev Replit Secrets: is VITE_BETA_MODE set? If yes, paste the value. If no, confirm unset.
+
+E3. Prod Replit deployment Secrets: is ISSUE_REPORT_RECIPIENT set? Value or unset.
+
+E4. Prod Replit deployment Secrets: is VITE_BETA_MODE set? Value or unset.
+
+===========================================================================
+PART 5: FINAL YES/NO SUMMARY
+===========================================================================
+
+Answer every one of these, plainly, after all paste-outs are complete:
+
+Q1. Does layout.tsx currently render ReportIssueButton?
+Q2. Does layout.tsx currently import or render BetaFeedbackWidget?
+Q3. Does App.tsx currently render BetaFeedbackWidget at the App level?
+Q4. Is that App.tsx render gated by VITE_BETA_MODE?
+Q5. Is beta_feedback_enabled present in seed-system-config.ts default array?
+Q6. Is beta_feedback_enabled present in the admin.routes.ts Zod enum for /system-config?
+Q7. Does the /api/v2/beta/config handler return a field literally named feedbackEnabled?
+Q8. Does admin-layout.tsx have both an "Issue Reports" nav entry AND a "Beta Feedback" nav entry?
+Q9. Does client/src/pages/admin/issue-reports.tsx exist?
+Q10. How many rows are currently in the dev issue_reports table?
+Q11. Is ISSUE_REPORT_RECIPIENT set in dev? In prod?
+Q12. Is VITE_BETA_MODE set in dev? In prod?
+Q13. Are there any grep hits for feedbackEnabled outside BetaFeedbackWidget.tsx, beta.routes.ts, and settings.tsx?
+Q14. Are there any grep hits for VITE_BETA_MODE outside App.tsx?
+
+Report all paste-outs and all 14 answers in one reply.
