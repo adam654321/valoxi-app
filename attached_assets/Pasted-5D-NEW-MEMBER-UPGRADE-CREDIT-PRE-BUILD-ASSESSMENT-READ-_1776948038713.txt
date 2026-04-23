@@ -1,0 +1,136 @@
+5D NEW MEMBER UPGRADE CREDIT — PRE-BUILD ASSESSMENT. READ-ONLY. DO NOT MODIFY ANY FILES. DO NOT RUN MIGRATIONS.
+
+Context: 5D New Member users get a 6-month free Core trial. If they upgrade to any paid plan during that free period, they currently lose their remaining free months with no credit issued, and the resolveCheckoutCoupon function returns null so they also lose their 15% post-free-period coupon. Net effect: user pays full Professional/Expert/Core price, no discount, no credit for unused free time.
+
+Goal: confirm current data state and code paths before building a fix that issues a pro-rata credit (unused_months × $73.95) to the Stripe customer balance, applies the post-free-period 15% coupon to the new subscription, and terminates the free period cleanly so cron jobs don't double-process.
+
+Paste every requested output verbatim. 10 checks total.
+
+===========================================================================
+PART 1: CAMPAIGN AND COUPON STATE
+===========================================================================
+
+A1. Run this SQL and paste the result:
+
+SELECT id, name, referral_source, free_months_total, stripe_coupon_id, 
+       post_free_period_coupon_id, created_at
+FROM promo_code_campaigns
+ORDER BY id;
+
+Confirm: does the 5D New Member row (referral_source='5d_community', free_months_total=6) have a non-null post_free_period_coupon_id?
+
+A2. Run this SQL and paste the result:
+
+SELECT 
+  'stripe_coupon_id' as field, stripe_coupon_id as value 
+  FROM promo_code_campaigns WHERE referral_source = '5d_community' AND free_months_total = 6
+UNION ALL
+SELECT 
+  'post_free_period_coupon_id' as field, post_free_period_coupon_id as value 
+  FROM promo_code_campaigns WHERE referral_source = '5d_community' AND free_months_total = 6;
+
+Expected: both fields present. If post_free_period_coupon_id is null or empty, that's a pre-build blocker — the 5D New Member campaign row must have this set before the fix can work.
+
+===========================================================================
+PART 2: CURRENT 5D NEW MEMBER USER STATE
+===========================================================================
+
+A3. Run this SQL and paste the result:
+
+SELECT u.id AS user_id, u.email, u.assigned_promo_campaign_id,
+       s.id AS sub_id, s.status, s.plan_key,
+       s.free_months_total, s.free_months_started_at,
+       s.stripe_customer_id IS NOT NULL AS has_stripe_customer,
+       s.stripe_subscription_id IS NOT NULL AS has_stripe_sub,
+       s.community_discount_coupon_id,
+       s.trial_end, s.updated_at
+FROM users u
+JOIN subscriptions s ON s.user_company_id = u.user_company_id
+WHERE u.assigned_promo_campaign_id IN (
+  SELECT id FROM promo_code_campaigns 
+  WHERE referral_source = '5d_community' AND free_months_total = 6
+)
+ORDER BY u.id;
+
+Report: how many 5D New Member users currently exist in dev, and whether any are in an "active free period" state (free_months_total > 0, free_months_started_at set, no stripe_subscription_id, and elapsed < 6 months).
+
+===========================================================================
+PART 3: CODE PATH CONFIRMATION
+===========================================================================
+
+A4. In server/routes/billing.routes.ts, locate the /checkout POST handler.
+
+Report: does the handler contain ANY reference to freeMonthsTotal, freeMonthsStartedAt, computeFreeMonthsElapsed, or INVOICE_RATE_CENTS? Paste any hits with 3 lines of context.
+
+Expected: ZERO hits. The credit logic is currently only in /upgrade.
+
+A5. In server/services/promo-code.service.ts, resolveCheckoutCoupon function. 
+
+Paste lines from "// 5D New Member path" through to the end of the function. Confirm: for a 5D New Member user whose elapsed < freeMonthsTotal, does the function return null?
+
+A6. In server/services/billing.service.ts, find the activateSubscription function. Paste the function body in full.
+
+Confirm: does this function touch freeMonthsTotal, freeMonthsStartedAt, or communityDiscountCouponId in its update? Expected: NO. It only writes stripeCustomerId, stripeSubscriptionId, planKey, status, billingInterval, currentPeriodStart, currentPeriodEnd.
+
+A7. In server/routes/billing.routes.ts, find the verify-session POST handler. Check whether it sets any free-period fields anywhere. Paste any lines that reference freeMonthsTotal, freeMonthsStartedAt, or communityDiscountCouponId. Expected: ZERO hits.
+
+===========================================================================
+PART 4: EXISTING CREDIT LOGIC REFERENCE
+===========================================================================
+
+A8. In server/routes/billing.routes.ts, /upgrade POST handler. Paste the complete block that starts with:
+
+  if (existingSub.freeMonthsTotal > 0 && existingSub.freeMonthsStartedAt && !existingSub.communityDiscountCouponId) {
+
+through to the end of the outer if block (the update to freeMonthsTotal: elapsed).
+
+This is the existing pattern we will mirror into /checkout. Please confirm it uses:
+- computeFreeMonthsElapsed
+- INVOICE_RATE_CENTS = 7395
+- stripe.customers.createBalanceTransaction
+- Sets freeMonthsTotal = elapsed AND communityDiscountCouponId = 'upgraded_early'
+
+===========================================================================
+PART 5: SUBSCRIPTION SCHEMA SANITY
+===========================================================================
+
+A9. In shared/schema/billing.ts (or wherever the subscriptions table is defined), paste the column definitions for:
+- freeMonthsTotal
+- freeMonthsStartedAt
+- communityDiscountCouponId
+- stripeCustomerId
+- stripeSubscriptionId
+
+Report each column's data type and whether it is nullable.
+
+===========================================================================
+PART 6: CRON INTERACTION CHECK
+===========================================================================
+
+A10. In server/cron/billing.cron.ts, the 09:15 job. The outer WHERE filter is:
+
+  gt(subscriptions.freeMonthsTotal, 0),
+  isNull(subscriptions.communityDiscountCouponId)
+
+Confirm: once our new code in /checkout sets communityDiscountCouponId = 'upgraded_early' after a credit issuance, the daily 09:15 cron will correctly SKIP that subscription (because isNull will fail). Paste the relevant cron lines and confirm the filter logic.
+
+===========================================================================
+SUMMARY TABLE
+===========================================================================
+
+Answer each row YES / NO / UNKNOWN:
+
+| # | Question | Answer | Note |
+|---|---|---|---|
+| 1 | Does the 5D New Member campaign have a post_free_period_coupon_id set in dev? | | |
+| 2 | Does any 5D New Member user exist in dev in active free-period state? | | |
+| 3 | Does /checkout currently have any free-period credit logic? | | |
+| 4 | Does resolveCheckoutCoupon return null during active 5D free period? | | |
+| 5 | Does activateSubscription touch free-period fields? | | |
+| 6 | Does /upgrade use INVOICE_RATE_CENTS = 7395 for credit? | | |
+| 7 | Does /upgrade mark communityDiscountCouponId='upgraded_early' after credit? | | |
+| 8 | Will the 09:15 cron skip subs with communityDiscountCouponId set? | | |
+| 9 | Is post_free_period_coupon_id nullable in the schema? | | |
+| 10 | Can we create a 5D New Member user in active free-period state for testing? | | YES if admin/waitlist invite flow works + we can wait for signup, OR if we can manually seed via SQL |
+
+Report all 10 checks plus the summary table in one reply.
