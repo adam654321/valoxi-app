@@ -707,8 +707,8 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
     if (resolvedCoupon && customerId) {
       try {
         await stripe.customers.update(customerId, {
-          coupon: resolvedCoupon.stripeCouponId,
-        } as any);
+          discounts: [{ coupon: resolvedCoupon.stripeCouponId }],
+        });
         console.log(`[Billing] attached customer-level coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId} (userCompanyId=${userCompanyId})`);
       } catch (err: any) {
         console.error(`[Billing] Failed to attach coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId}:`, err);

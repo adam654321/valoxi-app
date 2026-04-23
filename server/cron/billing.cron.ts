@@ -384,8 +384,8 @@ export function initializeBillingCron(): void {
             if (couponId && sub.stripeCustomerId) {
               try {
                 await stripe.customers.update(sub.stripeCustomerId, {
-                  coupon: couponId,
-                } as any);
+                  discounts: [{ coupon: couponId }],
+                });
               } catch (stripeErr) {
                 console.error(`[billing-cron] Failed to apply Stripe coupon for company ${sub.userCompanyId}:`, stripeErr);
               }
