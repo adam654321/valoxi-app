@@ -100,9 +100,9 @@ function Router() {
           <Route path="/invite/:token" component={AcceptInvitation} />
           {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
           {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
-          <Route path="/" component={Login} />
+          <Route path="/">{() => clerkEnabled ? <Redirect to="/sign-in" /> : <Login />}</Route>
           <Route path="/login" component={Login} />
-          <Route path="/register">{() => <Redirect to="/login" />}</Route>
+          <Route path="/register">{() => clerkEnabled ? <Redirect to="/sign-up" /> : <Register />}</Route>
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/auth/magic" component={MagicLinkPage} />

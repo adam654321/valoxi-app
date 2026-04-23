@@ -1,0 +1,101 @@
+Route unauthenticated / and /register to Clerk sign-in — BUILD. Make the exact changes below. Do not deviate.
+
+Goal: when Clerk is enabled and user is unauthenticated, the root path / should redirect to /sign-in (Clerk) instead of rendering the Express Login component. Same treatment for /register — redirect to /sign-up (Clerk) instead of mounting the legacy Register component. Direct access to /login stays accessible for magic link recovery flows.
+
+One file changes:
+- client/src/App.tsx (two Route swaps in the unauthenticated branch)
+
+===========================================================================
+CHANGE 1 of 1: App.tsx — redirect / and /register to Clerk when enabled
+===========================================================================
+
+File: client/src/App.tsx
+
+Locate the unauthenticated branch. Around lines 98-118 there is a <Switch> with these routes:
+
+          <Route path="/portal/:token" component={PortalPage} />
+          <Route path="/invite/:token" component={AcceptInvitation} />
+          {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
+          {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
+          <Route path="/" component={Login} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/auth/magic" component={MagicLinkPage} />
+          <Route path="/auth/link-expired" component={LinkExpiredPage} />
+          <Route path="/accept-invitation" component={AcceptInvitation} />
+          <Route component={NotFound} />
+
+Replace these two lines specifically:
+
+  <Route path="/" component={Login} />
+  <Route path="/register" component={Register} />
+
+With:
+
+  <Route path="/">{() => clerkEnabled ? <Redirect to="/sign-in" /> : <Login />}</Route>
+  <Route path="/register">{() => clerkEnabled ? <Redirect to="/sign-up" /> : <Register />}</Route>
+
+Leave all other routes unchanged. Specifically:
+- <Route path="/login" component={Login} /> stays (magic link flows redirect here)
+- <Route path="/sign-in"> and <Route path="/sign-up"> stay conditional on clerkEnabled
+- <Route path="/forgot-password"> stays (password reset still uses Express path)
+- <Route path="/reset-password"> stays (same reason)
+- <Route path="/auth/magic"> and <Route path="/auth/link-expired"> stay (magic link flows)
+
+Rationale:
+- / is the default URL. Users clicking the app logo or hitting the bare domain should land on Clerk sign-in, not a secondary Express form.
+- /register may exist as a stale link in older docs, emails, or user bookmarks. Redirect to /sign-up instead of dead-ending at the legacy Register component.
+- /login stays accessible for the magic link recovery flow which completes on /auth/magic and needs /login as a fallback target. This path only works for users who exist in the Express session path (rare post-Clerk).
+- The clerkEnabled ternary means if Clerk is ever disabled server-side (VITE_CLERK_ENABLED=false or server /api/v2/public/config returns clerkEnabled: false), the legacy Login and Register components still render as before. Backward compatible.
+
+Redirect is already imported at line 2: import { Switch, Route, Redirect } from "wouter". No new imports needed.
+
+===========================================================================
+POST-CHANGE VERIFICATION
+===========================================================================
+
+V1. Grep client/src/App.tsx for 'component={Login}'. Expected exactly one hit — the <Route path="/login" component={Login} /> line. The two previous hits on / and any other path should be gone.
+
+V2. Grep client/src/App.tsx for 'component={Register}'. Expected zero hits in the unauthenticated branch. If the Register lazy import at line 19 is now unused, it can optionally be removed, but leave it in place for this cycle to minimise scope.
+
+V3. Grep client/src/App.tsx for 'Redirect to="/sign-in"'. Expected exactly one hit (the new / route for unauthenticated + clerkEnabled users).
+
+V4. Grep client/src/App.tsx for 'Redirect to="/sign-up"'. Expected exactly one hit (the new /register route for unauthenticated + clerkEnabled users).
+
+V5. Paste the full unauthenticated branch (the <Switch> block around lines 98-118) verbatim with line numbers.
+
+V6. Restart dev server. Confirm clean start.
+
+V7. Browser smoke — root redirect:
+     a. In incognito (no cookies), navigate to the dev URL root (e.g., https://<dev>.replit.dev/).
+     b. Expected: browser redirects to /sign-in immediately. Clerk sign-in form renders.
+     c. Confirm the Express Login form does NOT briefly flash before the redirect.
+
+V8. Browser smoke — /register redirect:
+     a. In incognito, navigate to /register.
+     b. Expected: browser redirects to /sign-up immediately. Clerk sign-up form renders.
+     c. Confirm the legacy Register form does NOT flash.
+
+V9. Browser smoke — /login still accessible (magic link fallback):
+     a. In incognito, navigate to /login directly.
+     b. Expected: Express Login form renders normally. No redirect.
+     c. This is the magic link recovery flow target and must still work.
+
+V10. Browser smoke — orphan revocation flow end-to-end:
+     a. In incognito, navigate to /sign-up.
+     b. Sign up with a fake email (no matching Valoxi user).
+     c. Webhook revokes the Clerk account.
+     d. After AccountSetupPending's "Sign out and start over" is clicked, confirm the user lands on /sign-in (not /, not /login).
+     e. If they then navigate to / manually, they are redirected to /sign-in (since they are now unauthenticated + clerkEnabled).
+     f. Confirm no loop back to AccountSetupPending.
+
+V11. Authenticated path sanity check:
+     a. Sign in as a real admin user with an existing Valoxi account.
+     b. After successful sign-in, confirm the app renders the Dashboard at / (authenticated branch, lines 138+ in App.tsx).
+     c. Navigate manually to /login while authenticated. Confirm the authenticated /login route (line 187) redirects back to /.
+
+V12. Report any unexpected behaviour.
+
+Report completion with all 12 verifications.
