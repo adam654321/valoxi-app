@@ -1,0 +1,119 @@
+CONTEXT
+Third attempt at the 5D New Member free-period upgrade credit fix. Root cause established: the /checkout handler is re-entrant-unsafe. On a second call (most likely a double-click of the Confirm Upgrade button, which is only gated on upgradeMutation.isPending not checkoutMutation.isPending), the credit block short-circuits (coupon already set) but the trial-extension block fires because trialEndsAt is still populated in the DB and hasFreeMonthState evaluates to false (freeMonthsTotal is now 0 after the first call's DB write).
+
+Evidence from Replit's diagnostic script (this session): Stripe sub sub_1TPPw72N2rRCsCfripetkJUK has trial_end exactly 183 days after creation, matching remainingDays computed from trialEndsAt. No other code path sets trial_period_days. Codebase grep confirmed one hit, in the gated block.
+
+Fix has two parts:
+  Part 1 (server, the real fix): clear trialEndsAt and trialEnd in both DB writes inside the /checkout credit block. This makes the trial-extension guard's existingSub?.trialEndsAt check alone block the second call, even when hasFreeMonthState has become false.
+  Part 2 (client, defense in depth): gate the Confirm Upgrade button on checkoutMutation.isPending as well as upgradeMutation.isPending, so double-clicks can't trigger a second /checkout call in the first place.
+
+GOAL
+Make the three targeted edits below and verify. Do not touch the /upgrade handler, the /upgrade-preview handler, any webhook handler, or any other call to updateByCompanyId. Do not touch the hasFreeMonthState guard from the previous fix — it stays as-is.
+
+CHANGE 1 of 3 — server/routes/billing.routes.ts (credit block, success path)
+
+Find this exact block inside the POST /checkout handler, inside the `if (unusedFreeMonths > 0)` branch, inside the `try` block, directly after the console.log line that says "Applied ... free-period credit at checkout":
+
+BEFORE:
+          await billingRepository.updateByCompanyId(userCompanyId, {
+            stripeCustomerId: customerId,
+            freeMonthsTotal: elapsed,
+            communityDiscountCouponId: 'upgraded_early',
+          });
+
+AFTER:
+          await billingRepository.updateByCompanyId(userCompanyId, {
+            stripeCustomerId: customerId,
+            freeMonthsTotal: elapsed,
+            communityDiscountCouponId: 'upgraded_early',
+            trialEndsAt: null,
+            trialEnd: null,
+          });
+
+If the BEFORE block does not match exactly (including indentation — this block is indented 10 spaces from the line-start), STOP and paste surrounding 10 lines. Do not attempt the replace.
+
+CHANGE 2 of 3 — server/routes/billing.routes.ts (credit block, fallback path)
+
+Find this exact block inside the same POST /checkout handler, inside the `else` branch of `if (unusedFreeMonths > 0)`, directly after the comment that says "Stamp the marker so cron skips going forward.":
+
+BEFORE:
+        await billingRepository.updateByCompanyId(userCompanyId, {
+          stripeCustomerId: customerId,
+          communityDiscountCouponId: 'upgraded_early',
+        });
+
+AFTER:
+        await billingRepository.updateByCompanyId(userCompanyId, {
+          stripeCustomerId: customerId,
+          communityDiscountCouponId: 'upgraded_early',
+          trialEndsAt: null,
+          trialEnd: null,
+        });
+
+If BEFORE does not match (indentation here is 8 spaces), STOP and paste surrounding lines.
+
+CHANGE 3 of 3 — client/src/pages/billing.tsx
+
+Find this exact block near the bottom of the file, inside the <AlertDialog> that renders the upgrade confirmation dialog, specifically the <AlertDialogAction> button:
+
+BEFORE:
+            <AlertDialogAction onClick={confirmUpgrade} disabled={upgradeMutation.isPending}>
+              {upgradeMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Confirm Upgrade
+            </AlertDialogAction>
+
+AFTER:
+            <AlertDialogAction onClick={confirmUpgrade} disabled={upgradeMutation.isPending || checkoutMutation.isPending}>
+              {(upgradeMutation.isPending || checkoutMutation.isPending) ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Confirm Upgrade
+            </AlertDialogAction>
+
+If BEFORE does not match, STOP and paste the AlertDialogAction block as-is.
+
+VERIFICATION
+
+V1: Confirm the two server-side updates now include trialEndsAt: null.
+Command:
+  grep -n "trialEndsAt: null" server/routes/billing.routes.ts
+Expected: exactly 2 matches, both inside the POST /checkout credit block (one in the success path, one in the fallback).
+
+V2: Confirm the two server-side updates now include trialEnd: null.
+Command:
+  grep -n "trialEnd: null" server/routes/billing.routes.ts
+Expected: exactly 2 matches, same context as V1 (co-located lines).
+
+V3: Confirm no regressions to the hasFreeMonthState guard from the previous fix.
+Command:
+  grep -n "hasFreeMonthState" server/routes/billing.routes.ts
+Expected: exactly 2 matches (const declaration, usage in if condition). Same as before this fix — we are NOT touching that code.
+
+V4: Paste the full /checkout credit block, from the opening `if (existingSub && existingSub.freeMonthsTotal > 0 ...` through the closing `}` of the outer if/else. Expect both updateByCompanyId calls to show the four-field payload (stripeCustomerId, freeMonthsTotal/or not, communityDiscountCouponId, trialEndsAt: null, trialEnd: null).
+
+V5: Confirm client button change.
+Command:
+  grep -n "upgradeMutation.isPending || checkoutMutation.isPending" client/src/pages/billing.tsx
+Expected: exactly 2 matches (disabled prop, and the conditional for the spinner).
+
+V6: Paste the full AlertDialogAction block showing both the disabled prop and the conditional wrapping the Loader2.
+
+V7: TypeScript check — no new errors on either file.
+Command (fast, file-scoped):
+  npx tsc --noEmit 2>&1 | grep -E "billing\.routes\.ts|billing\.tsx" | head -30
+Expected: no new errors. Pre-existing baseline errors elsewhere are OK.
+
+V8: Restart/hot-reload check. Confirm the server is up, Vite is connected, no runtime errors in the console.
+
+SUMMARY TABLE:
+| Check | PASS / FAIL | Evidence |
+| V1 | | |
+| V2 | | |
+| V3 | | |
+| V4 | | |
+| V5 | | |
+| V6 | | |
+| V7 | | |
+| V8 | | |

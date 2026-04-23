@@ -1103,8 +1103,8 @@ export default function BillingPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={cancelUpgrade}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmUpgrade} disabled={upgradeMutation.isPending}>
-              {upgradeMutation.isPending ? (
+            <AlertDialogAction onClick={confirmUpgrade} disabled={upgradeMutation.isPending || checkoutMutation.isPending}>
+              {(upgradeMutation.isPending || checkoutMutation.isPending) ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
               Confirm Upgrade

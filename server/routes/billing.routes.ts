@@ -785,6 +785,8 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
             stripeCustomerId: customerId,
             freeMonthsTotal: elapsed,
             communityDiscountCouponId: 'upgraded_early',
+            trialEndsAt: null,
+            trialEnd: null,
           });
 
           await billingRepository.logEvent({
@@ -814,6 +816,8 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
         await billingRepository.updateByCompanyId(userCompanyId, {
           stripeCustomerId: customerId,
           communityDiscountCouponId: 'upgraded_early',
+          trialEndsAt: null,
+          trialEnd: null,
         });
       }
     } else if (!existingSub?.stripeCustomerId && customerId) {
