@@ -704,21 +704,6 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       customerId = customer.id;
     }
 
-    if (resolvedCoupon && customerId) {
-      try {
-        await stripe.customers.update(customerId, {
-          discounts: [{ coupon: resolvedCoupon.stripeCouponId }],
-        });
-        console.log(`[Billing] attached customer-level coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId} (userCompanyId=${userCompanyId})`);
-      } catch (err: any) {
-        console.error(`[Billing] Failed to attach coupon ${resolvedCoupon.stripeCouponId} to customer ${customerId}:`, err);
-        return res.status(500).json({
-          error: 'coupon_attach_failed',
-          message: 'Could not apply assigned discount. Please contact support.',
-        });
-      }
-    }
-
     const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
     if (!prices.data.length) {
       return res.status(400).json({ error: 'price_not_found', message: `No active price found for lookup key: ${lookupKey}` });
@@ -729,7 +714,9 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
       line_items: [{ price: prices.data[0].id, quantity: 1 }],
       success_url: `${baseUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/billing?canceled=true`,
-      ...(resolvedCoupon ? {} : { allow_promotion_codes: true }),
+      ...(resolvedCoupon
+        ? { discounts: [{ coupon: resolvedCoupon.stripeCouponId }] }
+        : { allow_promotion_codes: true }),
       metadata: {
         userCompanyId: String(userCompanyId),
         planKey,
@@ -749,6 +736,10 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
     }
 
     const session = await stripe.checkout.sessions.create(checkoutParams);
+
+    if (resolvedCoupon) {
+      console.log(`[Billing] Checkout session ${session.id} created with coupon ${resolvedCoupon.stripeCouponId} for customer ${customerId} (userCompanyId=${userCompanyId})`);
+    }
 
     return res.status(200).json({ checkoutUrl: session.url });
   } catch (err: any) {
@@ -781,6 +772,16 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
     const existingSub = await billingRepository.getByCompanyId(userCompanyId);
     if (!existingSub?.stripeSubscriptionId || (existingSub.status !== 'active' && existingSub.status !== 'trialing')) {
       return res.status(400).json({ error: 'no_active_subscription', message: 'No active Stripe subscription found. Use checkout for new subscriptions.' });
+    }
+
+    const userId = req.session.userId;
+    let resolvedCoupon: { stripeCouponId: string } | null = null;
+    if (userId) {
+      try {
+        resolvedCoupon = await promoCodeService.resolveCheckoutCoupon(userId);
+      } catch (err: any) {
+        console.error('[billing] /upgrade: resolveCheckoutCoupon failed (non-fatal, upgrade will proceed without discount):', err?.message || err);
+      }
     }
 
     const lookupKey = LOOKUP_KEY_MAP[planKey]?.[billingInterval === 'month' ? 'month' : 'year'];
@@ -824,7 +825,12 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
     await stripe.subscriptions.update(existingSub.stripeSubscriptionId, {
       items: [{ id: existingItemId, price: prices.data[0].id }],
       proration_behavior: 'always_invoice',
+      ...(resolvedCoupon ? { discounts: [{ coupon: resolvedCoupon.stripeCouponId }] } : {}),
     });
+
+    if (resolvedCoupon) {
+      console.log(`[billing] /upgrade: reapplied coupon ${resolvedCoupon.stripeCouponId} to subscription ${existingSub.stripeSubscriptionId} for company ${userCompanyId}`);
+    }
 
     const previousPlanKey = existingSub.planKey;
     const previousInterval = existingSub.billingInterval;

@@ -381,14 +381,17 @@ export function initializeBillingCron(): void {
               }
             }
 
-            if (couponId && sub.stripeCustomerId) {
+            if (couponId && sub.stripeSubscriptionId) {
               try {
-                await stripe.customers.update(sub.stripeCustomerId, {
+                await stripe.subscriptions.update(sub.stripeSubscriptionId, {
                   discounts: [{ coupon: couponId }],
                 });
+                console.log(`[billing-cron] Applied post-free-period coupon ${couponId} to subscription ${sub.stripeSubscriptionId} for company ${sub.userCompanyId}`);
               } catch (stripeErr) {
                 console.error(`[billing-cron] Failed to apply Stripe coupon for company ${sub.userCompanyId}:`, stripeErr);
               }
+            } else if (couponId && !sub.stripeSubscriptionId) {
+              console.warn(`[billing-cron] Company ${sub.userCompanyId} has couponId=${couponId} but no stripeSubscriptionId — coupon will apply at next subscription creation via resolveCheckoutCoupon`);
             }
 
             await billingRepository.updateByCompanyId(sub.userCompanyId, {
