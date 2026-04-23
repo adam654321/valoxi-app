@@ -1,0 +1,259 @@
+Clerk auth resilience — ORPHAN REVOCATION. BUILD. Make the exact changes below in the order given. Do not deviate.
+
+Goal: when the Clerk user.created webhook cannot establish a clean 1:1 link between the Clerk account and a Valoxi user row, revoke the Clerk account immediately. Three branches currently return silently: (1) no matching email in users table, (2) matched user is inactive, (3) matched user already has a different clerkUserId. All three now revoke the newly-created Clerk account.
+
+This preserves the working invite flow: invited user signs up, email matches a linkable row, link proceeds, no revocation.
+
+Also improve accept-invitation.tsx error messaging for cleaner fallback.
+
+Two files change:
+- server/routes/webhooks.routes.ts (revoke in all three no-link branches)
+- client/src/pages/accept-invitation.tsx (improve error messaging + fix redirect target)
+
+===========================================================================
+CHANGE 1 of 2: webhooks.routes.ts — revoke on all three no-link branches
+===========================================================================
+
+File: server/routes/webhooks.routes.ts
+
+First verify clerkClient is imported. Grep for 'clerkClient' at the top of the file. If not present, add the import matching how admin.routes.ts imports it:
+
+import { clerkClient } from '@clerk/express';
+
+Before modifying branches, define a helper at the top of handleUserCreated (just inside the function, before the email lookup). This centralises the revoke logic so the three branches stay clean:
+
+  const revokeOrphanClerk = async (reason: string) => {
+    if (process.env.CLERK_ENABLED !== 'true') {
+      console.log(`[clerk-webhook] CLERK_ENABLED !== 'true', skipping revocation. Reason: ${reason}`);
+      return;
+    }
+    try {
+      await clerkClient.users.deleteUser(clerkUserId);
+      console.log(`[clerk-webhook] orphan Clerk account ${clerkUserId} revoked (${reason}) for email ${email}`);
+    } catch (err: any) {
+      console.error(`[clerk-webhook] failed to revoke orphan Clerk account ${clerkUserId} (${reason}):`, err?.message || err);
+    }
+  };
+
+Now update the three branches.
+
+BRANCH 1 — no matching email in users table (around line 45-48).
+
+Current:
+  if (!match) {
+    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}), awaiting invitation flow`);
+    return;
+  }
+
+Replace with:
+  if (!match) {
+    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}), revoking orphan Clerk account`);
+    await revokeOrphanClerk('no_matching_user_row');
+    return;
+  }
+
+BRANCH 2 — matched user exists but is inactive (around line 50-53).
+
+Locate the branch that returns when the matched user has isActive === false. The current handler logs something like "matched user is inactive" and returns. Update it to also revoke:
+
+Current pattern (exact text may vary):
+  if (!match.isActive) {
+    console.log(`[clerk-webhook] matched user ${match.id} is inactive, skipping link`);
+    return;
+  }
+
+Replace with:
+  if (!match.isActive) {
+    console.log(`[clerk-webhook] matched user ${match.id} (${email}) is inactive, revoking Clerk account (Clerk ${clerkUserId})`);
+    await revokeOrphanClerk('matched_user_inactive');
+    return;
+  }
+
+BRANCH 3 — matched user already has a different clerkUserId (around line 65).
+
+Locate the branch that returns when match.clerkUserId is already set to a different value than the incoming clerkUserId. Current pattern (exact text may vary):
+
+  if (match.clerkUserId && match.clerkUserId !== clerkUserId) {
+    console.log(`[clerk-webhook] user ${match.id} already linked to different Clerk account ${match.clerkUserId}, skipping`);
+    return;
+  }
+
+Replace with:
+  if (match.clerkUserId && match.clerkUserId !== clerkUserId) {
+    console.log(`[clerk-webhook] user ${match.id} (${email}) already linked to different Clerk account ${match.clerkUserId}, revoking newer Clerk account ${clerkUserId}`);
+    await revokeOrphanClerk('clerkUserId_conflict');
+    return;
+  }
+
+Leave the happy path (match found, active, clerkUserId === null) unchanged. The link proceeds normally and NO revocation runs.
+
+Leave the seedDefaultPipelineStages call and welcome email send unchanged.
+
+===========================================================================
+CHANGE 2 of 2: accept-invitation.tsx — improve error messaging
+===========================================================================
+
+File: client/src/pages/accept-invitation.tsx
+
+2a. The invitation fetch error branch (around lines 170-193). Current:
+
+  if (error || !invitation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <CardTitle>Invitation Error</CardTitle>
+            <CardDescription>
+              {error?.message || "This invitation is invalid or has expired."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => setLocation("/login")} 
+              className="w-full"
+              variant="outline"
+            >
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+Replace with:
+
+  if (error || !invitation) {
+    const errorMessage = error?.message || "";
+    const isExpired = errorMessage.toLowerCase().includes('expired');
+    const isEmailMismatch = errorMessage.toLowerCase().includes('email');
+    
+    const description = isExpired
+      ? "This invitation has expired. Please ask your administrator to send a new one, or contact support."
+      : isEmailMismatch
+      ? "This invitation was sent to a different email address. Check the email you received, or contact support if you need help."
+      : errorMessage || "This invitation is invalid or has expired.";
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <CardTitle>Invitation Error</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button 
+              onClick={() => setLocation("/sign-in")} 
+              className="w-full"
+            >
+              Go to sign in
+            </Button>
+            
+              href="mailto:support@valoxi.ai?subject=Invitation%20link%20issue"
+              className="text-sm text-muted-foreground underline text-center"
+            >
+              Contact support
+            </a>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+Also find the "Invitation Already Used" branch (currently a second Card with its own Button). Update its button too:
+
+Current:
+  <Button 
+    onClick={() => setLocation("/login")} 
+    className="w-full"
+  >
+    Go to Login
+  </Button>
+
+Replace with:
+  <Button 
+    onClick={() => setLocation("/sign-in")} 
+    className="w-full"
+  >
+    Go to sign in
+  </Button>
+
+2b. The registration onError (around lines 126-132). Current:
+
+  onError: (error: any) => {
+    toast({
+      title: "Registration Failed",
+      description: error.message || "Failed to accept invitation. Please try again.",
+      variant: "destructive",
+    });
+  },
+
+Replace with:
+
+  onError: (error: any) => {
+    const msg = error?.message || "Failed to accept invitation. Please try again.";
+    const isEmailMismatch = msg.toLowerCase().includes('email');
+    toast({
+      title: "Registration Failed",
+      description: isEmailMismatch
+        ? "The email does not match this invitation. Check the email address your invitation was sent to, or contact support@valoxi.ai."
+        : msg,
+      variant: "destructive",
+    });
+  },
+
+2c. Also find the auto-login fallback onError in the mutation, around line 112 (the "Please login" toast in the outer try/catch). It currently setLocation("/login"). Update to setLocation("/sign-in") to keep the redirect target consistent with the Clerk flow.
+
+===========================================================================
+POST-CHANGE VERIFICATION (REQUIRED, run all)
+===========================================================================
+
+V1. Grep server/routes/webhooks.routes.ts for 'clerkClient.users.deleteUser'. Expected exactly one hit (inside revokeOrphanClerk helper).
+
+V2. Grep server/routes/webhooks.routes.ts for 'revokeOrphanClerk'. Expected exactly four hits: one helper definition, three call sites.
+
+V3. Grep server/ for 'clerkClient'. List every hit with file path and line number. Confirm webhook file imports from same package as admin.routes.ts.
+
+V4. Paste server/routes/webhooks.routes.ts imports verbatim (first 20 lines).
+
+V5. Paste the full handleUserCreated function verbatim, showing the helper plus all three updated branches plus the unchanged happy path.
+
+V6. Paste client/src/pages/accept-invitation.tsx lines showing the updated error Card block.
+
+V7. Paste client/src/pages/accept-invitation.tsx lines showing the updated onError handler.
+
+V8. Paste client/src/pages/accept-invitation.tsx lines showing the updated "Invitation Already Used" branch button.
+
+V9. Grep client/src/pages/accept-invitation.tsx for '/login'. Expected zero hits (all replaced with /sign-in).
+
+V10. Restart dev server. Confirm clean start with no errors. Specifically confirm: no import errors on clerkClient, no syntax errors in the handler.
+
+V11. Smoke test for Branch 1 (no matching email → orphan revocation):
+     a. Incognito window, navigate to /sign-up.
+     b. Sign up with a fresh fake email that has no matching Valoxi user.
+     c. Complete Clerk sign-up.
+     d. Land on AccountSetupPending.
+     e. Dev server console should show:
+        - [clerk-webhook] user.created: no matching user for ... revoking orphan Clerk account
+        - [clerk-webhook] orphan Clerk account ... revoked (no_matching_user_row) for email ...
+     f. Clerk dashboard → Users: confirm the test user is deleted.
+
+V12. Smoke test to confirm working invite flow is NOT broken:
+     a. As a system admin, invite a real test waitlist entry.
+     b. Accept the invitation via the normal flow (user goes to /sign-up, signs up with the invited email).
+     c. Confirm the Clerk user IS created and IS linked to the Valoxi user row.
+     d. Dev server console MUST NOT contain "revokeOrphanClerk" or "revoking orphan" for this successful flow.
+     e. User lands on the dashboard normally.
+
+V13. Smoke test error messaging:
+     a. Navigate to /invite/INVALID-TOKEN-XYZ.
+     b. Confirm: "Invitation Error" title, appropriate description, "Go to sign in" button, "Contact support" link.
+     c. Clicking "Go to sign in" navigates to /sign-in.
+
+V14. Report any unexpected behaviour.
+
+V15. Note: V11 Branch 2 (inactive user) and Branch 3 (clerkUserId conflict) are hard to test manually without setting up specific DB state. These are logged for future test coverage. The helper and branch updates are code-reviewed above; runtime test not required for this cycle.
+
+Report completion with all 15 verifications. V11 and V12 are both mandatory — V11 confirms orphan revocation, V12 confirms working invite flow survives unchanged.

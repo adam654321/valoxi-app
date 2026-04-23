@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { Webhook } from 'svix';
 import { eq, sql } from 'drizzle-orm';
 import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
+import { clerkClient } from '@clerk/express';
 import { db } from '../db';
 import { users } from '@shared/schema';
 import { promoCodeCampaigns } from '@shared/schema/billing';
@@ -29,6 +30,19 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     return;
   }
 
+  const revokeOrphanClerk = async (reason: string) => {
+    if (process.env.CLERK_ENABLED !== 'true') {
+      console.log(`[clerk-webhook] CLERK_ENABLED !== 'true', skipping revocation. Reason: ${reason}`);
+      return;
+    }
+    try {
+      await clerkClient.users.deleteUser(clerkUserId);
+      console.log(`[clerk-webhook] orphan Clerk account ${clerkUserId} revoked (${reason}) for email ${email}`);
+    } catch (err: any) {
+      console.error(`[clerk-webhook] failed to revoke orphan Clerk account ${clerkUserId} (${reason}):`, err?.message || err);
+    }
+  };
+
   const [match] = await db
     .select({
       id: users.id,
@@ -43,12 +57,14 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
 
   if (!match) {
-    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}), awaiting invitation flow`);
+    console.log(`[clerk-webhook] user.created: no matching user for ${email} (Clerk ${clerkUserId}), revoking orphan Clerk account`);
+    await revokeOrphanClerk('no_matching_user_row');
     return;
   }
 
   if (!match.isActive) {
-    console.log(`[clerk-webhook] user.created: matched user ${match.id} is inactive, skipping link for Clerk ${clerkUserId}`);
+    console.log(`[clerk-webhook] user.created: matched user ${match.id} (${email}) is inactive, revoking Clerk account (Clerk ${clerkUserId})`);
+    await revokeOrphanClerk('matched_user_inactive');
     return;
   }
 
@@ -62,7 +78,8 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     console.log(`[clerk-webhook] user.created: user ${match.id} already linked to Clerk ${clerkUserId}`);
     linked = true;
   } else {
-    console.error(`[clerk-webhook] user.created: CONFLICT, user ${match.id} already linked to Clerk ${match.clerkUserId}, incoming ${clerkUserId}, skipping`);
+    console.log(`[clerk-webhook] user.created: user ${match.id} (${email}) already linked to different Clerk account ${match.clerkUserId}, revoking newer Clerk account ${clerkUserId}`);
+    await revokeOrphanClerk('clerkUserId_conflict');
     return;
   }
 

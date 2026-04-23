@@ -113,20 +113,24 @@ export default function AcceptInvitation() {
           }, 1000);
         }
       } catch (error) {
-        // If auto-login fails, redirect to login page
+        // If auto-login fails, redirect to sign-in page
         toast({
-          title: "Please login",
-          description: "Your account was created successfully. Please login with your credentials.",
+          title: "Please sign in",
+          description: "Your account was created successfully. Please sign in with your credentials.",
         });
         setTimeout(() => {
-          setLocation("/login");
+          setLocation("/sign-in");
         }, 1500);
       }
     },
     onError: (error: any) => {
+      const msg = error?.message || "Failed to accept invitation. Please try again.";
+      const isEmailMismatch = msg.toLowerCase().includes('email');
       toast({
         title: "Registration Failed",
-        description: error.message || "Failed to accept invitation. Please try again.",
+        description: isEmailMismatch
+          ? "The email does not match this invitation. Check the email address your invitation was sent to, or contact support@valoxi.ai."
+          : msg,
         variant: "destructive",
       });
     },
@@ -168,24 +172,37 @@ export default function AcceptInvitation() {
   }
 
   if (error || !invitation) {
+    const errorMessage = error?.message || "";
+    const isExpired = errorMessage.toLowerCase().includes('expired');
+    const isEmailMismatch = errorMessage.toLowerCase().includes('email');
+
+    const description = isExpired
+      ? "This invitation has expired. Please ask your administrator to send a new one, or contact support."
+      : isEmailMismatch
+      ? "This invitation was sent to a different email address. Check the email you received, or contact support if you need help."
+      : errorMessage || "This invitation is invalid or has expired.";
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <CardTitle>Invitation Error</CardTitle>
-            <CardDescription>
-              {error?.message || "This invitation is invalid or has expired."}
-            </CardDescription>
+            <CardDescription>{description}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => setLocation("/login")} 
+          <CardContent className="flex flex-col gap-3">
+            <Button
+              onClick={() => setLocation("/sign-in")}
               className="w-full"
-              variant="outline"
             >
-              Go to Login
+              Go to sign in
             </Button>
+            <a
+              href="mailto:support@valoxi.ai?subject=Invitation%20link%20issue"
+              className="text-sm text-muted-foreground underline text-center"
+            >
+              Contact support
+            </a>
           </CardContent>
         </Card>
       </div>
@@ -204,11 +221,11 @@ export default function AcceptInvitation() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={() => setLocation("/login")} 
+            <Button
+              onClick={() => setLocation("/sign-in")}
               className="w-full"
             >
-              Go to Login
+              Go to sign in
             </Button>
           </CardContent>
         </Card>
@@ -342,7 +359,7 @@ export default function AcceptInvitation() {
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <button
-              onClick={() => setLocation("/login")}
+              onClick={() => setLocation("/sign-in")}
               className="text-primary hover:underline font-medium"
             >
               Sign in here
