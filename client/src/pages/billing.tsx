@@ -1077,7 +1077,13 @@ export default function BillingPage() {
                   </p>
                 )}
 
-                {upgradePreview && (
+                {upgradePreview && upgradePreview.isFreePeriodExit && (upgradePreview.freePeriodCredit ?? 0) > 0 && (
+                  <p className="text-sm">
+                    Your <span className="font-medium">{formatUSD(upgradePreview.freePeriodCredit!)}</span> credit will cover your first few months. You won't be charged until the credit is used up.
+                  </p>
+                )}
+
+                {upgradePreview && !upgradePreview.isFreePeriodExit && (
                   <p className="text-sm">
                     Your next invoice of <span className="font-medium">{formatUSD(upgradePreview.nextInvoiceAmount)}</span> will be on{" "}
                     {new Date(upgradePreview.nextInvoiceDate).toLocaleDateString("en-GB", {
