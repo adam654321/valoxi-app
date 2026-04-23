@@ -490,7 +490,7 @@ export default function BillingPage() {
                   <p className="text-sm text-muted-foreground mt-0.5">{benefitText}</p>
                   {showFreePeriodLine && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Free Core period: month {(freePeriodState!.elapsedMonths) + 1} of {assignedPromoCampaign!.freeMonthsTotal}. {freePeriodState!.remainingMonths} month{freePeriodState!.remainingMonths === 1 ? '' : 's'} remaining.
+                      Free Core period: {freePeriodState!.remainingMonths} of {assignedPromoCampaign!.freeMonthsTotal} months remaining.
                     </p>
                   )}
                 </div>
