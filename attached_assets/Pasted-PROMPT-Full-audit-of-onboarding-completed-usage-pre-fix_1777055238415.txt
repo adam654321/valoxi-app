@@ -1,0 +1,87 @@
+PROMPT: Full audit of onboarding_completed usage — pre-fix assessment
+SCOPE: Read-only. No code changes. No DB writes.
+
+BACKGROUND: We have a bug where the 7-step activation checklist on the
+dashboard stops showing after a new user completes the "Tell us about
+yourself" setup wizard. Root cause: both flows share the same
+users.onboarding_completed flag. Proposed fix: add a new column
+users.company_setup_completed, repoint setup wizard to use that,
+leave users.onboarding_completed meaning "activation checklist done".
+
+Before writing any fix, do a FULL audit of every place that reads or
+writes users.onboarding_completed or users.onboarding_completed_at.
+This audit must be complete — any missed reference becomes a bug later.
+
+=====================================================================
+PHASE 0A — CODE AUDIT
+=====================================================================
+
+Run these greps across the entire repo (exclude node_modules, dist,
+.git, build artefacts):
+
+  grep -rn "onboardingCompleted" --include="*.ts" --include="*.tsx"
+  grep -rn "onboarding_completed" --include="*.ts" --include="*.tsx" --include="*.sql"
+  grep -rn "onboardingCompletedAt" --include="*.ts" --include="*.tsx"
+  grep -rn "onboarding_completed_at" --include="*.ts" --include="*.tsx" --include="*.sql"
+
+For each hit, classify as:
+  - WRITE: code that sets the field
+  - READ: code that reads the field for logic/routing/display
+  - SCHEMA: declaration of the field
+  - TYPE: TypeScript interface/type that includes it
+  - QUERY: SELECT statement that returns it
+
+Report a structured table: file:line | category | purpose.
+
+Expected known hits (so we can tell if the report is complete):
+  - shared/schema/core.ts SCHEMA declaration
+  - server/routes/onboarding.routes.ts WRITE in /complete
+  - server/routes/onboarding.routes.ts WRITE in /checklist-complete
+  - server/routes/onboarding.routes.ts READ in /progress
+  - server/routes/auth.routes.ts READ in /me response shaping
+  - server/routes/auth.routes.ts READ in /magic redirect
+  - server/repositories/team.repository.ts (may return via getTeamMembers)
+  - client/src/pages/dashboard.tsx READ as gate
+  - client/src/pages/onboarding.tsx READ as redirect trigger
+  - client/src/components/onboarding/ActivationChecklist.tsx READ via progress
+
+Flag anything OUTSIDE that expected set as a surprise.
+
+=====================================================================
+PHASE 0B — DB AUDIT
+=====================================================================
+
+Run on DEV DB (read only):
+
+  SELECT COUNT(*) FROM users WHERE onboarding_completed = true;
+  SELECT COUNT(*) FROM users WHERE onboarding_completed = false OR onboarding_completed IS NULL;
+  SELECT id, email, onboarding_completed, onboarding_completed_at, onboarding_step
+  FROM users
+  WHERE onboarding_completed = true
+  ORDER BY id LIMIT 20;
+
+Same three queries on PROD DB (via PROD_DATABASE_URL, read only).
+
+Report the counts and the top-20 samples from each environment.
+
+=====================================================================
+PHASE 0C — PROPOSED APPROACH CHECK
+=====================================================================
+
+Confirm the proposed approach fits the codebase:
+
+1. Does the users table already have a candidate column we could reuse
+   (e.g., onboarding_step, or anything setup-related)? If so, report
+   its current use and whether repointing it would be safe.
+
+2. Does /api/v2/auth/me return a company object with companyName?
+   Paste the exact shape from auth.service.ts getCurrentUser.
+
+3. Are there any migration files in migrations/ or drizzle/ that
+   currently reference onboarding_completed? List them.
+
+4. Is drizzle-kit push or drizzle-kit migrate currently used? Which?
+
+Report all findings. Do NOT write any code. Do NOT suggest a fix.
+Just the complete audit.
+=====================================================================
