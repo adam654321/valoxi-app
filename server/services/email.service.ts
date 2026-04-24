@@ -2,6 +2,7 @@ import { emailService as legacyEmailService } from '../email';
 import { emailRepository } from '../repositories/email.repository';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { escapeHtml } from '../utils/html';
+import { renderBrandedEmail, type EmailBlock } from './email-template';
 import { config } from '../config';
 
 interface SendInvitationResult { success: boolean; message: string }
@@ -154,52 +155,31 @@ export class EmailApiService {
   }): Promise<SendInvitationResult> {
     const { to, firstName } = params;
     const appUrl = config.baseUrl;
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to Valoxi</title>
-          <style>
-            .container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-            .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
-            .button { display: inline-block; padding: 14px 32px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-            .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
-            .steps { background: #f0f7ff; padding: 20px; border-radius: 6px; margin: 20px 0; }
-            .steps ol { margin: 0; padding-left: 20px; }
-            .steps li { margin-bottom: 8px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Welcome to Valoxi</h1>
-            </div>
-            <div class="content">
-              <p>Hi ${escapeHtml(firstName)},</p>
-              <p>Your account is set up and your free trial has started. You now have access to the full Valoxi platform.</p>
-              <p>Here's how to get started:</p>
-              <div class="steps">
-                <ol>
-                  <li><strong>Add your first target company</strong>. Enter the business you're looking to acquire</li>
-                  <li><strong>Upload financial documents</strong>. Add their accounts or financial statements</li>
-                  <li><strong>Generate your first expert analysis</strong>. Let the AI produce a full commercial due diligence report</li>
-                </ol>
-              </div>
-              <p style="text-align: center;">
-                <a href="${appUrl}" class="button">Open Valoxi</a>
-              </p>
-              <p>Best regards,<br>The Valoxi Team</p>
-            </div>
-            <div class="footer">
-              <p>Valoxi. Acquire Smarter, Faster.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'Your account is set up and your free trial has started. You now have access to the full Valoxi platform.' },
+      { type: 'heading', text: 'Get started in three steps' },
+      {
+        type: 'steps',
+        steps: [
+          { lead: 'Add your first target company', detail: 'Enter the business you are looking to acquire.' },
+          { lead: 'Upload financial documents', detail: 'Add their accounts or financial statements.' },
+          { lead: 'Generate your first expert analysis', detail: 'Let the AI produce a full commercial due diligence report.' },
+        ],
+      },
+      { type: 'cta', cta: { label: 'Open Valoxi', href: appUrl } },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your account is set up. Three quick steps to run your first deal.',
+      eyebrow: 'Welcome',
+      heading: "Let's run your first deal",
+      blocks,
+      footerLine: 'You are receiving this because you just set up a Valoxi account.',
+    });
+
     const success = await (legacyEmailService as any).sendEmail({
       to,
       subject: "Welcome to Valoxi. Let's run your first deal",
@@ -220,59 +200,46 @@ export class EmailApiService {
     const safeFirstName = escapeHtml(firstName);
     const safeInvitedEmail = escapeHtml(invitedEmail);
     const trimmedBenefit = promoBenefitSentence?.trim();
-    const promoBenefitHtml = trimmedBenefit
-      ? `<div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 6px; margin: 20px 0; color: #1e3a8a;"><p style="margin: 0;">${escapeHtml(trimmedBenefit)}</p></div>`
-      : '';
     const trimmedTrialOverride = trialLineOverride?.trim();
     const trialLineText = trimmedTrialOverride
       ? escapeHtml(trimmedTrialOverride)
       : 'Your 24 hour free trial starts the moment you sign up.';
 
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Your Valoxi access is approved</title>
-<style>
-.container { max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-.header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-.content { background: #ffffff; padding: 30px; border: 1px solid #e1e5e9; }
-.button { display: inline-block; padding: 14px 32px; background: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-.footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #6c757d; border-radius: 0 0 8px 8px; }
-.warning { background: #fff8e1; padding: 20px; border-left: 4px solid #f59e0b; border-radius: 6px; margin: 20px 0; }
-.warning p { margin: 0 0 10px 0; }
-.warning p:last-child { margin-bottom: 0; }
-</style>
-</head>
-<body>
-<div class="container">
-<div class="header">
-<h1>Your Valoxi access is approved</h1>
-</div>
-<div class="content">
-<p>Hi ${safeFirstName},</p>
-<p>Good news. The Valoxi team has approved your access.</p>
-<p>Valoxi is the AI-powered M&amp;A platform for UK SME acquisitions. You can run target company analysis, build deal models, manage due diligence, and generate deal documents.</p>
-${promoBenefitHtml}
-<p style="text-align: center;">
-<a href="${inviteUrl}" class="button">Set up your account</a>
-</p>
-<div class="warning">
-<p><strong>Important. Sign up using this email address: ${safeInvitedEmail}</strong></p>
-<p>You can sign up with a password, or with Google, Microsoft, or LinkedIn. Whichever method you choose, make sure the email on the account is ${safeInvitedEmail}.</p>
-<p>If you sign up with a different email, your account will not be linked to your approved access and you will need to request a new invitation.</p>
-</div>
-<p>${trialLineText}</p>
-<p>This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai">support@valoxi.ai</a> for a new one.</p>
-<p>Best regards,<br>The Valoxi Team</p>
-</div>
-<div class="footer">
-<p>Valoxi. Acquire Smarter, Faster.</p>
-</div>
-</div>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'Good news. The Valoxi team has approved your access.' },
+      { type: 'paragraph', text: 'Valoxi is the AI-powered M&amp;A platform for UK SME acquisitions. You can run target company analysis, build deal models, manage due diligence, and generate deal documents.' },
+    ];
+
+    if (trimmedBenefit) {
+      blocks.push({
+        type: 'info_box',
+        box: { tone: 'success', body: escapeHtml(trimmedBenefit) },
+      });
+    }
+
+    blocks.push({ type: 'cta', cta: { label: 'Set up your account', href: inviteUrl } });
+
+    blocks.push({
+      type: 'info_box',
+      box: {
+        tone: 'warning',
+        title: `Important. Sign up using this email: ${safeInvitedEmail}`,
+        body: `You can sign up with a password, or with Google, Microsoft, or LinkedIn. Whichever method you choose, make sure the email on the account is ${safeInvitedEmail}. If you sign up with a different email, your account will not be linked to your approved access and you will need to request a new invitation.`,
+      },
+    });
+
+    blocks.push({ type: 'paragraph', text: trialLineText });
+    blocks.push({ type: 'paragraph', text: 'This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai" style="color:#F97316;text-decoration:none;">support@valoxi.ai</a> for a new one.' });
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi access is approved. Set up your account using the link inside.',
+      eyebrow: 'Access approved',
+      heading: 'Your Valoxi access is approved',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi waitlist application was approved.',
+    });
+
     const success = await (legacyEmailService as any).sendEmail({
       to,
       subject: 'Your Valoxi access is approved',
