@@ -63,12 +63,10 @@ export class EmailApiService {
     trialDays: number;
   }): Promise<SendInvitationResult> {
     const { to, firstName, planKey, magicLink, freeMonths, trialDays } = params;
+    const safeFirstName = escapeHtml(firstName);
 
     const planLabels: Record<string, string> = {
-      CORE: 'Core',
-      PROFESSIONAL: 'Professional',
-      EXPERT: 'Expert',
-      ENTERPRISE: 'Enterprise',
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
     };
     const planLabel = planLabels[planKey] || planKey;
 
@@ -79,67 +77,59 @@ export class EmailApiService {
     };
     const planDesc = planDescriptions[planKey] || '';
 
-    function formatDate(d: Date): string {
+    const formatDate = (d: Date): string => {
       const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-    }
+    };
 
-    let periodBox = '';
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> plan is now active.` },
+    ];
+
     if (freeMonths > 0) {
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + freeMonths);
-      periodBox = `
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
-          <p style="margin: 0; color: #166534; font-size: 14px;">Your <strong>${freeMonths} months free</strong> period starts today. No charge until <strong>${formatDate(endDate)}</strong>.</p>
-        </div>`;
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          body: `Your <strong>${freeMonths} months free</strong> period starts today. No charge until <strong>${formatDate(endDate)}</strong>.`,
+        },
+      });
     } else if (trialDays > 0) {
       const endDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
-      periodBox = `
-        <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 20px 0;">
-          <p style="margin: 0; color: #1e40af; font-size: 14px;">Your <strong>7-day free trial</strong> has started. You won't be charged until <strong>${formatDate(endDate)}</strong>.</p>
-        </div>`;
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `Your <strong>${trialDays} day free trial</strong> has started. You will not be charged until <strong>${formatDate(endDate)}</strong>.`,
+        },
+      });
     }
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr>
-          <td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your <strong>${planLabel}</strong> plan is now active.</p>
-            ${periodBox}
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${magicLink}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Access Valoxi &rarr;</a>
-            </div>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px;">This link expires in 72 hours. If it expires, visit the login page to request a new one.</p>
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-            ${planDesc ? `
-            <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin: 0 0 16px;">
-              <p style="margin: 0 0 4px; color: #374151; font-size: 13px; font-weight: 600;">${planLabel} Plan</p>
-              <p style="margin: 0; color: #6b7280; font-size: 13px;">${planDesc}</p>
-            </div>` : ''}
-            <p style="margin: 0; color: #6b7280; font-size: 14px;">Questions? Reply to this email and we'll get back to you.</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    blocks.push({ type: 'cta', cta: { label: 'Access Valoxi', href: magicLink } });
+    blocks.push({ type: 'paragraph', text: 'This link expires in 72 hours. If it expires, visit the login page to request a new one.' });
+
+    if (planDesc) {
+      blocks.push({ type: 'divider' });
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          title: `${planLabel} plan`,
+          body: planDesc,
+        },
+      });
+    }
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi ${planLabel} plan is active. Click inside to access your account.`,
+      eyebrow: 'Welcome',
+      heading: `Welcome to Valoxi, ${safeFirstName}`,
+      blocks,
+      footerLine: 'You are receiving this because a Valoxi account was created for your email address.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
@@ -312,39 +302,22 @@ export class EmailApiService {
     magicLink: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, magicLink } = params;
+    const safeFirstName = escapeHtml(firstName);
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr>
-          <td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Here's your login link. Click below to access your account.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${magicLink}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Log In to Valoxi &rarr;</a>
-            </div>
-            <p style="margin: 0; color: #6b7280; font-size: 13px;">This link expires in 72 hours.</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'Here is your Valoxi login link. Click below to access your account.' },
+      { type: 'cta', cta: { label: 'Log in to Valoxi', href: magicLink } },
+      { type: 'paragraph', text: 'This link expires in 72 hours. If you did not request this, you can safely ignore this email.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi login link is ready.',
+      eyebrow: 'Login link',
+      heading: 'Your Valoxi login link',
+      blocks,
+      footerLine: 'You are receiving this because a login link was requested for your Valoxi account.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
@@ -360,39 +333,24 @@ export class EmailApiService {
     signInUrl: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, signInUrl } = params;
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr>
-          <td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">A Valoxi administrator has generated a one-time sign-in link for your account. Click the button below to access Valoxi.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${signInUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Sign in to Valoxi</a>
-            </div>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px;">This link expires in 24 hours and can only be used once.</p>
-            <p style="margin: 0; color: #6b7280; font-size: 13px;">If you did not expect this email, you can safely ignore it.</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'A Valoxi administrator has generated a one-time sign-in link for your account. Click the button below to access Valoxi.' },
+      { type: 'cta', cta: { label: 'Sign in to Valoxi', href: signInUrl } },
+      { type: 'paragraph', text: 'This link expires in 24 hours and can only be used once.' },
+      { type: 'paragraph', text: 'If you did not expect this email, you can safely ignore it.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'An administrator has generated a one-time sign-in link for your Valoxi account.',
+      eyebrow: 'Admin sign-in',
+      heading: 'Your Valoxi access link',
+      blocks,
+      footerLine: 'You are receiving this because an administrator generated a sign-in link for your account.',
+    });
+
     const success = await (legacyEmailService as any).sendEmail({
       to,
       subject: 'Your Valoxi access link',

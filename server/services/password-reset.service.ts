@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { passwordResetRepository } from '../repositories/password-reset.repository';
 import { usersRepository } from '../repositories/users.repository';
 import { emailService as legacyEmailService } from '../email';
+import { renderBrandedEmail, type EmailBlock } from './email-template';
 import { BadRequestError } from '../utils/errors';
 import { db } from '../db';
 import { users, userSessions } from '@shared/schema';
@@ -17,34 +18,25 @@ class PasswordResetService {
 
     const resetUrl = `${baseUrl}/reset-password?token=${tokenRow.token}`;
 
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: 'Hi,' },
+      { type: 'paragraph', text: 'We received a request to reset the password for your Valoxi account. Click the button below to choose a new password.' },
+      { type: 'cta', cta: { label: 'Reset password', href: resetUrl } },
+      { type: 'paragraph', text: 'This link expires in <strong style="color:#FFFFFF;">1 hour</strong>. If you did not request a password reset, you can safely ignore this email.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'A request was made to reset your Valoxi password.',
+      eyebrow: 'Password reset',
+      heading: 'Reset your Valoxi password',
+      blocks,
+      footerLine: 'You are receiving this because a password reset was requested for your Valoxi account.',
+    });
+
     await (legacyEmailService as any).sendEmail({
       to: user.email,
       subject: 'Reset your password — Valoxi',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="display: inline-block; background: #2563eb; color: white; width: 48px; height: 48px; border-radius: 12px; line-height: 48px; font-size: 24px;">⚡</div>
-            <h1 style="margin: 16px 0 0; font-size: 24px; color: #111;">Valoxi</h1>
-          </div>
-          <h2 style="font-size: 20px; color: #111; margin-bottom: 16px;">Reset Your Password</h2>
-          <p style="color: #555; line-height: 1.6; margin-bottom: 24px;">
-            We received a request to reset your password. Click the button below to choose a new password.
-          </p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-              Reset Password
-            </a>
-          </div>
-          <p style="color: #888; font-size: 14px; line-height: 1.5;">
-            This link will expire in <strong>1 hour</strong>. If you didn't request a password reset, you can safely ignore this email.
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;" />
-          <p style="color: #aaa; font-size: 12px;">
-            If the button doesn't work, copy and paste this link into your browser:<br/>
-            <a href="${resetUrl}" style="color: #2563eb; word-break: break-all;">${resetUrl}</a>
-          </p>
-        </div>
-      `,
+      html,
     });
   }
 

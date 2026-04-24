@@ -1,0 +1,445 @@
+BUILD: Email Batch 2 — Auth & Access (6 emails, 3 files)
+
+CONTEXT
+Batch 2 of the email design system migration. Rewrites 6 auth/access email methods across 3 files to use the renderBrandedEmail helper created in Batch 1 (server/services/email-template.ts). No signature changes, no call-site changes. HTML output only.
+
+Methods migrated:
+- server/email.ts: sendTeamInvitation, sendPortalAccessLink
+- server/services/email.service.ts: sendWelcomeEmail, sendMagicLinkEmail, sendAdminSignInLink
+- server/services/password-reset.service.ts: requestReset
+
+ONE LOGICAL CHANGE UNIT per method. Files touched: 3. Total diff is HTML rewrites inside 6 methods plus 2 added imports.
+
+---
+
+STEP 1: Add the email-template import to server/email.ts
+
+In server/email.ts, add this line at the top of the file, immediately after the existing `import { Resend } from 'resend';` line:
+
+import { renderBrandedEmail, type EmailBlock } from './services/email-template';
+
+(Note the path is ./services/email-template relative to server/email.ts.)
+
+---
+
+STEP 2: Replace sendTeamInvitation in server/email.ts
+
+Locate the method with signature:
+
+  async sendTeamInvitation(
+    inviteEmail: string,
+    inviterName: string,
+    companyName: string,
+    inviteToken: string,
+    inviteUrl: string,
+    roleName: string
+  ): Promise<boolean> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendTeamInvitation(
+    inviteEmail: string,
+    inviterName: string,
+    companyName: string,
+    inviteToken: string,
+    inviteUrl: string,
+    roleName: string
+  ): Promise<boolean> {
+    const safeInviterName = this.escapeHtml(inviterName);
+    const safeCompanyName = this.escapeHtml(companyName);
+    const safeRoleName = this.escapeHtml(roleName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: 'Hello,' },
+      { type: 'paragraph', text: `<strong style="color:#FFFFFF;">${safeInviterName}</strong> has invited you to join the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> team on Valoxi.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `<strong>Role:</strong> ${safeRoleName}<br><strong>Company:</strong> ${safeCompanyName}`,
+        },
+      },
+      { type: 'cta', cta: { label: 'Accept invitation', href: inviteUrl } },
+      { type: 'paragraph', text: 'This invitation expires in 7 days.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `${inviterName} has invited you to join ${companyName} on Valoxi.`,
+      eyebrow: 'Team invitation',
+      heading: `Join ${safeCompanyName} on Valoxi`,
+      blocks,
+      footerLine: 'You are receiving this because a Valoxi user invited you to join their team.',
+    });
+
+    return this.sendEmail({
+      to: inviteEmail,
+      subject: `You're invited to join ${companyName} on Valoxi`,
+      html,
+    });
+  }
+
+NOTE: this method uses `this.escapeHtml(...)`. Since server/email.ts does not currently have that helper, STEP 3 adds it as a private method on the class.
+
+---
+
+STEP 3: Add a private escapeHtml method to the EmailService class in server/email.ts
+
+Inside the EmailService class in server/email.ts, immediately before the closing brace of the class (the final `}` before `export const emailService = new EmailService();`), insert:
+
+  private escapeHtml(str: string): string {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+---
+
+STEP 4: Replace sendPortalAccessLink in server/email.ts
+
+Locate the method with signature:
+
+  async sendPortalAccessLink(
+    contactEmail: string,
+    contactName: string,
+    companyName: string,
+    portalUrl: string,
+    customMessage?: string,
+    expiresAt?: Date
+  ): Promise<boolean> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendPortalAccessLink(
+    contactEmail: string,
+    contactName: string,
+    companyName: string,
+    portalUrl: string,
+    customMessage?: string,
+    expiresAt?: Date
+  ): Promise<boolean> {
+    const safeContactName = this.escapeHtml(contactName);
+    const safeCompanyName = this.escapeHtml(companyName);
+    const expiryText = expiresAt
+      ? `This link expires on ${expiresAt.toLocaleDateString('en-GB')}.`
+      : 'This link has a limited validity period.';
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hello ${safeContactName},` },
+      { type: 'paragraph', text: `You have been given secure access to the document portal for the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> transaction.` },
+    ];
+
+    if (customMessage && customMessage.trim()) {
+      blocks.push({
+        type: 'info_box',
+        box: { tone: 'info', body: this.escapeHtml(customMessage.trim()) },
+      });
+    }
+
+    blocks.push({ type: 'cta', cta: { label: 'Access document portal', href: portalUrl } });
+    blocks.push({ type: 'paragraph', text: `${expiryText} Please do not share this link.` });
+
+    const html = renderBrandedEmail({
+      preheader: `Secure document portal access for the ${companyName} transaction.`,
+      eyebrow: 'Portal access',
+      heading: 'Your document portal is ready',
+      blocks,
+      footerLine: 'You are receiving this because secure document portal access was granted to your email address.',
+    });
+
+    return this.sendEmail({
+      to: contactEmail,
+      subject: `Document Portal Access — ${companyName}`,
+      html,
+    });
+  }
+
+---
+
+STEP 5: Replace sendWelcomeEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendWelcomeEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    magicLink: string;
+    freeMonths: number;
+    trialDays: number;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendWelcomeEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    magicLink: string;
+    freeMonths: number;
+    trialDays: number;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, magicLink, freeMonths, trialDays } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+
+    const planDescriptions: Record<string, string> = {
+      CORE: '5 target companies &middot; Deal Modeller &middot; AI Screening',
+      PROFESSIONAL: '20 target companies &middot; Full Expert Analysis &middot; Data Room &middot; Team Seats',
+      EXPERT: '100 target companies &middot; All features &middot; Priority support',
+    };
+    const planDesc = planDescriptions[planKey] || '';
+
+    const formatDate = (d: Date): string => {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    };
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> plan is now active.` },
+    ];
+
+    if (freeMonths > 0) {
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + freeMonths);
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          body: `Your <strong>${freeMonths} months free</strong> period starts today. No charge until <strong>${formatDate(endDate)}</strong>.`,
+        },
+      });
+    } else if (trialDays > 0) {
+      const endDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `Your <strong>${trialDays} day free trial</strong> has started. You will not be charged until <strong>${formatDate(endDate)}</strong>.`,
+        },
+      });
+    }
+
+    blocks.push({ type: 'cta', cta: { label: 'Access Valoxi', href: magicLink } });
+    blocks.push({ type: 'paragraph', text: 'This link expires in 72 hours. If it expires, visit the login page to request a new one.' });
+
+    if (planDesc) {
+      blocks.push({ type: 'divider' });
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          title: `${planLabel} plan`,
+          body: planDesc,
+        },
+      });
+    }
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi ${planLabel} plan is active. Click inside to access your account.`,
+      eyebrow: 'Welcome',
+      heading: `Welcome to Valoxi, ${safeFirstName}`,
+      blocks,
+      footerLine: 'You are receiving this because a Valoxi account was created for your email address.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Welcome to Valoxi — click here to access your account',
+      html,
+    });
+    return { success, message: success ? 'Welcome email sent' : 'Failed to send welcome email' };
+  }
+
+---
+
+STEP 6: Replace sendMagicLinkEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendMagicLinkEmail(params: {
+    to: string;
+    firstName: string;
+    magicLink: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendMagicLinkEmail(params: {
+    to: string;
+    firstName: string;
+    magicLink: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, magicLink } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'Here is your Valoxi login link. Click below to access your account.' },
+      { type: 'cta', cta: { label: 'Log in to Valoxi', href: magicLink } },
+      { type: 'paragraph', text: 'This link expires in 72 hours. If you did not request this, you can safely ignore this email.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi login link is ready.',
+      eyebrow: 'Login link',
+      heading: 'Your Valoxi login link',
+      blocks,
+      footerLine: 'You are receiving this because a login link was requested for your Valoxi account.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi login link',
+      html,
+    });
+    return { success, message: success ? 'Magic link email sent' : 'Failed to send magic link email' };
+  }
+
+---
+
+STEP 7: Replace sendAdminSignInLink in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendAdminSignInLink(params: {
+    to: string;
+    firstName: string;
+    signInUrl: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendAdminSignInLink(params: {
+    to: string;
+    firstName: string;
+    signInUrl: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, signInUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'A Valoxi administrator has generated a one-time sign-in link for your account. Click the button below to access Valoxi.' },
+      { type: 'cta', cta: { label: 'Sign in to Valoxi', href: signInUrl } },
+      { type: 'paragraph', text: 'This link expires in 24 hours and can only be used once.' },
+      { type: 'paragraph', text: 'If you did not expect this email, you can safely ignore it.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'An administrator has generated a one-time sign-in link for your Valoxi account.',
+      eyebrow: 'Admin sign-in',
+      heading: 'Your Valoxi access link',
+      blocks,
+      footerLine: 'You are receiving this because an administrator generated a sign-in link for your account.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi access link',
+      html,
+    });
+    return { success, message: success ? 'Access link sent' : 'Failed to send access link' };
+  }
+
+---
+
+STEP 8: Add the email-template import to server/services/password-reset.service.ts
+
+In server/services/password-reset.service.ts, add this line immediately after the existing `import { emailService as legacyEmailService } from '../email';` line:
+
+import { renderBrandedEmail, type EmailBlock } from './email-template';
+
+---
+
+STEP 9: Replace requestReset in server/services/password-reset.service.ts
+
+Locate the method with signature:
+
+  async requestReset(email: string, baseUrl: string): Promise<void> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async requestReset(email: string, baseUrl: string): Promise<void> {
+    const user = await usersRepository.getByEmail(email);
+    if (!user) return;
+
+    await passwordResetRepository.deleteUserTokens(user.id);
+    const tokenRow = await passwordResetRepository.createToken(user.id);
+
+    const resetUrl = `${baseUrl}/reset-password?token=${tokenRow.token}`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: 'Hi,' },
+      { type: 'paragraph', text: 'We received a request to reset the password for your Valoxi account. Click the button below to choose a new password.' },
+      { type: 'cta', cta: { label: 'Reset password', href: resetUrl } },
+      { type: 'paragraph', text: 'This link expires in <strong style="color:#FFFFFF;">1 hour</strong>. If you did not request a password reset, you can safely ignore this email.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'A request was made to reset your Valoxi password.',
+      eyebrow: 'Password reset',
+      heading: 'Reset your Valoxi password',
+      blocks,
+      footerLine: 'You are receiving this because a password reset was requested for your Valoxi account.',
+    });
+
+    await (legacyEmailService as any).sendEmail({
+      to: user.email,
+      subject: 'Reset your password — Valoxi',
+      html,
+    });
+  }
+
+---
+
+VERIFICATION
+
+V1: Confirm both new imports of email-template are in place
+  Command: grep -rn "from './services/email-template'" server/email.ts server/services/email.service.ts server/services/password-reset.service.ts
+  Expected: 1 match in server/email.ts; the other two files use a different path (see V2)
+
+V2: Confirm the helper import in the two services files
+  Command: grep -rn "from './email-template'" server/services/
+  Expected: 2 matches (email.service.ts from Batch 1, and password-reset.service.ts from this batch)
+
+V3: Confirm no <style> blocks remain in server/email.ts
+  Command: grep -c '<style>' server/email.ts
+  Expected: 0
+
+V4: Confirm the lightning-bolt emoji is gone from password-reset.service.ts
+  Command: grep -c "⚡" server/services/password-reset.service.ts
+  Expected: 0
+
+V5: Confirm linear-gradient is gone from all three files
+  Command: grep -c "linear-gradient" server/email.ts server/services/email.service.ts server/services/password-reset.service.ts
+  Expected: 0 in all three (format of output: filename:0 for each)
+
+V6: Confirm the escapeHtml private method was added to EmailService in server/email.ts
+  Command: grep -n "private escapeHtml" server/email.ts
+  Expected: exactly 1 match
+
+V7: TypeScript compilation check
+  Command: npx tsc --noEmit 2>&1 | tail -40
+  Expected: no new errors. The 3 pre-existing errors in team.repository.ts, users.repository.ts, and App.tsx are unrelated and acceptable. If any NEW error appears citing email.ts, email.service.ts, or password-reset.service.ts, paste them and stop.
+
+V8: Restart the dev workflow
+  Action: Restart "Start application" workflow
+  Expected: boots clean to port 5000, no runtime errors, no import errors, no reference errors in logs. Paste the last 30 lines of boot logs.
+
+V9: Paste back the full final code of the following methods (signature to closing brace):
+  - sendTeamInvitation (server/email.ts)
+  - sendPortalAccessLink (server/email.ts)
+  - sendWelcomeEmail (server/services/email.service.ts)
+  - sendMagicLinkEmail (server/services/email.service.ts)
+  - sendAdminSignInLink (server/services/email.service.ts)
+  - requestReset (server/services/password-reset.service.ts)
+
+END OF PROMPT

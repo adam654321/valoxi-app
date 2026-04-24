@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { renderBrandedEmail, type EmailBlock } from './services/email-template';
 
 interface EmailOptions {
   to: string | string[];
@@ -54,36 +55,32 @@ class EmailService {
     inviteUrl: string,
     roleName: string
   ): Promise<boolean> {
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-        <tr><td style="background-color:#0f172a;padding:32px;text-align:center;border-radius:8px 8px 0 0;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Valoxi</h1>
-        </td></tr>
-        <tr><td style="background-color:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
-          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">Hello,</p>
-          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;"><strong>${inviterName}</strong> has invited you to join the <strong>${companyName}</strong> team on Valoxi.</p>
-          <div style="background-color:#f9fafb;border-radius:8px;padding:16px;margin:20px 0;">
-            <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Role:</strong> ${roleName}</p>
-            <p style="margin:0;color:#374151;font-size:14px;"><strong>Company:</strong> ${companyName}</p>
-          </div>
-          <div style="text-align:center;margin:28px 0;">
-            <a href="${inviteUrl}" style="display:inline-block;background-color:#0f172a;color:#ffffff;text-decoration:none;padding:16px 32px;border-radius:8px;font-size:16px;font-weight:600;">Accept Invitation &rarr;</a>
-          </div>
-          <p style="margin:0;color:#6b7280;font-size:13px;">This invitation expires in 7 days.</p>
-        </td></tr>
-        <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi.ai</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const safeInviterName = this.escapeHtml(inviterName);
+    const safeCompanyName = this.escapeHtml(companyName);
+    const safeRoleName = this.escapeHtml(roleName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: 'Hello,' },
+      { type: 'paragraph', text: `<strong style="color:#FFFFFF;">${safeInviterName}</strong> has invited you to join the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> team on Valoxi.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `<strong>Role:</strong> ${safeRoleName}<br><strong>Company:</strong> ${safeCompanyName}`,
+        },
+      },
+      { type: 'cta', cta: { label: 'Accept invitation', href: inviteUrl } },
+      { type: 'paragraph', text: 'This invitation expires in 7 days.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `${inviterName} has invited you to join ${companyName} on Valoxi.`,
+      eyebrow: 'Team invitation',
+      heading: `Join ${safeCompanyName} on Valoxi`,
+      blocks,
+      footerLine: 'You are receiving this because a Valoxi user invited you to join their team.',
+    });
+
     return this.sendEmail({
       to: inviteEmail,
       subject: `You're invited to join ${companyName} on Valoxi`,
@@ -99,36 +96,35 @@ class EmailService {
     customMessage?: string,
     expiresAt?: Date
   ): Promise<boolean> {
+    const safeContactName = this.escapeHtml(contactName);
+    const safeCompanyName = this.escapeHtml(companyName);
     const expiryText = expiresAt
       ? `This link expires on ${expiresAt.toLocaleDateString('en-GB')}.`
       : 'This link has a limited validity period.';
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-        <tr><td style="background-color:#0f172a;padding:32px;text-align:center;border-radius:8px 8px 0 0;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Valoxi</h1>
-        </td></tr>
-        <tr><td style="background-color:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
-          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">Hello ${contactName},</p>
-          <p style="margin:0 0 16px;color:#1f2937;font-size:16px;">You have been given secure access to the document portal for the <strong>${companyName}</strong> transaction.</p>
-          ${customMessage ? `<div style="background-color:#eff6ff;border-left:4px solid #3b82f6;padding:16px;margin:20px 0;border-radius:0 8px 8px 0;"><p style="margin:0;color:#1e40af;font-size:14px;">${customMessage}</p></div>` : ''}
-          <div style="text-align:center;margin:28px 0;">
-            <a href="${portalUrl}" style="display:inline-block;background-color:#0f172a;color:#ffffff;text-decoration:none;padding:16px 32px;border-radius:8px;font-size:16px;font-weight:600;">Access Document Portal &rarr;</a>
-          </div>
-          <p style="margin:0;color:#6b7280;font-size:13px;">${expiryText} Do not share this link.</p>
-        </td></tr>
-        <tr><td style="background-color:#f9fafb;padding:20px 32px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e5e7eb;border-top:none;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;">Valoxi.ai</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hello ${safeContactName},` },
+      { type: 'paragraph', text: `You have been given secure access to the document portal for the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> transaction.` },
+    ];
+
+    if (customMessage && customMessage.trim()) {
+      blocks.push({
+        type: 'info_box',
+        box: { tone: 'info', body: this.escapeHtml(customMessage.trim()) },
+      });
+    }
+
+    blocks.push({ type: 'cta', cta: { label: 'Access document portal', href: portalUrl } });
+    blocks.push({ type: 'paragraph', text: `${expiryText} Please do not share this link.` });
+
+    const html = renderBrandedEmail({
+      preheader: `Secure document portal access for the ${companyName} transaction.`,
+      eyebrow: 'Portal access',
+      heading: 'Your document portal is ready',
+      blocks,
+      footerLine: 'You are receiving this because secure document portal access was granted to your email address.',
+    });
+
     return this.sendEmail({
       to: contactEmail,
       subject: `Document Portal Access — ${companyName}`,
@@ -193,6 +189,15 @@ class EmailService {
     } catch {
       return false;
     }
+  }
+
+  private escapeHtml(str: string): string {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }
 
