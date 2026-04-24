@@ -1,0 +1,634 @@
+BUILD: Email Batch 3 — Billing & Subscriptions (9 emails, 2 files)
+
+CONTEXT
+Final full batch of the email design system migration. Rewrites 7 existing email methods and adds 2 new helper methods to replace raw-HTML sends currently inlined in the billing cron. All 9 emails use the renderBrandedEmail helper.
+
+Methods migrated:
+- server/services/email.service.ts: sendPaymentLinkedEmail, sendRenewalWarningEmail, sendFreePeriodPaymentRequiredEmail, sendFreePeriodCancellationEmail, sendPaymentFailedEmail, sendDunningDay7Email, sendDunningCancellationEmail
+- server/services/email.service.ts (new): sendLegacyFreePeriodWarningEmail, sendLegacyFreePeriodTransitionEmail
+- server/cron/billing.cron.ts: replace two inline HTML sends with calls to the two new methods above
+
+ONE LOGICAL CHANGE UNIT per method. Also switches the two legacy community cron emails from addressing company name to admin first name, consistent with all other billing emails. Uses the existing billingRepository.getAdminEmailForCompany helper.
+
+No signature changes to the 7 existing methods. No callsite changes for them. The 2 cron inline sends are replaced with calls to the 2 new EmailApiService methods.
+
+---
+
+STEP 1: Replace sendPaymentLinkedEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendPaymentLinkedEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendPaymentLinkedEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const loginUrl = `${appUrl}/login`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `We have linked your <strong style="color:#FFFFFF;">${planLabel}</strong> subscription to your existing Valoxi account. Sign in to access everything.` },
+      { type: 'cta', cta: { label: 'Log in to Valoxi', href: loginUrl } },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your ${planLabel} subscription is now linked to your Valoxi account.`,
+      eyebrow: 'Subscription linked',
+      heading: 'Your payment has been linked',
+      blocks,
+      footerLine: 'You are receiving this because a subscription was linked to your Valoxi account.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi payment has been linked',
+      html,
+    });
+    return { success, message: success ? 'Payment linked email sent' : 'Failed to send payment linked email' };
+  }
+
+---
+
+STEP 2: Replace sendRenewalWarningEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendRenewalWarningEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    renewalDate: Date;
+    amountDue: number;
+    currency: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendRenewalWarningEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    renewalDate: Date;
+    amountDue: number;
+    currency: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, renewalDate, amountDue, currency } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+
+    const symbol = currency === 'gbp' ? '£' : '$';
+    const amount = `${symbol}${(amountDue / 100).toFixed(2)}`;
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dateStr = `${renewalDate.getDate()} ${months[renewalDate.getMonth()]} ${renewalDate.getFullYear()}`;
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const billingUrl = `${appUrl}/billing`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> annual plan renews in 7 days.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `<strong>Renewal date:</strong> ${dateStr}<br><strong>Amount:</strong> ${amount}`,
+        },
+      },
+      { type: 'paragraph', text: 'Your card on file will be charged automatically. If you need to update your payment details or make any changes, visit your billing page before the renewal date.' },
+      { type: 'cta', cta: { label: 'Manage billing', href: billingUrl } },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi ${planLabel} plan renews on ${dateStr}.`,
+      eyebrow: 'Renewal notice',
+      heading: 'Your plan renews in 7 days',
+      blocks,
+      footerLine: 'You are receiving this because you have an active Valoxi subscription.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Your Valoxi ${planLabel} plan renews in 7 days`,
+      html,
+    });
+    return { success, message: success ? 'Renewal warning email sent' : 'Failed to send renewal warning email' };
+  }
+
+---
+
+STEP 3: Replace sendFreePeriodPaymentRequiredEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendFreePeriodPaymentRequiredEmail(params: {
+    to: string;
+    firstName: string;
+    endDate: Date;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendFreePeriodPaymentRequiredEmail(params: {
+    to: string;
+    firstName: string;
+    endDate: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, endDate } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dateStr = `${endDate.getDate()} ${months[endDate.getMonth()]} ${endDate.getFullYear()}`;
+    const safeDateStr = escapeHtml(dateStr);
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const billingUrl = `${appUrl}/billing`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your 6 month free period of Valoxi Core ends on <strong style="color:#FFFFFF;">${safeDateStr}</strong>. To keep your access active, add payment details before that date.` },
+      { type: 'paragraph', text: 'When you add payment details, your 15 percent member discount applies automatically to your Core subscription and to any plan you upgrade to later.' },
+      { type: 'cta', cta: { label: 'Add payment details', href: billingUrl } },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'warning',
+          body: `If you do not add payment details before ${safeDateStr}, your access will pause and your data will be preserved for 30 days. You can restore everything by signing back in with the same email and completing signup within that window.`,
+        },
+      },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your free period ends on ${dateStr}. Add payment details to keep your access active.`,
+      eyebrow: 'Action required',
+      heading: 'Your free period ends soon',
+      blocks,
+      footerLine: 'You are receiving this because you are on a Valoxi free period that is about to end.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Enter payment details to continue your Valoxi Core access',
+      html,
+    });
+    return { success, message: success ? 'Free-period payment-required email sent' : 'Failed to send free-period payment-required email' };
+  }
+
+---
+
+STEP 4: Replace sendFreePeriodCancellationEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendFreePeriodCancellationEmail(params: {
+    to: string;
+    firstName: string;
+    endDate: Date;
+    restoreByDate: Date;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendFreePeriodCancellationEmail(params: {
+    to: string;
+    firstName: string;
+    endDate: Date;
+    restoreByDate: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, endDate, restoreByDate } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const formatDate = (d: Date) => `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    const safeEndDate = escapeHtml(formatDate(endDate));
+    const safeRestoreByDate = escapeHtml(formatDate(restoreByDate));
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const signupUrl = `${appUrl}/sign-up`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your 6 month free period of Valoxi Core ended on <strong style="color:#FFFFFF;">${safeEndDate}</strong> and your access has now paused because no payment details were added.` },
+      { type: 'paragraph', text: `Your data is preserved for 30 days. You can restore everything by signing back in with the same email and completing signup before <strong style="color:#FFFFFF;">${safeRestoreByDate}</strong>. After that date the account will be closed.` },
+      { type: 'paragraph', text: 'If you want to continue with Valoxi, use the link below with the same email address.' },
+      { type: 'cta', cta: { label: 'Restore your account', href: signupUrl } },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi Core free period has ended. You have until ${formatDate(restoreByDate)} to restore.`,
+      eyebrow: 'Access paused',
+      heading: 'Your free period has ended',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi free period has ended.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi Core free period has ended',
+      html,
+    });
+    return { success, message: success ? 'Free-period cancellation email sent' : 'Failed to send free-period cancellation email' };
+  }
+
+---
+
+STEP 5: Replace sendPaymentFailedEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendPaymentFailedEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendPaymentFailedEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, billingUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const manageBillingUrl = billingUrl || `${appUrl}/billing`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `We could not collect payment for your <strong style="color:#FFFFFF;">${planLabel}</strong> plan.` },
+      { type: 'paragraph', text: 'We will retry payment automatically. Your account has a 14 day grace period, so please update your payment method as soon as you can.' },
+      { type: 'cta', cta: { label: 'Manage billing', href: manageBillingUrl } },
+      { type: 'paragraph', text: 'If you have already updated your card, no further action is needed.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Payment could not be collected for your Valoxi ${planLabel} plan.`,
+      eyebrow: 'Payment failed',
+      heading: 'We could not process your payment',
+      blocks,
+      footerLine: 'You are receiving this because a payment on your Valoxi subscription failed.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Payment failed for your Valoxi ${planLabel} plan`,
+      html,
+    });
+    return { success, message: success ? 'Payment failed email sent' : 'Failed to send payment failed email' };
+  }
+
+---
+
+STEP 6: Replace sendDunningDay7Email in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendDunningDay7Email(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendDunningDay7Email(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, billingUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const manageBillingUrl = billingUrl || `${appUrl}/billing`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Payment is still failing for your <strong style="color:#FFFFFF;">${planLabel}</strong> plan.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'warning',
+          body: 'Your subscription will be cancelled in 7 days unless payment succeeds. Please update your payment method to keep your account active.',
+        },
+      },
+      { type: 'cta', cta: { label: 'Manage billing', href: manageBillingUrl } },
+      { type: 'paragraph', text: 'We will keep retrying automatically during the grace period.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Action needed: your Valoxi ${planLabel} subscription will be cancelled in 7 days.`,
+      eyebrow: 'Action required',
+      heading: 'Your subscription will be cancelled in 7 days',
+      blocks,
+      footerLine: 'You are receiving this because a payment on your Valoxi subscription continues to fail.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Action needed: your Valoxi ${planLabel} subscription will be cancelled in 7 days`,
+      html,
+    });
+    return { success, message: success ? 'Day 7 dunning email sent' : 'Failed to send day 7 dunning email' };
+  }
+
+---
+
+STEP 7: Replace sendDunningCancellationEmail in server/services/email.service.ts
+
+Locate the method with signature:
+
+  async sendDunningCancellationEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+
+Replace everything from that signature to and including its closing brace with:
+
+  async sendDunningCancellationEmail(params: {
+    to: string;
+    firstName: string;
+    planKey: string;
+    billingUrl?: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, planKey, billingUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
+    const planLabels: Record<string, string> = {
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
+    };
+    const planLabel = planLabels[planKey] || planKey;
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+    const manageBillingUrl = billingUrl || `${appUrl}/billing`;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> subscription has been cancelled because payment could not be collected during the grace period.` },
+      { type: 'paragraph', text: 'Your data is preserved for 30 days. You can sign back in with the same email address and re-subscribe when you are ready to reactivate your account.' },
+      { type: 'cta', cta: { label: 'Manage billing', href: manageBillingUrl } },
+      { type: 'paragraph', text: 'If you need help, reply to this email and we will help you get back in.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi ${planLabel} subscription has been cancelled.`,
+      eyebrow: 'Subscription cancelled',
+      heading: 'Your subscription has been cancelled',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi subscription was cancelled.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Your Valoxi ${planLabel} subscription has been cancelled`,
+      html,
+    });
+    return { success, message: success ? 'Dunning cancellation email sent' : 'Failed to send dunning cancellation email' };
+  }
+
+---
+
+STEP 8: Add sendLegacyFreePeriodWarningEmail to EmailApiService
+
+In server/services/email.service.ts, immediately after the closing brace of sendDunningCancellationEmail, add this new method:
+
+  async sendLegacyFreePeriodWarningEmail(params: {
+    to: string;
+    firstName: string;
+    freeMonthsTotal: number;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, freeMonthsTotal } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${freeMonthsTotal} month</strong> free period will end next month. After that, your ongoing community discount will be applied automatically.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          body: 'No action is needed. We just wanted to give you a heads up.',
+        },
+      },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi free period ends next month. No action needed.',
+      eyebrow: 'Heads up',
+      heading: 'Your free period is ending soon',
+      blocks,
+      footerLine: 'You are receiving this because you are on a Valoxi community free period.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your free period is ending soon',
+      html,
+    });
+    return { success, message: success ? 'Legacy free-period warning email sent' : 'Failed to send legacy free-period warning email' };
+  }
+
+---
+
+STEP 9: Add sendLegacyFreePeriodTransitionEmail to EmailApiService
+
+In server/services/email.service.ts, immediately after the closing brace of sendLegacyFreePeriodWarningEmail, add this new method:
+
+  async sendLegacyFreePeriodTransitionEmail(params: {
+    to: string;
+    firstName: string;
+    freeMonthsTotal: number;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, freeMonthsTotal } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${freeMonthsTotal} month</strong> free period has now ended.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          body: 'Your ongoing community discount has been applied automatically. No action needed on your part.',
+        },
+      },
+      { type: 'paragraph', text: 'Thank you for being part of the community.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your free period has ended. Your community discount is now active.',
+      eyebrow: 'Free period ended',
+      heading: 'Your community discount is now active',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi community free period has ended.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your free period has ended, community discount now active',
+      html,
+    });
+    return { success, message: success ? 'Legacy free-period transition email sent' : 'Failed to send legacy free-period transition email' };
+  }
+
+---
+
+STEP 10: Update server/cron/billing.cron.ts — warning email call site
+
+In server/cron/billing.cron.ts, locate this block (inside the 09:15 daily cron, in the "legacy community path" branch):
+
+            } else {
+              // Legacy community path: existing "no action needed" email.
+              try {
+                await (emailService as any).sendEmail({
+                  to: company.email,
+                  subject: 'Your free period is ending soon',
+                  html: `
+                    <h2>Your free period is ending soon</h2>
+                    <p>Hi ${company.companyName || 'there'},</p>
+                    <p>Your ${sub.freeMonthsTotal}-month free period will end next month. After that, your ongoing community discount will be applied automatically.</p>
+                    <p>No action is needed, we just wanted to give you a heads up.</p>
+                  `,
+                });
+              } catch (emailErr) {
+                console.error(`[billing-cron] Failed to send legacy warning email for company ${sub.userCompanyId}:`, emailErr);
+              }
+
+Replace it with:
+
+            } else {
+              // Legacy community path: branded "no action needed" email.
+              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+              if (!adminEmail) {
+                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping legacy free-period warning`);
+                continue;
+              }
+              try {
+                await emailApiService.sendLegacyFreePeriodWarningEmail({
+                  to: adminEmail.email,
+                  firstName: adminEmail.firstName || 'there',
+                  freeMonthsTotal: sub.freeMonthsTotal,
+                });
+              } catch (emailErr) {
+                console.error(`[billing-cron] Failed to send legacy warning email for company ${sub.userCompanyId}:`, emailErr);
+              }
+
+---
+
+STEP 11: Update server/cron/billing.cron.ts — transition email call site
+
+In server/cron/billing.cron.ts, locate this block (inside the 09:15 daily cron, in the transition path after coupon application):
+
+            if (couponId && sub.stripeCustomerId) {
+              try {
+                await (emailService as any).sendEmail({
+                  to: company.email,
+                  subject: 'Your free period has ended, community discount now active',
+                  html: `
+                    <h2>Your free period has ended</h2>
+                    <p>Hi ${company.companyName || 'there'},</p>
+                    <p>Your ${sub.freeMonthsTotal}-month free period has now ended. Your ongoing community discount has been applied automatically, no action needed on your part.</p>
+                    <p>Thank you for being part of the community.</p>
+                  `,
+                });
+              } catch (emailErr) {
+                console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
+              }
+            }
+
+Replace it with:
+
+            if (couponId && sub.stripeCustomerId) {
+              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+              if (!adminEmail) {
+                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping legacy transition email`);
+              } else {
+                try {
+                  await emailApiService.sendLegacyFreePeriodTransitionEmail({
+                    to: adminEmail.email,
+                    firstName: adminEmail.firstName || 'there',
+                    freeMonthsTotal: sub.freeMonthsTotal,
+                  });
+                } catch (emailErr) {
+                  console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
+                }
+              }
+            }
+
+---
+
+VERIFICATION
+
+V1: Confirm the two new helper methods exist
+  Command: grep -n "sendLegacyFreePeriodWarningEmail\|sendLegacyFreePeriodTransitionEmail" server/services/email.service.ts
+  Expected: 4 matches total (2 method definitions, 2 return messages)
+
+V2: Confirm no raw HTML sends remain in billing.cron.ts
+  Command: grep -c "<h2>Your free period" server/cron/billing.cron.ts
+  Expected: 0
+
+V3: Confirm the company.email + company.companyName pattern is gone from both call sites
+  Command: grep -cE "to: company\.email|company\.companyName \|\| 'there'" server/cron/billing.cron.ts
+  Expected: 0
+
+V4: Confirm no <style> blocks or legacy linear-gradient in touched files
+  Command: grep -c "<style>\|linear-gradient" server/services/email.service.ts server/cron/billing.cron.ts
+  Expected: 0 in both (output format: filename:0 for each)
+
+V5: TypeScript compilation check
+  Command: npx tsc --noEmit 2>&1 | tail -40
+  Expected: no new errors. The 3 pre-existing errors in team.repository.ts, users.repository.ts, and App.tsx are acceptable. If any NEW error appears citing email.service.ts or billing.cron.ts, paste them and stop.
+
+V6: Restart the dev workflow
+  Action: Restart "Start application" workflow
+  Expected: boots clean to port 5000, no runtime errors, no import errors, cron schedules still print their "scheduled" lines. Paste the last 40 lines of boot logs.
+
+V7: Paste back the full final code of the following methods (signature to closing brace):
+  - sendPaymentLinkedEmail (server/services/email.service.ts)
+  - sendRenewalWarningEmail (server/services/email.service.ts)
+  - sendFreePeriodPaymentRequiredEmail (server/services/email.service.ts)
+  - sendFreePeriodCancellationEmail (server/services/email.service.ts)
+  - sendPaymentFailedEmail (server/services/email.service.ts)
+  - sendDunningDay7Email (server/services/email.service.ts)
+  - sendDunningCancellationEmail (server/services/email.service.ts)
+  - sendLegacyFreePeriodWarningEmail (server/services/email.service.ts) — new
+  - sendLegacyFreePeriodTransitionEmail (server/services/email.service.ts) — new
+
+V8: Paste back the two modified blocks from server/cron/billing.cron.ts:
+  - The legacy community warning branch
+  - The legacy community transition branch
+
+END OF PROMPT

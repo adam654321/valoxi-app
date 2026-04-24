@@ -244,50 +244,29 @@ export class EmailApiService {
     planKey: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, planKey } = params;
+    const safeFirstName = escapeHtml(firstName);
 
     const planLabels: Record<string, string> = {
-      CORE: 'Core',
-      PROFESSIONAL: 'Professional',
-      EXPERT: 'Expert',
-      ENTERPRISE: 'Enterprise',
+      CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
     };
     const planLabel = planLabels[planKey] || planKey;
 
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const loginUrl = `${appUrl}/login`;
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr>
-          <td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">We've linked your <strong>${planLabel}</strong> subscription to your existing Valoxi account.</p>
-            <p style="margin: 0 0 24px; color: #1f2937; font-size: 16px;">Log in at <a href="${loginUrl}" style="color: #2563eb;">${loginUrl}</a> to access your account.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${loginUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Log In Now &rarr;</a>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `We have linked your <strong style="color:#FFFFFF;">${planLabel}</strong> subscription to your existing Valoxi account. Sign in to access everything.` },
+      { type: 'cta', cta: { label: 'Log in to Valoxi', href: loginUrl } },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your ${planLabel} subscription is now linked to your Valoxi account.`,
+      eyebrow: 'Subscription linked',
+      heading: 'Your payment has been linked',
+      blocks,
+      footerLine: 'You are receiving this because a subscription was linked to your Valoxi account.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
@@ -368,6 +347,7 @@ export class EmailApiService {
     currency: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, planKey, renewalDate, amountDue, currency } = params;
+    const safeFirstName = escapeHtml(firstName);
 
     const planLabels: Record<string, string> = {
       CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
@@ -383,42 +363,27 @@ export class EmailApiService {
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const billingUrl = `${appUrl}/billing`;
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr>
-          <td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your <strong>${planLabel}</strong> annual plan renews in 7 days.</p>
-            <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
-              <p style="margin: 0 0 8px; color: #374151; font-size: 14px;"><strong>Renewal date:</strong> ${dateStr}</p>
-              <p style="margin: 0; color: #374151; font-size: 14px;"><strong>Amount:</strong> ${amount}</p>
-            </div>
-            <p style="margin: 0 0 24px; color: #6b7280; font-size: 14px;">Your card on file will be charged automatically. If you need to update your payment details or make any changes, visit your billing page before the renewal date.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${billingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-            <p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi &middot; Powered by ShiftOps Consulting</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> annual plan renews in 7 days.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `<strong>Renewal date:</strong> ${dateStr}<br><strong>Amount:</strong> ${amount}`,
+        },
+      },
+      { type: 'paragraph', text: 'Your card on file will be charged automatically. If you need to update your payment details or make any changes, visit your billing page before the renewal date.' },
+      { type: 'cta', cta: { label: 'Manage billing', href: billingUrl } },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi ${planLabel} plan renews on ${dateStr}.`,
+      eyebrow: 'Renewal notice',
+      heading: 'Your plan renews in 7 days',
+      blocks,
+      footerLine: 'You are receiving this because you have an active Valoxi subscription.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
@@ -434,43 +399,36 @@ export class EmailApiService {
     endDate: Date;
   }): Promise<SendInvitationResult> {
     const { to, firstName, endDate } = params;
+    const safeFirstName = escapeHtml(firstName);
 
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const dateStr = `${endDate.getDate()} ${months[endDate.getMonth()]} ${endDate.getFullYear()}`;
+    const safeDateStr = escapeHtml(dateStr);
 
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const billingUrl = `${appUrl}/billing`;
 
-    const safeFirstName = escapeHtml(firstName);
-    const safeDateStr = escapeHtml(dateStr);
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your 6 month free period of Valoxi Core ends on <strong style="color:#FFFFFF;">${safeDateStr}</strong>. To keep your access active, add payment details before that date.` },
+      { type: 'paragraph', text: 'When you add payment details, your 15 percent member discount applies automatically to your Core subscription and to any plan you upgrade to later.' },
+      { type: 'cta', cta: { label: 'Add payment details', href: billingUrl } },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'warning',
+          body: `If you do not add payment details before ${safeDateStr}, your access will pause and your data will be preserved for 30 days. You can restore everything by signing back in with the same email and completing signup within that window.`,
+        },
+      },
+    ];
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Enter payment details to continue your Valoxi Core access</title></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px; font-weight: 600;">Your free period ends soon</h2>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${safeFirstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your 6 month free period of Valoxi Core ends on <strong>${safeDateStr}</strong>. To keep your access active, you need to add payment details before then.</p>
-            <p style="margin: 0 0 24px; color: #1f2937; font-size: 16px;">When you add payment details, your 15 percent member discount applies automatically to your Core subscription and to any plan you upgrade to later.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${billingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Add payment details</a>
-            </div>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">If you do not add payment details before ${safeDateStr}, your access will pause and your data will be preserved for 30 days. You can restore everything by signing back in with the same email and completing signup within that window.</p>
-            <p style="margin: 24px 0 0; color: #1f2937; font-size: 16px;">Thanks,<br>The Valoxi team</p>
-          </td>
-        </tr>
-        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const html = renderBrandedEmail({
+      preheader: `Your free period ends on ${dateStr}. Add payment details to keep your access active.`,
+      eyebrow: 'Action required',
+      heading: 'Your free period ends soon',
+      blocks,
+      footerLine: 'You are receiving this because you are on a Valoxi free period that is about to end.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
@@ -487,46 +445,31 @@ export class EmailApiService {
     restoreByDate: Date;
   }): Promise<SendInvitationResult> {
     const { to, firstName, endDate, restoreByDate } = params;
+    const safeFirstName = escapeHtml(firstName);
 
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const formatDate = (d: Date) => `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-    const endDateStr = formatDate(endDate);
-    const restoreByDateStr = formatDate(restoreByDate);
+    const safeEndDate = escapeHtml(formatDate(endDate));
+    const safeRestoreByDate = escapeHtml(formatDate(restoreByDate));
 
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const signupUrl = `${appUrl}/sign-up`;
 
-    const safeFirstName = escapeHtml(firstName);
-    const safeEndDate = escapeHtml(endDateStr);
-    const safeRestoreByDate = escapeHtml(restoreByDateStr);
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your 6 month free period of Valoxi Core ended on <strong style="color:#FFFFFF;">${safeEndDate}</strong> and your access has now paused because no payment details were added.` },
+      { type: 'paragraph', text: `Your data is preserved for 30 days. You can restore everything by signing back in with the same email and completing signup before <strong style="color:#FFFFFF;">${safeRestoreByDate}</strong>. After that date the account will be closed.` },
+      { type: 'paragraph', text: 'If you want to continue with Valoxi, use the link below with the same email address.' },
+      { type: 'cta', cta: { label: 'Restore your account', href: signupUrl } },
+    ];
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Your Valoxi Core free period has ended</title></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 22px; font-weight: 600;">Your Valoxi Core free period has ended</h2>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${safeFirstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your 6 month free period of Valoxi Core ended on <strong>${safeEndDate}</strong> and your access has now paused because no payment details were added.</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your data is preserved for 30 days. You can restore everything by signing back in with the same email and completing signup before <strong>${safeRestoreByDate}</strong>. After that date the account will be closed.</p>
-            <p style="margin: 0 0 24px; color: #1f2937; font-size: 16px;">If you want to continue with Valoxi, use the link below with the same email address.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${signupUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Restore your account</a>
-            </div>
-            <p style="margin: 24px 0 0; color: #1f2937; font-size: 16px;">Thanks,<br>The Valoxi team</p>
-          </td>
-        </tr>
-        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi Core free period has ended. You have until ${formatDate(restoreByDate)} to restore.`,
+      eyebrow: 'Access paused',
+      heading: 'Your free period has ended',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi free period has ended.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
@@ -543,6 +486,7 @@ export class EmailApiService {
     billingUrl?: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, planKey, billingUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
     const planLabels: Record<string, string> = {
       CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
     };
@@ -550,35 +494,25 @@ export class EmailApiService {
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const manageBillingUrl = billingUrl || `${appUrl}/billing`;
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">We could not collect payment for your <strong>${planLabel}</strong> plan.</p>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">We will retry payment automatically. Your account has a 14 day grace period, so please update your payment method as soon as you can.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
-            </div>
-            <p style="margin: 0; color: #6b7280; font-size: 14px;">If you have already updated your card, no further action is needed.</p>
-          </td>
-        </tr>
-        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `We could not collect payment for your <strong style="color:#FFFFFF;">${planLabel}</strong> plan.` },
+      { type: 'paragraph', text: 'We will retry payment automatically. Your account has a 14 day grace period, so please update your payment method as soon as you can.' },
+      { type: 'cta', cta: { label: 'Manage billing', href: manageBillingUrl } },
+      { type: 'paragraph', text: 'If you have already updated your card, no further action is needed.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Payment could not be collected for your Valoxi ${planLabel} plan.`,
+      eyebrow: 'Payment failed',
+      heading: 'We could not process your payment',
+      blocks,
+      footerLine: 'You are receiving this because a payment on your Valoxi subscription failed.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
-      subject: `Payment failed for your Valoxi ${planKey} plan`,
+      subject: `Payment failed for your Valoxi ${planLabel} plan`,
       html,
     });
     return { success, message: success ? 'Payment failed email sent' : 'Failed to send payment failed email' };
@@ -591,6 +525,7 @@ export class EmailApiService {
     billingUrl?: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, planKey, billingUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
     const planLabels: Record<string, string> = {
       CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
     };
@@ -598,35 +533,31 @@ export class EmailApiService {
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const manageBillingUrl = billingUrl || `${appUrl}/billing`;
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Payment is still failing for your <strong>${planLabel}</strong> plan.</p>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">Your plan will be cancelled in 7 days unless payment succeeds. Please update your payment method to keep your account active.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
-            </div>
-            <p style="margin: 0; color: #6b7280; font-size: 14px;">We will keep retrying automatically during the grace period.</p>
-          </td>
-        </tr>
-        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Payment is still failing for your <strong style="color:#FFFFFF;">${planLabel}</strong> plan.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'warning',
+          body: 'Your subscription will be cancelled in 7 days unless payment succeeds. Please update your payment method to keep your account active.',
+        },
+      },
+      { type: 'cta', cta: { label: 'Manage billing', href: manageBillingUrl } },
+      { type: 'paragraph', text: 'We will keep retrying automatically during the grace period.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Action needed: your Valoxi ${planLabel} subscription will be cancelled in 7 days.`,
+      eyebrow: 'Action required',
+      heading: 'Your subscription will be cancelled in 7 days',
+      blocks,
+      footerLine: 'You are receiving this because a payment on your Valoxi subscription continues to fail.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
-      subject: `Action needed: your Valoxi ${planKey} subscription will be cancelled in 7 days`,
+      subject: `Action needed: your Valoxi ${planLabel} subscription will be cancelled in 7 days`,
       html,
     });
     return { success, message: success ? 'Day 7 dunning email sent' : 'Failed to send day 7 dunning email' };
@@ -639,6 +570,7 @@ export class EmailApiService {
     billingUrl?: string;
   }): Promise<SendInvitationResult> {
     const { to, firstName, planKey, billingUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
     const planLabels: Record<string, string> = {
       CORE: 'Core', PROFESSIONAL: 'Professional', EXPERT: 'Expert', ENTERPRISE: 'Enterprise',
     };
@@ -646,38 +578,101 @@ export class EmailApiService {
     const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
     const manageBillingUrl = billingUrl || `${appUrl}/billing`;
 
-    const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
-        <tr><td style="background-color: #0f172a; padding: 32px; text-align: center; border-radius: 8px 8px 0 0;"><h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Valoxi</h1></td></tr>
-        <tr>
-          <td style="background-color: #ffffff; padding: 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Hi ${firstName},</p>
-            <p style="margin: 0 0 16px; color: #1f2937; font-size: 16px;">Your <strong>${planLabel}</strong> subscription has been cancelled because payment could not be collected during the grace period.</p>
-            <p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">Your data is preserved for 30 days. You can sign back in with the same email address and re-subscribe when you are ready to reactivate your account.</p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${manageBillingUrl}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">Manage Billing &rarr;</a>
-            </div>
-            <p style="margin: 0; color: #6b7280; font-size: 14px;">If you need help, reply to this email and we will help you get back in.</p>
-          </td>
-        </tr>
-        <tr><td style="background-color: #f9fafb; padding: 20px 32px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;"><p style="margin: 0; color: #9ca3af; font-size: 12px;">Valoxi. Acquire Smarter, Faster.</p></td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${planLabel}</strong> subscription has been cancelled because payment could not be collected during the grace period.` },
+      { type: 'paragraph', text: 'Your data is preserved for 30 days. You can sign back in with the same email address and re-subscribe when you are ready to reactivate your account.' },
+      { type: 'cta', cta: { label: 'Manage billing', href: manageBillingUrl } },
+      { type: 'paragraph', text: 'If you need help, reply to this email and we will help you get back in.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Your Valoxi ${planLabel} subscription has been cancelled.`,
+      eyebrow: 'Subscription cancelled',
+      heading: 'Your subscription has been cancelled',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi subscription was cancelled.',
+    });
 
     const success = await (legacyEmailService as any).sendEmail({
       to,
-      subject: `Your Valoxi ${planKey} subscription has been cancelled`,
+      subject: `Your Valoxi ${planLabel} subscription has been cancelled`,
       html,
     });
     return { success, message: success ? 'Dunning cancellation email sent' : 'Failed to send dunning cancellation email' };
+  }
+
+  async sendLegacyFreePeriodWarningEmail(params: {
+    to: string;
+    firstName: string;
+    freeMonthsTotal: number;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, freeMonthsTotal } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${freeMonthsTotal} month</strong> free period will end next month. After that, your ongoing community discount will be applied automatically.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          body: 'No action is needed. We just wanted to give you a heads up.',
+        },
+      },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi free period ends next month. No action needed.',
+      eyebrow: 'Heads up',
+      heading: 'Your free period is ending soon',
+      blocks,
+      footerLine: 'You are receiving this because you are on a Valoxi community free period.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your free period is ending soon',
+      html,
+    });
+    return { success, message: success ? 'Legacy free-period warning email sent' : 'Failed to send legacy free-period warning email' };
+  }
+
+  async sendLegacyFreePeriodTransitionEmail(params: {
+    to: string;
+    firstName: string;
+    freeMonthsTotal: number;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, freeMonthsTotal } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${freeMonthsTotal} month</strong> free period has now ended.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          body: 'Your ongoing community discount has been applied automatically. No action needed on your part.',
+        },
+      },
+      { type: 'paragraph', text: 'Thank you for being part of the community.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your free period has ended. Your community discount is now active.',
+      eyebrow: 'Free period ended',
+      heading: 'Your community discount is now active',
+      blocks,
+      footerLine: 'You are receiving this because your Valoxi community free period has ended.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your free period has ended, community discount now active',
+      html,
+    });
+    return { success, message: success ? 'Legacy free-period transition email sent' : 'Failed to send legacy free-period transition email' };
   }
 }
 

@@ -415,19 +415,19 @@ export function initializeBillingCron(): void {
             // the user has a Stripe customer. 5D New Member with Stripe customer gets this too
             // because the coupon IS now applied and this is factually accurate.
             if (couponId && sub.stripeCustomerId) {
-              try {
-                await (emailService as any).sendEmail({
-                  to: company.email,
-                  subject: 'Your free period has ended, community discount now active',
-                  html: `
-                    <h2>Your free period has ended</h2>
-                    <p>Hi ${company.companyName || 'there'},</p>
-                    <p>Your ${sub.freeMonthsTotal}-month free period has now ended. Your ongoing community discount has been applied automatically, no action needed on your part.</p>
-                    <p>Thank you for being part of the community.</p>
-                  `,
-                });
-              } catch (emailErr) {
-                console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
+              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+              if (!adminEmail) {
+                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping legacy transition email`);
+              } else {
+                try {
+                  await emailApiService.sendLegacyFreePeriodTransitionEmail({
+                    to: adminEmail.email,
+                    firstName: adminEmail.firstName || 'there',
+                    freeMonthsTotal: sub.freeMonthsTotal,
+                  });
+                } catch (emailErr) {
+                  console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
+                }
               }
             }
 
@@ -485,17 +485,17 @@ export function initializeBillingCron(): void {
               warningCount++;
               console.log(`[billing-cron] Sent 5D New Member payment-required warning to company ${sub.userCompanyId}`);
             } else {
-              // Legacy community path: existing "no action needed" email.
+              // Legacy community path: branded "no action needed" email.
+              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+              if (!adminEmail) {
+                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping legacy free-period warning`);
+                continue;
+              }
               try {
-                await (emailService as any).sendEmail({
-                  to: company.email,
-                  subject: 'Your free period is ending soon',
-                  html: `
-                    <h2>Your free period is ending soon</h2>
-                    <p>Hi ${company.companyName || 'there'},</p>
-                    <p>Your ${sub.freeMonthsTotal}-month free period will end next month. After that, your ongoing community discount will be applied automatically.</p>
-                    <p>No action is needed, we just wanted to give you a heads up.</p>
-                  `,
+                await emailApiService.sendLegacyFreePeriodWarningEmail({
+                  to: adminEmail.email,
+                  firstName: adminEmail.firstName || 'there',
+                  freeMonthsTotal: sub.freeMonthsTotal,
                 });
               } catch (emailErr) {
                 console.error(`[billing-cron] Failed to send legacy warning email for company ${sub.userCompanyId}:`, emailErr);
