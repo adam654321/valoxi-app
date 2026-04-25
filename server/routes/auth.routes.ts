@@ -62,6 +62,7 @@
       lastName: result.user.lastName,
       isSystemAdmin: result.user.isSystemAdmin ?? false,
       onboardingCompleted: result.user.onboardingCompleted ?? false,
+      checklistCompleted: result.user.checklistCompleted ?? false,
       company: result.company,
       permissions: req.session.permissions ?? null,
       viewingAs: req.session.adminViewingAsUserId

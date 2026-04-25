@@ -1,0 +1,271 @@
+BUILD PROMPT — Activation checklist fix (#105)
+
+OBJECTIVE
+Introduce users.checklist_completed (boolean, default false, not null), repoint
+all activation-checklist read/write surfaces to the new column, and add the
+new field alongside (not replacing) onboardingCompleted in the AuthResult /
+/me / AuthUser shapes. The setup wizard /complete write, the App.tsx route
+guard, and the /auth/magic redirect all stay unchanged. Single logical
+change. Schema migration via drizzle-kit push.
+
+RELEASE GATE
+Dev only. Do NOT deploy to prod. Do NOT run drizzle-kit on prod. Do NOT touch
+the prod DB.
+
+PRE-FLIGHT (read-only, 1 minute)
+Re-confirm the surface line numbers from the assessment have not drifted
+since that report was generated. If any surface has moved, stop and report
+before proceeding. Confirm that schema users.checklistCompleted does not yet
+exist (Drizzle and DB).
+
+CHANGES (apply in this order)
+
+CHANGE 1 of 13: shared/schema/core.ts — add checklistCompleted column
+File: shared/schema/core.ts
+Find this exact line in the users table definition (currently around line 38):
+  onboardingCompletedAt: timestamp("onboarding_completed_at"),
+Insert this NEW line directly after it:
+  checklistCompleted: boolean("checklist_completed").default(false).notNull(),
+
+CHANGE 2 of 13: Apply schema to dev DB via drizzle-kit push
+Command:
+  npx drizzle-kit push
+Expected: prompt shows ADD COLUMN checklist_completed on users with no data
+loss. Accept. Verify post-run with information_schema:
+  SELECT column_name, data_type, is_nullable, column_default
+  FROM information_schema.columns
+  WHERE table_name = 'users' AND column_name = 'checklist_completed';
+Expected: 1 row, boolean, NOT NULL, default false.
+
+CHANGE 3 of 13: server/routes/onboarding.routes.ts — /progress SELECT
+File: server/routes/onboarding.routes.ts (around lines 26-29)
+BEFORE:
+  const [user] = await db
+    .select({ onboardingCompleted: users.onboardingCompleted })
+    .from(users)
+    .where(eq(users.id, userId));
+AFTER:
+  const [user] = await db
+    .select({ checklistCompleted: users.checklistCompleted })
+    .from(users)
+    .where(eq(users.id, userId));
+
+CHANGE 4 of 13: server/routes/onboarding.routes.ts — /progress short-circuit
+File: server/routes/onboarding.routes.ts (around lines 31-45)
+BEFORE:
+  if (user?.onboardingCompleted) {
+    return sendSuccess(res, {
+      steps: {
+        createTarget: true,
+        addContact: true,
+        sendPortal: true,
+        uploadDocuments: true,
+        generateAnalysis: true,
+        saveModel: true,
+        generateDocument: true,
+      },
+      completedCount: TOTAL_STEPS,
+      onboardingCompleted: true,
+    });
+  }
+AFTER:
+  if (user?.checklistCompleted) {
+    return sendSuccess(res, {
+      steps: {
+        createTarget: true,
+        addContact: true,
+        sendPortal: true,
+        uploadDocuments: true,
+        generateAnalysis: true,
+        saveModel: true,
+        generateDocument: true,
+      },
+      completedCount: TOTAL_STEPS,
+      checklistCompleted: true,
+    });
+  }
+
+CHANGE 5 of 13: server/routes/onboarding.routes.ts — /progress final return shape
+File: server/routes/onboarding.routes.ts (the sendSuccess at the bottom of
+the GET /progress handler, around line 124)
+BEFORE:
+  sendSuccess(res, {
+    steps,
+    completedCount,
+    onboardingCompleted: false,
+  });
+AFTER:
+  sendSuccess(res, {
+    steps,
+    completedCount,
+    checklistCompleted: false,
+  });
+
+CHANGE 6 of 13: server/routes/onboarding.routes.ts — /checklist-complete write
+File: server/routes/onboarding.routes.ts (around lines 136-142)
+BEFORE:
+  await db
+    .update(users)
+    .set({
+      onboardingCompleted: true,
+      onboardingCompletedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+AFTER:
+  await db
+    .update(users)
+    .set({
+      checklistCompleted: true,
+    })
+    .where(eq(users.id, userId));
+Note: this handler intentionally NO LONGER writes onboardingCompleted or
+onboardingCompletedAt. Those are owned by the setup wizard /complete handler
+(unchanged). The /checklist-complete handler now writes only the new flag.
+
+CHANGE 7 of 13: client/src/pages/dashboard.tsx — render gate
+File: client/src/pages/dashboard.tsx (around line 93)
+BEFORE:
+  {!user.onboardingCompleted && <ActivationChecklist />}
+AFTER:
+  {!user.checklistCompleted && <ActivationChecklist />}
+
+CHANGE 8 of 13: ActivationChecklist.tsx — interface field rename
+File: client/src/components/onboarding/ActivationChecklist.tsx (around line 32)
+BEFORE:
+  onboardingCompleted: boolean;
+AFTER:
+  checklistCompleted: boolean;
+
+CHANGE 9 of 13: ActivationChecklist.tsx — early-return guard
+File: client/src/components/onboarding/ActivationChecklist.tsx (around line 130)
+BEFORE:
+  if (dismissed || isLoading || !progress || progress.onboardingCompleted) {
+AFTER:
+  if (dismissed || isLoading || !progress || progress.checklistCompleted) {
+
+CHANGE 10 of 13: server/services/auth.service.ts — AuthResult interface
+File: server/services/auth.service.ts (around line 26)
+Find this exact line in the AuthResult interface:
+  onboardingCompleted?: boolean;
+Insert this NEW line directly after it:
+    checklistCompleted?: boolean;
+(Note: same indentation level as onboardingCompleted, i.e. inside the user
+object literal.)
+
+CHANGE 11 of 13: server/services/auth.service.ts — getCurrentUser return
+File: server/services/auth.service.ts (around line 126)
+Find this exact line in the getCurrentUser return block:
+  onboardingCompleted: user.onboardingCompleted ?? false,
+Insert this NEW line directly after it:
+        checklistCompleted: user.checklistCompleted ?? false,
+(Note: match the indentation of the surrounding object literal.)
+
+CHANGE 12 of 13: server/routes/auth.routes.ts — /me response shape
+File: server/routes/auth.routes.ts (around line 64)
+Find this exact line in the GET /me sendSuccess block:
+  onboardingCompleted: result.user.onboardingCompleted ?? false,
+Insert this NEW line directly after it:
+      checklistCompleted: result.user.checklistCompleted ?? false,
+(Note: match the indentation of the surrounding sendSuccess call.)
+
+CHANGE 13 of 13: client/src/hooks/useAuth.ts — AuthUser interface
+File: client/src/hooks/useAuth.ts (around line 11)
+Find this exact line in the AuthUser interface:
+  onboardingCompleted?: boolean;
+Insert this NEW line directly after it:
+  checklistCompleted?: boolean;
+
+V-CHECKS (report each as PASS or FAIL with one line of evidence)
+
+V1 — Drizzle schema: shared/schema/core.ts users table now has both
+    onboardingCompleted and checklistCompleted columns, both
+    boolean.notNull().default(false).
+    Evidence: grep result.
+
+V2 — Dev DB column: information_schema query confirms
+    users.checklist_completed exists, type=boolean, is_nullable=NO,
+    column_default=false.
+
+V3 — Dev DB data: SELECT COUNT(*), SUM(CASE WHEN checklist_completed
+    THEN 1 ELSE 0 END), SUM(CASE WHEN onboarding_completed THEN 1 ELSE 0 END)
+    FROM users; Expected: total unchanged, checklist_completed sum = 0
+    (every existing row defaults to false, including the 12 users who
+    currently have onboarding_completed = true). This is the intended
+    outcome — they now correctly show the activation checklist again.
+
+V4 — /progress SELECT reads users.checklistCompleted only. grep shows
+    .select({ checklistCompleted: users.checklistCompleted }) and zero
+    other reads of users.onboardingCompleted in this file.
+
+V5 — /progress short-circuit: grep confirms branch keyed on
+    user?.checklistCompleted and response payload includes
+    checklistCompleted: true with no onboardingCompleted key.
+
+V6 — /progress final return: sendSuccess at bottom of handler returns
+    checklistCompleted: false with no onboardingCompleted key.
+
+V7 — /checklist-complete write: db.update(users).set({...}) in this
+    handler now sets ONLY checklistCompleted: true. No onboardingCompleted
+    write, no onboardingCompletedAt write. grep confirms.
+
+V8 — /complete (setup wizard) UNTOUCHED: db.update(users).set({...}) in
+    POST /complete still writes onboardingCompleted: true,
+    onboardingCompletedAt: new Date(), jobTitle, hearAboutUs. Byte-for-byte
+    unchanged from pre-build state.
+
+V9 — dashboard.tsx render gate: grep confirms
+    {!user.checklistCompleted && <ActivationChecklist />} is present and
+    no occurrence of !user.onboardingCompleted remains in dashboard.tsx.
+
+V10 — ActivationChecklist OnboardingProgress interface: grep confirms
+     checklistCompleted: boolean; is present in the interface and
+     onboardingCompleted: boolean; is no longer present in the interface.
+
+V11 — ActivationChecklist early-return: grep confirms
+     progress.checklistCompleted is the field read in the dismissed
+     guard, and progress.onboardingCompleted is no longer read anywhere
+     in this file.
+
+V12 — AuthResult interface: grep confirms BOTH onboardingCompleted?:
+     boolean; AND checklistCompleted?: boolean; are present on the user
+     object inside AuthResult.
+
+V13 — getCurrentUser return: grep confirms BOTH onboardingCompleted:
+     user.onboardingCompleted ?? false AND checklistCompleted:
+     user.checklistCompleted ?? false are returned.
+
+V14 — /me response shape: grep confirms BOTH onboardingCompleted:
+     result.user.onboardingCompleted ?? false AND checklistCompleted:
+     result.user.checklistCompleted ?? false are returned by sendSuccess.
+
+V15 — AuthUser interface in useAuth.ts: grep confirms BOTH
+     onboardingCompleted?: boolean; AND checklistCompleted?: boolean;
+     are present.
+
+V16 — Untouched surfaces (re-grep):
+     (a) server/routes/auth.routes.ts /auth/magic redirect still reads
+         user.onboardingCompleted === false and redirects to /onboarding.
+     (b) client/src/App.tsx route guard still reads
+         user.onboardingCompleted === false && !user.viewingAs and
+         renders the /onboarding redirect Switch.
+
+V17 — TypeScript compile: npx tsc --noEmit shows no NEW errors. Pre-build
+     baseline error count if non-zero must match post-build count exactly.
+
+V18 — Server restart clean: tsx watcher reloads with no startup errors,
+     no schema mismatch warnings, no missing import errors.
+
+REPORT FORMAT
+
+For each V-check: PASS or FAIL on its own line, followed by one line of
+evidence (grep output snippet, query result row, or "no errors").
+
+End with:
+  OVERALL: PASS / FAIL
+  Files changed: [list]
+  Schema changes: [yes/no, with column name]
+  Drizzle migration applied to dev: [yes/no]
+  Ready for browser smoke: [yes/no]
+
+Do NOT continue past failed V-checks. If anything fails, stop and report
+before any further edits.

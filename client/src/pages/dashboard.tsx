@@ -90,7 +90,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {!user.onboardingCompleted && <ActivationChecklist />}
+      {!user.checklistCompleted && <ActivationChecklist />}
 
       {/* Key Metrics Cards */}
       {isLoading ? (

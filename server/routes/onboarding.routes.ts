@@ -24,11 +24,11 @@ router.get('/progress', asyncHandler(async (req: Request, res: Response) => {
   }
 
   const [user] = await db
-    .select({ onboardingCompleted: users.onboardingCompleted })
+    .select({ checklistCompleted: users.checklistCompleted })
     .from(users)
     .where(eq(users.id, userId));
 
-  if (user?.onboardingCompleted) {
+  if (user?.checklistCompleted) {
     return sendSuccess(res, {
       steps: {
         createTarget: true,
@@ -40,7 +40,7 @@ router.get('/progress', asyncHandler(async (req: Request, res: Response) => {
         generateDocument: true,
       },
       completedCount: TOTAL_STEPS,
-      onboardingCompleted: true,
+      checklistCompleted: true,
     });
   }
 
@@ -123,7 +123,7 @@ router.get('/progress', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, {
     steps,
     completedCount,
-    onboardingCompleted: false,
+    checklistCompleted: false,
   });
 }));
 
@@ -136,8 +136,7 @@ router.post('/checklist-complete', asyncHandler(async (req: Request, res: Respon
   await db
     .update(users)
     .set({
-      onboardingCompleted: true,
-      onboardingCompletedAt: new Date(),
+      checklistCompleted: true,
     })
     .where(eq(users.id, userId));
 

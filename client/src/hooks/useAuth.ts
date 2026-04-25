@@ -9,6 +9,7 @@ export interface AuthUser {
   lastName: string;
   isSystemAdmin?: boolean;
   onboardingCompleted?: boolean;
+  checklistCompleted?: boolean;
   permissions?: Record<string, boolean> | null;
   company?: {
     id: number;

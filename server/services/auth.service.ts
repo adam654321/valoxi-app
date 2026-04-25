@@ -24,6 +24,7 @@ export interface AuthResult {
     lastName: string;
     isSystemAdmin?: boolean;
     onboardingCompleted?: boolean;
+    checklistCompleted?: boolean;
   };
   company: UserCompany | null;
 }
@@ -124,6 +125,7 @@ export class AuthService {
         lastName: user.lastName,
         isSystemAdmin: user.isSystemAdmin ?? false,
         onboardingCompleted: user.onboardingCompleted ?? false,
+        checklistCompleted: user.checklistCompleted ?? false,
       },
       company: userCompany || null,
     };

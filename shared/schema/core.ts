@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
   onboardingStep: varchar("onboarding_step", { length: 50 }).default("create_target"),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
+  checklistCompleted: boolean("checklist_completed").default(false).notNull(),
   hearAboutUs: varchar("hear_about_us", { length: 100 }),
   jobTitle: varchar("job_title", { length: 100 }),
   clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),

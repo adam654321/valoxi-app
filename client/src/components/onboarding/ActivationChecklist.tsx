@@ -29,7 +29,7 @@ interface OnboardingProgress {
     generateDocument: boolean;
   };
   completedCount: number;
-  onboardingCompleted: boolean;
+  checklistCompleted: boolean;
 }
 
 interface StepConfig {
@@ -127,7 +127,7 @@ export default function ActivationChecklist() {
     },
   });
 
-  if (dismissed || isLoading || !progress || progress.onboardingCompleted) {
+  if (dismissed || isLoading || !progress || progress.checklistCompleted) {
     return null;
   }
 
