@@ -905,6 +905,9 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                 <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                   <DialogTitle>Upload New Document</DialogTitle>
+                  <DialogDescription>
+                    Our AI will try to extract information related to the required document types. Any other documents you upload will be saved to the deal for future reference.
+                  </DialogDescription>
                 </DialogHeader>
 
                 <Form {...documentForm}>
@@ -912,6 +915,10 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-medium">Select File *</label>
+                        {/* Max file size enforced server-side at server/routes/documents-files.routes.ts (multer limits.fileSize = 10 * 1024 * 1024). Update both if changed. */}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Max file size: 10 MB per document
+                        </p>
                         <div className="mt-2">
                           <input
                             ref={fileInputRef}
