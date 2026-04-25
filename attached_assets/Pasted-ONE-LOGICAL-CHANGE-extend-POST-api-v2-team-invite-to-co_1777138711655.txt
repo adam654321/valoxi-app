@@ -1,0 +1,347 @@
+ONE LOGICAL CHANGE: extend POST /api/v2/team/invite to collect firstName,
+lastName, jobTitle, and atomically pre-create a users row alongside the
+user_invitations row. Fix the seat-count double-count introduced by the
+pre-create.
+
+DEV ONLY. Do not deploy to prod. Do not apply NOT NULL to user_invitations
+columns yet (we will do that as a final step after Prompt 5 verifies the
+end-to-end flow).
+
+DO NOT MODIFY:
+  - server/routes/webhooks.routes.ts (Prompt 3)
+  - server/services/team.service.ts acceptInvitation method (Prompt 3)
+  - server/repositories/team.repository.ts acceptInvitation method (Prompt 3)
+  - server/routes/team.routes.ts the PUT /invitations/:id handler (Prompt 4)
+  - client/src/* (Prompt 5)
+  - server/email.ts (Prompt 5)
+
+STEP 1 — Update the Zod schema in server/routes/team.routes.ts
+Find the POST /invite handler. The existing Zod object is:
+  z.object({ email: z.string().email(), role: z.string().min(1), message: z.string().optional() })
+Replace with:
+  z.object({
+    email: z.string().email().transform(v => v.toLowerCase()),
+    firstName: z.string().min(1).max(100).trim(),
+    lastName: z.string().min(1).max(100).trim(),
+    jobTitle: z.string().max(100).trim().optional(),
+    role: z.string().min(1),
+    message: z.string().optional(),
+  })
+
+Note: email is now lowercased at the schema layer so every downstream
+consumer sees a consistent value. Existing email.toLowerCase() calls in
+the service are now redundant but harmless — leave them alone in this
+prompt.
+
+In the same handler body, pass the new fields through to
+teamService.createInvitation. The current call signature is:
+  teamService.createInvitation(userId, userCompanyId, email, role, message, req.ip, getUserWithPermissions, baseUrl)
+
+Update to:
+  teamService.createInvitation({
+    inviterUserId: userId,
+    userCompanyId,
+    email, firstName, lastName, jobTitle, role, message,
+    ipAddress: req.ip,
+    getUserWithPermissions: usersRepository.getUserWithPermissions.bind(usersRepository),
+    baseUrl,
+  })
+
+Switching to a single object parameter because we have grown past 6
+positional arguments. Update the service signature accordingly in Step 2.
+
+STEP 2 — Update teamService.createInvitation in server/services/team.service.ts
+Replace the existing signature and body with:
+
+  async createInvitation(params: {
+    inviterUserId: number;
+    userCompanyId: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    jobTitle?: string;
+    role: string;
+    message?: string;
+    ipAddress?: string;
+    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>;
+    baseUrl?: string;
+  }): Promise<UserInvitation & { inviteUrl?: string }> {
+    const {
+      inviterUserId, userCompanyId, email, firstName, lastName, jobTitle,
+      role, message, ipAddress, getUserWithPermissions, baseUrl
+    } = params;
+
+    if (getUserWithPermissions) {
+      const userPerms = await getUserWithPermissions(inviterUserId);
+      if (!userPerms?.permissions?.canManageUsers && !userPerms?.isCompanyAdmin) {
+        throw new ForbiddenError('Insufficient permissions to invite users');
+      }
+    }
+
+    // Cross-company email guard: users.email is UNIQUE, so an email already
+    // present in any users row blocks creation here (not just same-company).
+    // The legacy check only blocked same-company; the pre-create needs a
+    // hard guard because the users row INSERT inside the transaction will
+    // hit the unique constraint otherwise.
+    const existingUser = await teamRepository.getUserByEmail(email);
+    if (existingUser) {
+      if (existingUser.userCompanyId === userCompanyId) {
+        throw new BadRequestError('User already exists in your company');
+      }
+      throw new BadRequestError('A user with this email already exists');
+    }
+
+    const existingInvitations = await teamRepository.getInvitationsByCompany(userCompanyId);
+    if (existingInvitations.find(inv => inv.email === email && inv.invitationStatus === 'pending')) {
+      throw new BadRequestError('Invitation already sent to this email address');
+    }
+
+    const subscription = await billingService.getSubscription(userCompanyId);
+    if (subscription) {
+      const planKey = subscription.planKey as PlanKey;
+      const effectiveMaxSeats = getMaxSeats(planKey, subscription.additionalSeats, subscription.enterpriseOverrides as Record<string, unknown> | null);
+
+      if (effectiveMaxSeats !== null) {
+        const { db } = await import('../db');
+        const { users } = await import('@shared/schema/core');
+        const { eq, or, and, sql: sqlTag } = await import('drizzle-orm');
+        const activeUsers = await db.select({ count: sqlTag<number>`count(*)::int` })
+          .from(users)
+          .where(and(
+            or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
+            eq(users.isActive, true)
+          ));
+        // Seat-count fix for #100: pre-created invitee shells are now in
+        // activeUsers (isActive=true with userCompanyId set at invite time).
+        // Dropping pendingInvitations from the sum to prevent double-counting.
+        const consumedSeats = activeUsers[0]?.count ?? 0;
+
+        if (consumedSeats >= effectiveMaxSeats) {
+          const canPurchaseMore = hasFeature(planKey, 'additionalSeatPurchasing');
+          const error = new ForbiddenError('Seat limit reached');
+          (error as any).seatLimitData = {
+            error: 'seat_limit_reached',
+            currentSeats: consumedSeats,
+            maxSeats: effectiveMaxSeats,
+            canPurchaseMore,
+          };
+          throw error;
+        }
+      }
+    }
+
+    const invitationToken = randomUUID();
+    const invitation = await teamRepository.createInvitationWithUserShell({
+      userCompanyId,
+      email,
+      firstName,
+      lastName,
+      jobTitle,
+      invitedBy: inviterUserId,
+      invitationToken,
+      invitedRole: role,
+      invitationMessage: message || '',
+      ipAddressSent: ipAddress,
+    });
+
+    if (baseUrl) {
+      emailApiService.sendTeamInvitation(invitation.id, baseUrl).catch(err => {
+        console.error(`[TEAM] Failed to send invitation email for invitation ${invitation.id}:`, err.message);
+      });
+    }
+
+    return invitation;
+  }
+
+The legacy positional signature is removed. There are no other callers of
+teamService.createInvitation in the codebase (verify with a grep before
+proceeding); the route handler is the only caller.
+
+STEP 3 — Add createInvitationWithUserShell to teamRepository
+File: server/repositories/team.repository.ts
+Add a new method (do NOT delete the existing createInvitation method — it
+may still be referenced elsewhere; we will remove it in Prompt 4 if so).
+
+  async createInvitationWithUserShell(input: {
+    userCompanyId: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    jobTitle?: string;
+    invitedBy: number;
+    invitationToken: string;
+    invitedRole: string;
+    invitationMessage: string;
+    ipAddressSent?: string;
+  }): Promise<UserInvitation> {
+    return await db.transaction(async (tx) => {
+      // 1. Insert the pre-created users shell row.
+      //    clerkUserId NULL — Clerk webhook will populate on first sign-up.
+      //    passwordHash NULL — no password-based auth path for this user.
+      //    isActive true — counts toward seats, eligible for orphan-link.
+      //    emailVerified false — Clerk verifies on sign-up.
+      await tx.insert(users).values({
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        jobTitle: input.jobTitle ?? null,
+        userCompanyId: input.userCompanyId,
+        currentCompanyId: input.userCompanyId,
+        role: 'user',
+        userRole: input.invitedRole,
+        isCompanyAdmin: false,
+        isActive: true,
+        emailVerified: false,
+      } as InsertUser);
+
+      // 2. Insert the invitation row, now carrying name + jobTitle for
+      //    audit and re-send purposes.
+      const [newInvitation] = await tx.insert(userInvitations).values({
+        userCompanyId: input.userCompanyId,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        jobTitle: input.jobTitle ?? null,
+        invitedBy: input.invitedBy,
+        invitationToken: input.invitationToken,
+        invitedRole: input.invitedRole,
+        invitationMessage: input.invitationMessage,
+        invitationStatus: 'pending',
+        ipAddressSent: input.ipAddressSent,
+      }).returning();
+
+      return newInvitation;
+    });
+  }
+
+If either insert fails (unique-constraint violation on email, FK
+violation, anything else), the transaction rolls back and the caller sees
+a clean error. The cross-company email check above is the friendly path;
+the transaction is the safety net.
+
+STEP 4 — Verification: TypeScript compile
+Run npm run check (or whatever the tsc invocation is in this repo).
+
+Expected: no NEW errors. The 3 pre-existing errors from after Prompt 1
+(App.tsx Register import, two TeamMember projection mismatches) are
+acceptable to remain — they will be addressed in Prompt 4.
+
+Report any new errors verbatim. Stop and ask if any appear that are not
+on the pre-existing list.
+
+STEP 5 — Verification: smoke test the new flow against dev DB
+
+Important: do NOT use the team management UI for this step (the dialog
+still has only email/role/message — that is Prompt 5). Use a direct
+authenticated API call.
+
+5.1 — Capture starting state. Run and report:
+  SELECT id, email, first_name, last_name, job_title,
+         clerk_user_id, is_active, email_verified, password_hash IS NULL AS has_no_password,
+         user_company_id, user_role
+    FROM users
+   WHERE clerk_user_id IS NULL AND user_company_id IS NOT NULL
+   ORDER BY id DESC LIMIT 5;
+  SELECT id, email, first_name, last_name, job_title, invitation_status, invited_role
+    FROM user_invitations
+   ORDER BY id DESC LIMIT 5;
+
+5.2 — Send a fresh invite via direct API call. Find a valid CSRF token and
+session cookie for an authenticated company-admin dev user (Adam's dev
+account is fine). Then:
+  curl -X POST http://localhost:5000/api/v2/team/invite \
+    -H "Content-Type: application/json" \
+    -H "Cookie: <session>" \
+    -H "X-CSRF-Token: <csrf>" \
+    -d '{
+      "email": "Test.Invitee+prompt2@example.com",
+      "firstName": "Test",
+      "lastName": "Invitee",
+      "jobTitle": "Senior Analyst",
+      "role": "analyst",
+      "message": "Smoke test for #100 prompt 2"
+    }'
+Report the full HTTP response body.
+
+5.3 — Verify the rows after. Run and report:
+  SELECT id, email, first_name, last_name, job_title,
+         clerk_user_id, is_active, email_verified, password_hash IS NULL AS has_no_password,
+         user_company_id, current_company_id, user_role, is_company_admin, role
+    FROM users
+   WHERE email = 'test.invitee+prompt2@example.com';
+  SELECT id, email, first_name, last_name, job_title, invitation_status,
+         invited_role, invitation_message, invitation_token IS NOT NULL AS has_token
+    FROM user_invitations
+   WHERE email = 'test.invitee+prompt2@example.com';
+
+Expected:
+  - Exactly one users row, with email lowercased ('test.invitee+prompt2@example.com'),
+    first_name='Test', last_name='Invitee', job_title='Senior Analyst',
+    clerk_user_id NULL, is_active=true, email_verified=false,
+    has_no_password=true, user_company_id and current_company_id both
+    set to the inviter's company, user_role='analyst',
+    is_company_admin=false, role='user'.
+  - Exactly one user_invitations row, status='pending', invited_role='analyst',
+    first_name='Test', last_name='Invitee', job_title='Senior Analyst',
+    has_token=true.
+
+5.4 — Verify atomicity. Send the SAME invite again:
+  curl -X POST http://localhost:5000/api/v2/team/invite \
+    -H "Content-Type: application/json" \
+    -H "Cookie: <session>" \
+    -H "X-CSRF-Token: <csrf>" \
+    -d '{
+      "email": "Test.Invitee+prompt2@example.com",
+      "firstName": "Test", "lastName": "Invitee",
+      "role": "analyst"
+    }'
+
+Expected: HTTP 4xx with message "A user with this email already exists"
+or "Invitation already sent to this email address" (whichever the cross-
+company guard hits first; the same-company duplicate-pending guard runs
+after the cross-company guard). Report which error fires and the
+HTTP status code.
+
+5.5 — Verify rows did not change after the failed retry. Re-run the two
+SELECTs from 5.3. Expected: still exactly one row in each table, no
+duplicates, no orphans. This proves the transaction held.
+
+5.6 — Verify seat count is not double-counting. Run and report:
+  SELECT COUNT(*) AS active_users
+    FROM users
+   WHERE (user_company_id = <ADAM_DEV_COMPANY_ID> OR current_company_id = <ADAM_DEV_COMPANY_ID>)
+     AND is_active = true;
+  SELECT COUNT(*) AS pending_invitations
+    FROM user_invitations
+   WHERE user_company_id = <ADAM_DEV_COMPANY_ID>
+     AND invitation_status = 'pending';
+
+Report both numbers. The active_users number should equal the previous
+active_users count + 1 (the new shell). The pending_invitations number
+should also have incremented by 1. Under the OLD code these would both
+have contributed to consumedSeats; under the NEW code only active_users
+does. Confirm the seat count reported in the API logs (or inspect by
+sending one more invite and checking the seat-limit error path if a
+small dev plan is configured to test the boundary — optional).
+
+5.7 — Cleanup the test data:
+  DELETE FROM user_invitations WHERE email = 'test.invitee+prompt2@example.com';
+  DELETE FROM users WHERE email = 'test.invitee+prompt2@example.com';
+Confirm both DELETEs report 1 row affected.
+
+STEP 6 — Report back
+1. Diff applied to server/routes/team.routes.ts (verbatim, with line numbers)
+2. Diff applied to server/services/team.service.ts (verbatim, with line numbers)
+3. Diff applied to server/repositories/team.repository.ts (verbatim, with line numbers)
+4. npm run check output — flag any new errors
+5. Output of step 5.1 (starting state)
+6. Output of step 5.2 (invite POST response)
+7. Output of step 5.3 (rows after)
+8. Output of step 5.4 (duplicate POST response, status code, error message)
+9. Output of step 5.5 (rows did not change)
+10. Output of step 5.6 (seat counts)
+11. Output of step 5.7 (cleanup)
+12. Confirmation that no other files were modified
+13. Confirmation that the email send (sendTeamInvitation) ran without
+    error in the server logs (the email body is still the un-personalised
+    legacy template; that is Prompt 5)

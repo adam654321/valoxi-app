@@ -14,21 +14,44 @@ interface UserWithPermissions {
 }
 
 export class TeamService {
-  async createInvitation(
-    userId: number, userCompanyId: number, email: string, role: string, message?: string, ipAddress?: string,
-    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>,
-    baseUrl?: string
-  ): Promise<UserInvitation & { inviteUrl?: string }> {
+  async createInvitation(params: {
+    inviterUserId: number;
+    userCompanyId: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    jobTitle?: string;
+    role: string;
+    message?: string;
+    ipAddress?: string;
+    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>;
+    baseUrl?: string;
+  }): Promise<UserInvitation & { inviteUrl?: string }> {
+    const {
+      inviterUserId, userCompanyId, email, firstName, lastName, jobTitle,
+      role, message, ipAddress, getUserWithPermissions, baseUrl
+    } = params;
+
     if (getUserWithPermissions) {
-      const userPerms = await getUserWithPermissions(userId);
+      const userPerms = await getUserWithPermissions(inviterUserId);
       if (!userPerms?.permissions?.canManageUsers && !userPerms?.isCompanyAdmin) {
         throw new ForbiddenError('Insufficient permissions to invite users');
       }
     }
+
+    // Cross-company email guard: users.email is UNIQUE, so an email already
+    // present in any users row blocks creation here (not just same-company).
+    // The legacy check only blocked same-company; the pre-create needs a
+    // hard guard because the users row INSERT inside the transaction will
+    // hit the unique constraint otherwise.
     const existingUser = await teamRepository.getUserByEmail(email);
-    if (existingUser && existingUser.userCompanyId === userCompanyId) {
-      throw new BadRequestError('User already exists in your company');
+    if (existingUser) {
+      if (existingUser.userCompanyId === userCompanyId) {
+        throw new BadRequestError('User already exists in your company');
+      }
+      throw new BadRequestError('A user with this email already exists');
     }
+
     const existingInvitations = await teamRepository.getInvitationsByCompany(userCompanyId);
     if (existingInvitations.find(inv => inv.email === email && inv.invitationStatus === 'pending')) {
       throw new BadRequestError('Invitation already sent to this email address');
@@ -49,8 +72,10 @@ export class TeamService {
             or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
             eq(users.isActive, true)
           ));
-        const pendingInvitations = existingInvitations.filter(inv => inv.invitationStatus === 'pending').length;
-        const consumedSeats = (activeUsers[0]?.count ?? 0) + pendingInvitations;
+        // Seat-count fix for #100: pre-created invitee shells are now in
+        // activeUsers (isActive=true with userCompanyId set at invite time).
+        // Dropping pendingInvitations from the sum to prevent double-counting.
+        const consumedSeats = activeUsers[0]?.count ?? 0;
 
         if (consumedSeats >= effectiveMaxSeats) {
           const canPurchaseMore = hasFeature(planKey, 'additionalSeatPurchasing');
@@ -67,18 +92,25 @@ export class TeamService {
     }
 
     const invitationToken = randomUUID();
-    const invitation = await teamRepository.createInvitation({
-      userCompanyId, email: email.toLowerCase(), invitedBy: userId, invitationToken,
-      invitedRole: role, invitationMessage: message || '', invitationStatus: 'pending', ipAddressSent: ipAddress,
+    const invitation = await teamRepository.createInvitationWithUserShell({
+      userCompanyId,
+      email,
+      firstName,
+      lastName,
+      jobTitle,
+      invitedBy: inviterUserId,
+      invitationToken,
+      invitedRole: role,
+      invitationMessage: message || '',
+      ipAddressSent: ipAddress,
     });
-    
-    // Send invitation email asynchronously (don't block invitation creation)
+
     if (baseUrl) {
       emailApiService.sendTeamInvitation(invitation.id, baseUrl).catch(err => {
         console.error(`[TEAM] Failed to send invitation email for invitation ${invitation.id}:`, err.message);
       });
     }
-    
+
     return invitation;
   }
 

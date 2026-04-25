@@ -43,6 +43,58 @@ export class TeamRepository {
     return newInvitation;
   }
 
+  async createInvitationWithUserShell(input: {
+    userCompanyId: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    jobTitle?: string;
+    invitedBy: number;
+    invitationToken: string;
+    invitedRole: string;
+    invitationMessage: string;
+    ipAddressSent?: string;
+  }): Promise<UserInvitation> {
+    return await db.transaction(async (tx) => {
+      // 1. Insert the pre-created users shell row.
+      //    clerkUserId NULL — Clerk webhook will populate on first sign-up.
+      //    passwordHash NULL — no password-based auth path for this user.
+      //    isActive true — counts toward seats, eligible for orphan-link.
+      //    emailVerified false — Clerk verifies on sign-up.
+      await tx.insert(users).values({
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        jobTitle: input.jobTitle ?? null,
+        userCompanyId: input.userCompanyId,
+        currentCompanyId: input.userCompanyId,
+        role: 'user',
+        userRole: input.invitedRole,
+        isCompanyAdmin: false,
+        isActive: true,
+        emailVerified: false,
+      } as InsertUser);
+
+      // 2. Insert the invitation row, now carrying name + jobTitle for
+      //    audit and re-send purposes.
+      const [newInvitation] = await tx.insert(userInvitations).values({
+        userCompanyId: input.userCompanyId,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        jobTitle: input.jobTitle ?? null,
+        invitedBy: input.invitedBy,
+        invitationToken: input.invitationToken,
+        invitedRole: input.invitedRole,
+        invitationMessage: input.invitationMessage,
+        invitationStatus: 'pending',
+        ipAddressSent: input.ipAddressSent,
+      }).returning();
+
+      return newInvitation;
+    });
+  }
+
   async getInvitationByToken(token: string): Promise<InvitationWithDetails | undefined> {
     const [invitation] = await db.select({
       id: userInvitations.id, userCompanyId: userInvitations.userCompanyId, email: userInvitations.email,
