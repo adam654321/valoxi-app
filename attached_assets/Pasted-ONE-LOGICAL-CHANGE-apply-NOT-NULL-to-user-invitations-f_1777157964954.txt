@@ -1,0 +1,128 @@
+ONE LOGICAL CHANGE: apply NOT NULL to user_invitations.first_name and
+user_invitations.last_name. job_title stays nullable (it is optional at
+invite time per the dialog spec). Sync the schema file. Document in the
+drift register.
+
+Pre-condition: every invitation row created from Prompt 2 onwards has
+first_name and last_name populated. The only legacy nullable rows are
+the ones that existed before Prompt 1 (per Assessment 2 there were
+2 such rows in dev: ids 1 and 3, both already in non-pending status).
+
+DEV ONLY. Prod deploy comes after Adam V-checks.
+
+================================================================
+STEP 1 — Verify pre-condition: no NULLs in dev
+================================================================
+Run and report:
+  SELECT COUNT(*) FROM user_invitations WHERE first_name IS NULL;
+  SELECT COUNT(*) FROM user_invitations WHERE last_name IS NULL;
+  SELECT id, email, first_name, last_name, invitation_status
+    FROM user_invitations
+   WHERE first_name IS NULL OR last_name IS NULL;
+
+If any pending rows have NULL first_name or last_name, STOP and
+report. We do not apply NOT NULL while pending invitations would
+violate it.
+
+If only non-pending (accepted, cancelled, expired) rows have NULL
+values, that is acceptable: backfill them with placeholders before
+applying the constraint. The placeholder value is 'unknown' for both
+fields. Report the rows you backfilled.
+
+================================================================
+STEP 2 — Apply DDL via direct ALTER TABLE
+================================================================
+Run in a single transaction:
+
+BEGIN;
+
+-- Backfill any non-pending NULL rows from Step 1 (only if needed).
+-- Replace the WHERE clause with the specific row ids reported above.
+UPDATE user_invitations SET first_name = 'unknown' WHERE first_name IS NULL;
+UPDATE user_invitations SET last_name  = 'unknown' WHERE last_name  IS NULL;
+
+ALTER TABLE user_invitations
+  ALTER COLUMN first_name SET NOT NULL,
+  ALTER COLUMN last_name  SET NOT NULL;
+
+COMMIT;
+
+Report the row counts on each UPDATE and confirm the ALTER succeeded.
+
+================================================================
+STEP 3 — Sync schema file
+================================================================
+File: shared/schema/core.ts userInvitations table.
+
+Update the firstName and lastName declarations to add .notNull():
+
+-  firstName: varchar("first_name", { length: 100 }),
+-  lastName: varchar("last_name", { length: 100 }),
++  firstName: varchar("first_name", { length: 100 }).notNull(),
++  lastName: varchar("last_name", { length: 100 }).notNull(),
+   jobTitle: varchar("job_title", { length: 100 }),
+
+job_title stays nullable.
+
+================================================================
+STEP 4 — Drift register update
+================================================================
+Append a one-line entry to migrations/0003_parallel_redwing.sql:
+
+-- 25 April 2026 (#100 prompt 6): direct ALTER TABLE user_invitations
+-- ALTER COLUMN first_name SET NOT NULL, ALTER COLUMN last_name SET NOT NULL.
+-- Schema file synced.
+
+================================================================
+STEP 5 — Verification
+================================================================
+Run and report:
+
+  SELECT column_name, is_nullable FROM information_schema.columns
+   WHERE table_name = 'user_invitations'
+     AND column_name IN ('first_name', 'last_name', 'job_title')
+   ORDER BY column_name;
+
+Expected:
+  first_name | NO
+  job_title  | YES
+  last_name  | NO
+
+Run npm run check. Expected: zero errors.
+
+================================================================
+STEP 6 — Smoke: confirm a missing-name invite is rejected at insert
+================================================================
+We already proved Prompt 2's Zod schema rejects missing names at the
+HTTP layer. This smoke confirms the DB constraint is now also a
+backstop in case any future code path bypasses Zod.
+
+Direct SQL test:
+
+  -- This should fail with NOT NULL violation
+  INSERT INTO user_invitations (
+    user_company_id, email, invited_by, invitation_token, invited_role,
+    invitation_message, invitation_status
+  ) VALUES (
+    5, 'null-test@example.com', 1, 'null-test-token', 'analyst', '', 'pending'
+  );
+
+Expected: ERROR — null value in column "first_name" or "last_name"
+violates not-null constraint.
+
+Confirm and report the error message (do not catch it; just let it
+fail and report what Postgres said).
+
+If the insert somehow SUCCEEDS (it should not), DELETE the row
+immediately and STOP — that means the ALTER did not take effect.
+
+================================================================
+STEP 7 — Report back
+================================================================
+1. Output of Step 1 NULL counts and any backfilled rows
+2. Output of Step 2 (UPDATE row counts + COMMIT confirmation)
+3. Diff applied to shared/schema/core.ts
+4. Line appended to migrations/0003_parallel_redwing.sql
+5. Output of Step 5 verification queries + npm run check
+6. Output of Step 6 SQL insert error
+7. Confirmation that no other files were modified

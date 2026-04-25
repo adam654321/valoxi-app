@@ -9,3 +9,6 @@
 -- 25 April 2026 (#100 prompt 1): direct ALTER TABLE user_invitations
 -- ADD COLUMN first_name, last_name, job_title (all nullable);
 -- CREATE INDEX users_email_lower_idx. Schema file synced.
+-- 25 April 2026 (#100 prompt 6): direct ALTER TABLE user_invitations
+-- ALTER COLUMN first_name SET NOT NULL, ALTER COLUMN last_name SET NOT NULL.
+-- Schema file synced.
