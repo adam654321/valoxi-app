@@ -203,11 +203,6 @@ function ExpertCard({
                 <span className="text-xs capitalize font-medium">{result.confidence}</span>
               </div>
             )}
-            {result.processingTime && (
-              <p className="text-xs text-muted-foreground">
-                Processed in {(result.processingTime / 1000).toFixed(1)}s
-              </p>
-            )}
             {isClickable && (
               <div className="flex items-center text-xs text-primary mt-2 font-medium">
                 View full report <ChevronRight className="w-3 h-3 ml-1" />
@@ -793,9 +788,6 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
                 )}
                 {selectedExpert.confidence && (
                   <span>Confidence: <strong className="text-foreground capitalize">{selectedExpert.confidence}</strong></span>
-                )}
-                {selectedExpert.processingTime && (
-                  <span>Processed in: <strong className="text-foreground">{(selectedExpert.processingTime / 1000).toFixed(1)}s</strong></span>
                 )}
               </div>
             )}

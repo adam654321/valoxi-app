@@ -1144,15 +1144,6 @@ export function AnalysisDisplay({ results, isLoading, isRetryingAnalysis, onRetr
                 </div>
                 <span>•</span>
                 <span>Processed: {formatDate(result.createdAt)}</span>
-                {result.processingTime && (
-                  <>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {(result.processingTime / 1000).toFixed(1)}s
-                    </span>
-                  </>
-                )}
               </div>
             </div>
           </div>
