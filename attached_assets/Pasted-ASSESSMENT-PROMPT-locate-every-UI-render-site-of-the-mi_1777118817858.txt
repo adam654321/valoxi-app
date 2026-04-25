@@ -1,0 +1,131 @@
+ASSESSMENT PROMPT — locate every UI render site of the misleading
+per-call timer (#106)
+
+CONTEXT
+Action log #106 says: delete the timer display element from the
+expert analysis output component. Two visible surfaces have been
+confirmed in prod screenshots:
+- Expert analysis dashboard (the small "Processed in X.Xs" line on
+  every expert card, plus "Processed in: X.Xs" inside the per-expert
+  report modal header)
+- Uploaded document analysis card (the meta row showing
+  "Type: <Type> • Processed: <Date> • <clock icon> 7.7s")
+
+Before writing the build prompt I need a complete map of every UI
+render site of this timer in the frontend, plus confirmation of the
+TypeScript interface fields and any server-side coupling. I want zero
+surprises during the build.
+
+THIS IS AN ASSESSMENT ONLY. DO NOT MODIFY ANY FILES. Report only.
+No code edits, no schema changes, no checkpoints.
+
+TASK 1 — Codebase-wide grep for processingTime
+Run: grep -rn "processingTime" client/src/
+Report every match. Classify each into ONE of:
+  TYPE   : TypeScript interface field declaration only
+  API    : deserialisation, typing or pass-through only, not rendered
+  RENDER : actual JSX rendering of the value as user-visible UI text
+  OTHER  : anything else (logging, internal calc, dead code)
+Format: file:line | bucket | one-line snippet
+
+TASK 2 — Grep for the milliseconds-to-seconds conversion pattern
+Run: grep -rn "processingTime / 1000" client/src/
+Run: grep -rn "(processingTime / 1000)" client/src/
+Every match is near-certainly a UI render site. List file:line and
+one-line snippet for each.
+
+TASK 3 — Grep for similar timer patterns that might use other names
+Run: grep -rn "\.toFixed(1)}s" client/src/
+Run: grep -rn "durationMs" client/src/
+Run: grep -rn "elapsedMs" client/src/
+Run: grep -rn "duration / 1000" client/src/
+Goal: catch any per-call timer surface that does NOT use the literal
+field name "processingTime". Report each match or "no matches" per
+grep.
+
+TASK 4 — Read these three files in full and report current dev state
+File A: client/src/components/analysis/ExpertAnalysisDashboard.tsx
+File B: client/src/components/document-viewer/AnalysisDisplay.tsx
+File C: client/src/components/document-viewer/types.ts
+For each file report:
+- Does processingTime appear on a TypeScript interface declaration?
+  If yes, line number and exact declaration.
+- Does processingTime get rendered as user-visible UI? If yes, line
+  number(s) and the exact JSX block(s).
+- Anything else worth flagging (unusual usage, helper functions, etc.)
+
+TASK 5 — Confirm AnalysisDisplay.tsx meta-row context
+The current expectation from the local copy is that the meta row
+inside displayResults.map((result) => ...) renders something like:
+  <span>Type:</span> <badge>...</badge>
+  <span>•</span>
+  <span>Processed: {formatDate(result.createdAt)}</span>
+  {result.processingTime && (
+    <>
+      <span>•</span>
+      <span className="flex items-center gap-1">
+        <Clock className="w-3 h-3" />
+        {(result.processingTime / 1000).toFixed(1)}s
+      </span>
+    </>
+  )}
+
+Confirm or correct against the actual current dev file. Specifically:
+a) Is the "Processed: <date>" portion rendered OUTSIDE the
+   processingTime conditional? (so it stays after we delete the
+   conditional)
+b) Is `formatDate(result.createdAt)` the analysis-row creation date
+   (the date the document was analysed), or a different timestamp?
+c) After deleting the {result.processingTime && (<>...</>)} fragment,
+   would any orphan separator remain? (e.g., a trailing <span>•</span>
+   with nothing after it)
+d) Paste the exact current JSX block back so I can write the build
+   prompt against the actual current source (not the local copy).
+
+TASK 6 — Server-side coupling check
+Run: grep -rn "processingTime" server/
+Run: grep -rn "processingTime" shared/
+List every match with file:line and one-line snippet. Goal: confirm
+processingTime is computed and stored server-side and shipped via
+API responses, so deleting the frontend render does not break any
+backend logic, schema field, or downstream consumer.
+
+TASK 7 — Sibling file sweep in document-viewer/ and analysis/
+For each file below, report either "clean: no processingTime render"
+or paste the render block found:
+- client/src/components/document-viewer/DocumentPreview.tsx
+- client/src/components/document-viewer/DocumentViewer.tsx
+- client/src/components/document-viewer/index.ts
+- client/src/components/document-viewer.tsx (legacy thin re-export at
+  components root)
+- client/src/components/analysis/ExpertReportViews.tsx
+- client/src/components/analysis/ExplainButton.tsx
+
+TASK 8 — Wider candidate-area sweep for any fourth render site
+Run: grep -rn "processingTime" client/src/pages/
+Run: grep -rn "processingTime" client/src/components/target-company/
+Run: grep -rn "processingTime" client/src/components/target-companies/
+Run: grep -rn "processingTime" client/src/components/deal-documents/
+Run: grep -rn "processingTime" client/src/components/document-management.tsx
+Report every match with file:line and a one-line snippet. These are
+the most likely places for a render site I haven't already mapped.
+
+TASK 9 — Clock import disposition in AnalysisDisplay.tsx
+The current file imports Clock from lucide-react. After deleting the
+timer fragment in the displayResults.map block, would Clock still be
+used elsewhere in the file? List EVERY remaining Clock usage by line
+number and one-line snippet so I know whether the build prompt should
+keep the import or also remove it.
+
+REPORT FORMAT
+For each task, write the heading "TASK N RESULT" then findings.
+End the whole report with:
+
+TOTAL UI RENDER SITES IDENTIFIED: <number>
+1. <file>:<line> — <one-line description>
+2. <file>:<line> — <one-line description>
+...
+
+CRITICAL CONSTRAINT
+Read-only. No file edits. No commits. No checkpoints. No schema push.
+No package install. No dev server restart. Just grep, read, report.
