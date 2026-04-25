@@ -1,0 +1,116 @@
+BUILD PROMPT — Deal documents upload dialog helper text (#108)
+
+CONTEXT
+The internal "Upload New Document" dialog on the target company Documents
+tab currently shows no explanation of which files trigger AI extraction
+and no indication of the 10 MB max file size. Users do not learn the limit
+until upload fails. They also conflate the 10 AI-analyzable types with
+arbitrary deal paperwork (a usability trap, separately tracked as #107).
+
+This change adds two pieces of UI copy. Pure UI copy, single file touched.
+
+The file is client/src/components/document-management.tsx, rendered on the
+target company detail page. It is the BUYER-side dialog. The SELLER-side
+upload UI (client/src/pages/PortalPage.tsx, route /portal/:token) is a
+different component and stays untouched. This separation is V-checked.
+
+DialogDescription is already imported on line 11 of the file. No import
+change needed.
+
+The 10 MB limit is enforced server-side at
+server/routes/documents-files.routes.ts line 17:
+  multer({ ..., limits: { fileSize: 10 * 1024 * 1024 } })
+The frontend hint is purely informational. The code comment in this build
+points at that source of truth.
+
+RELEASE GATE
+Dev only. Do NOT deploy to prod. Continues on top of the dev branch that
+already carries #105 + the staleTime: 0 lag fix.
+
+CHANGE 1 of 2: document-management.tsx — add DialogDescription
+File: client/src/components/document-management.tsx
+
+Find this exact block:
+
+                <DialogHeader>
+                  <DialogTitle>Upload New Document</DialogTitle>
+                </DialogHeader>
+
+Replace with:
+
+                <DialogHeader>
+                  <DialogTitle>Upload New Document</DialogTitle>
+                  <DialogDescription>
+                    Our AI will try to extract information related to the required document types. Any other documents you upload will be saved to the deal for future reference.
+                  </DialogDescription>
+                </DialogHeader>
+
+CHANGE 2 of 2: document-management.tsx — add max file size indicator
+File: client/src/components/document-management.tsx
+
+Find this exact block (inside the same Upload dialog, immediately above
+the file input):
+
+                      <div>
+                        <label className="text-sm font-medium">Select File *</label>
+                        <div className="mt-2">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            onChange={handleFileSelect}
+
+Replace with:
+
+                      <div>
+                        <label className="text-sm font-medium">Select File *</label>
+                        {/* Max file size enforced server-side at server/routes/documents-files.routes.ts (multer limits.fileSize = 10 * 1024 * 1024). Update both if changed. */}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Max file size: 10 MB per document
+                        </p>
+                        <div className="mt-2">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            onChange={handleFileSelect}
+
+V-CHECKS
+
+V1 — DialogDescription rendered: grep document-management.tsx for the exact
+     phrase "Our AI will try to extract" and confirm one match present
+     inside a DialogDescription element directly under DialogTitle.
+
+V2 — Max file size hint rendered: grep document-management.tsx for the
+     exact phrase "Max file size: 10 MB per document" and confirm one
+     match present, in a <p> tag with class text-xs text-muted-foreground
+     mt-1, directly under the Select File label and above the file input.
+
+V3 — Server source-of-truth comment: grep document-management.tsx for
+     "documents-files.routes.ts" and confirm the comment is present
+     immediately above the max file size hint.
+
+V4 — Imports unchanged: grep document-management.tsx imports section.
+     DialogDescription was already imported on line 11. No new imports
+     added. Total import count unchanged.
+
+V5 — Portal firewall: grep client/src/pages/PortalPage.tsx for the exact
+     phrases "Our AI will try to extract" and "Max file size: 10 MB per
+     document". Both must return ZERO matches. The seller-side portal
+     upload UI is untouched.
+
+V6 — File diff scope: git diff (or equivalent Replit checkpoint diff)
+     touches exactly ONE file: client/src/components/document-management.tsx.
+     No other files modified.
+
+V7 — TypeScript compile: npx tsc --noEmit. Error count unchanged from the
+     post-#105 baseline (3 pre-existing errors).
+
+V8 — Vite HMR clean: dev server picks up the change with no console
+     warnings, no JSX parse errors, no missing component errors. Render
+     the dialog (open Upload Document on any target) and confirm both
+     pieces of copy appear visually.
+
+REPORT FORMAT
+PASS or FAIL per V-check with one line of evidence. End with OVERALL.
+
+DO NOT modify the multer limit. DO NOT touch PortalPage.tsx or any other
+file. The single-file scope is part of the safety boundary on this build.
