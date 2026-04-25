@@ -5,7 +5,6 @@ import {
   userCompanies,
   userCompanyMemberships,
   userSessions,
-  userInvitations,
   userRoles,
   userDealAssignments,
   type User,
@@ -15,9 +14,7 @@ import {
   type UserCompanyMembership,
   type InsertUserCompanyMembership,
   type UserSession,
-  type UserInvitation,
   type UserRole,
-  type InsertUserInvitation,
 } from '@shared/schema';
 
 export interface UserWithRole extends User {
@@ -33,10 +30,6 @@ export interface TeamMember extends User {
   lastLoginFormatted: string | null;
 }
 
-export interface InvitationWithDetails extends UserInvitation {
-  inviterName: string;
-  companyName: string;
-}
 
 export class UsersRepository {
   async getById(id: number): Promise<User | undefined> {
@@ -135,170 +128,6 @@ export class UsersRepository {
     await db.delete(userSessions).where(
       eq(userSessions.expiresAt, new Date())
     );
-  }
-
-  async createUserInvitation(invitation: InsertUserInvitation): Promise<UserInvitation> {
-    const [newInvitation] = await db
-      .insert(userInvitations)
-      .values(invitation)
-      .returning();
-    return newInvitation;
-  }
-
-  async getUserInvitationByToken(token: string): Promise<InvitationWithDetails | undefined> {
-    const [invitation] = await db
-      .select({
-        id: userInvitations.id,
-        userCompanyId: userInvitations.userCompanyId,
-        email: userInvitations.email,
-        invitedBy: userInvitations.invitedBy,
-        invitationToken: userInvitations.invitationToken,
-        invitedRole: userInvitations.invitedRole,
-        invitationMessage: userInvitations.invitationMessage,
-        firstName: userInvitations.firstName,
-        lastName: userInvitations.lastName,
-        jobTitle: userInvitations.jobTitle,
-        invitationStatus: userInvitations.invitationStatus,
-        sentAt: userInvitations.sentAt,
-        expiresAt: userInvitations.expiresAt,
-        acceptedAt: userInvitations.acceptedAt,
-        ipAddressSent: userInvitations.ipAddressSent,
-        ipAddressAccepted: userInvitations.ipAddressAccepted,
-        createdAt: userInvitations.createdAt,
-        inviterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-        companyName: userCompanies.companyName,
-      })
-      .from(userInvitations)
-      .innerJoin(users, eq(userInvitations.invitedBy, users.id))
-      .innerJoin(userCompanies, eq(userInvitations.userCompanyId, userCompanies.id))
-      .where(
-        and(
-          eq(userInvitations.invitationToken, token),
-          eq(userInvitations.invitationStatus, "pending"),
-          sql`${userInvitations.expiresAt} > NOW()`
-        )
-      );
-    
-    return invitation || undefined;
-  }
-
-  async getInvitationsByUserCompany(userCompanyId: number): Promise<InvitationWithDetails[]> {
-    return await db
-      .select({
-        id: userInvitations.id,
-        userCompanyId: userInvitations.userCompanyId,
-        email: userInvitations.email,
-        invitedBy: userInvitations.invitedBy,
-        invitationToken: userInvitations.invitationToken,
-        invitedRole: userInvitations.invitedRole,
-        invitationMessage: userInvitations.invitationMessage,
-        firstName: userInvitations.firstName,
-        lastName: userInvitations.lastName,
-        jobTitle: userInvitations.jobTitle,
-        invitationStatus: userInvitations.invitationStatus,
-        sentAt: userInvitations.sentAt,
-        expiresAt: userInvitations.expiresAt,
-        acceptedAt: userInvitations.acceptedAt,
-        ipAddressSent: userInvitations.ipAddressSent,
-        ipAddressAccepted: userInvitations.ipAddressAccepted,
-        createdAt: userInvitations.createdAt,
-        inviterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-        companyName: userCompanies.companyName,
-      })
-      .from(userInvitations)
-      .innerJoin(users, eq(userInvitations.invitedBy, users.id))
-      .innerJoin(userCompanies, eq(userInvitations.userCompanyId, userCompanies.id))
-      .where(eq(userInvitations.userCompanyId, userCompanyId))
-      .orderBy(desc(userInvitations.createdAt));
-  }
-
-  async updateUserInvitation(id: number, invitation: Partial<InsertUserInvitation>): Promise<UserInvitation | undefined> {
-    const [updatedInvitation] = await db
-      .update(userInvitations)
-      .set(invitation)
-      .where(eq(userInvitations.id, id))
-      .returning();
-    return updatedInvitation || undefined;
-  }
-
-  async acceptInvitation(token: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    return await db.transaction(async (tx) => {
-      const invitation = await tx
-        .select({
-          id: userInvitations.id,
-          userCompanyId: userInvitations.userCompanyId,
-          email: userInvitations.email,
-          invitedBy: userInvitations.invitedBy,
-          invitationToken: userInvitations.invitationToken,
-          invitedRole: userInvitations.invitedRole,
-          invitationMessage: userInvitations.invitationMessage,
-          invitationStatus: userInvitations.invitationStatus,
-          sentAt: userInvitations.sentAt,
-          expiresAt: userInvitations.expiresAt,
-          acceptedAt: userInvitations.acceptedAt,
-          ipAddressSent: userInvitations.ipAddressSent,
-          ipAddressAccepted: userInvitations.ipAddressAccepted,
-          createdAt: userInvitations.createdAt,
-          inviterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-          companyName: userCompanies.companyName,
-        })
-        .from(userInvitations)
-        .innerJoin(users, eq(userInvitations.invitedBy, users.id))
-        .innerJoin(userCompanies, eq(userInvitations.userCompanyId, userCompanies.id))
-        .where(and(
-          eq(userInvitations.invitationToken, token),
-          eq(userInvitations.invitationStatus, 'pending')
-        ))
-        .limit(1);
-      
-      if (!invitation.length) {
-        return undefined;
-      }
-      
-      const invitationData = invitation[0];
-
-      const existingUsers = await tx
-        .select()
-        .from(users)
-        .where(eq(users.email, invitationData.email));
-
-      let user: User;
-
-      if (existingUsers.length > 0) {
-        [user] = await tx
-          .update(users)
-          .set({
-            userCompanyId: invitationData.userCompanyId,
-            userRole: invitationData.invitedRole,
-            isActive: true,
-            emailVerified: true,
-            ...userData,
-          })
-          .where(eq(users.id, existingUsers[0].id))
-          .returning();
-      } else {
-        [user] = await tx
-          .insert(users)
-          .values({
-            ...userData,
-            email: invitationData.email,
-            userCompanyId: invitationData.userCompanyId,
-            userRole: invitationData.invitedRole,
-            isActive: true,
-          } as InsertUser)
-          .returning();
-      }
-
-      await tx
-        .update(userInvitations)
-        .set({
-          invitationStatus: "accepted",
-          acceptedAt: new Date(),
-        })
-        .where(eq(userInvitations.invitationToken, token));
-
-      return user;
-    });
   }
 
   async getUserRoles(): Promise<UserRole[]> {

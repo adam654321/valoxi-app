@@ -38,11 +38,6 @@ export interface TeamMember extends User {
 }
 
 export class TeamRepository {
-  async createInvitation(invitation: InsertUserInvitation): Promise<UserInvitation> {
-    const [newInvitation] = await db.insert(userInvitations).values(invitation).returning();
-    return newInvitation;
-  }
-
   async createInvitationWithUserShell(input: {
     userCompanyId: number;
     email: string;
@@ -238,25 +233,7 @@ export class TeamRepository {
     return company || undefined;
   }
 
-  async acceptInvitation(token: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    return await db.transaction(async (tx) => {
-      const invitation = await tx.select({
-        id: userInvitations.id, userCompanyId: userInvitations.userCompanyId, email: userInvitations.email,
-        invitedRole: userInvitations.invitedRole, invitationStatus: userInvitations.invitationStatus,
-      }).from(userInvitations).where(and(eq(userInvitations.invitationToken, token), eq(userInvitations.invitationStatus, 'pending'))).limit(1);
-      if (!invitation.length) return undefined;
-      const invData = invitation[0];
-      const existing = await tx.select().from(users).where(eq(users.email, invData.email));
-      let user: User;
-      if (existing.length > 0) {
-        [user] = await tx.update(users).set({ userCompanyId: invData.userCompanyId, userRole: invData.invitedRole, isActive: true, emailVerified: true, ...userData }).where(eq(users.id, existing[0].id)).returning();
-      } else {
-        [user] = await tx.insert(users).values({ ...userData, email: invData.email, userCompanyId: invData.userCompanyId, userRole: invData.invitedRole, isActive: true } as InsertUser).returning();
-      }
-      await tx.update(userInvitations).set({ invitationStatus: 'accepted', acceptedAt: new Date() }).where(eq(userInvitations.id, invData.id));
-      return user;
-    });
-  }
 }
+
 
 export const teamRepository = new TeamRepository();

@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { teamRepository, type InvitationWithDetails, type TeamMember } from '../repositories/team.repository';
 import { BadRequestError, NotFoundError, ForbiddenError, UnauthorizedError } from '../utils/errors';
@@ -129,19 +128,6 @@ export class TeamService {
       }
     }
     return await teamRepository.getInvitationsByCompany(userCompanyId);
-  }
-
-  async acceptInvitation(token: string, firstName: string, lastName: string, password: string): Promise<User> {
-    const invitation = await teamRepository.getInvitationByToken(token);
-    if (!invitation || invitation.invitationStatus !== 'pending') {
-      throw new BadRequestError('Invalid or expired invitation');
-    }
-    // Repository handles both new users and existing users (updates them to join this company)
-    const user = await teamRepository.acceptInvitation(token, {
-      firstName, lastName, passwordHash: await bcrypt.hash(password, 10), isActive: true, emailVerified: true,
-    });
-    if (!user) throw new BadRequestError('Failed to accept invitation');
-    return user;
   }
 
   async updateInvitation(id: number, userId: number, userCompanyId: number, status: string, getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>): Promise<UserInvitation> {

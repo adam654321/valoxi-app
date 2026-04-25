@@ -14,12 +14,6 @@ publicRouter.get('/invitation/:token', asyncHandler(async (req: Request, res: Re
   sendSuccess(res, { email: invitation.email, invitedRole: invitation.invitedRole, companyName: invitation.companyName, inviterName: invitation.inviterName, invitationMessage: invitation.invitationMessage, invitationStatus: invitation.invitationStatus });
 }));
 
-publicRouter.post('/invitation/:token/accept', asyncHandler(async (req: Request, res: Response) => {
-  const schema = z.object({ firstName: z.string().min(1), lastName: z.string().min(1), password: z.string().min(8) });
-  const { firstName, lastName, password } = schema.parse(req.body);
-  const user = await teamService.acceptInvitation(req.params.token, firstName, lastName, password);
-  sendSuccess(res, { message: 'Invitation accepted successfully', user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
-}));
 
 router.post('/invite', async (req: Request, res: Response) => {
   try {

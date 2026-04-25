@@ -1,10 +1,10 @@
 import { Router, type Request, type Response } from 'express';
 import { Webhook } from 'svix';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
 import { clerkClient } from '@clerk/express';
 import { db } from '../db';
-import { users } from '@shared/schema';
+import { users, userInvitations } from '@shared/schema';
 import { promoCodeCampaigns } from '@shared/schema/billing';
 import { emailApiService } from '../services/email.service';
 import { billingService } from '../services/billing.service';
@@ -81,6 +81,27 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     console.log(`[clerk-webhook] user.created: user ${match.id} (${email}) already linked to different Clerk account ${match.clerkUserId}, revoking newer Clerk account ${clerkUserId}`);
     await revokeOrphanClerk('clerkUserId_conflict');
     return;
+  }
+
+  // #100 — flip pending team invitation to accepted on first link.
+  // Idempotent: if invitation is already accepted (webhook re-delivery)
+  // the WHERE clause matches zero rows and the UPDATE is a no-op.
+  if (linked && match.userCompanyId !== null) {
+    const flipResult = await db
+      .update(userInvitations)
+      .set({ invitationStatus: 'accepted', acceptedAt: new Date() })
+      .where(and(
+        eq(userInvitations.userCompanyId, match.userCompanyId),
+        sql`LOWER(${userInvitations.email}) = LOWER(${email.trim()})`,
+        eq(userInvitations.invitationStatus, 'pending')
+      ))
+      .returning({ id: userInvitations.id });
+    if (flipResult.length > 0) {
+      console.log(
+        `[clerk-webhook] user.created: marked ${flipResult.length} invitation(s) ` +
+        `accepted for user ${match.id} (${email})`
+      );
+    }
   }
 
   if (linked && match.userCompanyId !== null) {
