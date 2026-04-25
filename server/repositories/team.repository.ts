@@ -128,9 +128,41 @@ export class TeamRepository {
       .orderBy(desc(userInvitations.createdAt));
   }
 
-  async updateInvitation(id: number, invitation: Partial<InsertUserInvitation>): Promise<UserInvitation | undefined> {
+  async updateInvitation(id: number, invitation: Partial<InsertUserInvitation> & { expiresAt?: Date | null }): Promise<UserInvitation | undefined> {
     const [updated] = await db.update(userInvitations).set(invitation).where(eq(userInvitations.id, id)).returning();
     return updated || undefined;
+  }
+
+  async getInvitationByIdAndCompany(id: number, userCompanyId: number): Promise<UserInvitation | undefined> {
+    const [row] = await db.select().from(userInvitations)
+      .where(and(eq(userInvitations.id, id), eq(userInvitations.userCompanyId, userCompanyId)))
+      .limit(1);
+    return row || undefined;
+  }
+
+  async cancelInvitationAndDeactivateShell(
+    invitationId: number, userCompanyId: number, email: string
+  ): Promise<UserInvitation | undefined> {
+    return await db.transaction(async (tx) => {
+      const [cancelled] = await tx.update(userInvitations)
+        .set({ invitationStatus: 'cancelled' })
+        .where(and(
+          eq(userInvitations.id, invitationId),
+          eq(userInvitations.userCompanyId, userCompanyId)
+        ))
+        .returning();
+      if (!cancelled) return undefined;
+
+      await tx.update(users)
+        .set({ isActive: false })
+        .where(and(
+          sql`LOWER(${users.email}) = LOWER(${email})`,
+          eq(users.userCompanyId, userCompanyId),
+          sql`${users.clerkUserId} IS NULL`
+        ));
+
+      return cancelled;
+    });
   }
 
   async getTeamMembers(userCompanyId: number): Promise<TeamMember[]> {
@@ -147,6 +179,10 @@ export class TeamRepository {
       jobTitle: users.jobTitle,
       clerkUserId: users.clerkUserId,
       welcomeEmailSentAt: users.welcomeEmailSentAt,
+      checklistCompleted: users.checklistCompleted,
+      assignedPromoCampaignId: users.assignedPromoCampaignId,
+      assignedByAdminId: users.assignedByAdminId,
+      assignedAt: users.assignedAt,
       roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
       assignedDealsCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM ${userDealAssignments} WHERE ${userDealAssignments.userId} = ${users.id} AND ${userDealAssignments.isActive} = true), 0)`,
       permCanManageUsers: userRoles.canManageUsers,
@@ -161,7 +197,11 @@ export class TeamRepository {
       permCanExportData: userRoles.canExportData,
     }).from(users)
       .leftJoin(userRoles, eq(users.userRole, userRoles.roleName))
-      .where(and(eq(users.userCompanyId, userCompanyId), eq(users.isActive, true)))
+      .where(and(
+        eq(users.userCompanyId, userCompanyId),
+        eq(users.isActive, true),
+        sql`${users.clerkUserId} IS NOT NULL`
+      ))
       .orderBy(users.createdAt);
     return members.map((m) => {
       const {

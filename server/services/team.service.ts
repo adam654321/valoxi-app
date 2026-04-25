@@ -130,16 +130,56 @@ export class TeamService {
     return await teamRepository.getInvitationsByCompany(userCompanyId);
   }
 
-  async updateInvitation(id: number, userId: number, userCompanyId: number, status: string, getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>): Promise<UserInvitation> {
+  async resendInvitation(
+    invitationId: number,
+    userId: number,
+    userCompanyId: number,
+    baseUrl: string,
+    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>
+  ): Promise<UserInvitation> {
     if (getUserWithPermissions) {
       const userPerms = await getUserWithPermissions(userId);
       if (!userPerms?.permissions?.canManageUsers && !userPerms?.isCompanyAdmin) {
         throw new ForbiddenError('Insufficient permissions');
       }
     }
-    const updated = await teamRepository.updateInvitation(id, { invitationStatus: status });
+    const existing = await teamRepository.getInvitationByIdAndCompany(invitationId, userCompanyId);
+    if (!existing) throw new NotFoundError('Invitation not found');
+    if (existing.invitationStatus !== 'pending') {
+      throw new BadRequestError('Only pending invitations can be resent');
+    }
+    const newToken = randomUUID();
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const updated = await teamRepository.updateInvitation(invitationId, {
+      invitationToken: newToken,
+      expiresAt: newExpiresAt,
+    });
     if (!updated) throw new NotFoundError('Invitation not found');
+    emailApiService.sendTeamInvitation(invitationId, baseUrl).catch(err => {
+      console.error(`[TEAM] Failed to re-send invitation email for invitation ${invitationId}:`, err.message);
+    });
     return updated;
+  }
+
+  async cancelInvitation(
+    invitationId: number,
+    userId: number,
+    userCompanyId: number,
+    getUserWithPermissions?: (id: number) => Promise<UserWithPermissions | undefined>
+  ): Promise<UserInvitation> {
+    if (getUserWithPermissions) {
+      const userPerms = await getUserWithPermissions(userId);
+      if (!userPerms?.permissions?.canManageUsers && !userPerms?.isCompanyAdmin) {
+        throw new ForbiddenError('Insufficient permissions');
+      }
+    }
+    const existing = await teamRepository.getInvitationByIdAndCompany(invitationId, userCompanyId);
+    if (!existing) throw new NotFoundError('Invitation not found');
+    const cancelled = await teamRepository.cancelInvitationAndDeactivateShell(
+      invitationId, userCompanyId, existing.email
+    );
+    if (!cancelled) throw new NotFoundError('Invitation not found');
+    return cancelled;
   }
 
   async getTeamMembers(userCompanyId: number): Promise<TeamMember[]> {

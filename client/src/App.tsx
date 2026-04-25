@@ -101,7 +101,6 @@ function Router() {
           {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
           <Route path="/">{() => clerkEnabled ? <Redirect to="/sign-in" /> : <Login />}</Route>
           <Route path="/login" component={Login} />
-          <Route path="/register">{() => clerkEnabled ? <Redirect to="/sign-up" /> : <Register />}</Route>
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/auth/magic" component={MagicLinkPage} />

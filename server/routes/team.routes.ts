@@ -59,12 +59,31 @@ router.get('/invitations', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, invitations);
 }));
 
-router.put('/invitations/:id', asyncHandler(async (req: Request, res: Response) => {
+router.post('/invitations/:id/resend', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
   const userCompanyId = req.session?.userCompanyId;
   if (!userId || !userCompanyId) throw new UnauthorizedError();
-  const { status } = z.object({ status: z.string() }).parse(req.body);
-  const updated = await teamService.updateInvitation(parseInt(req.params.id), userId, userCompanyId, status, usersRepository.getUserWithPermissions.bind(usersRepository));
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const updated = await teamService.resendInvitation(
+    parseInt(req.params.id),
+    userId,
+    userCompanyId,
+    baseUrl,
+    usersRepository.getUserWithPermissions.bind(usersRepository)
+  );
+  sendSuccess(res, updated);
+}));
+
+router.post('/invitations/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userId || !userCompanyId) throw new UnauthorizedError();
+  const updated = await teamService.cancelInvitation(
+    parseInt(req.params.id),
+    userId,
+    userCompanyId,
+    usersRepository.getUserWithPermissions.bind(usersRepository)
+  );
   sendSuccess(res, updated);
 }));
 

@@ -219,6 +219,10 @@ export class UsersRepository {
         jobTitle: users.jobTitle,
         clerkUserId: users.clerkUserId,
         welcomeEmailSentAt: users.welcomeEmailSentAt,
+        checklistCompleted: users.checklistCompleted,
+        assignedPromoCampaignId: users.assignedPromoCampaignId,
+        assignedByAdminId: users.assignedByAdminId,
+        assignedAt: users.assignedAt,
         roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
         assignedDealsCount: sql<number>`COALESCE((
           SELECT COUNT(*)::int 
@@ -229,7 +233,11 @@ export class UsersRepository {
       })
       .from(users)
       .leftJoin(userRoles, eq(users.userRole, userRoles.roleName))
-      .where(and(eq(users.userCompanyId, userCompanyId), eq(users.isActive, true)))
+      .where(and(
+        eq(users.userCompanyId, userCompanyId),
+        eq(users.isActive, true),
+        sql`${users.clerkUserId} IS NOT NULL`
+      ))
       .orderBy(users.createdAt);
 
     return members.map((member) => ({
@@ -237,6 +245,7 @@ export class UsersRepository {
       lastLoginFormatted: member.lastLogin 
         ? new Date(member.lastLogin).toLocaleDateString()
         : null,
+      permissions: null,
     }));
   }
 

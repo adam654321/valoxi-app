@@ -178,7 +178,7 @@ export default function TeamManagement() {
 
   const cancelInvitationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('PUT', `/api/v2/team/invitations/${id}`, { status: 'cancelled' });
+      const response = await apiRequest('POST', `/api/v2/team/invitations/${id}/cancel`);
       return response.json();
     },
     onSuccess: () => {
@@ -187,6 +187,7 @@ export default function TeamManagement() {
         description: "The invitation has been cancelled.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/team/invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/team/members'] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/billing/subscription'] });
     },
     onError: (error: Error) => {
@@ -200,7 +201,7 @@ export default function TeamManagement() {
 
   const resendInvitationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('PUT', `/api/v2/team/invitations/${id}`, { status: 'pending' });
+      const response = await apiRequest('POST', `/api/v2/team/invitations/${id}/resend`);
       return response.json();
     },
     onSuccess: () => {
