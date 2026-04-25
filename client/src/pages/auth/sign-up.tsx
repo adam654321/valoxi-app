@@ -15,6 +15,8 @@ export default function SignUpPage() {
     window.location.href = "/sign-in";
   };
 
+  const emailAddress = new URLSearchParams(window.location.search).get('email_address') || undefined;
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="flex flex-col items-center gap-4">
@@ -24,6 +26,7 @@ export default function SignUpPage() {
           signInUrl="/sign-in"
           forceRedirectUrl="/"
           fallbackRedirectUrl="/"
+          initialValues={emailAddress ? { emailAddress } : undefined}
         />
         <div className="flex flex-col items-center gap-2 mt-2 text-sm text-muted-foreground">
           <button

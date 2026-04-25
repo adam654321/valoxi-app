@@ -49,18 +49,23 @@ class EmailService {
 
   async sendTeamInvitation(
     inviteEmail: string,
+    inviteeFirstName: string,
     inviterName: string,
     companyName: string,
     inviteToken: string,
     inviteUrl: string,
-    roleName: string
+    roleName: string,
+    invitationMessage?: string
   ): Promise<boolean> {
+    const safeInviteeFirstName = this.escapeHtml(inviteeFirstName);
     const safeInviterName = this.escapeHtml(inviterName);
     const safeCompanyName = this.escapeHtml(companyName);
     const safeRoleName = this.escapeHtml(roleName);
+    const safeInviteEmail = this.escapeHtml(inviteEmail);
+    const trimmedMessage = invitationMessage?.trim();
 
     const blocks: EmailBlock[] = [
-      { type: 'paragraph', text: 'Hello,' },
+      { type: 'paragraph', text: `Hi ${safeInviteeFirstName},` },
       { type: 'paragraph', text: `<strong style="color:#FFFFFF;">${safeInviterName}</strong> has invited you to join the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> team on Valoxi.` },
       {
         type: 'info_box',
@@ -69,9 +74,29 @@ class EmailService {
           body: `<strong>Role:</strong> ${safeRoleName}<br><strong>Company:</strong> ${safeCompanyName}`,
         },
       },
-      { type: 'cta', cta: { label: 'Accept invitation', href: inviteUrl } },
-      { type: 'paragraph', text: 'This invitation expires in 7 days.' },
     ];
+
+    if (trimmedMessage) {
+      blocks.push({
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          title: `Personal note from ${safeInviterName}`,
+          body: this.escapeHtml(trimmedMessage),
+        },
+      });
+    }
+
+    blocks.push({ type: 'cta', cta: { label: 'Set up your account', href: inviteUrl } });
+    blocks.push({
+      type: 'info_box',
+      box: {
+        tone: 'warning',
+        title: `Important. Sign up using this email: ${safeInviteEmail}`,
+        body: `You can sign up with a password, or with Google, Microsoft, or LinkedIn. Whichever method you choose, make sure the email on the account is ${safeInviteEmail}. If you sign up with a different email, your account will not be linked to this invitation.`,
+      },
+    });
+    blocks.push({ type: 'paragraph', text: 'This invitation expires in 7 days.' });
 
     const html = renderBrandedEmail({
       preheader: `${inviterName} has invited you to join ${companyName} on Valoxi.`,

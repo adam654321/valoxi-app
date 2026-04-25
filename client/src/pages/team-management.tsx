@@ -24,7 +24,10 @@ import { Link } from "wouter";
 import type { UserInvitation, UserRole, TeamMember } from "@shared/schema";
 
 const inviteSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(100),
+  lastName: z.string().min(1, "Last name is required").max(100),
   email: z.string().email("Invalid email address"),
+  jobTitle: z.string().max(100).optional(),
   role: z.string().min(1, "Role is required"),
   message: z.string().optional(),
 });
@@ -77,7 +80,10 @@ export default function TeamManagement() {
   const inviteForm = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       email: "",
+      jobTitle: "",
       role: "",
       message: "",
     },
@@ -323,11 +329,39 @@ export default function TeamManagement() {
               <DialogHeader>
                 <DialogTitle>Invite Team Member</DialogTitle>
                 <DialogDescription>
-                  Send an invitation to add a new team member to your organization.
+                  Send an invitation to add a new team member to your organization. They will receive an email to sign up with the email address you enter below.
                 </DialogDescription>
               </DialogHeader>
               <Form {...inviteForm}>
                 <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={inviteForm.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Jane" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={inviteForm.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Smith" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={inviteForm.control}
                     name="email"
@@ -336,6 +370,19 @@ export default function TeamManagement() {
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
                           <Input placeholder="colleague@company.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={inviteForm.control}
+                    name="jobTitle"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Title (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Senior Analyst" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

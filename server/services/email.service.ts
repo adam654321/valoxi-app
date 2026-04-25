@@ -14,10 +14,22 @@ export class EmailApiService {
     if (!invitation) throw new NotFoundError('Invitation not found');
     if (!invitation.email) throw new BadRequestError('Invitation has no email address');
     const inviter = invitation.invitedBy ? await emailRepository.getUserById(invitation.invitedBy) : null;
-    const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || inviter.email : 'Team Admin';
+    const inviterName = inviter
+      ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || inviter.email
+      : 'Team Admin';
     const companyName = await emailRepository.getUserCompanyName(invitation.userCompanyId) || 'Company';
     const inviteUrl = `${baseUrl}/invite/${invitation.invitationToken}`;
-    const success = await legacyEmailService.sendTeamInvitation(invitation.email, inviterName, companyName, invitation.invitationToken, inviteUrl, invitation.invitedRole || 'Team Member');
+    const inviteeFirstName = (invitation as any).firstName || 'there';
+    const success = await legacyEmailService.sendTeamInvitation(
+      invitation.email,
+      inviteeFirstName,
+      inviterName,
+      companyName,
+      invitation.invitationToken,
+      inviteUrl,
+      invitation.invitedRole || 'Team Member',
+      (invitation as any).invitationMessage || undefined
+    );
     return { success, message: success ? 'Invitation email sent successfully' : 'Failed to send invitation email' };
   }
 
