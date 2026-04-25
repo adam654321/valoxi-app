@@ -1,0 +1,151 @@
+READ-ONLY ASSESSMENT. DO NOT MODIFY ANY FILES. DO NOT RUN SCHEMA PUSHES.
+DO NOT WRITE FIXES. Output is a structured report only.
+
+CONTEXT
+We are about to fix #100 (team invite flow is pre-Clerk: teamService.acceptInvitation
+creates password-based users who cannot subsequently sign in via Clerk because they
+have no clerkUserId linkage). The intended fix is Option A: at invitation time
+pre-create the users row with clerkUserId NULL and a pending status. When the
+invitee later signs up via Clerk, an orphan-detection branch in the user.created
+webhook handler matches by email and links the existing row by populating clerkUserId.
+
+Before any build prompt is written we need a clean picture of the current state of
+seven specific points across the dev tree. Do not infer. Read the actual files in
+the dev workspace and report exact line numbers, exact field names, exact code shape.
+
+SCOPE OF FILES (these are the likely surfaces; confirm by listing them and report
+any that do not exist or that contain something different than expected):
+  server/repositories/team.repository.ts
+  server/services/team.service.ts
+  server/routes/team.routes.ts
+  server/routes/webhooks.routes.ts          (Clerk webhook handler likely lives here)
+  server/services/auth.service.ts            (pre-Clerk password creation path)
+  server/repositories/users.repository.ts    (user row creation helpers)
+  server/services/email.service.ts           (sendTeamInvitation or similar template)
+  server/services/email-template.ts          (renderBrandedEmail helper)
+  client/src/pages/accept-invitation.tsx     (the /invite/:token frontend page)
+  shared/schema/core.ts                       (likely holds users + team_invitations)
+  shared/schema/index.ts                      (table re-exports)
+
+If any of these are wrong locations, find the correct one and use it.
+
+REPORT THESE SEVEN POINTS
+
+1. acceptInvitation end-to-end shape
+   - In server/services/team.service.ts AND server/repositories/team.repository.ts,
+     find every function on the invitation acceptance path. For each:
+     • file path + start/end line numbers of the function
+     • signature
+     • what DB rows it creates or mutates, in what order, and the exact fields
+       set on each insert (especially on the users insert: list every column)
+     • whether everything happens inside a transaction (db.transaction(...) or
+       similar) and what the boundaries are
+     • any helpers it calls (and where those helpers live)
+   - Report in a table with columns: file, function, lines, side effects.
+
+2. Clerk webhook handler shape
+   - Find the Clerk webhook route. Likely server/routes/webhooks.routes.ts.
+     Report:
+     • exact path it is mounted at (grep app.use / router.use for the mount point)
+     • full list of Clerk event types subscribed to (look for switch on
+       event.type or evt.type)
+     • for the user.created branch specifically: paste the full handler logic
+       with line numbers, including how it currently looks up an existing user,
+       what it does on no-match, what it does on match, whether it touches
+       clerkUserId, and any orphan-revocation behaviour (handover mentions
+       orphan revocation was added 23 April; confirm it is present and report
+       its branches)
+     • whether there is a separate service file that the route delegates to
+       (e.g. server/services/auth.service.ts handleUserCreated). If so paste
+       that handler too with line numbers.
+
+3. Schema state for clerkUserId and email indexing
+   - Find the users table definition (likely shared/schema/core.ts).
+     Report the full column list with types and modifiers. Specifically confirm:
+     • is clerkUserId nullable in the schema file
+     • is there a unique constraint on clerkUserId
+     • is the email column case-sensitive or lowercased on write
+     • is there an index on email (and on lower(email) for case-insensitive
+       orphan match)
+   - Then run these against the live dev DB and report results:
+     SELECT column_name, data_type, is_nullable, character_maximum_length
+       FROM information_schema.columns
+      WHERE table_name = 'users'
+      ORDER BY ordinal_position;
+     SELECT indexname, indexdef
+       FROM pg_indexes
+      WHERE tablename = 'users';
+   - Flag any divergence between the schema file and the live DB (this matters
+     because we already have known schema drift on the subscriptions table from
+     #105; we want to know if users has the same problem before we touch it).
+
+4. Password creation path used by the pre-Clerk invite flow
+   - Grep for every reference to bcrypt, password_hash, hashPassword,
+     setPassword, password generation, or "tempPassword" across:
+       server/services/team.service.ts
+       server/repositories/team.repository.ts
+       server/routes/team.routes.ts
+       server/services/auth.service.ts
+       server/repositories/users.repository.ts
+   - For each hit, report file + line + the surrounding 10 lines so we can see
+     which of these will be ripped out vs which are still load-bearing for
+     non-invite flows (eg legacy /reset-password may still use bcrypt).
+
+5. Frontend /invite/:token flow today
+   - In client/src/pages/accept-invitation.tsx (or whatever the actual file is),
+     report:
+     • the route mount path (grep for "/invite/:token" or "accept-invitation"
+       in client/src/App.tsx or wherever routes are wired)
+     • what API endpoints it calls and in what order
+     • where it redirects the user on success today (router.push target)
+     • whether it currently shows a "set your password" form, a Clerk SignUp
+       component, or something else
+     • whether it is gated by clerkEnabled or any feature flag
+     • paste the full file with line numbers. It is small enough to include in
+       full.
+
+6. Team invitation email template
+   - Find the function that sends the team invitation email. Likely in
+     server/services/email.service.ts (look for sendTeamInvitation,
+     sendTeamInvite, sendInviteEmail, or similar). Report:
+     • file + function + line range
+     • the exact link template it generates (eg `${baseUrl}/invite/${token}`)
+     • paste the full HTML/text body the template produces (or the
+       renderBrandedEmail props passed in if it uses the shared helper) so we
+       can see every reference to "set your password", "create your account",
+       and the invite link wording in one place
+   - Also report any other email functions that reference the invite token or
+     the /invite path.
+
+7. Anything the audit may have missed that touches the invitation lifecycle
+   - Run these greps from repo root and report all hits:
+       grep -rn "invitation" --include="*.ts" --include="*.tsx" server/ shared/ client/src/
+       grep -rn "acceptInvitation" --include="*.ts" --include="*.tsx" server/ shared/ client/src/
+       grep -rn "team_invitation" --include="*.ts" server/ shared/
+       grep -rn "/invite/" --include="*.ts" --include="*.tsx" server/ client/src/
+       grep -rn "inviteToken\|invite_token" --include="*.ts" --include="*.tsx" server/ shared/ client/src/
+   - Cross-reference against the audit list (team.repository.ts, team.service.ts,
+     team.routes.ts, webhooks.routes.ts, auth.service.ts, accept-invitation.tsx,
+     email.service.ts, shared/schema/core.ts) and report any file that comes up
+     in the greps but is NOT in the audit list. Specifically look for:
+     • magic-link.service.ts touching invite tokens
+     • notifications.service.ts dispatching invite-related notifications
+     • activities.service.ts logging invite acceptance events
+     • any cron job that touches stale or unaccepted invitations
+     • any portal-token.service.ts overlap with invite tokens
+   - For each missed surface, report file + lines + a one-sentence description
+     of how it touches the invite lifecycle.
+
+OUTPUT FORMAT
+Reply in seven numbered sections matching the points above. For each section
+include:
+  • the exact files and line numbers you read
+  • verbatim code paste for any handler we will need to modify (do not summarise)
+  • any "WARNING: differs from expectation" callouts
+  • any "FLAGGED: behaviour we did not expect" callouts
+
+DO NOT PROPOSE FIXES IN THIS REPLY. Once we have this report we will write
+build prompts. Build prompts will be split into 2 to 3 logical changes
+(schema first, then backend lifecycle, then frontend and email).
+
+Confirm you understand this is read-only and proceed.
