@@ -1,0 +1,68 @@
+BUILD PROMPT — Activation checklist instant update on step completion
+
+CONTEXT
+Following the #105 fix landed on dev, browser smoke surfaced a UX issue:
+after the user completes a checklist step (e.g. adds a target company,
+adds a contact, sends a portal), there is a perceptible delay before the
+corresponding step turns green on the dashboard. Worst case observed is
+roughly 30 seconds.
+
+ROOT CAUSE
+Two settings compound:
+1. Global queryClient defaults in client/src/lib/queryClient.ts include
+   staleTime: 60000. React Query treats every cached query as fresh for
+   60 seconds. When the user navigates back to /dashboard after completing
+   an action, the ActivationChecklist remounts, but refetchOnMount sees the
+   cached /progress data as "fresh" and SKIPS the refetch.
+2. The ActivationChecklist useQuery has refetchInterval: 30000. The only
+   thing that brings in fresh data on the dashboard is the 30-second
+   polling timer.
+
+Net delay: 0 to 30 seconds depending on user timing relative to the poll.
+
+FIX
+Single edit to client/src/components/onboarding/ActivationChecklist.tsx.
+Add staleTime: 0 to the useQuery options. This makes /progress always
+considered stale, so refetchOnMount (default true in React Query) fires a
+fresh network call on every dashboard mount. The existing refetchInterval
+remains as a safety net.
+
+RELEASE GATE
+Dev only. Do NOT deploy to prod. Continues directly on top of the #105
+build that is currently sat on dev.
+
+CHANGE 1 of 1: ActivationChecklist.tsx — add staleTime: 0 to /progress query
+File: client/src/components/onboarding/ActivationChecklist.tsx
+BEFORE:
+  const { data: progress, isLoading } = useQuery<OnboardingProgress>({
+    queryKey: ["/api/v2/onboarding/progress"],
+    select: (response: any) => response?.data || response,
+    refetchInterval: 30000,
+  });
+AFTER:
+  const { data: progress, isLoading } = useQuery<OnboardingProgress>({
+    queryKey: ["/api/v2/onboarding/progress"],
+    select: (response: any) => response?.data || response,
+    staleTime: 0,
+    refetchInterval: 30000,
+  });
+
+V-CHECKS
+
+V1 — Grep ActivationChecklist.tsx confirms staleTime: 0 is present in the
+     useQuery options block for queryKey ["/api/v2/onboarding/progress"].
+
+V2 — Grep confirms refetchInterval: 30000 still present (not removed).
+
+V3 — TypeScript compile: npx tsc --noEmit shows error count unchanged
+     from post-#105 baseline (3 pre-existing errors).
+
+V4 — Server / Vite HMR reloads cleanly with no startup errors and no new
+     warnings.
+
+REPORT FORMAT
+PASS or FAIL per check with one line of evidence. End with OVERALL.
+
+DO NOT touch any other file. Do NOT modify the global queryClient
+defaults. Do NOT add invalidateQueries calls in any mutation handlers.
+The single staleTime: 0 addition is the entire fix.

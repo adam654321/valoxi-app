@@ -116,6 +116,7 @@ export default function ActivationChecklist() {
   const { data: progress, isLoading } = useQuery<OnboardingProgress>({
     queryKey: ["/api/v2/onboarding/progress"],
     select: (response: any) => response?.data || response,
+    staleTime: 0,
     refetchInterval: 30000,
   });
 
