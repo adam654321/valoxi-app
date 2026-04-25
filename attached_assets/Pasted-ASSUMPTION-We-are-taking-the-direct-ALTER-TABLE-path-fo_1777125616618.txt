@@ -1,0 +1,115 @@
+ASSUMPTION: We are taking the direct ALTER TABLE path for #100 schema
+changes (matching the #105 precedent), because subscriptions drift is
+still unresolved and db:generate is not safe yet. Do not run db:push or
+db:generate during this prompt.
+
+ONE LOGICAL CHANGE: add three nullable columns to user_invitations and
+add a functional index on users(LOWER(email)). No code other than the
+schema file is modified.
+
+DEV ONLY. Do not deploy to prod. We will deploy after Prompt 5 is
+verified on dev.
+
+STEP 1 — Verify the dev DB starting state
+Run and report:
+  SELECT column_name, data_type, is_nullable
+    FROM information_schema.columns
+   WHERE table_name = 'user_invitations'
+   ORDER BY ordinal_position;
+  SELECT indexname, indexdef
+    FROM pg_indexes
+   WHERE tablename = 'users';
+  SELECT count(*) FROM user_invitations;
+Confirm none of first_name, last_name, job_title columns exist yet on
+user_invitations and that no index named users_email_lower_idx exists
+yet on users.
+
+STEP 2 — Apply the DDL directly via psql / db connection
+Run the following SQL in a single transaction:
+
+BEGIN;
+
+ALTER TABLE user_invitations
+  ADD COLUMN first_name varchar(100),
+  ADD COLUMN last_name varchar(100),
+  ADD COLUMN job_title varchar(100);
+
+CREATE INDEX users_email_lower_idx ON users (LOWER(email));
+
+COMMIT;
+
+All three new columns are deliberately added as nullable for now. Prompt
+2 will populate them through the createInvitation flow, then ALTER
+first_name and last_name to NOT NULL at the end of Prompt 2 once we have
+verified every code path is providing them. job_title stays nullable
+permanently (it is optional at invite time).
+
+The index is plain (non-unique) btree on the LOWER(email) expression, to
+speed up the orphan-match query in webhooks.routes.ts line 57:
+  WHERE LOWER(users.email) = LOWER(?)
+
+STEP 3 — Update the Drizzle schema file
+File: shared/schema/core.ts
+In the userInvitations pgTable definition (currently lines 73 to 87 per
+Assessment 1), add three new columns AFTER invitationMessage and BEFORE
+invitationStatus:
+
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  jobTitle: varchar("job_title", { length: 100 }),
+
+Do NOT add .notNull() yet. Keep them nullable to match the DB.
+
+The users table definition does not need a code change for the index.
+Drizzle index declarations are optional — the runtime query uses the
+index automatically once it exists in the DB. We will add a Drizzle
+index() declaration on users in a future cleanup if we want the schema
+file to reflect it; not required now.
+
+STEP 4 — Verification
+After applying both the SQL and the schema file edit, run and report:
+
+  SELECT column_name, data_type, is_nullable
+    FROM information_schema.columns
+   WHERE table_name = 'user_invitations'
+   ORDER BY ordinal_position;
+
+Expected: 17 columns total, with first_name, last_name, job_title all
+varchar(100), all is_nullable = YES.
+
+  SELECT indexname, indexdef
+    FROM pg_indexes
+   WHERE tablename = 'users';
+
+Expected: users_pkey, users_email_unique, users_clerk_user_id_unique,
+plus the new users_email_lower_idx with indexdef ending in
+"(lower((email)::text))".
+
+Then run a typescript compile check:
+  npm run check
+or whatever the tsc invocation is in this repo. Expected: zero new
+errors. The added Drizzle columns should not cause any consumer breakage
+because every existing consumer uses explicit column lists (per
+Assessment 2 point 3).
+
+STEP 5 — Drift register update
+Append a one-line comment to migrations/0003_parallel_redwing.sql
+documenting this new direct-ALTER step:
+  -- 25 April 2026 (#100 prompt 1): direct ALTER TABLE user_invitations
+  -- ADD COLUMN first_name, last_name, job_title (all nullable);
+  -- CREATE INDEX users_email_lower_idx. Schema file synced.
+
+This keeps the existing baseline marker honest about additional drift.
+
+STEP 6 — Report back
+1. Output of the three SELECT queries before changes
+2. Output of the ALTER + CREATE INDEX (success / row counts)
+3. Output of the three SELECT queries after changes
+4. Result of npm run check
+5. The diff applied to shared/schema/core.ts (verbatim, with line numbers)
+6. The line appended to migrations/0003_parallel_redwing.sql
+7. Confirmation that no other files were modified
+
+DO NOT modify team.service.ts, team.repository.ts, team.routes.ts,
+webhooks.routes.ts, accept-invitation.tsx, team-management.tsx, or
+email.ts in this prompt. Those are Prompts 2 through 5.

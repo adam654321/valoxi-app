@@ -6,3 +6,6 @@
 -- already applied on dev and prod. Future drizzle-kit migrate calls will
 -- correctly skip it. The snapshot 0003_snapshot.json is the authoritative
 -- schema baseline for subsequent db:generate runs.
+-- 25 April 2026 (#100 prompt 1): direct ALTER TABLE user_invitations
+-- ADD COLUMN first_name, last_name, job_title (all nullable);
+-- CREATE INDEX users_email_lower_idx. Schema file synced.
