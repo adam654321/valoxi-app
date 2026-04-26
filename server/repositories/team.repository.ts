@@ -200,7 +200,7 @@ export class TeamRepository {
       .where(and(
         eq(users.userCompanyId, userCompanyId),
         eq(users.isActive, true),
-        sql`${users.clerkUserId} IS NOT NULL`
+        sql`(${users.clerkUserId} IS NOT NULL OR ${users.passwordHash} IS NOT NULL)`
       ))
       .orderBy(users.createdAt);
     return members.map((m) => {

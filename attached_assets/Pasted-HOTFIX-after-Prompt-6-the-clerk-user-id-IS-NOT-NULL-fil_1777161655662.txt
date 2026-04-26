@@ -1,0 +1,63 @@
+HOTFIX after Prompt 6: the clerk_user_id IS NOT NULL filter on getTeamMembers
+is hiding legacy unlinked real users (not just shells). We discovered this
+in manual dev testing — Viv has clerk_user_id NULL but a populated
+password_hash, so she predates Clerk. The discriminator needs to be:
+
+  is a shell (hide):    clerk_user_id IS NULL AND password_hash IS NULL
+  is a real member:     clerk_user_id IS NOT NULL OR password_hash IS NOT NULL
+
+DEV ONLY.
+
+================================================================
+STEP 1 — Update the WHERE clause in both repository getTeamMembers methods
+================================================================
+
+File: server/repositories/team.repository.ts
+Current:
+  .where(and(
+    eq(users.userCompanyId, userCompanyId),
+    eq(users.isActive, true),
+    sql`${users.clerkUserId} IS NOT NULL`
+  ))
+Change to:
+  .where(and(
+    eq(users.userCompanyId, userCompanyId),
+    eq(users.isActive, true),
+    sql`(${users.clerkUserId} IS NOT NULL OR ${users.passwordHash} IS NOT NULL)`
+  ))
+
+File: server/repositories/users.repository.ts (parallel implementation)
+Apply the identical change.
+
+================================================================
+STEP 2 — TS check
+================================================================
+Run npm run check. Expected: zero errors.
+
+================================================================
+STEP 3 — Smoke test on dev
+================================================================
+Sign in to dev as Adam. Visit /team-management. Expected:
+  - Team Members card now shows BOTH adam@shiftopsconsulting.com AND
+    viv@shiftopsconsulting.com
+  - Pending Invitations card shows the existing pending invitation
+    (adam+teamtest@shiftopsconsulting.com) unchanged
+
+Then API check via curl or DB:
+  SELECT id, email, clerk_user_id, password_hash IS NULL AS no_pw, is_active
+    FROM users
+   WHERE user_company_id = 5
+   ORDER BY id;
+
+Confirm:
+  - adam (id=1): clerk_user_id populated, no_pw=false → SHOWS
+  - viv (id=2): clerk_user_id NULL, no_pw=false → NOW SHOWS (legacy)
+  - adam+teamtest (id=85): clerk_user_id NULL, no_pw=true → HIDDEN (shell)
+
+================================================================
+STEP 4 — Report back
+================================================================
+1. Diff applied to both repository files
+2. npm run check output
+3. Browser confirmation of Team Members card showing 2 members
+4. SQL output proving the three rows behave correctly under the new filter
