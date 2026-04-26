@@ -175,7 +175,7 @@ export class TeamService {
     }
     const existing = await teamRepository.getInvitationByIdAndCompany(invitationId, userCompanyId);
     if (!existing) throw new NotFoundError('Invitation not found');
-    const cancelled = await teamRepository.cancelInvitationAndDeactivateShell(
+    const cancelled = await teamRepository.cancelInvitationAndDeleteShell(
       invitationId, userCompanyId, existing.email
     );
     if (!cancelled) throw new NotFoundError('Invitation not found');

@@ -1,0 +1,110 @@
+Replit prompt — #100 Hotfix 4, build
+Context. Cancellation regression introduced by #100: cancel currently deactivates the shell user (isActive=false) rather than deleting it. Combined with getUserByEmail not filtering on isActive, this prevents re-inviting any cancelled email. Pre-#100 there was no shell at invite time, so no row was left behind. This is a #100 regression.
+Assessment confirmed:
+
+Single method to change at server/repositories/team.repository.ts lines 145 to 168
+Single call site to update at server/services/team.service.ts line 178
+No other callers of the old method name anywhere in the tree
+createInvitationWithUserShell does not insert a userCompanyMemberships row, so DELETE only needs to touch users
+All 48 FK constraints on users.id are populated only by authenticated user actions, none of which a shell user can perform — DELETE is safe provided the clerk_user_id IS NULL guard remains in the WHERE clause as a safety net
+TypeScript baseline 0 errors
+
+This is one logical change across two files.
+Tasks
+Task 1: rename and switch to DELETE in team.repository.ts
+Replace the entire cancelInvitationAndDeactivateShell method (lines 145 to 168) with:
+ts  async cancelInvitationAndDeleteShell(
+    invitationId: number, userCompanyId: number, email: string
+  ): Promise<UserInvitation | undefined> {
+    return await db.transaction(async (tx) => {
+      const [cancelled] = await tx.update(userInvitations)
+        .set({ invitationStatus: 'cancelled' })
+        .where(and(
+          eq(userInvitations.id, invitationId),
+          eq(userInvitations.userCompanyId, userCompanyId)
+        ))
+        .returning();
+      if (!cancelled) return undefined;
+
+      // Hotfix 4 to #100: hard-delete the shell so the email becomes
+      // re-invitable. The clerk_user_id IS NULL guard is now load-bearing
+      // as a safety net: it ensures we never delete a real linked user,
+      // even though the cancel route already gates on invitation status
+      // = pending (which by definition means the invitee has not yet
+      // completed Clerk sign-up).
+      await tx.delete(users)
+        .where(and(
+          sql`LOWER(${users.email}) = LOWER(${email})`,
+          eq(users.userCompanyId, userCompanyId),
+          sql`${users.clerkUserId} IS NULL`
+        ));
+
+      return cancelled;
+    });
+  }
+The diff is: method name change (cancelInvitationAndDeactivateShell → cancelInvitationAndDeleteShell), tx.update(users).set({ isActive: false }) becomes tx.delete(users), and a Hotfix 4 comment block replaces the implicit logic.
+Task 2: update the call site in team.service.ts
+At line 178, replace:
+tsconst cancelled = await teamRepository.cancelInvitationAndDeactivateShell(
+  invitationId, userCompanyId, existing.email
+);
+with:
+tsconst cancelled = await teamRepository.cancelInvitationAndDeleteShell(
+  invitationId, userCompanyId, existing.email
+);
+The signature is identical, only the method name changes.
+No other files should be touched. No schema changes. No migrations.
+V-check
+In this exact order:
+1. TypeScript clean
+Run npm run check. Expected: 0 errors. If it regresses, stop and report.
+2. Visual confirmation of both changes
+Read back server/repositories/team.repository.ts lines 140 to 175, and server/services/team.service.ts lines 173 to 185. Paste both. I want to see the new method body and the updated call site in context.
+3. Functional test — the actual regression scenario
+This is the gate. Run as Adam in the dev environment.
+Pick a fresh throwaway address that is NOT currently in use. Suggestion: adam+hotfix4-test@shiftopsconsulting.com.
+Step a: in Browser A /team-management, send an invitation to that throwaway. First Name Hotfix4, Last Name Test, role Analyst, any role and any message. Confirm:
+
+Pending Invitations card now shows the row
+Seat badge moves up by 1 (e.g. 2 of 4 → 3 of 4)
+DB query SELECT id, email, is_active, clerk_user_id FROM users WHERE LOWER(email) = LOWER('adam+hotfix4-test@shiftopsconsulting.com'); returns 1 row, is_active=true, clerk_user_id NULL
+
+Step b: click the cancel button (X) on the pending invitation in the UI. Confirm:
+
+Pending Invitations card no longer shows the row
+Seat badge moves back down by 1 (e.g. 3 of 4 → 2 of 4)
+DB query as above now returns 0 rows (the shell has been deleted, not just deactivated)
+DB query SELECT id, email, invitation_status FROM user_invitations WHERE LOWER(email) = LOWER('adam+hotfix4-test@shiftopsconsulting.com'); returns 1 row with invitation_status='cancelled'
+
+Step c: in the same UI, click Invite Member again. Send a second invitation to the same throwaway, same details. Confirm:
+
+The invite succeeds (no "User already exists in your company" error)
+Pending Invitations card shows a new row for the throwaway
+Seat badge moves up to 3 of 4 again
+DB query as in step a now returns 1 row again, with a NEW shell user (different id from step a)
+DB query as in step b now returns 2 rows for the email: one with invitation_status='cancelled' (old) and one with invitation_status='pending' (new)
+
+Step d: cancel the second invitation to keep dev clean. Confirm via DB query that the shell from step c is also deleted.
+The pre-Hotfix-4 behaviour would have failed at step c with "User already exists in your company". The post-Hotfix-4 behaviour completes through step d cleanly.
+4. Wider regression sanity
+Make sure nothing else broke. Hard-refresh /team-management as Adam. Confirm:
+
+Team Members card shows Adam and Viv (2 of 4)
+Pending Invitations is empty
+Invite Member button enabled
+
+That's the baseline state.
+Stop conditions
+
+Step 1 fails: tsc errors. Report.
+Step 3a fails: shell is not being created. Report.
+Step 3b: DB still has 1 row after cancel. Hotfix 4 didn't deploy or the DELETE didn't fire. Report.
+Step 3c fails: re-invite blocked with "User already exists in your company". Hotfix 4 didn't deploy. Report.
+Step 4: anything other than baseline state. Report.
+
+On success
+When all four V-check items pass, reply Hotfix 4 V-check pass.
+I will then:
+
+Refresh action log to v33: close #100 with full resolution including all four hotfixes, add #115 (streamlined invite flow) as new Open
+Tell you to resume the prod deploy bundle from stage 3.5 (Clerk and env-var verification on prod). Stage 3 DDL is already applied to prod, so we pick up there.

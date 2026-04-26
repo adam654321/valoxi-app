@@ -142,7 +142,7 @@ export class TeamRepository {
     return row || undefined;
   }
 
-  async cancelInvitationAndDeactivateShell(
+  async cancelInvitationAndDeleteShell(
     invitationId: number, userCompanyId: number, email: string
   ): Promise<UserInvitation | undefined> {
     return await db.transaction(async (tx) => {
@@ -155,8 +155,13 @@ export class TeamRepository {
         .returning();
       if (!cancelled) return undefined;
 
-      await tx.update(users)
-        .set({ isActive: false })
+      // Hotfix 4 to #100: hard-delete the shell so the email becomes
+      // re-invitable. The clerk_user_id IS NULL guard is now load-bearing
+      // as a safety net: it ensures we never delete a real linked user,
+      // even though the cancel route already gates on invitation status
+      // = pending (which by definition means the invitee has not yet
+      // completed Clerk sign-up).
+      await tx.delete(users)
         .where(and(
           sql`LOWER(${users.email}) = LOWER(${email})`,
           eq(users.userCompanyId, userCompanyId),
