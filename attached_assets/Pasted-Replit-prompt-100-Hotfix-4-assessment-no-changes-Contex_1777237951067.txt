@@ -1,0 +1,36 @@
+Replit prompt — #100 Hotfix 4 assessment, no changes
+Context. Adam identified during the prod deploy planning that cancelling an invitation currently deactivates the shell user row rather than deleting it. Combined with getUserByEmail returning inactive rows, this means you cannot re-invite an email after cancellation — team.service.ts createInvitation throws "User already exists in your company". Pre-#100 this didn't exist because there was no shell at invite time. This is a #100 regression. Hotfix 4 will change cancel to fully delete the shell.
+This is read-only. Do not edit any files. Confirm the dev-tree state precisely before the build prompt is written.
+Tasks
+1. Confirm the cancel method as-is
+Read server/repositories/team.repository.ts. Output the full cancelInvitationAndDeactivateShell method with line numbers from the live dev tree. I am expecting to see a transaction that:
+
+Updates user_invitations setting invitation_status='cancelled' for the matching id+company
+Updates users setting isActive=false where email matches, userCompanyId matches, and clerk_user_id IS NULL
+
+Confirm or contradict.
+2. Confirm getUserByEmail returns inactive rows
+Output the full getUserByEmail method from server/repositories/team.repository.ts with line numbers. Confirm it does NOT filter on isActive.
+3. Confirm the regression path
+Output lines around the existingUser guard in server/services/team.service.ts createInvitation (the lines that call getUserByEmail and throw BadRequestError). Confirm the guard does not check isActive either.
+4. Sweep for other callers of cancelInvitationAndDeactivateShell
+Grep the entire server/ and client/ and shared/ trees for the string cancelInvitationAndDeactivateShell. Report every match with file path, line number, and one line of context. The expected matches are:
+
+The method definition in server/repositories/team.repository.ts
+One call site in server/services/team.service.ts cancelInvitation
+
+If there are any other matches, report them. We need to know all rename targets.
+5. Confirm the shell creation path doesn't insert a membership row
+Read createInvitationWithUserShell in server/repositories/team.repository.ts. Confirm it ONLY inserts into users and userInvitations, NOT into userCompanyMemberships. We need to know whether deleting the shell needs to also clean up a membership row, or whether users is the only table.
+6. Verify FK references on users.id for shell rows
+Output a SQL query (do not execute, just show me the query you would run) that would identify every FK constraint pointing at users.id in the dev DB. The objective is to confirm that hard-deleting a shell user is safe (i.e., shells cannot have rows in any FK-dependent table because they've never logged in). Then run it and report results.
+7. TypeScript baseline
+Run npm run check. Report the current error count. We expect 0 from the Hotfix 3 baseline.
+Deliverable
+Plain-text report covering all seven tasks. No code changes. Once you return the report I will write a single-change build prompt that:
+
+Renames cancelInvitationAndDeactivateShell to cancelInvitationAndDeleteShell
+Replaces the UPDATE users SET isActive=false with DELETE FROM users keeping the same WHERE conditions (the clerk_user_id IS NULL guard becomes load-bearing as a safety net against ever deleting a real linked user)
+Updates the call site in team.service.ts
+
+The getUserByEmail method stays untouched. We deliberately rely on the DELETE making the inactive-row problem go away, rather than adding an isActive filter to getUserByEmail (which would create a different class of bug: you could end up with two rows for the same email if a shell got reactivated incorrectly).
