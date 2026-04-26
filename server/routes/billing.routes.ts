@@ -419,7 +419,6 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
 
     let consumedSeats = 0;
     try {
-      const { teamRepository } = await import('../repositories/team.repository');
       const { db } = await import('../db');
       const { users } = await import('@shared/schema/core');
       const { eq, or, and, sql: sqlTag } = await import('drizzle-orm');
@@ -429,9 +428,11 @@ router.get('/subscription', isAuthenticated, async (req: Request, res: Response)
           or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
           eq(users.isActive, true)
         ));
-      const invitations = await teamRepository.getInvitationsByCompany(userCompanyId);
-      const pendingInvitations = invitations.filter((inv: any) => inv.invitationStatus === 'pending').length;
-      consumedSeats = (activeUsers[0]?.count ?? 0) + pendingInvitations;
+      // Seat-count fix for #100 (Hotfix 3): mirror the gate formula in
+      // team.service.ts. Pre-created invitee shells are now in activeUsers
+      // (isActive=true with userCompanyId set at invite time). Summing
+      // pendingInvitations on top of that double-counts every shell.
+      consumedSeats = activeUsers[0]?.count ?? 0;
     } catch {
       consumedSeats = 0;
     }

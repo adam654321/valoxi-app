@@ -1,0 +1,81 @@
+Clean assessment. Single counting path, four lines of damage, clean tsc baseline. Here's the build prompt.
+
+Replit prompt — #100 Hotfix 3, build
+Context. Hotfix to #100 (the team invite Path A build). The seat-count fix described in Prompt 2 ("pendingInvitations no longer summed because the shells are now in activeUsers") landed correctly in server/services/team.service.ts at the gate, but was missed in server/routes/billing.routes.ts at the /subscription endpoint that feeds the displayed seat badge. Result: inviting one user moves the badge by 2 (the shell adds 1 to activeUsers, the pending invitation row adds another 1). This hotfix aligns the displayed count formula with the gate formula.
+Assessment confirmed:
+
+Bad block at server/routes/billing.routes.ts lines 420 to 437 inside the GET /subscription try block.
+Only counting path that double-counts. No other file affected.
+Symbols teamRepository, invitations, pendingInvitations are confined to lines 422, 432, 433 within the handler. Safe to remove.
+TypeScript baseline is 0 errors.
+
+This is one logical change in one file.
+Task
+In server/routes/billing.routes.ts, inside the GET /subscription handler, replace the entire try block at lines 421 to 437 with the simplified version below.
+Before (current dev tree, lines 420 to 437):
+tslet consumedSeats = 0;
+try {
+  const { teamRepository } = await import('../repositories/team.repository');
+  const { db } = await import('../db');
+  const { users } = await import('@shared/schema/core');
+  const { eq, or, and, sql: sqlTag } = await import('drizzle-orm');
+  const activeUsers = await db.select({ count: sqlTag<number>`count(*)::int` })
+    .from(users)
+    .where(and(
+      or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
+      eq(users.isActive, true)
+    ));
+  const invitations = await teamRepository.getInvitationsByCompany(userCompanyId);
+  const pendingInvitations = invitations.filter((inv: any) => inv.invitationStatus === 'pending').length;
+  consumedSeats = (activeUsers[0]?.count ?? 0) + pendingInvitations;
+} catch {
+  consumedSeats = 0;
+}
+After:
+tslet consumedSeats = 0;
+try {
+  const { db } = await import('../db');
+  const { users } = await import('@shared/schema/core');
+  const { eq, or, and, sql: sqlTag } = await import('drizzle-orm');
+  const activeUsers = await db.select({ count: sqlTag<number>`count(*)::int` })
+    .from(users)
+    .where(and(
+      or(eq(users.userCompanyId, userCompanyId), eq(users.currentCompanyId, userCompanyId)),
+      eq(users.isActive, true)
+    ));
+  // Seat-count fix for #100 (Hotfix 3): mirror the gate formula in
+  // team.service.ts. Pre-created invitee shells are now in activeUsers
+  // (isActive=true with userCompanyId set at invite time). Summing
+  // pendingInvitations on top of that double-counts every shell.
+  consumedSeats = activeUsers[0]?.count ?? 0;
+} catch {
+  consumedSeats = 0;
+}
+The diff is: drop the teamRepository dynamic import (line 422 in the before), drop the invitations fetch (line 432), drop the pendingInvitations filter (line 433), simplify the consumedSeats assignment (line 434), and add a comment matching the pattern at server/services/team.service.ts lines 74 to 76.
+No other file should be touched. No schema changes. No migrations.
+V-check
+After the edit, in this exact order:
+1. TypeScript clean
+Run npm run check. Expected: 0 errors. If anything regresses, stop and report.
+2. Visual confirmation of the change
+Read back server/routes/billing.routes.ts lines 415 to 440 and paste the result. I want to see the new try block in context.
+3. Quick API smoke as Adam
+While signed in as Adam in the dev environment, hit /api/v2/billing/subscription (the front end will call it on the next page load, or you can fetch it directly). Report the value of consumedSeats and effectiveMaxSeats in the response. With both throwaway test rows still present (adam+teamtest@shiftopsconsulting.com real linked user, and adam+user5@shiftopsconsulting.com shell row), the expected response is consumedSeats: 4, effectiveMaxSeats: 4. Not 5. The 5 was the bug.
+If the response shows consumedSeats: 4, the fix is working. If still 5, the deploy did not pick up the change. If the response errors out, paste the error.
+4. Browser hand check
+Hard-refresh /team-management as Adam. The badge should now show "Team: 4 of 4 seats used" with the "At limit" indicator. The Invite Member button should be disabled because the page hits the seat cap. Confirm both.
+5. Sanity on the gate
+No code change to server/services/team.service.ts is required, but as a paranoia check, output lines 64 to 89 of that file and confirm they still match the assessment report (the consumedSeats = activeUsers[0]?.count ?? 0 gate, no pending sum). The two seat-counting locations should now read identically.
+Out of scope for this prompt
+
+Cleanup of adam+teamtest and adam+user5 test rows. Adam is leaving them in place for now. Cleanup, if done, requires both DB delete and Clerk dashboard delete.
+Action log v32 update to close #100. That happens after the full retest passes, not in this prompt.
+Prod deploy bundle. That happens after a clean retest, not in this prompt.
+
+Stop conditions
+
+Step 1 fails: tsc errors. Report and stop.
+Step 3 returns consumedSeats: 5 or any value other than 4 with the test rows present, or any unexpected error response. Report and stop.
+Step 4 shows a different number than step 3. The front end is using stale cache. Confirm step 3 is correct first, then the cache will refresh on next mutation; this is not a bug to fix in this prompt.
+
+Once all five V-check items pass, reply "Hotfix 3 V-check pass" and I will write the resumed retest plan from step 5 onward, since steps 1 to 4 are already done.
