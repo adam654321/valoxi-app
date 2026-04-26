@@ -68,6 +68,8 @@ export class TeamRepository {
         isCompanyAdmin: false,
         isActive: true,
         emailVerified: false,
+        onboardingCompleted: true,
+        onboardingCompletedAt: new Date(),
       } as InsertUser);
 
       // 2. Insert the invitation row, now carrying name + jobTitle for

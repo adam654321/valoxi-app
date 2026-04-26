@@ -1,0 +1,133 @@
+HOTFIX 2 — invited team members skip onboarding.
+
+ONE LOGICAL CHANGE: invitees pre-created via the team invite flow should
+not see the onboarding screen. Their company-level fields (companyName,
+industry, companySize, country) are already set on the inviter's
+userCompanies row, which the shell shares via userCompanyId. Their
+jobTitle is collected by the invite dialog. The remaining onboarding
+side-effect (onboardingCompleted=true) needs to be set at shell-create
+time. hearAboutUs is intentionally left NULL because the invitee did not
+hear about Valoxi through marketing — they were invited.
+
+DEV ONLY.
+
+================================================================
+STEP 1 — Update the shell insert in createInvitationWithUserShell
+================================================================
+File: server/repositories/team.repository.ts
+In the createInvitationWithUserShell method, find the
+tx.insert(users).values({...}) block. Add two fields:
+
+  onboardingCompleted: true,
+  onboardingCompletedAt: new Date(),
+
+The full block becomes:
+
+  await tx.insert(users).values({
+    email: input.email,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    jobTitle: input.jobTitle ?? null,
+    userCompanyId: input.userCompanyId,
+    currentCompanyId: input.userCompanyId,
+    role: 'user',
+    userRole: input.invitedRole,
+    isCompanyAdmin: false,
+    isActive: true,
+    emailVerified: false,
+    onboardingCompleted: true,
+    onboardingCompletedAt: new Date(),
+  } as InsertUser);
+
+Rationale: companyName, industry, companySize, country live on
+userCompanies, not users — they are inherited automatically via
+userCompanyId. jobTitle is already populated from the invite dialog.
+hearAboutUs stays NULL because the invitee did not hear about Valoxi
+through marketing; populating it with a placeholder would pollute funnel
+analytics. checklistCompleted stays false (schema default) so the
+invitee sees the dashboard activation checklist on first sign-in, which
+is appropriate first-time-user UX.
+
+================================================================
+STEP 2 — Backfill the existing dev shell
+================================================================
+There is one shell sitting in dev from the previous test cycle (id=85,
+adam+teamtest@shiftopsconsulting.com). Backfill it so it matches the
+new behaviour, otherwise the existing shell will still hit onboarding
+when it eventually links to a Clerk user.
+
+UPDATE users
+   SET onboarding_completed = true,
+       onboarding_completed_at = NOW()
+ WHERE id = 85
+   AND clerk_user_id IS NULL
+   AND password_hash IS NULL;
+
+Verify the update affected exactly 1 row, then confirm:
+
+SELECT id, email, onboarding_completed, onboarding_completed_at,
+       hear_about_us, job_title
+  FROM users
+ WHERE id = 85;
+
+Expected: onboarding_completed = true, onboarding_completed_at recent,
+hear_about_us NULL (unchanged), job_title still populated.
+
+================================================================
+STEP 3 — TS check
+================================================================
+Run npm run check. Expected: zero errors.
+
+================================================================
+STEP 4 — Smoke test the change
+================================================================
+
+4.1 Pre-create a fresh shell via the existing invite flow. Use a clean
+email like adam+hotfix2@shiftopsconsulting.com:
+
+  curl -X POST http://localhost:5000/api/v2/team/invite \
+    -H "Content-Type: application/json" \
+    -H "Cookie: <Adam session>" \
+    -H "X-CSRF-Token: <csrf>" \
+    -d '{
+      "email": "adam+hotfix2@shiftopsconsulting.com",
+      "firstName": "Hotfix",
+      "lastName": "Tester",
+      "jobTitle": "QA",
+      "role": "analyst",
+      "message": "Verifying onboarding skip"
+    }'
+
+4.2 Verify the shell row:
+
+  SELECT id, email, first_name, last_name, job_title,
+         onboarding_completed, onboarding_completed_at,
+         checklist_completed, hear_about_us,
+         clerk_user_id, is_active
+    FROM users
+   WHERE email = 'adam+hotfix2@shiftopsconsulting.com';
+
+Expected:
+  - onboarding_completed = true
+  - onboarding_completed_at recent
+  - checklist_completed = false (schema default)
+  - hear_about_us = NULL
+  - clerk_user_id NULL
+  - is_active = true
+  - job_title = 'QA'
+
+4.3 Cleanup:
+
+  DELETE FROM user_invitations WHERE email = 'adam+hotfix2@shiftopsconsulting.com';
+  DELETE FROM users WHERE email = 'adam+hotfix2@shiftopsconsulting.com';
+
+================================================================
+STEP 5 — Report back
+================================================================
+1. Diff applied to server/repositories/team.repository.ts (verbatim)
+2. Output of Step 2 backfill UPDATE row count + verification SELECT
+3. npm run check output
+4. Output of Step 4.1 invite POST response
+5. Output of Step 4.2 shell row verification
+6. Output of Step 4.3 cleanup
+7. Confirmation that no other files were modified
