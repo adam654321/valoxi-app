@@ -1,0 +1,155 @@
+SCOPE: READ ONLY. SELECT statements only. Do not modify any rows.
+
+GOAL: Aggregate historical expert_analysis_results.processing_time and 
+document_analysis_results.processing_time to establish a baseline for 
+where time is currently spent in the pipeline. This drives observability 
+design decisions for #74.
+
+OUTPUT: Markdown report with one section per query, raw query results 
+included. No interpretation needed, just the numbers.
+
+NOTE on processing_time semantics (from the assessment report):
+- expert_analysis_results.processing_time: wall-clock from runExpert 
+  start to DB write, includes Gemini call + retry time + DB write
+- document_analysis_results.processing_time: single Gemini extraction 
+  call duration
+
+QUERY 1 — Per-expert processing time distribution (successful runs only)
+
+SELECT 
+  expert_type,
+  COUNT(*) AS run_count,
+  MIN(processing_time) AS min_ms,
+  ROUND(AVG(processing_time)::numeric, 0) AS avg_ms,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY processing_time) AS p50_ms,
+  PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY processing_time) AS p95_ms,
+  MAX(processing_time) AS max_ms
+FROM expert_analysis_results
+WHERE status = 'success'
+  AND processing_time IS NOT NULL
+GROUP BY expert_type
+ORDER BY avg_ms DESC;
+
+QUERY 2 — Per-expert processing time including failures
+
+SELECT 
+  expert_type,
+  status,
+  COUNT(*) AS run_count,
+  ROUND(AVG(processing_time)::numeric, 0) AS avg_ms,
+  MAX(processing_time) AS max_ms
+FROM expert_analysis_results
+WHERE processing_time IS NOT NULL
+GROUP BY expert_type, status
+ORDER BY expert_type, status;
+
+QUERY 3 — End-to-end Stage 2 wall-clock per target company
+This reconstructs what a full pipeline run cost by summing all 8 expert 
+processing_times for each target_company_id. NB this is a SUM not the 
+true wall clock because inter-expert wait time (state machine polling) 
+is not captured anywhere. Treat as a lower bound on real wall time.
+
+SELECT 
+  target_company_id,
+  COUNT(DISTINCT expert_type) AS experts_completed,
+  SUM(processing_time) AS sum_processing_time_ms,
+  ROUND(SUM(processing_time)::numeric / 1000, 1) AS sum_seconds,
+  MIN(created_at) AS first_record_inserted,
+  MAX(updated_at) AS last_record_updated,
+  EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(created_at))) AS true_wall_seconds
+FROM expert_analysis_results
+WHERE status = 'success'
+GROUP BY target_company_id
+HAVING COUNT(DISTINCT expert_type) >= 7
+ORDER BY sum_processing_time_ms DESC;
+
+QUERY 4 — Inter-expert gap estimation
+Difference between true wall time (max updated_at minus min created_at) 
+and sum of processing_times. The gap is everything not captured: state 
+machine polling, DB round-trips, parallel-but-not-fully-overlapping work, 
+etc.
+
+SELECT 
+  target_company_id,
+  ROUND(SUM(processing_time)::numeric / 1000, 1) AS sum_seconds,
+  ROUND(EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(created_at)))::numeric, 1) 
+    AS true_wall_seconds,
+  ROUND(
+    EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(created_at)))::numeric 
+    - SUM(processing_time)::numeric / 1000, 
+    1
+  ) AS unaccounted_seconds
+FROM expert_analysis_results
+WHERE status = 'success'
+GROUP BY target_company_id
+HAVING COUNT(DISTINCT expert_type) >= 7
+ORDER BY unaccounted_seconds DESC;
+
+QUERY 5 — Document analysis baseline
+Per-document Gemini call latency to know how much of the 5-6 minute 
+end-to-end is upstream document work versus downstream expert work.
+
+SELECT 
+  COUNT(*) AS doc_count,
+  MIN(processing_time) AS min_ms,
+  ROUND(AVG(processing_time)::numeric, 0) AS avg_ms,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY processing_time) AS p50_ms,
+  PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY processing_time) AS p95_ms,
+  MAX(processing_time) AS max_ms
+FROM document_analysis_results
+WHERE processing_time IS NOT NULL;
+
+QUERY 6 — Document analysis per company
+Total document-processing wall time per target company, to compare with 
+the expert-pipeline wall time from Query 3.
+
+SELECT 
+  dar.target_company_id,
+  COUNT(*) AS doc_analyses,
+  SUM(dar.processing_time) AS sum_doc_processing_ms,
+  ROUND(SUM(dar.processing_time)::numeric / 1000, 1) AS sum_doc_seconds
+FROM document_analysis_results dar
+WHERE dar.processing_time IS NOT NULL
+GROUP BY dar.target_company_id
+ORDER BY sum_doc_processing_ms DESC
+LIMIT 20;
+
+QUERY 7 — Stage 1 timing (data_quality plus screening)
+Stage 1 is the gate before Stage 2. If Stage 1 is slow it adds to total 
+perceived time even when Stage 2 is fine.
+
+SELECT 
+  COUNT(*) AS run_count,
+  ROUND(AVG(processing_time)::numeric, 0) AS avg_stage1_ms,
+  ROUND(AVG(detailed_analysis_processing_time)::numeric, 0) 
+    AS avg_detailed_ms,
+  PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY processing_time) 
+    AS p95_stage1_ms,
+  MAX(processing_time) AS max_stage1_ms
+FROM stage1_analysis_events
+WHERE processing_time IS NOT NULL;
+
+QUERY 8 — Token usage per expert
+Cross-check: bigger token counts often correlate with higher latency. 
+This tells us whether slow experts are slow because they are doing more 
+work or because Gemini is slow on equivalent input.
+
+SELECT 
+  expert_type,
+  COUNT(*) AS run_count,
+  ROUND(AVG((usage_metadata->>'promptTokenCount')::int)::numeric, 0) 
+    AS avg_prompt_tokens,
+  ROUND(AVG((usage_metadata->>'candidatesTokenCount')::int)::numeric, 0) 
+    AS avg_output_tokens,
+  ROUND(AVG((usage_metadata->>'totalTokenCount')::int)::numeric, 0) 
+    AS avg_total_tokens
+FROM expert_analysis_results
+WHERE status = 'success'
+  AND usage_metadata IS NOT NULL
+  AND usage_metadata ? 'promptTokenCount'
+GROUP BY expert_type
+ORDER BY avg_total_tokens DESC;
+
+OUTPUT FORMAT
+Markdown report with one section per query, query result included as a 
+plain table. No interpretation. NO row modifications anywhere.
