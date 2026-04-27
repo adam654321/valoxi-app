@@ -1,0 +1,105 @@
+Excellent. Several real corrections to make. The big one: my earlier build prompt would have caused a TypeScript error because I invented a metadata field on logEvent that doesn't exist. Glad you pushed for the assess.
+Three things to flag from the assess findings:
+
+Baseline tsc is 0 errors, not 6-7 as your standing rule states. Worth a note in your standing rules later. For this build, any new error = regression.
+track() uses dynamic import in billing.service.ts. My earlier prompt had it static. Will preserve the dynamic pattern.
+logEvent() has no metadata field. I should not invent one. Best to leave the existing logEvent call untouched.
+
+Rewriting the build prompt to be surgical: only add what's needed, don't rewrite working code, preserve existing calls verbatim.
+
+Build #122 prompt for Replit dev
+Surgical fix: subscription handler idempotency, canceled_at clearing, real period dates from Stripe.
+Files: server/routes/billing.routes.ts and server/services/billing.service.ts only. No schema changes. No new imports. No new files.
+Baseline tsc: 0 errors. Any new error is a regression that must be resolved before reporting back.
+Change 1 of 3: server/routes/billing.routes.ts
+In the case 'checkout.session.completed': block (currently lines 87 to 105), the activation call passes currentPeriodStart: new Date() and currentPeriodEnd: new Date() as hardcoded values. Replace with values fetched from Stripe.
+Inside the existing if (userCompanyId && session.customer && session.subscription) block, before the await billingService.activateSubscription(...) call, add:
+typescriptconst subscriptionId = session.subscription as string;
+const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+const primaryItem = stripeSub.items.data[0];
+const periodStart = primaryItem?.current_period_start
+  ? new Date(primaryItem.current_period_start * 1000)
+  : new Date();
+const periodEnd = primaryItem?.current_period_end
+  ? new Date(primaryItem.current_period_end * 1000)
+  : new Date();
+const stripeStatusMap: Record<string, SubscriptionStatus> = {
+  active: 'active',
+  trialing: 'trialing',
+  past_due: 'past_due',
+  canceled: 'canceled',
+  incomplete: 'incomplete',
+  incomplete_expired: 'canceled',
+  unpaid: 'past_due',
+};
+const mappedStatus: SubscriptionStatus = stripeStatusMap[stripeSub.status] ?? 'active';
+Then in the activateSubscription call, replace new Date() with periodStart and periodEnd, and change the customer / subscription reads to use the variables we just set, and add status: mappedStatus:
+typescriptawait billingService.activateSubscription(userCompanyId, {
+  stripeCustomerId: session.customer as string,
+  stripeSubscriptionId: subscriptionId,
+  planKey,
+  billingInterval,
+  currentPeriodStart: periodStart,
+  currentPeriodEnd: periodEnd,
+  status: mappedStatus,
+});
+Do not change anything else in this case block. The logWebhookEvent call after it stays exactly as is.
+Change 2 of 3: server/services/billing.service.ts, activateSubscription function (currently lines 128 to 172).
+Two changes inside the existing function. Do NOT rewrite the function. Do NOT touch the existing logEvent call or the existing track() dynamic import.
+Change 2a: Add status?: SubscriptionStatus as an optional field on the inline data parameter type. The signature becomes:
+typescriptasync activateSubscription(
+  userCompanyId: number,
+  data: {
+    stripeCustomerId: string;
+    stripeSubscriptionId: string;
+    planKey: PlanKey;
+    billingInterval: BillingInterval;
+    currentPeriodStart: Date;
+    currentPeriodEnd: Date;
+    status?: SubscriptionStatus;
+  }
+): Promise<Subscription>
+(SubscriptionStatus is already imported in this file per earlier verification.)
+Change 2b: Immediately after the existing const existing = await billingRepository.getByCompanyId(userCompanyId); line, add the idempotency guard:
+typescript// Idempotency guard: if this exact subscription is already in the desired state, no-op
+if (
+  existing &&
+  existing.stripeSubscriptionId === data.stripeSubscriptionId &&
+  (existing.status === 'active' || existing.status === 'trialing') &&
+  existing.canceledAt === null
+) {
+  return existing;
+}
+Change 2c: In the existing billingRepository.upsertByCompanyId(...) call, two field changes:
+
+Change status: 'active' to status: data.status ?? 'active'
+Add canceledAt: null, as a new field
+
+Do NOT change any other fields in the upsert. Do NOT change the logEvent or track calls that follow.
+Change 3 of 3: server/services/billing.service.ts, updateSubscriptionStatus function (currently lines 174 to 236).
+Single addition. Insert AFTER the existing dunning lifecycle block (after updateData.dunningDay7EmailSentAt = null; inside the if (data.status === 'active' || data.status === 'canceled') block) and BEFORE the const subscription = await billingRepository.updateByCompanyId(userCompanyId, updateData); line:
+typescript// Clear canceled_at when transitioning OUT of canceled
+if (existing && existing.status === 'canceled' && data.status !== 'canceled') {
+  updateData.canceledAt = null;
+}
+Do not touch anything else in this function.
+Confirmation checklist:
+
+ Two files changed: billing.routes.ts, billing.service.ts
+ No new imports added (all required types are already imported)
+ No schema changes
+ No changes to other webhook case blocks (customer.subscription.updated, customer.subscription.deleted, invoice.paid, invoice.payment_failed, invoice.upcoming)
+ No changes to logEvent call inside activateSubscription
+ No changes to dynamic track() import inside activateSubscription
+ No changes to repository layer
+ No changes to access middleware
+ No changes to other functions in billing.service.ts (createCheckoutSession, expireTrial, expireFreePeriodTrial, etc)
+
+After the build, report:
+
+Diff of both files (full file diffs preferred so I can sanity check no inadvertent changes)
+npx tsc --noEmit output. Must show 0 errors. If any new errors appear, do not proceed and report the errors instead
+Dev server boot log (lines containing [Billing], [Server], or any error)
+Confirmation that no other files were modified (git status)
+
+Do NOT deploy to prod. Do NOT touch dev DB. Just write the code and confirm clean compile + clean dev boot.

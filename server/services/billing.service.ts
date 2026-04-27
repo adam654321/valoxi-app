@@ -134,9 +134,21 @@ class BillingService {
       billingInterval: BillingInterval;
       currentPeriodStart: Date;
       currentPeriodEnd: Date;
+      status?: SubscriptionStatus;
     }
   ): Promise<Subscription> {
     const existing = await billingRepository.getByCompanyId(userCompanyId);
+
+    // Idempotency guard: if this exact subscription is already in the desired state, no-op
+    if (
+      existing &&
+      existing.stripeSubscriptionId === data.stripeSubscriptionId &&
+      (existing.status === 'active' || existing.status === 'trialing') &&
+      existing.canceledAt === null
+    ) {
+      return existing;
+    }
+
     const previousStatus = existing?.status ?? null;
     const previousPlanKey = existing?.planKey ?? null;
 
@@ -145,10 +157,11 @@ class BillingService {
       stripeCustomerId: data.stripeCustomerId,
       stripeSubscriptionId: data.stripeSubscriptionId,
       planKey: data.planKey,
-      status: 'active',
+      status: data.status ?? 'active',
       billingInterval: data.billingInterval,
       currentPeriodStart: data.currentPeriodStart,
       currentPeriodEnd: data.currentPeriodEnd,
+      canceledAt: null,
     });
 
     await billingRepository.logEvent({
@@ -208,6 +221,11 @@ class BillingService {
     if (data.status === 'active' || data.status === 'canceled') {
       updateData.pastDueSince = null;
       updateData.dunningDay7EmailSentAt = null;
+    }
+
+    // Clear canceled_at when transitioning OUT of canceled
+    if (existing && existing.status === 'canceled' && data.status !== 'canceled') {
+      updateData.canceledAt = null;
     }
 
     const subscription = await billingRepository.updateByCompanyId(userCompanyId, updateData);

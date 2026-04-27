@@ -91,13 +91,34 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
         const billingInterval = (session.metadata?.billingInterval as BillingInterval) ?? 'month';
 
         if (userCompanyId && session.customer && session.subscription) {
+          const subscriptionId = session.subscription as string;
+          const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+          const primaryItem = stripeSub.items.data[0];
+          const periodStart = primaryItem?.current_period_start
+            ? new Date(primaryItem.current_period_start * 1000)
+            : new Date();
+          const periodEnd = primaryItem?.current_period_end
+            ? new Date(primaryItem.current_period_end * 1000)
+            : new Date();
+          const stripeStatusMap: Record<string, SubscriptionStatus> = {
+            active: 'active',
+            trialing: 'trialing',
+            past_due: 'past_due',
+            canceled: 'canceled',
+            incomplete: 'incomplete',
+            incomplete_expired: 'canceled',
+            unpaid: 'past_due',
+          };
+          const mappedStatus: SubscriptionStatus = stripeStatusMap[stripeSub.status] ?? 'active';
+
           await billingService.activateSubscription(userCompanyId, {
             stripeCustomerId: session.customer as string,
-            stripeSubscriptionId: session.subscription as string,
+            stripeSubscriptionId: subscriptionId,
             planKey,
             billingInterval,
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(),
+            currentPeriodStart: periodStart,
+            currentPeriodEnd: periodEnd,
+            status: mappedStatus,
           });
         }
 
