@@ -1,0 +1,108 @@
+SCOPE: Build cycle. Two files modified. No schema changes, no migrations.
+Dev only. Do not deploy to prod from this cycle.
+
+GOAL: Add a per-expert timeout override mechanism for Gemini calls 
+made via GeminiExpertService.generateExpertAnalysis. Set QoE timeout 
+to 120 seconds (up from 90s default). All other expert types and 
+both document analysis services keep the existing 90 second default.
+
+CONTEXT: QoE expert historical data shows max processing_time of 102.5 
+seconds, indicating one timeout-fire (90s) plus a successful retry. 
+Bumping QoE timeout to 120s should reduce timeout firings without 
+affecting other experts. QoE has the highest input token count of all 
+experts at 32.8k, justifying the longer ceiling.
+
+CHANGE 1 — server/services/gemini-client.ts
+
+In the GenerateContentOptions interface (around lines 33-47), add an 
+optional timeoutMs field:
+
+  timeoutMs?: number;
+
+In the generateContent function, locate the setTimeout call (around 
+line 172-174). Currently it reads:
+
+  setTimeout(() => { 
+    req.destroy(new Error('AbortError: request timed out')); 
+  }, this.timeoutMs)
+
+Change this.timeoutMs to options.timeoutMs ?? this.timeoutMs:
+
+  setTimeout(() => { 
+    req.destroy(new Error('AbortError: request timed out')); 
+  }, options.timeoutMs ?? this.timeoutMs)
+
+This is the only line change in gemini-client.ts other than the 
+interface field addition. Do not change the DEFAULT_RETRY constant. 
+Do not change the constructor. Do not touch any other code path.
+
+CHANGE 2 — server/services/gemini-expert-service.ts
+
+At the top of the file, after the existing imports, add a top-level 
+constant for the per-expert timeout map:
+
+  const EXPERT_TIMEOUTS: Record<string, number> = {
+    qoe: 120000,
+  };
+
+In the generateExpertAnalysis function (around line 22), inside the 
+generateContent call (around line 35), pass the per-expert timeout. 
+Currently the call is something like:
+
+  geminiClient.generateContent({
+    model: ...,
+    prompt: ...,
+    thinkingLevel: ...,
+    // existing options
+  })
+
+Add timeoutMs to the options object:
+
+  geminiClient.generateContent({
+    model: ...,
+    prompt: ...,
+    thinkingLevel: ...,
+    timeoutMs: EXPERT_TIMEOUTS[expertType],
+    // existing options
+  })
+
+EXPERT_TIMEOUTS[expertType] returns undefined for any expert not in 
+the map (every expert except qoe). undefined falls through the 
+?? in gemini-client.ts to this.timeoutMs (90000), preserving the 
+existing default.
+
+VERIFICATION TASKS
+
+1. Confirm tsc compiles cleanly with zero errors.
+
+2. Confirm the existing gemini-client.ts behaviour is unchanged for 
+   any caller that does not pass timeoutMs:
+   - Document classification service still uses 90s
+   - Document step 2 service still uses 90s
+   - All experts other than QoE still use 90s
+
+3. Confirm the QoE call path uses 120s by reading the EXPERT_TIMEOUTS 
+   value at the point of the generateContent call.
+
+4. Read the actual diff of both files and confirm only the additive 
+   changes specified above were made. No incidental refactors. No 
+   formatting churn beyond the lines listed.
+
+5. Run the dev server and confirm it starts cleanly.
+
+6. Do not test against a live QoE call in this cycle — historical data 
+   already evidences the value of the change. Functional verification 
+   on QoE happens organically over the next two weeks of normal usage.
+
+NOT IN SCOPE
+- Schema changes
+- New tests
+- Changes to any other expert's timeout
+- Document analysis service changes
+- Retry logic changes
+- Logging changes
+- Prod deploy
+
+OUTPUT
+Diff of both files, tsc result, dev server start log, brief V-check 
+summary against the 5 verification tasks above.

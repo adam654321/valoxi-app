@@ -1,5 +1,9 @@
 import { geminiClient } from "./gemini-client";
 
+const EXPERT_TIMEOUTS: Record<string, number> = {
+  qoe: 120000,
+};
+
 export interface ExpertAnalysisUsage {
   promptTokenCount?: number;
   candidatesTokenCount?: number;
@@ -39,6 +43,7 @@ export class GeminiExpertService {
         responseMimeType: "application/json",
         thinkingLevel: resolvedThinkingLevel,
         maxOutputTokens: resolvedMaxOutputTokens,
+        timeoutMs: EXPERT_TIMEOUTS[expertType],
         service: `expert_analysis_${expertType}`,
         userId: tracking?.userId,
         userCompanyId: tracking?.userCompanyId,

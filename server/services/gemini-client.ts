@@ -39,6 +39,7 @@ export interface GenerateContentOptions {
   inlineData?: { mimeType: string; data: string };
   thinkingLevel?: ThinkingLevel;
   maxOutputTokens?: number;
+  timeoutMs?: number;
   userId?: number;
   userCompanyId?: number;
   dealId?: number;
@@ -171,7 +172,7 @@ export class GeminiClient {
 
         const timeoutId = setTimeout(() => {
           req.destroy(new Error('AbortError: request timed out'));
-        }, this.timeoutMs);
+        }, options.timeoutMs ?? this.timeoutMs);
 
         const req = https.request(reqOptions, (resp) => {
           clearTimeout(timeoutId);
