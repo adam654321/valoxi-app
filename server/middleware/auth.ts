@@ -55,6 +55,11 @@ export function blockWritesInViewAsMode(req: Request, res: Response, next: NextF
 export function injectViewAsIdentity(req: Request, _res: Response, next: NextFunction) {
   if (!req.session.adminViewingAsUserId) return next();
 
+  if (!req.session.isSystemAdmin) {
+    console.warn('[view-as] adminViewingAsUserId set on a non-admin session; ignoring swap');
+    return next();
+  }
+
   // Snapshot ALL identity and permission fields from the real admin session.
   // We restore them via session.save wrapping so the session store always
   // persists the real admin's values — the swap is request-scoped only.
@@ -162,8 +167,10 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
   }
 
   if (clerkResult && 'localUserId' in clerkResult) {
-    req.session.userId = clerkResult.localUserId;
-    req.session.userCompanyId = clerkResult.userCompanyId ?? undefined;
+    if (!req.session.adminViewingAsUserId) {
+      req.session.userId = clerkResult.localUserId;
+      req.session.userCompanyId = clerkResult.userCompanyId ?? undefined;
+    }
     req.clerkAuthenticated = true;
     return next();
   }

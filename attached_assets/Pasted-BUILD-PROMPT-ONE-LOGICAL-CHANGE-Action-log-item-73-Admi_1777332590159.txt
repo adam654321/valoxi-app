@@ -1,0 +1,56 @@
+BUILD PROMPT, ONE LOGICAL CHANGE.
+Action log item 73. Admin "view as" flow broken since Clerk migration: when admin clicks view-as on another user, the page shows the admin's own account instead of the target user's. Plus a small hardening line in injectViewAsIdentity.
+Two file changes:
+A) server/middleware/auth.ts — add guard inside isAuthenticated to skip Clerk's session.userId overwrite when adminViewingAsUserId is set
+B) server/middleware/auth.ts (same file) — add isSystemAdmin guard inside injectViewAsIdentity to prevent non-admin sessions from triggering the swap
+CHANGE A — Guard the Clerk overwrite in isAuthenticated
+Location: server/middleware/auth.ts, the block currently at lines 164–168 inside isAuthenticated (the block that processes a successful Clerk result).
+Current shape (do not change unrelated lines):
+if (clerkResult && 'localUserId' in clerkResult) {
+req.session.userId = clerkResult.localUserId;
+req.session.userCompanyId = clerkResult.userCompanyId ?? undefined;
+req.clerkAuthenticated = true;
+return next();
+}
+Change to:
+if (clerkResult && 'localUserId' in clerkResult) {
+if (!req.session.adminViewingAsUserId) {
+req.session.userId = clerkResult.localUserId;
+req.session.userCompanyId = clerkResult.userCompanyId ?? undefined;
+}
+req.clerkAuthenticated = true;
+return next();
+}
+The req.clerkAuthenticated assignment and return next() must remain unconditional — only the two session writes are gated by the new guard.
+CHANGE B — Hardening guard in injectViewAsIdentity
+Location: server/middleware/auth.ts, inside injectViewAsIdentity, immediately after the existing early-exit on line 56 (the if (!req.session.adminViewingAsUserId) return next() check).
+Add a second early-exit:
+if (!req.session.isSystemAdmin) {
+console.warn('[view-as] adminViewingAsUserId set on a non-admin session; ignoring swap');
+return next();
+}
+This must run BEFORE the field snapshot block (currently lines 61–67) so that a non-admin session never triggers the swap or the session.save wrapper installation.
+Reasoning (do not change): when this fix removes Clerk's accidental neutralisation of the swap, a tampered session with adminViewingAsUserId set would otherwise apply the swap on every request. The isSystemAdmin gate is a defensive check.
+OUT OF SCOPE
+
+Do not touch clerk-auth.ts
+Do not touch session.ts
+Do not touch routes/index.ts (the registration of injectViewAsIdentity)
+Do not touch admin.routes.ts (the view-as enter/exit endpoints)
+Do not touch any client-side code
+Do not touch blockWritesInViewAsMode (separate pre-existing issue, will be a new action log item)
+No schema changes
+No new database columns
+
+CONFIRMATION CHECKLIST after the build:
+
+File touched: server/middleware/auth.ts only
+Guard added inside isAuthenticated wrapping the two session.userId / userCompanyId writes only: yes/no
+req.clerkAuthenticated assignment and return next() remain unconditional inside the if block: yes/no
+Hardening guard added inside injectViewAsIdentity before the snapshot block: yes/no
+Hardening guard checks req.session.isSystemAdmin and logs a warning when failing: yes/no
+No other behaviour in either function changed: yes/no
+tsc error count: same baseline (6-7), no new errors introduced: confirm number
+Dev server boots clean
+
+After build, paste the diff or the full updated function bodies of isAuthenticated and injectViewAsIdentity so I can visually confirm both guards are in the right place before V-check.
