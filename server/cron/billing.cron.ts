@@ -129,6 +129,104 @@ export async function runDunningCancellationJob(): Promise<void> {
   }
 }
 
+export async function runTrialExpiryJob(): Promise<void> {
+  const stripe = new Stripe(config.stripe.secretKey);
+  try {
+    const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
+    const trialing = expiring.filter((s) => s.status === 'trialing' && s.freeMonthsTotal === 0 && (
+      (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
+      (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
+    ));
+
+    const trialEndsAtExpired = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          isNotNull(subscriptions.trialEndsAt),
+          lt(subscriptions.trialEndsAt, new Date()),
+          eq(subscriptions.status, 'trialing'),
+          eq(subscriptions.freeMonthsTotal, 0)
+        )
+      );
+
+    const allExpiring = [...trialing];
+    for (const sub of trialEndsAtExpired) {
+      if (!allExpiring.find(s => s.id === sub.id)) {
+        allExpiring.push(sub);
+      }
+    }
+    console.log(`[billing-cron] Trial expiry: processing ${allExpiring.length} non-free-period trial(s). Free-period trials handled by separate cron at 09:15.`);
+
+    let count = 0;
+
+    for (const sub of allExpiring) {
+      try {
+        if (sub.stripeSubscriptionId) {
+          try {
+            const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+            if (stripeSub.status === 'active' || stripeSub.status === 'trialing') {
+              continue;
+            }
+          } catch (stripeErr) {
+            console.error(`[billing-cron] Failed to check Stripe sub for company ${sub.userCompanyId}:`, stripeErr);
+          }
+        }
+
+        if (!sub.stripeSubscriptionId && sub.stripeCustomerId) {
+          try {
+            const result = await stripe.subscriptions.list({
+              customer: sub.stripeCustomerId,
+              status: 'all',
+              limit: 10,
+            });
+            const liveStripeSub = result.data.find(
+              s => s.status === 'active' || s.status === 'trialing'
+            );
+            if (liveStripeSub) {
+              console.warn(
+                `[billing-cron] Trial expiry skipped for company ${sub.userCompanyId}: ` +
+                `stripeSubscriptionId is NULL but found live Stripe sub ${liveStripeSub.id} ` +
+                `(status=${liveStripeSub.status}) via customer ${sub.stripeCustomerId}. ` +
+                `Will re-evaluate tomorrow.`
+              );
+              continue;
+            }
+          } catch (stripeErr) {
+            console.error(
+              `[billing-cron] Stripe lookup failed for company ${sub.userCompanyId} ` +
+              `(customerId=${sub.stripeCustomerId}), skipping cancel:`,
+              stripeErr
+            );
+            continue;
+          }
+        }
+
+        await billingService.expireTrial(sub.userCompanyId);
+
+        await billingRepository.logEvent({
+          userCompanyId: sub.userCompanyId,
+          eventType: 'subscription.trial_expired',
+          previousStatus: sub.status as any,
+          previousPlanKey: sub.planKey as any,
+          newStatus: 'canceled',
+          newPlanKey: sub.planKey as any,
+          payload: { trialEndsAt: sub.trialEndsAt, trialEnd: sub.trialEnd },
+        });
+
+        count++;
+      } catch (err) {
+        console.error(`[billing-cron] Failed to expire trial for company ${sub.userCompanyId}:`, err);
+      }
+    }
+
+    console.log(`[billing-cron] Expired ${count} trial(s)`);
+  } catch (err) {
+    console.error('[billing-cron] Trial expiry job failed:', err);
+    throw err;
+  }
+}
+
 export function initializeBillingCron(): void {
   cron.schedule('0 4 * * *', async () => {
     console.log('[billing-cron] Starting daily dunning checks (day 7 reminders + day 14 auto-cancel)...');
@@ -141,69 +239,9 @@ export function initializeBillingCron(): void {
   console.log('[billing-cron] Daily dunning checks scheduled at 04:00 London');
 
   cron.schedule('5 9 * * *', async () => {
-    const stripe = new Stripe(config.stripe.secretKey);
     console.log('[billing-cron] Starting daily trial expiry check...');
     try {
-      const expiring = await billingRepository.getSubscriptionsExpiringBefore(new Date());
-      const trialing = expiring.filter((s) => s.status === 'trialing' && s.freeMonthsTotal === 0 && (
-        (s.trialEnd && new Date(s.trialEnd) < new Date()) ||
-        (s.trialEndsAt && new Date(s.trialEndsAt) < new Date())
-      ));
-
-      const trialEndsAtExpired = await db
-        .select()
-        .from(subscriptions)
-        .where(
-          and(
-            isNotNull(subscriptions.trialEndsAt),
-            lt(subscriptions.trialEndsAt, new Date()),
-            eq(subscriptions.status, 'trialing'),
-            eq(subscriptions.freeMonthsTotal, 0)
-          )
-        );
-
-      const allExpiring = [...trialing];
-      for (const sub of trialEndsAtExpired) {
-        if (!allExpiring.find(s => s.id === sub.id)) {
-          allExpiring.push(sub);
-        }
-      }
-      console.log(`[billing-cron] Trial expiry: processing ${allExpiring.length} non-free-period trial(s). Free-period trials handled by separate cron at 09:15.`);
-
-      let count = 0;
-
-      for (const sub of allExpiring) {
-        try {
-          if (sub.stripeSubscriptionId) {
-            try {
-              const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
-              if (stripeSub.status === 'active' || stripeSub.status === 'trialing') {
-                continue;
-              }
-            } catch (stripeErr) {
-              console.error(`[billing-cron] Failed to check Stripe sub for company ${sub.userCompanyId}:`, stripeErr);
-            }
-          }
-
-          await billingService.expireTrial(sub.userCompanyId);
-
-          await billingRepository.logEvent({
-            userCompanyId: sub.userCompanyId,
-            eventType: 'subscription.trial_expired',
-            previousStatus: sub.status as any,
-            previousPlanKey: sub.planKey as any,
-            newStatus: 'canceled',
-            newPlanKey: sub.planKey as any,
-            payload: { trialEndsAt: sub.trialEndsAt, trialEnd: sub.trialEnd },
-          });
-
-          count++;
-        } catch (err) {
-          console.error(`[billing-cron] Failed to expire trial for company ${sub.userCompanyId}:`, err);
-        }
-      }
-
-      console.log(`[billing-cron] Expired ${count} trial(s)`);
+      await runTrialExpiryJob();
     } catch (err) {
       console.error('[billing-cron] Trial expiry job failed:', err);
     }
