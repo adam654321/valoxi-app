@@ -1,0 +1,75 @@
+READ ONLY ASSESS, NO EDITS, NO BUILD.
+Goal: scope the fix for action log item 73. Admin "view as" flow broken since Clerk migration. Read the actual dev tree. File paths and line numbers throughout. Short quoted snippets where helpful.
+Background from the action log: pre-Clerk, view-as worked correctly. Post-Clerk, when an admin clicks "view as" on another user, the page loads a read-only view but shows the admin's own account, not the target user. The previous diagnosis pointed at middleware ordering: injectViewAsIdentity runs first for non-/admin paths and swaps req.session.userId with a session.save wrapper to restore admin's value before persistence; then isAuthenticated runs per-route; the Clerk branch in tryClerkAuth in server/middleware/auth.ts overwrites the swapped session.userId with the admin's Clerk-resolved user ID, defeating the swap.
+Six sections to deliver:
+
+Current view-as middleware chain
+
+Read server/routes/index.ts and identify the view-as related middleware registration. Report:
+
+File path and line numbers for each piece
+Order of middleware registration: injectViewAsIdentity, isAuthenticated, any others
+How injectViewAsIdentity is gated (path matching, header check, etc.)
+The exact swap mechanism inside injectViewAsIdentity (currently)
+
+
+tryClerkAuth function in detail
+
+Read server/middleware/auth.ts in full or at least the tryClerkAuth function. Report:
+
+File path and line range
+What inputs it reads (req.session, headers, cookies)
+What it writes to req.session.userId and under what conditions
+Whether it has any awareness of an existing req.session.userId or adminViewingAsUserId state
+The exact line(s) where it overwrites session.userId
+
+
+Where adminViewingAsUserId comes from
+
+Trace the source. Report:
+
+Whether it lives in req.session, req.headers, a cookie, or somewhere else
+The client-side trigger that sets it (admin user table component or similar)
+Whether it persists across requests or is per-request only
+Type and shape
+
+
+The proposed handover fix
+
+The handover suggested: in tryClerkAuth, skip the session.userId assignment when adminViewingAsUserId is set. Specifically:
+
+Confirm whether this fix lands cleanly in the current code shape, or whether the function structure is different from what the handover described
+If it lands, identify the exact lines where the guard would go and what the guard condition reads
+If it does not land cleanly, propose an alternative fix shape and explain why
+
+
+Edge cases to consider
+
+Identify any of the following that apply:
+
+Admin views user A, then immediately views user B without going back to admin first: does session state cleanly transition?
+Admin views user A, then refreshes the page: does the view-as state persist or reset?
+Admin views user A, then attempts an action requiring admin permissions: does the system correctly route based on the admin's actual identity, not the viewed user?
+Admin's own session expires while viewing another user: what happens?
+Non-admin user has the adminViewingAsUserId header/session set somehow: is there a defence?
+Logout while in view-as mode: clean exit?
+
+For each, state whether the proposed fix preserves correct behaviour or whether additional code is needed.
+
+Test plan
+
+Propose how to V-check on dev. Specifically:
+
+Steps to reproduce the bug currently (state with current code, expected vs actual)
+Steps to verify the fix (admin views another user, sees that user's data, returns to admin, sees admin's data, etc.)
+Whether there is any existing test coverage that might break
+How to validate that the admin's actual identity is still used for permission checks while in view-as mode
+
+OUTPUT
+Single structured document, six sections in order. Read only. No edits to any file. No schema work. No build prompt at the end.
+CONFIRMATION CHECKLIST after running:
+
+Files touched: none (read only)
+Files read: full list with line ranges where relevant
+Sections complete: 1, 2, 3, 4, 5, 6
+Any blockers, surprises, or unknowns
