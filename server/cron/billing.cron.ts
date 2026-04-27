@@ -523,4 +523,104 @@ export function initializeBillingCron(): void {
   });
 
   console.log('[billing-cron] Free months warning/transition job scheduled for 9:15 AM UK time daily');
+
+  cron.schedule('0 8 * * *', async () => {
+    console.log('[billing-cron] Starting daily Stripe webhook failure check...');
+    try {
+      await runStripeWebhookFailureAlertJob();
+    } catch (err) {
+      console.error('[billing-cron] Stripe webhook failure check failed:', err);
+    }
+  }, { timezone: 'Europe/London' });
+  console.log('[billing-cron] Stripe webhook failure alert scheduled for 08:00 London');
+}
+
+export async function runStripeWebhookFailureAlertJob(): Promise<void> {
+  console.log('[billing-cron] Stripe webhook failure alert job started');
+
+  const recipient = config.smtp.alertEmail;
+  if (!recipient) {
+    console.warn('[billing-cron] SMTP_ALERT_EMAIL not configured — skipping webhook failure alert');
+    return;
+  }
+
+  const stripe = new Stripe(config.stripe.secretKey);
+  const startUnix = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+
+  interface FailedEvent {
+    id: string;
+    type: string;
+    created: number;
+    pending_webhooks: number;
+  }
+
+  const failedEvents: FailedEvent[] = [];
+  const PAGE_LIMIT = 5;
+  let pageCursor: string | undefined = undefined;
+  let pagesFetched = 0;
+  let cappedEarly = false;
+
+  while (true) {
+    const listParams: Stripe.EventListParams = {
+      delivery_success: false,
+      limit: 100,
+      created: { gte: startUnix },
+    };
+    if (pageCursor) listParams.starting_after = pageCursor;
+    const page = await stripe.events.list(listParams);
+
+    for (const evt of page.data) {
+      failedEvents.push({
+        id: evt.id,
+        type: evt.type,
+        created: evt.created,
+        pending_webhooks: evt.pending_webhooks,
+      });
+    }
+
+    pagesFetched++;
+
+    if (!page.has_more) break;
+
+    if (pagesFetched >= PAGE_LIMIT) {
+      console.warn(`[billing-cron] Webhook failure pagination cap hit (${PAGE_LIMIT} pages / ${failedEvents.length} events) — results truncated`);
+      cappedEarly = true;
+      break;
+    }
+
+    pageCursor = page.data[page.data.length - 1].id;
+  }
+
+  const failureCount = failedEvents.length;
+
+  if (failureCount === 0) {
+    console.log('[billing-cron] No webhook failures in last 24h');
+    return;
+  }
+
+  const eventLines = failedEvents
+    .map(evt => `${evt.id}, ${evt.type}, ${new Date(evt.created * 1000).toISOString()}, pending_webhooks: ${evt.pending_webhooks}`)
+    .join('\n');
+
+  const cappedNote = cappedEarly
+    ? `\nNote: results were capped at ${PAGE_LIMIT * 100} events — visit the Stripe dashboard for the full list.\n`
+    : '';
+
+  const subject = `[Valoxi] ${failureCount} Stripe webhook failure(s) in last 24h`;
+  const body =
+    `${failureCount} Stripe webhook failure(s) were recorded in the last 24 hours (window start: ${new Date(startUnix * 1000).toISOString()}).\n` +
+    `${cappedNote}\n` +
+    `${eventLines}\n\n` +
+    `Investigate at: https://dashboard.stripe.com/webhooks`;
+
+  try {
+    const result = await emailApiService.sendCustomEmail(recipient, subject, body);
+    if (result.success) {
+      console.log(`[billing-cron] Sent webhook failure alert for ${failureCount} event(s) to ${recipient}`);
+    } else {
+      console.error(`[billing-cron] Failed to send webhook failure alert to ${recipient}: ${result.message}`);
+    }
+  } catch (err) {
+    console.error('[billing-cron] Exception sending webhook failure alert:', err);
+  }
 }

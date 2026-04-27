@@ -1,0 +1,71 @@
+BUILD PROMPT, ONE LOGICAL CHANGE.
+Action log item 129. Add a daily Stripe webhook failure count cron with email alert.
+Replit is ground truth. Read the actual dev tree before writing anything. Maintain baseline of 6-7 pre-existing TypeScript errors, do not introduce new ones.
+CHANGE LOCATION
+Single file: server/cron/billing.cron.ts
+Two additions:
+
+New exported async function runStripeWebhookFailureAlertJob(): Promise<void>
+New cron.schedule(...) block inside initializeBillingCron(), appended after the last existing schedule block
+
+NEW FUNCTION SPEC
+Shape and conventions must mirror runDunningDay7ReminderJob:
+
+async, returns Promise<void>
+no parameters
+top-level try/catch wrapping entire body
+console.log on entry, console.log on summary, console.error on failure
+log prefix [billing-cron]
+reuses existing Stripe client construction pattern: new Stripe(config.stripe.secretKey)
+reuses emailApiService import already present at line 11
+
+Function logic:
+a) Compute window: now minus 24 hours, expressed as Unix timestamps for Stripe (gte for the start, no end needed since now is implicit)
+b) Read recipient from config.alertEmail. If empty string, log a warning and return early. Do not throw.
+c) Call stripe.events.list({ delivery_success: false, limit: 100, created: { gte: startUnix } }). Paginate via starting_after if has_more is true. Cap pagination at 5 pages defensively (500 events) and log a warning if cap is hit.
+d) If failureCount === 0, log [billing-cron] No webhook failures in last 24h and return. No email sent on zero failures.
+e) If failureCount > 0, build a plain text email body listing each failed event:
+
+event id
+event type
+created timestamp (ISO 8601 UTC)
+pending_webhooks count
+
+Subject line: [Valoxi] N Stripe webhook failure(s) in last 24h
+Where N is the count.
+Body opening line: One sentence stating the count and the window. Then a blank line. Then the event list, one event per line, comma separated fields. Then a blank line. Then a closing line pointing to the Stripe dashboard webhook page for investigation.
+f) Send via emailApiService using the same call shape used by existing methods in this file. Plain text, no HTML, no renderBrandedEmail. Recipient is config.alertEmail. From address default (noreply@send.valoxi.ai).
+g) Log [billing-cron] Sent webhook failure alert for N event(s) to <recipient> on success. console.error on send failure but do not throw — let the cron exit cleanly so the next day's run still fires.
+REGISTRATION
+Append after the last existing cron.schedule block inside initializeBillingCron():
+cron.schedule('0 8 * * *', async () => {
+console.log('[billing-cron] Starting daily Stripe webhook failure check...');
+try {
+await runStripeWebhookFailureAlertJob();
+} catch (err) {
+console.error('[billing-cron] Stripe webhook failure check failed:', err);
+}
+}, { timezone: 'Europe/London' });
+console.log('[billing-cron] Stripe webhook failure alert scheduled for 08:00 London');
+OUT OF SCOPE
+
+No new file
+No schema change
+No new email service method
+No env var changes (SMTP_ALERT_EMAIL will be set in Replit Secrets manually)
+Do not touch any other cron job
+Do not touch email-template.ts or email.service.ts
+
+CONFIRMATION CHECKLIST after the build:
+
+File touched: server/cron/billing.cron.ts (and only this file)
+New function present: yes/no
+Function shape matches runDunningDay7ReminderJob conventions: yes/no
+Cron schedule block added inside initializeBillingCron(): yes/no
+Schedule expression: '0 8 * * *' with timezone Europe/London: yes/no
+Pagination cap implemented (5 pages, 500 events): yes/no
+Empty recipient early return implemented: yes/no
+Zero failures path returns without sending: yes/no
+Plain text email, no renderBrandedEmail: yes/no
+tsc error count: same baseline as before (6-7), no new errors: confirm number
+Dev server boots clean: yes/no
