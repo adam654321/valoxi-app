@@ -1,0 +1,59 @@
+You're right, fair catch. We have an assess from earlier today (I incorporated those findings into the build prompt above) but there are gaps I should have flagged:
+What the earlier assess covered
+
+Activation handler body and helper
+updateSubscriptionStatus body
+Subscription object field reads
+Schema for subscriptions table
+Repository write methods
+Stripe API version (NOT pinned)
+Idempotency guards
+
+What it didn't cover that the build prompt now needs
+
+The exact TypeScript signature of the activateSubscription data type. I assumed an inline object type but it might be a named interface/type alias somewhere. If it is, my build prompt that adds status? to an inline type won't match the actual code.
+The track() function signature. I copied it forward but didn't verify what arguments it takes.
+The Stripe SDK version. stripe.subscriptions.retrieve() is standard but worth confirming the local SDK supports the call shape I'm assuming.
+The PlanKey and BillingInterval type imports. I'm assuming they're already imported in billing.routes.ts. If not, the build needs an import line.
+What billingRepository.logEvent() actually accepts. I wrote a metadata field but the existing code may not use that shape.
+What track() and previousStatus variables look like in current code. I preserved them but don't have ground truth.
+The exact location to insert the canceled_at clear in updateSubscriptionStatus. I said "after dunning lifecycle block" but didn't have full sight of the current block structure.
+
+These are real gaps. A build prompt that gets compile errors on dev wastes a session. Let me write a tight pre-build assess to fill them.
+Read-only pre-build assess for #122
+Run this on Replit dev. Quick. Read-only.
+
+Pre-build read-only verification for #122 fix. No edits.
+
+activateSubscription exact signature. Find the function in server/services/billing.service.ts around lines 128-172. Report the literal function signature including parameter type definition. If the second parameter type is a named interface/type alias rather than inline, also report the definition of that type.
+updateSubscriptionStatus full body. Same file, around lines 174-236. Report the complete function body including all conditional blocks. Specifically I need to see:
+
+Where previousStatus is set
+The dunning lifecycle conditionals
+The exact statement that calls updateByCompanyId
+Anything between those points
+
+
+Imports at top of server/routes/billing.routes.ts. Report all import statements. Specifically confirm: is Stripe imported? Are PlanKey, BillingInterval imported? Is billingService imported?
+Imports at top of server/services/billing.service.ts. Same exercise. Confirm imports for Subscription type, PlanKey, BillingInterval, repository, track function.
+track() function signature. Find its definition (likely server/services/analytics.ts or similar). Report the signature.
+billingRepository.logEvent() exact signature. server/repositories/billing.repository.ts. Report the function signature and the InsertSubscriptionEvent type if there is one. We need to know what fields are required vs optional.
+Stripe SDK version installed.
+
+bashcat package.json | grep '"stripe"'
+Report the version pinned.
+
+stripe.subscriptions.retrieve call shape. Search for any existing call to this method in the codebase:
+
+bashgrep -rn "subscriptions.retrieve" server/ --include="*.ts"
+Report any existing usage. Confirms the call shape is supported in this SDK version.
+
+Existing Stripe instance reuse. In server/routes/billing.routes.ts, the webhook handler creates a new Stripe instance per request (line 60 from earlier assess: const stripe = new Stripe(config.stripe.secretKey)). Confirm that's still the pattern. We'll reuse this instance for the new retrieve call rather than creating another.
+TypeScript baseline error count. Run:
+
+bashnpx tsc --noEmit 2>&1 | tail -5
+Report the error count. Establishes the baseline so we know whether the build introduces regressions.
+Confirmation:
+
+All 10 items reported
+No edits made
