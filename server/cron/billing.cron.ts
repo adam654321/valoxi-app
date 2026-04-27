@@ -524,7 +524,7 @@ export function initializeBillingCron(): void {
 
   console.log('[billing-cron] Free months warning/transition job scheduled for 9:15 AM UK time daily');
 
-  cron.schedule('54 22 * * *', async () => {
+  cron.schedule('59 22 * * *', async () => {
     console.log('[billing-cron] Starting daily Stripe webhook failure check...');
     try {
       await runStripeWebhookFailureAlertJob();
