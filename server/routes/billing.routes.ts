@@ -240,12 +240,6 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
               matchingSub.userCompanyId,
               {
                 status: 'active',
-                currentPeriodStart: invoice.period_start
-                  ? new Date(invoice.period_start * 1000)
-                  : undefined,
-                currentPeriodEnd: invoice.period_end
-                  ? new Date(invoice.period_end * 1000)
-                  : undefined,
               },
               event.id
             );
