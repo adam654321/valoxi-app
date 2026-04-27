@@ -1,0 +1,65 @@
+READ ONLY ASSESS, NO EDITS, NO BUILD.
+Goal: scope what needs to land for a daily Stripe webhook failure count cron with email alert. Action log item 129. Read the actual dev tree, not training data. File paths and line numbers throughout. Short quoted snippets where helpful. No code written for the new cron itself.
+Five sections to deliver:
+
+Stripe API method for failed webhook deliveries
+
+Confirm what Stripe SDK v20.4.0 supports for querying webhook delivery failures. Specifically:
+
+Is there a stripe.events.list with a delivery filter, or does this require the Webhook Endpoints API
+What params look like (delivery_success false, limit, created date range, type filter)
+Response shape and the relevant fields per event
+Pagination default page size
+Rate limit considerations for daily polling
+
+If the SDK does not support a clean filter, flag the workaround.
+
+Existing cron infrastructure
+
+Read server/services/billing.cron.ts in full. Report:
+
+Scheduler library (node-cron, agenda, custom, or Replit equivalent)
+Where cron schedules are registered (file path and line numbers)
+Full pattern of an existing daily job, using the trial expiry cron at 09:05 Europe London as the model
+How errors are handled in existing crons
+Whether there is any shared logging or alerting already present
+
+
+Email channel for the alert
+
+Read server/services/email-template.ts and at least two service files that consume renderBrandedEmail. Report:
+
+Shape of an existing transactional email method (signature, send-from, body formatting)
+Whether any existing pattern handles internal admin alerts vs customer facing emails
+Recipient pattern: configured admin address constant, env var, or new wiring needed
+Best from address: support@valoxi.ai, transactional helper, or other
+Whether renderBrandedEmail fits an internal alert or whether plain text is cleaner
+
+
+Threshold logic options
+
+Data gathering only, do not pick one:
+
+Existing alerting thresholds anywhere in the codebase
+Options to consider: any failure in 24 hours, more than N failures, more than N percent failure rate, streak of consecutive failures
+Pros and cons of each in plain English
+
+I will pick.
+
+Where the new cron should register
+
+Confirm exact file path the new cron should land in (likely billing.cron.ts alongside trial expiry, but verify). State:
+
+File path
+Function shape (signature, return type, async pattern)
+Where it gets registered with the scheduler
+Whether anything else needs to import or wire it up
+
+OUTPUT
+Single structured document, five sections in order. Read only. No edits to any file. No schema work. No build prompt at the end.
+CONFIRMATION CHECKLIST after running:
+
+Files touched: none (read only)
+Files read: full list
+Sections complete: 1, 2, 3, 4, 5
+Any blockers or unknowns
