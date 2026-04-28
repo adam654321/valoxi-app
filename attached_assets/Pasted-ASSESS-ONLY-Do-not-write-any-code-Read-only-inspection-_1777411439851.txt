@@ -1,0 +1,82 @@
+ASSESS-ONLY. Do not write any code. Read-only inspection plus a small amount of static analysis and grep. No writes. No builds. No file modifications. No deploys.
+
+Context: I'm preparing to fix two related security findings.
+
+C-1: The CSRF middleware at server/middleware/csrf.ts contains a bypass for Clerk-authenticated requests. Specifically, lines that read approximately:
+  if (req.clerkAuthenticated === true) {
+    return next();
+  }
+This bypass is incorrect. Clerk in this app uses cookie-based authentication via the __session cookie, which is vulnerable to CSRF in the same way the legacy session cookie is. The bypass means every authenticated cookie-bearing request currently skips CSRF validation. The fix is to remove the bypass.
+
+C-2: There is no Origin or Referer header validation on /api/v2 write methods. This is the defence-in-depth layer that pairs with CSRF. The fix is to add a new middleware that rejects non-GET requests to /api/v2 if the Origin or Referer header is missing or does not match the app's expected host.
+
+The system is in production with paying customers. CSRF and Origin changes can lock everyone out of writing anything if shipped wrong. I want to verify a number of preconditions before scoping the build prompts.
+
+This prompt does NOT authorise any code changes. Read-only only.
+
+The seven things I need answered:
+
+Question 1: confirm the exact current text of validateCsrfToken
+Read server/middleware/csrf.ts in full and quote the file verbatim. I want line numbers and exact text so that the build prompt can use precise str_replace patterns.
+
+Question 2: enumerate every place in the SERVER that sets req.clerkAuthenticated
+Search the entire server/ directory for "clerkAuthenticated". Report every file and line number where this field is read or written. I want to confirm the only writer is server/middleware/auth.ts inside isAuthenticated, and that there are no other places that could set this flag. If anything else writes it, that affects the fix shape.
+
+Question 3: enumerate every place in the CLIENT that fires a non-GET request
+Search the entire client/src directory for these patterns:
+- fetch( calls with method that is not GET
+- apiRequest("POST", ...), apiRequest("PUT", ...), apiRequest("PATCH", ...), apiRequest("DELETE", ...)
+- any .mutate() invocation that maps to a non-GET endpoint
+
+For each one, report:
+- file path and line number
+- the URL being called
+- whether the call is via apiRequest (which automatically attaches x-csrf-token if csrfToken is set in module memory) or via raw fetch (which does NOT attach the header)
+
+The reason I need this: once the CSRF bypass is removed, every non-GET request that does not carry a valid x-csrf-token header will return 403. Any raw fetch POST that bypasses apiRequest will break.
+
+Specifically check these known suspect files:
+- client/src/pages/auth/login.tsx (the ResendMagicLinkSection uses raw fetch)
+- client/src/lib/queryClient.ts (getQueryFn used by react-query, but that is GET-only)
+- client/src/hooks/useAuth.ts (raw fetch but GET-only)
+- any file under client/src that does multipart/form-data uploads (these often use raw fetch because of FormData handling)
+
+Question 4: confirm the timing of refreshCsrfToken on first page load
+Read client/src/hooks/useAuth.ts and trace the useEffect that calls refreshCsrfToken. Confirm:
+- it fires after the user query resolves with a non-null user
+- it does NOT fire if the user is unauthenticated
+- it uses a ref to fire only once
+
+Then identify any UI paths where a write mutation could fire BEFORE refreshCsrfToken completes. Specifically check:
+- the dashboard mount (does anything POST/PUT on initial render?)
+- the billing page mount
+- the onboarding flow
+- the portal management page
+- the target companies page
+- the deal modeller
+
+I want to know if there's a race where useAuth resolves the user, the page mounts, the page fires a mutation, and refreshCsrfToken hasn't completed yet. This race is currently masked by the Clerk CSRF bypass. Once removed, it will surface as 403s.
+
+Question 5: list every authenticated /api/v2 write endpoint and confirm CSRF middleware is in the chain
+Read server/routes/index.ts and confirm that every authenticated mount (every line that includes isAuthenticated) also includes validateCsrfToken in the same chain. Report any mount that has isAuthenticated but lacks validateCsrfToken. Those would be writes that currently bypass CSRF in BOTH directions (Clerk AND legacy users). Worth knowing before we touch the middleware.
+
+Question 6: define the current expected Origin / Referer values
+Identify what app.valoxi.ai serves in production and what dev workspaces serve. Specifically:
+- What is the value of process.env.APP_URL in dev (now that we have set it)?
+- What is the value of process.env.APP_URL in prod (now that we have set it)?
+- What hostname does config.baseUrl resolve to in each?
+- What is the current dev replit workspace URL (from process.env.REPLIT_DEV_DOMAIN if set)?
+
+This determines what the new Origin validation middleware should accept.
+
+Question 7: identify any non-browser callers of /api/v2 routes
+Are there any:
+- server-to-server callers of /api/v2 (unlikely but worth checking)
+- mobile native clients hitting /api/v2 directly (probably none, Valoxi is web only)
+- automated test runners (playwright, vitest) that hit /api/v2 endpoints
+- any CI/CD or n8n workflows that call /api/v2 with credentials
+
+A non-browser caller would not send Origin or Referer headers. If we add Origin validation, those callers break. The most likely place: tests/ directory and playwright-report/ directory plus any reference to /api/v2 in scripts/ or .github/.
+
+Output format:
+Return a single report with seven sections, one per question. Quote file paths and line numbers throughout. Do not propose fixes. Do not write code. Do not modify any file. The output of this assess feeds into a sequence of build prompts which I will scope after reading your answers.
