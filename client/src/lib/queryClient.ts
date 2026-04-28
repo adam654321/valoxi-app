@@ -6,15 +6,18 @@ export function getCsrfToken(): string | null {
   return csrfToken;
 }
 
-export async function refreshCsrfToken(): Promise<void> {
+export async function refreshCsrfToken(): Promise<boolean> {
   try {
     const res = await fetch("/api/v2/auth/csrf", { credentials: "include" });
     if (res.ok) {
       const json = await res.json();
       csrfToken = json?.data?.csrfToken ?? null;
+      return true;
     }
+    return false;
   } catch {
     csrfToken = null;
+    return false;
   }
 }
 

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { refreshCsrfToken } from "@/lib/queryClient";
 
@@ -65,13 +64,14 @@ export function useAuth() {
     retryDelay: (attempt) => ([1000, 2000, 3000, 4000][attempt] ?? 4000),
   });
 
-  const csrfFetched = useRef(false);
-  useEffect(() => {
-    if (user && !csrfFetched.current) {
-      csrfFetched.current = true;
-      refreshCsrfToken();
-    }
-  }, [user]);
+  const { isLoading: csrfLoading } = useQuery<boolean>({
+    queryKey: ["__internal__/csrf-token-bootstrap"],
+    queryFn: refreshCsrfToken,
+    enabled: !!user,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 1,
+  });
 
   const authError: "CLERK_USER_NOT_LINKED" | "CLERK_USER_INACTIVE" | null =
     (error as any)?.code === "CLERK_USER_NOT_LINKED"
@@ -82,7 +82,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading,
+    isLoading: isLoading || (!!user && csrfLoading),
     isAuthenticated: !!user,
     isSystemAdmin: !!user?.isSystemAdmin,
     error,
