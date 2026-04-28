@@ -1,0 +1,47 @@
+ASSESS-ONLY. Do not write any code. Read-only inspection of the dev workspace plus a small amount of read-only DB query. No writes. No builds. No file modifications.
+
+Context: I'm scoping security remediations for the Valoxi codebase. I need answers to four discrete questions before I can scope build prompts. This is a pure information-gathering pass.
+
+CRITICAL: this prompt does NOT authorise any code changes, file writes, schema changes, deploys, or DB writes. Read-only only. If anything in your investigation would require a write, stop and report back what you would need to write and why instead of doing it.
+
+Question 1: APP_URL configuration
+Read the value of process.env.APP_URL in the dev environment by writing a one-line shell command that prints it. Also check the prod Replit Secrets pane (or document.txt equivalent) to tell me whether APP_URL is set in prod and what its value is. If you cannot read prod secrets, say so and just give me dev's value.
+
+Question 2: Clerk cookie attributes in browser
+Look at server/middleware/session.ts to confirm legacy session cookie config. Then look at how Clerk is initialised in this app: read server/middleware/clerk-auth.ts, check package.json for @clerk/express version, and search the codebase for clerkMiddleware, clerkClient initialisation, or any Clerk cookie-related config. Report:
+- which @clerk/express version is pinned
+- whether the app calls clerkMiddleware() at the express level (in server/index.ts or routes/index.ts) or relies entirely on tryClerkAuth() being called from isAuthenticated
+- whether anywhere in the codebase configures the Clerk session cookie SameSite, Secure, or HttpOnly attributes (it almost certainly doesn't because Clerk manages its own cookies, but confirm)
+- whether Clerk is configured to use cookie-based auth, bearer-token-based auth, or both. The way to check this: search the client-side code (client/) for how API requests are made. Look for fetch() or axios calls that include Authorization headers, especially any pattern like getToken() from @clerk/react. If client requests include an Authorization: Bearer header from Clerk's getToken(), Clerk is using bearer tokens for API calls. If they don't, Clerk is using cookies. Report what you find with file paths and a representative line.
+
+Question 3: Were seed-admins.ts and seed-test-team-users.ts ever run against the prod database?
+This requires read-only DB inspection of prod. Two queries to run against prod DB (read-only SELECT, no writes):
+
+(a) Check whether the two seeded admin emails exist in prod users table:
+SELECT id, email, first_name, last_name, is_system_admin, is_active, created_at, password_hash IS NOT NULL AS has_password_hash, clerk_user_id IS NOT NULL AS has_clerk_link FROM users WHERE email IN ('viv@shiftopsconsulting.com', 'adam@shiftopsconsulting.com');
+
+(b) Check whether the six test team users exist in prod:
+SELECT id, email, first_name, last_name, is_active, created_at, password_hash IS NOT NULL AS has_password_hash FROM users WHERE email IN ('test.dealmanager@test.com', 'test.senioranalyst@test.com', 'test.analyst@test.com', 'test.accountant@test.com', 'test.legaladvisor@test.com', 'test.viewer@test.com');
+
+Report the full result rows from prod for both queries. If a row exists with has_password_hash = true and the created_at is consistent with when the seed scripts were last run, that's evidence the script was executed against prod and the bcrypt hash of the seed password is sitting in the prod users table. If has_clerk_link = true on the admin rows, password rotation is partially mitigated (Clerk auth is the active path) but the legacy hash is still latent.
+
+Question 4: Sanity check on existing security state
+Three small read-only checks:
+
+(c) Confirm the current value of subscription-events table unique constraint:
+SELECT conname, contype FROM pg_constraint WHERE conrelid = 'subscription_events'::regclass AND contype = 'u';
+
+(d) Confirm whether webhook_events.stripe_event_id has a unique constraint or just a btree index:
+SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'webhook_events';
+
+(e) Read server/index.ts to confirm whether app.set('trust proxy', ...) is called anywhere. If not, that's H-1 confirmed unfixed.
+
+Output format:
+Return a single report with five sections:
+1. APP_URL state (dev value, prod value if accessible)
+2. Clerk auth mechanism (version, middleware mode, cookie vs bearer, code references with file paths)
+3. Seed admin script execution evidence (rows from query a and b, plus your assessment of whether each script was run against prod)
+4. Subscription-events / webhook-events constraint state (rows from c and d)
+5. Trust proxy state (yes or no)
+
+Stick strictly to read-only. Do not propose fixes, do not write code, do not modify any file. Just answer the questions.
