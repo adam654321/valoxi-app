@@ -1,0 +1,63 @@
+Cycle 2 Build 1: C-9 chase-up /process gate.
+
+Context.
+First of six Cycle 2 builds. Closing C-9 by replacing the manual userId check on POST /api/v2/chase-up/process with the isSystemAdmin middleware. The /process endpoint triggers chaseUpService.processChaseUpSchedules(), which fetches all overdue schedules across all tenants. It must not be reachable by non-admin authenticated users. The cron at server/cron/chase-up.cron.ts calls the service directly (not via HTTP) and is unaffected by HTTP gating.
+
+File touched.
+server/routes/chase-up.routes.ts only. One file, two locations.
+
+Steps.
+1. Re-read server/routes/chase-up.routes.ts in full to confirm current dev state.
+2. Run npx tsc --noEmit and report the error count. Baseline is 0.
+3. Apply the diff below exactly as shown.
+4. Run npx tsc --noEmit again and report the error count. Must remain 0.
+5. Report what you changed (unified diff) and stop.
+
+Change 1: add a new import line at the bottom of the existing import block.
+
+Existing import block:
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import { chaseUpService } from '../services/chase-up.service';
+import { sendSuccess } from '../utils/response';
+import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
+
+After change, with one new line appended:
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import { chaseUpService } from '../services/chase-up.service';
+import { sendSuccess } from '../utils/response';
+import { UnauthorizedError, BadRequestError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
+import { isSystemAdmin } from '../middleware/auth';
+
+Change 2: replace the /process route handler body.
+
+Current /process route:
+router.post('/process', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  if (!userId) throw new UnauthorizedError();
+  
+  const result = await chaseUpService.processChaseUpSchedules();
+  sendSuccess(res, { message: 'Chase-up processing complete', ...result });
+}));
+
+After change:
+router.post('/process', isSystemAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const result = await chaseUpService.processChaseUpSchedules();
+  sendSuccess(res, { message: 'Chase-up processing complete', ...result });
+}));
+
+Constraints.
+- Do not touch any other route in this file.
+- Do not touch any other file.
+- Do not remove UnauthorizedError or BadRequestError from the imports. Both are still used by other routes in this file (extend, stop).
+- Do not modify chaseUpService.processChaseUpSchedules.
+- Do not modify server/cron/chase-up.cron.ts. The cron is unaffected.
+- Do not deploy. Dev only.
+
+Report.
+Paste the unified diff of the applied changes and the pre-change and post-change tsc error counts.
+
+STOP after reporting. Do not run V-check, do not deploy.
