@@ -1,0 +1,71 @@
+Cycle 2 security assess. Read-only. No code changes.
+
+Context.
+Builds 1, 2, 3 are deployed to prod and clean. CSRF is enforced. Origin gate is mounted at /api/v2. We now close the six remaining route-level Criticals (C-3, C-4, C-7, C-8, C-9, C-10).
+
+This prompt is assess only. Do not write code, do not run tsc, do not modify any files. End with a STOP.
+
+Read the following files in full and confirm current dev state:
+
+1. server/routes.ts (confirm middleware mount order and whether isAuthenticated is applied globally to /api/v2 or only per-route)
+2. server/middleware/auth.ts (confirm helpers available: isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode, and that canManageCompany is a valid permission key)
+3. server/routes/email.routes.ts
+4. server/routes/billing.routes.ts
+5. server/routes/chase-up.routes.ts
+6. server/routes/roles.routes.ts
+7. server/routes/document-analysis.routes.ts
+
+Then read the relevant services to confirm whether tenant scope is enforced inside the service layer (so we can decide if the fix sits at the route or the service):
+
+8. server/services/email.service.ts (sendCustomEmail, sendTeamInvitation, sendPortalAccessLink, sendDocumentNotification)
+9. server/services/file-analysis.service.ts (retriggerAnalysisForDocument)
+10. server/services/chase-up.service.ts (processChaseUpSchedules)
+11. server/services/roles.service.ts (getUserRoles, getUserRole, getUserWithPermissions, updateUserRole, checkPermission)
+
+For each of C-3, C-4, C-7, C-8, C-9, C-10 produce a short assessment block with:
+- File path and line numbers of the gap
+- Current state in one sentence
+- The gap in one sentence
+- Recommended fix using the smallest possible diff
+- Proposed diff shown as old block then new block, not a full file rewrite
+- Any caller, test, cron job, or client code that could break if the fix is applied
+
+Specific guidance per finding:
+
+C-3 open email relay (POST /api/v2/email/send).
+The /send endpoint accepts to, subject, html from the body. Recommend the right gate. Either delete the route if no caller uses it, or restrict to isSystemAdmin, or add a tenant scope check on the recipient. Report which is correct based on actual usage in the codebase. Grep for emailApiService.sendCustomEmail and for fetch calls to /api/v2/email/send.
+
+C-4 email helper routes.
+Three endpoints: /invitation/:invitationId/send, /portal/:tokenId/send, /document-notification. For each, identify whether the underlying service already verifies tenant ownership. If yes, route is safe and reclassify as not-a-finding with evidence. If no, propose a route-level scope check that loads the invitation, token, or target company and returns 403 if its userCompanyId does not match req.session.userCompanyId.
+
+C-7 billing writes lack canManageCompany.
+Routes affected: /verify-session, /checkout, /upgrade, /portal, /addon, /remove-slot, /remove-seat, /cancel, /reactivate. Recommend adding requirePermission('canManageCompany') in the middleware chain after isAuthenticated and validateCsrfToken on each. Confirm requirePermission's signature and whether system admins bypass automatically (it should, based on the helper). Note any read endpoints that should also be gated.
+
+C-8 doc-analysis retry.
+POST /api/v2/document-analysis/document/:documentId/retry calls retriggerAnalysisForDocument(documentId) without userCompanyId. Read retriggerAnalysisForDocument in server/services/file-analysis.service.ts. If the function does not currently take userCompanyId, propose adding it as a required second arg and verifying the document's userCompanyId matches before retrigger. Report all callers that would also need updating.
+
+C-9 chase-up /process.
+POST /api/v2/chase-up/process calls chaseUpService.processChaseUpSchedules() with no scope. Read processChaseUpSchedules. Decide which is correct:
+(a) /process is meant to be a system-wide cron trigger, in which case gate with isSystemAdmin and confirm whether the cron caller (if any) authenticates as admin
+(b) /process is meant to be per-tenant, in which case scope by req.session.userCompanyId and have the service take that as a filter
+Recommend one option with reasoning. Check whether anything outside the route file invokes processChaseUpSchedules (cron job, scheduled task, queue worker).
+
+C-10 roles permissions cross-tenant.
+File server/routes/roles.routes.ts. Multiple gaps:
+- GET / and GET /:roleName have no auth check at the route. Confirm whether isAuthenticated is mounted globally upstream so they are still gated. If not, add it.
+- GET /user/:userId/permissions lets any authenticated user read any user's permissions across tenants. Add a tenant scope check: load the target user, return 403 if their userCompanyId does not match req.session.userCompanyId. System admins should pass through.
+- PUT /user/:userId already passes userCompanyId to rolesService.updateUserRole. Confirm the service enforces it as a filter, not just receives it.
+
+Constraints.
+- No code changes in this prompt.
+- No tsc run.
+- Minimum-change fixes only. No architectural rewrites.
+- If a service signature must change, propose adding the param. Do not refactor the service further.
+- Use existing helpers (isAuthenticated, requirePermission, isSystemAdmin). Do not invent new middleware.
+
+Output.
+One assessment block per finding in the order C-3, C-4, C-7, C-8, C-9, C-10.
+
+After all six, give a recommended build order from lowest blast radius first to highest blast radius last. Each fix will ship as its own build prompt with V-check between.
+
+STOP. Do not write code. Do not run tsc. Do not modify any files.
