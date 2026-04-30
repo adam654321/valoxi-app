@@ -92,8 +92,15 @@ router.post('/company/:targetCompanyId/requirement/:requirementId/documents', re
 }));
 
 router.delete('/company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
   const docLinkId = parseInt(req.params.docLinkId);
-  await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId);
+  const userCompanyId = req.session.userCompanyId!;
+
+  if (isNaN(targetCompanyId)) {
+    return res.status(400).json({ message: 'Invalid targetCompanyId' });
+  }
+
+  await dueDiligenceService.unlinkDocumentFromRequirement(docLinkId, targetCompanyId, userCompanyId);
   res.json({ success: true });
 }));
 

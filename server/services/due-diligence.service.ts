@@ -4,7 +4,8 @@ import type { DdCategory, DdRequirement, DdRequirementStatus } from '@shared/sch
 import { documents } from '@shared/schema/documents';
 import { externalDocumentSubmissions } from '@shared/schema/portal';
 import { eq, and, sql, asc } from 'drizzle-orm';
-import { NotFoundError, BadRequestError } from '../utils/errors';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
+import { documentsRepository } from '../repositories/documents.repository';
 
 export interface DdCategoryWithStatus {
   category: DdCategory;
@@ -333,7 +334,23 @@ class DueDiligenceService {
     return link;
   }
 
-  async unlinkDocumentFromRequirement(docLinkId: number) {
+  async unlinkDocumentFromRequirement(docLinkId: number, targetCompanyId: number, userCompanyId: number) {
+    const [link] = await db.select().from(ddRequirementDocuments)
+      .where(eq(ddRequirementDocuments.id, docLinkId));
+
+    if (!link) {
+      throw new NotFoundError(`Document link with id ${docLinkId} not found`);
+    }
+
+    if (link.targetCompanyId !== targetCompanyId) {
+      throw new ForbiddenError('Access denied');
+    }
+
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(targetCompanyId, userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+
     await db.delete(ddRequirementDocuments)
       .where(eq(ddRequirementDocuments.id, docLinkId));
   }
