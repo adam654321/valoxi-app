@@ -10,7 +10,7 @@ import { db } from '../db';
 import { webhookEvents, users } from '@shared/schema/core';
 import { subscriptions, promoCodeCampaigns } from '@shared/schema/billing';
 import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
-import { isAuthenticated, isSystemAdmin } from '../middleware/auth';
+import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { emailApiService } from '../services/email.service';
 
@@ -611,7 +611,7 @@ router.get('/upgrade-preview', isAuthenticated, async (req: Request, res: Respon
   }
 });
 
-router.post('/verify-session', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/verify-session', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -704,7 +704,7 @@ router.post('/verify-session', isAuthenticated, validateCsrfToken, async (req: R
   }
 });
 
-router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/checkout', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -894,7 +894,7 @@ router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request
   }
 });
 
-router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/upgrade', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -1009,7 +1009,7 @@ router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request,
   }
 });
 
-router.post('/portal', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/portal', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -1045,7 +1045,7 @@ const ADDON_LOOKUP_KEYS: Record<string, string> = {
   seat: 'ma_addon_seat',
 };
 
-router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/addon', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -1141,7 +1141,7 @@ router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, r
   }
 });
 
-router.post('/remove-slot', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/remove-slot', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -1203,7 +1203,7 @@ router.post('/remove-slot', isAuthenticated, validateCsrfToken, async (req: Requ
   }
 });
 
-router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/remove-seat', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) {
@@ -1265,7 +1265,7 @@ router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Requ
   }
 });
 
-router.post('/cancel', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/cancel', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) return res.status(401).json({ error: 'unauthorized' });
@@ -1314,7 +1314,7 @@ router.post('/cancel', isAuthenticated, validateCsrfToken, async (req: Request, 
   }
 });
 
-router.post('/reactivate', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+router.post('/reactivate', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
   try {
     const userCompanyId = req.session.userCompanyId;
     if (!userCompanyId) return res.status(401).json({ error: 'unauthorized' });

@@ -1,0 +1,79 @@
+Cycle 2 Build 5: C-7 billing canManageCompany gate.
+
+Context.
+Fifth of six Cycle 2 builds. Closing C-7 by adding requirePermission('canManageCompany') to all nine billing write routes. System admins bypass automatically (auth.ts line 228). Read endpoints (GET /subscription, GET /upgrade-preview) are NOT touched. Webhook route is NOT touched.
+
+Pre-build audit on dev confirmed only one blocked user (adam+team@shiftopsconsulting.com, internal analyst test account, low risk). Prod audit is deferred to pre-deploy.
+
+Cycle 2 Builds 1 (C-9), 2 (C-3), 3 (C-10), 4 (C-8) on dev V-checked, not yet deployed to prod. Cycle 2 prod deploy is batched at the end.
+
+File touched.
+server/routes/billing.routes.ts only. One file, ten locations (one import change, nine route changes).
+
+Steps.
+1. Re-read server/routes/billing.routes.ts in full to confirm current dev state and exact line numbers (they may have drifted from the assess).
+2. Run npx tsc --noEmit and report the error count. Baseline is 0.
+3. Apply ALL ten changes below.
+4. Run npx tsc --noEmit again and report the error count. Must remain 0.
+5. Report what you changed (unified diff covering all ten changes) and stop.
+
+Change 1: add requirePermission to the existing auth import.
+
+Existing line:
+import { isAuthenticated, isSystemAdmin } from '../middleware/auth';
+
+After change:
+import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
+
+Changes 2 through 10: insert requirePermission('canManageCompany') as the third middleware on each of the nine billing write routes. The pattern is identical for each: after validateCsrfToken, before the async handler.
+
+For each route below, replace the route signature:
+
+Route 1: POST /verify-session
+OLD: router.post('/verify-session', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/verify-session', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 2: POST /checkout
+OLD: router.post('/checkout', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/checkout', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 3: POST /upgrade
+OLD: router.post('/upgrade', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/upgrade', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 4: POST /portal
+OLD: router.post('/portal', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/portal', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 5: POST /addon
+OLD: router.post('/addon', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/addon', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 6: POST /remove-slot
+OLD: router.post('/remove-slot', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/remove-slot', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 7: POST /remove-seat
+OLD: router.post('/remove-seat', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/remove-seat', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 8: POST /cancel
+OLD: router.post('/cancel', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/cancel', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Route 9: POST /reactivate
+OLD: router.post('/reactivate', isAuthenticated, validateCsrfToken, async (req: Request, res: Response) => {
+NEW: router.post('/reactivate', isAuthenticated, validateCsrfToken, requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+
+Constraints.
+- Do not touch GET /subscription or GET /upgrade-preview. Read endpoints stay open.
+- Do not touch billingWebhookRoutes (the webhook handler). It is signature-verified separately.
+- Do not touch the webhook route POST /webhook/stripe.
+- Do not touch any other file.
+- Do not modify any handler body, only the middleware chain in the route signature.
+- Do not deploy. Dev only.
+
+Report.
+Paste the unified diff covering ALL ten changes (one import line, nine route lines) and the pre-change and post-change tsc error counts.
+
+STOP after reporting. Do not run V-check, do not deploy.
