@@ -1,0 +1,77 @@
+Cycle 2 Build 4: C-8 doc-analysis retry tenant scope.
+
+Context.
+Fourth of six Cycle 2 builds. Closing C-8 by adding a tenant scope check at the route level (Option B from the assess). Service stays untouched. Route loads upload events for the documentId, picks events[0].targetCompanyId, and confirms ownership via documentsRepository.targetCompanyBelongsToUser. System admins bypass.
+
+Cycle 2 Builds 1 (C-9), 2 (C-3), 3 (C-10) are on dev, V-checked, not yet deployed to prod. Cycle 2 prod deploy is batched at the end.
+
+File touched.
+server/routes/document-analysis.routes.ts only. One file, two locations.
+
+Steps.
+1. Re-read server/routes/document-analysis.routes.ts in full to confirm current dev state.
+2. Run npx tsc --noEmit and report the error count. Baseline is 0.
+3. Apply the diff below exactly as shown.
+4. Run npx tsc --noEmit again and report the error count. Must remain 0.
+5. Report what you changed (unified diff) and stop.
+
+Change 1: add a new import line at the bottom of the existing import block.
+
+Existing import block:
+import { Router, Request, Response } from 'express';
+import { documentAnalysisService } from '../services/document-analysis.service';
+import { retriggerAnalysisForDocument } from '../services/file-analysis.service';
+import { sendSuccess } from '../utils/response';
+import { BadRequestError, UnauthorizedError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
+import { requireFeature } from '../middleware/subscription';
+
+After change, with one new line appended:
+import { Router, Request, Response } from 'express';
+import { documentAnalysisService } from '../services/document-analysis.service';
+import { retriggerAnalysisForDocument } from '../services/file-analysis.service';
+import { sendSuccess } from '../utils/response';
+import { BadRequestError, UnauthorizedError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
+import { requireFeature } from '../middleware/subscription';
+import { documentsRepository } from '../repositories/documents.repository';
+
+Change 2: replace the POST /document/:documentId/retry route handler.
+
+Current route:
+router.post('/document/:documentId/retry', asyncHandler(async (req: Request, res: Response) => {
+  const documentId = parseInt(req.params.documentId);
+  const userId = req.session?.userId;
+  if (!userId) throw new UnauthorizedError();
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  await retriggerAnalysisForDocument(documentId);
+  sendSuccess(res, { message: 'Analysis retriggered successfully', documentId });
+}));
+
+After change:
+router.post('/document/:documentId/retry', asyncHandler(async (req: Request, res: Response) => {
+  const documentId = parseInt(req.params.documentId);
+  const userId = req.session?.userId;
+  const sessionCompanyId = req.session?.userCompanyId;
+  if (!userId) throw new UnauthorizedError();
+  if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  if (!req.session?.isSystemAdmin) {
+    const events = await documentsRepository.getFileUploadEventsByDocumentId(documentId);
+    if (!events || events.length === 0) throw new BadRequestError('No upload events found for document');
+    const owned = await documentsRepository.targetCompanyBelongsToUser(events[0].targetCompanyId, sessionCompanyId!);
+    if (!owned) return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+  await retriggerAnalysisForDocument(documentId);
+  sendSuccess(res, { message: 'Analysis retriggered successfully', documentId });
+}));
+
+Constraints.
+- Do not touch any other route in this file (all the GET routes stay untouched).
+- Do not touch any other file. No service, repository, or middleware changes.
+- Do not modify retriggerAnalysisForDocument.
+- Do not deploy. Dev only.
+
+Report.
+Paste the unified diff of the applied changes and the pre-change and post-change tsc error counts.
+
+STOP after reporting. Do not run V-check, do not deploy.

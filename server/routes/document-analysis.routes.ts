@@ -5,6 +5,7 @@ import { sendSuccess } from '../utils/response';
 import { BadRequestError, UnauthorizedError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
 import { requireFeature } from '../middleware/subscription';
+import { documentsRepository } from '../repositories/documents.repository';
 
 const router = Router();
 
@@ -60,8 +61,15 @@ router.get('/company/:companyId/summary', asyncHandler(async (req: Request, res:
 router.post('/document/:documentId/retry', asyncHandler(async (req: Request, res: Response) => {
   const documentId = parseInt(req.params.documentId);
   const userId = req.session?.userId;
+  const sessionCompanyId = req.session?.userCompanyId;
   if (!userId) throw new UnauthorizedError();
   if (isNaN(documentId)) throw new BadRequestError('Invalid document ID');
+  if (!req.session?.isSystemAdmin) {
+    const events = await documentsRepository.getFileUploadEventsByDocumentId(documentId);
+    if (!events || events.length === 0) throw new BadRequestError('No upload events found for document');
+    const owned = await documentsRepository.targetCompanyBelongsToUser(events[0].targetCompanyId, sessionCompanyId!);
+    if (!owned) return res.status(403).json({ success: false, message: 'Access denied' });
+  }
   await retriggerAnalysisForDocument(documentId);
   sendSuccess(res, { message: 'Analysis retriggered successfully', documentId });
 }));
