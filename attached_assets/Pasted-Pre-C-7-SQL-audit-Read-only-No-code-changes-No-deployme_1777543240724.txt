@@ -1,0 +1,83 @@
+Pre-C-7 SQL audit. Read-only. No code changes. No deployment.
+
+Context.
+About to add requirePermission('canManageCompany') to nine billing write routes (C-7). Need to know who would be blocked before shipping. Run on DEV first, then on PROD.
+
+After the change, a user passes canManageCompany if any of these is true:
+1. users.isSystemAdmin = true (bypass)
+2. They have an RBAC user_roles entry where canManageCompany = true (or whatever the column is named)
+3. They have no matching RBAC entry but users.role = 'admin' (falls back to ADMIN_ROLE_PERMISSIONS)
+
+Anyone else gets 403.
+
+Steps.
+1. Read shared/schema in full and identify the schema files for users and user_roles. Confirm the exact table names and the column name on user_roles that holds the canManageCompany permission.
+
+2. Read server/repositories/roles.repository.ts to confirm how rolesService.getUserWithPermissions joins users to user_roles. Note the join column (probably users.userRole = user_roles.roleName or similar).
+
+3. Run the following audit queries on DEV. Report results inline. Do NOT modify any data.
+
+Query 1: Total active users on dev.
+SELECT COUNT(*) FROM users WHERE is_active = true;
+
+Query 2: Active users grouped by status flags.
+SELECT 
+  CASE WHEN is_system_admin THEN 'system_admin'
+       WHEN role = 'admin' THEN 'role_admin'
+       ELSE 'role_user' END as tier,
+  COUNT(*) as count
+FROM users
+WHERE is_active = true
+GROUP BY tier;
+
+Query 3: Active users with their RBAC mapping (if any). Adjust column names based on what schema reveals.
+SELECT 
+  u.id,
+  u.email,
+  u.is_system_admin,
+  u.role,
+  u.user_role,
+  u.user_company_id,
+  ur.role_name as rbac_role_name,
+  ur.can_manage_company as rbac_can_manage_company
+FROM users u
+LEFT JOIN user_roles ur ON u.user_role = ur.role_name
+WHERE u.is_active = true
+ORDER BY u.user_company_id, u.id;
+
+Query 4: The blocked set (users who would fail canManageCompany after C-7).
+A user is blocked if:
+- is_system_admin = false AND
+- (rbac_can_manage_company = false OR (rbac_can_manage_company IS NULL AND role != 'admin'))
+
+Adjust the column names per the schema. Report:
+- Count of blocked users
+- Their email, role, user_role, user_company_id, and (if applicable) rbac role name
+- Group counts by user_company_id (so we see if any single company has all-blocked users)
+
+4. After running on dev, run the same four queries on PROD via the prod database connection. Report prod results separately, in the same format.
+
+5. For each blocked user, classify them:
+   (a) Beta tester or active customer on prod who has been doing billing: HIGH RISK. They will get 403 after deploy.
+   (b) Beta tester or test account who has not done billing: LOW RISK. No impact.
+   (c) Inactive or stale account: NO RISK.
+
+For (a) HIGH RISK users on either env, flag them by email so Adam can decide whether to:
+- Set isSystemAdmin = true on their row (if they should be admin anyway)
+- Update their user_role to one that has canManageCompany = true
+- Update their role column to 'admin' to fall through to ADMIN_ROLE_PERMISSIONS
+- Or accept they will get 403 and contact them
+
+Constraints.
+- Read-only. No INSERT, UPDATE, or DELETE.
+- No code changes.
+- No deployment.
+- If a query fails because column or table names differ from this prompt, fix the names to match the actual schema and re-run, then report what you adjusted.
+
+Output.
+Schema confirmation (tables and column names found).
+Dev results: queries 1-4 plus risk classification.
+Prod results: queries 1-4 plus risk classification.
+Recommendation on whether to proceed with C-7 build immediately or remediate first.
+
+STOP.
