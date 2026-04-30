@@ -21,7 +21,14 @@ router.get('/:roleName', asyncHandler(async (req: Request, res: Response) => {
 
 router.get('/user/:userId/permissions', asyncHandler(async (req: Request, res: Response) => {
   const userId = parseInt(req.params.userId);
+  const sessionCompanyId = req.session?.userCompanyId;
+  if (!sessionCompanyId && !req.session?.isSystemAdmin) {
+    throw new UnauthorizedError();
+  }
   const user = await rolesService.getUserWithPermissions(userId);
+  if (!req.session?.isSystemAdmin && user.userCompanyId !== sessionCompanyId) {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
   sendSuccess(res, user);
 }));
 
