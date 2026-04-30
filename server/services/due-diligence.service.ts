@@ -358,10 +358,16 @@ class DueDiligenceService {
   async setBuyerReview(data: {
     requirementId: number;
     targetCompanyId: number;
+    userCompanyId: number;
     reviewStatus: string;
     notes?: string;
     reviewedBy: number;
   }) {
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(data.targetCompanyId, data.userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+
     const [statusRow] = await db.select().from(ddRequirementStatus)
       .where(and(
         eq(ddRequirementStatus.requirementId, data.requirementId),

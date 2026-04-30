@@ -108,6 +108,7 @@ router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review',
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
   const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId!;
   if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
   const { reviewStatus, notes } = req.body;
@@ -116,7 +117,7 @@ router.post('/company/:targetCompanyId/requirement/:requirementId/buyer-review',
   }
 
   const result = await dueDiligenceService.setBuyerReview({
-    requirementId, targetCompanyId, reviewStatus, notes, reviewedBy: userId,
+    requirementId, targetCompanyId, userCompanyId, reviewStatus, notes, reviewedBy: userId,
   });
   res.json(result);
 }));
