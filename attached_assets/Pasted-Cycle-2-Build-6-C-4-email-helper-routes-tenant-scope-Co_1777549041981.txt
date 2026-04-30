@@ -1,0 +1,146 @@
+Cycle 2 Build 6: C-4 email helper routes tenant scope.
+
+Context.
+Sixth and final of six Cycle 2 builds. Closing C-4 by adding tenant scope checks to three email helper routes:
+1. POST /invitation/:invitationId/send
+2. POST /portal/:tokenId/send
+3. POST /document-notification
+
+Each route currently accepts an ID (invitationId, tokenId, or targetCompanyId) and triggers an email without verifying the resource belongs to the caller's tenant. Fix is the same pattern used in C-10 and C-8: load the resource via emailRepository, compare its userCompanyId to the session's userCompanyId, return 403 on mismatch. System admins bypass.
+
+Cycle 2 Builds 1 (C-9), 2 (C-3), 3 (C-10), 4 (C-8), 5 (C-7) on dev V-checked, not yet deployed to prod. Cycle 2 prod deploy is batched at the end.
+
+Methods used (already exist in emailRepository, verified against schema):
+- emailRepository.getInvitationById(id): row from user_invitations, includes userCompanyId
+- emailRepository.getPortalTokenById(id): row from portal_access_tokens, includes userCompanyId
+- emailRepository.getTargetCompanyById(id): { companyName, userCompanyId }
+All three are untenanted lookups, suitable for fetching-then-comparing. Schema confirms userCompanyId is notNull on user_invitations and portal_access_tokens.
+
+File touched.
+server/routes/email.routes.ts only. One file, four locations (one import change, three route changes).
+
+Steps.
+1. Re-read server/routes/email.routes.ts in full to confirm current dev state. The C-3 fix from earlier today should already be present (isSystemAdmin on /send route).
+2. Run npx tsc --noEmit and report the error count. Baseline is 0.
+3. Apply ALL four changes below.
+4. Run npx tsc --noEmit again and report the error count. Must remain 0.
+5. Report what you changed (unified diff) and stop.
+
+Change 1: add new import line to the existing import block.
+
+Existing imports (after C-3 change earlier today):
+import { Router, Request, Response } from 'express';
+import { emailApiService } from '../services/email.service';
+import { sendSuccess } from '../utils/response';
+import { BadRequestError, UnauthorizedError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
+import { isSystemAdmin } from '../middleware/auth';
+
+After change, with one new line appended:
+import { Router, Request, Response } from 'express';
+import { emailApiService } from '../services/email.service';
+import { sendSuccess } from '../utils/response';
+import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/errors';
+import { asyncHandler } from '../utils/async-handler';
+import { isSystemAdmin } from '../middleware/auth';
+import { emailRepository } from '../repositories/email.repository';
+
+Change 2: replace POST /invitation/:invitationId/send.
+
+Current:
+router.post('/invitation/:invitationId/send', asyncHandler(async (req: Request, res: Response) => {
+  const invitationId = parseInt(req.params.invitationId);
+  if (isNaN(invitationId)) throw new BadRequestError('Invalid invitation ID');
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await emailApiService.sendTeamInvitation(invitationId, baseUrl);
+  sendSuccess(res, result);
+}));
+
+After:
+router.post('/invitation/:invitationId/send', asyncHandler(async (req: Request, res: Response) => {
+  const invitationId = parseInt(req.params.invitationId);
+  if (isNaN(invitationId)) throw new BadRequestError('Invalid invitation ID');
+  const sessionCompanyId = req.session?.userCompanyId;
+  if (!sessionCompanyId && !req.session?.isSystemAdmin) throw new UnauthorizedError();
+  if (!req.session?.isSystemAdmin) {
+    const invitation = await emailRepository.getInvitationById(invitationId);
+    if (!invitation) throw new NotFoundError('Invitation not found');
+    if (invitation.userCompanyId !== sessionCompanyId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+  }
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await emailApiService.sendTeamInvitation(invitationId, baseUrl);
+  sendSuccess(res, result);
+}));
+
+Change 3: replace POST /portal/:tokenId/send.
+
+Current:
+router.post('/portal/:tokenId/send', asyncHandler(async (req: Request, res: Response) => {
+  const tokenId = parseInt(req.params.tokenId);
+  if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, req.body.customMessage);
+  sendSuccess(res, result);
+}));
+
+After:
+router.post('/portal/:tokenId/send', asyncHandler(async (req: Request, res: Response) => {
+  const tokenId = parseInt(req.params.tokenId);
+  if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+  const sessionCompanyId = req.session?.userCompanyId;
+  if (!sessionCompanyId && !req.session?.isSystemAdmin) throw new UnauthorizedError();
+  if (!req.session?.isSystemAdmin) {
+    const token = await emailRepository.getPortalTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== sessionCompanyId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+  }
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, req.body.customMessage);
+  sendSuccess(res, result);
+}));
+
+Change 4: replace POST /document-notification.
+
+Current:
+router.post('/document-notification', asyncHandler(async (req: Request, res: Response) => {
+  const { targetCompanyId, documentName, documentCategory, contactName, submissionNotes } = req.body;
+  if (!targetCompanyId || !documentName || !documentCategory || !contactName) {
+    throw new BadRequestError('Missing required fields');
+  }
+  const result = await emailApiService.sendDocumentNotification(targetCompanyId, documentName, documentCategory, contactName, submissionNotes);
+  sendSuccess(res, result);
+}));
+
+After:
+router.post('/document-notification', asyncHandler(async (req: Request, res: Response) => {
+  const { targetCompanyId, documentName, documentCategory, contactName, submissionNotes } = req.body;
+  if (!targetCompanyId || !documentName || !documentCategory || !contactName) {
+    throw new BadRequestError('Missing required fields');
+  }
+  const sessionCompanyId = req.session?.userCompanyId;
+  if (!sessionCompanyId && !req.session?.isSystemAdmin) throw new UnauthorizedError();
+  if (!req.session?.isSystemAdmin) {
+    const company = await emailRepository.getTargetCompanyById(targetCompanyId);
+    if (!company) throw new NotFoundError('Target company not found');
+    if (company.userCompanyId !== sessionCompanyId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+  }
+  const result = await emailApiService.sendDocumentNotification(targetCompanyId, documentName, documentCategory, contactName, submissionNotes);
+  sendSuccess(res, result);
+}));
+
+Constraints.
+- Do not touch GET /test or POST /send. Those routes are out of scope (test is harmless, /send was gated in C-3 earlier today).
+- Do not touch any other file. No service or repository changes.
+- Do not modify any of the emailApiService methods or emailRepository methods.
+- Do not deploy. Dev only.
+
+Report.
+Paste the unified diff covering all four changes (one import line, three route blocks) and the pre-change and post-change tsc error counts.
+
+STOP after reporting. Do not run V-check, do not deploy.
