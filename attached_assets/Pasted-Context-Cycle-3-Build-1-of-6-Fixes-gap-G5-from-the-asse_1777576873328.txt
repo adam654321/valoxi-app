@@ -1,0 +1,45 @@
+Context. Cycle 3, Build 1 of 6. Fixes gap G5 from the assess: unlinkDocumentFromRequirement has no ownership check, so any docLinkId can be deleted by any authenticated user regardless of tenant. Highest severity gap in Cycle 3.
+
+BUILD-MODE PROPOSE-ONLY. Re-read the two files first, then show me the diff. Do not apply yet. STOP after the diff. I will authorise the apply in a separate prompt.
+
+Files allowed to change:
+- server/services/due-diligence.service.ts, only the unlinkDocumentFromRequirement method
+- server/routes/due-diligence.routes.ts, only Route 7: DELETE /company/:targetCompanyId/requirement/:requirementId/documents/:docLinkId
+
+Do not touch anything else. No other DD methods, no other routes, no portal-submissions, no schema, no shared, no middleware.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+2. Re-read both files in full. Confirm current code matches the assess on these two surfaces: unlinkDocumentFromRequirement currently takes docLinkId only, and Route 7 currently parses targetCompanyId but does not forward it to the service. If dev has drifted, stop and report.
+
+Fix shape.
+
+Service method:
+- Extend unlinkDocumentFromRequirement to take docLinkId, targetCompanyId, and userCompanyId. Match the existing arg style of neighbouring methods in the same file (single args vs object).
+- Before the DELETE:
+  a. Fetch the dd_requirement_documents row by docLinkId.
+  b. If not found, signal not-found, the route maps to 404.
+  c. Verify the fetched row's targetCompanyId equals the supplied targetCompanyId. If not, signal forbidden, the route maps to 403.
+  d. Verify the supplied targetCompanyId belongs to userCompanyId via documentsRepository.targetCompanyBelongsToUser(targetCompanyId, userCompanyId). If false, signal forbidden, mapped to 403.
+- Only after both checks pass, DELETE WHERE id = docLinkId.
+
+Match whichever error-signalling pattern already exists in this service. Do not invent a new error class. If there is no precedent, stop and ask.
+
+No system admin bypass. Tenant scope applies to every caller.
+
+Route 7:
+- Read req.user.companyId.
+- Pass targetCompanyId (already parsed, currently discarded) and userCompanyId to the service.
+- Map service results to 404, 403, or success consistent with the rest of this router.
+
+Constraints:
+- One logical change. Nothing outside the two surfaces above.
+- No formatting-only edits, no import reordering, no tidying.
+- Plain UK English in any new comments. No em-dashes. No double hyphens.
+- Drizzle only, no raw SQL.
+- No new dependencies. No any. No ts-ignore.
+
+Output:
+- Show the full proposed diff for both files: added, removed, changed lines.
+- Run grep across server/ for every caller of unlinkDocumentFromRequirement. Confirm each still compiles against the new signature. Per the assess the only caller is Route 7, but verify.
+- Do not apply. STOP after the diff. Wait for me.
