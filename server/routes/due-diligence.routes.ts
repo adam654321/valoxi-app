@@ -80,13 +80,14 @@ router.post('/company/:targetCompanyId/requirement/:requirementId/documents', re
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
   const userId = req.session.userId;
+  const userCompanyId = req.session.userCompanyId!;
   if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
   const { documentId, notes } = req.body;
   if (!documentId) return res.status(400).json({ message: 'documentId is required' });
 
   const result = await dueDiligenceService.linkDocumentToRequirement({
-    requirementId, targetCompanyId, documentId, notes, addedBy: userId,
+    requirementId, targetCompanyId, userCompanyId, documentId, notes, addedBy: userId,
   });
   res.json(result);
 }));

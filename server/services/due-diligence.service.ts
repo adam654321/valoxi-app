@@ -299,10 +299,16 @@ class DueDiligenceService {
   async linkDocumentToRequirement(data: {
     requirementId: number;
     targetCompanyId: number;
+    userCompanyId: number;
     documentId: number;
     notes?: string;
     addedBy: number;
   }) {
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(data.targetCompanyId, data.userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+
     let [statusRow] = await db.select().from(ddRequirementStatus)
       .where(and(
         eq(ddRequirementStatus.requirementId, data.requirementId),
