@@ -1,0 +1,67 @@
+Context. We are on Cycle 3 of the #109 security audit remediation. Cycle 1 (C-1, C-2) shipped to prod yesterday morning. Cycle 2 (C-3, C-4, C-7, C-8, C-9, C-10) shipped to prod yesterday evening. Cycle 3 is C-5: due-diligence multi-tenancy bypass.
+
+This cycle is a different shape to Cycle 2. Cycle 2 was missing route-level gates. Cycle 3 is missing userCompanyId WHERE clauses inside the service and possibly the repository, which lets one tenant read or write another tenant's due-diligence data.
+
+This prompt is ASSESS-ONLY. Do not change any files. Do not write any diff. Read-only investigation, then a structured report.
+
+Files to read in full:
+1. server/routes/due-diligence.routes.ts
+2. server/services/due-diligence.service.ts
+3. server/repositories/due-diligence.repository.ts (if it exists, find the path if it lives elsewhere)
+4. The shared schema file or files where the due-diligence tables are declared. Grep shared/schema for "due" or "dueDiligence" to locate them.
+5. server/middleware/auth.ts (just confirm the available helpers: isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode. Do not dump the file.)
+
+Helpers already verified during Cycle 2 that you can reference in fix proposals:
+- documentsRepository.targetCompanyBelongsToUser(targetCompanyId, userCompanyId) returns Promise<boolean>, two-column WHERE. Suited to Option B route-level scope checks.
+- emailRepository.getInvitationById, getPortalTokenById, getTargetCompanyById are untenanted lookups returning rows that include userCompanyId, suited to fetch-then-compare at the route layer.
+- targetCompaniesRepository.getById(id, userCompanyId) is already tenanted. Cannot be used for blind ID-only lookups.
+
+Baseline check before producing the report: run npx tsc --noEmit and confirm 0 errors. If non-zero, stop and tell me.
+
+What to produce, in this exact order, under headings A through G.
+
+A. Schema check
+- Confirm which tables relate to due-diligence.
+- For each table, state whether it has a userCompanyId column directly.
+- For tables without a tenant column, explain how they relate to a tenanted parent (for example via targetCompanyId joining to target_companies which has userCompanyId).
+
+B. Route map
+- List every route in due-diligence.routes.ts.
+- For each route: method, path, middleware stack, whether requirePermission is present, which service method it calls, which params it passes.
+- Flag any route that does not pull req.user.companyId and pass it forward.
+
+C. Service surface map
+- List every exported or public method on the due-diligence service.
+- For each: signature, whether it accepts userCompanyId or any tenant context, whether it calls the repository, whether it issues drizzle queries directly.
+- For each method, list every CALLER: the route that invokes it, plus any other service or cron job that imports it.
+
+D. Query gap list
+- Walk every drizzle query in the service AND the repository that touches a due-diligence table.
+- For each query, state: read or write, table, WHERE clauses, whether the WHERE clauses include userCompanyId directly or via a join to target_companies.
+- Flag every query that lacks a userCompanyId filter as a GAP. Number them G1, G2, G3 and so on.
+
+E. Fix proposals
+- For each gap, propose the smallest possible fix using one of two patterns:
+  Pattern A: service signature change. The service method accepts userCompanyId, passes it to the query, the query gains a WHERE on userCompanyId, or an inner join plus WHERE on target_companies.userCompanyId where the table itself has no tenant column.
+  Pattern B: route-level scope check before calling the service, via documentsRepository.targetCompanyBelongsToUser or a similar fetch-then-compare. Service stays untouched.
+- Recommend A or B for each gap. One sentence justification per gap, based on:
+  i. Consistency with how other tenanted services in this codebase look. Cite a specific example file and method.
+  ii. Minimum total diff size.
+  iii. Whether the service has callers OTHER than routes, for example a cron or another service. If yes, lean towards A so all callers are covered.
+
+F. Edge cases and concerns
+- Any service method that looks untenanted but is safe because the only entry path is via a tenanted parent fetch upstream. Explain why.
+- Any chained service-to-service calls within due-diligence.
+- Any cron job under server/cron or similar that calls the service.
+- Any place where userCompanyId is read off req.user and the auth middleware ordering needs sanity-checking.
+
+G. Build plan
+- Based on the gaps and recommended fixes, propose a build order. Likely 3 to 6 small builds, one method or one route per build, each individually V-checkable. Lowest blast radius first. Each build runs tsc 0 to 0.
+
+Constraints:
+- Read-only. No diffs. No file writes. No edits.
+- Do not write code yet. Describe each fix shape, not the code.
+- Keep the report structured under headings A through G.
+- Plain text. No fancy formatting.
+
+STOP after producing the report. Do not start any build prompt. Wait for me to review and authorise.
