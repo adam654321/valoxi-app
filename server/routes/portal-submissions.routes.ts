@@ -78,7 +78,7 @@ router.get('/:token/dd-requirements', asyncHandler(async (req: Request, res: Res
     ...cat.category,
     requirements: await Promise.all(cat.requirements.map(async req => {
       const statusData = req.status as any;
-      const linkedDocs = await dueDiligenceService.getRequirementDocuments(req.id, token.targetCompanyId);
+      const linkedDocs = await dueDiligenceService.getRequirementDocuments(req.id, token.targetCompanyId, token.userCompanyId);
       return {
         id: req.id,
         refNumber: req.refNumber,
@@ -109,7 +109,7 @@ router.post('/:token/dd-requirements/:requirementId/mark-complete', asyncHandler
   const token = await portalSubmissionsService.validateToken(req.params.token);
   const requirementId = parseInt(req.params.requirementId);
 
-  const docs = await dueDiligenceService.getRequirementDocuments(requirementId, token.targetCompanyId);
+  const docs = await dueDiligenceService.getRequirementDocuments(requirementId, token.targetCompanyId, token.userCompanyId);
   if (docs.length === 0) {
     return res.status(400).json({ error: 'Cannot mark complete — no documents linked to this requirement' });
   }

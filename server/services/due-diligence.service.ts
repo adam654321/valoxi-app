@@ -254,7 +254,12 @@ class DueDiligenceService {
     return { total, completed, mandatory, advisory, addsValue, byCategory };
   }
 
-  async getRequirementDocuments(requirementId: number, targetCompanyId: number) {
+  async getRequirementDocuments(requirementId: number, targetCompanyId: number, userCompanyId: number) {
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(targetCompanyId, userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+
     const [statusRow] = await db.select().from(ddRequirementStatus)
       .where(and(
         eq(ddRequirementStatus.requirementId, requirementId),

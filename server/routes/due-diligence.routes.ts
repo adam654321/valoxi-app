@@ -72,7 +72,8 @@ router.put('/company/:targetCompanyId/requirement/:requirementId/status', requir
 router.get('/company/:targetCompanyId/requirement/:requirementId/documents', requireFeature('ddDataRoom'), asyncHandler(async (req, res) => {
   const targetCompanyId = parseInt(req.params.targetCompanyId);
   const requirementId = parseInt(req.params.requirementId);
-  const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId);
+  const userCompanyId = req.session.userCompanyId!;
+  const docs = await dueDiligenceService.getRequirementDocuments(requirementId, targetCompanyId, userCompanyId);
   res.json(docs);
 }));
 
