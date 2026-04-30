@@ -3,6 +3,7 @@ import { emailApiService } from '../services/email.service';
 import { sendSuccess } from '../utils/response';
 import { BadRequestError, UnauthorizedError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
+import { isSystemAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -36,7 +37,7 @@ router.post('/document-notification', asyncHandler(async (req: Request, res: Res
   sendSuccess(res, result);
 }));
 
-router.post('/send', asyncHandler(async (req: Request, res: Response) => {
+router.post('/send', isSystemAdmin, asyncHandler(async (req: Request, res: Response) => {
   const { to, subject, html } = req.body;
   const result = await emailApiService.sendCustomEmail(to, subject, html);
   sendSuccess(res, result);
