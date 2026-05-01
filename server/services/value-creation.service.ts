@@ -7,9 +7,24 @@ import {
   valueCreationExitAssumptions,
   dealModels,
 } from '@shared/schema';
+import { ForbiddenError } from '../utils/errors';
+import { documentsRepository } from '../repositories/documents.repository';
 
 class ValueCreationService {
   
+  private async assertDealModelBelongsToUser(dealModelId: number, userCompanyId: number): Promise<void> {
+    const [dealModel] = await db.select({ targetCompanyId: dealModels.targetCompanyId })
+      .from(dealModels)
+      .where(eq(dealModels.id, dealModelId));
+    if (!dealModel) {
+      throw new ForbiddenError('Access denied');
+    }
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(dealModel.targetCompanyId, userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+  }
+
   async getOrCreateForModel(dealModelId: number) {
     const existing = await db.select().from(valueCreationScenarios)
       .where(eq(valueCreationScenarios.dealModelId, dealModelId));
