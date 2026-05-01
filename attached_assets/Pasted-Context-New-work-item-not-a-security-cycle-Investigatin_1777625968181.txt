@@ -1,0 +1,100 @@
+Context. New work item, not a security cycle. Investigating chase-up email loop terminal states. Adam has flagged that chase emails continue firing past points where they should stop. Months-old tokens still chasing. Need to design and implement four terminal rules:
+
+A. Manual intervention email fires, then stops permanently. No further chases.
+B. All required documents submitted, stops permanently.
+C. Buyer triggers analysis early, modal forces a choice: stop chases, or continue (back into the ladder, will eventually hit A or B).
+D. Time-based backstop: chase-start-setting + sum-of-ladder-intervals + 1 day. Derived value from existing settings, not a new setting.
+
+Existing portal UI has a manual stop button already. That stays as-is.
+
+Cycle 3 prod just deployed cleanly. C-6 (value-creation, Cycle 4) is also pending. This chase work is a separate parallel thread from #109 security work.
+
+This prompt is READ-ONLY. No code changes. Output is a structured report. Stop after the report. I will review and then we plan builds.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. Report count.
+
+What to read:
+
+1. The cron job that fires chase emails. Likely server/cron/chase-up.cron.ts. If not there, grep server/ for "chase" and find it.
+
+2. The chase-up service. Likely server/services/chase-up.service.ts or similar. The service the cron calls.
+
+3. The chase-up routes. Likely server/routes/chase-up.routes.ts. Includes the existing manual stop button endpoint.
+
+4. The portal token schema. shared/schema/portal.ts. Specifically the chase-related columns:
+   - chaseUpStatus
+   - lastChaseEmailSent
+   - chaseEmailCount
+   - escalationLevel
+   - manualDeadlineSet
+   - finalDeadlineDate
+   - submissionDeadline
+   - agreedSubmissionTimeframe
+   - isActive
+   Plus any others I've missed.
+
+5. The analysis trigger. Find where "Run Analysis" or "Run Deep Dive" is fired from on the buyer side. Likely server/routes/document-analysis.routes.ts or server/routes/analysis.routes.ts. We need to know where to put the modal logic for Rule C.
+
+6. The "when to start chasing" setting. Find where this is read from. Per-portal column, per-tenant setting, system constant in a config file, env var. Whatever it is, document it.
+
+7. Any place that updates dd_requirement_status for tokens (the portal-submissions service we touched in Cycle 3 Build 6 is one example). We need to know everywhere a "submitted" status can land, for Rule B's terminal check.
+
+What to produce, under headings A through I.
+
+A. Cron mechanics
+- File path and how often it fires
+- The query it runs to find tokens needing chases
+- Every WHERE clause on that query
+- What it does per token: which service method, with what args
+- Whether it has any terminal early-exit logic at present
+
+B. Chase ladder
+- The full ladder of email types from first email to final manual intervention email
+- For each step: what triggers it (days since createdAt, days since lastChaseEmailSent, escalationLevel value), what email it sends, what it sets escalationLevel to afterwards
+- Total ladder duration in days from first chase to manual intervention
+- Whether the ladder is hardcoded or configurable
+
+C. Chase-related columns on portal_access_tokens
+- For each chase column, current usage: when set, when read, what values it takes
+- Specifically chaseUpStatus and escalationLevel: what string values exist, which one represents manual intervention reached
+- Specifically isActive: what setting it to false does to the cron, and where it gets set false today (manual stop button, anywhere else)
+
+D. The "when to start chasing" setting
+- Where stored (per-portal column, per-tenant, system config, env)
+- Current value or default
+- Whether it can be changed, and where the change happens
+
+E. Existing terminal logic (if any)
+- The manual stop button in the portal UI: which endpoint, what it sets in the database, whether the cron honours it
+- Any other early-exit logic in the cron or service that already terminates chasing
+- What happens currently when documents are fully submitted: anything? Or does the cron keep going?
+- What happens currently when escalation reaches its highest level: anything? Or does it cycle?
+
+F. Analysis trigger location
+- The route or routes that trigger document analysis on a target company
+- Whether the trigger is on the buyer's authenticated session or the portal token side (it should be buyer-side)
+- A sketch of where Rule C's modal would intercept: at request time on the front end, or as a precondition on the back-end route
+
+G. Where dd_requirement_status submitted-state is set
+- Every code path that writes status='submitted' or status='approved' to dd_requirement_status
+- Whether the portal token id is known at the point of write (so Rule B's check can map back to the token)
+- The query needed to evaluate "all required documents for this token's targetCompanyId are submitted"
+
+H. Prod token state audit
+- A SQL query Adam can run on prod that returns: total active tokens, count by escalationLevel, count by age bucket (0-7 days, 8-14 days, 15-30 days, 31-60 days, 61-90 days, 90+ days), count by chaseEmailCount bucket. Do not run it. Just write it out for Adam to run.
+
+I. Build plan
+- Based on findings, propose a build order for rules A, B, C, D
+- Each build should be one logical change
+- Note which builds can ship together and which need separate V-checks
+- Note any prerequisite database migrations or schema changes
+- Flag anything that needs a product decision from Adam before code starts (e.g. modal default in Rule C, exact escalationLevel string for Rule A, etc.)
+
+Constraints:
+- Read-only. No diffs. No file writes. No code changes.
+- Plain UK English. No em-dashes. No double hyphens.
+- Do not propose specific code. Describe each fix shape, not the implementation.
+- Keep the report structured under headings A through I.
+
+STOP after the report. Wait for review.
