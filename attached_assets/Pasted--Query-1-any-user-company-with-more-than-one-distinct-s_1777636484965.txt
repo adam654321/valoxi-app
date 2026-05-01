@@ -1,0 +1,51 @@
+-- Query 1: any user_company with more than one distinct stripe_customer_id?
+-- Expected: zero rows. One row per company, even if test data left duplicates, would mean multiple
+-- Stripe customers exist for the same tenant.
+SELECT
+  uc.id AS user_company_id,
+  uc.company_name,
+  COUNT(DISTINCT uc.stripe_customer_id) AS distinct_stripe_customers,
+  STRING_AGG(DISTINCT uc.stripe_customer_id, ', ') AS stripe_customer_ids
+FROM user_companies uc
+WHERE uc.stripe_customer_id IS NOT NULL
+GROUP BY uc.id, uc.company_name
+HAVING COUNT(DISTINCT uc.stripe_customer_id) > 1;
+
+-- Query 2: any stripe_customer_id used by more than one user_company?
+-- Expected: zero rows. A Stripe customer should map to exactly one tenant.
+SELECT
+  uc.stripe_customer_id,
+  COUNT(*) AS user_company_count,
+  STRING_AGG(uc.company_name, ', ') AS company_names,
+  STRING_AGG(uc.id::text, ', ') AS user_company_ids
+FROM user_companies uc
+WHERE uc.stripe_customer_id IS NOT NULL
+GROUP BY uc.stripe_customer_id
+HAVING COUNT(*) > 1;
+
+-- Query 3: any users sharing a stripe_customer_id with another tenant?
+-- This catches the dev-time test-data anomaly that triggered #136 (adamauty@me.com had multiple Stripe
+-- customer records accumulated from months of test data). Confirms it didn't propagate to prod.
+SELECT
+  u.email,
+  u.user_company_id,
+  uc.stripe_customer_id,
+  uc.company_name
+FROM users u
+INNER JOIN user_companies uc ON uc.id = u.user_company_id
+WHERE uc.stripe_customer_id IS NOT NULL
+  AND uc.stripe_customer_id IN (
+    SELECT stripe_customer_id
+    FROM user_companies
+    GROUP BY stripe_customer_id
+    HAVING COUNT(*) > 1
+  )
+ORDER BY uc.stripe_customer_id, u.email;
+
+-- Query 4: counts for sanity
+SELECT
+  COUNT(*) FILTER (WHERE stripe_customer_id IS NOT NULL) AS companies_with_stripe_customer,
+  COUNT(*) FILTER (WHERE stripe_customer_id IS NULL) AS companies_without_stripe_customer,
+  COUNT(DISTINCT stripe_customer_id) AS distinct_stripe_customers,
+  COUNT(*) AS total_user_companies
+FROM user_companies;
