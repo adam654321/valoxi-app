@@ -1,0 +1,84 @@
+Context. Cycle 3, Build 5 of 6. Fixes gap G1 from the assess: getDdStatusForCompany reads dd_requirement_status using a caller-supplied targetCompanyId without ownership verification. Any tenant can read another tenant's DD status.
+
+Bundled with G1 in this build: getCompletionSummary. Per the assess, getCompletionSummary is a pure wrapper that calls this.getDdStatusForCompany internally. Adding userCompanyId to getDdStatusForCompany without threading it through getCompletionSummary would be a tsc failure, so both methods must change in the same build. This is not scope creep; it is one logical fix because the two methods are mechanically coupled.
+
+Builds 1, 2, 3, and 4 are applied on dev with V-checks passing. P1 pattern was locked in Build 4: userCompanyId from req.session.userCompanyId! in user routes, from token.userCompanyId in portal routes.
+
+Multi-caller, like Build 4. Per the assess:
+
+getDdStatusForCompany has three callers:
+- Route 2: GET /company/:targetCompanyId/status
+- getCompletionSummary internally (line 203 area, this.getDdStatusForCompany)
+- portal-submissions.routes.ts line 74
+
+getCompletionSummary has two callers:
+- Route 3: GET /company/:targetCompanyId/summary
+- portal-submissions.routes.ts line 75
+
+BUILD-MODE PROPOSE-ONLY. Re-read the three files first, then show me the diff. Do not apply yet. STOP after the diff. I will authorise the apply in a separate prompt.
+
+Files allowed to change:
+- server/services/due-diligence.service.ts, only the getDdStatusForCompany and getCompletionSummary methods
+- server/routes/due-diligence.routes.ts, only Route 2 and Route 3
+- server/routes/portal-submissions.routes.ts, only the two existing call sites at lines 74 and 75
+
+Do not touch anything else. No other DD methods or routes. Do not retouch unlinkDocumentFromRequirement, setBuyerReview, linkDocumentToRequirement, getRequirementDocuments, or their routes (Builds 1 to 4 state, finalised). Do not touch updateRequirementStatus or Route 4 (Build 6 territory). Do not touch the shadowing-req variable noted in Build 4.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+2. Re-read all three files in full. Confirm:
+   - getDdStatusForCompany currently takes (targetCompanyId: number) only, no userCompanyId
+   - getCompletionSummary currently takes (targetCompanyId: number) only, no userCompanyId
+   - Route 2 does not currently read req.session.userCompanyId
+   - Route 3 does not currently read req.session.userCompanyId
+   - Portal line 74 calls getDdStatusForCompany(token.targetCompanyId)
+   - Portal line 75 calls getCompletionSummary(token.targetCompanyId)
+   If dev has drifted, stop and report.
+3. Confirm the only internal call to getDdStatusForCompany from within the service file is from getCompletionSummary. Grep for this.getDdStatusForCompany inside the service file. If there are others, stop and report.
+
+Fix shape.
+
+Service method getDdStatusForCompany:
+- Change signature from (targetCompanyId: number) to (targetCompanyId: number, userCompanyId: number). Positional, second argument.
+- Before any database read, verify ownership via documentsRepository.targetCompanyBelongsToUser(targetCompanyId, userCompanyId). If false, throw ForbiddenError('Access denied').
+- Existing query logic runs unchanged after the check.
+
+Service method getCompletionSummary:
+- Change signature from (targetCompanyId: number) to (targetCompanyId: number, userCompanyId: number). Positional, second argument, matching getDdStatusForCompany.
+- Update the internal this.getDdStatusForCompany(targetCompanyId) call to this.getDdStatusForCompany(targetCompanyId, userCompanyId).
+- No additional ownership check inside getCompletionSummary. The check already runs inside getDdStatusForCompany on the very next line, and duplicating it serves no purpose. Single source of ownership truth.
+
+No system admin bypass on either method. Use existing imports of documentsRepository and ForbiddenError.
+
+Route 2:
+- Read req.session.userCompanyId with non-null assertion.
+- Pass userCompanyId as the second positional argument to getDdStatusForCompany.
+
+Route 3:
+- Read req.session.userCompanyId with non-null assertion.
+- Pass userCompanyId as the second positional argument to getCompletionSummary.
+
+Portal call site at portal-submissions.routes.ts line 74:
+- Currently: dueDiligenceService.getDdStatusForCompany(token.targetCompanyId)
+- Update to: dueDiligenceService.getDdStatusForCompany(token.targetCompanyId, token.userCompanyId)
+- One-token addition. P1 pattern.
+
+Portal call site at portal-submissions.routes.ts line 75:
+- Currently: dueDiligenceService.getCompletionSummary(token.targetCompanyId)
+- Update to: dueDiligenceService.getCompletionSummary(token.targetCompanyId, token.userCompanyId)
+- One-token addition. P1 pattern.
+
+Constraints:
+- One logical fix (G1 plus its mechanical cascade through getCompletionSummary). No further scope.
+- No formatting-only edits, no import reordering.
+- Plain UK English in any new comments. No em-dashes. No double hyphens.
+- Drizzle only, no raw SQL.
+- No new dependencies. No any. No ts-ignore.
+
+Output:
+- Show the full proposed diff for all three files: added, removed, changed lines.
+- Run grep across server/ for every caller of getDdStatusForCompany. Should be three: Route 2, getCompletionSummary internal, portal line 74. Confirm or correct.
+- Run grep across server/ for every caller of getCompletionSummary. Should be two: Route 3, portal line 75. Confirm or correct.
+- Confirm the only internal call inside the service file from getCompletionSummary to getDdStatusForCompany is the one being updated.
+- Confirm documentsRepository and ForbiddenError are already imported.
+- Do not apply. STOP after the diff. Wait for me.
