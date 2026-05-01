@@ -84,7 +84,7 @@ router.put('/exit/:dealModelId', requireFeature('valueCreationModule'), asyncHan
   if (!userCompanyId) throw new UnauthorizedError();
   
   const dealModelId = parseInt(req.params.dealModelId);
-  const result = await valueCreationService.updateExitAssumptions(dealModelId, req.body);
+  const result = await valueCreationService.updateExitAssumptions(dealModelId, req.body, userCompanyId);
   sendSuccess(res, result);
 }));
 

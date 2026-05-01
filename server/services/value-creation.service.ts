@@ -187,7 +187,8 @@ class ValueCreationService {
     return { deleted: true };
   }
 
-  async updateExitAssumptions(dealModelId: number, data: Partial<typeof valueCreationExitAssumptions.$inferInsert>) {
+  async updateExitAssumptions(dealModelId: number, data: Partial<typeof valueCreationExitAssumptions.$inferInsert>, userCompanyId: number) {
+    await this.assertDealModelBelongsToUser(dealModelId, userCompanyId);
     const existing = await db.select().from(valueCreationExitAssumptions)
       .where(eq(valueCreationExitAssumptions.dealModelId, dealModelId));
     
