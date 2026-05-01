@@ -75,7 +75,7 @@ router.delete('/synergies/:id', requireFeature('valueCreationModule'), asyncHand
   if (!userCompanyId) throw new UnauthorizedError();
   
   const id = parseInt(req.params.id);
-  const result = await valueCreationService.deleteSynergy(id);
+  const result = await valueCreationService.deleteSynergy(id, userCompanyId);
   sendSuccess(res, result);
 }));
 

@@ -166,7 +166,20 @@ class ValueCreationService {
     return updated;
   }
 
-  async deleteSynergy(synergyId: number) {
+  async deleteSynergy(synergyId: number, userCompanyId: number) {
+    const [synergy] = await db.select({ scenarioId: valueCreationSynergies.scenarioId })
+      .from(valueCreationSynergies)
+      .where(eq(valueCreationSynergies.id, synergyId));
+    if (!synergy) {
+      throw new ForbiddenError('Access denied');
+    }
+    const [scenario] = await db.select({ dealModelId: valueCreationScenarios.dealModelId })
+      .from(valueCreationScenarios)
+      .where(eq(valueCreationScenarios.id, synergy.scenarioId));
+    if (!scenario) {
+      throw new ForbiddenError('Access denied');
+    }
+    await this.assertDealModelBelongsToUser(scenario.dealModelId, userCompanyId);
     await db.delete(valueCreationSynergies)
       .where(eq(valueCreationSynergies.id, synergyId));
     return { deleted: true };
