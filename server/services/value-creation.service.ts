@@ -160,7 +160,14 @@ class ValueCreationService {
     return updated;
   }
 
-  async addSynergy(scenarioId: number, data: typeof valueCreationSynergies.$inferInsert) {
+  async addSynergy(scenarioId: number, data: typeof valueCreationSynergies.$inferInsert, userCompanyId: number) {
+    const [scenario] = await db.select({ dealModelId: valueCreationScenarios.dealModelId })
+      .from(valueCreationScenarios)
+      .where(eq(valueCreationScenarios.id, scenarioId));
+    if (!scenario) {
+      throw new ForbiddenError('Access denied');
+    }
+    await this.assertDealModelBelongsToUser(scenario.dealModelId, userCompanyId);
     const [created] = await db.insert(valueCreationSynergies)
       .values({ ...data, scenarioId })
       .returning();

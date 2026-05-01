@@ -57,7 +57,7 @@ router.post('/synergies/:scenarioId', requireFeature('valueCreationModule'), asy
   if (!userCompanyId) throw new UnauthorizedError();
   
   const scenarioId = parseInt(req.params.scenarioId);
-  const result = await valueCreationService.addSynergy(scenarioId, req.body);
+  const result = await valueCreationService.addSynergy(scenarioId, req.body, userCompanyId);
   sendCreated(res, result);
 }));
 
