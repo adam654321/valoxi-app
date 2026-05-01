@@ -1,0 +1,55 @@
+-- Query 1: schedule overview
+SELECT
+  'OVERVIEW' AS section,
+  COUNT(*) FILTER (WHERE cs.is_active = true AND cs.is_completed = false) AS active_incomplete,
+  COUNT(*) FILTER (WHERE cs.is_active = true AND cs.is_completed = true) AS active_completed,
+  COUNT(*) FILTER (WHERE cs.is_active = false) AS inactive,
+  COUNT(*) AS total
+FROM chase_up_schedules cs;
+
+-- Query 2: token state by escalation level
+SELECT
+  pat.escalation_level,
+  COUNT(*) AS token_count,
+  MIN(pat.chase_email_count) AS min_email_count,
+  MAX(pat.chase_email_count) AS max_email_count,
+  ROUND(AVG(pat.chase_email_count), 1) AS avg_email_count
+FROM chase_up_schedules cs
+INNER JOIN portal_access_tokens pat ON cs.portal_token_id = pat.id
+WHERE cs.is_active = true AND cs.is_completed = false
+GROUP BY pat.escalation_level
+ORDER BY token_count DESC;
+
+-- Query 3: age distribution of overdue active schedules
+SELECT
+  CASE
+    WHEN CURRENT_DATE - cs.submission_deadline <= 7  THEN '0-7 days overdue'
+    WHEN CURRENT_DATE - cs.submission_deadline <= 14 THEN '8-14 days overdue'
+    WHEN CURRENT_DATE - cs.submission_deadline <= 30 THEN '15-30 days overdue'
+    WHEN CURRENT_DATE - cs.submission_deadline <= 60 THEN '31-60 days overdue'
+    WHEN CURRENT_DATE - cs.submission_deadline <= 90 THEN '61-90 days overdue'
+    ELSE '90+ days overdue'
+  END AS age_bucket,
+  COUNT(*) AS schedule_count
+FROM chase_up_schedules cs
+WHERE cs.is_active = true AND cs.is_completed = false
+  AND cs.submission_deadline <= CURRENT_DATE
+GROUP BY age_bucket
+ORDER BY MIN(CURRENT_DATE - cs.submission_deadline);
+
+-- Query 4: chase email count distribution
+SELECT
+  CASE
+    WHEN pat.chase_email_count = 0 THEN '0 emails'
+    WHEN pat.chase_email_count BETWEEN 1 AND 2 THEN '1-2 emails'
+    WHEN pat.chase_email_count BETWEEN 3 AND 4 THEN '3-4 emails'
+    WHEN pat.chase_email_count BETWEEN 5 AND 9 THEN '5-9 emails'
+    WHEN pat.chase_email_count BETWEEN 10 AND 19 THEN '10-19 emails'
+    ELSE '20+ emails'
+  END AS email_count_bucket,
+  COUNT(*) AS token_count
+FROM chase_up_schedules cs
+INNER JOIN portal_access_tokens pat ON cs.portal_token_id = pat.id
+WHERE cs.is_active = true AND cs.is_completed = false
+GROUP BY email_count_bucket
+ORDER BY MIN(pat.chase_email_count);
