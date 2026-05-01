@@ -136,7 +136,14 @@ class ValueCreationService {
     return results;
   }
 
-  async updateScenario(scenarioId: number, data: Partial<typeof valueCreationScenarios.$inferInsert>) {
+  async updateScenario(scenarioId: number, data: Partial<typeof valueCreationScenarios.$inferInsert>, userCompanyId: number) {
+    const [scenario] = await db.select({ dealModelId: valueCreationScenarios.dealModelId })
+      .from(valueCreationScenarios)
+      .where(eq(valueCreationScenarios.id, scenarioId));
+    if (!scenario) {
+      throw new ForbiddenError('Access denied');
+    }
+    await this.assertDealModelBelongsToUser(scenario.dealModelId, userCompanyId);
     const [updated] = await db.update(valueCreationScenarios)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(valueCreationScenarios.id, scenarioId))

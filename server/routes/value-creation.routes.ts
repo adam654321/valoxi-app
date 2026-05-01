@@ -48,7 +48,7 @@ router.put('/scenarios/:id', requireFeature('valueCreationModule'), asyncHandler
   if (!userCompanyId) throw new UnauthorizedError();
   
   const id = parseInt(req.params.id);
-  const result = await valueCreationService.updateScenario(id, req.body);
+  const result = await valueCreationService.updateScenario(id, req.body, userCompanyId);
   sendSuccess(res, result);
 }));
 
