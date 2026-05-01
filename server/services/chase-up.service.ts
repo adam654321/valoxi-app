@@ -156,6 +156,7 @@ export class ChaseUpService {
     if (daysOverdue >= (schedule.manualDeadlineDelayDays || 11)) {
       await chaseUpRepository.updateTokenChaseUpStatus(schedule.portalTokenId, 'manual_intervention', 'manual');
       await this.sendInternalAlert(schedule, 'manual_intervention');
+      await chaseUpRepository.completeSchedule(schedule.id, 'manual_intervention');
       return { emailSent: false };
     } else if (daysOverdue >= (schedule.email4DelayDays || 8) && !sentSequences.has(4)) {
       emailToSend = 4;
