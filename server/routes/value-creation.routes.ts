@@ -12,7 +12,7 @@ router.get('/deal-model/:dealModelId', requireFeature('valueCreationModule'), as
   if (!userCompanyId) throw new UnauthorizedError();
   
   const dealModelId = parseInt(req.params.dealModelId);
-  const result = await valueCreationService.getOrCreateForModel(dealModelId);
+  const result = await valueCreationService.getOrCreateForModel(dealModelId, userCompanyId);
   sendSuccess(res, result);
 }));
 

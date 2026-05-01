@@ -25,7 +25,8 @@ class ValueCreationService {
     }
   }
 
-  async getOrCreateForModel(dealModelId: number) {
+  async getOrCreateForModel(dealModelId: number, userCompanyId: number) {
+    await this.assertDealModelBelongsToUser(dealModelId, userCompanyId);
     const existing = await db.select().from(valueCreationScenarios)
       .where(eq(valueCreationScenarios.dealModelId, dealModelId));
     
