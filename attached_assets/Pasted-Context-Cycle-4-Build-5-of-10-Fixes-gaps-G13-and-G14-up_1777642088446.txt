@@ -1,0 +1,49 @@
+Context. Cycle 4, Build 5 of 10. Fixes gaps G13 and G14: updateExitAssumptions. Reads value_creation_exit_assumptions by dealModelId, then either updates the existing row or inserts a new one. Both paths currently use a caller-supplied dealModelId without ownership verification. Single-hop ownership gate at the entry point covers both branches.
+
+Builds 1, 2, 3, 4 are applied on dev. Build 4 V-check passed.
+
+Process note: Replit workflow restart is delayed up to several minutes after a file change. Wait for the post-apply server log timestamp to be NEW before V-checking.
+
+BUILD-MODE PROPOSE-ONLY. Re-read the two files first, then show me the diff. Do not apply yet. STOP after the diff.
+
+Files allowed to change:
+- server/services/value-creation.service.ts, only updateExitAssumptions
+- server/routes/value-creation.routes.ts, only Route 9: PUT /exit/:dealModelId
+
+Do not touch anything else. No other methods, no other routes. Do not retouch helper, deleteSynergy, getOrCreateForModel, getFullData, or updateAllScenariosForModel.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+2. Re-read both files in full. Confirm:
+   - updateExitAssumptions currently takes (dealModelId: number, data) only, no userCompanyId
+   - The method first reads value_creation_exit_assumptions by dealModelId, then branches into update (if existing row) or insert (if not)
+   - Route 9 reads userCompanyId from req.session?.userCompanyId, guards with UnauthorizedError, but does not pass userCompanyId to the service
+   - assertDealModelBelongsToUser exists
+   If dev has drifted, stop and report.
+
+Fix shape.
+
+Service method updateExitAssumptions:
+- Change signature to add userCompanyId: number. Position the new param immediately after dealModelId, preserving existing arg order for data (consistent with Build 4's positioning of userCompanyId after data — actually Build 4 placed userCompanyId third after data; for Build 5 do the same: dealModelId, data, userCompanyId). Match Build 4 ordering for consistency.
+- As the very first statement in the method, call this.assertDealModelBelongsToUser(dealModelId, userCompanyId).
+- After the gate passes, the existing read-then-update-or-insert logic runs unchanged. Both branches stay as they are.
+- No system admin bypass.
+
+Route 9:
+- Use the existing guarded local userCompanyId variable.
+- Pass userCompanyId to the service in the position that matches the new signature (after data/req.body).
+- No new assertion, no second session access. Match Build 3 and Build 4 style.
+- Keep all existing param parsing and response shape.
+
+Constraints:
+- One logical change. Two surfaces only.
+- No formatting-only edits. No import reordering.
+- Plain UK English in any comments. No em-dashes. No double hyphens.
+- Drizzle only, no raw SQL.
+- No new dependencies. No any. No ts-ignore.
+
+Output:
+- Show the full proposed diff for both files.
+- Run grep across server/ for every caller of updateExitAssumptions. Per the assess, only Route 9. Confirm or correct.
+- Confirm assertDealModelBelongsToUser now has exactly four callers: deleteSynergy, getOrCreateForModel, updateAllScenariosForModel, updateExitAssumptions.
+- Do not apply. STOP after the diff. Wait for me.
