@@ -1,0 +1,45 @@
+Context. New work item, separate from #109 security work. Implementing terminal states for the chase-up email loop. Adam has confirmed Build 1 shape.
+
+Build 1 of 4: Rule A. When daysOverdue >= manualDeadlineDelayDays, the manual_intervention branch in processSchedule currently:
+- updates portal_access_tokens.chaseUpStatus to 'manual_intervention'
+- updates escalationLevel to 'manual'
+- fires an internal alert
+- returns { emailSent: false }
+
+What it does NOT do, but must: call completeSchedule(scheduleId, reason) to set chase_up_schedules.is_completed = true. Without that, the schedule re-enters tomorrow's cron run, and every day after that. This is the root-cause loop that has months-old tokens still firing alerts.
+
+Confirmed product decision: alert fires once, schedule completes, fully terminal. No re-alert, no nag cycle. If the team does not action the alert, nothing further happens automatically. Manual re-engagement only.
+
+BUILD-MODE PROPOSE-ONLY. Re-read the file first, then show me the diff. Do not apply yet. STOP after the diff. I will authorise the apply in a separate prompt.
+
+Files allowed to change:
+- server/services/chase-up.service.ts, only the manual_intervention branch inside processSchedule
+
+Do not touch anything else. No other branches inside processSchedule. No other service methods. No routes. No cron file. No schema. No tests.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+2. Re-read server/services/chase-up.service.ts in full. Confirm:
+   - processSchedule exists and contains a branch guarded by daysOverdue >= manualDeadlineDelayDays (or equivalent)
+   - That branch currently calls updateTokenChaseUpStatus and an internal alert, then returns without calling completeSchedule
+   - completeSchedule exists in this file or in chaseUpRepository, takes (scheduleId, reason) or similar, and is the same method called by the manual stop button flow
+   If dev has drifted, stop and report.
+
+Fix shape:
+- Inside the manual_intervention branch in processSchedule, after the existing updateTokenChaseUpStatus call and after the internal alert is fired, before the return, add a single call: completeSchedule(schedule.id, 'manual_intervention')
+- Use whatever name and signature completeSchedule has in this codebase. If it lives on the repository (chaseUpRepository.completeSchedule) and the service uses that everywhere else, use that. If the service has its own completeSchedule method that wraps the repository, use that. Match existing usage exactly. Do not introduce a new pattern.
+- The completion reason string is 'manual_intervention'. Confirm this is consistent with how the manual stop button writes its reason (the stop button writes 'manual_stop' or similar; we want a distinct string so completion_reason can be filtered later).
+
+No other behaviour change. No re-ordering. No log line changes. The existing alert continues to fire exactly once on the day daysOverdue first hits the threshold, then the schedule completes and never re-enters the cron.
+
+Constraints:
+- One logical change. Nothing outside the manual_intervention branch.
+- No formatting-only edits. No import reordering.
+- Plain UK English in any new comments. No em-dashes. No double hyphens.
+- No new dependencies. No any. No ts-ignore.
+
+Output:
+- Show the full proposed diff: added, removed, changed lines, with five lines of surrounding context.
+- Confirm completeSchedule's signature and source (service method or repository method) and that the existing manual stop button calls it the same way.
+- Confirm the completion reason string used by the manual stop button so we know our 'manual_intervention' string is distinct.
+- Do not apply. STOP after the diff. Wait for me.
