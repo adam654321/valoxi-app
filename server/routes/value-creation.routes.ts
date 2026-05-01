@@ -21,7 +21,7 @@ router.put('/assumptions/bulk', requireFeature('valueCreationModule'), asyncHand
   if (!userCompanyId) throw new UnauthorizedError();
   
   const { updates } = req.body;
-  const result = await valueCreationService.bulkUpdateAssumptions(updates);
+  const result = await valueCreationService.bulkUpdateAssumptions(updates, userCompanyId);
   sendSuccess(res, result);
 }));
 

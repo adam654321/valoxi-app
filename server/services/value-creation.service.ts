@@ -1,11 +1,12 @@
 import { db } from '../db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import {
   valueCreationScenarios,
   valueCreationAssumptions,
   valueCreationSynergies,
   valueCreationExitAssumptions,
   dealModels,
+  targetCompanies,
 } from '@shared/schema';
 import { ForbiddenError } from '../utils/errors';
 import { documentsRepository } from '../repositories/documents.repository';
@@ -137,7 +138,28 @@ class ValueCreationService {
     return updated;
   }
 
-  async bulkUpdateAssumptions(updates: Array<{ id: number; data: Record<string, any> }>) {
+  async bulkUpdateAssumptions(updates: Array<{ id: number; data: Record<string, any> }>, userCompanyId: number) {
+    if (updates.length === 0) {
+      return [];
+    }
+    const inputIds = [...new Set(updates.map(u => u.id))];
+    // Single batched join validates all input IDs belong to the caller in one round trip.
+    const rows = await db
+      .select({
+        assumptionId: valueCreationAssumptions.id,
+        rowUserCompanyId: targetCompanies.userCompanyId,
+      })
+      .from(valueCreationAssumptions)
+      .innerJoin(valueCreationScenarios, eq(valueCreationScenarios.id, valueCreationAssumptions.scenarioId))
+      .innerJoin(dealModels, eq(dealModels.id, valueCreationScenarios.dealModelId))
+      .innerJoin(targetCompanies, eq(targetCompanies.id, dealModels.targetCompanyId))
+      .where(inArray(valueCreationAssumptions.id, inputIds));
+    if (rows.length !== inputIds.length) {
+      throw new ForbiddenError('Access denied');
+    }
+    if (rows.some(r => r.rowUserCompanyId !== userCompanyId)) {
+      throw new ForbiddenError('Access denied');
+    }
     const results = [];
     for (const { id, data } of updates) {
       const [updated] = await db.update(valueCreationAssumptions)
