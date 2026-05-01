@@ -17,7 +17,8 @@ router.get('/company/:targetCompanyId/status', requireFeature('ddDataRoom'), asy
     return res.status(400).json({ message: 'Invalid targetCompanyId' });
   }
 
-  const status = await dueDiligenceService.getDdStatusForCompany(targetCompanyId);
+  const userCompanyId = req.session.userCompanyId!;
+  const status = await dueDiligenceService.getDdStatusForCompany(targetCompanyId, userCompanyId);
   res.json(status);
 }));
 
@@ -27,7 +28,8 @@ router.get('/company/:targetCompanyId/summary', requireFeature('ddDataRoom'), as
     return res.status(400).json({ message: 'Invalid targetCompanyId' });
   }
 
-  const summary = await dueDiligenceService.getCompletionSummary(targetCompanyId);
+  const userCompanyId = req.session.userCompanyId!;
+  const summary = await dueDiligenceService.getCompletionSummary(targetCompanyId, userCompanyId);
   res.json(summary);
 }));
 

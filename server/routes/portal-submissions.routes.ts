@@ -71,8 +71,8 @@ router.delete('/:token/documents/:id', asyncHandler(async (req: Request, res: Re
 router.get('/:token/dd-requirements', asyncHandler(async (req: Request, res: Response) => {
   const token = await portalSubmissionsService.validateToken(req.params.token);
 
-  const categoriesWithStatus = await dueDiligenceService.getDdStatusForCompany(token.targetCompanyId);
-  const summary = await dueDiligenceService.getCompletionSummary(token.targetCompanyId);
+  const categoriesWithStatus = await dueDiligenceService.getDdStatusForCompany(token.targetCompanyId, token.userCompanyId);
+  const summary = await dueDiligenceService.getCompletionSummary(token.targetCompanyId, token.userCompanyId);
 
   const categories = await Promise.all(categoriesWithStatus.map(async cat => ({
     ...cat.category,

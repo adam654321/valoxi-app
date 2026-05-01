@@ -66,7 +66,12 @@ class DueDiligenceService {
     return { category, requirements };
   }
 
-  async getDdStatusForCompany(targetCompanyId: number): Promise<DdCategoryWithStatus[]> {
+  async getDdStatusForCompany(targetCompanyId: number, userCompanyId: number): Promise<DdCategoryWithStatus[]> {
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(targetCompanyId, userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+
     const categories = await db.select().from(ddCategories)
       .where(eq(ddCategories.isActive, true))
       .orderBy(asc(ddCategories.sortOrder));
@@ -200,8 +205,8 @@ class DueDiligenceService {
     }
   }
 
-  async getCompletionSummary(targetCompanyId: number): Promise<DdCompletionSummary> {
-    const categoryData = await this.getDdStatusForCompany(targetCompanyId);
+  async getCompletionSummary(targetCompanyId: number, userCompanyId: number): Promise<DdCompletionSummary> {
+    const categoryData = await this.getDdStatusForCompany(targetCompanyId, userCompanyId);
 
     const isCompleted = (statusRow: DdRequirementStatus | null) => {
       if (!statusRow) return false;
