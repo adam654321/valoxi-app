@@ -66,7 +66,7 @@ router.put('/synergies/:id', requireFeature('valueCreationModule'), asyncHandler
   if (!userCompanyId) throw new UnauthorizedError();
   
   const id = parseInt(req.params.id);
-  const result = await valueCreationService.updateSynergy(id, req.body);
+  const result = await valueCreationService.updateSynergy(id, req.body, userCompanyId);
   sendSuccess(res, result);
 }));
 
