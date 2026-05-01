@@ -39,7 +39,7 @@ router.put('/scenarios/deal-model/:dealModelId', requireFeature('valueCreationMo
   if (!userCompanyId) throw new UnauthorizedError();
   
   const dealModelId = parseInt(req.params.dealModelId);
-  const result = await valueCreationService.updateAllScenariosForModel(dealModelId, req.body);
+  const result = await valueCreationService.updateAllScenariosForModel(dealModelId, req.body, userCompanyId);
   sendSuccess(res, result);
 }));
 

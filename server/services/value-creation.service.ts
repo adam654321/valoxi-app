@@ -144,7 +144,8 @@ class ValueCreationService {
     return updated;
   }
 
-  async updateAllScenariosForModel(dealModelId: number, data: Partial<typeof valueCreationScenarios.$inferInsert>) {
+  async updateAllScenariosForModel(dealModelId: number, data: Partial<typeof valueCreationScenarios.$inferInsert>, userCompanyId: number) {
+    await this.assertDealModelBelongsToUser(dealModelId, userCompanyId);
     const updated = await db.update(valueCreationScenarios)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(valueCreationScenarios.dealModelId, dealModelId))
