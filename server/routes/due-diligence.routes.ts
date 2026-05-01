@@ -58,9 +58,11 @@ router.put('/company/:targetCompanyId/requirement/:requirementId/status', requir
 
   const validated = updateStatusSchema.parse(req.body);
 
+  const userCompanyId = req.session.userCompanyId!;
   const result = await dueDiligenceService.updateRequirementStatus({
     requirementId,
     targetCompanyId,
+    userCompanyId,
     status: validated.status,
     notes: validated.notes,
     documentId: validated.documentId,

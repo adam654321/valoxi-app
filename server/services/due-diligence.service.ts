@@ -133,12 +133,18 @@ class DueDiligenceService {
   async updateRequirementStatus(data: {
     requirementId: number;
     targetCompanyId: number;
+    userCompanyId: number;
     status: string;
     notes?: string;
     documentId?: number | null;
     externalSubmissionId?: number;
     updatedBy: number;
   }) {
+    const belongs = await documentsRepository.targetCompanyBelongsToUser(data.targetCompanyId, data.userCompanyId);
+    if (!belongs) {
+      throw new ForbiddenError('Access denied');
+    }
+
     const validStatuses = ['not_submitted', 'submitted', 'approved', 'rejected', 'na'];
     if (!validStatuses.includes(data.status)) {
       throw new BadRequestError(`Invalid status: ${data.status}. Must be one of: ${validStatuses.join(', ')}`);
