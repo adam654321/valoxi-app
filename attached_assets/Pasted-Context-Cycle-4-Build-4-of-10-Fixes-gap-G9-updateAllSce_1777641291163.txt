@@ -1,0 +1,48 @@
+Context. Cycle 4, Build 4 of 10. Fixes gap G9: updateAllScenariosForModel. dealModelId is supplied directly so this is a single-hop ownership gate at the entry point. Single caller, no portal, no cron.
+
+Builds 1, 2, 3 are applied on dev. Build 3 V-check passed: negative 403, positive 200 with full body.
+
+Process note: Replit workflow restart is delayed up to several minutes after a file change. Wait for the post-apply server log timestamp to be NEW before V-checking.
+
+BUILD-MODE PROPOSE-ONLY. Re-read the two files first, then show me the diff. Do not apply yet. STOP after the diff.
+
+Files allowed to change:
+- server/services/value-creation.service.ts, only updateAllScenariosForModel
+- server/routes/value-creation.routes.ts, only Route 4: PUT /scenarios/deal-model/:dealModelId
+
+Do not touch anything else. No other methods, no other routes, no schema. Do not retouch the helper, deleteSynergy, getOrCreateForModel, or getFullData.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+2. Re-read both files in full. Confirm:
+   - updateAllScenariosForModel currently takes (dealModelId: number, data) only, no userCompanyId
+   - Route 4 reads userCompanyId from req.session?.userCompanyId, guards with UnauthorizedError, but does not pass userCompanyId to the service
+   - assertDealModelBelongsToUser exists and is callable on this
+   If dev has drifted, stop and report.
+
+Fix shape.
+
+Service method updateAllScenariosForModel:
+- Change signature to add userCompanyId: number. Position the new param immediately after dealModelId (third arg if data is second, or second arg if data is first; preserve existing arg order for data).
+- As the very first statement in the method, call this.assertDealModelBelongsToUser(dealModelId, userCompanyId).
+- After the gate passes, the existing scenario update logic runs unchanged.
+- No system admin bypass.
+
+Route 4:
+- Use the existing guarded local userCompanyId variable.
+- Pass userCompanyId to the service in the position that matches the new signature.
+- No new assertion, no second session access. Match Build 3 style.
+- Keep all existing param parsing and response shape.
+
+Constraints:
+- One logical change. Two surfaces only.
+- No formatting-only edits. No import reordering.
+- Plain UK English in any comments. No em-dashes. No double hyphens.
+- Drizzle only, no raw SQL.
+- No new dependencies. No any. No ts-ignore.
+
+Output:
+- Show the full proposed diff for both files.
+- Run grep across server/ for every caller of updateAllScenariosForModel. Per the assess, only Route 4. Confirm or correct.
+- Confirm assertDealModelBelongsToUser now has exactly three callers: deleteSynergy, getOrCreateForModel, updateAllScenariosForModel.
+- Do not apply. STOP after the diff. Wait for me.
