@@ -1,0 +1,50 @@
+Context. Cycle 4, Build 3 of 10. Fixes gaps G1, G2, G3, G4, G5: getOrCreateForModel and its private helper getFullData. dealModelId is supplied directly, so this is a single-hop ownership gate at the entry point of getOrCreateForModel. getFullData is private and called only from getOrCreateForModel, so it inherits the gate via that single caller and does not need its own userCompanyId param.
+
+Build 1 (helper) and Build 2 (deleteSynergy) are applied on dev. Build 2 V-check passed on negative live, positive by code review.
+
+Process note: Replit workflow restart is delayed up to several minutes after a file change. Wait for the post-apply server log timestamp to be NEW before V-checking.
+
+BUILD-MODE PROPOSE-ONLY. Re-read the two files first, then show me the diff. Do not apply yet. STOP after the diff. I will authorise the apply in a separate prompt.
+
+Files allowed to change:
+- server/services/value-creation.service.ts, only getOrCreateForModel (NOT getFullData)
+- server/routes/value-creation.routes.ts, only Route 1: GET /deal-model/:dealModelId
+
+Do not touch anything else. No other methods, no other routes, no schema. Do not modify getFullData. Do not retouch the helper or deleteSynergy.
+
+Pre-checks:
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+2. Re-read both files in full. Confirm:
+   - getOrCreateForModel currently takes (dealModelId: number) only
+   - getOrCreateForModel calls this.getFullData(dealModelId) internally; that internal call stays unchanged in this build
+   - Route 1 reads userCompanyId from req.session?.userCompanyId, guards with UnauthorizedError, but does not pass userCompanyId to getOrCreateForModel
+   - assertDealModelBelongsToUser exists as a private method on ValueCreationService
+   If dev has drifted, stop and report.
+
+Fix shape.
+
+Service method getOrCreateForModel:
+- Change signature from (dealModelId: number) to (dealModelId: number, userCompanyId: number). Positional, second arg.
+- Before any read or upsert logic, call this.assertDealModelBelongsToUser(dealModelId, userCompanyId). The helper throws ForbiddenError on fail.
+- After the gate passes, the existing logic (getFullData call, scenario creation if missing, etc.) runs unchanged.
+- getFullData itself is NOT modified. It remains a private untenanted helper. The gate in getOrCreateForModel covers the only entry path.
+- No system admin bypass.
+
+Route 1:
+- Use the existing local userCompanyId variable (already declared and guarded). Do NOT add a non-null assertion or re-read req.session.
+- Pass userCompanyId as the second positional arg to getOrCreateForModel.
+- Keep all existing param parsing and response shape.
+
+Constraints:
+- One logical change. Nothing outside the two surfaces above.
+- No formatting-only edits. No import reordering.
+- Plain UK English in any comments. No em-dashes. No double hyphens.
+- Drizzle only, no raw SQL.
+- No new dependencies. No any. No ts-ignore.
+
+Output:
+- Show the full proposed diff for both files.
+- Run grep across server/ for every caller of getOrCreateForModel. Per the assess, only Route 1 calls it. Confirm or correct.
+- Confirm getFullData remains private and is still called only from getOrCreateForModel.
+- Confirm assertDealModelBelongsToUser now has exactly two callers: deleteSynergy and getOrCreateForModel.
+- Do not apply. STOP after the diff. Wait for me.
