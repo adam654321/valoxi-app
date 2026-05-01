@@ -30,7 +30,7 @@ router.put('/assumptions/:id', requireFeature('valueCreationModule'), asyncHandl
   if (!userCompanyId) throw new UnauthorizedError();
   
   const id = parseInt(req.params.id);
-  const result = await valueCreationService.updateAssumption(id, req.body);
+  const result = await valueCreationService.updateAssumption(id, req.body, userCompanyId);
   sendSuccess(res, result);
 }));
 

@@ -116,7 +116,20 @@ class ValueCreationService {
     };
   }
 
-  async updateAssumption(assumptionId: number, data: Partial<typeof valueCreationAssumptions.$inferInsert>) {
+  async updateAssumption(assumptionId: number, data: Partial<typeof valueCreationAssumptions.$inferInsert>, userCompanyId: number) {
+    const [assumption] = await db.select({ scenarioId: valueCreationAssumptions.scenarioId })
+      .from(valueCreationAssumptions)
+      .where(eq(valueCreationAssumptions.id, assumptionId));
+    if (!assumption) {
+      throw new ForbiddenError('Access denied');
+    }
+    const [scenario] = await db.select({ dealModelId: valueCreationScenarios.dealModelId })
+      .from(valueCreationScenarios)
+      .where(eq(valueCreationScenarios.id, assumption.scenarioId));
+    if (!scenario) {
+      throw new ForbiddenError('Access denied');
+    }
+    await this.assertDealModelBelongsToUser(scenario.dealModelId, userCompanyId);
     const [updated] = await db.update(valueCreationAssumptions)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(valueCreationAssumptions.id, assumptionId))
