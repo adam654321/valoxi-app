@@ -1,0 +1,40 @@
+Context. Cycle 3, Build 6 of 6. Final build. Fixes gap G2 from the assess: updateRequirementStatus reads dd_requirement_status by requirementId + targetCompanyId without ownership verification, then upserts. Any tenant can create or overwrite DD status rows on another tenant's target company.
+
+Builds 1, 2, 3, 4, and 5 are applied on dev with V-checks passing. P1 pattern locked in Build 4: userCompanyId from req.session.userCompanyId! in user routes, from token.userCompanyId in portal callers.
+
+Per the assess, updateRequirementStatus has two callers:
+- Route 4: PUT /company/:targetCompanyId/requirement/:requirementId/status — user-authenticated
+- portal-submissions.service.ts line 88 — non-route service caller, called from inside the portal flow after token validation
+
+Note this is a SERVICE caller, not a route caller. portal-submissions.service.ts line 88 sits inside a portal submission service method that is itself called from a portal route handler that has already validated the token. The token.userCompanyId is available at the portal route layer, but may or may not currently be threaded through to the service method that calls updateRequirementStatus. Stage 1 read-only investigation needed before proposing the diff.
+
+This prompt has TWO stages. Do stage 1 read-only first. Stop. Then I authorise stage 2.
+
+STAGE 1: portal service caller investigation. Read-only.
+
+1. npx tsc --noEmit. Confirm 0 errors. If non-zero, stop and report.
+
+2. Read portal-submissions.service.ts in the area around line 88. Show the full method that contains the updateRequirementStatus call. Identify:
+   - The method name
+   - Its current signature
+   - How userCompanyId is currently obtained inside this method, if at all
+   - Where this method is called from (grep for it across server/)
+
+3. Read the route handler in portal-submissions.routes.ts that calls the service method identified in step 2. Confirm whether it has the validated token in scope and therefore token.userCompanyId.
+
+4. Decide threading approach:
+   - Option T1: the service method already accepts a userCompanyId or accepts the full token object. No threading change needed at the service level beyond passing it forward to updateRequirementStatus.
+   - Option T2: the service method does not currently have userCompanyId. The cleanest fix is to add userCompanyId to its signature and pass it from the route handler at call time. The route handler reads it from token.userCompanyId.
+   - Option T3: the service method already accepts the targetCompanyId or other token-derived data. Add userCompanyId in the same shape.
+
+5. Output a stage 1 report with these headings:
+
+A. updateRequirementStatus current state (signature, query gap as per assess)
+B. Route 4 caller (user-authenticated, straightforward like prior builds)
+C. portal-submissions.service.ts line 88 caller — full enclosing method, current signature, current userCompanyId source if any
+D. The route handler in portal-submissions.routes.ts that calls the service method from step C — token availability
+E. Recommended threading option (T1, T2, or T3) with one-sentence justification
+F. List of files to change in stage 2
+G. List of files NOT to change
+
+STOP. Do not propose any diff yet. Wait for me to authorise stage 2.
