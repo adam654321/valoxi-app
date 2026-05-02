@@ -1,0 +1,87 @@
+[V-CHECK] Build 2, Phase 2 execute
+
+Authorised. Execute in this order. STOP at any halt instruction.
+
+STEP 1 — Run the proposed setup INSERTs exactly as restated.
+
+  [Case A: 2 rows on company 71, both 'submitted']
+  [Case B: 2 rows on company 70, one 'submitted' one 'outstanding']
+  [No insert for Case C]
+
+After insert, verify with:
+
+SELECT target_company_id, requirement_name, collection_stage, is_mandatory, requirement_status
+FROM company_document_requirements
+WHERE target_company_id IN (70, 71)
+  AND requirement_name LIKE 'Test Doc % (Build 2 V-check)'
+ORDER BY target_company_id, requirement_name;
+
+Expect 4 rows. If any other count, HALT and report.
+
+STEP 2 — Email recipient sanity check (run BEFORE creating the trigger script).
+
+-- Contacts that will receive chase emails when the cron runs:
+SELECT
+  pat.id AS portal_token_id,
+  pat.user_company_id,
+  tc.email AS contact_email,
+  tco.company_name
+FROM portal_access_tokens pat
+INNER JOIN target_contacts tc ON pat.target_contact_id = tc.id
+INNER JOIN target_companies tco ON pat.target_company_id = tco.id
+WHERE pat.id IN (17, 18, 21, 3, 6, 8, 12, 15, 16)
+ORDER BY pat.id;
+
+-- Team members that will receive internal alerts for the manual-intervention schedules:
+SELECT DISTINCT
+  pat.id AS portal_token_id,
+  pat.user_company_id,
+  u.email AS team_email
+FROM portal_access_tokens pat
+INNER JOIN users u ON u.user_company_id = pat.user_company_id
+WHERE pat.id IN (3, 6, 8, 12, 15, 16)
+ORDER BY pat.id, u.email;
+
+Output both result sets. Then apply this rule:
+  - If every email address ends with @valoxi.ai, @shiftopsconsulting.com, an obvious test domain (example.com, mailinator.com, +test variants, etc.), or otherwise looks clearly internal/test → proceed to STEP 3.
+  - If ANY address looks like a real third-party customer domain (a real company name in the local-part or domain), HALT, do not proceed, report the addresses and wait for explicit "proceed anyway" from me.
+
+STEP 3 — Create the trigger script exactly as restated:
+
+File: server/scripts/test-rule-b.ts
+[content as proposed in Phase 2a]
+
+STEP 4 — Run the script:
+
+npx tsx server/scripts/test-rule-b.ts
+
+Capture the full stdout/stderr.
+
+STEP 5 — Post-snapshot. Run all four queries from the pre-snapshot block (1a, 1b, 1c, 1d) again. Output results.
+
+STEP 6 — Output a one-line per case verdict:
+  - Case A (schedule 17): pass / fail, with the actual values seen for is_completed, completion_reason, chase_up_status, escalation_level, chase_email_count.
+  - Case B (schedule 18): pass / fail, with actuals.
+  - Case C (schedule 21): pass / fail, with actuals.
+  - Rule A side-verification (schedules 3, 6, 8, 12, 15, 16): pass / fail collectively (all six should be is_completed=true with completion_reason='manual_intervention').
+
+Definition of pass for Case A:
+  is_completed=true, completion_reason='all_required_submitted',
+  chase_up_status='completed', escalation_level='none',
+  chase_email_count UNCHANGED at 2 (the Decision 3B check).
+
+Definition of pass for Case B:
+  is_completed=false, completion_reason IS NULL,
+  email 2 (firm) added to chase_up_emails for portal_token_id 18,
+  chase_email_count = 3.
+
+Definition of pass for Case C:
+  is_completed=false, completion_reason IS NULL,
+  email 1 (gentle) added to chase_up_emails for portal_token_id 21,
+  chase_email_count = 2.
+
+Definition of pass for Rule A side-verification:
+  All six schedules is_completed=true, completion_reason='manual_intervention',
+  each chase_email_count bumped by exactly 1.
+
+Do NOT delete the trigger script or the test requirement rows yet. We want them in place for any follow-up checks. Cleanup will be a separate authorised step at the end.
