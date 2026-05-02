@@ -1,0 +1,127 @@
+[CODE] Build 3: Rule D (time-based backstop, populate + enforce)
+
+Plain UK English. No em-dashes. No double hyphens.
+
+CONTEXT
+Following Build 2 (Rule B). Rule D writes finalDeadlineDate at schedule creation and extension, and reads it inside processSchedule to terminate cleanly when exceeded. Defence in depth: in normal operation Rule A fires on day manualDeadlineDelayDays (default 11), Rule D only fires the day AFTER (day 12+) and only catches cases where Rule A regressed. Locked decisions D1-D8 from the assess apply.
+
+DO NOT APPLY ANY EDITS IN THIS PROMPT. Re-read each file from the dev tree, propose unified diffs for each of the four changes below, then STOP and wait for "authorise apply".
+
+PRE-WORK
+1. Re-read fresh from the dev tree:
+   - server/repositories/chase-up.repository.ts (must include the clearTokenChaseStatus method added in Build 2)
+   - server/services/chase-up.service.ts (must include the Rule B guard at top of processSchedule from Build 2)
+2. Confirm tsc baseline error count. Expect 0. If non-zero, STOP and report.
+3. Confirm getOverdueSchedules return type is unchanged (we are deliberately not touching it; D1 chose option (a)).
+
+CHANGE 1 of 4 — server/repositories/chase-up.repository.ts: new method getTokenFinalDeadline
+
+Add to ChaseUpRepository class. Place it adjacent to updateTokenDeadline (logical grouping with deadline-related methods).
+
+  async getTokenFinalDeadline(tokenId: number): Promise<string | null> {
+    const [row] = await db.select({ finalDeadlineDate: portalAccessTokens.finalDeadlineDate })
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.id, tokenId));
+    return row?.finalDeadlineDate ?? null;
+  }
+
+CHANGE 2 of 4 — server/repositories/chase-up.repository.ts: extend updateTokenDeadline signature
+
+Modify the existing method to accept an optional finalDeadlineDate. Conditionally include it in the SET clause. The existing single-argument calls remain valid (TypeScript optional parameter), but we will update both callers in Change 3.
+
+Existing:
+  async updateTokenDeadline(tokenId: number, deadline: string): Promise<void> {
+    await db.update(portalAccessTokens).set({
+      submissionDeadline: deadline,
+      manualDeadlineSet: new Date(),
+    }).where(eq(portalAccessTokens.id, tokenId));
+  }
+
+Modified:
+  async updateTokenDeadline(tokenId: number, deadline: string, finalDeadlineDate?: string): Promise<void> {
+    const updates: Record<string, any> = {
+      submissionDeadline: deadline,
+      manualDeadlineSet: new Date(),
+    };
+    if (finalDeadlineDate !== undefined) {
+      updates.finalDeadlineDate = finalDeadlineDate;
+    }
+    await db.update(portalAccessTokens).set(updates).where(eq(portalAccessTokens.id, tokenId));
+  }
+
+CHANGE 3 of 4 — server/services/chase-up.service.ts: setPortalTimeframe and extendTimeframe
+
+3a — setPortalTimeframe: REORDER createSchedule before updateTokenDeadline, then compute finalDeadlineString from schedule.manualDeadlineDelayDays (use || 11 to match existing style at line 156), then pass to updateTokenDeadline.
+
+Existing flow (after deadlineString computed):
+  await chaseUpRepository.updateTokenDeadline(portalTokenId, deadlineString);
+  const schedule = await chaseUpRepository.createSchedule({ ... });
+  await chaseUpRepository.updateTokenChaseUpStatus(portalTokenId, 'within_timeframe', 'none');
+  return schedule;
+
+New flow:
+  const schedule = await chaseUpRepository.createSchedule({
+    portalTokenId,
+    targetCompanyId: token.targetCompanyId,
+    timeframeDays,
+    submissionDeadline: deadlineString,
+    createdBy: userId,
+  });
+  // Compute finalDeadlineDate = submissionDeadline + manualDeadlineDelayDays.
+  // Rule D backstop: defence in depth in case Rule A regresses.
+  const finalDeadline = new Date(deadlineString);
+  finalDeadline.setDate(finalDeadline.getDate() + (schedule.manualDeadlineDelayDays || 11));
+  const finalDeadlineString = finalDeadline.toISOString().split('T')[0];
+  await chaseUpRepository.updateTokenDeadline(portalTokenId, deadlineString, finalDeadlineString);
+  await chaseUpRepository.updateTokenChaseUpStatus(portalTokenId, 'within_timeframe', 'none');
+  return schedule;
+
+3b — extendTimeframe schedule branch: compute new finalDeadlineString from newDeadlineString + schedule.manualDeadlineDelayDays. Pass to updateTokenDeadline.
+
+Existing flow (schedule branch only, after newDeadlineString computed):
+  await chaseUpRepository.updateTokenDeadline(portalTokenId, newDeadlineString);
+  const updated = await chaseUpRepository.updateSchedule(schedule.id, { ... });
+  ...
+
+New flow:
+  // Recompute finalDeadlineDate from new deadline. Backfills legacy nulls
+  // on first extension, which is the desired behaviour.
+  const newFinalDeadline = new Date(newDeadlineString);
+  newFinalDeadline.setDate(newFinalDeadline.getDate() + (schedule.manualDeadlineDelayDays || 11));
+  const newFinalDeadlineString = newFinalDeadline.toISOString().split('T')[0];
+  await chaseUpRepository.updateTokenDeadline(portalTokenId, newDeadlineString, newFinalDeadlineString);
+  const updated = await chaseUpRepository.updateSchedule(schedule.id, { ... });
+  ...
+
+3c — extendTimeframe no-schedule branch: NO CHANGE. Decision D4 explicitly excludes this branch.
+
+CHANGE 4 of 4 — server/services/chase-up.service.ts: Rule D guard in processSchedule
+
+Insert AFTER the Rule B block (added in Build 2) and BEFORE const today = new Date(). The guard reads finalDeadlineDate via the new repository method, skips entirely on null (legacy schedule protection), uses > for strict comparison so Rule D fires the day AFTER finalDeadlineDate (preserving Rule A's first-responder role).
+
+  // Rule D: time-based backstop. Terminate if today is past finalDeadlineDate.
+  // Defence in depth: in normal operation Rule A fires first on day
+  // manualDeadlineDelayDays. Rule D fires the day after (using > not >=) and
+  // only catches cases where Rule A regressed or was bypassed. Skips when
+  // finalDeadlineDate IS NULL: legacy schedules pre-Build 3 stay under Rule A
+  // protection until extended, at which point extendTimeframe backfills the
+  // column. See action log #139.
+  const finalDeadlineDate = await chaseUpRepository.getTokenFinalDeadline(schedule.portalTokenId);
+  if (finalDeadlineDate !== null) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (todayStr > finalDeadlineDate) {
+      await chaseUpRepository.completeSchedule(schedule.id, 'final_deadline_passed');
+      await chaseUpRepository.clearTokenChaseStatus(schedule.portalTokenId, 'completed', 'none');
+      return { emailSent: false };
+    }
+  }
+
+POST-PROPOSAL CHECK
+After proposing the four diffs, before stopping:
+- Confirm tsc would still be 0 errors after the proposed diffs (read-only verification of types and the optional parameter signature change).
+- Confirm both callers of updateTokenDeadline (setPortalTimeframe and extendTimeframe schedule branch) are updated to pass the new third argument.
+- Confirm the no-schedule branch of extendTimeframe is genuinely untouched (D4).
+- List any side effect or risk you spot that I have not flagged. If none, say "no further risks identified".
+- Restate the four change locations in one line each so I can spot-check before authorising.
+
+DO NOT APPLY. Wait for "authorise apply" from me.
