@@ -1,0 +1,62 @@
+[CONTEXT] Builds 2 and 3 of #139 chase-up cancellation rules are dev-verified
+and ready for prod deploy as a single bundle. Build 1 (Rule A) is already
+live on prod and the 09:00 UK audit on 2 May confirmed it working (six
+manual_intervention closures, zero schedules at escalation_level=manual in
+active+incomplete). No schema changes, no migration, three files only.
+
+[TASK] Pre-deploy verification only. Do NOT click Deploy. Adam will do that
+manually after this verification report comes back clean.
+
+[STEPS]
+
+Step 1. Re-read the three target files from the dev tree fresh (do not
+trust any cached view) and confirm the following landmarks are present in
+each. Report the exact lines or method names you find.
+
+File A: server/repositories/portal-requirements.repository.ts
+- Confirm presence of new method: areAllMandatorySubmitted
+- Confirm signature returns boolean (or Promise<boolean>) and takes a
+  portalTokenId
+
+File B: server/repositories/chase-up.repository.ts
+- Confirm presence of new method: clearTokenChaseStatus
+- Confirm presence of new method: getTokenFinalDeadline
+- Confirm updateTokenDeadline now accepts an optional finalDeadlineDate
+  parameter and uses the conditional spread pattern
+  {...(finalDeadlineDate !== undefined ? { finalDeadlineDate } : {})}
+  rather than Record<string, any>
+
+File C: server/services/chase-up.service.ts
+- Confirm new import for areAllMandatorySubmitted from
+  portal-requirements.repository
+- Confirm processSchedule has Rule B guard at the TOP of the method body,
+  before Rule D, before the daysOverdue ladder
+- Confirm Rule D guard is positioned BETWEEN Rule B and the daysOverdue
+  ladder, using > not >= so Rule A retains first-responder role on day 11
+- Confirm setPortalTimeframe has been reordered so createSchedule runs
+  BEFORE updateTokenDeadline
+- Confirm both setPortalTimeframe and the schedule branch of
+  extendTimeframe pass finalDeadlineDate when calling updateTokenDeadline
+
+Step 2. Run tsc and report the error count. Expected: 0.
+
+Step 3. Pre-deploy prod responsiveness smoke. Adam will run this from his
+prod browser console after this report comes back. Just confirm the
+expected output shape so he knows what to look for:
+
+  fetch('/api/v2/auth/csrf').then(r=>r.json()).then(d=>console.log(d.data.csrfToken))
+
+Expected: a non-empty token string printed. The d.data.csrfToken access
+path is the right one (NOT d.csrfToken, which was the bug from #142).
+
+Step 4. Provide a one-line readiness verdict: GREEN (proceed to Deploy
+button) or RED (with reason).
+
+[CONSTRAINTS]
+- Read-only step. No edits. No commits. No deploy.
+- Do not attempt to write a test trigger script or run
+  processChaseUpSchedules. Prod V-check is the natural 09:00 UK cron
+  firing on its own after deploy, not a script.
+- If any landmark is missing or shaped differently from the description
+  above, stop and report rather than guessing.
+`
