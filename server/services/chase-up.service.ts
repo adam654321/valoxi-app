@@ -30,8 +30,6 @@ export class ChaseUpService {
     submissionDeadline.setDate(submissionDeadline.getDate() + timeframeDays);
     const deadlineString = submissionDeadline.toISOString().split('T')[0];
 
-    await chaseUpRepository.updateTokenDeadline(portalTokenId, deadlineString);
-
     const schedule = await chaseUpRepository.createSchedule({
       portalTokenId,
       targetCompanyId: token.targetCompanyId,
@@ -39,6 +37,14 @@ export class ChaseUpService {
       submissionDeadline: deadlineString,
       createdBy: userId,
     });
+
+    // Compute finalDeadlineDate = submissionDeadline + manualDeadlineDelayDays.
+    // Rule D backstop: defence in depth in case Rule A regresses.
+    const finalDeadline = new Date(deadlineString);
+    finalDeadline.setDate(finalDeadline.getDate() + (schedule.manualDeadlineDelayDays || 11));
+    const finalDeadlineString = finalDeadline.toISOString().split('T')[0];
+
+    await chaseUpRepository.updateTokenDeadline(portalTokenId, deadlineString, finalDeadlineString);
 
     await chaseUpRepository.updateTokenChaseUpStatus(portalTokenId, 'within_timeframe', 'none');
 
@@ -67,7 +73,13 @@ export class ChaseUpService {
     currentDeadline.setDate(currentDeadline.getDate() + additionalDays);
     const newDeadlineString = currentDeadline.toISOString().split('T')[0];
 
-    await chaseUpRepository.updateTokenDeadline(portalTokenId, newDeadlineString);
+    // Recompute finalDeadlineDate from new deadline. Backfills legacy nulls
+    // on first extension, which is the desired behaviour.
+    const newFinalDeadline = new Date(newDeadlineString);
+    newFinalDeadline.setDate(newFinalDeadline.getDate() + (schedule.manualDeadlineDelayDays || 11));
+    const newFinalDeadlineString = newFinalDeadline.toISOString().split('T')[0];
+
+    await chaseUpRepository.updateTokenDeadline(portalTokenId, newDeadlineString, newFinalDeadlineString);
 
     const updated = await chaseUpRepository.updateSchedule(schedule.id, {
       submissionDeadline: newDeadlineString,
@@ -157,6 +169,23 @@ export class ChaseUpService {
       await chaseUpRepository.completeSchedule(schedule.id, 'all_required_submitted');
       await chaseUpRepository.clearTokenChaseStatus(schedule.portalTokenId, 'completed', 'none');
       return { emailSent: false };
+    }
+
+    // Rule D: time-based backstop. Terminate if today is past finalDeadlineDate.
+    // Defence in depth: in normal operation Rule A fires first on day
+    // manualDeadlineDelayDays. Rule D fires the day after (using > not >=) and
+    // only catches cases where Rule A regressed or was bypassed. Skips when
+    // finalDeadlineDate IS NULL: legacy schedules pre-Build 3 stay under Rule A
+    // protection until extended, at which point extendTimeframe backfills the
+    // column. See action log #139.
+    const finalDeadlineDate = await chaseUpRepository.getTokenFinalDeadline(schedule.portalTokenId);
+    if (finalDeadlineDate !== null) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (todayStr > finalDeadlineDate) {
+        await chaseUpRepository.completeSchedule(schedule.id, 'final_deadline_passed');
+        await chaseUpRepository.clearTokenChaseStatus(schedule.portalTokenId, 'completed', 'none');
+        return { emailSent: false };
+      }
     }
 
     const today = new Date();

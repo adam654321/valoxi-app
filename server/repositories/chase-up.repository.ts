@@ -107,11 +107,19 @@ export class ChaseUpRepository {
     }).where(eq(portalAccessTokens.id, tokenId));
   }
 
-  async updateTokenDeadline(tokenId: number, deadline: string): Promise<void> {
+  async updateTokenDeadline(tokenId: number, deadline: string, finalDeadlineDate?: string): Promise<void> {
     await db.update(portalAccessTokens).set({
       submissionDeadline: deadline,
       manualDeadlineSet: new Date(),
+      ...(finalDeadlineDate !== undefined ? { finalDeadlineDate } : {}),
     }).where(eq(portalAccessTokens.id, tokenId));
+  }
+
+  async getTokenFinalDeadline(tokenId: number): Promise<string | null> {
+    const [row] = await db.select({ finalDeadlineDate: portalAccessTokens.finalDeadlineDate })
+      .from(portalAccessTokens)
+      .where(eq(portalAccessTokens.id, tokenId));
+    return row?.finalDeadlineDate ?? null;
   }
 
   async getChaseUpDashboard(userCompanyId: number): Promise<any[]> {
