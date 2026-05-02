@@ -1,0 +1,74 @@
+[CODE] Build 2: Rule B (terminal on all mandatory Stage 1 submitted)
+
+Plain UK English. No em-dashes. No double hyphens.
+
+CONTEXT
+Following the read-only assess, build chase-up Rule B. Single logical change spanning three files. Cron-driven, no request handlers touched, no tenant-id gates needed.
+
+DO NOT APPLY ANY EDITS IN THIS PROMPT. Re-read each file from the dev tree, propose a unified diff for each of the three changes below, then STOP and wait for me to send a separate "authorise apply" message.
+
+PRE-WORK
+1. Re-read fresh from the dev tree:
+   - server/repositories/portal-requirements.repository.ts
+   - server/repositories/chase-up.repository.ts
+   - server/services/chase-up.service.ts
+2. Confirm tsc baseline error count. Expect 0. If non-zero, STOP and report.
+3. Confirm imports already available in each target file. Note any missing imports needed (drizzle operators, schema tables, repository singletons).
+
+CHANGE 1 of 3 — server/repositories/portal-requirements.repository.ts
+
+Add a new method to the PortalRequirementsRepository class. Naming and signature exactly:
+
+  async areAllMandatorySubmitted(targetCompanyId: number, stage: number): Promise<boolean>
+
+Behaviour:
+- SELECT isMandatory and requirementStatus from companyDocumentRequirements
+  WHERE targetCompanyId = $1 AND collectionStage = $2.
+- Filter rows to mandatory: r.isMandatory !== false  (so true and null both count as mandatory).
+- If the filtered mandatory array is empty, return false. This deliberately treats "no requirements initialised" as non-terminal so we do not auto-complete schedules for companies whose requirements have not been set up.
+- Otherwise return mandatory.every(r => r.requirementStatus === 'submitted' || r.requirementStatus === 'approved'). This matches the convention already used in getRequirementCountByStage.
+
+Place the method alongside the other read methods. Use the same drizzle imports already present in the file (eq, and).
+
+CHANGE 2 of 3 — server/repositories/chase-up.repository.ts
+
+Add a new method to the ChaseUpRepository class. Naming and signature exactly:
+
+  async clearTokenChaseStatus(tokenId: number, status: string, escalationLevel: string): Promise<void>
+
+Behaviour:
+- UPDATE portalAccessTokens SET chaseUpStatus = $2, escalationLevel = $3 WHERE id = $1.
+- Crucially: do NOT write lastChaseEmailSent, do NOT increment chaseEmailCount. This is intentional and is the whole reason for adding this method instead of reusing updateTokenChaseUpStatus.
+
+Place it next to updateTokenChaseUpStatus so the contrast between the two is obvious to future readers.
+
+CHANGE 3 of 3 — server/services/chase-up.service.ts
+
+(a) Add an import for portalRequirementsRepository from '../repositories/portal-requirements.repository' alongside the existing imports.
+
+(b) Inside processSchedule(), insert Rule B at the very top of the method body, before the existing line `const today = new Date()`. Shape:
+
+  // Rule B: terminate the schedule when every mandatory Stage 1 requirement
+  // for this targetCompanyId is in a terminal status (submitted or approved).
+  // Stage 1 only: chase-up is a Stage 1 collection tool. If Stage 2 chasing
+  // is added later, chase_up_schedules will need a collectionStage column
+  // and this call will need to read it. See action log #139.
+  const allRequiredSubmitted = await portalRequirementsRepository.areAllMandatorySubmitted(
+    schedule.targetCompanyId,
+    1,
+  );
+  if (allRequiredSubmitted) {
+    await chaseUpRepository.completeSchedule(schedule.id, 'all_required_submitted');
+    await chaseUpRepository.clearTokenChaseStatus(schedule.portalTokenId, 'completed', 'none');
+    return { emailSent: false };
+  }
+
+The reason string 'all_required_submitted' is deliberately distinct from Rule A's 'manual_intervention' and from the manual stop button's 'manual_stop'. The existing daysOverdue ladder below stays untouched.
+
+POST-PROPOSAL CHECK
+After proposing the three diffs, before stopping:
+- Confirm tsc would still be 0 errors after the proposed diffs (read-only verification of types and imports).
+- List any side effect or risk you spot that I have not flagged. If none, say "no further risks identified".
+- Restate the three change locations in one line each so I can spot-check before authorising.
+
+DO NOT APPLY. Wait for "authorise apply" from me.
