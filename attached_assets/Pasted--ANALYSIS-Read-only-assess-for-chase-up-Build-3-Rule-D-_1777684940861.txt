@@ -1,0 +1,65 @@
+[ANALYSIS] Read-only assess for chase-up Build 3 (Rule D: time-based backstop, populate + enforce)
+
+CONTEXT
+Following Build 2 (Rule B), build chase-up Rule D. Time-based backstop at finalDeadlineDate. Two parts: WRITE the column at schedule creation and extension time, READ it inside processSchedule and terminate cleanly when exceeded. Designed as defence in depth: in normal operation Rule A or Rule B fires first, Rule D only catches cases where Rules A/B regress or are bypassed by future changes. Builds on Build 2's clearTokenChaseStatus method (added to chase-up.repository.ts).
+
+DO NOT change any code in this prompt. Read only. Re-read every file from the dev tree, not from memory. Output is a written analysis at the end. No tsc, no edits.
+
+FILES TO READ FRESH FROM DEV TREE
+1. server/services/chase-up.service.ts (especially setPortalTimeframe, extendTimeframe, processSchedule, plus the new Rule B guard added in Build 2)
+2. server/repositories/chase-up.repository.ts (especially updateTokenDeadline, getOverdueSchedules, completeSchedule, the new clearTokenChaseStatus added in Build 2)
+3. shared/schema/portal.ts (portalAccessTokens.finalDeadlineDate definition, chaseUpSchedules.manualDeadlineDelayDays)
+
+WHAT WE BELIEVE ALREADY (verify or refute against dev tree)
+A. portalAccessTokens.finalDeadlineDate exists in the schema as a date column, currently never written by any code path. Confirmed earlier as a dead column.
+B. chaseUpSchedules.manualDeadlineDelayDays defaults to 11. This is the offset Rule D should use: finalDeadlineDate = submissionDeadline + manualDeadlineDelayDays.
+C. setPortalTimeframe currently calls updateTokenDeadline(tokenId, deadlineString), which writes submissionDeadline and manualDeadlineSet only. It does not touch finalDeadlineDate.
+D. extendTimeframe has two branches. The "schedule exists" branch calls updateTokenDeadline with the new deadline. The "no schedule" branch does a direct db.update on portalAccessTokens setting expiresAt and submissionDeadline. Neither touches finalDeadlineDate.
+E. processSchedule receives a ChaseUpSchedule object from getOverdueSchedules. The schedule object does not currently include finalDeadlineDate (which lives on portalAccessTokens, not on chase_up_schedules).
+F. Build 2 added Rule B at the very top of processSchedule, before the daysOverdue ladder. Rule D should fire AFTER Rule B (no point checking the time backstop if everything's already submitted) and BEFORE Rule A (so the backstop triggers cleanly even if Rule A's manual_intervention threshold misfires).
+
+DECISIONS NEEDED, SURFACE EACH IN THE FINAL OUTPUT
+
+D1. How should processSchedule access finalDeadlineDate? Two options:
+    (a) New small repository method getTokenFinalDeadline(tokenId): Promise<string | null>, called inside processSchedule. One extra DB hit per schedule per cron tick, simple, isolated change.
+    (b) Modify getOverdueSchedules to inner-join portalAccessTokens and return finalDeadlineDate alongside the schedule columns. No extra per-schedule hit, but changes the return type and touches more code.
+   Recommend one with reasoning. Volume on prod is sub-100 schedules, so perf is not a real factor; pick on cleanliness.
+
+D2. How should setPortalTimeframe and extendTimeframe write finalDeadlineDate? Three options:
+    (a) Modify updateTokenDeadline to accept an optional finalDeadlineDate parameter. Smallest diff. Other callers (none currently outside chase-up.service.ts, verify) keep working unchanged.
+    (b) Add a new method updateTokenSchedulingDates(tokenId, submissionDeadline, finalDeadlineDate). Both callers in chase-up.service.ts switch to it. Old method kept for any future single-deadline-only callers.
+    (c) Add a separate updateTokenFinalDeadline(tokenId, finalDeadline) method called as a second DB roundtrip after updateTokenDeadline. Two writes per call, but clearest separation of concerns.
+   List ALL current callers of updateTokenDeadline anywhere in the dev tree and recommend one option.
+
+D3. Source of manualDeadlineDelayDays for the calculation. Two options:
+    (a) Hardcode literal 11 in setPortalTimeframe / extendTimeframe with a comment that this matches the chaseUpSchedules.manualDeadlineDelayDays schema default.
+    (b) Read from the schedule object after createSchedule (in setPortalTimeframe) or from the existing schedule (in extendTimeframe), giving a single source of truth.
+   (b) is more correct but requires reordering the writes in setPortalTimeframe (currently updateTokenDeadline runs before createSchedule). Confirm whether this reorder is safe.
+
+D4. extendTimeframe no-schedule branch. Should it also populate finalDeadlineDate?
+   Reasoning: Rule D enforcement runs inside processSchedule, which only iterates schedules. A token without a schedule never reaches Rule D. So writing finalDeadlineDate on a scheduleless token has no effect today. Recommend (a) skip it (no write on the no-schedule branch) or (b) write for consistency in case a schedule is later created. Pick one and justify.
+
+D5. extendTimeframe schedule branch arithmetic. Two options for the new finalDeadlineDate value:
+    (a) Read current portalAccessTokens.finalDeadlineDate and add additionalDays. (Preserves any legacy null state by leaving null when null.)
+    (b) Recompute from new submissionDeadline + manualDeadlineDelayDays. (Always produces a valid date; backfills legacy nulls as a side effect.)
+   Recommend one. Note legacy schedules created before Build 3 will have finalDeadlineDate IS NULL; option (a) leaves them null, option (b) populates them on first extension.
+
+D6. Rule D enforcement check: pseudocode.
+   Confirm the firing condition handles legacy nulls correctly (Rule D MUST NOT fire when finalDeadlineDate IS NULL — Rule A is still the safety net for those). Compare today (Date) to finalDeadlineDate (date column, returned as string or Date by Drizzle, verify which). Use date-only comparison, no time-of-day.
+
+D7. Reason string for completion. Build 2 used 'all_required_submitted'. Rule A uses 'manual_intervention'. Rule D should be distinct so we can audit which rule fired in production. Recommend a value like 'final_deadline_passed' or 'time_backstop'. Pick one.
+
+D8. V-check shape. What's the dev test recipe for Rule D? Specifically:
+    - How do we set a finalDeadlineDate in the past on a test schedule (direct UPDATE on portal_access_tokens, presumably).
+    - How do we ensure Rule B does not fire first for that schedule (no requirements set up, or all outstanding).
+    - How do we ensure Rule A does not fire first (set manualDeadlineDelayDays high enough on the test schedule that Rule A's threshold is not crossed, OR ensure submissionDeadline is recent enough).
+    - The crux: Rule D must fire BEFORE Rule A in the processSchedule order, so that even when both conditions are true, the reason string recorded is 'final_deadline_passed' (or whatever D7 chooses), not 'manual_intervention'. Test design must include one schedule where both Rule D and Rule A would fire, to verify Rule D's earlier position in the pipeline.
+
+OUTPUT FORMAT
+End with a single section titled RECOMMENDED BUILD SHAPE containing:
+  - One-line answer to each of D1 through D8, in order
+  - A short pseudocode block for setPortalTimeframe, extendTimeframe (both branches), and the Rule D guard in processSchedule
+  - File-and-line list of every change site, with proposed change type (new method, modify signature, insert block, etc.)
+  - Estimated tsc-impact summary (expect 0 errors after changes)
+
+Do not write the build diff. Do not edit any file. Read only.
