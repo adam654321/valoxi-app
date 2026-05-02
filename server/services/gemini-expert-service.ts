@@ -33,7 +33,8 @@ export class GeminiExpertService {
     console.log(`[GEMINI_EXPERT] Starting ${expertType} analysis`);
 
     const resolvedThinkingLevel = expertType === 'deal_structure' ? undefined : "LOW" as const;
-    const resolvedMaxOutputTokens = expertType === 'deal_structure' ? 16384 : undefined;
+    const HIGH_OUTPUT_EXPERTS = ['deal_structure', 'synthesis'];
+    const resolvedMaxOutputTokens = HIGH_OUTPUT_EXPERTS.includes(expertType) ? 16384 : undefined;
 
     try {
       const response = await geminiClient.generateContent({
