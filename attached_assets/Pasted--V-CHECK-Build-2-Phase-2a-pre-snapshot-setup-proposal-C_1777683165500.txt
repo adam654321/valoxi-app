@@ -1,0 +1,106 @@
+[V-CHECK] Build 2, Phase 2a: pre-snapshot + setup proposal
+
+Capture pre-snapshot read-only, then PROPOSE setup SQL and trigger script content. Do NOT execute SQL, do NOT create the file, do NOT run anything yet. Stop after the proposal and wait for "authorise execute" from me.
+
+STEP 1 — PRE-SNAPSHOT (run now, output results)
+
+-- 1a: schedule + token state for the three test cases
+SELECT
+  cs.id AS schedule_id,
+  cs.target_company_id,
+  cs.is_active,
+  cs.is_completed,
+  cs.completion_reason,
+  cs.submission_deadline,
+  CURRENT_DATE - cs.submission_deadline AS days_overdue,
+  pat.chase_up_status,
+  pat.escalation_level,
+  pat.chase_email_count,
+  pat.last_chase_email_sent
+FROM chase_up_schedules cs
+INNER JOIN portal_access_tokens pat ON cs.portal_token_id = pat.id
+WHERE cs.id IN (17, 18, 21)
+ORDER BY cs.id;
+
+-- 1b: chase_up_emails records (these populate sentSequences in processSchedule)
+SELECT
+  portal_token_id,
+  email_sequence_number,
+  email_type,
+  delivery_status,
+  sent_at
+FROM chase_up_emails
+WHERE portal_token_id IN (17, 18, 21)
+ORDER BY portal_token_id, email_sequence_number;
+
+-- 1c: schedule + token state for the six manual-loop schedules (Rule A side-verification)
+SELECT
+  cs.id AS schedule_id,
+  cs.target_company_id,
+  cs.is_completed,
+  cs.completion_reason,
+  pat.chase_email_count
+FROM chase_up_schedules cs
+INNER JOIN portal_access_tokens pat ON cs.portal_token_id = pat.id
+WHERE cs.id IN (3, 6, 8, 12, 15, 16)
+ORDER BY cs.id;
+
+-- 1d: belt-and-braces — confirm companies 70, 71, 77 still have zero requirement rows
+SELECT target_company_id, COUNT(*) AS row_count
+FROM company_document_requirements
+WHERE target_company_id IN (70, 71, 77)
+GROUP BY target_company_id;
+
+STEP 2 — PROPOSED SETUP SQL (do not execute)
+
+-- Case A: company 71, two mandatory Stage 1 rows, both 'submitted' (Rule B should fire)
+INSERT INTO company_document_requirements
+  (target_company_id, requirement_name, document_category, collection_stage,
+   priority_level, is_mandatory, requirement_status)
+VALUES
+  (71, 'Test Doc A1 (Build 2 V-check)', 'financial', 1, 'medium', true, 'submitted'),
+  (71, 'Test Doc A2 (Build 2 V-check)', 'legal',     1, 'medium', true, 'submitted');
+
+-- Case B: company 70, two mandatory Stage 1 rows, one 'submitted' one 'outstanding' (Rule B must NOT fire)
+INSERT INTO company_document_requirements
+  (target_company_id, requirement_name, document_category, collection_stage,
+   priority_level, is_mandatory, requirement_status)
+VALUES
+  (70, 'Test Doc B1 (Build 2 V-check)', 'financial', 1, 'medium', true, 'submitted'),
+  (70, 'Test Doc B2 (Build 2 V-check)', 'legal',     1, 'medium', true, 'outstanding');
+
+-- Case C: company 77, no setup. The zero-rows state is the test condition.
+
+STEP 3 — PROPOSED TRIGGER SCRIPT (do not create)
+
+File path: server/scripts/test-rule-b.ts
+
+import { chaseUpService } from '../services/chase-up.service';
+
+async function main(): Promise<void> {
+  console.log('[TEST RULE B] Triggering processChaseUpSchedules on dev...');
+  const result = await chaseUpService.processChaseUpSchedules();
+  console.log(`[TEST RULE B] Complete: ${result.processed} schedules processed, ${result.emailsSent} emails sent`);
+  process.exit(0);
+}
+
+main().catch(e => {
+  console.error('[TEST RULE B] Failed:', e);
+  process.exit(1);
+});
+
+EXPECTED OUTCOMES AFTER EXECUTE (for reference, not for action yet)
+
+Schedule 17 (Case A): is_completed=true, completion_reason='all_required_submitted', chase_up_status='completed', escalation_level='none', chase_email_count UNCHANGED from pre-snapshot value. This is the key Decision 3B check.
+
+Schedule 18 (Case B): is_completed=false, completion_reason=NULL, chase_up_status/escalation_level UNCHANGED. chase_email_count behaviour depends on what 1b shows for sentSequences.
+
+Schedule 21 (Case C): is_completed=false, completion_reason=NULL. Behaviour depends on 1b.
+
+Schedules 3, 6, 8, 12, 15, 16 (Rule A side-effect): all flip to is_completed=true, completion_reason='manual_intervention'. chase_email_count each bumped by 1 (existing #144-style bump, expected, not a Build 2 regression).
+
+OUTPUT
+1) Print results of 1a, 1b, 1c, 1d.
+2) Restate the exact INSERT statements you will run when authorised.
+3) Restate the exact file content you will create when authorised.
+4) STOP. Wait for "authorise execute" before doing anything that writes to the dev database, creates a file, or runs the script.
