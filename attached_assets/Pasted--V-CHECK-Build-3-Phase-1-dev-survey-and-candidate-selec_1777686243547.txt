@@ -1,0 +1,89 @@
+[V-CHECK] Build 3, Phase 1: dev survey and candidate selection
+
+Read-only SQL on dev. NO writes. NO setup yet. Output a written candidate proposal at the end and wait for authorise.
+
+QUERIES TO RUN
+
+1) All chase-up schedules with token state, including finalDeadlineDate:
+
+SELECT
+  cs.id AS schedule_id,
+  cs.portal_token_id,
+  cs.target_company_id,
+  cs.submission_deadline,
+  CURRENT_DATE - cs.submission_deadline AS days_overdue,
+  cs.is_active,
+  cs.is_completed,
+  cs.completion_reason,
+  cs.manual_deadline_delay_days,
+  pat.chase_up_status,
+  pat.escalation_level,
+  pat.chase_email_count,
+  pat.final_deadline_date
+FROM chase_up_schedules cs
+INNER JOIN portal_access_tokens pat ON cs.portal_token_id = pat.id
+ORDER BY cs.id;
+
+2) Confirm zero requirement rows for the candidate target companies (so Rule B does not interfere with Rule D V-checks):
+
+SELECT cdr.target_company_id, COUNT(*) AS row_count
+FROM company_document_requirements cdr
+WHERE cdr.target_company_id IN (
+  SELECT DISTINCT cs.target_company_id
+  FROM chase_up_schedules cs
+  WHERE cs.is_active = true AND cs.is_completed = false
+)
+GROUP BY cdr.target_company_id
+ORDER BY cdr.target_company_id;
+
+3) Confirm chase_up_emails state for tokens we may select (so we can predict ladder behaviour if Rule D were to NOT fire on any case):
+
+SELECT portal_token_id, email_sequence_number, email_type, delivery_status
+FROM chase_up_emails
+WHERE portal_token_id IN (
+  SELECT cs.portal_token_id
+  FROM chase_up_schedules cs
+  WHERE cs.is_active = true AND cs.is_completed = false
+)
+ORDER BY portal_token_id, email_sequence_number;
+
+CANDIDATE PROPOSAL
+
+We need three test schedules, all currently is_active=true and is_completed=false. Each candidate's target_company_id MUST have zero requirement rows in companyDocumentRequirements (so Rule B returns false and we isolate Rule D's behaviour). Each schedule MUST be currently overdue OR be set to overdue via setup, because getOverdueSchedules filters on submission_deadline <= CURRENT_DATE.
+
+Case D1 — Rule D fires alone, Rule A does not.
+Required state pre-cron:
+  - days_overdue >= 0 (so getOverdueSchedules picks it up)
+  - days_overdue < manual_deadline_delay_days (so Rule A would NOT fire)
+  - final_deadline_date set to yesterday (so Rule D fires: todayStr > finalDeadlineDate)
+Setup will need to UPDATE submission_deadline (to keep daysOverdue low, e.g., 1) AND final_deadline_date (to yesterday).
+Expected: is_completed=true, completion_reason='final_deadline_passed', chase_email_count UNCHANGED (clearTokenChaseStatus per Decision 3B).
+
+Case D2 — Rule D fires AND Rule A would also fire (positioning verification).
+Required state pre-cron:
+  - days_overdue >= manual_deadline_delay_days (so Rule A WOULD fire)
+  - final_deadline_date set to yesterday (so Rule D fires)
+Setup will need to UPDATE submission_deadline (very far in the past, e.g., 30 days ago) AND final_deadline_date (to yesterday).
+Critical: completion_reason MUST come back as 'final_deadline_passed', NOT 'manual_intervention'. This is the proof that Rule D is positioned BEFORE Rule A in processSchedule.
+Expected: is_completed=true, completion_reason='final_deadline_passed' (NOT 'manual_intervention'), chase_email_count UNCHANGED.
+
+Case D3 — Legacy null protection. Rule D must NOT fire; Rule A must.
+Required state pre-cron:
+  - days_overdue >= manual_deadline_delay_days (so Rule A fires)
+  - final_deadline_date IS NULL (so Rule D's null guard skips it entirely)
+Setup will need to UPDATE submission_deadline to far past, AND set final_deadline_date back to NULL if currently populated.
+Expected: is_completed=true, completion_reason='manual_intervention' (Rule A fired), chase_email_count BUMPED BY 1 (Rule A still uses updateTokenChaseUpStatus per existing #144 cleanup item).
+
+CONSTRAINTS
+
+- Three distinct schedule_ids and three distinct target_company_ids (isolation).
+- Each target_company_id has zero rows in companyDocumentRequirements (Rule B isolation).
+- Pick from currently is_active=true and is_completed=false schedules only.
+- Do NOT pick schedules that were used in Build 2 V-check (token 17 was Case A, token 18 was Case B, token 21 was Case C). Reuse of 18 and 21 is acceptable since both ended is_completed=false, but flag any reuse explicitly so Adam can sanity-check.
+- Note any schedule whose current submission_deadline or final_deadline_date will need to be reset back after the V-check completes. Phase 2 will include a "restore original state" step.
+
+OUTPUT
+1) Print results of queries 1, 2, 3.
+2) Propose schedule_id, target_company_id, current state, and required setup mutations for Case D1, D2, D3.
+3) For each case, list the values that will be overwritten and what they are now (so we can restore them afterwards).
+4) STOP. Wait for authorise.
