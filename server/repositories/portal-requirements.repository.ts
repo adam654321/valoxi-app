@@ -95,6 +95,22 @@ export class PortalRequirementsRepository {
     return (result?.count || 0) > 0;
   }
 
+  async areAllMandatorySubmitted(targetCompanyId: number, stage: number): Promise<boolean> {
+    const rows = await db.select({
+      isMandatory: companyDocumentRequirements.isMandatory,
+      requirementStatus: companyDocumentRequirements.requirementStatus,
+    }).from(companyDocumentRequirements)
+      .where(and(
+        eq(companyDocumentRequirements.targetCompanyId, targetCompanyId),
+        eq(companyDocumentRequirements.collectionStage, stage),
+      ));
+    const mandatory = rows.filter(r => r.isMandatory !== false);
+    if (mandatory.length === 0) return false;
+    return mandatory.every(
+      r => r.requirementStatus === 'submitted' || r.requirementStatus === 'approved',
+    );
+  }
+
   async getPortalRequirementsByToken(portalTokenId: number): Promise<any[]> {
     return await db.select().from(portalDocumentRequirements)
       .where(eq(portalDocumentRequirements.portalTokenId, portalTokenId))

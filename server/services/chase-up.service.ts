@@ -1,4 +1,5 @@
 import { chaseUpRepository } from '../repositories/chase-up.repository';
+import { portalRequirementsRepository } from '../repositories/portal-requirements.repository';
 import { portalRepository } from '../repositories/portal.repository';
 import { emailRepository } from '../repositories/email.repository';
 import { emailApiService } from './email.service';
@@ -143,6 +144,21 @@ export class ChaseUpService {
   }
 
   private async processSchedule(schedule: ChaseUpSchedule): Promise<{ emailSent: boolean }> {
+    // Rule B: terminate the schedule when every mandatory Stage 1 requirement
+    // for this targetCompanyId is in a terminal status (submitted or approved).
+    // Stage 1 only: chase-up is a Stage 1 collection tool. If Stage 2 chasing
+    // is added later, chase_up_schedules will need a collectionStage column
+    // and this call will need to read it. See action log #139.
+    const allRequiredSubmitted = await portalRequirementsRepository.areAllMandatorySubmitted(
+      schedule.targetCompanyId,
+      1,
+    );
+    if (allRequiredSubmitted) {
+      await chaseUpRepository.completeSchedule(schedule.id, 'all_required_submitted');
+      await chaseUpRepository.clearTokenChaseStatus(schedule.portalTokenId, 'completed', 'none');
+      return { emailSent: false };
+    }
+
     const today = new Date();
     const deadline = new Date(schedule.submissionDeadline);
     const daysOverdue = Math.floor((today.getTime() - deadline.getTime()) / (1000 * 60 * 60 * 24));

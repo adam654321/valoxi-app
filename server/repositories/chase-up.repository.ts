@@ -97,6 +97,16 @@ export class ChaseUpRepository {
     }).where(eq(portalAccessTokens.id, tokenId));
   }
 
+  // Use this method (not updateTokenChaseUpStatus) when terminating a schedule
+  // without sending an email. It sets status and escalation level only, and
+  // deliberately does not write lastChaseEmailSent or increment chaseEmailCount.
+  async clearTokenChaseStatus(tokenId: number, status: string, escalationLevel: string): Promise<void> {
+    await db.update(portalAccessTokens).set({
+      chaseUpStatus: status,
+      escalationLevel: escalationLevel,
+    }).where(eq(portalAccessTokens.id, tokenId));
+  }
+
   async updateTokenDeadline(tokenId: number, deadline: string): Promise<void> {
     await db.update(portalAccessTokens).set({
       submissionDeadline: deadline,
