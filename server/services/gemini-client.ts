@@ -208,7 +208,12 @@ export class GeminiClient {
 
       const candidate = data.candidates?.[0];
       const text = candidate?.content?.parts?.map((p: any) => p.text || '').join('') ?? '';
+      const finishReason = candidate?.finishReason ?? 'UNKNOWN';
       const usageMetadata = data.usageMetadata ?? null;
+
+      if (finishReason === 'MAX_TOKENS') {
+        console.warn(`[GEMINI_CLIENT] Response truncated by MAX_TOKENS (finishReason=${finishReason})`);
+      }
 
       return { text, usageMetadata };
     };
@@ -355,13 +360,22 @@ export class GeminiClient {
       const result = JSON.parse(repaired);
       console.log("[GEMINI_CLIENT] JSON parsed successfully after truncation repair");
       return result;
-    } catch (repairError) {
+    } catch {
+      // Stage 3 failed — fall through to unescaped-quote repair
+    }
+
+    console.log("[GEMINI_CLIENT] Truncation repair failed, attempting unescaped-quote repair");
+    const quotedRepaired = this.repairUnescapedQuotes(repaired);
+    try {
+      const result = JSON.parse(quotedRepaired);
+      console.log("[GEMINI_CLIENT] JSON parsed successfully after unescaped-quote repair");
+      return result;
+    } catch (finalError) {
       console.error(
-        `[GEMINI_CLIENT] JSON parse failed even after repair. ` +
-          `First 500 chars: ${repaired.substring(0, 500)}`
+        `[GEMINI_CLIENT] JSON parse failed after all 4 repair stages. ` +
+          `First 500 chars: ${quotedRepaired.substring(0, 500)}`
       );
       console.error(`[GEMINI_CLIENT] GEMINI PARSE FAILURE — RAW RESPONSE`, originalText);
-      console.error(`[GEMINI_CLIENT] GEMINI PARSE FAILURE — FIRST 200 CHARS OF REPAIRED`, repaired.substring(0, 200));
       return null;
     }
   }
@@ -440,6 +454,31 @@ export class GeminiClient {
     while (openBrackets > 0) { repaired += "]"; openBrackets--; }
     while (openBraces > 0) { repaired += "}"; openBraces--; }
 
+    return repaired;
+  }
+
+  // Stage 4 repair: use the SyntaxError character position to iteratively
+  // escape unescaped double-quotes inside string values. The most common
+  // cause of synthesis JSON failures is prose fields (executive_summary,
+  // narrative_report) that contain literal " characters the model forgot
+  // to escape. Caps at 40 iterations to prevent infinite loops.
+  private repairUnescapedQuotes(text: string): string {
+    let repaired = text;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      try {
+        JSON.parse(repaired);
+        return repaired;
+      } catch (e: any) {
+        const match = e.message?.match(/position (\d+)/);
+        if (!match) return repaired;
+        const pos = parseInt(match[1], 10);
+        if (repaired[pos] === '"' && repaired[pos - 1] !== '\\') {
+          repaired = repaired.substring(0, pos) + '\\"' + repaired.substring(pos + 1);
+        } else {
+          return repaired;
+        }
+      }
+    }
     return repaired;
   }
 }
