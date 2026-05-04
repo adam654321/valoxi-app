@@ -186,6 +186,26 @@ export class ChaseUpRepository {
       .where(eq(chaseUpSchedules.id, scheduleId));
     return result;
   }
+
+  async getActiveScheduleForTarget(
+    userCompanyId: number,
+    targetCompanyId: number,
+  ): Promise<{ portalTokenId: number } | null> {
+    const [row] = await db
+      .select({ portalTokenId: chaseUpSchedules.portalTokenId })
+      .from(chaseUpSchedules)
+      .innerJoin(portalAccessTokens, eq(chaseUpSchedules.portalTokenId, portalAccessTokens.id))
+      .where(
+        and(
+          eq(portalAccessTokens.userCompanyId, userCompanyId),
+          eq(chaseUpSchedules.targetCompanyId, targetCompanyId),
+          eq(chaseUpSchedules.isActive, true),
+          eq(chaseUpSchedules.isCompleted, false),
+        ),
+      )
+      .limit(1);
+    return row ?? null;
+  }
 }
 
 export const chaseUpRepository = new ChaseUpRepository();

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { chaseUpService } from '../services/chase-up.service';
+import { chaseUpRepository } from '../repositories/chase-up.repository';
 import { sendSuccess } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../utils/async-handler';
@@ -63,6 +64,15 @@ router.post('/tokens/:tokenId/stop', asyncHandler(async (req: Request, res: Resp
   
   const schedule = await chaseUpService.stopChaseUp(tokenId, reason || 'manual_stop');
   sendSuccess(res, { message: 'Chase-up stopped successfully', schedule });
+}));
+
+router.get('/active-for-target/:targetCompanyId', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const targetCompanyId = parseInt(req.params.targetCompanyId);
+  if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid target company ID');
+  const result = await chaseUpRepository.getActiveScheduleForTarget(userCompanyId, targetCompanyId);
+  sendSuccess(res, { hasActiveSchedule: result !== null, portalTokenId: result?.portalTokenId ?? null });
 }));
 
 router.post('/process', isSystemAdmin, asyncHandler(async (req: Request, res: Response) => {
