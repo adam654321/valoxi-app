@@ -290,11 +290,48 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
     staleTime: 5000, // Consider data stale after 5 seconds
   });
 
+  const { data: chaseUpActiveData } = useQuery<{ hasActiveSchedule: boolean; portalTokenId: number | null }>({
+    queryKey: ['/api/v2/chase-up/active-for-target', targetCompanyId],
+    select: (response: any) => response.data,
+    staleTime: 30000,
+  });
+
+  const [chaseSelection, setChaseSelection] = useState<'continue' | 'stop'>('continue');
+
+  const stopChaseMutation = useMutation({
+    mutationFn: async (tokenId: number) => {
+      const response = await apiRequest('POST', `/api/v2/chase-up/tokens/${tokenId}/stop`, { reason: 'manual_stop' });
+      return response.json();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to stop chase-up.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   if (isLoading || !completionStatus) {
     return null;
   }
 
   const { completedTypes, missingTypes, isComplete, completionPercentage, completedCount } = completionStatus;
+
+  const hasActiveSchedule = chaseUpActiveData?.hasActiveSchedule ?? false;
+  const activePortalTokenId = chaseUpActiveData?.portalTokenId ?? null;
+  const hasChaseUpDialog = hasActiveSchedule && completedCount < 10;
+
+  const handleAnalysisConfirm = async () => {
+    if (chaseSelection === 'stop' && activePortalTokenId !== null) {
+      try {
+        await stopChaseMutation.mutateAsync(activePortalTokenId);
+      } catch {
+        return;
+      }
+    }
+    triggerExpertAnalysisMutation.mutate();
+  };
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4 mb-4">
@@ -387,7 +424,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
             Ready to run expert screening analysis
           </span>
           {completedCount < 10 ? (
-            <AlertDialog>
+            <AlertDialog onOpenChange={(open) => { if (open) setChaseSelection('continue'); }}>
               <AlertDialogTrigger asChild>
                 <Button 
                   size="sm" 
@@ -430,16 +467,47 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
                         Without complete documentation, the analysis may produce less reliable results 
                         and key areas may not be assessed.
                       </p>
+                      {hasActiveSchedule && (
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                          <p className="text-sm font-medium text-foreground">
+                            This seller is currently being chased for documents.
+                          </p>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`chase-p1-${targetCompanyId}`}
+                                value="continue"
+                                checked={chaseSelection === 'continue'}
+                                onChange={() => setChaseSelection('continue')}
+                                className="accent-blue-600"
+                              />
+                              <span className="text-sm">Continue chasing</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`chase-p1-${targetCompanyId}`}
+                                value="stop"
+                                checked={chaseSelection === 'stop'}
+                                onChange={() => setChaseSelection('stop')}
+                                className="accent-blue-600"
+                              />
+                              <span className="text-sm">Stop chases now</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction 
-                    onClick={() => triggerExpertAnalysisMutation.mutate()}
+                    onClick={handleAnalysisConfirm}
                     className="bg-amber-600 hover:bg-amber-700"
                   >
-                    Proceed with Limited Analysis
+                    {hasChaseUpDialog ? 'Run analysis' : 'Proceed with Limited Analysis'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -478,26 +546,100 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
                   : 'Analysis complete. Upload new documents to re-run.'}
               </span>
             </div>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => triggerExpertAnalysisMutation.mutate()}
-              disabled={!hasNewDocuments || triggerExpertAnalysisMutation.isPending || hasRunningExperts}
-              className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
-              title={!hasNewDocuments ? 'No new documents uploaded since last analysis' : ''}
-            >
-              {triggerExpertAnalysisMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
-                  Re-running...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Re-run Analysis
-                </>
-              )}
-            </Button>
+            {hasChaseUpDialog ? (
+              <AlertDialog onOpenChange={(open) => { if (open) setChaseSelection('continue'); }}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!hasNewDocuments || triggerExpertAnalysisMutation.isPending || hasRunningExperts}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
+                    title={!hasNewDocuments ? 'No new documents uploaded since last analysis' : ''}
+                  >
+                    {triggerExpertAnalysisMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
+                        Re-running...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Re-run Analysis
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <RefreshCw className="w-5 h-5 text-blue-500" />
+                      Re-run Analysis
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="text-left space-y-3">
+                        <p>Re-running analysis with the latest uploaded documents.</p>
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                          <p className="text-sm font-medium text-foreground">
+                            This seller is currently being chased for documents.
+                          </p>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`chase-p2-${targetCompanyId}`}
+                                value="continue"
+                                checked={chaseSelection === 'continue'}
+                                onChange={() => setChaseSelection('continue')}
+                                className="accent-blue-600"
+                              />
+                              <span className="text-sm">Continue chasing</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`chase-p2-${targetCompanyId}`}
+                                value="stop"
+                                checked={chaseSelection === 'stop'}
+                                onChange={() => setChaseSelection('stop')}
+                                className="accent-blue-600"
+                              />
+                              <span className="text-sm">Stop chases now</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleAnalysisConfirm}>
+                      Run analysis
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => triggerExpertAnalysisMutation.mutate()}
+                disabled={!hasNewDocuments || triggerExpertAnalysisMutation.isPending || hasRunningExperts}
+                className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-900"
+                title={!hasNewDocuments ? 'No new documents uploaded since last analysis' : ''}
+              >
+                {triggerExpertAnalysisMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2" />
+                    Re-running...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Re-run Analysis
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       )}
