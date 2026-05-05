@@ -231,7 +231,7 @@ function DocumentAnalysisBadges({ documentId }: { documentId: number }) {
 }
 
 // Analysis completion indicator component
-function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime }: { targetCompanyId: number; latestDocumentUploadTime?: string }) {
+function AnalysisCompletionIndicator({ targetCompanyId, companyName, latestDocumentUploadTime }: { targetCompanyId: number; companyName: string; latestDocumentUploadTime?: string }) {
   const { toast } = useToast();
 
   const triggerExpertAnalysisMutation = useMutation({
@@ -470,7 +470,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
                       {hasActiveSchedule && (
                         <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
                           <p className="text-sm font-medium text-foreground">
-                            This seller is currently being chased for documents.
+                            {companyName} is currently being chased for documents.
                           </p>
                           <div className="space-y-2">
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -580,7 +580,7 @@ function AnalysisCompletionIndicator({ targetCompanyId, latestDocumentUploadTime
                         <p>Re-running analysis with the latest uploaded documents.</p>
                         <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
                           <p className="text-sm font-medium text-foreground">
-                            This seller is currently being chased for documents.
+                            {companyName} is currently being chased for documents.
                           </p>
                           <div className="space-y-2">
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -1186,6 +1186,7 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
         <CardContent>
           <AnalysisCompletionIndicator 
             targetCompanyId={targetCompanyId} 
+            companyName={companyName}
             latestDocumentUploadTime={
               documentsData?.documents && documentsData.documents.length > 0
                 ? documentsData.documents.reduce((latest, doc) => {
