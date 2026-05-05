@@ -1,0 +1,68 @@
+[CONTEXT] Build 4b.1 of #139, small follow-on to Build 4b. Adam saw the
+new chase-up dialog on dev and pointed out "this seller" is too vague when
+the buyer may be running analysis on multiple targets in a session. The
+fix is trivial: companyName is already a prop on DocumentManagement (the
+parent component) but is not passed to AnalysisCompletionIndicator (where
+the dialogs live). Thread it through and use it in the chase-up section
+heading.
+
+[TASK] Build, propose-diff-only. Do NOT apply yet. Output the proposed
+diff in full, then wait for explicit authorise-apply confirmation.
+
+[DESIGN]
+
+Two changes inside client/src/components/document-management.tsx, no
+other files touched.
+
+Change 1. Update AnalysisCompletionIndicator's prop type and signature:
+  function AnalysisCompletionIndicator({
+    targetCompanyId,
+    companyName,
+    latestDocumentUploadTime
+  }: {
+    targetCompanyId: number;
+    companyName: string;
+    latestDocumentUploadTime?: string
+  })
+
+Change 2. Update the parent DocumentManagement's render of
+AnalysisCompletionIndicator to pass companyName through:
+  <AnalysisCompletionIndicator
+    targetCompanyId={targetCompanyId}
+    companyName={companyName}
+    latestDocumentUploadTime={ ... existing ... }
+  />
+
+Change 3. Update both chase-up section headings in the two new
+AlertDialogs to use companyName:
+
+OLD:
+  This seller is currently being chased for documents.
+
+NEW:
+  {companyName} is currently being chased for documents.
+
+The heading is wrapped in a <p> tag, so JSX-interpolating companyName
+inside the <p> works directly. The <strong>-ifying of the company name
+is optional — propose without it, since the heading is already
+font-medium.
+
+[STEPS]
+
+Step 1. Re-read client/src/components/document-management.tsx fresh
+from the dev tree to confirm current state matches what was applied
+in Build 4b.
+
+Step 2. Propose the full diff. Three small edits, all in the same file.
+
+Step 3. Reason about type-cleanliness. companyName is string, both
+chase-up section headings interpolate it inside a <p>, no type concerns.
+
+Step 4. Output a one-line readiness verdict.
+
+[CONSTRAINTS]
+- Propose-diff-only.
+- No changes to any other component or file.
+- No changes to dialog logic, just the heading copy and the prop
+  threading.
+- Plain UK English. No em-dashes. No double hyphens.
