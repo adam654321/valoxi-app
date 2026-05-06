@@ -1,0 +1,163 @@
+AUTHORISE-APPLY — #127 reconciliation script. Apply the proposed
+file exactly as in the assess.
+
+Scope: ONE new file. No edits to any existing file.
+
+File: server/scripts/reconcile-subscription-periods.ts
+
+Create with the exact content from the assess. Verbatim:
+
+    import Stripe from 'stripe';
+    import { eq, inArray } from 'drizzle-orm';
+    import { db } from '../db';
+    import { subscriptions } from '@shared/schema/billing';
+    import { config } from '../config';
+    import { billingRepository } from '../repositories/billing.repository';
+    
+    // One-shot reconciliation script for subscriptions affected by the
+    // pre-#122 invoice.paid bug that wrote current_period_start =
+    // current_period_end. Fetches canonical period dates from Stripe
+    // and writes them back. Idempotent — skips rows where
+    // current_period_end > current_period_start (already fixed) and
+    // skips rows where Stripe returns the same collided dates we
+    // already have.
+    
+    const TARGET_SUBSCRIPTION_IDS = [38, 40, 44];
+    
+    export async function reconcileSubscriptionPeriods(): Promise<{
+      reconciled: number;
+      skipped_already_fixed: number;
+      skipped_stripe_no_change: number;
+      errors: number;
+    }> {
+      console.log('[RECONCILE] Starting subscription period reconciliation...');
+      
+      if (!config.stripe.secretKey) {
+        console.error('[RECONCILE] STRIPE_SECRET_KEY not configured');
+        throw new Error('STRIPE_SECRET_KEY required');
+      }
+      const stripe = new Stripe(config.stripe.secretKey);
+      
+      const rows = await db
+        .select()
+        .from(subscriptions)
+        .where(inArray(subscriptions.id, TARGET_SUBSCRIPTION_IDS));
+      
+      console.log(`[RECONCILE] Found ${rows.length} target rows on prod (expected 3)`);
+      
+      let reconciled = 0;
+      let skipped_already_fixed = 0;
+      let skipped_stripe_no_change = 0;
+      let errors = 0;
+      
+      for (const row of rows) {
+        const tag = `sub ${row.id} (company ${row.userCompanyId})`;
+        
+        try {
+          if (
+            row.currentPeriodStart &&
+            row.currentPeriodEnd &&
+            row.currentPeriodEnd.getTime() > row.currentPeriodStart.getTime()
+          ) {
+            console.log(`[RECONCILE] ${tag}: SKIP — already has valid period (start=${row.currentPeriodStart.toISOString()}, end=${row.currentPeriodEnd.toISOString()})`);
+            skipped_already_fixed++;
+            continue;
+          }
+          
+          if (!row.stripeSubscriptionId) {
+            console.log(`[RECONCILE] ${tag}: SKIP — no stripe_subscription_id`);
+            errors++;
+            continue;
+          }
+          
+          console.log(`[RECONCILE] ${tag}: fetching ${row.stripeSubscriptionId} from Stripe...`);
+          const stripeSub = await stripe.subscriptions.retrieve(row.stripeSubscriptionId);
+          const primaryItem = stripeSub.items.data[0];
+          
+          if (!primaryItem) {
+            console.error(`[RECONCILE] ${tag}: Stripe sub has no items, cannot read period`);
+            errors++;
+            continue;
+          }
+          
+          const stripePeriodStart = primaryItem.current_period_start
+            ? new Date(primaryItem.current_period_start * 1000)
+            : null;
+          const stripePeriodEnd = primaryItem.current_period_end
+            ? new Date(primaryItem.current_period_end * 1000)
+            : null;
+          
+          if (!stripePeriodStart || !stripePeriodEnd) {
+            console.error(`[RECONCILE] ${tag}: Stripe item missing current_period_start/end`);
+            errors++;
+            continue;
+          }
+          
+          if (stripePeriodEnd.getTime() <= stripePeriodStart.getTime()) {
+            console.error(`[RECONCILE] ${tag}: Stripe also reports collided dates (start=${stripePeriodStart.toISOString()}, end=${stripePeriodEnd.toISOString()}), refusing to write`);
+            skipped_stripe_no_change++;
+            continue;
+          }
+          
+          console.log(`[RECONCILE] ${tag}: DB had start=${row.currentPeriodStart?.toISOString()}, end=${row.currentPeriodEnd?.toISOString()}`);
+          console.log(`[RECONCILE] ${tag}: Stripe says start=${stripePeriodStart.toISOString()}, end=${stripePeriodEnd.toISOString()}`);
+          
+          await db
+            .update(subscriptions)
+            .set({
+              currentPeriodStart: stripePeriodStart,
+              currentPeriodEnd: stripePeriodEnd,
+            })
+            .where(eq(subscriptions.id, row.id));
+          
+          await billingRepository.logEvent({
+            userCompanyId: row.userCompanyId,
+            stripeEventId: null,
+            eventType: 'admin.period_reconciliation',
+            previousStatus: row.status,
+            previousPlanKey: row.planKey,
+            newStatus: row.status,
+            newPlanKey: row.planKey,
+            payload: {
+              source: 'reconcile-subscription-periods script',
+              previousCurrentPeriodStart: row.currentPeriodStart?.toISOString() ?? null,
+              previousCurrentPeriodEnd: row.currentPeriodEnd?.toISOString() ?? null,
+              newCurrentPeriodStart: stripePeriodStart.toISOString(),
+              newCurrentPeriodEnd: stripePeriodEnd.toISOString(),
+              stripeSubscriptionId: row.stripeSubscriptionId,
+            },
+          });
+          
+          console.log(`[RECONCILE] ${tag}: WRITTEN — period now ${stripePeriodStart.toISOString()} to ${stripePeriodEnd.toISOString()}`);
+          reconciled++;
+        } catch (err) {
+          console.error(`[RECONCILE] ${tag}: ERROR`, err);
+          errors++;
+        }
+      }
+      
+      console.log(`[RECONCILE] Done — reconciled: ${reconciled}, skipped_already_fixed: ${skipped_already_fixed}, skipped_stripe_no_change: ${skipped_stripe_no_change}, errors: ${errors}`);
+      return { reconciled, skipped_already_fixed, skipped_stripe_no_change, errors };
+    }
+    
+    if (process.argv[1]?.includes('reconcile-subscription-periods')) {
+      reconcileSubscriptionPeriods()
+        .then((result) => {
+          console.log('[RECONCILE] Final result:', result);
+          process.exit(0);
+        })
+        .catch((err) => {
+          console.error('[RECONCILE] Failed:', err);
+          process.exit(1);
+        });
+    }
+
+After creating the file:
+- Run npx tsc --noEmit. Confirm 0 errors. Paste the count.
+- Run grep -n "reconcileSubscriptionPeriods\|admin.period_reconciliation" \
+    server/scripts/reconcile-subscription-periods.ts
+  Expected: 3+ matches (function definition, .then callback in
+  self-trigger, eventType string).
+
+Do NOT run the script yet. The next step (after this apply
+confirms) is for Adam to execute it from the Replit prod shell.
