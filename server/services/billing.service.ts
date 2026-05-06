@@ -26,6 +26,24 @@ class BillingService {
     return subscription.planKey as PlanKey;
   }
 
+  private getTransitionEventType(
+    previousStatus: SubscriptionStatus | null,
+    newStatus: SubscriptionStatus
+  ): string {
+    if (newStatus === 'past_due')     return 'invoice.payment_failed';
+    if (newStatus === 'canceled')     return 'subscription.canceled';
+    if (newStatus === 'admin_comped') return 'admin.comp_granted';
+    if (newStatus === 'incomplete')   return 'subscription.incomplete';
+    if (newStatus === 'trialing')     return 'subscription.trialing';
+    if (newStatus === 'active') {
+      if (previousStatus === 'trialing') return 'subscription.trial_converted';
+      if (previousStatus === 'past_due') return 'subscription.recovered';
+      if (previousStatus === 'canceled') return 'subscription.reactivated';
+      return 'subscription.updated';
+    }
+    return `status.changed_to.${newStatus}`;
+  }
+
   async getSubscription(userCompanyId: number): Promise<Subscription | null> {
     const subscription = await billingRepository.getByCompanyId(userCompanyId);
     if (!subscription) return null;
@@ -230,19 +248,13 @@ class BillingService {
 
     const subscription = await billingRepository.updateByCompanyId(userCompanyId, updateData);
 
-    const eventTypeMap: Record<string, string> = {
-      active: 'subscription.renewed',
-      past_due: 'invoice.payment_failed',
-      canceled: 'subscription.canceled',
-      incomplete: 'subscription.incomplete',
-      trialing: 'subscription.trialing',
-      admin_comped: 'admin.comp_granted',
-    };
-
     await billingRepository.logEvent({
       userCompanyId,
       stripeEventId: stripeEventId ?? null,
-      eventType: eventTypeMap[data.status] ?? `status.changed_to.${data.status}`,
+      eventType: this.getTransitionEventType(
+        previousStatus as SubscriptionStatus | null,
+        data.status
+      ),
       previousStatus: previousStatus as SubscriptionStatus | null,
       previousPlanKey: previousPlanKey as PlanKey | null,
       newStatus: data.status,
