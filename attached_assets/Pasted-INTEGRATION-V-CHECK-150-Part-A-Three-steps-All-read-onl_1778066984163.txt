@@ -1,0 +1,98 @@
+INTEGRATION V-CHECK — #150 Part A.
+
+Three steps. All read-only.
+
+Step 1: success-path regression check.
+
+The fix moved the `usage` const construction above the parse-failure
+check. We need to confirm a successful expert call still writes
+usage_metadata to the success row, exactly as before.
+
+Best way to confirm: trigger a single expert call against a known-good
+test target on dev (any of the existing test companies). The 'sector'
+expert is fastest because its prompt is small and it doesn't depend
+on other experts.
+
+If you don't want to trigger a fresh analysis on dev right now, an
+acceptable alternative: query the most recent successful expert
+result and confirm usage_metadata is still being captured under the
+new code. Run:
+
+  SELECT id, target_company_id, expert_type, status, processing_time,
+         usage_metadata, created_at, updated_at
+  FROM expert_analysis_results
+  WHERE status = 'success'
+    AND created_at > '2026-05-06 11:30:00'
+  ORDER BY created_at DESC
+  LIMIT 5;
+
+  -- Replace 11:30 with whatever the apply timestamp was.
+
+If 0 rows: no success has run since apply, so no regression evidence
+yet. That's fine, we'll see it on first natural traffic. Move on.
+
+If 1+ rows: each one should have usage_metadata populated with
+{promptTokenCount, candidatesTokenCount, totalTokenCount}. Confirm.
+If any row has usage_metadata=null, the fix has regressed the
+success path — stop and investigate.
+
+Step 2: failure-path code trace.
+
+Walk through the failure path mentally and confirm the new code
+produces a row with:
+  - status = 'failed'
+  - processing_time set
+  - usage_metadata set (new — was null before)
+  - analysis_data = {
+      error: "Failed to parse <expertType> expert response as JSON",
+      failure_type: 'parse_failure',
+      raw_response: <up to 100KB of text or text + '...[truncated]'>,
+      raw_response_length: <full length, even if truncated>,
+    }
+
+Confirm by reading the code paths:
+  - gemini-client.ts: parseJsonWithRecovery returns null after all 4
+    repair stages fail. response = { text: "<raw>", json: null,
+    usage: <usage> }.
+  - gemini-expert-service.ts: usage const built. Then 
+    `if (!response.json)` true. throw GeminiParseFailureError(message,
+    response.text, usage).
+  - The outer try/catch in generateExpertAnalysis catches this error,
+    logs to console.error, re-throws. The error is preserved (not
+    re-wrapped).
+  - expert-analysis.service.ts runExpert catch:
+    `error instanceof GeminiParseFailureError` is true.
+    Branch writes raw_response (capped), failure_type, etc.
+
+State: "trace confirmed" or describe any gap.
+
+One subtle point worth confirming: the outer try/catch in 
+gemini-expert-service.ts re-throws via `throw error`. Does that 
+preserve the GeminiParseFailureError prototype chain? In TypeScript/
+JavaScript, `throw error` preserves the original error reference, so
+yes. Confirm by reading lines 95-99 of the post-apply file.
+
+Step 3: backward compatibility for non-parse failures.
+
+Network errors, timeouts, and other non-parse failures should write
+the same row shape as before (status='failed', processing_time,
+analysis_data={error: "..."}, no usage_metadata, no raw_response).
+
+Confirm by reading the else branch of the catch:
+
+    } else {
+      await this.updateExpertRecord(record.id, {
+        status: 'failed',
+        processingTime,
+        analysisData: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      });
+    }
+
+State: "matches pre-fix behaviour" or describe any gap.
+
+Summary: confirm Steps 1, 2, 3. We are NOT triggering an actual
+parse failure in this V-check (we have no reliable way to do so
+without modifying code). The natural exercise will come when the
+next real parse failure happens on prod post-deploy.
