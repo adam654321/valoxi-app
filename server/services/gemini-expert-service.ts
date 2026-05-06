@@ -1,5 +1,16 @@
 import { geminiClient } from "./gemini-client";
 
+export class GeminiParseFailureError extends Error {
+  constructor(
+    message: string,
+    public readonly rawText: string,
+    public readonly usage: ExpertAnalysisUsage,
+  ) {
+    super(message);
+    this.name = 'GeminiParseFailureError';
+  }
+}
+
 const EXPERT_TIMEOUTS: Record<string, number> = {
   qoe: 120000,
 };
@@ -61,10 +72,6 @@ export class GeminiExpertService {
             : "")
       );
 
-      if (!response.json) {
-        throw new Error(`Failed to parse ${expertType} expert response as JSON`);
-      }
-
       const usage: ExpertAnalysisUsage = response.usage
         ? {
             promptTokenCount: response.usage.promptTokens,
@@ -72,6 +79,14 @@ export class GeminiExpertService {
             totalTokenCount: response.usage.totalTokens,
           }
         : {};
+
+      if (!response.json) {
+        throw new GeminiParseFailureError(
+          `Failed to parse ${expertType} expert response as JSON`,
+          response.text,
+          usage,
+        );
+      }
 
       return { params: response.json as Record<string, unknown>, usage };
     } catch (error) {

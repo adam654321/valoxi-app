@@ -1,0 +1,192 @@
+AUTHORISE-APPLY — #150 Part A. Capture raw response text on parse
+failures. Apply the diff exactly as proposed in the assess.
+
+Scope: TWO files, both edits in the same apply pass.
+
+File 1: server/services/gemini-expert-service.ts
+
+  Edit A — add GeminiParseFailureError class:
+  - Insert immediately AFTER the import line at the top of the file
+    and BEFORE the EXPERT_TIMEOUTS const declaration. Verbatim:
+  
+    export class GeminiParseFailureError extends Error {
+      constructor(
+        message: string,
+        public readonly rawText: string,
+        public readonly usage: ExpertAnalysisUsage,
+      ) {
+        super(message);
+        this.name = 'GeminiParseFailureError';
+      }
+    }
+    
+    Followed by one blank line.
+  
+  Note: ExpertAnalysisUsage is exported from this same file. The
+  class declaration above the EXPERT_TIMEOUTS const will reference
+  ExpertAnalysisUsage which is declared later in the file. TypeScript
+  hoists type declarations within a module, so this works. If for
+  any reason it doesn't compile, move the ExpertAnalysisUsage
+  interface declaration above the class — but try the natural
+  ordering first.
+
+  Edit B — restructure the parse-failure check:
+  - Move the construction of the `usage` const to BEFORE the
+    if (!response.json) check.
+  - Replace the plain Error throw with a GeminiParseFailureError
+    throw that carries response.text and the new usage const.
+  
+  Verbatim final structure for the relevant block (the surrounding
+  console.log, processingTime, and return are unchanged):
+  
+    const processingTime = Date.now() - startTime;
+    
+    console.log(
+      `[GEMINI_EXPERT] ${expertType} response received in ${processingTime}ms, ` +
+        `length: ${response.text.length} chars` +
+        (response.usage
+          ? `, tokens: prompt=${response.usage.promptTokens}, candidates=${response.usage.candidateTokens}, total=${response.usage.totalTokens}`
+          : "")
+    );
+    
+    const usage: ExpertAnalysisUsage = response.usage
+      ? {
+          promptTokenCount: response.usage.promptTokens,
+          candidatesTokenCount: response.usage.candidateTokens,
+          totalTokenCount: response.usage.totalTokens,
+        }
+      : {};
+    
+    if (!response.json) {
+      throw new GeminiParseFailureError(
+        `Failed to parse ${expertType} expert response as JSON`,
+        response.text,
+        usage,
+      );
+    }
+    
+    return { params: response.json as Record<string, unknown>, usage };
+
+  Leave the outer try/catch in generateExpertAnalysis untouched
+  (the one that catches and rethrows with console.error).
+
+File 2: server/services/expert-analysis.service.ts
+
+  Edit C — update the import:
+  - Find: import { GeminiExpertService } from './gemini-expert-service';
+  - Replace with:
+    import { GeminiExpertService, GeminiParseFailureError } from './gemini-expert-service';
+
+  Edit D — replace runExpert's catch block with a branched version:
+  - Locate the catch block at the end of runExpert. Currently:
+  
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error(
+        `[EXPERT_ORCHESTRATOR] ${expertType} failed for company ${record.targetCompanyId}:`,
+        error
+      );
+      await this.updateExpertRecord(record.id, {
+        status: 'failed',
+        processingTime,
+        analysisData: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      });
+    }
+  
+  - Replace ENTIRELY with:
+  
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error(
+        `[EXPERT_ORCHESTRATOR] ${expertType} failed for company ${record.targetCompanyId}:`,
+        error
+      );
+    
+      const RAW_RESPONSE_CAP_BYTES = 100_000;
+    
+      if (error instanceof GeminiParseFailureError) {
+        const rawText = error.rawText.length > RAW_RESPONSE_CAP_BYTES
+          ? error.rawText.slice(0, RAW_RESPONSE_CAP_BYTES) + '...[truncated]'
+          : error.rawText;
+    
+        await this.updateExpertRecord(record.id, {
+          status: 'failed',
+          processingTime,
+          usageMetadata: error.usage,
+          analysisData: {
+            error: error.message,
+            failure_type: 'parse_failure',
+            raw_response: rawText,
+            raw_response_length: error.rawText.length,
+          },
+        });
+      } else {
+        await this.updateExpertRecord(record.id, {
+          status: 'failed',
+          processingTime,
+          analysisData: {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
+        });
+      }
+    }
+
+  Leave the rest of runExpert untouched (the success path, the
+  initial status='processing' write, the try-block contents).
+
+Before applying, RE-READ both files from the dev tree to confirm
+nothing has shifted since the assess.
+
+After applying:
+- Run npx tsc --noEmit. Confirm 0 errors. Paste the count.
+- Run grep -n "GeminiParseFailureError" \
+    server/services/gemini-expert-service.ts \
+    server/services/expert-analysis.service.ts
+  Expected:
+    - 2 hits in gemini-expert-service.ts (class declaration + throw)
+    - 2 hits in expert-analysis.service.ts (import + instanceof check)
+- Run grep -n "RAW_RESPONSE_CAP_BYTES\|raw_response\|failure_type" \
+    server/services/expert-analysis.service.ts
+  Expected: 5+ matches all inside runExpert's catch block.
+
+Do not deploy. Dev-tree apply only.
+V-check after apply:
+[V-CHECK] #150 Part A V-check.
+V-CHECK — #150 Part A.
+
+1. tsc count from the apply step. Should be 0. Paste it.
+
+2. grep -n "GeminiParseFailureError" \
+     server/services/gemini-expert-service.ts \
+     server/services/expert-analysis.service.ts
+   Expected:
+     - gemini-expert-service.ts: 2 hits (class declaration + throw 
+       inside generateExpertAnalysis)
+     - expert-analysis.service.ts: 2 hits (import + instanceof in 
+       runExpert)
+
+3. grep -n "raw_response\|failure_type\|RAW_RESPONSE_CAP_BYTES" \
+     server/services/expert-analysis.service.ts
+   Expected: 5 matches (declaration of RAW_RESPONSE_CAP_BYTES, two
+   uses, and raw_response + failure_type fields in the analysisData
+   object).
+
+4. Visual sanity scan gemini-expert-service.ts:
+   - GeminiParseFailureError class declared near top, after import,
+     before EXPERT_TIMEOUTS.
+   - Inside generateExpertAnalysis: usage const construction now
+     above the if (!response.json) check.
+   - Throw uses GeminiParseFailureError with response.text and usage.
+   - Success path return is unchanged.
+
+5. Visual sanity scan expert-analysis.service.ts:
+   - Import now includes GeminiParseFailureError.
+   - runExpert success path unchanged.
+   - runExpert catch block has the branched logic: instanceof check
+     for parse failures (writes raw_response, failure_type, usage),
+     else branch for non-parse failures (unchanged behaviour).
+
+6. Workflow log: confirm a NEW server start timestamp post-apply.
+   Manual restart if not seen.

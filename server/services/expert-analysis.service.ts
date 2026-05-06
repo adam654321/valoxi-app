@@ -8,7 +8,7 @@ import {
   type ExpertAnalysisResult,
   type TargetCompany,
 } from '@shared/schema';
-import { GeminiExpertService } from './gemini-expert-service';
+import { GeminiExpertService, GeminiParseFailureError } from './gemini-expert-service';
 import { captureAnalysisSnapshot } from './metrics-snapshot.service';
 import { buildStage0DataQualityPrompt } from '../prompts/stage0-data-quality-prompt';
 import { buildStage1ScreeningPrompt } from '../prompts/stage1-screening-prompt';
@@ -343,13 +343,34 @@ export class ExpertAnalysisService {
         `[EXPERT_ORCHESTRATOR] ${expertType} failed for company ${record.targetCompanyId}:`,
         error
       );
-      await this.updateExpertRecord(record.id, {
-        status: 'failed',
-        processingTime,
-        analysisData: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
-      });
+
+      const RAW_RESPONSE_CAP_BYTES = 100_000;
+
+      if (error instanceof GeminiParseFailureError) {
+        const rawText = error.rawText.length > RAW_RESPONSE_CAP_BYTES
+          ? error.rawText.slice(0, RAW_RESPONSE_CAP_BYTES) + '...[truncated]'
+          : error.rawText;
+
+        await this.updateExpertRecord(record.id, {
+          status: 'failed',
+          processingTime,
+          usageMetadata: error.usage,
+          analysisData: {
+            error: error.message,
+            failure_type: 'parse_failure',
+            raw_response: rawText,
+            raw_response_length: error.rawText.length,
+          },
+        });
+      } else {
+        await this.updateExpertRecord(record.id, {
+          status: 'failed',
+          processingTime,
+          analysisData: {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
+        });
+      }
     }
   }
 
