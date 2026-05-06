@@ -1,0 +1,130 @@
+AUTHORISE-APPLY — Build 3 of #151. Apply the diff exactly as proposed
+in the assess.
+
+Scope: ONE file, ONE additive edit.
+
+File: server/routes/billing.routes.ts
+
+  Edit — inside the case 'invoice.paid': block (line 222), within the
+  if (matchingSub) { ... } body. The existing
+  await billingService.updateSubscriptionStatus(...) call (currently
+  lines 239-245) STAYS as-is. Add new lines around it as below.
+
+  Specifically:
+  - Insert ONE line BEFORE the updateSubscriptionStatus call:
+      const previousStatusForRenewal = matchingSub.status;
+      (with one blank line separating it from the await call below)
+  - AFTER the updateSubscriptionStatus call closes (after its
+    semicolon on line 245), insert a blank line, then the
+    confirmFirstPayment call, then a blank line, then the conditional
+    subscription.renewed logEvent block. Verbatim:
+
+    const firstPayment = await billingService.confirmFirstPayment(
+      matchingSub.userCompanyId,
+      invoice.id
+    );
+
+    if (
+      !firstPayment.wasFirstPayment &&
+      previousStatusForRenewal === 'active'
+    ) {
+      await billingRepository.logEvent({
+        userCompanyId: matchingSub.userCompanyId,
+        stripeEventId: null,
+        eventType: 'subscription.renewed',
+        previousStatus: previousStatusForRenewal,
+        previousPlanKey: matchingSub.planKey,
+        newStatus: 'active',
+        newPlanKey: matchingSub.planKey,
+        payload: {
+          paidInvoiceId: invoice.id,
+          amountPaid: invoice.amount_paid ?? null,
+          currency: invoice.currency ?? null,
+          periodStart: invoice.period_start
+            ? new Date(invoice.period_start * 1000)
+            : null,
+          periodEnd: invoice.period_end
+            ? new Date(invoice.period_end * 1000)
+            : null,
+        },
+      });
+    }
+
+  CRITICAL: stripeEventId is null in this logEvent call, NOT event.id.
+  This is intentional and is the deviation Replit caught in the assess.
+  Reason: updateSubscriptionStatus has just written a subscription_events
+  row with stripe_event_id = event.id, and that column is UNIQUE. A
+  second write with the same event.id would silently conflict and
+  fail. Route-level dedup at lines 79-83 already covers Stripe retry
+  idempotency for the whole invoice.paid case, so the inner write
+  doesn't need its own.
+
+  Leave everything else in the invoice.paid case untouched. The
+  existing await logWebhookEvent(...) and break stay where they are.
+  Do not touch the case 'invoice.payment_failed' block, the case
+  'customer.subscription.updated' block, or any other case in the
+  switch statement.
+
+Before applying, RE-READ billing.routes.ts from the dev tree to
+confirm line numbers haven't shifted.
+
+After applying:
+- Run npx tsc --noEmit. Confirm 0 errors. Paste the count.
+- Run grep -n "confirmFirstPayment\|subscription.renewed\|previousStatusForRenewal" \
+    server/routes/billing.routes.ts
+  Expected:
+    - 1 hit for confirmFirstPayment (the call inside invoice.paid)
+    - 1 hit for 'subscription.renewed' (the eventType in the new write)
+    - 2 hits for previousStatusForRenewal (declaration + use in
+      both the guard and the logEvent payload — actually 3 hits total
+      since the variable is read twice in the conditional and once in
+      the payload; expected 4 lines total when grepping; verify and
+      report exact count)
+
+Do not deploy. Dev-tree apply only. After Adam V-checks, we move to
+the integration V-check on dev with simulated events, then a single
+bundle deploy to prod.
+V-check after apply:
+[V-CHECK] Build 3 V-check.
+V-CHECK — Build 3.
+
+1. tsc count from the apply step. Should be 0. Paste it.
+
+2. grep -n "confirmFirstPayment\|previousStatusForRenewal" \
+     server/routes/billing.routes.ts
+   Expected:
+     - 1 line for confirmFirstPayment (the call in invoice.paid)
+     - 3 lines for previousStatusForRenewal: the declaration, the
+       guard test, and the previousStatus payload field
+
+3. grep -rn "subscription.renewed" server/ client/ shared/
+   Expected: exactly 1 match — server/routes/billing.routes.ts,
+   inside the invoice.paid case. The label has been correctly
+   reintroduced in its proper place. Build 2 left zero matches;
+   Build 3 should leave exactly one.
+
+4. grep -rn "subscription.activated" server/ client/ shared/
+   Expected:
+     - 2 matches in server/services/billing.service.ts (eventType +
+       track string in confirmFirstPayment)
+     - 2 matches in server/routes/admin.routes.ts (lines 544 and 575,
+       the funnel reads, unchanged)
+     - 0 matches in server/routes/billing.routes.ts (correct: routes
+       calls confirmFirstPayment which writes the label internally,
+       not the literal string)
+     - 0 matches anywhere in client/ or shared/
+
+5. Visual sanity scan billing.routes.ts:
+   - Inside case 'invoice.paid':
+     - previousStatusForRenewal declaration just before
+       updateSubscriptionStatus
+     - updateSubscriptionStatus call unchanged
+     - confirmFirstPayment call after it
+     - conditional subscription.renewed logEvent block after that
+     - logWebhookEvent and break still at the bottom of the case
+   - case 'invoice.payment_failed', case 'customer.subscription.updated',
+     case 'customer.subscription.deleted', case 'invoice.upcoming':
+     all unchanged.
+
+6. Workflow log: confirm a NEW server start timestamp post-apply.
+   Manual restart if not seen.

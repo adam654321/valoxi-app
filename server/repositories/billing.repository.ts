@@ -96,6 +96,23 @@ export class BillingRepository {
     return row;
   }
 
+  async hasEventOfType(
+    userCompanyId: number,
+    eventType: string
+  ): Promise<boolean> {
+    const [row] = await db
+      .select({ id: subscriptionEvents.id })
+      .from(subscriptionEvents)
+      .where(
+        and(
+          eq(subscriptionEvents.userCompanyId, userCompanyId),
+          eq(subscriptionEvents.eventType, eventType)
+        )
+      )
+      .limit(1);
+    return !!row;
+  }
+
   async hasRecentEvent(
     userCompanyId: number,
     eventType: string,

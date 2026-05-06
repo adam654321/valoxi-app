@@ -167,9 +167,6 @@ class BillingService {
       return existing;
     }
 
-    const previousStatus = existing?.status ?? null;
-    const previousPlanKey = existing?.planKey ?? null;
-
     const subscription = await billingRepository.upsertByCompanyId({
       userCompanyId,
       stripeCustomerId: data.stripeCustomerId,
@@ -182,24 +179,48 @@ class BillingService {
       canceledAt: null,
     });
 
+    return subscription;
+  }
+
+  async confirmFirstPayment(
+    userCompanyId: number,
+    paidInvoiceId?: string
+  ): Promise<{ wasFirstPayment: boolean }> {
+    const subscription = await billingRepository.getByCompanyId(userCompanyId);
+    if (!subscription) {
+      return { wasFirstPayment: false };
+    }
+
+    const alreadyFired = await billingRepository.hasEventOfType(
+      userCompanyId,
+      'subscription.activated'
+    );
+    if (alreadyFired) {
+      return { wasFirstPayment: false };
+    }
+
     await billingRepository.logEvent({
       userCompanyId,
       eventType: 'subscription.activated',
-      previousStatus: previousStatus as SubscriptionStatus | null,
-      previousPlanKey: previousPlanKey as PlanKey | null,
-      newStatus: 'active',
-      newPlanKey: data.planKey,
+      previousStatus: null,
+      previousPlanKey: null,
+      newStatus: subscription.status as SubscriptionStatus,
+      newPlanKey: subscription.planKey as PlanKey,
       payload: {
-        stripeCustomerId: data.stripeCustomerId,
-        stripeSubscriptionId: data.stripeSubscriptionId,
-        billingInterval: data.billingInterval,
+        stripeCustomerId: subscription.stripeCustomerId,
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        billingInterval: subscription.billingInterval,
+        paidInvoiceId: paidInvoiceId ?? null,
       },
     });
 
     const { track } = await import('./funnel.service');
-    track(userCompanyId, null, 'subscription.activated', { planKey: data.planKey, billingInterval: data.billingInterval });
+    track(userCompanyId, null, 'subscription.activated', {
+      planKey: subscription.planKey,
+      billingInterval: subscription.billingInterval,
+    });
 
-    return subscription;
+    return { wasFirstPayment: true };
   }
 
   async updateSubscriptionStatus(

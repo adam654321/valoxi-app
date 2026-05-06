@@ -236,6 +236,8 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           const matchingSub = await billingRepository.getByStripeSubscriptionId(subscriptionId);
 
           if (matchingSub) {
+            const previousStatusForRenewal = matchingSub.status;
+
             await billingService.updateSubscriptionStatus(
               matchingSub.userCompanyId,
               {
@@ -243,6 +245,37 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
               },
               event.id
             );
+
+            const firstPayment = await billingService.confirmFirstPayment(
+              matchingSub.userCompanyId,
+              invoice.id
+            );
+
+            if (
+              !firstPayment.wasFirstPayment &&
+              previousStatusForRenewal === 'active'
+            ) {
+              await billingRepository.logEvent({
+                userCompanyId: matchingSub.userCompanyId,
+                stripeEventId: null,
+                eventType: 'subscription.renewed',
+                previousStatus: previousStatusForRenewal,
+                previousPlanKey: matchingSub.planKey,
+                newStatus: 'active',
+                newPlanKey: matchingSub.planKey,
+                payload: {
+                  paidInvoiceId: invoice.id,
+                  amountPaid: invoice.amount_paid ?? null,
+                  currency: invoice.currency ?? null,
+                  periodStart: invoice.period_start
+                    ? new Date(invoice.period_start * 1000)
+                    : null,
+                  periodEnd: invoice.period_end
+                    ? new Date(invoice.period_end * 1000)
+                    : null,
+                },
+              });
+            }
           }
         }
 
