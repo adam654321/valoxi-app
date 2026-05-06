@@ -1,0 +1,91 @@
+ASSESS — #151 subscription event labelling errors. READ-ONLY. NO code changes.
+
+Context: subscription_events on prod is mislabelling lifecycle events. Two
+specific issues observed against company 97 (rajjaladi@gmail.com) over
+4-6 May 2026:
+
+(a) subscription.activated row written at checkout time (4 May 10:46 UK)
+    before any payment had been collected. The activation label is
+    misleading because it implies "active and paid" rather than just
+    "subscription lifecycle started".
+
+(b) subscription.renewed row written 5 May 10:46 UK on the trial-to-active
+    transition, with previous_status='trialing'. Renewals only apply to
+    already-active subscriptions on a recurring boundary, not to a freshly
+    trial-ended subscription that has not yet had a paid invoice.
+
+Both labels come from server/services/billing.service.ts. Specifically:
+  - activateSubscription() writes 'subscription.activated' on every call,
+    with no check for whether payment has been confirmed.
+  - updateSubscriptionStatus() has an eventTypeMap that writes
+    'subscription.renewed' for every transition where data.status='active',
+    regardless of previous_status or whether an invoice was paid.
+
+Tasks for this assess (no code edits, do not propose diffs yet):
+
+1. Read server/services/billing.service.ts in full. Confirm the two issue
+   locations match what's described above. State the exact line numbers
+   for:
+   - the activateSubscription() call to billingRepository.logEvent that
+     writes 'subscription.activated'
+   - the eventTypeMap inside updateSubscriptionStatus that maps
+     active -> 'subscription.renewed'
+
+2. Run this grep across the whole repo and paste the output verbatim:
+
+       grep -rn --include='*.ts' --include='*.tsx' \
+         -E "subscription\.(activated|renewed|trial_converted|recovered|reactivated|created)" \
+         server/ client/ shared/
+
+   Purpose: find every place that consumes these event-type strings as
+   literals (frontend filters, admin reporting, dashboards, tests, scripts).
+   Anything outside billing.service.ts is a callsite that needs to keep
+   working after we change the labels.
+
+3. Confirm whether subscription_events.event_type is a free-text varchar
+   (no enum constraint at DB level). Answer "varchar(100), no enum" or
+   give the actual constraint text from shared/schema/billing.ts.
+
+4. List every place in billing.routes.ts and billing.service.ts that calls
+   updateSubscriptionStatus(), with the inferred 'previous_status -> new_status'
+   transition for each call. We need this to design a label-mapping that
+   picks the right event_type based on the transition, not just the new
+   status. Specifically distinguish:
+     - trialing -> active   (trial conversion, first paid invoice)
+     - past_due -> active   (recovery from failed payment)
+     - canceled -> active   (reactivation, rare)
+     - active -> active     (no-op or routine update, e.g. plan change)
+
+5. Confirm that the dunning email at 'invoice.payment_failed' is fired
+   from billing.routes.ts directly and NOT from inside
+   updateSubscriptionStatus. We need this to know whether changing the
+   eventTypeMap can affect email firing. Answer "fired in routes, not
+   in service" or describe the actual flow.
+
+6. Decision summary at the end of the response, in this exact form:
+
+   DECISIONS NEEDED FROM ADAM:
+   
+   D1. Should 'subscription.activated' on checkout be:
+       (A) Renamed to 'subscription.created' for clarity (lifecycle event,
+           no payment claim).
+       (B) Kept as 'subscription.activated' but only fired AFTER first
+           invoice.paid lands (deferred write).
+       (C) Split into two: 'subscription.created' fires on checkout,
+           'subscription.first_payment_confirmed' fires on first invoice.paid.
+       Recommended default: (A). Lower complexity, keeps existing audit
+       semantics, just renames to avoid the misleading "activated" word.
+   
+   D2. Should the eventTypeMap inside updateSubscriptionStatus be:
+       (A) Replaced by a transition-aware function that picks a label
+           based on (previousStatus -> newStatus) pair.
+       (B) Replaced by hard-coded labels at each callsite in billing.routes.ts
+           where we know the context (e.g. invoice.paid handler writes
+           'subscription.renewed' explicitly when matchingSub previously
+           had a paid invoice; trial-end handler writes 'subscription.
+           trial_converted'; etc.).
+       Recommended default: (A). Single source of truth, easier to change
+       later. Keep the hard-coded fallback at callsites for cases the
+       function genuinely cannot infer.
+
+Do not write any code. This pass is purely diagnostic.
