@@ -1,0 +1,182 @@
+ASSESS — #25 Build 4 of 5: Frontend Connected accounts UI in
+account settings. READ-ONLY. NO code changes. Propose the diff.
+
+Context: Builds 1-3 landed cleanly. Backend exposes:
+  - POST /api/v2/nylas/auth/initiate (body {provider}, returns {authUrl})
+  - GET  /api/v2/nylas/auth/callback (handled, redirects to /?nylas_connected=1)
+  - GET  /api/v2/nylas/grants (returns user's grants, revoked excluded)
+  - DELETE /api/v2/nylas/grants/:id (tenant-scoped, calls Nylas + marks revoked)
+  - POST /api/v2/nylas/send (Build 5 will use; not exercised by Build 4)
+
+Build 4 adds the user-facing UI for connecting and managing email
+accounts. Lives in account settings. After Build 4: a logged-in user
+can navigate to settings, see their connected accounts (initially
+empty for new users), click a button per provider to connect, complete
+OAuth in the browser, return to settings and see the new account
+listed, and click disconnect on any account to revoke it. No document
+delivery wiring yet — Build 5 owns that.
+
+LOCKED DECISIONS
+
+D25.9: Connect button in account settings, primary location for
+       v1. Inline prompts in document-delivery flows are deferred.
+D1.2:  Multi-grant per user. UI must handle 0 to N connected
+       accounts cleanly.
+
+DIAGNOSTIC TASKS FIRST (read-only, propose diff after):
+
+T1. Locate the existing account/settings UI:
+    - List the files in client/src/pages/ that match settings,
+      account, profile, or similar. Identify the canonical settings
+      page file.
+    - Read it. Does it use tabs (e.g. shadcn Tabs)? Sections within
+      a single page? Multiple sub-pages routed under /settings/*?
+    - State the page-routing convention so Build 4 knows whether to
+      add a new sub-route, a new tab, or a new section in an
+      existing page.
+
+T2. Identify the routing library (likely wouter, react-router, or
+    Next-style). State which.
+
+T3. CSRF token frontend convention:
+    - Search for csrf in client/src/. Find the existing
+      hook/util/wrapper that handles the CSRF dance for authenticated
+      mutations.
+    - Common patterns: a `useCsrf` hook, an `apiPost` util that
+      auto-fetches CSRF before each mutation, or a `useMutation`
+      wrapper from React Query that does it.
+    - State the existing convention so the new component uses it
+      verbatim. Building a new csrf-fetching wrapper for Build 4
+      would be wrong.
+
+T4. Data-fetching convention:
+    - Does the codebase use React Query (@tanstack/react-query)?
+      Confirm by checking package.json.
+    - If yes, identify a recent example of a useQuery + useMutation
+      pair tied to an authenticated endpoint (e.g. billing settings
+      or account profile fetch).
+    - State the queryKey naming convention (e.g.
+      ['nylas', 'grants'] or ['/api/v2/nylas/grants']).
+
+T5. UI component library:
+    - Confirm shadcn/ui usage. Look for components/ui/ directory.
+    - List the components likely needed for Build 4: Button, Card,
+      Badge (for status pills), AlertDialog (for disconnect
+      confirmation), Skeleton (for loading state).
+    - State which exist already in components/ui/ vs need installing.
+      shadcn components are typically installed via `npx shadcn-ui
+      add <name>` per-component.
+
+T6. Toast/notification convention:
+    - Find the toast/notification helper used elsewhere (likely
+      shadcn's Toaster + useToast or sonner). Build 4 needs to show:
+      success: 'Connected your <provider> account', error toasts.
+    - State the existing convention.
+
+T7. Confirm the callback redirect destination:
+    - Build 2's callback redirects to /?nylas_connected=1 on success
+      and /?nylas_error=... on failure.
+    - Build 4 should change these to /settings/connected-accounts?
+      connected=1 (or wherever the new page lives per T1) so the
+      user lands on the relevant page.
+    - This means Build 4's diff also touches server/routes/
+      nylas.routes.ts to update the two redirect targets in the
+      callback handler.
+    - Confirm which exact path Build 4's UI lives at and update
+      the two redirects accordingly.
+
+PROPOSED DIFF
+
+FILE 1 (NEW): client/src/components/settings/connected-accounts-section.tsx
+
+  React component. Tree-shape:
+  - Section header: "Connected email accounts"
+  - Description text: "Connect your email so messages to clients and
+    sellers come from your address, not no-reply@valoxi.ai."
+  - Loading state (Skeleton) while fetching
+  - Empty state (no grants): "You haven't connected an email account
+    yet." + two Connect buttons (Google, Microsoft)
+  - Populated state (1+ grants): list of connected accounts with:
+      - Provider icon/badge
+      - Email address
+      - Status pill (active / broken)
+      - "Last used" relative time (or "Not used yet")
+      - Disconnect button per row
+    + Two Connect buttons at the bottom for adding more accounts
+  - Toast on connect-success (read query param ?connected=1 from URL,
+    show toast, clear param)
+  - Toast on connect-error (read query param ?nylas_error=... from URL,
+    show error toast, clear param)
+  - Disconnect button opens AlertDialog confirmation:
+      "Disconnect <email>? Future emails will revert to no-reply@
+      valoxi.ai until you reconnect."
+      [Cancel] [Disconnect]
+  
+  Uses:
+  - useQuery({ queryKey: ['nylas', 'grants'], ... }) for the list
+  - useMutation for initiate (POST /api/v2/nylas/auth/initiate, then
+    window.location.href = data.authUrl)
+  - useMutation for disconnect (DELETE /api/v2/nylas/grants/:id, then
+    invalidate queryKey)
+
+FILE 2 (PROBABLY EDIT, MAYBE NEW): the settings page
+  Either:
+  (a) Add a new tab/section to the existing settings page (per T1
+      finding), or
+  (b) Add a new sub-route /settings/connected-accounts (per T1
+      finding) and register it in the router.
+  
+  The proposed diff path will be specified in the actual proposal
+  once T1 surfaces the convention.
+
+FILE 3 (EDIT): server/routes/nylas.routes.ts
+  Update the two redirect targets in the callback handler:
+  - Success: from /?nylas_connected=1 to /settings/connected-accounts?connected=1
+    (or whatever T1 path lands on)
+  - Error: from /?nylas_error=<reason> to /settings/connected-accounts?nylas_error=<reason>
+
+DECISIONS NEEDED FROM ADAM:
+
+D4.1. Disconnect confirmation:
+  (A) Modal AlertDialog with confirm button (current proposal). User
+      must click twice to disconnect. Safer.
+  (B) One-click disconnect with a toast that has an "Undo" action
+      (5-second window before the actual revoke fires).
+  Recommended: (A). Disconnect is irreversible (next reconnect
+  creates a new grant_id; the old grant data is gone). One-click
+  with undo is UX-friendly but adds complexity for a rarely-used
+  action.
+
+D4.2. Status pill colours:
+  (A) active = green, broken = red. Standard convention.
+  (B) active = blue, broken = amber.
+  Recommended: (A).
+
+D4.3. Provider naming/icons:
+  (A) "Google" + Google G icon, "Microsoft" + Microsoft logo
+  (B) "Gmail" / "Outlook" (more user-recognisable than provider
+      names)
+  Recommended: (B). Users think in terms of where their email lives,
+  not the OAuth provider name. "Gmail" / "Outlook" maps cleanly.
+
+D4.4. Should we display the scopes granted to each connected account?
+  (A) Yes, expandable details showing "What can Valoxi do with this
+      account": Send emails on your behalf, read your name and email
+      address. Transparent.
+  (B) No. Users don't typically read these. Keep UI clean.
+  Recommended: (A) but as a collapsed disclosure ("View permissions"
+  link that expands), not always-shown. Builds trust without
+  cluttering the main UI.
+
+D4.5. Where in account settings does this live?
+  Depends on T1 findings. Three patterns possible:
+  (a) New top-level "Connected accounts" or "Integrations" section
+      in settings sidebar/tabs.
+  (b) New section within existing "Account" or "Profile" page,
+      below other account info.
+  (c) New sub-route /settings/connected-accounts.
+  Recommended: pick the pattern that matches what's already there
+  (T1 surfaces). Don't introduce a new convention.
+
+Read-only assess. Do not write any code yet. Propose the diff in
+plain text only.
