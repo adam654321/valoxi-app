@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Users, Lock, User, Building2 } from "lucide-react";
+import { Loader2, Users, Lock, User, Building2, Link2 } from "lucide-react";
+import { ConnectedAccountsSection } from "@/components/settings/connected-accounts-section";
 
 const INDUSTRIES = [
   "Accounting & Finance", "Agriculture & Farming", "Architecture & Design", "Automotive",
@@ -47,6 +48,14 @@ export default function AccountPage() {
   const { toast } = useToast();
   const canEditCompany = user?.permissions?.canManageCompany ?? false;
   const company = user?.company;
+
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("nylas_connected") || params.get("nylas_error")) {
+      return "connected-accounts";
+    }
+    return "profile";
+  });
 
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
     queryKey: ["/api/v2/account/profile"],
@@ -149,10 +158,11 @@ export default function AccountPage() {
         <p className="mt-1 text-textSecondary">Manage your personal details and company settings</p>
       </div>
 
-      <Tabs defaultValue="profile">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="profile" className="gap-2"><User className="h-4 w-4" />Profile</TabsTrigger>
           <TabsTrigger value="company" className="gap-2"><Building2 className="h-4 w-4" />Company</TabsTrigger>
+          <TabsTrigger value="connected-accounts" className="gap-2"><Link2 className="h-4 w-4" />Connected accounts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -349,6 +359,10 @@ export default function AccountPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="connected-accounts" className="space-y-6">
+          <ConnectedAccountsSection />
         </TabsContent>
       </Tabs>
     </div>

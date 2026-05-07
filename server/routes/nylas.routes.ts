@@ -15,7 +15,7 @@ nylasCallbackRouter.get('/auth/callback', async (req: Request, res: Response) =>
 
   if (error) {
     console.error('[NYLAS] OAuth error from provider:', error);
-    return res.redirect(`/?nylas_error=${encodeURIComponent(error)}`);
+    return res.redirect(`/account?nylas_error=${encodeURIComponent(error)}`);
   }
 
   if (!code || !state) {
@@ -27,7 +27,7 @@ nylasCallbackRouter.get('/auth/callback', async (req: Request, res: Response) =>
     claims = verifyNylasState(state);
   } catch (err: any) {
     console.error('[NYLAS] State token verification failed:', err.message);
-    return res.redirect(`/?nylas_error=invalid_state`);
+    return res.redirect(`/account?nylas_error=invalid_state`);
   }
 
   try {
@@ -49,10 +49,10 @@ nylasCallbackRouter.get('/auth/callback', async (req: Request, res: Response) =>
       console.log(`[NYLAS] Grant created for user ${claims.userId} (${result.email}, ${result.provider})`);
     }
 
-    return res.redirect(`/?nylas_connected=1`);
+    return res.redirect(`/account?nylas_connected=1`);
   } catch (err: any) {
     console.error('[NYLAS] Code exchange or grant creation failed:', err.message);
-    return res.redirect(`/?nylas_error=exchange_failed`);
+    return res.redirect(`/account?nylas_error=exchange_failed`);
   }
 });
 
