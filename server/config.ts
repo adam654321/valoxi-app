@@ -58,6 +58,13 @@ export const config = {
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   },
 
+  nylas: {
+    apiKey: process.env.NYLAS_API_KEY || '',
+    clientId: process.env.NYLAS_CLIENT_ID || '',
+    apiUri: process.env.NYLAS_API_URI || 'https://api.us.nylas.com',
+    redirectUri: process.env.NYLAS_REDIRECT_URI || '',
+  },
+
   geminiPricing: {
     'gemini-3-flash-preview': { inputCostPerMillionTokens: 0.50, outputCostPerMillionTokens: 3.00 },
     'gemini-3-pro-preview': { inputCostPerMillionTokens: 1.25, outputCostPerMillionTokens: 10.00 },

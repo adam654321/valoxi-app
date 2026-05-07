@@ -5,6 +5,7 @@ import { initializeChaseUpCron } from "./cron/chase-up.cron";
 import { initializeBillingCron } from "./cron/billing.cron";
 import { initializeBackupCron } from "./cron/backup.cron";
 import { sendError } from "./utils/response";
+import { config } from "./config";
 
 process.on('SIGHUP', () => {
   console.log('[PROCESS] SIGHUP received — ignoring to preserve esbuild');
@@ -78,6 +79,11 @@ app.use((req, res, next) => {
     }
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       console.warn('[billing] WARNING: STRIPE_WEBHOOK_SECRET not set — webhooks will not be verified');
+    }
+    if (config.nylas.apiKey && config.nylas.clientId && config.nylas.redirectUri) {
+      log('[NYLAS] configured — OAuth and email send enabled');
+    } else {
+      console.warn('[NYLAS] WARNING: NYLAS_API_KEY, NYLAS_CLIENT_ID or NYLAS_REDIRECT_URI not set — OAuth and email send disabled');
     }
     initializeChaseUpCron();
     initializeBillingCron();
