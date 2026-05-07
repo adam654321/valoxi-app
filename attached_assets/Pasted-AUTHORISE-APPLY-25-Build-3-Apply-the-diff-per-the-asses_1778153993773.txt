@@ -1,0 +1,69 @@
+AUTHORISE-APPLY — #25 Build 3. Apply the diff per the assess.
+
+Scope: THREE files, all edits (no new files). No schema change. No
+npm install.
+
+Pre-apply: re-read each file from the dev tree before editing.
+
+FILE 1 (EDIT): server/services/nylas.service.ts
+  Replace the two stubs (sendEmail and revokeGrant) with the
+  implementations from the assess. Verbatim.
+  
+  Note: response.data.id and response.data.threadId — no cast,
+  no fallback. Per T1 the SDK return is fully typed as
+  NylasResponse<Message>.
+
+FILE 2 (EDIT): server/repositories/nylas.repository.ts
+  - Update line 1 import to add `ne`:
+      import { and, desc, eq, ne } from 'drizzle-orm';
+  - Add the new method getGrantsForUser AFTER bumpLastUsed.
+  - Use the cleaner type approach: do NOT explicitly type
+    baseConditions; let TS infer. Verbatim:
+    
+      async getGrantsForUser(userId: number, options: { includeRevoked?: boolean } = {}) {
+        const baseConditions = [eq(nylasGrants.userId, userId)];
+        if (!options.includeRevoked) {
+          baseConditions.push(ne(nylasGrants.status, 'revoked'));
+        }
+        return db.select().from(nylasGrants)
+          .where(and(...baseConditions))
+          .orderBy(desc(nylasGrants.lastUsedAt), desc(nylasGrants.createdAt));
+      },
+
+FILE 3 (EDIT): server/routes/nylas.routes.ts
+  Three changes:
+  
+  (1) Update the import for nylas.service to include
+      NylasGrantBrokenError:
+      
+      import { nylasService, NylasServiceNotConfiguredError, NylasGrantBrokenError } from '../services/nylas.service';
+  
+  (2) Add sendBodySchema at module level immediately after the
+      existing initiateBodySchema. Verbatim from the assess.
+  
+  (3) Add the three route handlers (GET /grants, DELETE /grants/:id,
+      POST /send) on the authenticated `router` (default export).
+      Place them AFTER the existing /auth/initiate handler and
+      BEFORE the export default router line. Verbatim from the
+      assess.
+
+Do NOT touch the nylasCallbackRouter (the unauthenticated callback
+router) — Build 3 endpoints are all on the authenticated router.
+Do NOT touch server/routes/index.ts — both routers are already
+mounted from Build 2.
+
+After applying:
+- Run npx tsc --noEmit. Confirm 0 errors. Paste the count.
+- Run grep -n "sendEmail\|revokeGrant\|getGrantsForUser\|NylasGrantBrokenError\|sendBodySchema" \
+    server/services/nylas.service.ts \
+    server/repositories/nylas.repository.ts \
+    server/routes/nylas.routes.ts
+  Expected:
+    - sendEmail: 1 hit (definition in service.ts) + 1 hit (call in routes.ts)
+    - revokeGrant: 1 hit (definition in service.ts) + 1 hit (call in routes.ts)
+    - getGrantsForUser: 1 hit (definition in repository.ts) + 1 hit (call in routes.ts)
+    - NylasGrantBrokenError: 1 hit (class def in service.ts) + 1 hit (import in routes.ts) + 1 hit (instanceof in routes.ts)
+    - sendBodySchema: 1 hit (definition in routes.ts) + 1 hit (use in /send handler)
+
+DO NOT deploy. Dev-tree apply only. After Adam V-checks, Build 4
+begins.

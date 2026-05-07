@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
-import { nylasService, NylasServiceNotConfiguredError } from '../services/nylas.service';
+import { nylasService, NylasServiceNotConfiguredError, NylasGrantBrokenError } from '../services/nylas.service';
 import { nylasRepository } from '../repositories/nylas.repository';
 import { signNylasState, verifyNylasState } from '../lib/nylas-state-token';
 
@@ -66,6 +66,29 @@ const initiateBodySchema = z.object({
   provider: z.enum(['google', 'microsoft']),
 });
 
+const sendBodySchema = z.object({
+  grantId: z.number().int().positive(),
+  subject: z.string().min(1).max(998),
+  to: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })).min(1),
+  body: z.string().min(1),
+  cc: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })).optional(),
+  bcc: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })).optional(),
+  replyTo: z.array(z.object({
+    email: z.string().email(),
+    name: z.string().optional(),
+  })).optional(),
+  isPlainText: z.boolean().optional(),
+});
+
 router.post('/auth/initiate', async (req: Request, res: Response) => {
   try {
     const { provider } = initiateBodySchema.parse(req.body);
@@ -89,6 +112,131 @@ router.post('/auth/initiate', async (req: Request, res: Response) => {
     }
     console.error('[NYLAS] auth/initiate failed:', err);
     return res.status(500).json({ success: false, error: 'Failed to start OAuth flow' });
+  }
+});
+
+// GET /api/v2/nylas/grants
+router.get('/grants', async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const includeRevoked = req.query.includeRevoked === 'true';
+    const grants = await nylasRepository.getGrantsForUser(userId, { includeRevoked });
+
+    return res.json({
+      success: true,
+      data: grants.map(g => ({
+        id: g.id,
+        email: g.email,
+        provider: g.provider,
+        status: g.status,
+        scopes: g.scopes,
+        lastUsedAt: g.lastUsedAt,
+        lastErrorAt: g.lastErrorAt,
+        lastErrorMessage: g.lastErrorMessage,
+        createdAt: g.createdAt,
+      })),
+    });
+  } catch (err) {
+    console.error('[NYLAS] GET /grants failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to list grants' });
+  }
+});
+
+// DELETE /api/v2/nylas/grants/:id
+router.delete('/grants/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const grantRowId = parseInt(req.params.id, 10);
+    if (isNaN(grantRowId)) {
+      return res.status(400).json({ success: false, error: 'Invalid grant id' });
+    }
+
+    const grant = await nylasRepository.getGrantById(grantRowId);
+    if (!grant) {
+      return res.status(404).json({ success: false, error: 'Grant not found' });
+    }
+
+    if (grant.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    await nylasService.revokeGrant(grant.grantId);
+    await nylasRepository.markRevoked(grant.grantId);
+
+    return res.json({ success: true, data: { id: grant.id, status: 'revoked' } });
+  } catch (err) {
+    console.error('[NYLAS] DELETE /grants failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to revoke grant' });
+  }
+});
+
+// POST /api/v2/nylas/send
+router.post('/send', async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const parsed = sendBodySchema.parse(req.body);
+
+    const grant = await nylasRepository.getGrantById(parsed.grantId);
+    if (!grant) {
+      return res.status(404).json({ success: false, error: 'Grant not found' });
+    }
+
+    if (grant.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (grant.status !== 'active') {
+      return res.status(409).json({
+        success: false,
+        error: `Grant is ${grant.status} — reconnect required`,
+      });
+    }
+
+    const result = await nylasService.sendEmail(grant.grantId, {
+      subject: parsed.subject,
+      to: parsed.to,
+      body: parsed.body,
+      cc: parsed.cc,
+      bcc: parsed.bcc,
+      replyTo: parsed.replyTo,
+      isPlainText: parsed.isPlainText,
+    });
+
+    await nylasRepository.bumpLastUsed(grant.grantId);
+
+    return res.json({
+      success: true,
+      data: { messageId: result.messageId, threadId: result.threadId },
+    });
+  } catch (err) {
+    if (err instanceof NylasGrantBrokenError) {
+      await nylasRepository.markBroken(err.grantId, err.message);
+      return res.status(409).json({
+        success: false,
+        error: 'Grant is no longer valid — reconnect required',
+      });
+    }
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request body',
+        details: err.errors,
+      });
+    }
+    console.error('[NYLAS] POST /send failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to send email' });
   }
 });
 

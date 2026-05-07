@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 import { db } from '../db';
 import { nylasGrants } from '@shared/schema';
 
@@ -64,5 +64,15 @@ export const nylasRepository = {
       lastUsedAt: new Date(),
       updatedAt: new Date(),
     }).where(eq(nylasGrants.grantId, grantId));
+  },
+
+  async getGrantsForUser(userId: number, options: { includeRevoked?: boolean } = {}) {
+    const baseConditions = [eq(nylasGrants.userId, userId)];
+    if (!options.includeRevoked) {
+      baseConditions.push(ne(nylasGrants.status, 'revoked'));
+    }
+    return db.select().from(nylasGrants)
+      .where(and(...baseConditions))
+      .orderBy(desc(nylasGrants.lastUsedAt), desc(nylasGrants.createdAt));
   },
 };

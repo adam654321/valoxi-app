@@ -123,8 +123,7 @@ class NylasService {
     };
   }
 
-  // Build 3 will fill these in:
-  async sendEmail(_grantId: string, _payload: {
+  async sendEmail(grantId: string, payload: {
     subject: string;
     to: { email: string; name?: string }[];
     body: string;
@@ -133,11 +132,61 @@ class NylasService {
     replyTo?: { email: string; name?: string }[];
     isPlainText?: boolean;
   }): Promise<{ messageId: string; threadId: string | null }> {
-    throw new Error('Not implemented — Build 3');
+    const client = this.getClient();
+
+    try {
+      const response = await client.messages.send({
+        identifier: grantId,
+        requestBody: {
+          subject: payload.subject,
+          to: payload.to,
+          body: payload.body,
+          ...(payload.cc !== undefined ? { cc: payload.cc } : {}),
+          ...(payload.bcc !== undefined ? { bcc: payload.bcc } : {}),
+          ...(payload.replyTo !== undefined ? { replyTo: payload.replyTo } : {}),
+          // SDK uses isPlaintext (lowercase t) — confirmed from types/models/drafts.d.ts
+          ...(payload.isPlainText !== undefined ? { isPlaintext: payload.isPlainText } : {}),
+        },
+      });
+
+      // response is NylasResponse<Message> = { data: Message, requestId: string }
+      return {
+        messageId: response.data.id,
+        threadId: response.data.threadId ?? null,
+      };
+    } catch (err: any) {
+      const upstreamStatus = err?.statusCode ?? err?.status ?? 0;
+
+      if (upstreamStatus === 401 || upstreamStatus === 404) {
+        throw new NylasGrantBrokenError(
+          `Grant ${grantId} returned ${upstreamStatus} from Nylas — likely revoked at provider`,
+          grantId,
+          upstreamStatus,
+        );
+      }
+
+      console.error(`[NYLAS] sendEmail failed for grant ${grantId}:`, err);
+      throw err;
+    }
   }
 
-  async revokeGrant(_grantId: string): Promise<void> {
-    throw new Error('Not implemented — Build 3');
+  async revokeGrant(grantId: string): Promise<void> {
+    const client = this.getClient();
+
+    try {
+      await client.grants.destroy({ grantId });
+    } catch (err: any) {
+      const upstreamStatus = err?.statusCode ?? err?.status ?? 0;
+
+      // 404 = already gone upstream — treat as success (idempotent revoke)
+      if (upstreamStatus === 404) {
+        console.log(`[NYLAS] revokeGrant: grant ${grantId} already gone upstream, treating as success`);
+        return;
+      }
+
+      console.error(`[NYLAS] revokeGrant failed for grant ${grantId}:`, err);
+      throw err;
+    }
   }
 }
 
