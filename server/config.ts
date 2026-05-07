@@ -63,6 +63,7 @@ export const config = {
     clientId: process.env.NYLAS_CLIENT_ID || '',
     apiUri: process.env.NYLAS_API_URI || 'https://api.us.nylas.com',
     redirectUri: process.env.NYLAS_REDIRECT_URI || '',
+    stateSecret: process.env.NYLAS_STATE_SECRET || '',
   },
 
   geminiPricing: {

@@ -80,10 +80,15 @@ app.use((req, res, next) => {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       console.warn('[billing] WARNING: STRIPE_WEBHOOK_SECRET not set — webhooks will not be verified');
     }
-    if (config.nylas.apiKey && config.nylas.clientId && config.nylas.redirectUri) {
+    if (
+      config.nylas.apiKey &&
+      config.nylas.clientId &&
+      config.nylas.redirectUri &&
+      config.nylas.stateSecret
+    ) {
       log('[NYLAS] configured — OAuth and email send enabled');
     } else {
-      console.warn('[NYLAS] WARNING: NYLAS_API_KEY, NYLAS_CLIENT_ID or NYLAS_REDIRECT_URI not set — OAuth and email send disabled');
+      console.warn('[NYLAS] WARNING: NYLAS_API_KEY, NYLAS_CLIENT_ID, NYLAS_REDIRECT_URI or NYLAS_STATE_SECRET not set — OAuth and email send disabled');
     }
     initializeChaseUpCron();
     initializeBillingCron();

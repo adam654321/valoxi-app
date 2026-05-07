@@ -39,6 +39,7 @@ import betaFeedbackRoutes from './beta-feedback.routes';
 import betaRoutes from './beta.routes';
 import adminToolsRoutes from './admin-tools.routes';
 import accountRoutes from './account.routes';
+import nylasRoutes, { nylasCallbackRouter } from './nylas.routes';
 import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode, injectViewAsIdentity } from '../middleware/auth';
 import { validateCsrfToken } from '../middleware/csrf';
 import { portalLimiter, analysisTriggerLimiter, waitlistLimiter } from '../middleware/rate-limit';
@@ -105,4 +106,6 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/beta', isAuthenticated, validateCsrfToken, betaRoutes);
   app.use('/api/v2/admin-tools', isAuthenticated, validateCsrfToken, isSystemAdmin, adminToolsRoutes);
   app.use('/api/v2/account', isAuthenticated, validateCsrfToken, accountRoutes);
+  app.use('/api/v2/nylas', nylasCallbackRouter);
+  app.use('/api/v2/nylas', isAuthenticated, validateCsrfToken, nylasRoutes);
 }

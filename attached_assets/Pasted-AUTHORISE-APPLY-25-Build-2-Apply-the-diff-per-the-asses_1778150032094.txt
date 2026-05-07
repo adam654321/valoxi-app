@@ -1,0 +1,220 @@
+AUTHORISE-APPLY — #25 Build 2. Apply the diff per the assess WITH
+five adjustments below. Re-read each file from the dev tree before
+editing.
+
+INSTALL FIRST:
+- Run: npm install jsonwebtoken @types/jsonwebtoken
+- Confirm both land in package.json under dependencies (or
+  devDependencies for @types/* per existing convention).
+- No other npm changes.
+
+ADJUSTMENT 1: Repository — add a markActive method.
+
+FILE 5 (EDIT): server/repositories/nylas.repository.ts
+
+  Add this method to the existing nylasRepository object,
+  immediately after markRevoked:
+
+    async markActive(grantId: string) {
+      await db.update(nylasGrants).set({
+        status: 'active',
+        lastErrorAt: null,
+        lastErrorMessage: null,
+        updatedAt: new Date(),
+      }).where(eq(nylasGrants.grantId, grantId));
+    },
+
+  Rationale: a freshly re-authed grant must end up in 'active' state.
+  The assess's markRevoked-only approach leaves the grant in 'revoked'
+  which is worse than the no-handling case. Also clears
+  lastErrorAt/Message so a previously broken grant comes back clean.
+
+ADJUSTMENT 2: Callback re-auth path — use markActive, not markRevoked.
+
+FILE 3 (NEW): server/routes/nylas.routes.ts
+
+  Inside the callback handler's `if (existing) { ... }` block, replace
+  the markRevoked call with markActive. Also update the log line.
+  Final block:
+
+    if (existing) {
+      await nylasRepository.markActive(result.grantId);
+      console.log(`[NYLAS] Re-auth for existing grant ${result.grantId} (user ${claims.userId}, set back to active)`);
+    } else {
+      await nylasRepository.createGrant({
+        userId: claims.userId,
+        userCompanyId: claims.userCompanyId,
+        grantId: result.grantId,
+        email: result.email,
+        provider: result.provider,
+        scopes: result.scope,
+      });
+      console.log(`[NYLAS] Grant created for user ${claims.userId} (${result.email}, ${result.provider})`);
+    }
+
+ADJUSTMENT 3: Service — add stateSecret to config block.
+
+FILE: server/config.ts
+
+  Extend the nylas block:
+
+    nylas: {
+      apiKey: process.env.NYLAS_API_KEY || '',
+      clientId: process.env.NYLAS_CLIENT_ID || '',
+      apiUri: process.env.NYLAS_API_URI || 'https://api.us.nylas.com',
+      redirectUri: process.env.NYLAS_REDIRECT_URI || '',
+      stateSecret: process.env.NYLAS_STATE_SECRET || '',  // NEW
+    },
+
+  Note: nylas-state-token.ts reads NYLAS_STATE_SECRET directly via
+  process.env (per the assess proposed file). The config entry is
+  for the startup-log warning AND so future code can reference
+  config.nylas.stateSecret instead of process.env directly. Keep
+  both in sync.
+
+ADJUSTMENT 4: Startup log — extend warning to mention NYLAS_STATE_SECRET.
+
+FILE: server/index.ts
+
+  Update the existing Nylas startup-log block to include
+  stateSecret in the required-vars check:
+
+    if (
+      config.nylas.apiKey &&
+      config.nylas.clientId &&
+      config.nylas.redirectUri &&
+      config.nylas.stateSecret
+    ) {
+      log('[NYLAS] configured — OAuth and email send enabled');
+    } else {
+      console.warn('[NYLAS] WARNING: NYLAS_API_KEY, NYLAS_CLIENT_ID, NYLAS_REDIRECT_URI or NYLAS_STATE_SECRET not set — OAuth and email send disabled');
+    }
+
+ADJUSTMENT 5: All other diff content from the assess as-proposed.
+
+  Apply Files 1, 2, 3, 4 verbatim from the assess (with the callback
+  re-auth fix from Adjustment 2 already folded into File 3).
+
+Before applying, RE-READ from the dev tree: server/services/nylas.service.ts,
+server/repositories/nylas.repository.ts, server/routes/index.ts,
+server/config.ts, server/index.ts.
+
+After applying:
+- Run npx tsc --noEmit. Confirm 0 errors. Paste the count.
+- Run grep -n "getAuthUrl\|exchangeCodeForGrant\|signNylasState\|verifyNylasState\|markActive\|nylasCallbackRouter" \
+    server/services/nylas.service.ts \
+    server/lib/nylas-state-token.ts \
+    server/routes/nylas.routes.ts \
+    server/repositories/nylas.repository.ts \
+    server/routes/index.ts
+  Expected: each symbol shows in its definition file plus its call sites
+  in routes/index.ts.
+
+DO NOT deploy. Dev-tree apply only. After Adam V-checks (manual OAuth
+flow), Build 3 begins.
+After apply lands cleanly, set NYLAS_STATE_SECRET in Replit Secrets before V-check. Generate via:
+openssl rand -hex 32
+That gives 64 hex chars (32 bytes entropy). Paste straight into Replit Secrets, do NOT paste back into our chat. Workflow restarts, the startup log should still show "[NYLAS] configured" (not WARNING) — which now includes NYLAS_STATE_SECRET in the required set per Adjustment 4.
+V-check after env var is set:
+[V-CHECK] Build 2 V-check.
+V-CHECK — Build 2 #25. Manual OAuth flow + DB confirmation.
+
+Pre-check: confirm NYLAS_STATE_SECRET is set in Replit Secrets and the
+startup log shows "[NYLAS] configured" (not WARNING) post-restart.
+
+Step 1: Initiate Google flow from devtools.
+
+In an authenticated browser session on the dev URL, open devtools
+console and run:
+
+  fetch('/api/v2/auth/csrf', { credentials: 'include' })
+    .then(r => r.json())
+    .then(d => fetch('/api/v2/nylas/auth/initiate', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': d.data.csrfToken },
+      body: JSON.stringify({ provider: 'google' })
+    }))
+    .then(r => r.json())
+    .then(d => console.log('AUTH URL:', d.data.authUrl));
+
+Expected: console logs an auth URL starting with
+https://api.us.nylas.com/v3/connect/auth?client_id=d672edd9-...
+&redirect_uri=...&response_type=code&provider=google&scope=...
+&access_type=offline&state=eyJ... (the JWT).
+
+Confirm the URL contains:
+- response_type=code
+- provider=google
+- access_type=offline  (Google only)
+- scope= URL-encoded with full URLs (not bare 'email'/'profile')
+- state= a JWT (3 dot-separated base64 segments)
+- NO prompt= parameter anywhere
+
+Step 2: Complete the OAuth flow.
+
+Open the auth URL in a new browser tab. Sign in with a personal
+Google account (or test account). Grant gmail.send scope when
+prompted. Should redirect to your NYLAS_REDIRECT_URI (callback)
+which then redirects to /?nylas_connected=1.
+
+If anything errors mid-flow:
+- Provider error (Google's screen): note the error and the URL
+  parameters; investigate scope or client_id config.
+- Nylas error after Google success: check Nylas dashboard logs
+  for the connect attempt.
+- 400 from /api/v2/nylas/auth/callback: state token verification
+  failed; check NYLAS_STATE_SECRET matches what was set.
+
+Step 3: Verify DB row landed.
+
+  SELECT id, user_id, user_company_id, grant_id, email, provider,
+         status, scopes, last_used_at, created_at
+  FROM nylas_grants
+  ORDER BY id DESC
+  LIMIT 5;
+
+Expected: 1 new row with your user_id, your test Google email,
+provider='google', status='active', scopes is a json array
+containing the gmail.send + openid + userinfo.email scopes.
+
+Step 4: Verify state token rejects malformed/expired tokens.
+
+Two negative tests via devtools, both manual GETs to the callback
+URL with broken state. Expected: each redirects to /?nylas_error=...
+
+(a) Hit /api/v2/nylas/auth/callback?code=fake&state=clearly-not-jwt
+    Expected redirect: /?nylas_error=invalid_state
+
+(b) Hit /api/v2/nylas/auth/callback?error=user_denied
+    Expected redirect: /?nylas_error=user_denied
+
+Step 5: Re-auth idempotency.
+
+Run Step 1 again (initiate Google flow, complete OAuth, hit callback)
+with the SAME Google account. Expected: NO new row in nylas_grants
+(query confirms only the one row from Step 3 still exists). Console
+log should show "[NYLAS] Re-auth for existing grant ... set back to
+active". Status remains 'active'.
+
+Step 6: Microsoft test (the previously-untested path).
+
+Repeat Steps 1-3 with provider: 'microsoft'. CC's handoff flagged
+the Microsoft scope string as theory-only. If anything fails on this
+step:
+- Note the EXACT error from Microsoft Graph or Nylas (paste it back).
+- Most likely failure mode: scope_not_allowed on one of the listed
+  scopes, or unsupported_response_type, or invalid_scope.
+- Do NOT attempt to fix in this V-check — paste error and we adjust
+  the scope string in a Build 2.1 if needed before proceeding.
+
+Step 7: tsc and grep checks.
+
+  npx tsc --noEmit      → expected EXIT:0
+  grep counts per the apply prompt above → confirm
+
+Step 8: Workflow log fresh start.
+
+Confirm a NEW server start timestamp appears post-apply (and again
+post-secret-set if you add NYLAS_STATE_SECRET after the file apply).
+Manual restart if not seen.

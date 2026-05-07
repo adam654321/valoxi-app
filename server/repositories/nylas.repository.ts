@@ -50,6 +50,15 @@ export const nylasRepository = {
     }).where(eq(nylasGrants.grantId, grantId));
   },
 
+  async markActive(grantId: string) {
+    await db.update(nylasGrants).set({
+      status: 'active',
+      lastErrorAt: null,
+      lastErrorMessage: null,
+      updatedAt: new Date(),
+    }).where(eq(nylasGrants.grantId, grantId));
+  },
+
   async bumpLastUsed(grantId: string) {
     await db.update(nylasGrants).set({
       lastUsedAt: new Date(),
