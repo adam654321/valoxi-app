@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { handleSendResult } from '@/lib/send-result-toast';
 
 interface DocumentResponse {
   id: number;
@@ -123,9 +124,9 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
-      toast({ title: 'Offer sent to seller portal' });
+      handleSendResult(data, toast, 'Offer sent to seller portal');
     },
     onError: (err: any) => {
       toast({ title: 'Error', description: err.message || 'Failed to send offer', variant: 'destructive' });
@@ -144,9 +145,9 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
       const sendRes = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
       return sendRes.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
-      toast({ title: 'HoT sent to seller portal' });
+      handleSendResult(data, toast, 'HoT sent to seller portal');
       setShowHotTermsForm(false);
       setHotTermsAction(null);
     },
@@ -1083,6 +1084,7 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
   onClose: () => void;
   targetCompanyId: number;
 }) {
+  const { toast } = useToast();
   const [exclusivityPeriodDays, setExclusivityPeriodDays] = useState(90);
   const [nonCompetePeriodYears, setNonCompetePeriodYears] = useState(2);
   const [nonSolicitPeriodYears, setNonSolicitPeriodYears] = useState(2);
@@ -1130,8 +1132,9 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
       const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      handleSendResult(data, toast, 'HoT sent to seller');
       onClose();
     },
     onError: (err: any) => {
@@ -1247,6 +1250,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
   documents: DealDocument[];
   targetCompanyId: number;
 }) {
+  const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<DealDocument | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -1275,9 +1279,10 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
       const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents', latest.id] });
+      handleSendResult(data, toast, 'Document sent to seller');
     },
   });
 

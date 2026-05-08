@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, Users, FileText, Clock, Mail, Plus, ChevronRight, ArrowLeft, Building2, AlertTriangle, TimerOff, CalendarPlus, RefreshCw } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { handleSendResult } from '@/lib/send-result-toast';
 
 interface TargetCompany {
   id: number;
@@ -259,11 +260,8 @@ export default function PortalManagement() {
       const response = await apiRequest('POST', '/api/v2/portal/tokens', data);
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Portal link created successfully",
-        description: "Portal access email has been sent to the primary contact.",
-      });
+    onSuccess: (data) => {
+      handleSendResult(data, toast, 'Portal link created');
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
       // Invalidate pipeline/company queries since creating portal moves company to Documents Requested stage
       queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
@@ -313,11 +311,8 @@ export default function PortalManagement() {
       const response = await apiRequest('POST', `/api/v2/portal/tokens/${tokenId}/reinstate`);
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Portal link reinstated",
-        description: "The portal link is active and access email has been sent.",
-      });
+    onSuccess: (data) => {
+      handleSendResult(data, toast, 'Portal link reinstated');
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
     },
     onError: (error: any) => {
@@ -335,11 +330,8 @@ export default function PortalManagement() {
       const response = await apiRequest('POST', `/api/v2/portal/tokens/${tokenId}/resend-email`);
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Email sent",
-        description: "Portal access email has been resent to the contact.",
-      });
+    onSuccess: (data) => {
+      handleSendResult(data, toast, 'Portal email resent');
     },
     onError: (error: any) => {
       toast({

@@ -1,0 +1,388 @@
+Build 5.1b apply.
+
+Four files. One new, three
+edited. Apply in order.
+
+================================
+FILE 1 (NEW): 
+client/src/lib/send-result-toast.tsx
+================================
+
+Create the file with this
+exact content:
+
+import { ToastAction } from '@/components/ui/toast';
+
+export interface SendResult {
+  success: boolean;
+  sentVia: 'nylas' | 'resend';
+  fromEmail: string;
+  replyToEmail: string | null;
+}
+
+type ToastFn = (opts: any) => void;
+
+/**
+ * Surfaces the post-send banner per D25.11.
+ * Reads sendResult from either response shape:
+ *   - wrapped via sendSuccess/sendCreated: data.data.sendResult
+ *   - bare res.json(): data.sendResult
+ * Emits a Nylas success toast with the From address,
+ * or a Resend fallback toast with the connect-email banner.
+ */
+export function handleSendResult(
+  data: any,
+  toast: ToastFn,
+  successContext: string,
+): void {
+  const result: SendResult | null =
+    data?.data?.sendResult ?? data?.sendResult ?? null;
+
+  if (!result) {
+    toast({ title: successContext });
+    return;
+  }
+
+  if (result.sentVia === 'nylas') {
+    toast({
+      title: successContext,
+      description: `Sent from ${result.fromEmail}`,
+    });
+    return;
+  }
+
+  toast({
+    title: successContext,
+    description:
+      'Sent as system email. Connect your email to send personalised.',
+    duration: 8000,
+    action: (
+      <ToastAction
+        altText="Connect email"
+        onClick={() => {
+          window.location.href = '/account';
+        }}
+      >
+        Connect email
+      </ToastAction>
+    ),
+  });
+}
+
+================================
+FILE 2: 
+client/src/components/deal-documents/DealDocumentsSummary.tsx
+================================
+
+EDIT 2.1 — Add helper import.
+Find the existing import line:
+
+import { useToast } from '@/hooks/use-toast';
+
+Replace with:
+
+import { useToast } from '@/hooks/use-toast';
+import { handleSendResult } from '@/lib/send-result-toast';
+
+EDIT 2.2 — sendOfferPortalMutation.
+
+Find:
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      toast({ title: 'Offer sent to seller portal' });
+    },
+
+Replace with:
+
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      handleSendResult(data, toast, 'Offer sent to seller portal');
+    },
+
+EDIT 2.3 — sendHotPortalMutation.
+
+Find:
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      toast({ title: 'HoT sent to seller portal' });
+      setShowHotTermsForm(false);
+      setHotTermsAction(null);
+    },
+
+Replace with:
+
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      handleSendResult(data, toast, 'HoT sent to seller portal');
+      setShowHotTermsForm(false);
+      setHotTermsAction(null);
+    },
+
+EDIT 2.4 — DocumentRow.sendMutation.
+DocumentRow does NOT currently
+use useToast. Need to add it.
+
+First, add toast hook inside
+DocumentRow. Find:
+
+function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
+  label: string;
+  icon: any;
+  documents: DealDocument[];
+  targetCompanyId: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+Replace with:
+
+function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
+  label: string;
+  icon: any;
+  documents: DealDocument[];
+  targetCompanyId: number;
+}) {
+  const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+
+Then update the mutation. Find
+(this exact block within
+DocumentRow):
+
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents', latest.id] });
+    },
+  });
+
+Replace with:
+
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents', latest.id] });
+      handleSendResult(data, toast, 'Document sent to seller');
+    },
+  });
+
+EDIT 2.5 — HoTConfigDialog.sendMutation.
+HoTConfigDialog also does not
+currently use useToast. May be
+dead code but updating
+defensively.
+
+First, add toast hook. Find:
+
+function HoTConfigDialog({ open, onClose, targetCompanyId }: {
+  open: boolean;
+  onClose: () => void;
+  targetCompanyId: number;
+}) {
+  const [exclusivityPeriodDays, setExclusivityPeriodDays] = useState(90);
+
+Replace with:
+
+function HoTConfigDialog({ open, onClose, targetCompanyId }: {
+  open: boolean;
+  onClose: () => void;
+  targetCompanyId: number;
+}) {
+  const { toast } = useToast();
+  const [exclusivityPeriodDays, setExclusivityPeriodDays] = useState(90);
+
+Then update the mutation. Find
+(this exact block within
+HoTConfigDialog):
+
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      onClose();
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to send document');
+    },
+  });
+
+Replace with:
+
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
+      handleSendResult(data, toast, 'HoT sent to seller');
+      onClose();
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to send document');
+    },
+  });
+
+================================
+FILE 3:
+client/src/components/dashboard/pending-send-widget.tsx
+================================
+
+EDIT 3.1 — Add imports. Find:
+
+import { apiRequest, queryClient } from "@/lib/queryClient";
+
+Replace with:
+
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { handleSendResult } from "@/lib/send-result-toast";
+
+EDIT 3.2 — Add toast hook and
+update mutation. Find:
+
+export default function PendingSendWidget() {
+  const { data: pending = [], isLoading } = useQuery<PendingDoc[]>({
+    queryKey: ['/api/v2/deal-documents/pending-send'],
+    select: (response: any) => response?.data || response || [],
+    refetchInterval: 60 * 1000,
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/pending-send'] });
+    },
+  });
+
+Replace with:
+
+export default function PendingSendWidget() {
+  const { toast } = useToast();
+  const { data: pending = [], isLoading } = useQuery<PendingDoc[]>({
+    queryKey: ['/api/v2/deal-documents/pending-send'],
+    select: (response: any) => response?.data || response || [],
+    refetchInterval: 60 * 1000,
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async (docId: number) => {
+      const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/pending-send'] });
+      handleSendResult(data, toast, 'Document sent to seller');
+    },
+  });
+
+================================
+FILE 4:
+client/src/pages/PortalManagement.tsx
+================================
+
+EDIT 4.1 — Add helper import.
+Find:
+
+import { apiRequest } from '@/lib/queryClient';
+
+Replace with:
+
+import { apiRequest } from '@/lib/queryClient';
+import { handleSendResult } from '@/lib/send-result-toast';
+
+EDIT 4.2 — createPortalToken
+mutation. Find:
+
+    onSuccess: () => {
+      toast({
+        title: "Portal link created successfully",
+        description: "Portal access email has been sent to the primary contact.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+
+Replace with:
+
+    onSuccess: (data) => {
+      handleSendResult(data, toast, 'Portal link created');
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+
+EDIT 4.3 — reinstatePortalToken
+mutation. Find:
+
+    onSuccess: () => {
+      toast({
+        title: "Portal link reinstated",
+        description: "The portal link is active and access email has been sent.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+    },
+
+Replace with:
+
+    onSuccess: (data) => {
+      handleSendResult(data, toast, 'Portal link reinstated');
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
+    },
+
+EDIT 4.4 — resendPortalEmail
+mutation. Find:
+
+    onSuccess: () => {
+      toast({
+        title: "Email sent",
+        description: "Portal access email has been resent to the contact.",
+      });
+    },
+
+Replace with:
+
+    onSuccess: (data) => {
+      handleSendResult(data, toast, 'Portal email resent');
+    },
+
+================================
+After all edits applied:
+================================
+
+1. Confirm the dev server's
+   hot reload picks up the
+   changes. Report any
+   TypeScript errors verbatim.
+
+2. Run these greps:
+
+grep -rn "handleSendResult" client/src
+grep -n "send-result-toast" client/src/components/deal-documents/DealDocumentsSummary.tsx
+grep -n "send-result-toast" client/src/components/dashboard/pending-send-widget.tsx
+grep -n "send-result-toast" client/src/pages/PortalManagement.tsx
+grep -rn "ToastAction" client/src/lib/send-result-toast.tsx
+
+3. Expected greps:
+   - handleSendResult: 9 matches
+     total (1 export in helper +
+     8 call sites)
+   - send-result-toast import:
+     1 match in each of the 3
+     touched files
+   - ToastAction in helper:
+     2 matches (import + JSX)
+
+4. Confirm working tree state.
+   Wait for next instruction.
+   Don't trigger any sends yet.

@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { FileCheck, Send, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { handleSendResult } from "@/lib/send-result-toast";
 
 interface PendingDoc {
   id: number;
@@ -21,6 +23,7 @@ const docTypeLabel: Record<string, string> = {
 };
 
 export default function PendingSendWidget() {
+  const { toast } = useToast();
   const { data: pending = [], isLoading } = useQuery<PendingDoc[]>({
     queryKey: ['/api/v2/deal-documents/pending-send'],
     select: (response: any) => response?.data || response || [],
@@ -32,8 +35,9 @@ export default function PendingSendWidget() {
       const res = await apiRequest('POST', `/api/v2/deal-documents/${docId}/send`, {});
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/pending-send'] });
+      handleSendResult(data, toast, 'Document sent to seller');
     },
   });
 
