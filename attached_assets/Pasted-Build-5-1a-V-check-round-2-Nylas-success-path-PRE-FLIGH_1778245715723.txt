@@ -1,0 +1,105 @@
+Build 5.1a V-check round 2 —
+Nylas success path.
+
+PRE-FLIGHT
+Confirm in the UI (or report
+back from the DB) that company
+default for user_company_id=5
+is now Google grant id=5
+(adam@valoxi.ai). Run:
+
+  SELECT id, email, provider,
+         is_company_default,
+         is_personal_default
+  FROM nylas_grants
+  WHERE user_company_id = 5
+    AND status = 'active';
+
+Confirm grant id=5 has
+is_company_default=true and
+grant id=6 has
+is_company_default=false.
+
+If not yet flipped, flip via
+Account → Connected accounts
+→ Set as company default on
+the adam@valoxi.ai row.
+
+STEP 1 — Trigger resend.
+Same call site as round 1.
+From the Replit shell:
+
+  npx tsx -e "import('./server/services/email.service.js').then(m => m.emailApiService.sendPortalAccessLink(23, 'http://localhost:5000', 1)).then(r => console.log(JSON.stringify(r, null, 2)))"
+
+Or use the UI Portal
+Management page → company 79
+(bones) → click Resend on
+the portal token row.
+
+STEP 2 — Capture and paste:
+- The [EMAIL] log line.
+  Should now be:
+    "[EMAIL] Sent via Nylas
+     grant <id> (adam@valoxi.ai)
+     to adam@shiftopsconsulting.com,
+     messageId=..."
+- The full API response body.
+  Should be:
+    {
+      success: true,
+      message: "...",
+      sentVia: "nylas",
+      fromEmail: "adam@valoxi.ai",
+      replyToEmail: "adam@valoxi.ai",
+      ...
+    }
+
+STEP 3 — Inbox check at
+adam@shiftopsconsulting.com.
+Report:
+- From address (expect:
+  adam@valoxi.ai, NOT
+  noreply@send.valoxi.ai)
+- Reply-To if visible (may be
+  suppressed by client when
+  same as From — this is fine)
+- Confirm the email arrived
+  with the correct branded
+  HTML content (CTA button,
+  expiry text, etc.)
+
+STEP 4 — DB state.
+Same query as round 1:
+
+  SELECT id, grant_id, email,
+         provider, status,
+         last_used_at,
+         last_error_at,
+         last_error_message
+  FROM nylas_grants
+  WHERE id IN (5, 6, 7);
+
+Grant id=5 should now show:
+- last_used_at: very recent
+  (within last few minutes)
+- last_error_at: NULL
+- status: active
+
+Grant id=6 should still show
+the round-1 state (no change
+expected).
+
+STEP 5 — Cumulative
+fingerprint check (per #153).
+Confirm 5.0.1 fingerprints
+still present:
+
+  grep -n "markAsSent" server/services/deal-document.service.ts
+  grep -n "NDA created and made available" server/services/deal-document.service.ts
+  grep -n "this.sendDocument" server/services/deal-document.service.ts
+
+Expected: 3 matches, 1 match,
+0 matches respectively (same
+as 5.0.1 ship).
+
+Report all findings.
