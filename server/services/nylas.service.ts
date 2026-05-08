@@ -62,10 +62,13 @@ class NylasService {
       return 'https://www.googleapis.com/auth/gmail.send openid https://www.googleapis.com/auth/userinfo.email';
     }
     if (provider === 'microsoft') {
-      // NOT YET TESTED end-to-end (CC handoff Section 5). Verify
-      // during Build 2 V-check by completing a Microsoft auth flow
-      // and confirming a grant row lands.
-      return 'Mail.Send offline_access openid email User.Read';
+      // Use full URI form per Microsoft Graph docs and per #161
+      // investigation 8 May 2026: short-form Mail.Send caused
+      // 403 api.insufficient_scopes at Nylas send time despite
+      // appearing in granted scopes column. Full URI form
+      // matches what Microsoft returns and what Nylas
+      // expects at send time.
+      return 'https://graph.microsoft.com/Mail.Send offline_access openid email https://graph.microsoft.com/User.Read';
     }
     throw new Error(`Unknown provider: ${provider}`);
   }
