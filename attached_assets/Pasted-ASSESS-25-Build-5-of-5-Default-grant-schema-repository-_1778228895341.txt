@@ -1,0 +1,449 @@
+ASSESS — #25 Build 5 of 5+: Default-grant schema + repository + UI.
+READ-ONLY. NO code changes. Propose the diff.
+
+Context: Builds 1-4 landed cleanly. Frontend Connected accounts UI
+is live on dev /account. Backend has full CRUD on grants. This build
+adds the "default grant" concept that Build 5.1 (send-path migration)
+will consume.
+
+Build 5.1 will be a separate later build covering:
+- Migrating NDA / offer letter / heads of terms send paths to Nylas
+- Migrating portal invitation send path to Nylas
+- Resend fallback when no company default exists
+- Single prod deploy bundle of Builds 1-5.1 together
+
+LOCKED DECISIONS
+
+D25.13: Two-tier default grants:
+  - is_company_default: exactly one true per user_company_id, used
+    by all system-triggered customer-facing sends (Build 5.1 work)
+  - is_personal_default: exactly one true per user_id, reserved for
+    future user-triggered send features (Build 6+)
+  - Both can be true on the same row (solo users)
+  - First grant auto-marked: when a user creates their first grant
+    of any provider, set is_personal_default=true. Additionally, if
+    the user is an admin AND their company has no existing
+    is_company_default, also set is_company_default=true.
+
+D25.14: Build 5 schema/UI/endpoints only. Build 5.1 wires sends.
+        No send-path code touched in this build.
+
+D25.15: When sending (Build 5.1, not this build), use:
+        - from = company default grant's email
+        - replyTo = triggering user's personal grant email IF they
+          have one, omit otherwise (replies bounce to company default)
+        Documented here for future reference; no code in Build 5.
+
+DIAGNOSTIC TASKS FIRST (read-only, propose diff after):
+
+T1. Read shared/schema/nylas.ts to confirm the current column set
+    and verify the two new boolean columns can be added without
+    constraint conflicts. Confirm the Drizzle convention for
+    boolean columns with default false (likely
+    `boolean('is_company_default').notNull().default(false)`).
+
+T2. Read server/repositories/nylas.repository.ts to map the existing
+    methods. Build 5 adds 4 new methods + modifies createGrant. The
+    assess should propose all changes verbatim.
+
+T3. Identify the admin-permission convention used elsewhere in the
+    codebase. Search for: `isAdmin`, `requireAdmin`, `role`, or
+    similar. Likely there's either a middleware or a session field
+    indicating admin-status. State the existing convention so Build
+    5's PATCH /grants/:id/company-default endpoint uses it correctly.
+
+T4. Re-read client/src/components/settings/connected-accounts-section.tsx
+    (Build 4 component) to plan the diff for badges + Make Default
+    buttons. Specifically:
+    - How is the existing "Active"/broken Badge used? Component reuses
+      will follow the same Badge variant pattern.
+    - How is the AlertDialog wrapped? Need to confirm if confirmation
+      is appropriate for "Make company default" (recommend yes — it's
+      a company-wide action affecting other team members) vs
+      personal default (recommend no — affects only the user's own
+      future sends).
+
+T5. Confirm Drizzle migration mechanics. Build 1 hit an interactive-
+    prompt issue with `db:push --force` and fell back to direct DDL.
+    For two new boolean columns with non-null defaults, the same
+    issue may arise. State the expected mechanic for this build:
+    drizzle-kit push, manual DDL, or generate-and-apply migration.
+
+PROPOSED DIFF
+
+FILE 1 (EDIT): shared/schema/nylas.ts
+  Add two columns to the nylasGrants pgTable definition, before the
+  existing createdAt:
+  
+    isCompanyDefault: boolean('is_company_default').notNull().default(false),
+    isPersonalDefault: boolean('is_personal_default').notNull().default(false),
+  
+  Add a new partial unique index ensuring only one company default
+  per user_company_id (and only one personal default per user_id).
+  Drizzle expression for partial unique:
+  
+    uniqueIndex('nylas_grants_one_company_default_per_company')
+      .on(table.userCompanyId)
+      .where(sql`${table.isCompanyDefault} = true`),
+    uniqueIndex('nylas_grants_one_personal_default_per_user')
+      .on(table.userId)
+      .where(sql`${table.isPersonalDefault} = true`),
+  
+  Note: Postgres partial unique indexes match exactly the "exactly
+  one true per scope" requirement. The constraint also allows zero
+  true (e.g. if a company hasn't yet had any admin connect a grant).
+  Confirm the import from drizzle-orm/pg-core for sql template if
+  needed.
+
+FILE 2 (EDIT): server/repositories/nylas.repository.ts
+  
+  Modify createGrant to auto-set defaults:
+  
+    async createGrant(data: {
+      userId: number;
+      userCompanyId: number;
+      grantId: string;
+      email: string;
+      provider: 'google' | 'microsoft';
+      scopes: string[];
+      isAdmin?: boolean;  // NEW: caller passes whether the user is an admin
+    }) {
+      // Check existing personal default for this user
+      const existingPersonal = await db.select().from(nylasGrants)
+        .where(and(
+          eq(nylasGrants.userId, data.userId),
+          eq(nylasGrants.isPersonalDefault, true),
+          ne(nylasGrants.status, 'revoked'),
+        ))
+        .limit(1);
+      const shouldBePersonalDefault = existingPersonal.length === 0;
+      
+      // Check existing company default for this company (only relevant if user is admin)
+      let shouldBeCompanyDefault = false;
+      if (data.isAdmin) {
+        const existingCompany = await db.select().from(nylasGrants)
+          .where(and(
+            eq(nylasGrants.userCompanyId, data.userCompanyId),
+            eq(nylasGrants.isCompanyDefault, true),
+            ne(nylasGrants.status, 'revoked'),
+          ))
+          .limit(1);
+        shouldBeCompanyDefault = existingCompany.length === 0;
+      }
+      
+      const [row] = await db.insert(nylasGrants).values({
+        userId: data.userId,
+        userCompanyId: data.userCompanyId,
+        grantId: data.grantId,
+        email: data.email,
+        provider: data.provider,
+        scopes: data.scopes,
+        status: 'active',
+        isPersonalDefault: shouldBePersonalDefault,
+        isCompanyDefault: shouldBeCompanyDefault,
+      }).returning();
+      return row;
+    },
+  
+  Add four new methods after bumpLastUsed:
+  
+    async getCompanyDefaultGrant(userCompanyId: number) {
+      const [row] = await db.select().from(nylasGrants).where(
+        and(
+          eq(nylasGrants.userCompanyId, userCompanyId),
+          eq(nylasGrants.isCompanyDefault, true),
+          eq(nylasGrants.status, 'active'),
+        )
+      ).limit(1);
+      return row ?? null;
+    },
+    
+    async getPersonalDefaultGrant(userId: number) {
+      const [row] = await db.select().from(nylasGrants).where(
+        and(
+          eq(nylasGrants.userId, userId),
+          eq(nylasGrants.isPersonalDefault, true),
+          eq(nylasGrants.status, 'active'),
+        )
+      ).limit(1);
+      return row ?? null;
+    },
+    
+    async setCompanyDefaultGrant(grantRowId: number, userCompanyId: number) {
+      // Atomically: clear all existing company defaults for this company,
+      // then set the new one. Wrap in transaction.
+      await db.transaction(async (tx) => {
+        await tx.update(nylasGrants).set({
+          isCompanyDefault: false,
+          updatedAt: new Date(),
+        }).where(
+          and(
+            eq(nylasGrants.userCompanyId, userCompanyId),
+            eq(nylasGrants.isCompanyDefault, true),
+          )
+        );
+        
+        await tx.update(nylasGrants).set({
+          isCompanyDefault: true,
+          updatedAt: new Date(),
+        }).where(eq(nylasGrants.id, grantRowId));
+      });
+    },
+    
+    async setPersonalDefaultGrant(grantRowId: number, userId: number) {
+      await db.transaction(async (tx) => {
+        await tx.update(nylasGrants).set({
+          isPersonalDefault: false,
+          updatedAt: new Date(),
+        }).where(
+          and(
+            eq(nylasGrants.userId, userId),
+            eq(nylasGrants.isPersonalDefault, true),
+          )
+        );
+        
+        await tx.update(nylasGrants).set({
+          isPersonalDefault: true,
+          updatedAt: new Date(),
+        }).where(eq(nylasGrants.id, grantRowId));
+      });
+    },
+  
+  Update getGrantsForUser to return the two new fields naturally
+  (it does select.from(nylasGrants) so all columns come through).
+  Confirm.
+
+FILE 3 (EDIT): server/routes/nylas.routes.ts
+  
+  Update the callback handler's createGrant call to pass isAdmin:
+  
+    // Inside the callback handler, when calling createGrant:
+    const userIsAdmin = ... // surface from session per T3 finding
+    
+    await nylasRepository.createGrant({
+      userId: claims.userId,
+      userCompanyId: claims.userCompanyId,
+      grantId: result.grantId,
+      email: result.email,
+      provider: result.provider,
+      scopes: result.scope,
+      isAdmin: userIsAdmin,
+    });
+  
+  Note: the session JWT (state token) does NOT carry isAdmin — it's
+  signed at initiate-time and we don't want to inflate the JWT
+  payload. Either:
+  (a) Re-fetch user's admin status from DB at callback time using
+      claims.userId
+  (b) Add isAdmin to the JWT payload (signed at initiate time, valid
+      for 5min — admin status is unlikely to change in 5min)
+  Recommended: (a). DB fetch is one query, cleanest. JWT stays minimal.
+  
+  Update the GET /grants response to include the two new flags:
+  
+    return res.json({
+      success: true,
+      data: grants.map(g => ({
+        id: g.id,
+        email: g.email,
+        provider: g.provider,
+        status: g.status,
+        scopes: g.scopes,
+        lastUsedAt: g.lastUsedAt,
+        lastErrorAt: g.lastErrorAt,
+        lastErrorMessage: g.lastErrorMessage,
+        createdAt: g.createdAt,
+        isCompanyDefault: g.isCompanyDefault,
+        isPersonalDefault: g.isPersonalDefault,
+      })),
+    });
+  
+  Add two new endpoints:
+  
+    // PATCH /api/v2/nylas/grants/:id/company-default
+    // Admin-only. Sets this grant as company default for the user's
+    // company.
+    router.patch('/grants/:id/company-default', requireAdmin, async (req, res) => {
+      try {
+        const userId = req.session.userId;
+        const userCompanyId = req.session.userCompanyId;
+        if (!userId || !userCompanyId) {
+          return res.status(401).json({ success: false, error: 'Not authenticated' });
+        }
+        
+        const grantRowId = parseInt(req.params.id, 10);
+        if (isNaN(grantRowId)) {
+          return res.status(400).json({ success: false, error: 'Invalid grant id' });
+        }
+        
+        const grant = await nylasRepository.getGrantById(grantRowId);
+        if (!grant) {
+          return res.status(404).json({ success: false, error: 'Grant not found' });
+        }
+        
+        // Tenant scoping: grant must belong to the same company
+        if (grant.userCompanyId !== userCompanyId) {
+          return res.status(403).json({ success: false, error: 'Access denied' });
+        }
+        
+        if (grant.status !== 'active') {
+          return res.status(409).json({ success: false, error: 'Cannot mark a non-active grant as default' });
+        }
+        
+        await nylasRepository.setCompanyDefaultGrant(grantRowId, userCompanyId);
+        
+        return res.json({ success: true, data: { id: grantRowId, isCompanyDefault: true } });
+      } catch (err) {
+        console.error('[NYLAS] PATCH /grants/:id/company-default failed:', err);
+        return res.status(500).json({ success: false, error: 'Failed to set company default' });
+      }
+    });
+    
+    // PATCH /api/v2/nylas/grants/:id/personal-default
+    // Any authenticated user can set their own personal default.
+    router.patch('/grants/:id/personal-default', async (req, res) => {
+      try {
+        const userId = req.session.userId;
+        if (!userId) {
+          return res.status(401).json({ success: false, error: 'Not authenticated' });
+        }
+        
+        const grantRowId = parseInt(req.params.id, 10);
+        if (isNaN(grantRowId)) {
+          return res.status(400).json({ success: false, error: 'Invalid grant id' });
+        }
+        
+        const grant = await nylasRepository.getGrantById(grantRowId);
+        if (!grant) {
+          return res.status(404).json({ success: false, error: 'Grant not found' });
+        }
+        
+        // User-scoping: grant must belong to the requesting user
+        if (grant.userId !== userId) {
+          return res.status(403).json({ success: false, error: 'Access denied' });
+        }
+        
+        if (grant.status !== 'active') {
+          return res.status(409).json({ success: false, error: 'Cannot mark a non-active grant as default' });
+        }
+        
+        await nylasRepository.setPersonalDefaultGrant(grantRowId, userId);
+        
+        return res.json({ success: true, data: { id: grantRowId, isPersonalDefault: true } });
+      } catch (err) {
+        console.error('[NYLAS] PATCH /grants/:id/personal-default failed:', err);
+        return res.status(500).json({ success: false, error: 'Failed to set personal default' });
+      }
+    });
+  
+  Note: requireAdmin import + middleware to be confirmed via T3.
+
+FILE 4 (EDIT): client/src/components/settings/connected-accounts-section.tsx
+  
+  Update the NylasGrant interface to include two new fields:
+  
+    interface NylasGrant {
+      id: number;
+      email: string;
+      provider: "google" | "microsoft";
+      status: "active" | "broken" | "revoked";
+      scopes: string[] | null;
+      lastUsedAt: string | null;
+      createdAt: string;
+      isCompanyDefault: boolean;
+      isPersonalDefault: boolean;
+    }
+  
+  Add user info hook (we need to know if the user is admin):
+  
+    // Fetch the authenticated user (needs to know admin status)
+    const { data: meData } = useQuery<{ success: boolean; data: { isAdmin: boolean; ... } }>({
+      queryKey: ["/api/v2/auth/me"],  // or whichever endpoint returns user info per T3
+    });
+    const isAdmin = meData?.data?.isAdmin ?? false;
+  
+  Add two new mutations:
+  
+    const setCompanyDefaultMutation = useMutation({
+      mutationFn: async (grantId: number) => {
+        await apiRequest("PATCH", `/api/v2/nylas/grants/${grantId}/company-default`);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/nylas/grants"] });
+        toast({ title: "Company default updated", description: "Customer-facing emails will now send from this account." });
+      },
+      onError: (error: any) => {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      },
+    });
+    
+    const setPersonalDefaultMutation = useMutation({
+      mutationFn: async (grantId: number) => {
+        await apiRequest("PATCH", `/api/v2/nylas/grants/${grantId}/personal-default`);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/v2/nylas/grants"] });
+        toast({ title: "Personal default updated", description: "Your personal sends will now use this account." });
+      },
+      onError: (error: any) => {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      },
+    });
+  
+  Update the populated-state list rendering: each row now shows
+  badges for "Company default" and "Your default" alongside the
+  status badge, plus the disconnect button. Add a small overflow
+  menu (or two small text buttons) for the "Make default" actions.
+  
+  Suggested per-row layout:
+  
+    [icon] [email + provider]    [Active] [Company default] [Your default]
+                                                                   [Disconnect]
+  
+  With "Make company default" and "Make personal default" hidden
+  unless the corresponding flag is currently false.
+  
+  Make company default button is admin-only (hidden for non-admins).
+  Make personal default button is shown for any user.
+  
+  Both "Make company default" actions get an AlertDialog wrap (per
+  T4 — affecting whole company, deserves confirmation). Make
+  personal default is single-click (only affects current user).
+  
+  Update the empty-state copy to reflect the company-default
+  semantics:
+  
+    "You haven't connected an email account yet. The first account
+    an admin connects will become your company's default — used for
+    customer-facing emails."
+
+DECISIONS NEEDED FROM ADAM:
+
+D5.1. Auto-set first grant as company default behaviour:
+  (A) Only if user is admin (current proposal). Non-admin users
+      connecting first never auto-create a company default.
+  (B) First user to connect, regardless of admin status, gets
+      company default. Subsequent admins can override.
+  Recommended: (A). Cleanest semantics — company-wide settings
+  belong to admins.
+
+D5.2. Should "Make company default" require AlertDialog confirmation?
+  (A) Yes — affects company-wide email sending behaviour.
+  (B) No — single-click toggle, similar to other settings.
+  Recommended: (A). Friction for a non-trivial action.
+
+D5.3. Should we expose the "Company default" badge to non-admins?
+  (A) Yes, all users see which grant is the company default (helps
+      transparency).
+  (B) No, hide the company-default concept entirely from non-admins.
+  Recommended: (A). Transparency — non-admins should know which
+  account is sending company emails on their behalf.
+
+D5.4. Migration approach:
+  (A) drizzle-kit push (may hit the same interactive-prompt issue
+      as Build 1).
+  (B) Direct DDL via SQL run from Replit shell.
+  Recommended: try (A) first; fall back to (B) per Build 1 pattern.
+
+Read-only assess. Do not write any code yet. Propose the diff in
+plain text only.
