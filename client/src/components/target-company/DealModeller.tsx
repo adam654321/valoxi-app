@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { handleSendResult } from '@/lib/send-result-toast';
 import {
   calculateFullDealModel,
   toNum,
@@ -284,7 +285,9 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       return res.json();
     },
     onSuccess: (data: any) => {
-      toast({ title: 'Offer Sent', description: `Offer letter v${data.version} has been sent to the seller's portal.` });
+      const version = data?.document?.version ?? data?.data?.document?.version;
+      const versionSuffix = version ? ` v${version}` : '';
+      handleSendResult(data, toast, `Offer letter${versionSuffix} sent to seller portal`);
     },
     onError: (err: Error) => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });

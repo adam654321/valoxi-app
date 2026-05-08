@@ -1,0 +1,91 @@
+Build 5.1b fix — DealModeller
+sendOfferMutation.
+
+One file. Two edits.
+
+================================
+FILE: client/src/components/target-company/DealModeller.tsx
+================================
+
+EDIT 1 — Add helper import.
+Find the existing apiRequest
+import line:
+
+import { apiRequest, queryClient } from '@/lib/queryClient';
+
+Replace with:
+
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { handleSendResult } from '@/lib/send-result-toast';
+
+EDIT 2 — sendOfferMutation
+onSuccess. Find:
+
+  const sendOfferMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
+        targetCompanyId: companyId,
+        dealModelId: selectedModelId,
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({ title: 'Offer Sent', description: `Offer letter v${data.version} has been sent to the seller's portal.` });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
+Replace with:
+
+  const sendOfferMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
+        targetCompanyId: companyId,
+        dealModelId: selectedModelId,
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      const version = data?.document?.version ?? data?.data?.document?.version;
+      const versionSuffix = version ? ` v${version}` : '';
+      handleSendResult(data, toast, `Offer letter${versionSuffix} sent to seller portal`);
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
+================================
+After applying:
+================================
+
+1. Confirm Vite hot-reloads
+   the file. Report any
+   TypeScript errors.
+
+2. Run these greps:
+
+grep -n "sendOfferMutation" client/src/components/target-company/DealModeller.tsx
+grep -n "handleSendResult" client/src/components/target-company/DealModeller.tsx
+grep -n "Offer Sent" client/src/components/target-company/DealModeller.tsx
+grep -n "vundefined" client/src/components/target-company/DealModeller.tsx
+grep -n "send-result-toast" client/src/components/target-company/DealModeller.tsx
+
+Expected:
+- sendOfferMutation: a few
+  matches (definition + button
+  refs)
+- handleSendResult: 2 matches
+  (import + call)
+- "Offer Sent" (with title
+  case): 0 matches — old toast
+  is gone
+- vundefined: 0 matches — was
+  never literal in code anyway
+- send-result-toast: 1 match
+  (import)
+
+Wait for next instruction. Don't
+trigger any sends yet.
