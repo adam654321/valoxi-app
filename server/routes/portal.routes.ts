@@ -38,12 +38,12 @@ authenticatedRouter.post('/tokens', requirePermission('canCreateDeals'), asyncHa
   });
   const data = schema.parse(req.body);
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const token = await portalService.createToken({
+  const result = await portalService.createToken({
     userCompanyId, targetCompanyId: data.targetCompanyId, targetContactId: data.targetContactId,
     createdBy: userId, expiresInDays: data.expiresInDays, allowedActions: data.allowedActions, customMessage: data.customMessage,
     timeframeDays: data.timeframeDays, includeNda: data.includeNda,
   }, baseUrl);
-  sendCreated(res, token);
+  sendCreated(res, result);
 }));
 
 authenticatedRouter.delete('/tokens/:id', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
@@ -57,22 +57,24 @@ authenticatedRouter.delete('/tokens/:id', requirePermission('canCreateDeals'), a
 
 authenticatedRouter.post('/tokens/:id/reinstate', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
-  if (!userCompanyId) throw new UnauthorizedError();
+  const userId = req.session?.userId;
+  if (!userCompanyId || !userId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
   if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  await portalService.reinstateToken(tokenId, userCompanyId, baseUrl);
-  sendSuccess(res, { message: 'Portal link reinstated and access email sent.' });
+  const result = await portalService.reinstateToken(tokenId, userCompanyId, userId, baseUrl);
+  sendSuccess(res, { message: 'Portal link reinstated and access email sent.', success: result.success, sendResult: result.sendResult });
 }));
 
 authenticatedRouter.post('/tokens/:id/resend-email', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
-  if (!userCompanyId) throw new UnauthorizedError();
+  const userId = req.session?.userId;
+  if (!userCompanyId || !userId) throw new UnauthorizedError();
   const tokenId = parseInt(req.params.id);
   if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  await portalService.resendPortalEmail(tokenId, userCompanyId, baseUrl);
-  sendSuccess(res, { message: 'Portal access email sent successfully.' });
+  const result = await portalService.resendPortalEmail(tokenId, userCompanyId, userId, baseUrl);
+  sendSuccess(res, { message: 'Portal access email sent successfully.', sendResult: result.sendResult });
 }));
 
 authenticatedRouter.post('/review/:submissionId', asyncHandler(async (req: Request, res: Response) => {

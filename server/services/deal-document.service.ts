@@ -87,7 +87,7 @@ export class DealDocumentService {
     return { outputPath, filename };
   }
 
-  async sendDocument(documentId: number) {
+  async sendDocument(documentId: number, triggeringUserId: number) {
     const doc = await this.getDocumentById(documentId);
     if (!doc) throw new Error('Document not found');
     if (doc.status !== 'draft') throw new Error(`Cannot send document in status: ${doc.status}`);
@@ -117,6 +117,13 @@ export class DealDocumentService {
       'heads_of_terms': 'Heads of Terms',
     };
     const docLabel = docTypeLabels[doc.documentType] || doc.documentType;
+
+    let sellerSendResult: {
+      success: boolean;
+      sentVia: 'nylas' | 'resend';
+      fromEmail: string;
+      replyToEmail: string | null;
+    } | null = null;
 
     try {
       const { users } = await import('@shared/schema/core');
@@ -155,8 +162,20 @@ export class DealDocumentService {
             `;
 
             const sellerSubject = `${doc.documentType === 'offer_letter' ? 'Offer Letter' : docLabel} Received — ${companyName}`;
-            await emailApiService.sendCustomEmail(contact.email, sellerSubject, sellerHtml);
-            console.log(`[DEAL_DOCS] Seller notification sent to ${contact.email} for ${docLabel}`);
+            const sellerResult = await emailApiService.sendCustomerFacingEmail({
+              to: contact.email,
+              subject: sellerSubject,
+              html: sellerHtml,
+              userCompanyId: doc.userCompanyId,
+              triggeringUserId,
+            });
+            sellerSendResult = {
+              success: sellerResult.success,
+              sentVia: sellerResult.sentVia,
+              fromEmail: sellerResult.fromEmail,
+              replyToEmail: sellerResult.replyToEmail,
+            };
+            console.log(`[DEAL_DOCS] Seller notification sent to ${contact.email} for ${docLabel} via ${sellerResult.sentVia}, from=${sellerResult.fromEmail}, replyTo=${sellerResult.replyToEmail || 'none'}`);
           }
         }
       }
@@ -191,7 +210,8 @@ export class DealDocumentService {
       );
     }
 
-    return this.getDocumentById(documentId);
+    const updatedDoc = await this.getDocumentById(documentId);
+    return { document: updatedDoc, sendResult: sellerSendResult };
   }
 
   private async markAsSent(documentId: number): Promise<void> {

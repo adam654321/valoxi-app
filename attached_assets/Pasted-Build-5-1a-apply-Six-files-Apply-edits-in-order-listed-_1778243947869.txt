@@ -1,0 +1,547 @@
+Build 5.1a apply.
+
+Six files. Apply edits in order
+listed (deps first, callers
+later). All edits below use
+exact-match find/replace.
+
+================================
+FILE 1: server/services/email.service.ts
+================================
+
+EDIT 1.1 — Imports.
+
+Find:
+import { config } from '../config';
+
+Replace with:
+import { config } from '../config';
+import { nylasService, NylasGrantBrokenError } from './nylas.service';
+import { nylasRepository } from '../repositories/nylas.repository';
+
+EDIT 1.2 — Add new dispatcher
+method `sendCustomerFacingEmail`.
+Place it immediately AFTER the
+closing brace of the existing
+`sendCustomEmail` method.
+
+Find:
+  async sendCustomEmail(to: string, subject: string, html: string): Promise<SendInvitationResult> {
+    if (!to || !subject || !html) throw new BadRequestError('Missing required fields: to, subject, html');
+    const success = await (legacyEmailService as any).sendEmail({ to, subject, html });
+    return { success, message: success ? 'Email sent successfully' : 'Failed to send email' };
+  }
+
+Replace with:
+  async sendCustomEmail(to: string, subject: string, html: string): Promise<SendInvitationResult> {
+    if (!to || !subject || !html) throw new BadRequestError('Missing required fields: to, subject, html');
+    const success = await (legacyEmailService as any).sendEmail({ to, subject, html });
+    return { success, message: success ? 'Email sent successfully' : 'Failed to send email' };
+  }
+
+  async sendCustomerFacingEmail(params: {
+    to: string;
+    subject: string;
+    html: string;
+    userCompanyId: number;
+    triggeringUserId: number;
+  }): Promise<{
+    success: boolean;
+    sentVia: 'nylas' | 'resend';
+    fromEmail: string;
+    replyToEmail: string | null;
+    messageId?: string;
+  }> {
+    const grant = await nylasRepository.getCompanyDefaultGrant(params.userCompanyId);
+
+    if (grant) {
+      const personalGrant = await nylasRepository.getPersonalDefaultGrant(params.triggeringUserId);
+      const replyToEmail = personalGrant?.email ?? null;
+
+      try {
+        const result = await nylasService.sendEmail(grant.grantId, {
+          subject: params.subject,
+          to: [{ email: params.to }],
+          body: params.html,
+          isPlainText: false,
+          ...(replyToEmail ? { replyTo: [{ email: replyToEmail }] } : {}),
+        });
+        await nylasRepository.bumpLastUsed(grant.grantId);
+        console.log(`[EMAIL] Sent via Nylas grant ${grant.grantId} (${grant.email}) to ${params.to}, messageId=${result.messageId}`);
+        return {
+          success: true,
+          sentVia: 'nylas',
+          fromEmail: grant.email,
+          replyToEmail,
+          messageId: result.messageId,
+        };
+      } catch (err: any) {
+        if (err instanceof NylasGrantBrokenError) {
+          console.error(`[EMAIL] Nylas grant ${grant.grantId} broken (${err.upstreamStatus}), marking and falling back to Resend`);
+          await nylasRepository.markBroken(grant.grantId, err.message);
+        } else {
+          console.error(`[EMAIL] Nylas send failed for grant ${grant.grantId}, falling back to Resend:`, err);
+        }
+      }
+    }
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+    });
+    const fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@send.valoxi.ai';
+    return {
+      success,
+      sentVia: 'resend',
+      fromEmail,
+      replyToEmail: null,
+    };
+  }
+
+EDIT 1.3 — Replace
+`sendPortalAccessLink` entirely.
+The new version builds HTML in
+this layer and routes through
+the dispatcher.
+
+Find:
+  async sendPortalAccessLink(portalTokenId: number, baseUrl: string, customMessage?: string): Promise<SendPortalLinkResult> {
+    const token = await emailRepository.getPortalTokenById(portalTokenId);
+    if (!token) throw new NotFoundError('Portal token not found');
+    const contact = await emailRepository.getContactById(token.targetContactId);
+    if (!contact || !contact.email) throw new BadRequestError('Contact has no email address');
+    const company = await emailRepository.getTargetCompanyById(token.targetCompanyId);
+    if (!company) throw new NotFoundError('Company not found');
+    const contactName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Contact';
+    const portalUrl = `${baseUrl}/portal/${token.accessToken}`;
+    const success = await legacyEmailService.sendPortalAccessLink(contact.email, contactName, company.companyName, portalUrl, customMessage || token.customMessage, token.expiresAt);
+    return { success, message: success ? 'Portal access email sent successfully' : 'Failed to send portal access email' };
+  }
+
+Replace with:
+  async sendPortalAccessLink(
+    portalTokenId: number,
+    baseUrl: string,
+    triggeringUserId: number,
+    customMessage?: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    sentVia: 'nylas' | 'resend';
+    fromEmail: string;
+    replyToEmail: string | null;
+  }> {
+    const token = await emailRepository.getPortalTokenById(portalTokenId);
+    if (!token) throw new NotFoundError('Portal token not found');
+    const contact = await emailRepository.getContactById(token.targetContactId);
+    if (!contact || !contact.email) throw new BadRequestError('Contact has no email address');
+    const company = await emailRepository.getTargetCompanyById(token.targetCompanyId);
+    if (!company) throw new NotFoundError('Company not found');
+
+    const contactName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Contact';
+    const portalUrl = `${baseUrl}/portal/${token.accessToken}`;
+    const safeContactName = escapeHtml(contactName);
+    const safeCompanyName = escapeHtml(company.companyName);
+    const expiryText = token.expiresAt
+      ? `This link expires on ${new Date(token.expiresAt).toLocaleDateString('en-GB')}.`
+      : 'This link has a limited validity period.';
+    const resolvedMessage = customMessage || token.customMessage || undefined;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hello ${safeContactName},` },
+      { type: 'paragraph', text: `You have been given secure access to the document portal for the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> transaction.` },
+    ];
+    if (resolvedMessage && resolvedMessage.trim()) {
+      blocks.push({
+        type: 'info_box',
+        box: { tone: 'info', body: escapeHtml(resolvedMessage.trim()) },
+      });
+    }
+    blocks.push({ type: 'cta', cta: { label: 'Access document portal', href: portalUrl } });
+    blocks.push({ type: 'paragraph', text: `${expiryText} Please do not share this link.` });
+
+    const html = renderBrandedEmail({
+      preheader: `Secure document portal access for the ${company.companyName} transaction.`,
+      eyebrow: 'Portal access',
+      heading: 'Your document portal is ready',
+      blocks,
+      footerLine: 'You are receiving this because secure document portal access was granted to your email address.',
+    });
+
+    const sendResult = await this.sendCustomerFacingEmail({
+      to: contact.email,
+      subject: `Document Portal Access — ${company.companyName}`,
+      html,
+      userCompanyId: token.userCompanyId,
+      triggeringUserId,
+    });
+
+    return {
+      success: sendResult.success,
+      message: sendResult.success ? 'Portal access email sent successfully' : 'Failed to send portal access email',
+      sentVia: sendResult.sentVia,
+      fromEmail: sendResult.fromEmail,
+      replyToEmail: sendResult.replyToEmail,
+    };
+  }
+
+================================
+FILE 2: server/services/deal-document.service.ts
+================================
+
+EDIT 2.1 — sendDocument signature.
+
+Find:
+  async sendDocument(documentId: number) {
+
+Replace with:
+  async sendDocument(documentId: number, triggeringUserId: number) {
+
+EDIT 2.2 — Declare sellerSendResult
+variable just before the email try
+block.
+
+Find:
+    const docLabel = docTypeLabels[doc.documentType] || doc.documentType;
+
+    try {
+      const { users } = await import('@shared/schema/core');
+
+Replace with:
+    const docLabel = docTypeLabels[doc.documentType] || doc.documentType;
+
+    let sellerSendResult: {
+      success: boolean;
+      sentVia: 'nylas' | 'resend';
+      fromEmail: string;
+      replyToEmail: string | null;
+    } | null = null;
+
+    try {
+      const { users } = await import('@shared/schema/core');
+
+EDIT 2.3 — Replace seller-block
+send call with dispatcher.
+
+Find:
+          await emailApiService.sendCustomEmail(contact.email, sellerSubject, sellerHtml);
+          console.log(`[DEAL_DOCS] Seller notification sent to ${contact.email} for ${docLabel}`);
+
+Replace with:
+          const sellerResult = await emailApiService.sendCustomerFacingEmail({
+            to: contact.email,
+            subject: sellerSubject,
+            html: sellerHtml,
+            userCompanyId: doc.userCompanyId,
+            triggeringUserId,
+          });
+          sellerSendResult = {
+            success: sellerResult.success,
+            sentVia: sellerResult.sentVia,
+            fromEmail: sellerResult.fromEmail,
+            replyToEmail: sellerResult.replyToEmail,
+          };
+          console.log(`[DEAL_DOCS] Seller notification sent to ${contact.email} for ${docLabel} via ${sellerResult.sentVia}, from=${sellerResult.fromEmail}, replyTo=${sellerResult.replyToEmail || 'none'}`);
+
+EDIT 2.4 — Update final return.
+
+Find:
+        `${docLabel} sent to seller`
+      );
+    }
+
+    return this.getDocumentById(documentId);
+  }
+
+Replace with:
+        `${docLabel} sent to seller`
+      );
+    }
+
+    const updatedDoc = await this.getDocumentById(documentId);
+    return { document: updatedDoc, sendResult: sellerSendResult };
+  }
+
+================================
+FILE 3: server/services/portal.service.ts
+================================
+
+EDIT 3.1 — createToken: await
+email and return sendResult.
+
+Find:
+    // Send portal access email asynchronously (don't block token creation)
+    if (baseUrl) {
+      emailApiService.sendPortalAccessLink(token.id, baseUrl, data.customMessage).catch(err => {
+        console.error(`[PORTAL] Failed to send portal access email for token ${token.id}:`, err.message);
+      });
+    }
+    
+    return token;
+  }
+
+Replace with:
+    // Send portal access email synchronously to capture sentVia for banner UI
+    let sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null = null;
+    if (baseUrl) {
+      try {
+        const result = await emailApiService.sendPortalAccessLink(token.id, baseUrl, data.createdBy, data.customMessage);
+        sendResult = { success: result.success, sentVia: result.sentVia, fromEmail: result.fromEmail, replyToEmail: result.replyToEmail };
+      } catch (err: any) {
+        console.error(`[PORTAL] Failed to send portal access email for token ${token.id}:`, err.message);
+      }
+    }
+    
+    return { token, sendResult };
+  }
+
+EDIT 3.2 — reinstateToken: replace
+entire method.
+
+Find:
+  async reinstateToken(tokenId: number, userCompanyId: number, baseUrl?: string): Promise<boolean> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to reinstate this token');
+    if (token.isActive) throw new BadRequestError('Token is already active');
+    // Deactivate any other active tokens for this company first
+    await portalRepository.deactivateTokensForCompany(token.targetCompanyId);
+    const reinstated = await portalRepository.reinstateToken(tokenId);
+    
+    // Automatically send portal access email after reinstatement
+    if (reinstated && baseUrl) {
+      emailApiService.sendPortalAccessLink(tokenId, baseUrl).catch(err => {
+        console.error(`[PORTAL] Failed to send reinstated portal email for token ${tokenId}:`, err.message);
+      });
+    }
+    
+    return reinstated;
+  }
+
+Replace with:
+  async reinstateToken(tokenId: number, userCompanyId: number, triggeringUserId: number, baseUrl?: string): Promise<{ success: boolean; sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null }> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to reinstate this token');
+    if (token.isActive) throw new BadRequestError('Token is already active');
+    // Deactivate any other active tokens for this company first
+    await portalRepository.deactivateTokensForCompany(token.targetCompanyId);
+    const reinstated = await portalRepository.reinstateToken(tokenId);
+    
+    // Automatically send portal access email after reinstatement (synchronous to capture sentVia)
+    let sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null = null;
+    if (reinstated && baseUrl) {
+      try {
+        const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, triggeringUserId);
+        sendResult = { success: result.success, sentVia: result.sentVia, fromEmail: result.fromEmail, replyToEmail: result.replyToEmail };
+      } catch (err: any) {
+        console.error(`[PORTAL] Failed to send reinstated portal email for token ${tokenId}:`, err.message);
+      }
+    }
+    
+    return { success: reinstated, sendResult };
+  }
+
+EDIT 3.3 — resendPortalEmail:
+replace entire method.
+
+Find:
+  async resendPortalEmail(tokenId: number, userCompanyId: number, baseUrl: string): Promise<void> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to resend email for this token');
+    if (!token.isActive) throw new BadRequestError('Cannot resend email for inactive portal link. Please reinstate it first.');
+    await emailApiService.sendPortalAccessLink(tokenId, baseUrl);
+  }
+
+Replace with:
+  async resendPortalEmail(tokenId: number, userCompanyId: number, triggeringUserId: number, baseUrl: string): Promise<{ sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } }> {
+    const token = await portalRepository.getTokenById(tokenId);
+    if (!token) throw new NotFoundError('Token not found');
+    if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to resend email for this token');
+    if (!token.isActive) throw new BadRequestError('Cannot resend email for inactive portal link. Please reinstate it first.');
+    const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, triggeringUserId);
+    return { sendResult: { success: result.success, sentVia: result.sentVia, fromEmail: result.fromEmail, replyToEmail: result.replyToEmail } };
+  }
+
+================================
+FILE 4: server/routes/deal-document.routes.ts
+================================
+
+EDIT 4.1 — POST /send-offer.
+
+Find:
+  const sent = await dealDocumentService.sendDocument(doc.id);
+
+  res.status(201).json(sent);
+
+Replace with:
+  const result = await dealDocumentService.sendDocument(doc.id, userId);
+
+  res.status(201).json(result);
+
+EDIT 4.2 — POST /:id/send.
+
+Find:
+router.post('/:id/send', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+  const existing = await dealDocumentService.getDocumentById(id);
+  if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
+  const doc = await dealDocumentService.sendDocument(id);
+  res.json(doc);
+}));
+
+Replace with:
+router.post('/:id/send', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
+  const userCompanyId = req.session.userCompanyId;
+  const userId = req.session.userId;
+  if (!userCompanyId || !userId) return res.status(401).json({ message: 'Unauthorized' });
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
+  const existing = await dealDocumentService.getDocumentById(id);
+  if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
+  const result = await dealDocumentService.sendDocument(id, userId);
+  res.json(result);
+}));
+
+================================
+FILE 5: server/routes/email.routes.ts
+================================
+
+EDIT 5.1 — POST /portal/:tokenId/send.
+
+Find:
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, req.body.customMessage);
+  sendSuccess(res, result);
+}));
+
+Replace with:
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const userId = req.session?.userId;
+  if (!userId) throw new UnauthorizedError();
+  const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, userId, req.body.customMessage);
+  sendSuccess(res, result);
+}));
+
+================================
+FILE 6: server/routes/portal.routes.ts
+================================
+
+EDIT 6.1 — POST /tokens (create).
+
+Find:
+  const token = await portalService.createToken({
+    userCompanyId, targetCompanyId: data.targetCompanyId, targetContactId: data.targetContactId,
+    createdBy: userId, expiresInDays: data.expiresInDays, allowedActions: data.allowedActions, customMessage: data.customMessage,
+    timeframeDays: data.timeframeDays, includeNda: data.includeNda,
+  }, baseUrl);
+  sendCreated(res, token);
+}));
+
+Replace with:
+  const result = await portalService.createToken({
+    userCompanyId, targetCompanyId: data.targetCompanyId, targetContactId: data.targetContactId,
+    createdBy: userId, expiresInDays: data.expiresInDays, allowedActions: data.allowedActions, customMessage: data.customMessage,
+    timeframeDays: data.timeframeDays, includeNda: data.includeNda,
+  }, baseUrl);
+  sendCreated(res, result);
+}));
+
+EDIT 6.2 — POST /tokens/:id/reinstate.
+
+Find:
+authenticatedRouter.post('/tokens/:id/reinstate', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const tokenId = parseInt(req.params.id);
+  if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  await portalService.reinstateToken(tokenId, userCompanyId, baseUrl);
+  sendSuccess(res, { message: 'Portal link reinstated and access email sent.' });
+}));
+
+Replace with:
+authenticatedRouter.post('/tokens/:id/reinstate', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const userId = req.session?.userId;
+  if (!userCompanyId || !userId) throw new UnauthorizedError();
+  const tokenId = parseInt(req.params.id);
+  if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await portalService.reinstateToken(tokenId, userCompanyId, userId, baseUrl);
+  sendSuccess(res, { message: 'Portal link reinstated and access email sent.', success: result.success, sendResult: result.sendResult });
+}));
+
+EDIT 6.3 — POST /tokens/:id/resend-email.
+
+Find:
+authenticatedRouter.post('/tokens/:id/resend-email', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const tokenId = parseInt(req.params.id);
+  if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  await portalService.resendPortalEmail(tokenId, userCompanyId, baseUrl);
+  sendSuccess(res, { message: 'Portal access email sent successfully.' });
+}));
+
+Replace with:
+authenticatedRouter.post('/tokens/:id/resend-email', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const userId = req.session?.userId;
+  if (!userCompanyId || !userId) throw new UnauthorizedError();
+  const tokenId = parseInt(req.params.id);
+  if (isNaN(tokenId)) throw new BadRequestError('Invalid token ID');
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await portalService.resendPortalEmail(tokenId, userCompanyId, userId, baseUrl);
+  sendSuccess(res, { message: 'Portal access email sent successfully.', sendResult: result.sendResult });
+}));
+
+================================
+After all edits applied:
+================================
+
+1. Restart the server.
+
+2. Report the fresh start
+   timestamp.
+
+3. Confirm the server starts
+   cleanly. Report any
+   TypeScript errors verbatim.
+
+4. Run these greps and paste
+   the output:
+
+grep -n "sendCustomerFacingEmail" server/services/email.service.ts
+grep -n "triggeringUserId" server/services/email.service.ts
+grep -n "triggeringUserId" server/services/deal-document.service.ts
+grep -n "triggeringUserId" server/services/portal.service.ts
+grep -n "triggeringUserId" server/routes/deal-document.routes.ts
+grep -n "triggeringUserId" server/routes/email.routes.ts
+grep -n "triggeringUserId" server/routes/portal.routes.ts
+grep -n "sentVia" server/services/email.service.ts
+grep -n "sellerSendResult" server/services/deal-document.service.ts
+grep -n "legacyEmailService.sendPortalAccessLink" server/services/email.service.ts
+grep -n "sendCustomEmail" server/services/deal-document.service.ts
+
+5. The last grep is important —
+   `sendCustomEmail` should
+   STILL appear in
+   deal-document.service.ts
+   (used by the buyer-confirmation
+   block which stays on Resend).
+   Just confirm it does not
+   appear in the seller-block
+   anymore.
+
+Wait for next instruction once
+findings are reported. Do not
+trigger any sends yet — the
+functional V-check is the next
+step.

@@ -4,6 +4,8 @@ import { NotFoundError, BadRequestError } from '../utils/errors';
 import { escapeHtml } from '../utils/html';
 import { renderBrandedEmail, type EmailBlock } from './email-template';
 import { config } from '../config';
+import { nylasService, NylasGrantBrokenError } from './nylas.service';
+import { nylasRepository } from '../repositories/nylas.repository';
 
 interface SendInvitationResult { success: boolean; message: string }
 interface SendPortalLinkResult { success: boolean; message: string }
@@ -33,17 +35,70 @@ export class EmailApiService {
     return { success, message: success ? 'Invitation email sent successfully' : 'Failed to send invitation email' };
   }
 
-  async sendPortalAccessLink(portalTokenId: number, baseUrl: string, customMessage?: string): Promise<SendPortalLinkResult> {
+  async sendPortalAccessLink(
+    portalTokenId: number,
+    baseUrl: string,
+    triggeringUserId: number,
+    customMessage?: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    sentVia: 'nylas' | 'resend';
+    fromEmail: string;
+    replyToEmail: string | null;
+  }> {
     const token = await emailRepository.getPortalTokenById(portalTokenId);
     if (!token) throw new NotFoundError('Portal token not found');
     const contact = await emailRepository.getContactById(token.targetContactId);
     if (!contact || !contact.email) throw new BadRequestError('Contact has no email address');
     const company = await emailRepository.getTargetCompanyById(token.targetCompanyId);
     if (!company) throw new NotFoundError('Company not found');
+
     const contactName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Contact';
     const portalUrl = `${baseUrl}/portal/${token.accessToken}`;
-    const success = await legacyEmailService.sendPortalAccessLink(contact.email, contactName, company.companyName, portalUrl, customMessage || token.customMessage, token.expiresAt);
-    return { success, message: success ? 'Portal access email sent successfully' : 'Failed to send portal access email' };
+    const safeContactName = escapeHtml(contactName);
+    const safeCompanyName = escapeHtml(company.companyName);
+    const expiryText = token.expiresAt
+      ? `This link expires on ${new Date(token.expiresAt).toLocaleDateString('en-GB')}.`
+      : 'This link has a limited validity period.';
+    const resolvedMessage = customMessage || token.customMessage || undefined;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hello ${safeContactName},` },
+      { type: 'paragraph', text: `You have been given secure access to the document portal for the <strong style="color:#FFFFFF;">${safeCompanyName}</strong> transaction.` },
+    ];
+    if (resolvedMessage && resolvedMessage.trim()) {
+      blocks.push({
+        type: 'info_box',
+        box: { tone: 'info', body: escapeHtml(resolvedMessage.trim()) },
+      });
+    }
+    blocks.push({ type: 'cta', cta: { label: 'Access document portal', href: portalUrl } });
+    blocks.push({ type: 'paragraph', text: `${expiryText} Please do not share this link.` });
+
+    const html = renderBrandedEmail({
+      preheader: `Secure document portal access for the ${company.companyName} transaction.`,
+      eyebrow: 'Portal access',
+      heading: 'Your document portal is ready',
+      blocks,
+      footerLine: 'You are receiving this because secure document portal access was granted to your email address.',
+    });
+
+    const sendResult = await this.sendCustomerFacingEmail({
+      to: contact.email,
+      subject: `Document Portal Access — ${company.companyName}`,
+      html,
+      userCompanyId: token.userCompanyId,
+      triggeringUserId,
+    });
+
+    return {
+      success: sendResult.success,
+      message: sendResult.success ? 'Portal access email sent successfully' : 'Failed to send portal access email',
+      sentVia: sendResult.sentVia,
+      fromEmail: sendResult.fromEmail,
+      replyToEmail: sendResult.replyToEmail,
+    };
   }
 
   async sendDocumentNotification(targetCompanyId: number, documentName: string, documentCategory: string, contactName: string, submissionNotes?: string): Promise<SendPortalLinkResult> {
@@ -64,6 +119,66 @@ export class EmailApiService {
     if (!to || !subject || !html) throw new BadRequestError('Missing required fields: to, subject, html');
     const success = await (legacyEmailService as any).sendEmail({ to, subject, html });
     return { success, message: success ? 'Email sent successfully' : 'Failed to send email' };
+  }
+
+  async sendCustomerFacingEmail(params: {
+    to: string;
+    subject: string;
+    html: string;
+    userCompanyId: number;
+    triggeringUserId: number;
+  }): Promise<{
+    success: boolean;
+    sentVia: 'nylas' | 'resend';
+    fromEmail: string;
+    replyToEmail: string | null;
+    messageId?: string;
+  }> {
+    const grant = await nylasRepository.getCompanyDefaultGrant(params.userCompanyId);
+
+    if (grant) {
+      const personalGrant = await nylasRepository.getPersonalDefaultGrant(params.triggeringUserId);
+      const replyToEmail = personalGrant?.email ?? null;
+
+      try {
+        const result = await nylasService.sendEmail(grant.grantId, {
+          subject: params.subject,
+          to: [{ email: params.to }],
+          body: params.html,
+          isPlainText: false,
+          ...(replyToEmail ? { replyTo: [{ email: replyToEmail }] } : {}),
+        });
+        await nylasRepository.bumpLastUsed(grant.grantId);
+        console.log(`[EMAIL] Sent via Nylas grant ${grant.grantId} (${grant.email}) to ${params.to}, messageId=${result.messageId}`);
+        return {
+          success: true,
+          sentVia: 'nylas',
+          fromEmail: grant.email,
+          replyToEmail,
+          messageId: result.messageId,
+        };
+      } catch (err: any) {
+        if (err instanceof NylasGrantBrokenError) {
+          console.error(`[EMAIL] Nylas grant ${grant.grantId} broken (${err.upstreamStatus}), marking and falling back to Resend`);
+          await nylasRepository.markBroken(grant.grantId, err.message);
+        } else {
+          console.error(`[EMAIL] Nylas send failed for grant ${grant.grantId}, falling back to Resend:`, err);
+        }
+      }
+    }
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+    });
+    const fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@send.valoxi.ai';
+    return {
+      success,
+      sentVia: 'resend',
+      fromEmail,
+      replyToEmail: null,
+    };
   }
 
   async sendWelcomeEmail(params: {

@@ -67,14 +67,18 @@ export class PortalService {
       }
     }
     
-    // Send portal access email asynchronously (don't block token creation)
+    // Send portal access email synchronously to capture sentVia for banner UI
+    let sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null = null;
     if (baseUrl) {
-      emailApiService.sendPortalAccessLink(token.id, baseUrl, data.customMessage).catch(err => {
+      try {
+        const result = await emailApiService.sendPortalAccessLink(token.id, baseUrl, data.createdBy, data.customMessage);
+        sendResult = { success: result.success, sentVia: result.sentVia, fromEmail: result.fromEmail, replyToEmail: result.replyToEmail };
+      } catch (err: any) {
         console.error(`[PORTAL] Failed to send portal access email for token ${token.id}:`, err.message);
-      });
+      }
     }
     
-    return token;
+    return { token, sendResult };
   }
 
   async getTokensForCompany(userCompanyId: number) {
@@ -95,7 +99,7 @@ export class PortalService {
     return await portalRepository.deleteToken(tokenId);
   }
 
-  async reinstateToken(tokenId: number, userCompanyId: number, baseUrl?: string): Promise<boolean> {
+  async reinstateToken(tokenId: number, userCompanyId: number, triggeringUserId: number, baseUrl?: string): Promise<{ success: boolean; sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null }> {
     const token = await portalRepository.getTokenById(tokenId);
     if (!token) throw new NotFoundError('Token not found');
     if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to reinstate this token');
@@ -104,22 +108,27 @@ export class PortalService {
     await portalRepository.deactivateTokensForCompany(token.targetCompanyId);
     const reinstated = await portalRepository.reinstateToken(tokenId);
     
-    // Automatically send portal access email after reinstatement
+    // Automatically send portal access email after reinstatement (synchronous to capture sentVia)
+    let sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } | null = null;
     if (reinstated && baseUrl) {
-      emailApiService.sendPortalAccessLink(tokenId, baseUrl).catch(err => {
+      try {
+        const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, triggeringUserId);
+        sendResult = { success: result.success, sentVia: result.sentVia, fromEmail: result.fromEmail, replyToEmail: result.replyToEmail };
+      } catch (err: any) {
         console.error(`[PORTAL] Failed to send reinstated portal email for token ${tokenId}:`, err.message);
-      });
+      }
     }
     
-    return reinstated;
+    return { success: reinstated, sendResult };
   }
 
-  async resendPortalEmail(tokenId: number, userCompanyId: number, baseUrl: string): Promise<void> {
+  async resendPortalEmail(tokenId: number, userCompanyId: number, triggeringUserId: number, baseUrl: string): Promise<{ sendResult: { success: boolean; sentVia: 'nylas' | 'resend'; fromEmail: string; replyToEmail: string | null } }> {
     const token = await portalRepository.getTokenById(tokenId);
     if (!token) throw new NotFoundError('Token not found');
     if (token.userCompanyId !== userCompanyId) throw new ForbiddenError('Not authorized to resend email for this token');
     if (!token.isActive) throw new BadRequestError('Cannot resend email for inactive portal link. Please reinstate it first.');
-    await emailApiService.sendPortalAccessLink(tokenId, baseUrl);
+    const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, triggeringUserId);
+    return { sendResult: { success: result.success, sentVia: result.sentVia, fromEmail: result.fromEmail, replyToEmail: result.replyToEmail } };
   }
 
   async getSubmissionsByToken(accessToken: string): Promise<ExternalDocumentSubmission[]> {

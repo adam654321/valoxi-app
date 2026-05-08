@@ -185,9 +185,9 @@ router.post('/send-offer', requirePermission('canCreateOffers'), asyncHandler(as
     createdBy: userId,
   });
 
-  const sent = await dealDocumentService.sendDocument(doc.id);
+  const result = await dealDocumentService.sendDocument(doc.id, userId);
 
-  res.status(201).json(sent);
+  res.status(201).json(result);
 }));
 
 router.get('/pending-send', asyncHandler(async (req: Request, res: Response) => {
@@ -455,13 +455,14 @@ router.post('/:id/generate', requirePermission('canCreateOffers'), asyncHandler(
 
 router.post('/:id/send', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {
   const userCompanyId = req.session.userCompanyId;
-  if (!userCompanyId) return res.status(401).json({ message: 'Unauthorized' });
+  const userId = req.session.userId;
+  if (!userCompanyId || !userId) return res.status(401).json({ message: 'Unauthorized' });
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ message: 'Invalid document ID' });
   const existing = await dealDocumentService.getDocumentById(id);
   if (!existing || existing.userCompanyId !== userCompanyId) return res.status(404).json({ message: 'Document not found' });
-  const doc = await dealDocumentService.sendDocument(id);
-  res.json(doc);
+  const result = await dealDocumentService.sendDocument(id, userId);
+  res.json(result);
 }));
 
 router.post('/:id/withdraw', requirePermission('canCreateOffers'), asyncHandler(async (req, res) => {

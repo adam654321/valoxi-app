@@ -43,7 +43,9 @@ router.post('/portal/:tokenId/send', asyncHandler(async (req: Request, res: Resp
     }
   }
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, req.body.customMessage);
+  const userId = req.session?.userId;
+  if (!userId) throw new UnauthorizedError();
+  const result = await emailApiService.sendPortalAccessLink(tokenId, baseUrl, userId, req.body.customMessage);
   sendSuccess(res, result);
 }));
 
