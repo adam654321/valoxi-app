@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Unplug } from "lucide-react";
+import { Loader2, Unplug, Star } from "lucide-react";
 import { SiGmail } from "react-icons/si";
 
 function MicrosoftIcon({ className }: { className?: string }) {
@@ -36,9 +36,11 @@ interface NylasGrant {
   email: string;
   provider: "google" | "microsoft";
   status: "active" | "broken" | "revoked";
-  scopes: string | null;
+  scopes: string[] | null;
   lastUsedAt: string | null;
   createdAt: string;
+  isCompanyDefault: boolean;
+  isPersonalDefault: boolean;
 }
 
 function providerIcon(provider: "google" | "microsoft") {
@@ -91,6 +93,14 @@ export function ConnectedAccountsSection() {
     queryKey: ["/api/v2/nylas/grants"],
   });
 
+  const { data: meData } = useQuery<{
+    success: boolean;
+    data: { permissions: Record<string, boolean> | null };
+  }>({
+    queryKey: ["/api/v2/auth/me"],
+  });
+  const isAdmin = meData?.data?.permissions?.canManageCompany ?? false;
+
   const grants = data?.data ?? [];
 
   const initiateMutation = useMutation({
@@ -126,6 +136,38 @@ export function ConnectedAccountsSection() {
         description: error.message ?? "Failed to disconnect.",
         variant: "destructive",
       });
+    },
+  });
+
+  const setCompanyDefaultMutation = useMutation({
+    mutationFn: async (grantId: number) => {
+      await apiRequest("PATCH", `/api/v2/nylas/grants/${grantId}/company-default`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/nylas/grants"] });
+      toast({
+        title: "Company default updated",
+        description: "Customer-facing emails will now send from this account.",
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const setPersonalDefaultMutation = useMutation({
+    mutationFn: async (grantId: number) => {
+      await apiRequest("PATCH", `/api/v2/nylas/grants/${grantId}/personal-default`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/nylas/grants"] });
+      toast({
+        title: "Personal default updated",
+        description: "Your personal sends will now use this account.",
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
@@ -180,7 +222,8 @@ export function ConnectedAccountsSection() {
         ) : grants.length === 0 ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              You haven't connected an email account yet.
+              You haven't connected an email account yet. The first account an admin connects
+              will become your company's default — used for customer-facing emails.
             </p>
             <ConnectButtons />
           </div>
@@ -188,7 +231,7 @@ export function ConnectedAccountsSection() {
           <div className="space-y-4">
             <ul role="list" className="divide-y divide-border rounded-md border">
               {grants.map((grant) => (
-                <li key={grant.id} className="flex items-center justify-between p-3 gap-3">
+                <li key={grant.id} className="flex items-center justify-between p-3 gap-3 flex-wrap">
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-muted-foreground flex-shrink-0">
                       {providerIcon(grant.provider)}
@@ -200,13 +243,81 @@ export function ConnectedAccountsSection() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                    {/* Status badge */}
                     <Badge
                       variant={grant.status === "active" ? "default" : "destructive"}
                       className={grant.status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100" : ""}
                     >
                       {grant.status === "active" ? "Active" : "Connection broken"}
                     </Badge>
+
+                    {/* Company default badge */}
+                    {grant.isCompanyDefault && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Star className="h-3 w-3" />
+                        Company default
+                      </Badge>
+                    )}
+
+                    {/* Personal default badge */}
+                    {grant.isPersonalDefault && (
+                      <Badge variant="outline" className="gap-1">
+                        <Star className="h-3 w-3" />
+                        Your default
+                      </Badge>
+                    )}
+
+                    {/* Make company default — admin only, AlertDialog confirmation */}
+                    {isAdmin && !grant.isCompanyDefault && grant.status === "active" && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                            Set company default
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Set as company default?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              All automated customer-facing emails (NDAs, offer letters, portal invitations)
+                              will be sent from <strong>{grant.email}</strong>. This replaces any existing
+                              company default for your whole team.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => setCompanyDefaultMutation.mutate(grant.id)}
+                              disabled={setCompanyDefaultMutation.isPending}
+                            >
+                              {setCompanyDefaultMutation.isPending && (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              )}
+                              Confirm
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+
+                    {/* Make personal default — single click, no confirmation */}
+                    {!grant.isPersonalDefault && grant.status === "active" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs"
+                        onClick={() => setPersonalDefaultMutation.mutate(grant.id)}
+                        disabled={setPersonalDefaultMutation.isPending}
+                      >
+                        {setPersonalDefaultMutation.isPending && (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        )}
+                        Set as my default
+                      </Button>
+                    )}
+
+                    {/* Disconnect */}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="gap-1">
@@ -218,7 +329,8 @@ export function ConnectedAccountsSection() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Disconnect {grant.email}?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Future emails will revert to no-reply@valoxi.ai until you reconnect. This cannot be undone.
+                            Future emails will revert to no-reply@valoxi.ai until you reconnect.
+                            {grant.isCompanyDefault && " This is currently the company default — disconnecting will leave your company without a default sending account."}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

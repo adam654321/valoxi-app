@@ -1,8 +1,12 @@
 import { Router, type Request, type Response } from 'express';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { nylasService, NylasServiceNotConfiguredError, NylasGrantBrokenError } from '../services/nylas.service';
 import { nylasRepository } from '../repositories/nylas.repository';
 import { signNylasState, verifyNylasState } from '../lib/nylas-state-token';
+import { db } from '../db';
+import { users } from '@shared/schema/core';
+import { requirePermission } from '../middleware/auth';
 
 // ── Unauthenticated callback router (mounted without isAuthenticated) ────────
 export const nylasCallbackRouter = Router();
@@ -38,6 +42,11 @@ nylasCallbackRouter.get('/auth/callback', async (req: Request, res: Response) =>
       await nylasRepository.markActive(result.grantId);
       console.log(`[NYLAS] Re-auth for existing grant ${result.grantId} (user ${claims.userId}, set back to active)`);
     } else {
+      // Determine if the connecting user is a company admin (for auto-company-default logic).
+      const [callerUser] = await db.select({ isCompanyAdmin: users.isCompanyAdmin })
+        .from(users).where(eq(users.id, claims.userId)).limit(1);
+      const userIsAdmin = callerUser?.isCompanyAdmin ?? false;
+
       await nylasRepository.createGrant({
         userId: claims.userId,
         userCompanyId: claims.userCompanyId,
@@ -45,6 +54,7 @@ nylasCallbackRouter.get('/auth/callback', async (req: Request, res: Response) =>
         email: result.email,
         provider: result.provider,
         scopes: result.scope,
+        isAdmin: userIsAdmin,
       });
       console.log(`[NYLAS] Grant created for user ${claims.userId} (${result.email}, ${result.provider})`);
     }
@@ -138,6 +148,8 @@ router.get('/grants', async (req: Request, res: Response) => {
         lastErrorAt: g.lastErrorAt,
         lastErrorMessage: g.lastErrorMessage,
         createdAt: g.createdAt,
+        isCompanyDefault: g.isCompanyDefault,
+        isPersonalDefault: g.isPersonalDefault,
       })),
     });
   } catch (err) {
@@ -237,6 +249,77 @@ router.post('/send', async (req: Request, res: Response) => {
     }
     console.error('[NYLAS] POST /send failed:', err);
     return res.status(500).json({ success: false, error: 'Failed to send email' });
+  }
+});
+
+// PATCH /api/v2/nylas/grants/:id/company-default
+// Company-admin only.
+router.patch('/grants/:id/company-default', requirePermission('canManageCompany'), async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    const userCompanyId = req.session.userCompanyId;
+    if (!userId || !userCompanyId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const grantRowId = parseInt(req.params.id, 10);
+    if (isNaN(grantRowId)) {
+      return res.status(400).json({ success: false, error: 'Invalid grant id' });
+    }
+
+    const grant = await nylasRepository.getGrantById(grantRowId);
+    if (!grant) {
+      return res.status(404).json({ success: false, error: 'Grant not found' });
+    }
+
+    if (grant.userCompanyId !== userCompanyId) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (grant.status !== 'active') {
+      return res.status(409).json({ success: false, error: 'Cannot mark a non-active grant as default' });
+    }
+
+    await nylasRepository.setCompanyDefaultGrant(grantRowId, userCompanyId);
+    return res.json({ success: true, data: { id: grantRowId, isCompanyDefault: true } });
+  } catch (err) {
+    console.error('[NYLAS] PATCH /grants/:id/company-default failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to set company default' });
+  }
+});
+
+// PATCH /api/v2/nylas/grants/:id/personal-default
+// Any authenticated user — own grants only.
+router.patch('/grants/:id/personal-default', async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const grantRowId = parseInt(req.params.id, 10);
+    if (isNaN(grantRowId)) {
+      return res.status(400).json({ success: false, error: 'Invalid grant id' });
+    }
+
+    const grant = await nylasRepository.getGrantById(grantRowId);
+    if (!grant) {
+      return res.status(404).json({ success: false, error: 'Grant not found' });
+    }
+
+    if (grant.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (grant.status !== 'active') {
+      return res.status(409).json({ success: false, error: 'Cannot mark a non-active grant as default' });
+    }
+
+    await nylasRepository.setPersonalDefaultGrant(grantRowId, userId);
+    return res.json({ success: true, data: { id: grantRowId, isPersonalDefault: true } });
+  } catch (err) {
+    console.error('[NYLAS] PATCH /grants/:id/personal-default failed:', err);
+    return res.status(500).json({ success: false, error: 'Failed to set personal default' });
   }
 });
 

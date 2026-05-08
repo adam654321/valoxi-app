@@ -1,4 +1,5 @@
-import { pgTable, serial, varchar, integer, timestamp, jsonb, index, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, integer, timestamp, jsonb, boolean, index, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users, userCompanies } from './core';
@@ -18,11 +19,19 @@ export const nylasGrants = pgTable('nylas_grants', {
   lastUsedAt: timestamp('last_used_at'),
   lastErrorAt: timestamp('last_error_at'),
   lastErrorMessage: varchar('last_error_message', { length: 500 }),
+  isCompanyDefault: boolean('is_company_default').notNull().default(false),
+  isPersonalDefault: boolean('is_personal_default').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   userStatusIdx: index('nylas_grants_user_status_idx').on(table.userId, table.status),
   userCompanyIdx: index('nylas_grants_user_company_idx').on(table.userCompanyId),
+  oneCompanyDefault: uniqueIndex('nylas_grants_one_company_default_per_company')
+    .on(table.userCompanyId)
+    .where(sql`${table.isCompanyDefault} = true`),
+  onePersonalDefault: uniqueIndex('nylas_grants_one_personal_default_per_user')
+    .on(table.userId)
+    .where(sql`${table.isPersonalDefault} = true`),
 }));
 
 export const insertNylasGrantSchema = createInsertSchema(nylasGrants).omit({
