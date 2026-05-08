@@ -59,10 +59,14 @@ nylasCallbackRouter.get('/auth/callback', async (req: Request, res: Response) =>
       console.log(`[NYLAS] Grant created for user ${claims.userId} (${result.email}, ${result.provider})`);
     }
 
-    return res.redirect(`/account?nylas_connected=1`);
+    if (!res.headersSent) {
+      return res.redirect(`/account?nylas_connected=1`);
+    }
   } catch (err: any) {
     console.error('[NYLAS] Code exchange or grant creation failed:', err.message);
-    return res.redirect(`/account?nylas_error=exchange_failed`);
+    if (!res.headersSent) {
+      return res.redirect(`/account?nylas_error=exchange_failed`);
+    }
   }
 });
 
