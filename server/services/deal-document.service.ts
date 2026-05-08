@@ -93,12 +93,7 @@ export class DealDocumentService {
     if (doc.status !== 'draft') throw new Error(`Cannot send document in status: ${doc.status}`);
     if (!doc.generatedFileUrl) throw new Error('Document has not been generated yet');
 
-    await db.update(dealDocuments)
-      .set({
-        status: 'sent',
-        sentAt: new Date(),
-      })
-      .where(eq(dealDocuments.id, documentId));
+    await this.markAsSent(documentId);
 
     if (doc.documentType === 'offer_letter') {
       try {
@@ -197,6 +192,15 @@ export class DealDocumentService {
     }
 
     return this.getDocumentById(documentId);
+  }
+
+  private async markAsSent(documentId: number): Promise<void> {
+    await db.update(dealDocuments)
+      .set({
+        status: 'sent',
+        sentAt: new Date(),
+      })
+      .where(eq(dealDocuments.id, documentId));
   }
 
   async markViewed(documentId: number) {
@@ -643,9 +647,9 @@ export class DealDocumentService {
 
       await this.generateDocumentFile(doc.id, context);
 
-      await this.sendDocument(doc.id);
+      await this.markAsSent(doc.id);
 
-      console.log(`[DEAL_DOCS] NDA created and sent for portal ${params.portalTokenId} (doc id: ${doc.id})`);
+      console.log(`[DEAL_DOCS] NDA created and made available in portal ${params.portalTokenId} (doc id: ${doc.id})`);
       return doc;
     } catch (err) {
       console.error(`[DEAL_DOCS] Failed to generate NDA for portal ${params.portalTokenId}:`, err);
