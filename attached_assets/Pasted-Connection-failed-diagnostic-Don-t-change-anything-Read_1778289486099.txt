@@ -1,0 +1,99 @@
+Connection failed diagnostic.
+
+Don't change anything. Read
+logs and DB only.
+
+1. Tail the server logs for
+   the last 5 minutes. Look
+   for [NYLAS] or [NYLAS_OAUTH]
+   or any line related to the
+   /api/v2/nylas/auth/callback
+   route. Paste everything
+   relevant verbatim.
+
+   Specifically I want to see:
+   - Whether the callback
+     route was hit at all
+   - Any exception stack trace
+   - The result of
+     exchangeCodeForGrant
+   - Whether the createGrant
+     or markActive logic ran
+
+2. Check DB state:
+
+   SELECT id, grant_id, email,
+          provider, status,
+          last_error_at,
+          last_error_message
+   FROM nylas_grants
+   ORDER BY id DESC
+   LIMIT 3;
+
+   I want to see if a grant
+   row was attempted to be
+   inserted (even if status
+   ended up failed).
+
+3. Confirm the callback URI
+   exact-match by running this
+   in the Replit shell:
+
+   echo "$NYLAS_REDIRECT_URI"
+
+   Compare character-for-
+   character with what's
+   registered in the EU Dev
+   Nylas dashboard under
+   Hosted Authentication
+   callback URIs. Confirm
+   exact match including
+   case, no trailing slash,
+   etc.
+
+4. Check the Nylas dashboard
+   EU Dev app's Microsoft AND
+   Google connector
+   configuration:
+   - Are both connectors using
+     CUSTOM credentials (not
+     Nylas-shared)?
+   - For each: is client_id
+     populated?
+   - For each: is client_secret
+     populated (it'll show
+     masked, but should not be
+     blank)?
+
+   This is a manual UI check.
+   Report back what you see.
+
+5. Open Google Cloud Console
+   for the Valoxi-owned OAuth
+   client. Under Authorised
+   redirect URIs, confirm
+   this exact URL is listed:
+
+   https://api.eu.nylas.com/v3/connect/callback
+
+   This is the Nylas EU
+   callback URL that Google
+   redirects to. NOT your
+   Valoxi callback URL — that
+   one is registered with
+   Nylas, not with Google.
+
+   Two redirect URIs need to
+   exist:
+   - In Google Cloud Console
+     OAuth client: must include
+     https://api.eu.nylas.com/v3/connect/callback
+   - In Nylas Dashboard EU Dev
+     app callback URIs: must
+     include your Replit dev
+     callback URL
+
+   Report whether both are
+   configured.
+
+Wait for next instruction.
