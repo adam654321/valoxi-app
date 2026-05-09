@@ -66,6 +66,8 @@ export const nylasRepository = {
   async markBroken(grantId: string, errorMessage: string) {
     await db.update(nylasGrants).set({
       status: 'broken',
+      isCompanyDefault: false,
+      isPersonalDefault: false,
       lastErrorAt: new Date(),
       lastErrorMessage: errorMessage.slice(0, 500),
       updatedAt: new Date(),
@@ -75,6 +77,8 @@ export const nylasRepository = {
   async markRevoked(grantId: string) {
     await db.update(nylasGrants).set({
       status: 'revoked',
+      isCompanyDefault: false,
+      isPersonalDefault: false,
       updatedAt: new Date(),
     }).where(eq(nylasGrants.grantId, grantId));
   },
