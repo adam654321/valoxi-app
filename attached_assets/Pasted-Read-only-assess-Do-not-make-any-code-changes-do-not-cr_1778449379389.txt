@@ -1,0 +1,65 @@
+Read-only assess. Do not make any code changes, do not create or delete any files.
+
+Context: We are about to integrate the standalone Valoxi Help Center as new routes inside the authenticated app. Four new files and two modified files. Before we issue the build prompts I need you to confirm the current state of the codebase so the diffs apply cleanly. Replit is ground truth, my local copy may be stale.
+
+1. Confirm these paths do NOT already exist:
+   - client/src/data/helpContent.ts
+   - client/src/pages/help/ (the whole directory)
+   - client/src/pages/help/HelpHome.tsx
+   - client/src/pages/help/HelpArticle.tsx
+   - client/src/pages/help/HelpSearch.tsx
+
+2. Read client/src/App.tsx and confirm:
+   a. Lazy imports use the const X = lazy(() => import("@/pages/X")) pattern
+   b. There is an authenticated route block of the shape <Route><Layout><Switch>...</Switch></Layout></Route> that contains /dashboard, /pipeline, /billing, /account
+   c. That inner Switch ends with <Route component={NotFound} />
+   d. No existing /help route anywhere in the file
+   e. Quote back the exact 3 lines immediately above <Route path="/account" component={AccountPage} /> so I can confirm placement context
+
+3. Read client/src/components/layout/PageHeader.tsx and confirm:
+   a. There is currently NO lucide-react import
+   b. The wouter import line is exactly: import { useLocation } from "wouter";
+   c. There is no existing Button import from @/components/ui/button
+   d. routeLabels is a flat Record<string, string>
+   e. The right-side flex group is <div className="ml-auto flex items-center gap-2"> containing <ThemeToggle /> then <Notifications /> in that order
+
+4. Confirm these dependencies in package.json with versions:
+   - wouter
+   - lucide-react
+   - @radix-ui/react-slot
+
+5. Grep across client/src/ for each of these strings and report counts plus file paths:
+   - "/help"
+   - HelpHome
+   - HelpArticle
+   - HelpSearch
+   - helpContent
+
+6. Run npm run check and report current tsc error count plus the first 5 errors if any. We need a clean baseline.
+
+7. Run git status and report current branch, clean or dirty, and any unstaged or untracked files.
+
+Report format:
+
+PATHS:
+(one line per path, EXISTS or NOT EXISTS)
+
+APP.TSX:
+a, b, c, d, e each with YES or NO plus a one-line note if NO
+
+PAGEHEADER.TSX:
+a, b, c, d, e each with YES or NO plus a one-line note if NO
+
+DEPENDENCIES:
+one line per package with installed version
+
+GREP RESULTS:
+one line per string with count and files
+
+TSC BASELINE:
+error count, first 5 errors if any
+
+GIT STATUS:
+branch, clean or dirty, any files of note
+
+Stop after reporting. No code changes, no follow-up actions.
