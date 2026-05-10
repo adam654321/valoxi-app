@@ -39,6 +39,9 @@ const PortalManagement = lazy(() => import("@/pages/PortalManagement"));
 const CompanyAccounts = lazy(() => import("@/pages/company-accounts"));
 const Billing = lazy(() => import("@/pages/billing"));
 const AccountPage = lazy(() => import("@/pages/account"));
+const HelpHome = lazy(() => import("@/pages/help/HelpHome"));
+const HelpArticle = lazy(() => import("@/pages/help/HelpArticle"));
+const HelpSearch = lazy(() => import("@/pages/help/HelpSearch"));
 const EmailTest = lazy(() => import("@/pages/EmailTest"));
 const WebhookTest = lazy(() => import("@/pages/webhook-test"));
 const FileUploadTest = lazy(() => import("@/pages/file-upload-test"));
@@ -208,6 +211,9 @@ function Router() {
               </Route>
               {/* <Route path="/company-accounts" component={CompanyAccounts} /> */}
               <Route path="/billing" component={Billing} />
+              <Route path="/help" component={HelpHome} />
+              <Route path="/help/search" component={HelpSearch} />
+              <Route path="/help/article/:slug" component={HelpArticle} />
               <Route path="/account" component={AccountPage} />
               <Route component={NotFound} />
             </Switch>

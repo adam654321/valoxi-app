@@ -1,0 +1,1212 @@
+[CODE] Build 1 of 2: Help Center integration (4 new files + App.tsx routing)
+
+Goal: Create the four new Help Center files and wire three routes into the authenticated route block of App.tsx. Build 2 (PageHeader entry point) will follow as a separate prompt after V-check.
+
+Do not modify any file other than App.tsx, and only in the two locations specified. Create only the four new files listed below at the exact paths shown. The pages/help/ and data/ directories do not yet exist; create them as needed.
+
+========================================
+CREATE FILE: client/src/data/helpContent.ts
+========================================
+export interface HelpArticle {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  categoryId: string;
+  excerpt: string;
+  content: HelpBlock[];
+}
+
+export interface HelpBlock {
+  type: "heading" | "paragraph" | "bullet" | "numbered" | "table" | "tip" | "warning";
+  text?: string;
+  items?: string[];
+  rows?: { cells: string[] }[];
+  headers?: string[];
+}
+
+export interface HelpCategory {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export const categories: HelpCategory[] = [
+  {
+    id: "getting-started",
+    title: "Getting Started",
+    description: "Sign in, onboarding, and platform navigation",
+    icon: "Rocket",
+  },
+  {
+    id: "dashboard",
+    title: "Dashboard",
+    description: "Metrics, widgets, and quick actions",
+    icon: "LayoutDashboard",
+  },
+  {
+    id: "pipeline",
+    title: "Pipeline",
+    description: "Kanban board, deal stages, and workflow",
+    icon: "Kanban",
+  },
+  {
+    id: "target-companies",
+    title: "Target Companies",
+    description: "Adding targets, documents, analysis, and modelling",
+    icon: "Building2",
+  },
+  {
+    id: "seller-portal",
+    title: "Seller Portal",
+    description: "Secure document collection and NDA signing",
+    icon: "Shield",
+  },
+  {
+    id: "portal-management",
+    title: "Portal Management",
+    description: "Manage and monitor all portal links",
+    icon: "Link",
+  },
+  {
+    id: "contacts-team",
+    title: "Contacts & Team",
+    description: "Directory, invites, and collaboration",
+    icon: "Users",
+  },
+  {
+    id: "account-billing",
+    title: "Account & Billing",
+    description: "Profile, settings, and subscription plans",
+    icon: "CreditCard",
+  },
+];
+
+export const articles: HelpArticle[] = [
+  {
+    id: "signing-in",
+    title: "Signing In",
+    slug: "signing-in",
+    category: "Getting Started",
+    categoryId: "getting-started",
+    excerpt: "How to sign in to Valoxi using email/password or magic links.",
+    content: [
+      { type: "paragraph", text: "Navigate to your Valoxi URL and sign in with your email and password." },
+      { type: "paragraph", text: "If you have forgotten your password, use the Forgot Password link on the login page to receive a reset email." },
+      { type: "paragraph", text: "If your organisation uses a magic link login, check your inbox for the sign-in email and click the link to access the platform instantly." },
+    ],
+  },
+  {
+    id: "onboarding",
+    title: "Onboarding",
+    slug: "onboarding",
+    category: "Getting Started",
+    categoryId: "getting-started",
+    excerpt: "Your first-time setup walkthrough.",
+    content: [
+      { type: "paragraph", text: "New users are guided through a short onboarding flow the first time they sign in. This sets up your company profile and confirms the key settings needed to personalise your workspace." },
+      { type: "paragraph", text: "You will be asked to confirm your company name, industry, and country of operation. These settings affect financial formatting and regulatory references throughout the platform." },
+    ],
+  },
+  {
+    id: "navigation",
+    title: "Navigation",
+    slug: "navigation",
+    category: "Getting Started",
+    categoryId: "getting-started",
+    excerpt: "Understanding the sidebar and main sections of Valoxi.",
+    content: [
+      { type: "paragraph", text: "The left-hand sidebar gives you access to every major section of the platform." },
+      { type: "heading", text: "Sidebar Items" },
+      {
+        type: "table",
+        headers: ["Item", "Description"],
+        rows: [
+          { cells: ["Dashboard", "High-level overview of your activity and key metrics"] },
+          { cells: ["Pipeline", "Visual Kanban board of all your active deals"] },
+          { cells: ["Target Companies", "Full list of all targets you are tracking"] },
+          { cells: ["Portal Management", "Manage Seller Portal links and track document submissions"] },
+          { cells: ["Contacts", "Directory of individuals linked to your deals"] },
+          { cells: ["Team", "Invite and manage team members"] },
+          { cells: ["Reports", "Activity alerts and reminders"] },
+          { cells: ["Billing", "Manage your subscription and payment details"] },
+          { cells: ["Account", "Update your profile and company settings"] },
+        ],
+      },
+    ],
+  },
+  {
+    id: "key-metrics",
+    title: "Key Metrics",
+    slug: "key-metrics",
+    category: "Dashboard",
+    categoryId: "dashboard",
+    excerpt: "Understanding the four summary cards at the top of your Dashboard.",
+    content: [
+      { type: "paragraph", text: "At the top of the Dashboard, four summary cards show your deal activity at a glance:" },
+      { type: "bullet", items: [
+        "Target Companies — the number of active targets currently in your pipeline",
+        "Total Deals — the total number of companies you have ever tracked, including archived ones",
+        "Offers Sent — the number of targets that have reached the Offer Stage or beyond",
+        "Total Pipeline Value — the combined estimated deal value of all active targets",
+      ]},
+    ],
+  },
+  {
+    id: "dashboard-widgets",
+    title: "Dashboard Widgets",
+    slug: "dashboard-widgets",
+    category: "Dashboard",
+    categoryId: "dashboard",
+    excerpt: "Pipeline overview, hot deals, reminders, stage alerts, and activity feed.",
+    content: [
+      { type: "paragraph", text: "Beneath the metrics, several widgets surface the information most relevant to your day-to-day work:" },
+      { type: "bullet", items: [
+        "Pipeline Overview — a visual breakdown of how many deals sit in each stage of your pipeline",
+        "Hot Deals — targets flagged as high priority that need your attention soon",
+        "Upcoming Reminders — tasks and deadlines you have set against specific targets",
+        "Stage Alerts — deals that have been sitting in the same stage for an unusually long time, prompting you to take action",
+        "Recent Activity / Team Activity — a running log of updates across your workspace, including actions taken by team members",
+      ]},
+    ],
+  },
+  {
+    id: "quick-actions",
+    title: "Quick Actions",
+    slug: "quick-actions",
+    category: "Dashboard",
+    categoryId: "dashboard",
+    excerpt: "Shortcut buttons for common tasks.",
+    content: [
+      { type: "paragraph", text: "Buttons on the Dashboard let you jump straight to adding a new target company, viewing the full pipeline, or managing your team without navigating the sidebar." },
+    ],
+  },
+  {
+    id: "deal-stages",
+    title: "Deal Stages",
+    slug: "deal-stages",
+    category: "Pipeline",
+    categoryId: "pipeline",
+    excerpt: "The default Kanban columns and what each stage means.",
+    content: [
+      { type: "paragraph", text: "The default pipeline stages move a deal from initial identification through to completion:" },
+      {
+        type: "table",
+        headers: ["Stage", "What it means"],
+        rows: [
+          { cells: ["New Target", "Newly identified company you are considering"] },
+          { cells: ["Initial Contact", "You have made first contact with the owner or their representative"] },
+          { cells: ["Documents Requested", "You have asked the target to share financial and operational documents"] },
+          { cells: ["Under Review", "You are actively reviewing the documents and business"] },
+          { cells: ["Offer Stage", "You are preparing or have submitted an offer"] },
+          { cells: ["Heads of Terms", "You are negotiating and agreeing the headline deal terms"] },
+          { cells: ["Due Diligence", "Formal legal and financial due diligence is underway"] },
+          { cells: ["Legal & Accounting", "Legal and accounting workstreams are active"] },
+          { cells: ["Completion", "The deal is completing or has completed"] },
+          { cells: ["Not Qualified", "The target did not meet your criteria and has been closed out"] },
+        ],
+      },
+    ],
+  },
+  {
+    id: "moving-deals",
+    title: "Moving Deals Through the Pipeline",
+    slug: "moving-deals",
+    category: "Pipeline",
+    categoryId: "pipeline",
+    excerpt: "How to update deal stages and automated triggers.",
+    content: [
+      { type: "paragraph", text: "Drag a deal card from one column to another to update its stage. The platform records the transition and can trigger automated actions — for example, when you create a Seller Portal link for a target, the deal may automatically advance to the Documents Requested stage." },
+    ],
+  },
+  {
+    id: "adding-target-pipeline",
+    title: "Adding a New Target from the Pipeline",
+    slug: "adding-target-pipeline",
+    category: "Pipeline",
+    categoryId: "pipeline",
+    excerpt: "Create a new target directly from the Pipeline view.",
+    content: [
+      { type: "paragraph", text: "Use the Add Company button at the top of the Pipeline page to create a new target directly. You will be prompted to enter the company name and any initial details before the card appears in the pipeline." },
+    ],
+  },
+  {
+    id: "adding-a-target",
+    title: "Adding a Target",
+    slug: "adding-a-target",
+    category: "Target Companies",
+    categoryId: "target-companies",
+    excerpt: "Create a new company profile to track in your pipeline.",
+    content: [
+      { type: "paragraph", text: "Click Add Company (available from the Pipeline, Dashboard, or Target Companies list) and fill in the company's basic details: name, sector, approximate revenue, and any notes. Once created, the target appears in your pipeline and you can begin building the deal file." },
+    ],
+  },
+  {
+    id: "uploading-documents",
+    title: "Uploading Documents",
+    slug: "uploading-documents",
+    category: "Target Companies",
+    categoryId: "target-companies",
+    excerpt: "Upload financial and operational documents for AI analysis.",
+    content: [
+      { type: "paragraph", text: "The Documents section within a target profile is where you upload the financial and operational documents that power Valoxi's analysis." },
+      { type: "heading", text: "Supported document types" },
+      { type: "bullet", items: [
+        "Profit & Loss statement",
+        "Balance Sheet",
+        "Management accounts",
+        "Asset register",
+        "Sales ledger",
+        "And other standard due diligence materials",
+      ]},
+      { type: "heading", text: "How to upload" },
+      { type: "paragraph", text: "Navigate to the target company, go to the Documents tab, and drag and drop files or click to browse. Valoxi accepts common file formats including PDF, Excel, and Word documents." },
+      { type: "heading", text: "What happens next — the AI screening workflow" },
+      { type: "numbered", items: [
+        "Classification — Valoxi automatically identifies the type of each document (e.g. \"Profit & Loss Statement\") using AI",
+        "Extraction — Structured financial data is extracted from the document and saved",
+        "Normalisation — Revenue, cost, and balance sheet figures are standardised so they can feed directly into the Deal Modeller",
+        "Phase 1 Screening — Once all required document types have been uploaded and processed, Valoxi automatically triggers the first stage of Expert Analysis",
+      ]},
+      { type: "tip", text: "You do not need to trigger these steps manually — they run automatically as soon as the required documents are in place." },
+    ],
+  },
+  {
+    id: "expert-analysis",
+    title: "Expert Analysis",
+    slug: "expert-analysis",
+    category: "Target Companies",
+    categoryId: "target-companies",
+    excerpt: "AI-generated multi-dimensional assessment of each target.",
+    content: [
+      { type: "paragraph", text: "The Analysis tab provides a structured, AI-generated assessment of the target company across multiple dimensions. This is available on the Professional plan and above." },
+      { type: "heading", text: "Analysis Layers" },
+      {
+        type: "table",
+        headers: ["Layer", "Analysis"],
+        rows: [
+          { cells: ["Foundation", "Data Quality, Initial Screening"] },
+          { cells: ["Layer 1", "Financial, Operational, Risk"] },
+          { cells: ["Layer 2", "Quality of Earnings, Sector"] },
+          { cells: ["Layer 3", "Valuation, Deal Structure"] },
+          { cells: ["Layer 4", "Synthesis (overall recommendation)"] },
+        ],
+      },
+      { type: "paragraph", text: "Each dimension produces a written assessment with supporting data points, ratings, and flags. The Explain button next to any finding lets you ask the AI a follow-up question to get deeper context on a specific point." },
+      { type: "paragraph", text: "The Synthesis output at the end brings all dimensions together into a final deal verdict and overall recommendation." },
+    ],
+  },
+  {
+    id: "deal-modeller",
+    title: "Deal Modeller",
+    slug: "deal-modeller",
+    category: "Target Companies",
+    categoryId: "target-companies",
+    excerpt: "Structure enterprise value, funding, and offer terms.",
+    content: [
+      { type: "paragraph", text: "The Deal Modeller tab is where you structure the financial terms of the deal. It is available in a simplified form on the Core plan, and in its full version on Professional and above." },
+      { type: "heading", text: "Key sections" },
+      { type: "bullet", items: [
+        "Enterprise Value — set your target enterprise value and adjust the assumptions that drive it (e.g. EBITDA multiple, revenue multiple)",
+        "Funding Structure — define how the deal will be funded, including cash at completion, bank debt, deferred payments, and earn-outs",
+        "Offer Structuring — model the cash consideration payable to the seller at different funding scenarios",
+        "P&L Summary — see the projected impact of the deal terms on the combined business's profitability in the years following completion",
+        "Viability — an assessment of whether the business can service its post-acquisition debt obligations, including key coverage ratios",
+      ]},
+      { type: "heading", text: "Version History" },
+      { type: "paragraph", text: "On the Professional plan, you can save multiple versions of your deal model (up to 5 versions, with 90 days of history) so you can compare different scenarios side by side. The Expert plan increases this to 20 versions with 180 days of history." },
+    ],
+  },
+  {
+    id: "value-creation",
+    title: "Value Creation",
+    slug: "value-creation",
+    category: "Target Companies",
+    categoryId: "target-companies",
+    excerpt: "Model post-acquisition growth, scenarios, and returns.",
+    content: [
+      { type: "paragraph", text: "The Value Creation tab focuses on what the business could be worth after your ownership, rather than at the point of acquisition. This tab is available on the Expert plan." },
+      { type: "heading", text: "Key features" },
+      { type: "bullet", items: [
+        "Growth Modelling — set assumptions for revenue growth, margin improvement, and cost synergies across a 5-year projection period",
+        "Scenario Analysis — test how sensitive your projected returns are to changes in key inputs. Results are displayed as a heat map",
+        "Exit Scenario — model the likely exit value of the business at the end of your hold period, based on prevailing market multiples",
+        "Returns — view projected IRR (Internal Rate of Return) and MoM (Money-on-Money multiple, also referred to as MOIC) across different scenarios",
+        "Waterfall — a visual breakdown of how exit proceeds would be distributed, reflecting the priority order of different financing instruments",
+      ]},
+    ],
+  },
+  {
+    id: "setting-up-portal",
+    title: "Setting Up a Portal Link",
+    slug: "setting-up-portal",
+    category: "Seller Portal",
+    categoryId: "seller-portal",
+    excerpt: "Create and send a secure document collection link.",
+    content: [
+      { type: "paragraph", text: "The Seller Portal is a secure, standalone web page that you send to a contact at the target company. It allows them to upload documents and (if required) sign an NDA — without needing to create a Valoxi account." },
+      { type: "heading", text: "Steps to create a portal link" },
+      { type: "numbered", items: [
+        "Go to Portal Management in the left-hand sidebar",
+        "Click Create Portal Link and select the target company and the primary contact you want to send it to",
+        "Optionally add a personalised message that the contact will see when they open the portal",
+        "Choose whether to require the contact to sign a Non-Disclosure Agreement before they can upload any documents",
+        "Click Generate Link. Valoxi sends an email to the contact with their secure, unique access link",
+      ]},
+      { type: "tip", text: "Each link is time-limited and tied to a specific contact, so you maintain full control over who can access the portal and for how long." },
+    ],
+  },
+  {
+    id: "nda-signing",
+    title: "NDA Signing",
+    slug: "nda-signing",
+    category: "Seller Portal",
+    categoryId: "seller-portal",
+    excerpt: "How sellers electronically sign NDAs before uploading documents.",
+    content: [
+      { type: "paragraph", text: "If you enabled NDA signing when creating the portal link, the contact must complete this step before they can upload any documents." },
+      { type: "heading", text: "The process from the contact's perspective" },
+      { type: "numbered", items: [
+        "They open their portal link and are presented with the NDA document",
+        "They must scroll through the full document before the acceptance option becomes available",
+        "They check the agreement box and type their full name as their electronic signature",
+        "The system records their name, the timestamp, and their IP address",
+        "A signed PDF copy is generated automatically and made available to download immediately. A copy is also stored securely in the platform",
+      ]},
+      { type: "paragraph", text: "Once the NDA is signed, the contact proceeds to the document upload section." },
+    ],
+  },
+  {
+    id: "document-submission",
+    title: "Document Submission (Seller View)",
+    slug: "document-submission",
+    category: "Seller Portal",
+    categoryId: "seller-portal",
+    excerpt: "What sellers see when they open the portal and upload files.",
+    content: [
+      { type: "paragraph", text: "Inside the portal, the contact sees a structured checklist of the documents you are requesting. Each category (e.g. \"Profit & Loss\", \"Balance Sheet\", \"Asset Register\") has a clearly labelled upload area." },
+      { type: "paragraph", text: "The contact uploads files by dragging them into the relevant category or clicking to browse their computer. A progress bar at the top of the page shows how many of the required document types have been successfully submitted and processed, giving the seller a clear sense of completion." },
+    ],
+  },
+  {
+    id: "monitoring-progress",
+    title: "Monitoring Progress",
+    slug: "monitoring-progress",
+    category: "Seller Portal",
+    categoryId: "seller-portal",
+    excerpt: "Track seller submissions and configure automated reminders.",
+    content: [
+      { type: "paragraph", text: "Once a contact has been given portal access, you can track their progress from inside the target company profile and from the Portal Management page. You will see which document types have been submitted, which are still outstanding, and whether the AI has successfully processed each file." },
+      { type: "heading", text: "Automated chase-ups" },
+      { type: "paragraph", text: "You can configure the portal to send automatic reminder emails to the contact if they have not completed their submissions within a set number of days. The system sends a gentle reminder first, escalating to a more urgent follow-up if documents remain outstanding after the second deadline." },
+    ],
+  },
+  {
+    id: "portal-management-overview",
+    title: "Portal Management Overview",
+    slug: "portal-management-overview",
+    category: "Portal Management",
+    categoryId: "portal-management",
+    excerpt: "Central view of all Seller Portal links across your targets.",
+    content: [
+      { type: "paragraph", text: "The Portal Management page gives you a central view of all the Seller Portal links you have created across all your target companies." },
+      { type: "heading", text: "From this page you can" },
+      { type: "bullet", items: [
+        "See the total number of portal links you have active",
+        "Track how many contacts have submitted documents",
+        "Review the status of each individual portal link (active, expired, or completed)",
+        "Create new portal links directly from the page",
+        "Delete or deactivate links that are no longer needed",
+      ]},
+      { type: "paragraph", text: "This page is especially useful when you have multiple live deal processes running simultaneously and need a consolidated view of where each target is in the document collection process." },
+    ],
+  },
+  {
+    id: "contacts",
+    title: "Contacts",
+    slug: "contacts",
+    category: "Contacts & Team",
+    categoryId: "contacts-team",
+    excerpt: "Manage individuals linked to your deals.",
+    content: [
+      { type: "paragraph", text: "The Contacts page is a directory of all the individuals linked to your deals — founders, business owners, advisers, and any other contacts you have added. You can associate contacts with specific target companies and record their role in the process." },
+    ],
+  },
+  {
+    id: "team-management",
+    title: "Team Management",
+    slug: "team-management",
+    category: "Contacts & Team",
+    categoryId: "contacts-team",
+    excerpt: "Invite colleagues and manage workspace access.",
+    content: [
+      { type: "paragraph", text: "The Team page allows company admins to invite colleagues and manage their access to the workspace." },
+      { type: "heading", text: "To invite a new team member" },
+      { type: "numbered", items: [
+        "Go to Team in the sidebar",
+        "Click Invite Member and enter their email address",
+        "They will receive an invitation email with a link to set up their account",
+      ]},
+      { type: "paragraph", text: "Team members can collaborate on target company profiles, view the pipeline, and contribute to deal analysis. The number of seats available depends on your subscription plan." },
+    ],
+  },
+  {
+    id: "profile-settings",
+    title: "Profile & Security",
+    slug: "profile-settings",
+    category: "Account & Billing",
+    categoryId: "account-billing",
+    excerpt: "Update your personal profile and manage security settings.",
+    content: [
+      { type: "paragraph", text: "Update your first name, last name, and job title from the Profile section." },
+      { type: "paragraph", text: "To change your password, use the Security section on the same page. If your organisation uses Clerk for authentication, you can also manage your active sessions and connected accounts from here." },
+    ],
+  },
+  {
+    id: "company-settings",
+    title: "Company Settings",
+    slug: "company-settings",
+    category: "Account & Billing",
+    categoryId: "account-billing",
+    excerpt: "Admin-only settings for your organisation.",
+    content: [
+      { type: "paragraph", text: "Company administrators can update the following settings. Changes are applied across the entire workspace for all team members." },
+      { type: "bullet", items: [
+        "Company Name",
+        "Industry — select from a predefined list of sectors",
+        "Company Size",
+        "Country of Operation — UK or US (this affects certain financial formatting and regulatory references throughout the platform)",
+        "Business contact details — email, phone, and address",
+      ]},
+    ],
+  },
+  {
+    id: "subscription-plans",
+    title: "Subscription Plans",
+    slug: "subscription-plans",
+    category: "Account & Billing",
+    categoryId: "account-billing",
+    excerpt: "Core, Professional, and Expert plans explained.",
+    content: [
+      { type: "paragraph", text: "Valoxi offers three plans, each designed for a different level of deal activity. Annual billing is available at a 20% discount across all plans." },
+      {
+        type: "table",
+        headers: ["Plan", "Price", "Key Features"],
+        rows: [
+          { cells: ["Core", "$87/month", "Up to 5 active targets, 1 GB storage, simplified Deal Modeller, Seller Portal, email support"] },
+          { cells: ["Professional", "$167/month", "Up to 15 active targets, 10 GB storage, full Deal Modeller with 5 versions, Expert Deep-Dive Analysis, DD Data Room, onboarding call"] },
+          { cells: ["Expert", "$397/month", "Up to 50 active targets, 25 GB storage, Deal Modeller with 20 versions, Value Creation Modeller, Heads of Terms builder, white-label portal, API access"] },
+        ],
+      },
+      { type: "heading", text: "Add-ons" },
+      { type: "paragraph", text: "If you need more than your plan includes, you can purchase additional capacity:" },
+      { type: "bullet", items: [
+        "Extra Seats — add more team members beyond the plan default",
+        "Extra Company Slots — add more active target slots if you exceed your plan's limit",
+      ]},
+    ],
+  },
+  {
+    id: "managing-subscription",
+    title: "Managing Your Subscription",
+    slug: "managing-subscription",
+    category: "Account & Billing",
+    categoryId: "account-billing",
+    excerpt: "Upgrades, downgrades, invoices, and payment methods.",
+    content: [
+      { type: "paragraph", text: "From the Billing page, you can:" },
+      { type: "bullet", items: [
+        "View your current plan and renewal date",
+        "Upgrade or downgrade your plan",
+        "Add or remove seats and company slots",
+        "Update your payment method",
+        "Download past invoices",
+      ]},
+      { type: "paragraph", text: "Clicking Manage Subscription opens the Stripe customer portal, where all payment-related actions are handled securely." },
+      { type: "heading", text: "Promotional Benefits" },
+      { type: "paragraph", text: "If you joined Valoxi during a promotional period (such as an Early Bird offer or community partnership), any active benefits and their expiry dates are displayed at the top of the Billing page." },
+    ],
+  },
+];
+
+export function getArticleBySlug(slug: string): HelpArticle | undefined {
+  return articles.find((a) => a.slug === slug);
+}
+
+export function getArticlesByCategory(categoryId: string): HelpArticle[] {
+  return articles.filter((a) => a.categoryId === categoryId);
+}
+
+export function searchArticles(query: string): HelpArticle[] {
+  const q = query.toLowerCase();
+  return articles.filter(
+    (a) =>
+      a.title.toLowerCase().includes(q) ||
+      a.excerpt.toLowerCase().includes(q) ||
+      a.category.toLowerCase().includes(q) ||
+      a.content.some(
+        (block) =>
+          (block.text && block.text.toLowerCase().includes(q)) ||
+          (block.items && block.items.some((item) => item.toLowerCase().includes(q)))
+      )
+  );
+}
+========================================
+END FILE: client/src/data/helpContent.ts
+========================================
+
+========================================
+CREATE FILE: client/src/pages/help/HelpHome.tsx
+========================================
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import {
+  Search,
+  Rocket,
+  LayoutDashboard,
+  Kanban,
+  Building2,
+  Shield,
+  Link2,
+  Users,
+  CreditCard,
+  ArrowRight,
+  BookOpen,
+  FileText,
+} from "lucide-react";
+import { categories, articles, searchArticles } from "@/data/helpContent";
+
+const iconMap: Record<string, React.ElementType> = {
+  Rocket,
+  LayoutDashboard,
+  Kanban,
+  Building2,
+  Shield,
+  Link: Link2,
+  Users,
+  CreditCard,
+};
+
+export default function HelpHome() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [, navigate] = useLocation();
+
+  const popularArticles = articles.slice(0, 6);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/help/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const quickResults =
+    searchQuery.length >= 2 ? searchArticles(searchQuery).slice(0, 4) : [];
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      {/* Hero section */}
+      <div className="text-center mb-12">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#e85d04]/15 mb-6">
+          <BookOpen className="w-8 h-8 text-[#e85d04]" />
+        </div>
+        <h1 className="text-4xl font-bold text-foreground mb-3">
+          How can we help?
+        </h1>
+        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          Search the knowledge base for answers about Valoxi features, workflows,
+          and best practices.
+        </p>
+      </div>
+
+      {/* Search bar */}
+      <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12 relative">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for topics, features, or questions..."
+            className="w-full bg-card border border-border rounded-xl pl-12 pr-4 py-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#e85d04]/50 focus:ring-1 focus:ring-[#e85d04]/20 transition-all"
+          />
+        </div>
+
+        {/* Quick search dropdown */}
+        {quickResults.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden z-50">
+            {quickResults.map((result) => (
+              <Link
+                key={result.id}
+                href={`/help/article/${result.slug}`}
+                onClick={() => setSearchQuery("")}
+                className="flex items-start gap-3 px-4 py-3 hover:bg-muted transition-colors border-b border-border last:border-0"
+              >
+                <FileText className="w-4 h-4 text-[#e85d04] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-foreground font-medium">
+                    {result.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {result.category}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </form>
+
+      {/* Category cards */}
+      <div className="mb-16">
+        <h2 className="text-xl font-semibold text-foreground mb-6">
+          Browse by Category
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {categories.map((cat) => {
+            const Icon = iconMap[cat.icon] || BookOpen;
+            const count = articles.filter((a) => a.categoryId === cat.id).length;
+            return (
+              <Link
+                key={cat.id}
+                href={`/help/search?category=${cat.id}`}
+                className="group bg-card border border-border rounded-xl p-5 hover:border-[#e85d04]/30 hover:bg-muted/50 transition-all"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#e85d04]/10 flex items-center justify-center mb-4 group-hover:bg-[#e85d04]/20 transition-colors">
+                  <Icon className="w-5 h-5 text-[#e85d04]" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">
+                  {cat.title}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {cat.description}
+                </p>
+                <div className="flex items-center gap-1 text-xs text-[#e85d04]">
+                  <span>{count} articles</span>
+                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Popular articles */}
+      <div>
+        <h2 className="text-xl font-semibold text-foreground mb-6">
+          Popular Articles
+        </h2>
+        <div className="bg-card border border-border rounded-xl divide-y divide-border">
+          {popularArticles.map((article) => (
+            <Link
+              key={article.id}
+              href={`/help/article/${article.slug}`}
+              className="flex items-center gap-4 px-5 py-4 hover:bg-muted/50 transition-colors group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-[#e85d04]/10 transition-colors">
+                <FileText className="w-4 h-4 text-muted-foreground group-hover:text-[#e85d04] transition-colors" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-foreground">
+                  {article.title}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {article.excerpt}
+                </p>
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+                {article.category}
+              </span>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-[#e85d04] transition-colors shrink-0" />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+========================================
+END FILE: client/src/pages/help/HelpHome.tsx
+========================================
+
+========================================
+CREATE FILE: client/src/pages/help/HelpArticle.tsx
+========================================
+import { Link, useParams } from "wouter";
+import {
+  getArticleBySlug,
+  getArticlesByCategory,
+  articles,
+} from "@/data/helpContent";
+import {
+  ChevronRight,
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  Lightbulb,
+  FileText,
+} from "lucide-react";
+
+export default function HelpArticle() {
+  const params = useParams<{ slug: string }>();
+  const slug = params?.slug || "";
+  const article = getArticleBySlug(slug);
+
+  if (!article) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+          <FileText className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Article not found
+        </h1>
+        <p className="text-muted-foreground mb-6">
+          The help article you are looking for does not exist.
+        </p>
+        <Link
+          href="/help"
+          className="inline-flex items-center gap-2 text-[#e85d04] hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Help Center
+        </Link>
+      </div>
+    );
+  }
+
+  const related = getArticlesByCategory(article.categoryId)
+    .filter((a) => a.id !== article.id)
+    .slice(0, 4);
+
+  const categoryArticles = articles.filter(
+    (a) => a.categoryId === article.categoryId
+  );
+  const currentIndex = categoryArticles.findIndex((a) => a.id === article.id);
+  const prevArticle = currentIndex > 0 ? categoryArticles[currentIndex - 1] : null;
+  const nextArticle =
+    currentIndex < categoryArticles.length - 1
+      ? categoryArticles[currentIndex + 1]
+      : null;
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <Link href="/help" className="hover:text-[#e85d04] transition-colors">
+          Help
+        </Link>
+        <ChevronRight className="w-3 h-3" />
+        <span>{article.category}</span>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-foreground">{article.title}</span>
+      </nav>
+
+      {/* Article header */}
+      <div className="mb-8">
+        <p className="text-xs uppercase tracking-wider text-[#e85d04] font-semibold mb-2">
+          {article.category}
+        </p>
+        <h1 className="text-3xl font-bold text-foreground mb-3">
+          {article.title}
+        </h1>
+        <p className="text-muted-foreground text-lg">{article.excerpt}</p>
+      </div>
+
+      {/* Article content */}
+      <article className="space-y-5">
+        {article.content.map((block, idx) => {
+          switch (block.type) {
+            case "heading":
+              return (
+                <h2
+                  key={idx}
+                  className="text-xl font-semibold text-foreground mt-8 mb-3"
+                >
+                  {block.text}
+                </h2>
+              );
+            case "paragraph":
+              return (
+                <p key={idx} className="text-foreground/90 leading-relaxed">
+                  {block.text}
+                </p>
+              );
+            case "bullet":
+              return (
+                <ul key={idx} className="space-y-2">
+                  {block.items?.map((item, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3 text-foreground/90"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#e85d04] mt-2 shrink-0" />
+                      <span className="leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            case "numbered":
+              return (
+                <ol key={idx} className="space-y-3">
+                  {block.items?.map((item, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3 text-foreground/90"
+                    >
+                      <span className="w-6 h-6 rounded-full bg-[#e85d04]/15 text-[#e85d04] text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              );
+            case "table":
+              return (
+                <div key={idx} className="overflow-x-auto">
+                  <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+                    {block.headers && (
+                      <thead>
+                        <tr className="bg-muted">
+                          {block.headers.map((h, i) => (
+                            <th
+                              key={i}
+                              className="px-4 py-3 text-left text-foreground font-semibold border-b border-border"
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                    )}
+                    <tbody className="divide-y divide-border">
+                      {block.rows?.map((row, ri) => (
+                        <tr
+                          key={ri}
+                          className="hover:bg-muted/50 transition-colors"
+                        >
+                          {row.cells.map((cell, ci) => (
+                            <td
+                              key={ci}
+                              className="px-4 py-3 text-muted-foreground"
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            case "tip":
+              return (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 bg-[#e85d04]/10 border border-[#e85d04]/20 rounded-lg p-4"
+                >
+                  <Lightbulb className="w-5 h-5 text-[#e85d04] shrink-0 mt-0.5" />
+                  <p className="text-sm text-foreground/90">{block.text}</p>
+                </div>
+              );
+            case "warning":
+              return (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 bg-destructive/10 border border-destructive/20 rounded-lg p-4"
+                >
+                  <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-sm text-foreground/90">{block.text}</p>
+                </div>
+              );
+            default:
+              return null;
+          }
+        })}
+      </article>
+
+      {/* Feedback */}
+      <div className="mt-12 pt-8 border-t border-border">
+        <p className="text-sm text-muted-foreground mb-3">
+          Was this article helpful?
+        </p>
+        <div className="flex gap-3">
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground hover:bg-[#e85d04]/10 hover:border-[#e85d04]/30 hover:text-[#e85d04] transition-colors">
+            <CheckCircle2 className="w-4 h-4" />
+            Yes, helpful
+          </button>
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive transition-colors">
+            <AlertCircle className="w-4 h-4" />
+            Not helpful
+          </button>
+        </div>
+      </div>
+
+      {/* Prev/Next navigation */}
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {prevArticle && (
+          <Link
+            href={`/help/article/${prevArticle.slug}`}
+            className="group p-4 bg-card border border-border rounded-lg hover:border-[#e85d04]/30 transition-colors"
+          >
+            <p className="text-xs text-muted-foreground mb-1">Previous</p>
+            <p className="text-sm font-medium text-foreground group-hover:text-[#e85d04] transition-colors">
+              {prevArticle.title}
+            </p>
+          </Link>
+        )}
+        {nextArticle && (
+          <Link
+            href={`/help/article/${nextArticle.slug}`}
+            className={`group p-4 bg-card border border-border rounded-lg hover:border-[#e85d04]/30 transition-colors ${
+              !prevArticle ? "sm:col-start-2" : ""
+            }`}
+          >
+            <p className="text-xs text-muted-foreground mb-1 text-right">
+              Next
+            </p>
+            <p className="text-sm font-medium text-foreground group-hover:text-[#e85d04] transition-colors text-right">
+              {nextArticle.title}
+            </p>
+          </Link>
+        )}
+      </div>
+
+      {/* Related articles */}
+      {related.length > 0 && (
+        <div className="mt-12">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            Related Articles
+          </h3>
+          <div className="space-y-2">
+            {related.map((a) => (
+              <Link
+                key={a.id}
+                href={`/help/article/${a.slug}`}
+                className="flex items-center gap-3 p-3 bg-card border border-border rounded-lg hover:border-[#e85d04]/30 hover:bg-muted/50 transition-colors group"
+              >
+                <FileText className="w-4 h-4 text-muted-foreground group-hover:text-[#e85d04] transition-colors" />
+                <span className="text-sm text-foreground group-hover:text-[#e85d04] transition-colors">
+                  {a.title}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+========================================
+END FILE: client/src/pages/help/HelpArticle.tsx
+========================================
+
+========================================
+CREATE FILE: client/src/pages/help/HelpSearch.tsx
+========================================
+import { useMemo } from "react";
+import { Link, useSearch, useLocation } from "wouter";
+import { searchArticles, articles, categories } from "@/data/helpContent";
+import { Search, FileText, ArrowRight, X } from "lucide-react";
+
+export default function HelpSearch() {
+  const search = useSearch();
+  const [, setLocation] = useLocation();
+
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
+  const query = searchParams.get("q") || "";
+  const categoryFilter = searchParams.get("category") || "";
+
+  const updateParams = (next: URLSearchParams) => {
+    const qs = next.toString();
+    setLocation(qs ? `/help/search?${qs}` : "/help/search");
+  };
+
+  const results = useMemo(() => {
+    let filtered = query ? searchArticles(query) : articles;
+    if (categoryFilter) {
+      filtered = filtered.filter((a) => a.categoryId === categoryFilter);
+    }
+    return filtered;
+  }, [query, categoryFilter]);
+
+  const activeCategory = categories.find((c) => c.id === categoryFilter);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Search header */}
+      <div className="mb-8">
+        {query && (
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Results for "{query}"
+          </h1>
+        )}
+        {activeCategory && !query && (
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {activeCategory.title}
+          </h1>
+        )}
+        <p className="text-muted-foreground">
+          {results.length} {results.length === 1 ? "article" : "articles"} found
+          {activeCategory && ` in ${activeCategory.title}`}
+        </p>
+
+        {/* Active filters */}
+        {(query || categoryFilter) && (
+          <div className="flex items-center gap-2 mt-4">
+            {query && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-[#e85d04]/15 text-[#e85d04] text-xs rounded-full">
+                Search: {query}
+                <button
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete("q");
+                    updateParams(next);
+                  }}
+                  className="hover:text-foreground"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {categoryFilter && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-muted text-foreground text-xs rounded-full">
+                Category: {activeCategory?.title}
+                <button
+                  onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete("category");
+                    updateParams(next);
+                  }}
+                  className="hover:text-foreground"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Results list */}
+      {results.length > 0 ? (
+        <div className="space-y-3">
+          {results.map((article) => (
+            <Link
+              key={article.id}
+              href={`/help/article/${article.slug}`}
+              className="flex items-start gap-4 p-4 bg-card border border-border rounded-xl hover:border-[#e85d04]/30 hover:bg-muted/50 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-[#e85d04]/10 transition-colors">
+                <FileText className="w-5 h-5 text-muted-foreground group-hover:text-[#e85d04] transition-colors" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-medium text-foreground">
+                    {article.title}
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                    {article.category}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {article.excerpt}
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-[#e85d04] transition-colors shrink-0 mt-1" />
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16">
+          <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-lg font-medium text-foreground mb-2">
+            No results found
+          </h2>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            Try adjusting your search terms, or browse categories from the Help
+            home page to find what you need.
+          </p>
+          <Link
+            href="/help"
+            className="inline-flex items-center gap-2 mt-4 text-sm text-[#e85d04] hover:underline"
+          >
+            Back to Help Center
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+========================================
+END FILE: client/src/pages/help/HelpSearch.tsx
+========================================
+
+========================================
+MODIFY FILE: client/src/App.tsx
+========================================
+
+Change 1 of 2: add three lazy import lines.
+
+Find this existing line:
+const AccountPage = lazy(() => import("@/pages/account"));
+
+Immediately AFTER that line, insert these three new lines:
+const HelpHome = lazy(() => import("@/pages/help/HelpHome"));
+const HelpArticle = lazy(() => import("@/pages/help/HelpArticle"));
+const HelpSearch = lazy(() => import("@/pages/help/HelpSearch"));
+
+Change 2 of 2: add three Route lines inside the authenticated Layout Switch.
+
+Find this existing line inside the <Layout><Switch> block:
+<Route path="/account" component={AccountPage} />
+
+Immediately BEFORE that line, insert these three new lines as siblings:
+<Route path="/help" component={HelpHome} />
+<Route path="/help/search" component={HelpSearch} />
+<Route path="/help/article/:slug" component={HelpArticle} />
+
+After both changes the relevant section of the Switch must read top to bottom:
+<Route path="/billing" component={Billing} />
+<Route path="/help" component={HelpHome} />
+<Route path="/help/search" component={HelpSearch} />
+<Route path="/help/article/:slug" component={HelpArticle} />
+<Route path="/account" component={AccountPage} />
+<Route component={NotFound} />
+
+Do not touch any other line in App.tsx. Do not add routes inside the unauthenticated block or the admin block. Do not modify any file other than App.tsx and the four newly created files above.
+
+========================================
+VERIFICATION
+========================================
+
+After applying all changes, perform the following and report:
+
+1. Run npm run check. Expected: exactly 1 tsc error, the pre-existing server/services/portal.service.ts(81,14) TS2353 error. Any additional error is a regression.
+
+2. Confirm the dev server has restarted cleanly with no parse errors in the four new help files. Wait for the fresh start timestamp before reporting.
+
+3. Report the line numbers in App.tsx where:
+   a. The three new lazy import lines now sit
+   b. The three new Route lines now sit
+
+4. Confirm each of the four new files exists at the expected path with non-zero size.
+
+Report format:
+
+FILES CREATED:
+- client/src/data/helpContent.ts (size in bytes)
+- client/src/pages/help/HelpHome.tsx (size in bytes)
+- client/src/pages/help/HelpArticle.tsx (size in bytes)
+- client/src/pages/help/HelpSearch.tsx (size in bytes)
+
+APP.TSX CHANGE 1: lines applied at L<start>-L<end>
+APP.TSX CHANGE 2: lines applied at L<start>-L<end>
+
+TSC: <count> error(s). If only 1: confirm it is the pre-existing portal.service.ts error.
+
+DEV SERVER: fresh start timestamp, clean or with errors
+
+Stop after reporting. Do not run anything else and do not start on Build 2.
