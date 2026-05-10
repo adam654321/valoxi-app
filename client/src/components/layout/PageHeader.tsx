@@ -1,4 +1,6 @@
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
+import { HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -22,6 +24,8 @@ const routeLabels: Record<string, string> = {
   "/portal-management": "Portals",
   "/company-accounts": "Company Accounts",
   "/file-upload-test": "File Upload Test",
+  "/help": "Help",
+  "/help/search": "Help",
 };
 
 export function PageHeader() {
@@ -30,6 +34,9 @@ export function PageHeader() {
   const getCurrentPageLabel = () => {
     if (location.startsWith("/target-companies/")) {
       return "Company Details";
+    }
+    if (location.startsWith("/help/article/")) {
+      return "Help";
     }
     return routeLabels[location] || "Page";
   };
@@ -66,6 +73,12 @@ export function PageHeader() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+          <Link href="/help">
+            <HelpCircle className="h-4 w-4" />
+            <span className="sr-only">Help Center</span>
+          </Link>
+        </Button>
         <ThemeToggle />
         <Notifications />
       </div>

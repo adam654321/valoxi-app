@@ -1,0 +1,108 @@
+[CODE] Build 2 of 2: Help Center entry point in PageHeader
+
+Goal: add a HelpCircle icon button next to the existing ThemeToggle in the top header, plus the breadcrumb labels for the three help routes. Build 1 (4 new files + App.tsx routes) has been verified clean on dev, this is the second and final build for the Help Center integration.
+
+Only one file is modified: client/src/components/layout/PageHeader.tsx. Do not touch any other file.
+
+Apply five changes to client/src/components/layout/PageHeader.tsx in order.
+
+Change 1 of 5: replace the wouter import line.
+
+Find this exact line near the top of the file:
+import { useLocation } from "wouter";
+
+Replace it with:
+import { Link, useLocation } from "wouter";
+
+Change 2 of 5: add three new imports immediately below the wouter import line.
+
+Insert these three lines after the wouter import:
+import { HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+Final order of the top-of-file imports must be:
+import { Link, useLocation } from "wouter";
+import { HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+...rest of existing imports unchanged...
+
+Change 3 of 5: add two entries to routeLabels.
+
+Find the closing brace of the routeLabels constant. The current last entry is:
+"/file-upload-test": "File Upload Test",
+
+Immediately after that line, before the closing brace of routeLabels, add these two lines:
+"/help": "Help",
+"/help/search": "Help",
+
+The article path /help/article/:slug is intentionally not added here, it is handled in getCurrentPageLabel.
+
+Change 4 of 5: extend getCurrentPageLabel to handle help article paths.
+
+Find the existing getCurrentPageLabel function. It currently reads:
+const getCurrentPageLabel = () => {
+  if (location.startsWith("/target-companies/")) {
+    return "Company Details";
+  }
+  return routeLabels[location] || "Page";
+};
+
+Replace it with:
+const getCurrentPageLabel = () => {
+  if (location.startsWith("/target-companies/")) {
+    return "Company Details";
+  }
+  if (location.startsWith("/help/article/")) {
+    return "Help";
+  }
+  return routeLabels[location] || "Page";
+};
+
+Change 5 of 5: add the Help button to the right-side flex group as the first child.
+
+Find this existing block:
+<div className="ml-auto flex items-center gap-2">
+  <ThemeToggle />
+  <Notifications />
+</div>
+
+Replace it with:
+<div className="ml-auto flex items-center gap-2">
+  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+    <Link href="/help">
+      <HelpCircle className="h-4 w-4" />
+      <span className="sr-only">Help Center</span>
+    </Link>
+  </Button>
+  <ThemeToggle />
+  <Notifications />
+</div>
+
+Final order of buttons in the right-side flex group, left to right, must be: Help button, ThemeToggle, Notifications.
+
+After applying all five changes:
+
+1. Run npm run check. Expected: exactly 1 tsc error, the pre-existing server/services/portal.service.ts(81,14) TS2353 error. Any additional error is a regression. Confirm zero regressions.
+
+2. Confirm the dev server has hot-reloaded cleanly with no parse errors in PageHeader.tsx. Wait for the fresh HMR timestamp before reporting.
+
+3. Report the line numbers in PageHeader.tsx where:
+   a. The three new imports now sit
+   b. The two new routeLabels entries now sit
+   c. The new "/help/article/" branch inside getCurrentPageLabel sits
+   d. The new Button block sits
+
+Report format:
+
+CHANGE 1 (wouter import replaced): YES, L<number>
+CHANGE 2 (HelpCircle and Button imports added): YES, L<start>-L<end>
+CHANGE 3 (routeLabels entries added): YES, L<start>-L<end>
+CHANGE 4 (getCurrentPageLabel branch added): YES, L<number>
+CHANGE 5 (Help Button block added): YES, L<start>-L<end>
+
+TSC: <count> error(s). If only 1: confirm it is the pre-existing portal.service.ts error.
+
+DEV SERVER: fresh HMR timestamp, clean or with errors
+
+Stop after reporting. Do not run anything else.
