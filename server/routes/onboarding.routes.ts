@@ -157,13 +157,15 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
     throw new UnauthorizedError();
   }
 
-  const { companyName, industry, companySize, country, role, hearAboutUs } = req.body as {
+  const { companyName, industry, companySize, country, role, hearAboutUs, acceptTerms, acceptDpa } = req.body as {
     companyName?: string;
     industry?: string;
     companySize?: string;
     country?: string;
     role?: string;
     hearAboutUs?: string;
+    acceptTerms?: boolean;
+    acceptDpa?: boolean;
   };
 
   if (!companyName || !companyName.trim()) {
@@ -171,6 +173,12 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
   }
   if (!industry || !industry.trim()) {
     return res.status(400).json({ error: 'validation', message: 'Industry is required.' });
+  }
+  if (acceptTerms !== true) {
+    return res.status(400).json({ error: 'validation', message: 'You must accept the Terms and Conditions to continue.' });
+  }
+  if (acceptDpa !== true) {
+    return res.status(400).json({ error: 'validation', message: 'You must accept the Data Processing Agreement to continue.' });
   }
 
   if (userCompanyId) {
@@ -194,6 +202,13 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
       onboardingCompletedAt: new Date(),
     })
     .where(eq(users.id, userId));
+
+  const { recordAcceptance, TERMS_VERSION, DPA_VERSION } = await import('../services/compliance.service');
+  const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || null;
+  const userAgent = req.headers['user-agent'] || null;
+
+  await recordAcceptance({ userId, documentType: 'terms', version: TERMS_VERSION, ipAddress, userAgent });
+  await recordAcceptance({ userId, documentType: 'dpa', version: DPA_VERSION, ipAddress, userAgent });
 
   if (userCompanyId) {
     const { track } = await import('../services/funnel.service');

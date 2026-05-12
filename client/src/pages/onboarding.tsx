@@ -106,6 +106,8 @@ export default function OnboardingPage() {
   const [hearAboutUs, setHearAboutUs] = useState("");
   const [hearAboutUsOther, setHearAboutUsOther] = useState("");
   const [companyNamePreFilled, setCompanyNamePreFilled] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptDpa, setAcceptDpa] = useState(false);
 
   useEffect(() => {
     if (!companyNamePreFilled && subData) {
@@ -137,6 +139,8 @@ export default function OnboardingPage() {
       country?: string;
       role: string;
       hearAboutUs: string;
+      acceptTerms: boolean;
+      acceptDpa: boolean;
     }) => {
       const res = await apiRequest("POST", "/api/v2/onboarding/complete", data);
       return res.json();
@@ -162,13 +166,14 @@ export default function OnboardingPage() {
     },
   });
 
-  const [errors, setErrors] = useState<{ companyName?: string; industry?: string }>({});
+  const [errors, setErrors] = useState<{ companyName?: string; industry?: string; acceptance?: string }>({});
 
   const handleSubmit = () => {
-    const newErrors: typeof errors = {};
+    const newErrors: { companyName?: string; industry?: string; acceptance?: string } = {};
     if (!companyName.trim()) newErrors.companyName = "Company name is required.";
     if (!industry) newErrors.industry = "Please select your industry.";
     if (industry === "Other" && !industryOther.trim()) newErrors.industry = "Please describe your industry.";
+    if (!acceptTerms || !acceptDpa) newErrors.acceptance = "Please accept the Terms and Data Processing Agreement to continue.";
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
@@ -179,6 +184,8 @@ export default function OnboardingPage() {
       country,
       role,
       hearAboutUs: hearAboutUs === "Other" ? `Other: ${hearAboutUsOther.trim()}` : hearAboutUs,
+      acceptTerms,
+      acceptDpa,
     });
   };
 
@@ -318,6 +325,49 @@ export default function OnboardingPage() {
                   />
                 </div>
               )}
+            </div>
+
+            <div className="pt-4 border-t border-border space-y-3">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={acceptTerms}
+                  onChange={(e) => { setAcceptTerms(e.target.checked); setErrors((p) => ({ ...p, acceptance: undefined })); }}
+                  className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                />
+                <label htmlFor="acceptTerms" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                  I accept the{" "}
+                  <a href="https://valoxi.ai/terms/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+                    Terms and Conditions
+                  </a>
+                  .
+                </label>
+              </div>
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="acceptDpa"
+                  checked={acceptDpa}
+                  onChange={(e) => { setAcceptDpa(e.target.checked); setErrors((p) => ({ ...p, acceptance: undefined })); }}
+                  className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                />
+                <label htmlFor="acceptDpa" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                  I accept the{" "}
+                  <a href="https://valoxi.ai/dpa/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+                    Data Processing Agreement
+                  </a>
+                  .
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground pl-7">
+                Our{" "}
+                <a href="https://valoxi.ai/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+                  Privacy Policy
+                </a>{" "}
+                explains how we handle your data.
+              </p>
+              {errors.acceptance && <p className="text-sm text-red-600 pl-7">{errors.acceptance}</p>}
             </div>
 
             <Button
