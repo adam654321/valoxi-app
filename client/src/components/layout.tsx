@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AcceptanceGate } from '@/components/compliance/AcceptanceGate';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -130,6 +131,7 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </SidebarInset>
+      <AcceptanceGate />
     </SidebarProvider>
   );
 }

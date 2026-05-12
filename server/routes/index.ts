@@ -34,6 +34,7 @@ import publicConfigRoutes from './public.routes';
 import publicWaitlistRoutes from './public-waitlist.routes';
 import billingAdminRoutes from './billing-admin.routes';
 import onboardingRoutes from './onboarding.routes';
+import complianceRoutes from './compliance.routes';
 import explainRoutes from './explain.routes';
 import betaFeedbackRoutes from './beta-feedback.routes';
 import betaRoutes from './beta.routes';
@@ -101,6 +102,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingAdminRoutes);
   app.use('/api/v2/onboarding', isAuthenticated, validateCsrfToken, onboardingRoutes);
+  app.use('/api/v2/compliance', isAuthenticated, validateCsrfToken, complianceRoutes);
   app.use('/api/v2/explain', isAuthenticated, validateCsrfToken, requireActiveSubscription, explainRoutes);
   app.use('/api/v2/beta-feedback', isAuthenticated, validateCsrfToken, betaFeedbackRoutes);
   app.use('/api/v2/beta', isAuthenticated, validateCsrfToken, betaRoutes);

@@ -1,0 +1,308 @@
+[CODE] Build 2 of 2 for #146: T&Cs + DPA acceptance backfill gate for existing users.
+
+Goal: Add a modal gate that appears for any authenticated user with onboardingCompleted=true who has not yet accepted the current TERMS_VERSION or DPA_VERSION. Modal blocks app access until acceptance is recorded. Build 1 (new-user onboarding integration) already shipped to dev 12 May 2026 and V-checked clean.
+
+Preconditions assumed (from Build 1):
+- user_acceptances table exists with columns id, user_id, document_type, version, accepted_at, ip_address, user_agent
+- server/services/compliance.service.ts exports TERMS_VERSION, DPA_VERSION, recordAcceptance, hasAcceptedCurrent, hasAcceptedAllCurrent
+- TSC baseline is 1 pre-existing portal.service.ts error
+- Existing dev DB has 23 users including 1 (user_id 74) with acceptance records, 22 without
+
+Four changes to apply.
+
+CHANGE 1: Create server/routes/compliance.routes.ts
+
+Create the file with this content:
+
+```typescript
+import { Router, Request, Response } from 'express';
+import { sendSuccess } from '../utils/response';
+import { asyncHandler } from '../utils/async-handler';
+import { UnauthorizedError } from '../utils/errors';
+import {
+  TERMS_VERSION,
+  DPA_VERSION,
+  hasAcceptedCurrent,
+  recordAcceptance,
+  type AcceptanceDocumentType,
+} from '../services/compliance.service';
+
+const router = Router();
+
+router.get('/status', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  if (!userId) {
+    throw new UnauthorizedError();
+  }
+
+  const [termsOk, dpaOk] = await Promise.all([
+    hasAcceptedCurrent(userId, 'terms'),
+    hasAcceptedCurrent(userId, 'dpa'),
+  ]);
+
+  const missing: { documentType: AcceptanceDocumentType; version: string }[] = [];
+  if (!termsOk) missing.push({ documentType: 'terms', version: TERMS_VERSION });
+  if (!dpaOk) missing.push({ documentType: 'dpa', version: DPA_VERSION });
+
+  sendSuccess(res, {
+    allAccepted: missing.length === 0,
+    missing,
+    currentVersions: {
+      terms: TERMS_VERSION,
+      dpa: DPA_VERSION,
+    },
+  });
+}));
+
+router.post('/accept', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
+  if (!userId) {
+    throw new UnauthorizedError();
+  }
+
+  const { acceptTerms, acceptDpa } = req.body as {
+    acceptTerms?: boolean;
+    acceptDpa?: boolean;
+  };
+
+  if (acceptTerms !== true && acceptDpa !== true) {
+    return res.status(400).json({ error: 'validation', message: 'No acceptance flags provided.' });
+  }
+
+  const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || null;
+  const userAgent = req.headers['user-agent'] || null;
+
+  if (acceptTerms === true) {
+    const already = await hasAcceptedCurrent(userId, 'terms');
+    if (!already) {
+      await recordAcceptance({ userId, documentType: 'terms', version: TERMS_VERSION, ipAddress, userAgent });
+    }
+  }
+
+  if (acceptDpa === true) {
+    const already = await hasAcceptedCurrent(userId, 'dpa');
+    if (!already) {
+      await recordAcceptance({ userId, documentType: 'dpa', version: DPA_VERSION, ipAddress, userAgent });
+    }
+  }
+
+  sendSuccess(res, { success: true });
+}));
+
+export default router;
+```
+
+CHANGE 2: Mount the new router
+
+Locate the file where v2 routes are aggregated (likely server/index.ts or server/routes/index.ts; the same place where onboardingRouter is mounted as /api/v2/onboarding). Find the existing pattern such as:
+
+```typescript
+import onboardingRouter from './routes/onboarding.routes';
+app.use('/api/v2/onboarding', onboardingRouter);
+```
+
+Add immediately after that block (or in matching alphabetical order if existing imports follow one):
+
+```typescript
+import complianceRouter from './routes/compliance.routes';
+app.use('/api/v2/compliance', complianceRouter);
+```
+
+Report the exact filename and line numbers of the two lines added.
+
+CHANGE 3: Create client/src/components/compliance/AcceptanceGate.tsx
+
+Create the file with this content:
+
+```typescript
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface MissingDocument {
+  documentType: 'terms' | 'dpa';
+  version: string;
+}
+
+interface ComplianceStatus {
+  allAccepted: boolean;
+  missing: MissingDocument[];
+  currentVersions: { terms: string; dpa: string };
+}
+
+export function AcceptanceGate() {
+  const { toast } = useToast();
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptDpa, setAcceptDpa] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery<ComplianceStatus>({
+    queryKey: ['/api/v2/compliance/status'],
+    select: (response: any) => response?.data || response,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: async (payload: { acceptTerms: boolean; acceptDpa: boolean }) => {
+      const res = await apiRequest('POST', '/api/v2/compliance/accept', payload);
+      return res.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/v2/compliance/status'] });
+      toast({ title: "Thanks, you're all set." });
+    },
+    onError: (err: any) => {
+      setError(err?.message || 'Something went wrong, please try again.');
+    },
+  });
+
+  if (isLoading || !data) return null;
+  if (data.allAccepted) return null;
+
+  const termsMissing = data.missing.some((m) => m.documentType === 'terms');
+  const dpaMissing = data.missing.some((m) => m.documentType === 'dpa');
+
+  const canSubmit = (!termsMissing || acceptTerms) && (!dpaMissing || acceptDpa);
+
+  const handleSubmit = () => {
+    if (!canSubmit) {
+      setError('Please accept all required documents to continue.');
+      return;
+    }
+    setError(null);
+    acceptMutation.mutate({
+      acceptTerms: termsMissing ? acceptTerms : false,
+      acceptDpa: dpaMissing ? acceptDpa : false,
+    });
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={() => { /* gate cannot be dismissed */ }}>
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        hideCloseButton
+      >
+        <DialogHeader>
+          <DialogTitle>Confirm your terms</DialogTitle>
+          <DialogDescription>
+            We've now published our Terms and Data Processing Agreement on valoxi.ai. Please tick to confirm you accept both before continuing. You can read each in full via the links below.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 pt-2">
+          {termsMissing && (
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="gateTerms"
+                checked={acceptTerms}
+                onChange={(e) => { setAcceptTerms(e.target.checked); setError(null); }}
+                className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+              />
+              <label htmlFor="gateTerms" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                I accept the{" "}
+                <a href="https://valoxi.ai/terms/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+                  Terms and Conditions
+                </a>
+                .
+              </label>
+            </div>
+          )}
+          {dpaMissing && (
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="gateDpa"
+                checked={acceptDpa}
+                onChange={(e) => { setAcceptDpa(e.target.checked); setError(null); }}
+                className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+              />
+              <label htmlFor="gateDpa" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                I accept the{" "}
+                <a href="https://valoxi.ai/dpa/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+                  Data Processing Agreement
+                </a>
+                .
+              </label>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground pl-7">
+            Our{" "}
+            <a href="https://valoxi.ai/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">
+              Privacy Policy
+            </a>{" "}
+            explains how we handle your data.
+          </p>
+          {error && <p className="text-sm text-red-600 pl-7">{error}</p>}
+        </div>
+
+        <Button
+          onClick={handleSubmit}
+          disabled={!canSubmit || acceptMutation.isPending}
+          className="w-full"
+        >
+          {acceptMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Confirm and continue
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+If shadcn DialogContent in this codebase does NOT support a hideCloseButton prop, remove that prop and instead modify the className to suppress the default close button. Change className="sm:max-w-md" to className="sm:max-w-md [&>button.absolute]:hidden". Inspect client/src/components/ui/dialog.tsx if unsure which approach matches the existing DialogContent API.
+
+CHANGE 4: Mount the gate in client/src/components/layout.tsx
+
+Open client/src/components/layout.tsx. Add this import at the top of the file alongside existing imports:
+
+```typescript
+import { AcceptanceGate } from '@/components/compliance/AcceptanceGate';
+```
+
+Then render the gate as the LAST child inside SidebarProvider (so it overlays everything but inherits the authenticated route gating). Place this line immediately before the closing </SidebarProvider> tag:
+
+```typescript
+<AcceptanceGate />
+```
+
+Report the exact line number where it was placed and confirm it sits within the authenticated Layout block, not the unauthenticated routes.
+
+VERIFICATION
+
+After applying all four changes, perform the following and report:
+
+1. Run npm run check. Expected: exactly 1 tsc error, the pre-existing portal.service.ts(81,14) TS2353 error. Any additional error is a regression.
+
+2. Confirm dev server hot-reloaded cleanly with no parse errors in the new files or modified files. Wait for fresh HMR timestamp before reporting.
+
+3. Sanity check the database state. Run in Replit shell:
+```bash
+psql $DATABASE_URL -c "SELECT COUNT(DISTINCT user_id) AS users_with_acceptances, (SELECT COUNT(*) FROM users WHERE onboarding_completed = true) AS total_completed_users FROM user_acceptances"
+```
+Report the output. Expected: users_with_acceptances should be 1 (user 74 from Build 1 V-check), total_completed_users should be roughly 23. The gap (approximately 22 users) is the backfill population that will see the gate.
+
+4. Report:
+   a. server/routes/compliance.routes.ts total line count
+   b. The filename where complianceRouter was mounted plus the line range of the two added lines
+   c. client/src/components/compliance/AcceptanceGate.tsx total line count
+   d. client/src/components/layout.tsx line number where AcceptanceGate is rendered
+
+Report format:
+
+CHANGE 1: server/routes/compliance.routes.ts created, line count
+CHANGE 2: mount at <filename> L<line range>
+CHANGE 3: client/src/components/compliance/AcceptanceGate.tsx created, line count
+CHANGE 4: AcceptanceGate rendered at client/src/components/layout.tsx L<line>
+TSC: error count, baseline confirmation
+DEV SERVER: fresh HMR timestamp
+USERS WITH/WITHOUT ACCEPTANCES: psql output
+
+Stop after reporting. Do not run anything else.
