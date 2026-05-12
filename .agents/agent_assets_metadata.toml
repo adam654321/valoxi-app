@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "-3WtAB61hXXofgAgBQepk"
+uri = "file://.local/tasks/launch-brief-corrections.md"
+type = "text"
+title = "Launch Brief Corrections"
