@@ -216,19 +216,23 @@ export function PipelineKanbanBoard() {
                 className="flex-shrink-0 w-72"
                 data-testid={`pipeline-column-${column.stageName.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <div className={`rounded-lg ${colors.bg} ${colors.border} border p-3 mb-3`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${colors.accent}`} />
-                      <h3 className="font-semibold text-foreground">{column.stageName}</h3>
+                <div className={`rounded-lg ${colors.bg} ${colors.border} border p-3 mb-3 group ${column.description ? 'cursor-default' : ''}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${colors.accent}`} />
+                      <h3 className={`font-semibold text-foreground truncate ${column.description ? 'group-hover:hidden' : ''}`}>
+                        {column.stageName}
+                      </h3>
+                      {column.description && (
+                        <p className="hidden group-hover:block text-sm font-semibold text-foreground leading-snug">
+                          {column.description}
+                        </p>
+                      )}
                     </div>
-                    <Badge variant="secondary" className={colors.text}>
+                    <Badge variant="secondary" className={`${colors.text} flex-shrink-0`}>
                       {column.companies.length}
                     </Badge>
                   </div>
-                  {column.description && (
-                    <p className="text-xs text-muted-foreground mt-1 ml-5">{column.description}</p>
-                  )}
                 </div>
 
                 <Droppable droppableId={column.stageName}>

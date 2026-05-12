@@ -1,20 +1,20 @@
 import { db } from '../db';
 import { pipelineStages } from '@shared/schema/deals';
-import { count } from 'drizzle-orm';
+import { count, sql } from 'drizzle-orm';
 import { log } from '../vite';
 import { seedSystemConfig } from './seed-system-config';
 
 const DEFAULT_PIPELINE_STAGES = [
-  { stageName: 'New Target', stageOrder: 1, description: 'Newly identified acquisition target' },
-  { stageName: 'Initial Contact', stageOrder: 2, description: 'First outreach made to the target' },
-  { stageName: 'Documents Requested', stageOrder: 3, description: 'Financial and operational documents requested' },
-  { stageName: 'Under Review', stageOrder: 4, description: 'Documents and business under active review' },
-  { stageName: 'Offer Stage', stageOrder: 5, description: 'Preparing or submitting an offer' },
-  { stageName: 'Heads of Terms', stageOrder: 6, description: 'Negotiating and agreeing heads of terms' },
-  { stageName: 'Due Diligence', stageOrder: 7, description: 'Formal due diligence in progress' },
-  { stageName: 'Legal & Accounting', stageOrder: 8, description: 'Legal and accounting workstreams active' },
-  { stageName: 'Completion', stageOrder: 9, description: 'Deal completing or completed' },
-  { stageName: 'Not Qualified', stageOrder: 10, description: 'Target did not meet criteria' },
+  { stageName: 'New Target', stageOrder: 1, description: 'Newly identified company you are considering' },
+  { stageName: 'Initial Contact', stageOrder: 2, description: 'You have made first contact with the owner or their representative' },
+  { stageName: 'Documents Requested', stageOrder: 3, description: 'You have asked the target to share financial and operational documents' },
+  { stageName: 'Under Review', stageOrder: 4, description: 'You are actively reviewing the documents and business' },
+  { stageName: 'Offer Stage', stageOrder: 5, description: 'You are preparing or have submitted an offer' },
+  { stageName: 'Heads of Terms', stageOrder: 6, description: 'You are negotiating and agreeing the headline deal terms' },
+  { stageName: 'Due Diligence', stageOrder: 7, description: 'Formal legal and financial due diligence is underway' },
+  { stageName: 'Legal & Accounting', stageOrder: 8, description: 'Legal and accounting workstreams are active' },
+  { stageName: 'Completion', stageOrder: 9, description: 'The deal is completing or has completed' },
+  { stageName: 'Not Qualified', stageOrder: 10, description: 'The target did not meet your criteria and has been closed out' },
 ];
 
 export async function seedDefaultPipelineStages(): Promise<void> {
@@ -22,11 +22,20 @@ export async function seedDefaultPipelineStages(): Promise<void> {
     .select({ count: count() })
     .from(pipelineStages);
 
-  if ((existing?.count ?? 0) > 0) {
-    return;
-  }
+  const isFirstRun = (existing?.count ?? 0) === 0;
 
-  await db.insert(pipelineStages).values(DEFAULT_PIPELINE_STAGES).onConflictDoNothing();
-  log('[SEED] Seeded default pipeline stages');
-  await seedSystemConfig();
+  await db
+    .insert(pipelineStages)
+    .values(DEFAULT_PIPELINE_STAGES)
+    .onConflictDoUpdate({
+      target: pipelineStages.stageName,
+      set: { description: sql`excluded.description` },
+    });
+
+  if (isFirstRun) {
+    log('[SEED] Seeded default pipeline stages');
+    await seedSystemConfig();
+  } else {
+    log('[SEED] Updated pipeline stage descriptions');
+  }
 }
