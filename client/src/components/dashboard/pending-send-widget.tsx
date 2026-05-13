@@ -6,6 +6,7 @@ import { FileCheck, Send, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useServerConfig } from "@/hooks/useServerConfig";
 import { handleSendResult } from "@/lib/send-result-toast";
 
 interface PendingDoc {
@@ -24,6 +25,7 @@ const docTypeLabel: Record<string, string> = {
 
 export default function PendingSendWidget() {
   const { toast } = useToast();
+  const { nylasConnectVisible } = useServerConfig();
   const { data: pending = [], isLoading } = useQuery<PendingDoc[]>({
     queryKey: ['/api/v2/deal-documents/pending-send'],
     select: (response: any) => response?.data || response || [],
@@ -37,7 +39,7 @@ export default function PendingSendWidget() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/pending-send'] });
-      handleSendResult(data, toast, 'Document sent to seller');
+      handleSendResult(data, toast, 'Document sent to seller', nylasConnectVisible);
     },
   });
 

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useServerConfig } from '@/hooks/useServerConfig';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExternalLink, Users, FileText, Clock, Mail, Plus, ChevronRight, ArrowLeft, Building2, AlertTriangle, TimerOff, CalendarPlus, RefreshCw } from 'lucide-react';
@@ -216,6 +217,7 @@ export default function PortalManagement() {
   const [extensionDays, setExtensionDays] = useState<number>(7);
   const [includeNda, setIncludeNda] = useState<boolean>(true);
   const { toast } = useToast();
+  const { nylasConnectVisible } = useServerConfig();
   const queryClient = useQueryClient();
 
   // Fetch target companies
@@ -261,7 +263,7 @@ export default function PortalManagement() {
       return response.json();
     },
     onSuccess: (data) => {
-      handleSendResult(data, toast, 'Portal link created');
+      handleSendResult(data, toast, 'Portal link created', nylasConnectVisible);
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
       // Invalidate pipeline/company queries since creating portal moves company to Documents Requested stage
       queryClient.invalidateQueries({ queryKey: ['/api/v2/target-companies'] });
@@ -312,7 +314,7 @@ export default function PortalManagement() {
       return response.json();
     },
     onSuccess: (data) => {
-      handleSendResult(data, toast, 'Portal link reinstated');
+      handleSendResult(data, toast, 'Portal link reinstated', nylasConnectVisible);
       queryClient.invalidateQueries({ queryKey: ['/api/v2/portal/tokens'] });
     },
     onError: (error: any) => {
@@ -331,7 +333,7 @@ export default function PortalManagement() {
       return response.json();
     },
     onSuccess: (data) => {
-      handleSendResult(data, toast, 'Portal email resent');
+      handleSendResult(data, toast, 'Portal email resent', nylasConnectVisible);
     },
     onError: (error: any) => {
       toast({

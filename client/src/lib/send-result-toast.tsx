@@ -21,6 +21,7 @@ export function handleSendResult(
   data: any,
   toast: ToastFn,
   successContext: string,
+  nylasConnectVisible = false,
 ): void {
   const result: SendResult | null =
     data?.data?.sendResult ?? data?.sendResult ?? null;
@@ -35,6 +36,11 @@ export function handleSendResult(
       title: successContext,
       description: `Sent from ${result.fromEmail}`,
     });
+    return;
+  }
+
+  if (!nylasConnectVisible) {
+    toast({ title: successContext });
     return;
   }
 

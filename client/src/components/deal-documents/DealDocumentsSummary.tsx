@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useServerConfig } from '@/hooks/useServerConfig';
 import { handleSendResult } from '@/lib/send-result-toast';
 
 interface DocumentResponse {
@@ -65,6 +66,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'outlin
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
   const { toast } = useToast();
+  const { nylasConnectVisible } = useServerConfig();
   const [ndaLoading, setNdaLoading] = useState(false);
   const [offerLoading, setOfferLoading] = useState(false);
   const [hotLoading, setHotLoading] = useState(false);
@@ -126,7 +128,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
-      handleSendResult(data, toast, 'Offer sent to seller portal');
+      handleSendResult(data, toast, 'Offer sent to seller portal', nylasConnectVisible);
     },
     onError: (err: any) => {
       toast({ title: 'Error', description: err.message || 'Failed to send offer', variant: 'destructive' });
@@ -147,7 +149,7 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
-      handleSendResult(data, toast, 'HoT sent to seller portal');
+      handleSendResult(data, toast, 'HoT sent to seller portal', nylasConnectVisible);
       setShowHotTermsForm(false);
       setHotTermsAction(null);
     },
@@ -1085,6 +1087,7 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
   targetCompanyId: number;
 }) {
   const { toast } = useToast();
+  const { nylasConnectVisible } = useServerConfig();
   const [exclusivityPeriodDays, setExclusivityPeriodDays] = useState(90);
   const [nonCompetePeriodYears, setNonCompetePeriodYears] = useState(2);
   const [nonSolicitPeriodYears, setNonSolicitPeriodYears] = useState(2);
@@ -1134,7 +1137,7 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
-      handleSendResult(data, toast, 'HoT sent to seller');
+      handleSendResult(data, toast, 'HoT sent to seller', nylasConnectVisible);
       onClose();
     },
     onError: (err: any) => {
@@ -1251,6 +1254,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
   targetCompanyId: number;
 }) {
   const { toast } = useToast();
+  const { nylasConnectVisible } = useServerConfig();
   const [expanded, setExpanded] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<DealDocument | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -1282,7 +1286,7 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', targetCompanyId] });
       queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents', latest.id] });
-      handleSendResult(data, toast, 'Document sent to seller');
+      handleSendResult(data, toast, 'Document sent to seller', nylasConnectVisible);
     },
   });
 

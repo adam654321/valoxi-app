@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useServerConfig } from '@/hooks/useServerConfig';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { handleSendResult } from '@/lib/send-result-toast';
 import {
@@ -98,6 +99,7 @@ export interface ExplainContext {
 
 export default function DealModeller({ companyId }: DealModellerProps) {
   const { toast } = useToast();
+  const { nylasConnectVisible } = useServerConfig();
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [transactionType, setTransactionType] = useState<string>('share_sale');
 
@@ -287,7 +289,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     onSuccess: (data: any) => {
       const version = data?.document?.version ?? data?.data?.document?.version;
       const versionSuffix = version ? ` v${version}` : '';
-      handleSendResult(data, toast, `Offer letter${versionSuffix} sent to seller portal`);
+      handleSendResult(data, toast, `Offer letter${versionSuffix} sent to seller portal`, nylasConnectVisible);
     },
     onError: (err: Error) => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
