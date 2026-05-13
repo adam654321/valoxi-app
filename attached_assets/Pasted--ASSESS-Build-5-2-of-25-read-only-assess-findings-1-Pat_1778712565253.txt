@@ -1,0 +1,66 @@
+[ASSESS] Build 5.2 of #25 — read-only assess findings
+1. Paths confirmed
+FileLinesNotesclient/src/pages/account.tsx343Connected Accounts content delegated to subcomponent, NOT rendered inlineclient/src/lib/send-result-toast.tsx54Resend-fallback toast + Connect actionclient/src/components/settings/connected-accounts-section.tsx322Actual Connect button location
+2. Connect surfaces actually present
+Three wrap points, not two as handover suggested.
+2a. account.tsx lines 157-160 (TabsList trigger)
+tsx<TabsTrigger value="connected-accounts" className="gap-2">
+  <Link2 className="h-4 w-4" />Connected accounts
+</TabsTrigger>
+2b. account.tsx lines 333-335 (TabsContent body)
+tsx<TabsContent value="connected-accounts" className="space-y-6">
+  <ConnectedAccountsSection />
+</TabsContent>
+Important: if we hide only the TabsContent and leave the TabsList trigger, clicking the tab gives an empty pane. Both must wrap together.
+2c. connected-accounts-section.tsx lines 166-197 (ConnectButtons function)
+This is the component that owns the actual buttons. Two buttons, label strings are "Connect Gmail" and "Connect Outlook" (not "Connect Google" / "Connect Microsoft" as the handover grep list assumed). When 2a + 2b are wrapped, this entire component is unreachable, so no internal wrap needed inside the section.
+2d. account.tsx lines 52-58 (activeTab init effect)
+tsxconst params = new URLSearchParams(window.location.search);
+if (params.get("nylas_connected") || params.get("nylas_error")) {
+  return "connected-accounts";
+}
+Dead-but-harmless when flag is off: those URL params can never legitimately arrive (OAuth can't fire without the button). Leave alone.
+3. send-result-toast.tsx Connect prompt
+Lines 38-53 — the Resend-fallback path:
+tsxtoast({
+  title: successContext,
+  description: 'Sent as system email. Connect your email to send personalised.',
+  duration: 8000,
+  action: (
+    <ToastAction altText="Connect email" onClick={() => { window.location.href = '/account'; }}>
+      Connect email
+    </ToastAction>
+  ),
+});
+This fires every time a customer-facing send falls back to Resend (i.e. every send while no company default grant exists, which is every send with flag off because no one can connect). With flag off, this toast tells users to do something they can't see. Must be gated.
+4. Grep surface confirmation
+I do not have shell grep across the codebase via MCP. I have inspected the three handover-named files plus the underlying component. Based on the #25 build history (D25.9 explicitly deferred inline prompts), these are the only Connect surfaces. To be 100% certain no inline prompt landed accidentally, a Replit shell grep would close this gap. Suggest running this single grep on Replit before the build:
+grep -rn "Connect Gmail\|Connect Outlook\|Connect email\|Connect your email\|/api/v2/nylas/auth" client/src/
+5. Vite env var pattern — open question
+The codebase has no existing import.meta.env.VITE_* pattern in the files I read. The current pattern for runtime feature flags is server-config-driven: useServerConfig hook fetches /api/v2/public/config which returns { clerkEnabled: boolean }.
+Two options:
+Option A: VITE_NYLAS_CONNECT_VISIBLE (per D25.17 lock)
+
+Build-time, baked into JS bundle
+Set in Replit Secrets, requires redeploy to flip
+New pattern in this codebase
+
+Option B: extend server-config (consistent with existing precedent)
+
+Add nylasConnectVisible to /api/v2/public/config
+Server reads process.env.NYLAS_CONNECT_VISIBLE and emits in the public config response
+Client reads via useServerConfig().nylasConnectVisible
+To flip: change env var + restart (no rebuild)
+Same shape as clerkEnabled
+
+Option B is closer to house style. Option A is what D25.17 locks. Worth a moment's thought before authorising the build. Recommend Option B unless you want to stay with the locked decision.
+6. Toast UX with flag off — open question
+When flag is off, three options for the Resend-fallback toast:
+
+A. Silent: same toast as Nylas-success ({ title: successContext } only). Pre-#25 baseline behaviour. Recommended.
+B. Informative: keep "Sent as system email." description, drop the Connect prompt and action button
+C. Half-measure: leave description verbatim, drop only the action
+
+Recommend A — cleanest, matches pre-#25 customer experience.
+7. TSC baseline and git status
+Cannot run from MCP. The handover noted 1 pre-existing portal.service.ts(81,14) TS2353 error as expected baseline. To be confirmed by you on Replit shell before build: npm run check + git status clean.
