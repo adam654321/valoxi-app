@@ -1,4 +1,5 @@
 import { billingRepository } from '../repositories/billing.repository';
+import { marketingContactsService } from './marketing-contacts.service';
 import {
   type Subscription,
   type InsertSubscription,
@@ -179,6 +180,8 @@ class BillingService {
       canceledAt: null,
     });
 
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
     return subscription;
   }
 
@@ -283,6 +286,8 @@ class BillingService {
       payload: { ...data },
     });
 
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
     return subscription;
   }
 
@@ -316,6 +321,8 @@ class BillingService {
       payload: { notes: notes ?? null },
     });
 
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
     return subscription;
   }
 
@@ -338,6 +345,8 @@ class BillingService {
       payload: { trialEnd: existing.trialEnd },
     });
 
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
     return subscription;
   }
 
@@ -365,6 +374,8 @@ class BillingService {
       },
     });
 
+    // Marketing segment sync, fire-and-forget — must never break billing flows
+    void marketingContactsService.reconcileSubscriptionAudiences(userCompanyId);
     return subscription;
   }
 

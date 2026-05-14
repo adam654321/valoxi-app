@@ -8,6 +8,7 @@ import { users, userInvitations } from '@shared/schema';
 import { promoCodeCampaigns } from '@shared/schema/billing';
 import { emailApiService } from '../services/email.service';
 import { billingService } from '../services/billing.service';
+import { marketingContactsService } from '../services/marketing-contacts.service';
 import { isFiveDNewMember } from '../services/promo-code.service';
 import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 
@@ -145,6 +146,10 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     await db.update(users).set({ welcomeEmailSentAt: new Date() }).where(eq(users.id, match.id));
     console.log(`[clerk-webhook] user.created: welcome email sent to ${email} for user ${match.id}`);
   }
+
+  if (linked) {
+    await marketingContactsService.syncContactOnUserCreate(match.id);
+  }
 }
 
 async function handleUserUpdated(data: UserJSON): Promise<void> {
@@ -203,6 +208,7 @@ async function handleUserDeleted(data: DeletedObjectJSON): Promise<void> {
 
   await db.update(users).set({ isActive: false }).where(eq(users.id, match.id));
   console.log(`[clerk-webhook] user.deleted: soft-deleted user ${match.id} (Clerk ${clerkUserId})`);
+  await marketingContactsService.syncContactOnUserDelete(match.id);
 }
 
 router.post('/clerk', async (req: Request, res: Response) => {
