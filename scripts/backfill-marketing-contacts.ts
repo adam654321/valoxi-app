@@ -1,0 +1,140 @@
+#!/usr/bin/env tsx
+/**
+ * Backfill marketing contacts to Resend.
+ *
+ * Iterates active users from the local DB and calls
+ * marketingContactsService.upsertContact for each. Idempotent.
+ *
+ * Usage:
+ *   tsx scripts/backfill-marketing-contacts.ts                   # full run
+ *   tsx scripts/backfill-marketing-contacts.ts --dry-run         # no Resend calls
+ *   tsx scripts/backfill-marketing-contacts.ts --limit=3         # first 3 users only
+ *   tsx scripts/backfill-marketing-contacts.ts --user-id=42      # single user
+ *   tsx scripts/backfill-marketing-contacts.ts --dry-run --limit=3
+ */
+
+import pLimit from 'p-limit';
+import { eq, asc, and } from 'drizzle-orm';
+import { db } from '../server/db';
+import { users } from '@shared/schema';
+import { marketingContactsService } from '../server/services/marketing-contacts.service';
+
+interface Args {
+  dryRun: boolean;
+  limit: number | null;
+  userId: number | null;
+}
+
+function parseArgs(): Args {
+  const dryRun = process.argv.includes('--dry-run');
+  let limit: number | null = null;
+  let userId: number | null = null;
+
+  for (const arg of process.argv.slice(2)) {
+    if (arg.startsWith('--limit=')) {
+      const n = Number.parseInt(arg.slice('--limit='.length), 10);
+      if (Number.isFinite(n) && n > 0) limit = n;
+    }
+    if (arg.startsWith('--user-id=')) {
+      const n = Number.parseInt(arg.slice('--user-id='.length), 10);
+      if (Number.isFinite(n) && n > 0) userId = n;
+    }
+  }
+  return { dryRun, limit, userId };
+}
+
+async function main(): Promise<void> {
+  const args = parseArgs();
+
+  console.log('='.repeat(60));
+  console.log('Marketing contacts backfill');
+  console.log('='.repeat(60));
+  console.log(`Mode:      ${args.dryRun ? 'DRY RUN (no Resend calls)' : 'LIVE'}`);
+  console.log(`Limit:     ${args.limit === null ? 'no limit' : args.limit}`);
+  console.log(`User ID:   ${args.userId === null ? 'all active users' : args.userId}`);
+  console.log('='.repeat(60));
+
+  let query = db.select({ id: users.id, email: users.email })
+    .from(users)
+    .where(args.userId !== null
+      ? and(eq(users.id, args.userId), eq(users.isActive, true))
+      : eq(users.isActive, true))
+    .orderBy(asc(users.id));
+
+  let targetUsers = await query;
+  if (args.limit !== null) {
+    targetUsers = targetUsers.slice(0, args.limit);
+  }
+
+  console.log(`Found ${targetUsers.length} active users to process.`);
+  if (targetUsers.length === 0) {
+    console.log('Nothing to do.');
+    process.exit(0);
+  }
+  console.log('');
+
+  if (args.dryRun) {
+    for (const u of targetUsers) {
+      console.log(`[dry-run] would upsert user ${u.id} (${u.email})`);
+    }
+    console.log('');
+    console.log(`Dry run complete. ${targetUsers.length} users would be upserted.`);
+    process.exit(0);
+  }
+
+  const limiter = pLimit(5);
+  const tally = { created: 0, updated: 0, skipped: 0, failed: 0 };
+  const failures: { id: number; email: string; reason?: string }[] = [];
+  const skips: { id: number; email: string; reason?: string }[] = [];
+
+  const tasks = targetUsers.map((u) => limiter(async () => {
+    const result = await marketingContactsService.upsertContact(u.id);
+    tally[result.status] = (tally[result.status] ?? 0) + 1;
+
+    const tag = result.status.toUpperCase().padEnd(8);
+    console.log(`[${tag}] user ${String(u.id).padStart(4)} ${u.email}${result.reason ? ` (${result.reason})` : ''}`);
+
+    if (result.status === 'failed') {
+      failures.push({ id: u.id, email: u.email, reason: result.reason });
+    }
+    if (result.status === 'skipped') {
+      skips.push({ id: u.id, email: u.email, reason: result.reason });
+    }
+  }));
+
+  await Promise.all(tasks);
+
+  console.log('');
+  console.log('='.repeat(60));
+  console.log('Backfill complete');
+  console.log('='.repeat(60));
+  console.log(`Created:  ${tally.created}`);
+  console.log(`Updated:  ${tally.updated}`);
+  console.log(`Skipped:  ${tally.skipped}`);
+  console.log(`Failed:   ${tally.failed}`);
+  console.log(`Total:    ${targetUsers.length}`);
+
+  if (skips.length > 0) {
+    console.log('');
+    console.log('Skips:');
+    for (const s of skips) {
+      console.log(`  - user ${s.id} (${s.email})${s.reason ? `: ${s.reason}` : ''}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    console.log('');
+    console.log('Failures:');
+    for (const f of failures) {
+      console.log(`  - user ${f.id} (${f.email})${f.reason ? `: ${f.reason}` : ''}`);
+    }
+    process.exit(1);
+  }
+
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error('Backfill crashed:', err);
+  process.exit(1);
+});
