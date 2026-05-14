@@ -79,7 +79,11 @@ export function validateOrigin(req: Request, res: Response, next: NextFunction) 
   }
 
   // Webhook endpoints use signature verification — Origin header is absent by design
-  if (req.path === '/billing/webhook/stripe' || req.path === '/webhooks/clerk') {
+  if (
+    req.path === '/billing/webhook/stripe' ||
+    req.path === '/webhooks/clerk' ||
+    req.path === '/webhooks/resend-marketing'
+  ) {
     return next();
   }
 
