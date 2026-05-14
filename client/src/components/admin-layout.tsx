@@ -15,6 +15,7 @@ import {
   Settings,
   Database,
   ClipboardList,
+  Send,
 } from "lucide-react";
 
 const adminNav = [
@@ -27,6 +28,7 @@ const adminNav = [
   { title: "Companies", url: "/admin/companies", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Waitlist", url: "/admin/waitlist", icon: ClipboardList },
+  { title: "Broadcasts", url: "/admin/broadcasts", icon: Send },
   { title: "Webhook Events", url: "/admin/webhook-events", icon: Webhook },
   { title: "Promo Codes", url: "/admin/promo-codes", icon: Tag },
   { title: "5D Invoice", url: "/admin/referral-invoice", icon: Receipt },
