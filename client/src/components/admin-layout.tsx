@@ -43,8 +43,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col shrink-0">
+    <div className="flex h-screen">
+      <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col shrink-0 h-full overflow-hidden">
         <div className="p-4 border-b border-slate-700">
           <div className="flex items-center gap-2 mb-1">
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-sm">
@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {adminNav.map((item) => (
             <Link
               key={item.url}
