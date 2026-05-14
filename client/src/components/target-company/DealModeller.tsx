@@ -99,7 +99,8 @@ export interface ExplainContext {
 
 export default function DealModeller({ companyId }: DealModellerProps) {
   const { toast } = useToast();
-  const { nylasConnectVisible } = useServerConfig();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [transactionType, setTransactionType] = useState<string>('share_sale');
 

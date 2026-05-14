@@ -217,7 +217,8 @@ export default function PortalManagement() {
   const [extensionDays, setExtensionDays] = useState<number>(7);
   const [includeNda, setIncludeNda] = useState<boolean>(true);
   const { toast } = useToast();
-  const { nylasConnectVisible } = useServerConfig();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const queryClient = useQueryClient();
 
   // Fetch target companies

@@ -3,7 +3,8 @@ import { getQueryFn } from "@/lib/queryClient";
 
 export interface ServerConfig {
   clerkEnabled: boolean;
-  nylasConnectVisible: boolean;
+  nylasConnectGmailVisible: boolean;
+  nylasConnectOutlookVisible: boolean;
 }
 
 export function useServerConfig() {
@@ -18,7 +19,8 @@ export function useServerConfig() {
   return {
     config: data ?? null,
     clerkEnabled: data?.clerkEnabled ?? false,
-    nylasConnectVisible: data?.nylasConnectVisible ?? false,
+    nylasConnectGmailVisible: data?.nylasConnectGmailVisible ?? false,
+    nylasConnectOutlookVisible: data?.nylasConnectOutlookVisible ?? false,
     isLoading,
     error,
   };

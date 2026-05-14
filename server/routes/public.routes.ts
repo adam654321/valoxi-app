@@ -9,7 +9,8 @@ router.get(
   asyncHandler(async (_req, res) => {
     sendSuccess(res, {
       clerkEnabled: process.env.CLERK_ENABLED === 'true',
-      nylasConnectVisible: process.env.NYLAS_CONNECT_VISIBLE === 'true',
+      nylasConnectGmailVisible: process.env.NYLAS_CONNECT_GMAIL_VISIBLE === 'true',
+      nylasConnectOutlookVisible: process.env.NYLAS_CONNECT_OUTLOOK_VISIBLE === 'true',
     });
   }),
 );

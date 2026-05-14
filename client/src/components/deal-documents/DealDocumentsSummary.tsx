@@ -66,7 +66,8 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'outlin
 
 export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsSummaryProps) {
   const { toast } = useToast();
-  const { nylasConnectVisible } = useServerConfig();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const [ndaLoading, setNdaLoading] = useState(false);
   const [offerLoading, setOfferLoading] = useState(false);
   const [hotLoading, setHotLoading] = useState(false);
@@ -1087,7 +1088,8 @@ function HoTConfigDialog({ open, onClose, targetCompanyId }: {
   targetCompanyId: number;
 }) {
   const { toast } = useToast();
-  const { nylasConnectVisible } = useServerConfig();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const [exclusivityPeriodDays, setExclusivityPeriodDays] = useState(90);
   const [nonCompetePeriodYears, setNonCompetePeriodYears] = useState(2);
   const [nonSolicitPeriodYears, setNonSolicitPeriodYears] = useState(2);
@@ -1254,7 +1256,8 @@ function DocumentRow({ label, icon: Icon, documents, targetCompanyId }: {
   targetCompanyId: number;
 }) {
   const { toast } = useToast();
-  const { nylasConnectVisible } = useServerConfig();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const [expanded, setExpanded] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<DealDocument | null>(null);
   const [downloading, setDownloading] = useState(false);

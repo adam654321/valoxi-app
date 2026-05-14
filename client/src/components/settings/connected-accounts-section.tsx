@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useServerConfig } from '@/hooks/useServerConfig';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -66,6 +67,7 @@ function relativeTime(iso: string | null): string {
 
 export function ConnectedAccountsSection() {
   const { toast } = useToast();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
   const [initiatingProvider, setInitiatingProvider] = useState<"google" | "microsoft" | null>(null);
 
   useEffect(() => {
@@ -172,34 +174,39 @@ export function ConnectedAccountsSection() {
   });
 
   function ConnectButtons() {
+    const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
     return (
       <div className="flex gap-2 flex-wrap">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => initiateMutation.mutate("google")}
-          disabled={initiatingProvider !== null}
-        >
-          {initiatingProvider === "google" ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <span className="mr-2">{providerIcon("google")}</span>
-          )}
-          Connect Gmail
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => initiateMutation.mutate("microsoft")}
-          disabled={initiatingProvider !== null}
-        >
-          {initiatingProvider === "microsoft" ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <span className="mr-2">{providerIcon("microsoft")}</span>
-          )}
-          Connect Outlook
-        </Button>
+        {nylasConnectGmailVisible && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => initiateMutation.mutate("google")}
+            disabled={initiatingProvider !== null}
+          >
+            {initiatingProvider === "google" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <span className="mr-2">{providerIcon("google")}</span>
+            )}
+            Connect Gmail
+          </Button>
+        )}
+        {nylasConnectOutlookVisible && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => initiateMutation.mutate("microsoft")}
+            disabled={initiatingProvider !== null}
+          >
+            {initiatingProvider === "microsoft" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <span className="mr-2">{providerIcon("microsoft")}</span>
+            )}
+            Connect Outlook
+          </Button>
+        )}
       </div>
     );
   }
@@ -352,10 +359,12 @@ export function ConnectedAccountsSection() {
                 </li>
               ))}
             </ul>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Add another account:</p>
-              <ConnectButtons />
-            </div>
+            {(nylasConnectGmailVisible || nylasConnectOutlookVisible) && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Add another account:</p>
+                <ConnectButtons />
+              </div>
+            )}
           </div>
         )}
       </CardContent>

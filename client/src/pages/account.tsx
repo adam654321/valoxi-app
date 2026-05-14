@@ -43,7 +43,8 @@ interface UserProfile {
 
 export default function AccountPage() {
   const { user } = useAuth();
-  const { clerkEnabled, nylasConnectVisible } = useServerConfig();
+  const { clerkEnabled, nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasAnyConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const { openUserProfile } = useClerk();
   const { toast } = useToast();
   const canEditCompany = user?.permissions?.canManageCompany ?? false;
@@ -162,7 +163,7 @@ export default function AccountPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="profile" className="gap-2"><User className="h-4 w-4" />Profile</TabsTrigger>
           <TabsTrigger value="company" className="gap-2"><Building2 className="h-4 w-4" />Company</TabsTrigger>
-          {nylasConnectVisible && <TabsTrigger value="connected-accounts" className="gap-2"><Link2 className="h-4 w-4" />Connected accounts</TabsTrigger>}
+          {nylasAnyConnectVisible && <TabsTrigger value="connected-accounts" className="gap-2"><Link2 className="h-4 w-4" />Connected accounts</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -361,7 +362,7 @@ export default function AccountPage() {
           </Card>
         </TabsContent>
 
-        {nylasConnectVisible && (
+        {nylasAnyConnectVisible && (
           <TabsContent value="connected-accounts" className="space-y-6">
             <ConnectedAccountsSection />
           </TabsContent>

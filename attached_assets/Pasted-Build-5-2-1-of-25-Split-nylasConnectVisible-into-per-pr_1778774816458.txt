@@ -1,0 +1,154 @@
+Build 5.2.1 of #25. Split nylasConnectVisible into per-provider flags. Confirmed clean against read-only assess.
+
+Files touched: 4 + connected-accounts-section.tsx (5 files, plus 4 caller files threading both flags into a local OR).
+
+Apply step 1 — server/routes/public.routes.ts
+
+Find:
+      nylasConnectVisible: process.env.NYLAS_CONNECT_VISIBLE === 'true',
+
+Replace with:
+      nylasConnectGmailVisible: process.env.NYLAS_CONNECT_GMAIL_VISIBLE === 'true',
+      nylasConnectOutlookVisible: process.env.NYLAS_CONNECT_OUTLOOK_VISIBLE === 'true',
+
+Apply step 2 — client/src/hooks/useServerConfig.ts
+
+In the ServerConfig interface, find:
+  nylasConnectVisible: boolean;
+
+Replace with:
+  nylasConnectGmailVisible: boolean;
+  nylasConnectOutlookVisible: boolean;
+
+In the hook return, find:
+    nylasConnectVisible: data?.nylasConnectVisible ?? false,
+
+Replace with:
+    nylasConnectGmailVisible: data?.nylasConnectGmailVisible ?? false,
+    nylasConnectOutlookVisible: data?.nylasConnectOutlookVisible ?? false,
+
+Apply step 3 — client/src/pages/account.tsx
+
+Line 46 — find:
+const { clerkEnabled, nylasConnectVisible } = useServerConfig();
+
+Replace with:
+const { clerkEnabled, nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+const nylasAnyConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
+
+Line 165 — find:
+{nylasConnectVisible && <TabsTrigger value="connected-accounts" className="gap-2">
+
+Replace with:
+{nylasAnyConnectVisible && <TabsTrigger value="connected-accounts" className="gap-2">
+
+Lines 364-368 — find:
+{nylasConnectVisible && (
+  <TabsContent value="connected-accounts" className="space-y-6">
+
+Replace with:
+{nylasAnyConnectVisible && (
+  <TabsContent value="connected-accounts" className="space-y-6">
+
+Apply step 4 — client/src/components/settings/connected-accounts-section.tsx
+
+In imports block (lines 1-21), add (alongside other "@/hooks" imports if any, or just before the components):
+import { useServerConfig } from '@/hooks/useServerConfig';
+
+In the ConnectButtons function (lines 174-205), find the entire function body and replace:
+
+function ConnectButtons() {
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  return (
+    <div className="flex gap-2 flex-wrap">
+      {nylasConnectGmailVisible && (
+        <Button variant="outline" size="sm" onClick={() => initiateMutation.mutate("google")}
+          disabled={initiatingProvider !== null}>
+          {initiatingProvider === "google"
+            ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            : <span className="mr-2">{providerIcon("google")}</span>}
+          Connect Gmail
+        </Button>
+      )}
+      {nylasConnectOutlookVisible && (
+        <Button variant="outline" size="sm" onClick={() => initiateMutation.mutate("microsoft")}
+          disabled={initiatingProvider !== null}>
+          {initiatingProvider === "microsoft"
+            ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            : <span className="mr-2">{providerIcon("microsoft")}</span>}
+          Connect Outlook
+        </Button>
+      )}
+    </div>
+  );
+}
+
+NOTE: ConnectButtons is rendered at two call sites (line 228 in zero-grants branch, line 357 in has-grants branch). If BOTH flags are false, ConnectButtons renders an empty div. At the line 357 call site, the "Add another account:" label sits above it. That label would orphan-render with no buttons beneath. To fix, wrap the label + ConnectButtons together at line ~355-358 (find the surrounding JSX in the has-grants branch and wrap with a conditional):
+
+{(nylasConnectGmailVisible || nylasConnectOutlookVisible) && (
+  <>
+    <p className="...">Add another account:</p>
+    <ConnectButtons />
+  </>
+)}
+
+(Preserve whatever surrounding markup currently exists; only wrap the label-plus-buttons pair.)
+
+For the zero-grants branch (line 228), if both flags are false, showing the empty state alone is fine — the existing copy presumably still makes sense. If not, also wrap appropriately. Inspect surrounding JSX and decide.
+
+Apply step 5 — four caller files
+
+The pattern for each: find the destructure line, expand it; add the local OR; the handleSendResult call sites stay unchanged.
+
+PortalManagement.tsx line 220 — find:
+const { nylasConnectVisible } = useServerConfig();
+
+Replace with:
+const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
+
+pending-send-widget.tsx line 28 — same find/replace as above.
+
+DealDocumentsSummary.tsx — three separate destructure sites at lines 69, 1090, 1257. Each takes the same find/replace. Three edits in this one file.
+
+DealModeller.tsx line 102 — same find/replace.
+
+All four files: handleSendResult call sites stay unchanged (they pass the locally-computed nylasConnectVisible boolean).
+
+Apply step 6 — Replit Secrets
+
+In dev Secrets:
+- Delete: NYLAS_CONNECT_VISIBLE
+- Add: NYLAS_CONNECT_GMAIL_VISIBLE=true
+- Add: NYLAS_CONNECT_OUTLOOK_VISIBLE=false
+
+Restart dev workflow so env vars apply.
+
+V-check after all edits:
+
+1. npm run check — confirm baseline (1 pre-existing portal.service.ts error only). Any new error, paste and stop.
+
+2. Hit /api/v2/public/config (curl localhost:5000/api/v2/public/config or browser). Paste JSON response. Expected:
+   { "data": { "clerkEnabled": true, "nylasConnectGmailVisible": true, "nylasConnectOutlookVisible": false } }
+
+3. Hit /account in dev browser. Visual confirmations:
+   - Connected accounts TAB is visible (because nylasConnectGmailVisible=true makes the OR true)
+   - Existing Gmail grant (adam@valoxi.ai from earlier) listed normally
+   - Existing Outlook grant (adam.auty@autyconsultancy.co.uk from earlier) listed normally — disconnect button still works
+   - "Add another account:" section shows ONLY Connect Gmail button. Connect Outlook button does NOT appear anywhere.
+
+4. Flip test — temporarily set NYLAS_CONNECT_OUTLOOK_VISIBLE=true in dev Secrets, restart, hit /account. Confirm Connect Outlook button now appears. Then flip back to false, restart, confirm gone again. (Proves the flag actually controls the render, isn't accidentally always-on.)
+
+5. Flip-off test — set NYLAS_CONNECT_GMAIL_VISIBLE=false (both now false), restart, hit /account. Confirm:
+   - Connected accounts TAB completely gone from tab list
+   - Existing grants still in DB but not surfaceable until tab returns
+   - Then flip Gmail back to true, restart, confirm tab returns with Connect Gmail button visible.
+
+6. Grep confirmations (post-build):
+   - grep -rn "nylasConnectVisible" client/src/ | grep -v node_modules | grep -v "// " — should return ONLY the 5 in-file local-OR computations (account.tsx via nylasAnyConnectVisible alias, plus 4 caller files where the locally-named const is computed). No survivor of useServerConfig destructure of single nylasConnectVisible name in any caller file.
+   - grep -rn "nylasConnectGmailVisible" client/src/ | grep -v node_modules — expect 7+ hits (hook + account + connected-accounts-section + 4 callers + DealDocumentsSummary x3 sites all hit).
+   - grep -rn "NYLAS_CONNECT_VISIBLE" server/ — expect 0 hits (old env var gone from code).
+
+7. git diff --stat — expect 8 files changed (server route + hook + account page + connected-accounts-section + 4 caller files).
+
+Stop after V-check and report results.

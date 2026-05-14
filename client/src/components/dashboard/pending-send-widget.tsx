@@ -25,7 +25,8 @@ const docTypeLabel: Record<string, string> = {
 
 export default function PendingSendWidget() {
   const { toast } = useToast();
-  const { nylasConnectVisible } = useServerConfig();
+  const { nylasConnectGmailVisible, nylasConnectOutlookVisible } = useServerConfig();
+  const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const { data: pending = [], isLoading } = useQuery<PendingDoc[]>({
     queryKey: ['/api/v2/deal-documents/pending-send'],
     select: (response: any) => response?.data || response || [],
