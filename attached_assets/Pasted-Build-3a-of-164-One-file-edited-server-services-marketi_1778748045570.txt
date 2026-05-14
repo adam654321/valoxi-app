@@ -1,0 +1,195 @@
+Build 3a of #164. One file edited: server/services/marketing-contacts.service.ts.
+
+Two changes combined:
+- Error-logging patch on 3 existing methods (Resend SDK returns errors, doesn't throw — current code swallows them)
+- New public upsertContact(userId) method for backfill use
+
+Apply step 1 — error-logging patch on syncContactOnUserCreate
+
+In server/services/marketing-contacts.service.ts, find this block in syncContactOnUserCreate:
+
+      await resendMarketing!.contacts.create({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        unsubscribed: false,
+        segments: initial.map((id) => ({ id })),
+      });
+
+      console.log(`[marketing-contacts] created Resend contact for user ${userId} (${user.email}) in ${initial.length} segments`);
+
+Replace with:
+
+      const { data, error } = await resendMarketing!.contacts.create({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        unsubscribed: false,
+        segments: initial.map((id) => ({ id })),
+      });
+
+      if (error) {
+        console.error(`[marketing-contacts] syncContactOnUserCreate Resend error for user ${userId} (${user.email}): name=${error.name} message=${error.message}`);
+        return;
+      }
+
+      console.log(`[marketing-contacts] created Resend contact for user ${userId} (${user.email}) id=${data?.id} in ${initial.length} segments`);
+
+Apply step 2 — error-logging patch on reconcileSubscriptionAudiences inner loop
+
+Find this block (inside the for loop over segments):
+
+          try {
+            if (required.has(segmentId)) {
+              await resendMarketing!.contacts.segments.add({ email: u.email, segmentId });
+            } else {
+              await resendMarketing!.contacts.segments.remove({ email: u.email, segmentId });
+            }
+          } catch (innerErr: unknown) {
+            const msg = innerErr instanceof Error ? innerErr.message : String(innerErr);
+            console.warn(`[marketing-contacts] segment sync (segment=${segmentId}, user=${u.id}): ${msg}`);
+          }
+
+Replace with:
+
+          try {
+            const op = required.has(segmentId) ? 'add' : 'remove';
+            const result = required.has(segmentId)
+              ? await resendMarketing!.contacts.segments.add({ email: u.email, segmentId })
+              : await resendMarketing!.contacts.segments.remove({ email: u.email, segmentId });
+            if (result.error) {
+              console.warn(`[marketing-contacts] segment sync Resend error (op=${op}, segment=${segmentId}, user=${u.id}): name=${result.error.name} message=${result.error.message}`);
+            }
+          } catch (innerErr: unknown) {
+            const msg = innerErr instanceof Error ? innerErr.message : String(innerErr);
+            console.warn(`[marketing-contacts] segment sync threw (segment=${segmentId}, user=${u.id}): ${msg}`);
+          }
+
+Apply step 3 — error-logging patch on syncContactOnUserDelete
+
+Find:
+
+      await resendMarketing!.contacts.update({
+        email: user.email,
+        unsubscribed: true,
+      });
+
+      console.log(`[marketing-contacts] marked user ${userId} (${user.email}) unsubscribed in Resend`);
+
+Replace with:
+
+      const { error } = await resendMarketing!.contacts.update({
+        email: user.email,
+        unsubscribed: true,
+      });
+
+      if (error) {
+        console.error(`[marketing-contacts] syncContactOnUserDelete Resend error for user ${userId} (${user.email}): name=${error.name} message=${error.message}`);
+        return;
+      }
+
+      console.log(`[marketing-contacts] marked user ${userId} (${user.email}) unsubscribed in Resend`);
+
+Apply step 4 — add new upsertContact method
+
+Add a new public method to the MarketingContactsService class. Place it AFTER syncContactOnUserDelete and BEFORE the closing brace of the class:
+
+  async upsertContact(userId: number): Promise<{ status: 'created' | 'updated' | 'skipped' | 'failed'; reason?: string }> {
+    if (!this.isConfigured()) {
+      return { status: 'skipped', reason: 'service not configured' };
+    }
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        return { status: 'skipped', reason: 'user not found' };
+      }
+      if (user.isActive === false) {
+        return { status: 'skipped', reason: 'user inactive' };
+      }
+
+      const targetSegments = await this.computeInitialSegments(user);
+      const targetSet = new Set(targetSegments);
+
+      const { data: existing, error: getError } = await resendMarketing!.contacts.get({ email: user.email });
+
+      if (getError && getError.name !== 'not_found') {
+        return { status: 'failed', reason: `get: ${getError.name} ${getError.message}` };
+      }
+
+      if (!existing) {
+        const { error: createError } = await resendMarketing!.contacts.create({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          unsubscribed: false,
+          segments: targetSegments.map((id) => ({ id })),
+        });
+        if (createError) {
+          return { status: 'failed', reason: `create: ${createError.name} ${createError.message}` };
+        }
+        return { status: 'created' };
+      }
+
+      const { error: updateError } = await resendMarketing!.contacts.update({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        unsubscribed: false,
+      });
+      if (updateError) {
+        return { status: 'failed', reason: `update: ${updateError.name} ${updateError.message}` };
+      }
+
+      const allSegments: string[] = [
+        this.segmentIds!.allUsers,
+        this.segmentIds!.activeSubscribers,
+        this.segmentIds!.cancelledSubscribers,
+        this.segmentIds!.pastDue,
+        this.segmentIds!.trialing,
+        this.segmentIds!.testInternal,
+      ];
+
+      const segmentErrors: string[] = [];
+      for (const segmentId of allSegments) {
+        try {
+          const op = targetSet.has(segmentId) ? 'add' : 'remove';
+          const result = targetSet.has(segmentId)
+            ? await resendMarketing!.contacts.segments.add({ email: user.email, segmentId })
+            : await resendMarketing!.contacts.segments.remove({ email: user.email, segmentId });
+          if (result.error && result.error.name !== 'not_found') {
+            segmentErrors.push(`${op}/${segmentId}: ${result.error.name}`);
+          }
+        } catch (segErr: unknown) {
+          const msg = segErr instanceof Error ? segErr.message : String(segErr);
+          segmentErrors.push(`throw/${segmentId}: ${msg}`);
+        }
+      }
+
+      if (segmentErrors.length > 0) {
+        return { status: 'updated', reason: `segment warnings: ${segmentErrors.join('; ')}` };
+      }
+
+      return { status: 'updated' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { status: 'failed', reason: msg };
+    }
+  }
+
+V-check after all 4 edits applied:
+
+1. Run npm run check. Confirm exit code matches baseline: still 1 pre-existing portal.service.ts(81,14) error, no new errors. If any new error, paste it and stop.
+
+2. Restart dev workflow. Confirm startup lines still appear in order:
+   - [resend-marketing] marketing Resend client initialised
+   - [marketing-contacts] all 6 segment IDs configured
+   (Or the missing-env variants if you reverted env vars — paste whichever you see.)
+
+3. Grep confirmations:
+   - grep -c "result.error" server/services/marketing-contacts.service.ts → expect 2 (one in reconcile inner loop, one in upsertContact segment loop)
+   - grep -c "async upsertContact" server/services/marketing-contacts.service.ts → expect 1
+   - grep -c "console.error.*Resend error" server/services/marketing-contacts.service.ts → expect 2 (syncContactOnUserCreate, syncContactOnUserDelete)
+
+4. git diff --stat server/services/marketing-contacts.service.ts. Expected: roughly 80-90 insertions, 12-15 deletions (the error-logging blocks replace existing blocks, and upsertContact is new).
+
+Stop after V-check and report results.

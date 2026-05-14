@@ -93,7 +93,7 @@ class MarketingContactsService {
 
       const initial = await this.computeInitialSegments(user);
 
-      await resendMarketing!.contacts.create({
+      const { data, error } = await resendMarketing!.contacts.create({
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -101,7 +101,12 @@ class MarketingContactsService {
         segments: initial.map((id) => ({ id })),
       });
 
-      console.log(`[marketing-contacts] created Resend contact for user ${userId} (${user.email}) in ${initial.length} segments`);
+      if (error) {
+        console.error(`[marketing-contacts] syncContactOnUserCreate Resend error for user ${userId} (${user.email}): name=${error.name} message=${error.message}`);
+        return;
+      }
+
+      console.log(`[marketing-contacts] created Resend contact for user ${userId} (${user.email}) id=${data?.id} in ${initial.length} segments`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[marketing-contacts] syncContactOnUserCreate failed for user ${userId}: ${msg}`);
@@ -136,14 +141,16 @@ class MarketingContactsService {
       for (const u of companyUsers) {
         for (const segmentId of stateUniverse) {
           try {
-            if (required.has(segmentId)) {
-              await resendMarketing!.contacts.segments.add({ email: u.email, segmentId });
-            } else {
-              await resendMarketing!.contacts.segments.remove({ email: u.email, segmentId });
+            const op = required.has(segmentId) ? 'add' : 'remove';
+            const result = required.has(segmentId)
+              ? await resendMarketing!.contacts.segments.add({ email: u.email, segmentId })
+              : await resendMarketing!.contacts.segments.remove({ email: u.email, segmentId });
+            if (result.error) {
+              console.warn(`[marketing-contacts] segment sync Resend error (op=${op}, segment=${segmentId}, user=${u.id}): name=${result.error.name} message=${result.error.message}`);
             }
           } catch (innerErr: unknown) {
             const msg = innerErr instanceof Error ? innerErr.message : String(innerErr);
-            console.warn(`[marketing-contacts] segment sync (segment=${segmentId}, user=${u.id}): ${msg}`);
+            console.warn(`[marketing-contacts] segment sync threw (segment=${segmentId}, user=${u.id}): ${msg}`);
           }
         }
       }
@@ -167,15 +174,102 @@ class MarketingContactsService {
         return;
       }
 
-      await resendMarketing!.contacts.update({
+      const { error } = await resendMarketing!.contacts.update({
         email: user.email,
         unsubscribed: true,
       });
+
+      if (error) {
+        console.error(`[marketing-contacts] syncContactOnUserDelete Resend error for user ${userId} (${user.email}): name=${error.name} message=${error.message}`);
+        return;
+      }
 
       console.log(`[marketing-contacts] marked user ${userId} (${user.email}) unsubscribed in Resend`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[marketing-contacts] syncContactOnUserDelete failed for user ${userId}: ${msg}`);
+    }
+  }
+
+  async upsertContact(userId: number): Promise<{ status: 'created' | 'updated' | 'skipped' | 'failed'; reason?: string }> {
+    if (!this.isConfigured()) {
+      return { status: 'skipped', reason: 'service not configured' };
+    }
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) {
+        return { status: 'skipped', reason: 'user not found' };
+      }
+      if (user.isActive === false) {
+        return { status: 'skipped', reason: 'user inactive' };
+      }
+
+      const targetSegments = await this.computeInitialSegments(user);
+      const targetSet = new Set(targetSegments);
+
+      const { data: existing, error: getError } = await resendMarketing!.contacts.get({ email: user.email });
+
+      if (getError && getError.name !== 'not_found') {
+        return { status: 'failed', reason: `get: ${getError.name} ${getError.message}` };
+      }
+
+      if (!existing) {
+        const { error: createError } = await resendMarketing!.contacts.create({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          unsubscribed: false,
+          segments: targetSegments.map((id) => ({ id })),
+        });
+        if (createError) {
+          return { status: 'failed', reason: `create: ${createError.name} ${createError.message}` };
+        }
+        return { status: 'created' };
+      }
+
+      const { error: updateError } = await resendMarketing!.contacts.update({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        unsubscribed: false,
+      });
+      if (updateError) {
+        return { status: 'failed', reason: `update: ${updateError.name} ${updateError.message}` };
+      }
+
+      const allSegments: string[] = [
+        this.segmentIds!.allUsers,
+        this.segmentIds!.activeSubscribers,
+        this.segmentIds!.cancelledSubscribers,
+        this.segmentIds!.pastDue,
+        this.segmentIds!.trialing,
+        this.segmentIds!.testInternal,
+      ];
+
+      const segmentErrors: string[] = [];
+      for (const segmentId of allSegments) {
+        try {
+          const op = targetSet.has(segmentId) ? 'add' : 'remove';
+          const result = targetSet.has(segmentId)
+            ? await resendMarketing!.contacts.segments.add({ email: user.email, segmentId })
+            : await resendMarketing!.contacts.segments.remove({ email: user.email, segmentId });
+          if (result.error && result.error.name !== 'not_found') {
+            segmentErrors.push(`${op}/${segmentId}: ${result.error.name}`);
+          }
+        } catch (segErr: unknown) {
+          const msg = segErr instanceof Error ? segErr.message : String(segErr);
+          segmentErrors.push(`throw/${segmentId}: ${msg}`);
+        }
+      }
+
+      if (segmentErrors.length > 0) {
+        return { status: 'updated', reason: `segment warnings: ${segmentErrors.join('; ')}` };
+      }
+
+      return { status: 'updated' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { status: 'failed', reason: msg };
     }
   }
 }
