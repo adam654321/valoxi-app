@@ -24,8 +24,9 @@ export interface EmailInfoBox {
 }
 
 export interface EmailBlock {
-  type: 'paragraph' | 'heading' | 'cta' | 'info_box' | 'divider' | 'steps';
+  type: 'paragraph' | 'heading' | 'cta' | 'info_box' | 'divider' | 'steps' | 'raw_html';
   text?: string;
+  html?: string;
   cta?: EmailCta;
   box?: EmailInfoBox;
   steps?: Array<{ lead: string; detail: string }>;
@@ -69,6 +70,8 @@ function renderBlock(block: EmailBlock): string {
       const items = block.steps.map(s => `<li style="margin-bottom:10px;color:${BRAND.textBody};font-size:15px;line-height:1.6;"><strong style="color:${BRAND.textPrimary};">${s.lead}.</strong> ${s.detail}</li>`).join('');
       return `<ol style="margin:8px 0 20px 20px;padding:0;">${items}</ol>`;
     }
+    case 'raw_html':
+      return block.html ?? '';
     default:
       return '';
   }

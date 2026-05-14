@@ -40,6 +40,7 @@ import explainRoutes from './explain.routes';
 import betaFeedbackRoutes from './beta-feedback.routes';
 import betaRoutes from './beta.routes';
 import adminToolsRoutes from './admin-tools.routes';
+import adminBroadcastsRoutes from './admin-broadcasts.routes';
 import accountRoutes from './account.routes';
 import nylasRoutes, { nylasCallbackRouter } from './nylas.routes';
 import { isAuthenticated, isSystemAdmin, requirePermission, blockWritesInViewAsMode, injectViewAsIdentity } from '../middleware/auth';
@@ -95,6 +96,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/due-diligence', isAuthenticated, validateCsrfToken, requireActiveSubscription, dueDiligenceRoutes);
   app.use('/api/v2/value-creation', isAuthenticated, validateCsrfToken, requireFeature('valueCreationModule'), valueCreationRoutes);
   app.use('/api/v2/admin/waitlist', isAuthenticated, validateCsrfToken, isSystemAdmin, adminWaitlistRoutes);
+  app.use('/api/v2/admin/broadcasts', isAuthenticated, validateCsrfToken, isSystemAdmin, adminBroadcastsRoutes);
   app.use('/api/v2/admin', isAuthenticated, validateCsrfToken, isSystemAdmin, adminRoutes);
   app.use('/api/v2/webhooks', webhooksRoutes);
   app.use('/api/v2/webhooks', marketingWebhooksRoutes);
