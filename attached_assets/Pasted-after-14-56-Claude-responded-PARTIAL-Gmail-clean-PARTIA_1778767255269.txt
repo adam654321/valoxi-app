@@ -1,0 +1,53 @@
+after:
+
+14:56
+Claude responded: [PARTIAL] Gmail clean ✓.
+[PARTIAL] Gmail clean ✓. Outlook flow ends in ?nylas_error=exchange_failed but UI shows Active — bug. Need to debug before today's push.
+
+Two unrelated questions:
+
+Was there a Microsoft "app not verified" warning during the OAuth consent screen?
+Outlook is shown "Last used: Not used yet" — so we don't know whether it actually sends. Did you try sending from a deal portal via the Outlook default?
+What nylas_error=exchange_failed means
+That redirect target is from server/routes/nylas.routes.ts line 67-68 — the catch block of the OAuth code-exchange path. Something between "Microsoft consent screen approved" and "store Nylas grant in our DB" threw. Possible causes:
+
+Nylas's Microsoft connector itself rejected the exchange (their side)
+Microsoft scope mismatch — Nylas requested a scope we haven't authorised for the Microsoft app
+Our grant-creation code threw post-exchange (e.g. DB constraint failure)
+Token shape mismatch causing the parsing logic to throw
+The "Active" badge contradiction
+UI shows Active but exchange_failed redirect = stale data. Possibilities:
+
+A. Old grant row from previous testing still in DB from before tonight's flag flip — UI reads "you have a grant" without knowing it's outdated
+B. Some part of the exchange succeeded (created the grant row) but a later step threw, so the catch fired and redirected error — but the grant row was already written
+C. Frontend cache showing stale state
+Most likely B: the grant got written but the post-exchange "test send" or "fetch profile" or "set default" step failed.
+
+Debug step 1: read the dev logs
+The OAuth exchange handler logs to console. Find these in the dev workflow log around the time you clicked Connect Outlook:
+
+[NYLAS] Grant created for user ... (...email..., outlook)
+[NYLAS] Code exchange or grant creation failed: ...message...
+Both lines, or only the error line? Paste whichever you see.
+
+If you see "Grant created" THEN "failed" → confirms B (succeeded then post-step failed). The grant exists, that's why UI shows Active.
+
+If you see only "failed" → exchange itself failed but a grant row from earlier testing exists.
+
+Debug step 2: check the DB
+Quick SQL in dev:
+
+sql
+SELECT id, user_id, email, provider, created_at
+FROM nylas_grants
+WHERE email = 'adam.auty@autyconsultancy.co.uk'
+ORDER BY created_at DESC
+LIMIT 3;
+How many rows? Recent or stale? If multiple, we've been accumulating partial grants. The Last used: Not used yet text in the UI suggests this grant is fresh — but the error redirect says exchange failed.
+
+Debug step 3: try sending
+Until we know whether Outlook actually sends, we don't know if it's "looks broken but works" or "looks broken and is broken". Find a dev test deal portal, set the Outlook account as your personal default, send a test customer-facing email. Watch:
+
+Toast result (success, fallback, or hard error)
+Nylas dashboard → Logs (filter to last few minutes) → see if any API call hit Nylas for the Outlook grant
+Dev workflow logs
