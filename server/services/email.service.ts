@@ -347,7 +347,7 @@ export class EmailApiService {
     });
 
     blocks.push({ type: 'paragraph', text: trialLineText });
-    blocks.push({ type: 'paragraph', text: 'This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai" style="color:#F97316;text-decoration:none;">support@valoxi.ai</a> for a new one.' });
+    blocks.push({ type: 'paragraph', text: 'This invitation expires in 7 days. If it expires, contact <a href="mailto:support@valoxi.ai" style="color:#E05115;text-decoration:none;">support@valoxi.ai</a> for a new one.' });
 
     const html = renderBrandedEmail({
       preheader: 'Your Valoxi access is approved. Set up your account using the link inside.',

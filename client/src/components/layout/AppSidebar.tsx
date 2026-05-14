@@ -90,7 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   fill="none"
                   aria-hidden="true"
                 >
-                  <path d="M3 5L15 26L27 5H21.5L15 17L8.5 5H3Z" fill="#F97316" />
+                  <path d="M3 5L15 26L27 5H21.5L15 17L8.5 5H3Z" fill="#E05115" />
                 </svg>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Valoxi</span>

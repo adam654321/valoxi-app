@@ -8,7 +8,7 @@ export function ValoxiLogo() {
         fill="none"
         aria-hidden="true"
       >
-        <path d="M3 5L15 26L27 5H21.5L15 17L8.5 5H3Z" fill="#F97316" />
+        <path d="M3 5L15 26L27 5H21.5L15 17L8.5 5H3Z" fill="#E05115" />
       </svg>
       <span className="text-3xl font-bold text-textPrimary tracking-tight">Valoxi</span>
     </div>
