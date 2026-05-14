@@ -1,0 +1,52 @@
+Build 3c of #164. One file edited: scripts/backfill-marketing-contacts.ts.
+
+Tightens the user filter from "active" to "active AND signed up via Clerk". Excludes invitees who haven't yet completed signup (no clerkUserId yet, no consent path completed).
+
+Apply step — edit scripts/backfill-marketing-contacts.ts
+
+Edit 1: update the drizzle import. Find this line:
+
+import { eq, asc, and } from 'drizzle-orm';
+
+Replace with:
+
+import { eq, asc, and, isNotNull } from 'drizzle-orm';
+
+Edit 2: tighten the where clause. Find this block:
+
+  let query = db.select({ id: users.id, email: users.email })
+    .from(users)
+    .where(args.userId !== null
+      ? and(eq(users.id, args.userId), eq(users.isActive, true))
+      : eq(users.isActive, true))
+    .orderBy(asc(users.id));
+
+Replace with:
+
+  let query = db.select({ id: users.id, email: users.email })
+    .from(users)
+    .where(args.userId !== null
+      ? and(eq(users.id, args.userId), eq(users.isActive, true), isNotNull(users.clerkUserId))
+      : and(eq(users.isActive, true), isNotNull(users.clerkUserId)))
+    .orderBy(asc(users.id));
+
+V-check:
+
+1. npm run check — confirm baseline (still 1 pre-existing portal.service.ts error only)
+
+2. Run dry-run to confirm filter behaviour:
+   tsx scripts/backfill-marketing-contacts.ts --dry-run
+
+   Paste the full output. Confirm "Found N active users to process" — N should match the count of signed-up users in dev (excluding invitees). For comparison, run this SQL and paste the result:
+
+   SELECT
+     COUNT(*) FILTER (WHERE "isActive" = true) AS active_total,
+     COUNT(*) FILTER (WHERE "isActive" = true AND "clerkUserId" IS NOT NULL) AS signed_up,
+     COUNT(*) FILTER (WHERE "isActive" = true AND "clerkUserId" IS NULL) AS invited_pending
+   FROM users;
+
+   The "signed_up" count from SQL should match the "Found N" count from the dry-run.
+
+3. git diff --stat scripts/backfill-marketing-contacts.ts — expected 2 insertions, 2 deletions.
+
+Stop after V-check and report.

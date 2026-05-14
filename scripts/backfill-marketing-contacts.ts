@@ -14,7 +14,7 @@
  */
 
 import pLimit from 'p-limit';
-import { eq, asc, and } from 'drizzle-orm';
+import { eq, asc, and, isNotNull } from 'drizzle-orm';
 import { db } from '../server/db';
 import { users } from '@shared/schema';
 import { marketingContactsService } from '../server/services/marketing-contacts.service';
@@ -57,8 +57,8 @@ async function main(): Promise<void> {
   let query = db.select({ id: users.id, email: users.email })
     .from(users)
     .where(args.userId !== null
-      ? and(eq(users.id, args.userId), eq(users.isActive, true))
-      : eq(users.isActive, true))
+      ? and(eq(users.id, args.userId), eq(users.isActive, true), isNotNull(users.clerkUserId))
+      : and(eq(users.isActive, true), isNotNull(users.clerkUserId)))
     .orderBy(asc(users.id));
 
   let targetUsers = await query;
