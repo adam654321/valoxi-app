@@ -1,0 +1,46 @@
+Read-only assess for #164 Build 2 (revised after Resend dashboard discovery): marketing contacts sync service. Do not make any code changes, do not create or delete any files.
+
+Decisions locked since prior assess:
+- Resend pivoted Nov 2025 to single audience + global contacts + segments + topics + properties model
+- 6 segments and 2 topics now exist in Resend dashboard with UUID IDs stashed in password manager
+- Build 2 uses 6 RESEND_SEGMENT_* env vars (UUIDs), no audience_id parameter anywhere
+- Build 2 skips custom contact properties entirely (use defaults: email, firstName, lastName, unsubscribed)
+- Topics are NOT wired in Build 2 (deferred to Build 4 unsubscribe webhook and Build 5 admin UI)
+- Service is state-shaped: reconcileSubscriptionAudiences(userCompanyId)
+- 9 hook call sites: 2 in webhooks.routes.ts, 7 in billing.service.ts (insertion targets already confirmed)
+- Marketing Resend client separate from transactional, new file server/lib/resend-marketing.ts
+- past_due users remain in active_subscribers AND past_due segments simultaneously
+- test_internal membership rule: userCompanyId match via TEST_INTERNAL_USER_COMPANY_ID env var
+
+Resend SDK is resend@^6.10.0 per package.json (confirmed). No SDK upgrade required.
+
+Report:
+
+1. SDK type signatures. Open node_modules/resend/dist/index.d.ts (or equivalent type file). Paste exact TypeScript signatures for:
+   - Resend.contacts.create (input + return type)
+   - Resend.contacts.remove (input + return type)
+   - Resend.contacts.get (input + return type)
+   - Any method on Resend.contacts named addToSegment, addSegment, or similar (paste signature + name)
+   - Any method on Resend.contacts named removeFromSegment, removeSegment, or similar (paste signature + name)
+   - Resend constructor (confirm it accepts an apiKey string)
+   
+   If a method has a different name than expected, report what's actually there. Goal: lock the exact method names and param shape before the build prompt.
+
+2. Confirm the new Resend("") construction pattern by reading server/email.ts. Paste 8 lines around the Resend instantiation. The marketing client will follow the same pattern with a different env var (RESEND_API_KEY_MARKETING).
+
+3. Confirm env var read pattern. Search server/ for "process.env.RESEND_API_KEY" and report file:line:context for each match. Want to confirm the existing transactional client reads RESEND_API_KEY (not a config-helper indirection).
+
+4. Run npm run check. Confirm baseline is 1 pre-existing portal.service.ts(81,14) error, no other errors. Run git status, confirm clean.
+
+5. Confirm no existing server/lib/resend-marketing.ts file. ls server/lib/ and report contents.
+
+6. Confirm no existing server/services/marketing-contacts.service.ts file. Already in services list confirmed by prior assess, but re-confirm via ls server/services/ | grep marketing.
+
+Report format:
+- SDK signatures (paste TypeScript)
+- Existing Resend construction pattern (paste)
+- RESEND_API_KEY grep results (file:line:context)
+- TSC baseline + git status
+- ls confirmations for both new files
+
+Stop after reporting.
