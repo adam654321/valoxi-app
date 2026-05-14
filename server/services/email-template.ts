@@ -4,7 +4,7 @@ const BRAND = {
   bg: '#0D0D0D',
   card: '#141414',
   border: '#252525',
-  orange: '#F97316',
+  orange: '#E05115',
   white: '#FFFFFF',
   textPrimary: '#FFFFFF',
   textBody: '#CCCCCC',
