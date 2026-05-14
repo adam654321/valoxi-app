@@ -7,7 +7,7 @@ const BRAND = {
   orange: '#E05115',
   white: '#FFFFFF',
   textPrimary: '#FFFFFF',
-  textBody: '#CCCCCC',
+  textBody: '#E5E5E5',
   textMuted: '#555555',
   fontStack: "Inter, 'Segoe UI', Arial, sans-serif",
 };
@@ -71,7 +71,7 @@ function renderBlock(block: EmailBlock): string {
       return `<ol style="margin:8px 0 20px 20px;padding:0;">${items}</ol>`;
     }
     case 'raw_html':
-      return block.html ?? '';
+      return `<div style="color:${BRAND.textBody};font-size:15px;line-height:1.6;">${block.html ?? ''}</div>`;
     default:
       return '';
   }
@@ -112,7 +112,7 @@ ${preheader}
       </tr>
       <tr>
         <td style="padding-top:24px;">
-          <p style="margin:0;font-size:11px;color:${BRAND.textMuted};line-height:1.6;text-align:center;">${footerLine}<br>&copy; 2026 ADJV LLC trading as Valoxi &nbsp;&middot;&nbsp; valoxi.ai</p>
+          <p style="margin:0;font-size:11px;color:${BRAND.textMuted};line-height:1.6;text-align:center;">${footerLine}<br>&copy; 2026 ADJV LLC trading as Valoxi &nbsp;&middot;&nbsp; <a href="https://valoxi.ai" style="color:${BRAND.orange};text-decoration:underline;">valoxi.ai</a></p>
         </td>
       </tr>
     </table>
