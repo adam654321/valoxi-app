@@ -1,0 +1,63 @@
+Patch: Build 4 webhook handler to dispatch on email.suppressed instead of contact.unsubscribed (Resend doesn't expose a dedicated unsubscribe event; email.suppressed is the most reliable do-not-contact signal).
+
+Apply to server/routes/marketing-webhooks.routes.ts:
+
+Edit 1 — rename handler function
+
+Find:
+async function handleContactUnsubscribed(evt: ResendWebhookEvent, svixId: string): Promise<void> {
+
+Replace with:
+async function handleEmailSuppressed(evt: ResendWebhookEvent, svixId: string): Promise<void> {
+
+Edit 2 — update event type dispatch
+
+Find:
+    if (evt.type === 'contact.unsubscribed') {
+      await handleContactUnsubscribed(evt, svixId);
+    } else {
+      console.log(`[resend-webhook] ignoring event type ${evt.type} (out of Build 4 scope)`);
+    }
+
+Replace with:
+    if (evt.type === 'email.suppressed') {
+      await handleEmailSuppressed(evt, svixId);
+    } else {
+      console.log(`[resend-webhook] ignoring event type ${evt.type} (out of Build 4 scope)`);
+    }
+
+Edit 3 — update the source field on insert (so audit row indicates the actual event type)
+
+Find inside the handler function:
+      source: 'resend_webhook',
+
+(unchanged, source stays as 'resend_webhook')
+
+But add a payload note for clarity in the log line at end of function. Find:
+  console.log(`[resend-webhook] contact.unsubscribed recorded for ${email} (user=${userId ?? 'unlinked'}, topic=${topicName ?? 'global'})`);
+
+Replace with:
+  console.log(`[resend-webhook] email.suppressed recorded for ${email} (user=${userId ?? 'unlinked'}, topic=${topicName ?? 'global'})`);
+
+Edit 4 — also update ResendWebhookEvent.data type if needed for the email.suppressed payload shape. Inspect the Resend test event for email.suppressed to see what fields are present. The existing shape (data.email, data.id, data.topic_id, data.topic_name) should largely match since email.suppressed is contact-centric, but verify:
+
+For email.suppressed events, Resend's data field typically includes:
+- email (string) — the suppressed address
+- id (string, maybe) — the contact's Resend ID
+- reason (string) — 'unsubscribe' | 'bounce' | 'manual' etc.
+
+Build 4's handler currently logs and stores from data.email, data.id, data.topic_id, data.topic_name. data.email is present. data.topic_id / data.topic_name may not be (if Resend doesn't tie suppression to a specific topic — suppression is account-wide). The handler gracefully handles missing fields (?? null), so no code change needed. The audit row will simply have NULL topic_id and NULL topic_name.
+
+V-check:
+
+1. npm run check — confirm baseline (1 pre-existing portal.service.ts error only).
+
+2. Restart dev workflow.
+
+3. Grep confirmation:
+   - grep -n "email.suppressed" server/routes/marketing-webhooks.routes.ts → expect 2 hits (event-type check + log line)
+   - grep -n "contact.unsubscribed" server/routes/marketing-webhooks.routes.ts → expect 0 hits (fully replaced)
+
+4. git diff --stat — single file, ~5 lines changed.
+
+Stop after V-check.

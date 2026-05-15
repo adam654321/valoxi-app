@@ -51,8 +51,8 @@ router.post('/resend-marketing', async (req: Request, res: Response) => {
   console.log(`[resend-webhook] received type=${evt.type} svix_id=${svixId}`);
 
   try {
-    if (evt.type === 'contact.unsubscribed') {
-      await handleContactUnsubscribed(evt, svixId);
+    if (evt.type === 'email.suppressed') {
+      await handleEmailSuppressed(evt, svixId);
     } else {
       console.log(`[resend-webhook] ignoring event type ${evt.type} (out of Build 4 scope)`);
     }
@@ -64,7 +64,7 @@ router.post('/resend-marketing', async (req: Request, res: Response) => {
   return res.status(200).json({ received: true });
 });
 
-async function handleContactUnsubscribed(evt: ResendWebhookEvent, svixId: string): Promise<void> {
+async function handleEmailSuppressed(evt: ResendWebhookEvent, svixId: string): Promise<void> {
   const email = evt.data?.email;
   if (!email) {
     console.warn('[resend-webhook] contact.unsubscribed: missing email in payload');
@@ -94,7 +94,7 @@ async function handleContactUnsubscribed(evt: ResendWebhookEvent, svixId: string
     source: 'resend_webhook',
   }).onConflictDoNothing({ target: marketingUnsubscribes.resendEventId });
 
-  console.log(`[resend-webhook] contact.unsubscribed recorded for ${email} (user=${userId ?? 'unlinked'}, topic=${topicName ?? 'global'})`);
+  console.log(`[resend-webhook] email.suppressed recorded for ${email} (user=${userId ?? 'unlinked'}, topic=${topicName ?? 'global'})`);
 }
 
 export default router;
