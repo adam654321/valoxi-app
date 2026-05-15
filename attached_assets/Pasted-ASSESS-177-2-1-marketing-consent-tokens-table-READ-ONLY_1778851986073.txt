@@ -1,0 +1,65 @@
+ASSESS #177.2-1 — marketing_consent_tokens table
+
+READ-ONLY. No file writes. No DDL. No migrations. No restarts. Report only.
+
+PRE-CHECKS
+1. Run `git status`. Confirm clean working tree. Report current branch, HEAD commit hash, first line of message.
+2. Run `npm run check`. Report TSC error count baseline (expected: 1, the pre-existing portal.service.ts:81 TS2353 'token' error). Do not fix anything.
+
+NEGATIVE CHECK (must be zero hits)
+3. Confirm no existing references to marketing_consent_tokens table or related code:
+   grep -rni "marketing_consent_token\|marketingConsentToken\|marketing_consent_tokens" shared/ server/ scripts/ 2>/dev/null
+   Report count and any hits. ABORT this assess and report only this section if non-zero.
+
+SCHEMA FILE DISCOVERY
+4. Locate shared/schema/marketing.ts (file already exists per prior unique-constraint sweep that found resendEventId on line 10):
+   ls -l shared/schema/marketing.ts
+   cat shared/schema/marketing.ts
+   Show full file with line numbers. We need to see existing exports, import patterns, types used (pgTable, varchar, timestamp, inet, integer, uuid, boolean, etc), and the existing marketing_unsubscribes table for reference.
+
+5. Confirm marketing.ts is exported from shared/schema/index.ts:
+   grep -n "marketing" shared/schema/index.ts
+   Show the line with line number.
+
+USERS + WAITLIST TABLE FK ANCHORS
+6. Re-confirm the users + waitlist primary key column types (we're adding FKs to them):
+   grep -n "id: serial(\"id\")" shared/schema/core.ts
+   grep -n "id: uuid(\"id\")" shared/schema/core.ts
+   Expected: users.id is serial (integer), waitlist.id is uuid (string). Show both lines with line numbers.
+
+INET COLUMN PRECEDENT (optional context)
+7. Confirm whether any existing table uses `inet` type or whether IPs are stored as varchar elsewhere:
+   grep -rn "inet(\"\|inet('" shared/schema/ 2>/dev/null
+   grep -rn "ip_address\|ipAddress" shared/schema/ 2>/dev/null
+   Report any hits. We will use `inet` for the new column if Drizzle supports it cleanly in this version, otherwise fall back to varchar(45) (max IPv6 length).
+
+EMAIL SEND PATTERN (forward-prep)
+8. Locate the existing transactional email service:
+   ls -l server/services/email.service.ts 2>/dev/null || echo "not at expected path"
+   If found, show:
+   - import block (lines 1-30)
+   - public function signatures (just the signatures, not bodies): grep -n "^export\|^async function\|^function" server/services/email.service.ts
+   - the function that sends via hello@send.valoxi.ai (search for "send.valoxi.ai" string)
+   We need this for build 177.2-4 (email template + send method).
+
+9. Locate the marketing-contacts reconcile function from the recent Resend marketing work:
+   grep -rn "reconcileSubscriptionAudiences\|upsertContact" server/services/ 2>/dev/null
+   Show file paths + line numbers + function signatures (no bodies). Build 177.2-2 (token endpoint) needs to call something here after flipping marketing_consent=true.
+
+DRIZZLE TYPE IMPORT PATTERN
+10. Check how shared/schema files currently import pg types. Show the import block from shared/schema/marketing.ts (already requested in step 4 but flag specifically) and one other recent schema file (shared/schema/billing.ts top 20 lines) so we can match the convention exactly.
+
+RECIPIENT COUNT VERIFICATION
+11. Confirm the actual recipient set sizes for the eventual send (read-only):
+    SELECT COUNT(*) FROM users WHERE marketing_consent = false AND is_active = true AND clerk_user_id IS NOT NULL;
+    Report the count. This is the "real users currently signed up but no consent on record" cohort.
+
+    SELECT COUNT(*) FROM waitlist WHERE marketing_consent = false AND status IN ('new', 'approved');
+    Report the count. This is the "waitlisted but not yet invited" cohort.
+
+    SELECT COUNT(*) FROM users WHERE marketing_consent = true;
+    Report the count. Sanity check that the only true rows are post-Stage-1 test rows that were cleaned up (should be zero) plus any direct DB inserts (should be zero). If non-zero, list the rows so we know.
+
+REPORT
+
+Single consolidated report covering 1-11 with section headers matching the numbered list. Include file paths in path/to/file.ts:LINE format throughout. Do not propose changes. Do not write any file. Stop after report.
