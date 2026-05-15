@@ -6,3 +6,9 @@ id = "-3WtAB61hXXofgAgBQepk"
 uri = "file://.local/tasks/launch-brief-corrections.md"
 type = "text"
 title = "Launch Brief Corrections"
+
+[[outputs]]
+id = "Ic9CMml8qfFZ4PM7kGcdk"
+uri = "file://.local/us-localisation-scope.md"
+type = "text"
+title = "Valoxi US Localisation — Scope & Research Brief"

@@ -1,0 +1,112 @@
+BUILD 177.1A-S1 (resumed) — rename subscriptions constraint + db:push + V-check
+
+Source: Continuation of BUILD 177.1A-S1 after pre-existing subscriptions naming drift discovered. The four file edits (A1-A4) are already committed on main as 4afd5572. This prompt finishes the migration step (M1) and full V-check (V1-V5) from the original build, with a one-time DDL prepended to remediate the drift.
+
+TSC baseline: 1 error (server/services/portal.service.ts:81 TS2353 'token', pre-existing). Must not increase.
+
+==============================================================
+PRE-STEP VERIFICATIONS — all must pass before any DDL
+==============================================================
+
+P1. Re-confirm the four 177.1A-S1 edits are present on disk. Run:
+    grep -n "marketingConsent\|marketing_consent" shared/schema/core.ts server/routes/public-waitlist.routes.ts
+    Expected: 7 lines total (4 in core.ts, 3 in public-waitlist.routes.ts). ABORT if not 7.
+
+P2. Re-confirm zero duplicates on subscriptions.user_company_id. Run:
+    SELECT user_company_id, COUNT(*) FROM subscriptions
+    GROUP BY user_company_id HAVING COUNT(*) > 1;
+    Expected: zero rows. ABORT if any.
+
+P3. Re-confirm the live constraint state. Run:
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'public.subscriptions'::regclass
+      AND contype = 'u'
+    ORDER BY conname;
+    Expected output (verbatim, exact two names):
+      subscriptions_stripe_subscription_id_key
+      subscriptions_user_company_id_key
+    ABORT if subscriptions_user_company_id_unique already exists (means someone else already remediated). ABORT if subscriptions_user_company_id_key is not present (means the state has changed since the previous assess).
+
+P4. Confirm git working tree clean. Run: git status. Expected: clean on main, last commit 4afd5572.
+
+==============================================================
+APPLY — DDL remediation
+==============================================================
+
+A1. Rename the live constraint to match Drizzle's naming convention. Run exactly:
+
+    ALTER TABLE subscriptions
+    RENAME CONSTRAINT subscriptions_user_company_id_key
+    TO subscriptions_user_company_id_unique;
+
+    Report the success/failure of the statement. This is a metadata-only rename; no data is touched, no rows scanned, no locks held beyond the brief catalog update.
+
+A2. Verify post-rename state. Run:
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'public.subscriptions'::regclass
+      AND contype = 'u'
+    ORDER BY conname;
+    Expected output (verbatim):
+      subscriptions_stripe_subscription_id_key
+      subscriptions_user_company_id_unique
+    ABORT remainder of build if subscriptions_user_company_id_unique is not present.
+
+==============================================================
+MIGRATE — finish 177.1A-S1
+==============================================================
+
+M1. Run: npm run db:push
+    Report the FULL output verbatim. Expected: a clean additive push covering only the four new columns (users.marketing_consent, users.marketing_consent_at, waitlist.marketing_consent, waitlist.marketing_consent_at). No interactive prompts of any kind. If db:push prompts for ANYTHING — truncate, rename, drop, anything — STOP immediately and report the prompt verbatim. Do not accept any prompt.
+
+==============================================================
+V-CHECK — stop after this, do not proceed to any other item
+==============================================================
+
+V1. Run: npm run check
+    Expected: exactly 1 error, the pre-existing server/services/portal.service.ts(81,14) TS2353. Report total error count and, if greater than 1, list new errors.
+
+V2. Restart the dev workflow. Confirm clean boot with no schema or runtime errors. Paste boot log up to the "server listening" line.
+
+V3. Grep assertions:
+    grep -cn "marketingConsent\|marketing_consent" shared/schema/core.ts
+      Expected: 4
+    grep -cn "marketingConsent\|marketing_consent" server/routes/public-waitlist.routes.ts
+      Expected: 3
+    grep -rln "marketingConsent\|marketing_consent" server/ shared/ scripts/
+      Report all files with hits, one per line.
+
+V4. DB column verification on both tables. For each of the following four columns, run a describe (or pg_catalog query) and report column type, nullable, default:
+    a) users.marketing_consent           -> type=boolean,  nullable=NO,  default=false
+    b) users.marketing_consent_at        -> type=timestamp, nullable=YES, default=NULL
+    c) waitlist.marketing_consent        -> type=boolean,  nullable=NO,  default=false
+    d) waitlist.marketing_consent_at     -> type=timestamp, nullable=YES, default=NULL
+
+V5. Constraint verification on subscriptions. Run:
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'public.subscriptions'::regclass
+      AND contype = 'u'
+    ORDER BY conname;
+    Expected verbatim:
+      subscriptions_stripe_subscription_id_key
+      subscriptions_user_company_id_unique
+    Exactly two unique constraints. Not three (no redundant ..._unique sitting alongside ..._key).
+
+V6. Run: git status && git diff --stat
+    Expected: working tree clean (Replit's auto-checkpoint will have committed any drizzle artefacts from db:push). Report the last 2 commit hashes and first-line messages.
+
+==============================================================
+FORWARD-PREP (read-only) — capture user-insert block for Stage 2
+==============================================================
+
+F1. Show the full user-insert block inside the invite transaction at server/routes/admin-waitlist.routes.ts. Run:
+      grep -n "tx.insert(users)" server/routes/admin-waitlist.routes.ts
+    Then display the full block from `tx.insert(users)` through the closing `).returning();` (or equivalent), with line numbers and exact indentation. Also show:
+    a) The line that derives firstName/lastName from entry.fullName.
+    b) The line that opens the db.transaction(...) call.
+    c) The line that selects/loads the entry (waitlist row) — the SELECT that produces the `entry` variable consumed by the insert.
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering: P1-P4, A1-A2, M1, V1-V6, F1. Stop. Do not commit additional work. Do not proceed to Stage 2 or any other item.
