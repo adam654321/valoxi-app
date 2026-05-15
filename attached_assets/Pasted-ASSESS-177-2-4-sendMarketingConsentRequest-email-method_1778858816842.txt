@@ -1,0 +1,50 @@
+ASSESS #177.2-4 — sendMarketingConsentRequest email method
+
+READ-ONLY. No file writes. Report only.
+
+1. Git + TSC baseline:
+   git status            — expected clean on main, HEAD f734800 (177.2-3 already auto-committed)
+   npm run check         — expected 1 error
+
+2. Locate two existing reference methods in server/services/email.service.ts that we'll mirror. Show:
+
+   a) sendWaitlistInvitation (line 308). Show the full method body from line 308 through the next 'async' keyword (likely ~360). We need:
+      - Full params interface
+      - How it builds the EmailBlock array
+      - How it composes subject + heading + preheader
+      - The renderBrandedEmail call
+      - The dispatch call (sendCustomerFacingEmail or direct legacyEmailService)
+      - The return shape
+
+   b) sendMagicLinkEmail (line 405). Same. Show the full method body from line 405 to the next 'async'. We need:
+      - How it uses APP_URL/baseUrl to build a click-through URL
+      - How the CTA block is constructed
+      - Whether it sets a custom Reply-To or From
+
+3. The renderBrandedEmail config shape and EmailBlock types — already captured in 177.2-1 forward-prep. Re-confirm by showing:
+   grep -n "RenderBrandedEmailConfig\|EmailBlock\|EmailCta\|EmailInfoBox" server/services/email-template.ts
+   Report. We need exact field names for the build.
+
+4. The legacyEmailService.sendEmail signature:
+   grep -rn "sendEmail.*to.*subject.*html\|async sendEmail\|function sendEmail" server/email.ts 2>/dev/null
+   Show the function signature. Confirm it accepts { to, subject, html } and returns boolean.
+
+5. Confirm the sender / from address handling:
+   grep -n "SMTP_FROM_EMAIL\|hello@send.valoxi.ai\|from:" server/email.ts | head -10
+   Report. We want hello@send.valoxi.ai for the consent email — confirm this is the default (or controllable via a method param).
+
+6. Show the existing email-template footerLine / supportLine usage if any:
+   grep -n "footerLine\|supportLine" server/services/email.service.ts | head -10
+   Pick one method that uses them and show 5 lines of context. We may want a custom footer for the consent email (the "this is a one-off" line).
+
+7. Confirm config.baseUrl resolves to the production app URL in prod env. Already verified in 177.2-2 assess (server/config.ts line 13). No re-check needed unless P1 finds something has changed.
+
+8. Forward-prep for 177.2-5 (sender script):
+   ls -l scripts/ | head -20
+   Show contents of scripts/. We want to know what existing scripts look like (file naming, flag-parsing style, dry-run convention). The backfill-marketing-contacts.ts script from the recent Resend work is the closest precedent.
+
+   If present, show first 40 lines of scripts/backfill-marketing-contacts.ts.
+
+REPORT
+
+Single consolidated report covering 1-8. Stop. No file writes.
