@@ -82,12 +82,18 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  const limiter = pLimit(5);
+  const limiter = pLimit(1);
   const tally = { created: 0, updated: 0, skipped: 0, failed: 0 };
   const failures: { id: number; email: string; reason?: string }[] = [];
   const skips: { id: number; email: string; reason?: string }[] = [];
 
-  const tasks = targetUsers.map((u) => limiter(async () => {
+  const tasks = targetUsers.map((u, idx) => limiter(async () => {
+    // Wait 250ms before each user except the first, so we stay under
+    // Resend's 5 req/sec cap given upsertContact makes up to 8 API calls per user.
+    if (idx > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+
     const result = await marketingContactsService.upsertContact(u.id);
     tally[result.status] = (tally[result.status] ?? 0) + 1;
 
