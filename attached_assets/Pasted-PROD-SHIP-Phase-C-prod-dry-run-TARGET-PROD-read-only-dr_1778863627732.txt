@@ -1,0 +1,38 @@
+PROD SHIP — Phase C: prod dry-run
+
+TARGET: PROD (read-only — dry-run never writes)
+
+Run this once. It exercises the sender script against the prod DB by overriding DATABASE_URL for this single command. The script itself is unchanged and unaware. Nothing is written to either DB.
+
+C1. Confirm the override mechanism works without touching the actual run. First, a one-shot test that DATABASE_URL really gets the prod value for the subprocess:
+    DATABASE_URL="$PROD_DATABASE_URL" node -e "const u = new URL(process.env.DATABASE_URL); console.log('subprocess DB host:', u.hostname);"
+    Report the host. ABORT if the hostname matches the dev hostname seen earlier today.
+
+C2. Prod dry-run:
+    DATABASE_URL="$PROD_DATABASE_URL" npx tsx scripts/send-marketing-consent-emails.ts --dry-run
+
+    Report full stdout verbatim. Expected shape:
+    - Header banner
+    - Mode: DRY RUN
+    - Cohort line: "Cohort: 37 users, 0 waitlist → 37 after limit"
+    - 37 [PLAN] lines, all "user" kind, with title-cased firstNames
+    - "Dry run complete. 37 recipients planned."
+    - Exit 0
+
+    Critical inspections inside the output:
+    - All 37 lines should be `user` kind, zero `wlist` kind
+    - First names should be title-cased
+    - Email addresses should look like real external users (not adam+something@... internal test accounts; not viv@shiftopsconsulting.com which we pre-consented)
+    - No id=1 (Adam) and no id=2 (Vivek) — they're filtered by company_id=5 even with --include-internal off, but additionally we pre-consented them so they'd be filtered by marketing_consent=true anyway. Belt and braces.
+
+C3. Sanity check that the dry-run wrote nothing to prod:
+    psql "$PROD_DATABASE_URL" -c "SELECT COUNT(*) FROM marketing_consent_tokens;"
+    Expected: 0.
+
+C4. Sanity check that we did NOT touch dev:
+    psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM marketing_consent_tokens;"
+    Expected: 0 (cleanup from earlier tonight left it at 0).
+
+REPORT
+
+Single consolidated report covering C1-C4 with the full C2 stdout. Stop. Do not proceed to live send. Adam will eyeball the 37-recipient manifest before authorising Phase D.
