@@ -1,0 +1,31 @@
+HOTFIX 177.2-7 — resend consent emails with correct prod URL
+
+TARGET: PROD (write — sends real emails to same 37 recipients via Resend, no DB writes)
+
+CONTEXT: Phase D live send went out with consent URLs pointing at the dev Replit preview domain (config.baseUrl resolved to this dev workspace at send time). Tokens are correctly in the prod DB but the links in the emails are broken. Need to resend immediately with correct app.valoxi.ai URL. Same tokens — DO NOT generate new ones; the existing ones are valid for 30 days.
+
+PRE-FLIGHT
+==============================================================
+
+P1. Confirm prod tokens exist as expected from Phase D:
+    psql "$PROD_DATABASE_URL" -c "
+      SELECT COUNT(*) AS total,
+             COUNT(*) FILTER (WHERE consent_recorded_at IS NULL) AS unconsumed,
+             COUNT(*) FILTER (WHERE consent_recorded_at IS NOT NULL) AS already_consented
+      FROM marketing_consent_tokens
+      WHERE user_id IS NOT NULL;
+    "
+    Expected: total=37, unconsumed=37, already_consented=0. ABORT if anything has clicked through already (we don't want to re-email anyone who already confirmed; very unlikely in the minutes since send but worth checking).
+
+P2. Determine the correct prod public URL. Per the privacy policy "Applies to: valoxi.ai and app.valoxi.ai" and prior context, the prod app domain is app.valoxi.ai. Confirm with a quick check:
+    curl -s -o /dev/null -w "%{http_code}" https://app.valoxi.ai/marketing-consent/0000000000000000000000000000000000000000000000000000000000000000
+    Expected: 200 (the page renders even for invalid tokens — Adam already confirmed this manually).
+    If 200, app.valoxi.ai is correct. If anything else, STOP and report.
+
+==============================================================
+APPLY — one-shot resend script
+==============================================================
+
+A1. Create scripts/.tmp-resend-consent-emails.ts (.tmp- prefix marks it disposable; we'll delete it post-run):
+
+```typescript
