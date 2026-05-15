@@ -1,0 +1,65 @@
+ASSESS #177.2-3 — client marketing consent landing page
+
+READ-ONLY. No file writes. Report only.
+
+1. Commit the pending 177.2-2 work first if Replit's checkpoint hasn't done it. Run:
+   git status
+   If 3 files (server/routes/index.ts + the two new files) are uncommitted/untracked, run:
+     git add server/routes/index.ts server/repositories/marketing-consent-token.repository.ts server/routes/public-marketing-consent.routes.ts
+     git commit -m "177.2-2: public marketing consent token endpoints + repository"
+   Report new commit hash and git log --oneline -3.
+   If working tree is already clean, skip — Replit's auto-checkpoint handled it.
+
+2. TSC baseline: npm run check. Expected: 1 error.
+
+3. Client routing file shape. Show:
+   wc -l client/src/App.tsx
+   sed -n '1,30p' client/src/App.tsx                 # imports
+   sed -n '74,130p' client/src/App.tsx               # the Router function and Switch block
+   We need to know exactly where new <Route> entries go, what import style is used, and what the lazy-loading pattern is (if any).
+
+4. Existing token-page pattern. Show file size + first 60 lines of one of the existing public token pages. Pick whichever exists:
+   ls -l client/src/pages/portal*.tsx 2>/dev/null
+   ls -l client/src/pages/accept-invitation*.tsx 2>/dev/null
+   ls -l client/src/pages/*invite*.tsx 2>/dev/null
+
+   For whichever file matches /portal/:token (used at App.tsx:102), show:
+     head -80 <that file>
+   We want to see:
+   - how it reads :token from the URL via wouter
+   - how it calls the public API endpoint
+   - what fetch wrapper (if any) it uses
+   - how loading/error/success states are structured
+   - the page chrome (does it use a shared <PublicLayout> or stand alone?)
+
+5. API client/wrapper. Search for a centralised fetch helper used by public pages:
+   grep -rn "fetch(.*\/api\/v2\/public" client/src/ 2>/dev/null | head -10
+   grep -rn "apiClient\|apiFetch\|publicApi\|baseFetch" client/src/lib/ 2>/dev/null | head -10
+   ls -l client/src/lib/ 2>/dev/null
+   Report. If a helper exists, we use it; if pages just call fetch() directly, we follow that pattern.
+
+6. Confirm Tailwind/UI library available. Show:
+   ls -l client/src/components/ui/ 2>/dev/null | head -20
+   Confirm shadcn-style Button, Card, etc. exist for the new page chrome.
+
+7. Existing brand-pixel-perfect page. The marketing site uses bg-bg-base, brand-primary orange (#E05115), and Inter. Confirm the app uses the same tokens or different ones:
+   cat client/src/index.css 2>/dev/null | head -50
+   grep -rn "brand-primary\|--brand\|#E05115" client/src/ 2>/dev/null | head -10
+   Report. The landing page should match either the app's design tokens or, if they differ, decide which to use.
+
+8. Confirm there's no rogue marketing-consent client file already:
+   grep -rni "marketing-consent\|marketingConsent\|MarketingConsent" client/src/ 2>/dev/null
+   Expected: zero hits.
+
+9. Toast/notification system if any (we may want a success toast on confirm click):
+   grep -rn "useToast\|toast\." client/src/ 2>/dev/null | head -10
+   grep -rn "import.*toast\|import.*Toast" client/src/ 2>/dev/null | head -10
+   Report.
+
+10. Wouter useParams pattern. Show one example usage from an existing :token route:
+    grep -rn "useParams\|useRoute" client/src/pages/ 2>/dev/null | head -10
+    Report. wouter has both useParams() and useRoute() patterns — we follow whichever the existing /portal/:token and /invite/:token pages use.
+
+REPORT
+
+Single consolidated report covering 1-10. Stop. No client builds, no writes.
