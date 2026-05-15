@@ -1,0 +1,151 @@
+BUILD — final constraint renames + finish 177.1A-S1 + V-check
+
+Source: Continuation of BUILD 177.1A-S1. Third and final round of constraint naming drift remediation. Three renames remain, all table-level named/auto-named uniques missed in the earlier inline .unique() sweep.
+
+TSC baseline: 1 error (server/services/portal.service.ts:81, pre-existing). Must not increase.
+
+==============================================================
+PRE-STEP VERIFICATIONS
+==============================================================
+
+P1. Re-confirm the three target _key constraints still exist on the live DB:
+    SELECT conname FROM pg_constraint
+    WHERE conrelid IN (
+      'public.user_company_memberships'::regclass,
+      'public.user_deal_assignments'::regclass,
+      'public.document_stage_progression'::regclass
+    )
+    AND contype = 'u'
+    ORDER BY conname;
+    Expected verbatim:
+      document_stage_progression_target_company_id_key
+      user_company_memberships_user_id_user_company_id_key
+      user_deal_assignments_user_id_target_company_id_key
+    ABORT if any expected _unique target name already exists.
+
+P2. Re-confirm zero duplicates on all three composite/single column targets:
+    SELECT user_id, user_company_id, COUNT(*) FROM user_company_memberships
+      GROUP BY user_id, user_company_id HAVING COUNT(*) > 1;
+    SELECT user_id, target_company_id, COUNT(*) FROM user_deal_assignments
+      GROUP BY user_id, target_company_id HAVING COUNT(*) > 1;
+    SELECT target_company_id, COUNT(*) FROM document_stage_progression
+      GROUP BY target_company_id HAVING COUNT(*) > 1;
+    All three expected: zero rows. ABORT if any duplicate.
+
+P3. Row-count safety snapshot. Record exact row counts pre-DDL so we can verify no row was disturbed:
+    SELECT 'user_company_memberships' AS t, COUNT(*) FROM user_company_memberships
+    UNION ALL SELECT 'user_deal_assignments', COUNT(*) FROM user_deal_assignments
+    UNION ALL SELECT 'document_stage_progression', COUNT(*) FROM document_stage_progression
+    UNION ALL SELECT 'subscriptions', COUNT(*) FROM subscriptions
+    UNION ALL SELECT 'subscription_events', COUNT(*) FROM subscription_events
+    UNION ALL SELECT 'users', COUNT(*) FROM users
+    UNION ALL SELECT 'waitlist', COUNT(*) FROM waitlist;
+    Report the table, with all 7 counts. Keep this value in mind for V6.
+
+P4. Working tree clean + edits intact:
+    git status
+    grep -cn "marketingConsent\|marketing_consent" shared/schema/core.ts server/routes/public-waitlist.routes.ts
+    Expected: clean working tree, core.ts=4, public-waitlist.routes.ts=3.
+
+==============================================================
+APPLY — single atomic transaction
+==============================================================
+
+A1. Run as one transaction:
+
+    BEGIN;
+
+    ALTER TABLE user_company_memberships
+      RENAME CONSTRAINT user_company_memberships_user_id_user_company_id_key
+      TO unique_user_company;
+
+    ALTER TABLE user_deal_assignments
+      RENAME CONSTRAINT user_deal_assignments_user_id_target_company_id_key
+      TO user_deal_assignments_user_id_target_company_id_unique;
+
+    ALTER TABLE document_stage_progression
+      RENAME CONSTRAINT document_stage_progression_target_company_id_key
+      TO document_stage_progression_target_company_id_unique;
+
+    COMMIT;
+
+    Report each statement's result and the final COMMIT confirmation. If anything fails, report verbatim and STOP — do not retry individual statements.
+
+A2. Verify post-transaction. Run the full sweep one final time:
+    SELECT
+      c.conrelid::regclass::text AS table_name,
+      c.conname
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.contype = 'u'
+      AND c.conname LIKE '%_key'
+    ORDER BY table_name, conname;
+
+    Expected: ZERO rows. Every `_key` constraint that corresponds to a Drizzle-declared unique is now renamed. ABORT remainder if any rows returned.
+
+A3. Verify the three new names exist:
+    SELECT conname FROM pg_constraint
+    WHERE conname IN (
+      'unique_user_company',
+      'user_deal_assignments_user_id_target_company_id_unique',
+      'document_stage_progression_target_company_id_unique'
+    )
+    ORDER BY conname;
+    Expected: all 3 rows returned.
+
+==============================================================
+MIGRATE — finish 177.1A-S1
+==============================================================
+
+M1. Run: npm run db:push
+    Report FULL output verbatim. Expected: clean additive push covering only the four marketing consent columns. NO interactive prompts.
+    If db:push prompts for ANYTHING — truncate, rename, drop, anything at all — STOP immediately, report verbatim, do not accept.
+
+==============================================================
+V-CHECK
+==============================================================
+
+V1. Run: npm run check
+    Expected: exactly 1 error (server/services/portal.service.ts:81 TS2353). Report count and any new errors.
+
+V2. Restart dev workflow. Confirm clean boot. Paste boot log up to "server listening".
+
+V3. Grep assertions:
+    grep -cn "marketingConsent\|marketing_consent" shared/schema/core.ts            -> expected 4
+    grep -cn "marketingConsent\|marketing_consent" server/routes/public-waitlist.routes.ts  -> expected 3
+    grep -rln "marketingConsent\|marketing_consent" server/ shared/ scripts/
+      Report all files with hits.
+
+V4. DB column verification:
+    a) users.marketing_consent           -> type=boolean,  nullable=NO,  default=false
+    b) users.marketing_consent_at        -> type=timestamp, nullable=YES, default=NULL
+    c) waitlist.marketing_consent        -> type=boolean,  nullable=NO,  default=false
+    d) waitlist.marketing_consent_at     -> type=timestamp, nullable=YES, default=NULL
+
+V5. Constraint integrity proof. Run:
+    SELECT COUNT(*) FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public' AND c.contype = 'u';
+    Expected: 27 (same as A3 of previous build — three renames are metadata-only, total count unchanged).
+
+V6. Row-count safety re-check. Run the same query as P3:
+    SELECT 'user_company_memberships' AS t, COUNT(*) FROM user_company_memberships
+    UNION ALL SELECT 'user_deal_assignments', COUNT(*) FROM user_deal_assignments
+    UNION ALL SELECT 'document_stage_progression', COUNT(*) FROM document_stage_progression
+    UNION ALL SELECT 'subscriptions', COUNT(*) FROM subscriptions
+    UNION ALL SELECT 'subscription_events', COUNT(*) FROM subscription_events
+    UNION ALL SELECT 'users', COUNT(*) FROM users
+    UNION ALL SELECT 'waitlist', COUNT(*) FROM waitlist;
+    Every row count must be IDENTICAL to P3. ABORT and report if any differ.
+
+V7. Run: git status && git log --oneline -3
+    Report.
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering P1-P4, A1-A3, M1, V1-V7. Stop. Do not commit additional work. Do not proceed to Stage 2 or any other item.
