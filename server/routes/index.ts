@@ -33,6 +33,7 @@ import webhooksRoutes from './webhooks.routes';
 import marketingWebhooksRoutes from './marketing-webhooks.routes';
 import publicConfigRoutes from './public.routes';
 import publicWaitlistRoutes from './public-waitlist.routes';
+import publicMarketingConsentRoutes from './public-marketing-consent.routes';
 import billingAdminRoutes from './billing-admin.routes';
 import onboardingRoutes from './onboarding.routes';
 import complianceRoutes from './compliance.routes';
@@ -101,6 +102,7 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/webhooks', webhooksRoutes);
   app.use('/api/v2/webhooks', marketingWebhooksRoutes);
   app.use('/api/v2/public/waitlist', waitlistLimiter, publicWaitlistRoutes);
+  app.use('/api/v2/public/marketing-consent', waitlistLimiter, publicMarketingConsentRoutes);
   app.use('/api/v2/public', publicConfigRoutes);
   app.use('/api/v2/billing', billingWebhookRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingRoutes);
