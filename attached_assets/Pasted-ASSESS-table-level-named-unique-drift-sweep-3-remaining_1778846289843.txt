@@ -1,0 +1,66 @@
+ASSESS — table-level named unique drift sweep (3 remaining tables)
+
+READ-ONLY. No DDL. Report only.
+
+T1. Find every table-level named unique declaration in the schema. Run:
+    grep -rn "unique(\"" shared/schema/
+    grep -rn "unique('" shared/schema/
+    Report all hits with file:line and full matching line. This finds declarations of the form `unique("name").on(...)` or `unique('name').on(...)`.
+
+T2. For each of the three remaining _key constraints, show the relevant pgTable definition.
+
+    a) user_company_memberships:
+       Find the pgTable("user_company_memberships", ...) block.
+       Run: grep -n "pgTable(\"user_company_memberships\"\|pgTable('user_company_memberships'" shared/schema/
+       Then display the FULL block from `export const` through the closing `}));` with line numbers, including the `(table) => ({...})` options block.
+
+    b) user_deal_assignments:
+       Same: grep -n "pgTable(\"user_deal_assignments\"\|pgTable('user_deal_assignments'" shared/schema/
+       Then display the FULL block with line numbers.
+
+    c) document_stage_progression:
+       Same: grep -n "pgTable(\"document_stage_progression\"\|pgTable('document_stage_progression'" shared/schema/
+       Then display the FULL block with line numbers.
+
+T3. For each of the three tables, report the resolved Drizzle-expected constraint name:
+
+    For inline `.unique()`: Drizzle expects `<table>_<column>_unique`.
+    For table-level `unique("name").on(...)`: Drizzle expects exactly `"name"` (the literal string).
+    If neither is declared (no .unique() inline AND no unique() in the (table) options): Drizzle will want to DROP the live constraint.
+
+    Build this matrix:
+
+    | Table                        | Schema declaration form           | Live DB Name                                                | Drizzle Expected Name      | Action       |
+    |------------------------------|-----------------------------------|-------------------------------------------------------------|----------------------------|--------------|
+    | user_company_memberships     | unique("unique_user_company").on  | user_company_memberships_user_id_user_company_id_key        | unique_user_company        | RENAME       |
+    | user_deal_assignments        | <fill from T2>                    | user_deal_assignments_user_id_target_company_id_key         | <fill from T2>             | RENAME/DROP  |
+    | document_stage_progression   | <fill from T2>                    | document_stage_progression_target_company_id_key            | <fill from T2>             | RENAME/DROP  |
+
+T4. Duplicate check on the composite columns for the two RENAME-candidate tables. Run:
+
+    SELECT user_id, user_company_id, COUNT(*) FROM user_company_memberships
+    GROUP BY user_id, user_company_id HAVING COUNT(*) > 1;
+
+    SELECT user_id, target_company_id, COUNT(*) FROM user_deal_assignments
+    GROUP BY user_id, target_company_id HAVING COUNT(*) > 1;
+
+    Report results. Expected: zero rows on each.
+
+T5. Duplicate check on document_stage_progression.target_company_id:
+    SELECT target_company_id, COUNT(*) FROM document_stage_progression
+    GROUP BY target_company_id HAVING COUNT(*) > 1;
+    Report. Expected: zero rows.
+
+T6. Confirm db:push session has been cancelled and working tree is clean:
+    git status
+    Expected: clean. ABORT if anything is uncommitted from the failed push.
+
+T7. Re-confirm 177.1A-S1 edits intact:
+    grep -cn "marketingConsent\|marketing_consent" shared/schema/core.ts server/routes/public-waitlist.routes.ts
+    Expected: core.ts=4, public-waitlist.routes.ts=3.
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering T1-T7. Stop. Do not run DDL. Do not run db:push. Do not commit.
