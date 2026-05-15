@@ -16,6 +16,7 @@ import { BetaFeedbackWidget } from "@/components/BetaFeedbackWidget";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/auth/login";
 import AcceptInvitation from "@/pages/accept-invitation";
+import MarketingConsentPage from "@/pages/marketing-consent";
 
 const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
 const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
@@ -110,6 +111,7 @@ function Router() {
           <Route path="/auth/magic" component={MagicLinkPage} />
           <Route path="/auth/link-expired" component={LinkExpiredPage} />
           <Route path="/accept-invitation" component={AcceptInvitation} />
+          <Route path="/marketing-consent/:token" component={MarketingConsentPage} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>
@@ -135,6 +137,7 @@ function Router() {
       <Switch>
         <Route path="/portal/:token" component={PortalPage} />
         <Route path="/invite/:token" component={AcceptInvitation} />
+        <Route path="/marketing-consent/:token" component={MarketingConsentPage} />
 
         <Route path="/admin/companies/:id">
           {() => (
