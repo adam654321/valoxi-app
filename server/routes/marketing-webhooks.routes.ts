@@ -67,7 +67,7 @@ router.post('/resend-marketing', async (req: Request, res: Response) => {
 async function handleEmailSuppressed(evt: ResendWebhookEvent, svixId: string): Promise<void> {
   const email = evt.data?.email;
   if (!email) {
-    console.warn('[resend-webhook] contact.unsubscribed: missing email in payload');
+    console.warn('[resend-webhook] email.suppressed: missing email in payload');
     return;
   }
 
