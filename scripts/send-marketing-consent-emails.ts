@@ -80,10 +80,16 @@ interface WaitlistRecipient {
 
 type Recipient = UserRecipient | WaitlistRecipient;
 
+function titleCase(name: string): string {
+  if (!name) return name;
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
 function extractFirstName(fullName: string | null | undefined): string {
   if (!fullName) return 'there';
   const first = fullName.trim().split(/\s+/)[0];
-  return first && first.length > 0 ? first : 'there';
+  if (!first || first.length === 0) return 'there';
+  return titleCase(first);
 }
 
 async function loadUserRecipients(args: Args): Promise<UserRecipient[]> {
@@ -114,7 +120,7 @@ async function loadUserRecipients(args: Args): Promise<UserRecipient[]> {
     kind: 'user' as const,
     id: r.id,
     email: r.email,
-    firstName: r.firstName || 'there',
+    firstName: r.firstName ? titleCase(r.firstName) : 'there',
   }));
 }
 

@@ -1,0 +1,105 @@
+BUILD 177.2-5.1 — title-case firstName in sender script
+
+Source: small follow-up to 177.2-5. Default-format extracted firstName with title-case so single-word names get a capital initial regardless of source row casing. Adam eyeballs the dry-run list before live send and overrides any rows where title-casing would be wrong via direct SQL.
+
+==============================================================
+PRE-STEP VERIFICATIONS
+==============================================================
+
+P1. git status. Expected: clean OR scripts/send-marketing-consent-emails.ts modified/untracked. Report whichever.
+
+P2. npm run check. Expected: 1 error (pre-existing).
+
+P3. Confirm extractFirstName function still exists in current form:
+    grep -n "function extractFirstName" scripts/send-marketing-consent-emails.ts
+    sed -n '<line>,<line+6>p' scripts/send-marketing-consent-emails.ts
+    Report. Expected current shape:
+      function extractFirstName(fullName: string | null | undefined): string {
+        if (!fullName) return 'there';
+        const first = fullName.trim().split(/\s+/)[0];
+        return first && first.length > 0 ? first : 'there';
+      }
+
+P4. Confirm the users-cohort first_name fallback still reads:
+    grep -n "firstName: r.firstName" scripts/send-marketing-consent-emails.ts
+    Expected: `firstName: r.firstName || 'there'`
+
+==============================================================
+APPLY
+==============================================================
+
+A1. Edit scripts/send-marketing-consent-emails.ts. Two changes:
+
+  A1a. Add a titleCase helper just above extractFirstName.
+
+    Find (exact):
+      function extractFirstName(fullName: string | null | undefined): string {
+        if (!fullName) return 'there';
+        const first = fullName.trim().split(/\s+/)[0];
+        return first && first.length > 0 ? first : 'there';
+      }
+
+    Replace with (exact):
+      function titleCase(name: string): string {
+        if (!name) return name;
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+      }
+
+      function extractFirstName(fullName: string | null | undefined): string {
+        if (!fullName) return 'there';
+        const first = fullName.trim().split(/\s+/)[0];
+        if (!first || first.length === 0) return 'there';
+        return titleCase(first);
+      }
+
+  A1b. Apply titleCase to the user cohort firstName too.
+
+    Find (exact):
+      firstName: r.firstName || 'there',
+
+    Replace with (exact):
+      firstName: r.firstName ? titleCase(r.firstName) : 'there',
+
+A2. Run npm run check. Expected: 1 error (pre-existing only).
+
+==============================================================
+V-CHECK
+==============================================================
+
+V1. TSC: npm run check. Expected: 1 error.
+
+V2. Grep self-checks:
+    grep -c "titleCase" scripts/send-marketing-consent-emails.ts
+    Expected: 4 (1 declaration, 1 usage in extractFirstName, 1 usage in loadUserRecipients, 1 self-reference inside the function body — actually count is 3 declarations/usages plus 0 = 3; if Replit reports 3, that is correct, the count of 4 in this spec was off by one).
+
+    More important: verify both call sites:
+    grep -n "titleCase(" scripts/send-marketing-consent-emails.ts
+    Expected: at least 2 call sites (one in extractFirstName, one in user firstName extraction).
+
+V3. Dry-run with --limit=3 to spot-check title-case is firing:
+    npx tsx scripts/send-marketing-consent-emails.ts --dry-run --limit=3
+    Report stdout. Expected: 3 [PLAN] lines with title-cased firstNames.
+
+V4. Full dry-run for the inspection manifest. Spot-check the rows that motivated this change:
+    npx tsx scripts/send-marketing-consent-emails.ts --dry-run
+    Report stdout. Expected:
+      - timstigma@gmail.com now shows (firstName: Tim) — was (firstName: tim)
+      - mercy_matewa@yahoo.co.uk now shows (firstName: Mercy) — was (firstName: MERCY)
+      - jitsy35@gmail.com now shows (firstName: Ranjit) — was (firstName: ranjit)
+      - All other rows unchanged in meaning (Adam stays Adam, Jagdev stays Jagdev, etc.)
+    No DB writes, no emails.
+
+V5. Confirm DB is clean:
+    SELECT COUNT(*) FROM marketing_consent_tokens;
+    Expected: 0.
+
+V6. Git state:
+    git status
+    git diff --stat scripts/send-marketing-consent-emails.ts
+    Expected: file shows ~6-8 line change (helper added + two call site changes).
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering P1-P4, A1-A2, V1-V6. Stop. Do not commit.
