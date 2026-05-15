@@ -1,0 +1,224 @@
+[GOOD] Clean assess. One conflict to surface before the build prompt: the email copy.
+[DEBUG] Replit's "summary plan" at the end of the assess diverged from the copy I sent you in the previous turn. Replit drafted a different version:
+
+Eyebrow: "Marketing emails"
+Heading: "Would you like product updates from Valoxi?"
+Body: "We'd love to send you occasional product updates, new features, and useful M&A resources."
+Subject: "Would you like product updates from Valoxi?"
+
+Replit's version is fine but it does the thing I was trying to avoid — it lightly pitches ("we'd love", positions us as the asker for our benefit). My version frames it as housekeeping ("tightening up how we handle marketing emails to match what we promise in our privacy policy") which is closer to neutral transactional and gives a clear reason-why grounded in the privacy policy update we just shipped.
+For a category-1 transactional email going to 39 prod users + waitlist, neutral-housekeeping is safer than enthusiastic-ask. Less risk of getting flagged as marketing by Outlook/Gmail filters. Replit doesn't have the legal-basis context that I do, hence the drift.
+[LOCKED] Going with my original copy. Build prompt below uses it verbatim.
+BUILD 177.2-4 — sendMarketingConsentRequest email method
+
+Source: Item #177.2 sub-build 4 of 5. New method in server/services/email.service.ts. Caller (177.2-5 sender script) composes the consentUrl and passes it in pre-formed.
+
+TSC baseline: 1 pre-existing error (portal.service.ts:81). Must not increase.
+
+==============================================================
+PRE-STEP VERIFICATIONS
+==============================================================
+
+P1. Working tree clean. Run: git status. Expected: clean on main, HEAD 0021b1d.
+
+P2. TSC baseline. Run: npm run check. Expected: 1 error.
+
+P3. Confirm email.service.ts shape unchanged from assess. Run:
+    wc -l server/services/email.service.ts
+    Expected: 807 lines.
+    grep -n "^export const emailApiService\|^class EmailApiService\|^export class EmailApiService" server/services/email.service.ts
+    Report the line numbers of the class declaration and the singleton export.
+
+P4. Confirm no existing method named sendMarketingConsentRequest:
+    grep -n "sendMarketingConsentRequest\|sendMarketingConsent\|marketingConsentEmail" server/services/email.service.ts
+    Expected: zero hits.
+
+P5. Locate the EXACT closing brace of the EmailApiService class (we'll insert the new method directly above it). Run:
+    grep -n "^}" server/services/email.service.ts | tail -5
+    Then run:
+    sed -n '800,807p' server/services/email.service.ts
+    Report. We need to see the last existing method's closing brace and the class's closing brace to choose the insertion point precisely.
+
+==============================================================
+APPLY
+==============================================================
+
+A1. Edit server/services/email.service.ts. Insert the new method immediately before the class's closing brace. The exact find/replace text depends on what P5 reports — Replit, construct the find/replace from the P5 output and apply.
+
+    The pattern is:
+    - Find: the last 3-5 lines of the file showing (last method's closing `}`) + (blank line) + (class's closing `}`) + (any trailing code/exports below).
+    - Insert: the new method between the last method's closing `}` and the class's closing `}`, preserving file's 2-space indentation.
+
+    New method body (insert exactly this, indented to match the file's 2-space class-member indentation):
+
+```typescript
+  async sendMarketingConsentRequest(params: {
+    to: string;
+    firstName: string;
+    consentUrl: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, consentUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      {
+        type: 'paragraph',
+        text: "We're tightening up how we handle marketing emails to match what we promise in our privacy policy. Right now we don't have a record of whether you'd like to hear product news and updates from us, so we're asking explicitly.",
+      },
+      {
+        type: 'paragraph',
+        text: "If you'd like Valoxi product updates and useful resources by email, click the button below. We'll keep them occasional and you can unsubscribe at any time.",
+      },
+      {
+        type: 'cta',
+        cta: { label: 'Yes, send me product updates', href: consentUrl },
+      },
+      {
+        type: 'paragraph',
+        text: "If marketing emails aren't for you, you don't need to do anything. Closing this email keeps your current preference (no marketing emails). You'll still receive account, billing, and security emails from us regardless. Those aren't affected by this preference.",
+      },
+      { type: 'paragraph', text: 'Thanks,<br/>The Valoxi team' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'A quick yes-or-no on marketing emails. Doing nothing is fine.',
+      eyebrow: 'Marketing preferences',
+      heading: 'Quick yes-or-no on marketing emails',
+      blocks,
+      footerLine:
+        'This is a one-off transactional email about your marketing preferences. We will not send another like it. Account, billing, and security emails are unaffected.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Quick yes-or-no on marketing emails from Valoxi',
+      html,
+    });
+
+    return {
+      success,
+      message: success
+        ? 'Marketing consent request email sent'
+        : 'Failed to send marketing consent request email',
+    };
+  }
+```
+
+    Pre-step shape check before applying: ensure that `escapeHtml`, `EmailBlock`, `renderBrandedEmail`, `legacyEmailService`, and `SendInvitationResult` are already imported in email.service.ts. Run:
+      grep -n "escapeHtml\|EmailBlock\|renderBrandedEmail\|legacyEmailService\|SendInvitationResult" server/services/email.service.ts | head -20
+    Confirm all five are present in the imports block at the top of the file (they should be, per assess; this is a confirmation check). ABORT and report if any is missing — we would need to add an import too.
+
+A2. Run npm run check. Expected: still 1 error (pre-existing only). If new errors appear, report verbatim and stop.
+
+==============================================================
+V-CHECK
+==============================================================
+
+V1. TSC: npm run check. Expected: 1 error.
+
+V2. Restart dev workflow. Confirm clean boot. Paste log up to "server listening".
+
+V3. Grep assertions:
+    grep -cn "sendMarketingConsentRequest" server/services/email.service.ts
+    Expected: 1 (the method declaration line).
+
+    wc -l server/services/email.service.ts
+    Expected: roughly 854 lines (was 807, new method is ~47 lines including method signature + body + closing brace + blank line above).
+
+V4. End-to-end render + send smoke test. We exercise the method by calling it directly via a one-shot tsx invocation. Send to a co-founder address that you (Replit) can verify lands.
+
+  V4a. Pick a safe test recipient. Use adam+consent-smoketest@shiftopsconsulting.com (the +tag will route to Adam's inbox without polluting any segment).
+
+  V4b. Compose a one-shot script invocation. Create a temporary file at scripts/.tmp-test-consent-email.ts (the .tmp- prefix signals it is throw-away — we'll delete it in V4d):
+
+```typescript
+import { emailService } from '../server/services/email.service';
+import { config } from '../server/config';
+
+async function main() {
+  const consentUrl = `${config.baseUrl}/marketing-consent/0000000000000000000000000000000000000000000000000000000000000000`;
+  const result = await emailService.sendMarketingConsentRequest({
+    to: 'adam+consent-smoketest@shiftopsconsulting.com',
+    firstName: 'Adam',
+    consentUrl,
+  });
+  console.log('[smoke] result:', result);
+  console.log('[smoke] consentUrl used:', consentUrl);
+}
+
+main().then(() => process.exit(0)).catch((err) => {
+  console.error('[smoke] error:', err);
+  process.exit(1);
+});
+```
+
+      The placeholder token (all zeros) intentionally won't validate if the recipient clicks it — that's deliberate. We're testing email render + dispatch only. The recipient page will show "This link is no longer valid" if clicked, which is correct.
+
+  V4c. Run the script:
+      npx tsx scripts/.tmp-test-consent-email.ts
+      Report stdout/stderr verbatim. Expected: [smoke] result: { success: true, message: 'Marketing consent request email sent' }.
+
+      Then confirm the inbox (this is Adam's eyeball check — Replit doesn't have access). Replit, just confirm the script exited 0.
+
+  V4d. Cleanup:
+      rm scripts/.tmp-test-consent-email.ts
+      ls scripts/ | grep -c "tmp-test-consent-email"
+      Expected: 0.
+
+V5. Render-only check (no send) — extract the html string returned by renderBrandedEmail and dump to a file so Adam can preview in a browser. Create scripts/.tmp-render-consent-preview.ts:
+
+```typescript
+import { writeFileSync } from 'fs';
+import { renderBrandedEmail, type EmailBlock } from '../server/services/email-template';
+import { escapeHtml } from '../server/utils/html';
+
+const safeFirstName = escapeHtml('Adam');
+const consentUrl = 'https://app.valoxi.ai/marketing-consent/EXAMPLE_TOKEN';
+
+const blocks: EmailBlock[] = [
+  { type: 'paragraph', text: `Hi ${safeFirstName},` },
+  { type: 'paragraph', text: "We're tightening up how we handle marketing emails to match what we promise in our privacy policy. Right now we don't have a record of whether you'd like to hear product news and updates from us, so we're asking explicitly." },
+  { type: 'paragraph', text: "If you'd like Valoxi product updates and useful resources by email, click the button below. We'll keep them occasional and you can unsubscribe at any time." },
+  { type: 'cta', cta: { label: 'Yes, send me product updates', href: consentUrl } },
+  { type: 'paragraph', text: "If marketing emails aren't for you, you don't need to do anything. Closing this email keeps your current preference (no marketing emails). You'll still receive account, billing, and security emails from us regardless. Those aren't affected by this preference." },
+  { type: 'paragraph', text: 'Thanks,<br/>The Valoxi team' },
+];
+
+const html = renderBrandedEmail({
+  preheader: 'A quick yes-or-no on marketing emails. Doing nothing is fine.',
+  eyebrow: 'Marketing preferences',
+  heading: 'Quick yes-or-no on marketing emails',
+  blocks,
+  footerLine: 'This is a one-off transactional email about your marketing preferences. We will not send another like it. Account, billing, and security emails are unaffected.',
+});
+
+writeFileSync('/tmp/consent-email-preview.html', html);
+console.log('[preview] written to /tmp/consent-email-preview.html, length:', html.length);
+```
+
+    Run:
+      npx tsx scripts/.tmp-render-consent-preview.ts
+    Report stdout. Confirm the file exists:
+      ls -l /tmp/consent-email-preview.html
+      wc -c /tmp/consent-email-preview.html
+    Report. Expected: file exists, several KB.
+
+    Then output the first 80 lines of the rendered HTML so Adam can see the structure inline:
+      head -80 /tmp/consent-email-preview.html
+    Report.
+
+    Cleanup:
+      rm scripts/.tmp-render-consent-preview.ts
+      (Leave /tmp/consent-email-preview.html in place — Adam may want to inspect it in a browser.)
+
+V6. Git state:
+    git status
+    git diff --stat
+    Expected: 1 file changed: server/services/email.service.ts (~47 insertions). Plus untracked attached_assets and possibly the /tmp preview file (which is outside the repo and won't show).
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering P1-P5, A1-A2, V1-V6. Stop. Do not commit. Do not proceed to 177.2-5.

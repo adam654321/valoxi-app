@@ -801,6 +801,58 @@ export class EmailApiService {
     });
     return { success, message: success ? 'Legacy free-period transition email sent' : 'Failed to send legacy free-period transition email' };
   }
+
+  async sendMarketingConsentRequest(params: {
+    to: string;
+    firstName: string;
+    consentUrl: string;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, consentUrl } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      {
+        type: 'paragraph',
+        text: "We're tightening up how we handle marketing emails to match what we promise in our privacy policy. Right now we don't have a record of whether you'd like to hear product news and updates from us, so we're asking explicitly.",
+      },
+      {
+        type: 'paragraph',
+        text: "If you'd like Valoxi product updates and useful resources by email, click the button below. We'll keep them occasional and you can unsubscribe at any time.",
+      },
+      {
+        type: 'cta',
+        cta: { label: 'Yes, send me product updates', href: consentUrl },
+      },
+      {
+        type: 'paragraph',
+        text: "If marketing emails aren't for you, you don't need to do anything. Closing this email keeps your current preference (no marketing emails). You'll still receive account, billing, and security emails from us regardless. Those aren't affected by this preference.",
+      },
+      { type: 'paragraph', text: 'Thanks,<br/>The Valoxi team' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'A quick yes-or-no on marketing emails. Doing nothing is fine.',
+      eyebrow: 'Marketing preferences',
+      heading: 'Quick yes-or-no on marketing emails',
+      blocks,
+      footerLine:
+        'This is a one-off transactional email about your marketing preferences. We will not send another like it. Account, billing, and security emails are unaffected.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Quick yes-or-no on marketing emails from Valoxi',
+      html,
+    });
+
+    return {
+      success,
+      message: success
+        ? 'Marketing consent request email sent'
+        : 'Failed to send marketing consent request email',
+    };
+  }
 }
 
 export const emailApiService = new EmailApiService();
