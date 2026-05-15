@@ -223,6 +223,8 @@ export class UsersRepository {
         assignedPromoCampaignId: users.assignedPromoCampaignId,
         assignedByAdminId: users.assignedByAdminId,
         assignedAt: users.assignedAt,
+        marketingConsent: users.marketingConsent,
+        marketingConsentAt: users.marketingConsentAt,
         roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
         assignedDealsCount: sql<number>`COALESCE((
           SELECT COUNT(*)::int 

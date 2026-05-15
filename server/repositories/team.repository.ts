@@ -190,6 +190,8 @@ export class TeamRepository {
       assignedPromoCampaignId: users.assignedPromoCampaignId,
       assignedByAdminId: users.assignedByAdminId,
       assignedAt: users.assignedAt,
+      marketingConsent: users.marketingConsent,
+      marketingConsentAt: users.marketingConsentAt,
       roleDescription: sql<string>`COALESCE(${userRoles.roleDescription}, 'No role assigned')`,
       assignedDealsCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM ${userDealAssignments} WHERE ${userDealAssignments.userId} = ${users.id} AND ${userDealAssignments.isActive} = true), 0)`,
       permCanManageUsers: userRoles.canManageUsers,
