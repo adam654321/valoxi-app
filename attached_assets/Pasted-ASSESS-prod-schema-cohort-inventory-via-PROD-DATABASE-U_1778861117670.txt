@@ -1,0 +1,134 @@
+ASSESS — prod schema + cohort inventory via PROD_DATABASE_URL
+
+TARGET: PROD (read-only)
+
+READ-ONLY. No DDL on prod. No DDL on dev. No code changes. No deploys. Report only.
+
+CONTEXT: All of today's #177.2 build ran against dev. PROD_DATABASE_URL is available in this Replit env for inspection. Need to inventory the gap between dev (already migrated) and prod (still pre-#177.1A schema).
+
+How to query prod safely:
+- Use the psql CLI with PROD_DATABASE_URL passed explicitly. Do NOT change DATABASE_URL.
+- Example: psql "$PROD_DATABASE_URL" -c "SELECT ..." (the connection string contains credentials, use it via env var reference only, never paste it into output)
+- Confirm psql is available: which psql
+
+If psql is unavailable, use a one-shot node script:
+  node -e "import('pg').then(async ({ default: pg }) => { const c = new pg.Client({ connectionString: process.env.PROD_DATABASE_URL, ssl: { rejectUnauthorized: false } }); await c.connect(); const r = await c.query('<SQL>'); console.log(r.rows); await c.end(); });"
+
+Pick whichever works. Use the same method for every query.
+
+==============================================================
+PROD IDENTITY CONFIRMATION
+==============================================================
+
+P1. Confirm we are looking at prod, not dev. Run against PROD_DATABASE_URL:
+   SELECT COUNT(*) AS total_users FROM users;
+   SELECT COUNT(*) AS active_users_with_clerk FROM users WHERE is_active=true AND clerk_user_id IS NOT NULL;
+   SELECT COUNT(*) AS subs FROM subscriptions;
+   SELECT id, email, first_name FROM users WHERE id IN (1,2,3,4) ORDER BY id;
+   Report.
+
+   Sanity check expectation per handover: prod has ~16 paying users, 39 prod marketing contacts, co-founders Adam Viv Jag Dee at low ids. If numbers look like prod, proceed. If they match dev numbers (10 external + 4 internal users) STOP and report — means we are looking at the wrong DB.
+
+==============================================================
+SCHEMA GAP — what does prod NOT have that dev does
+==============================================================
+
+P2. Marketing consent columns on users + waitlist (added today via 177.1A-S1):
+   SELECT table_name, column_name, data_type, is_nullable, column_default
+   FROM information_schema.columns
+   WHERE table_schema='public'
+     AND table_name IN ('users', 'waitlist')
+     AND column_name IN ('marketing_consent', 'marketing_consent_at')
+   ORDER BY table_name, column_name;
+   Expected on prod: zero rows (columns not yet added).
+   If rows exist on prod, flag and report — would mean someone else applied them or this is the wrong DB.
+
+P3. marketing_consent_tokens table (added today via 177.2-1):
+   SELECT EXISTS (
+     SELECT 1 FROM information_schema.tables
+     WHERE table_schema='public' AND table_name='marketing_consent_tokens'
+   ) AS tokens_table_exists_on_prod;
+   Expected: false.
+
+P4. Constraint naming drift on prod. Run the same sweep query we used for dev this morning:
+   SELECT
+     c.conrelid::regclass::text AS table_name,
+     c.conname
+   FROM pg_constraint c
+   JOIN pg_class t ON t.oid = c.conrelid
+   JOIN pg_namespace n ON n.oid = t.relnamespace
+   WHERE n.nspname = 'public'
+     AND c.contype = 'u'
+   ORDER BY table_name, conname;
+   Report. We want to see whether prod has the same _key/_unique naming drift as dev did before this morning's #189 remediation. Compare against the 19-rename + 1-drop matrix from this morning's work. Most likely prod is drifted (same as dev was at start of session) since the dev DB was a copy at some prior point and dev work has diverged since.
+
+P5. Other table-drift items that might bite during a prod db:push. Inventory the same 7 divergences that surfaced from #188 on dev:
+   a) Does prod have a 'session' table not in the Drizzle schema?
+      SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='session') AS prod_has_session_table;
+      SELECT COUNT(*) FROM session WHERE TRUE; -- safe even if non-existent will error; wrap with safer check if needed
+      Or safer:
+      SELECT (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='session') AS session_table_count;
+   b) deal_documents.notes column present?
+      SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='deal_documents' AND column_name='notes') AS prod_has_deal_documents_notes;
+   c) usage_metadata column type on whichever table it sits (likely api_usage or similar — confirm via:
+      SELECT table_name, data_type FROM information_schema.columns WHERE column_name='usage_metadata' AND table_schema='public';
+      Report.
+   d) file_path column current type:
+      SELECT table_name, data_type, character_maximum_length FROM information_schema.columns WHERE column_name='file_path' AND table_schema='public';
+   e) encryption_status column current type:
+      SELECT table_name, data_type, character_maximum_length FROM information_schema.columns WHERE column_name='encryption_status' AND table_schema='public';
+   f) token_purpose column current type:
+      SELECT table_name, data_type, character_maximum_length FROM information_schema.columns WHERE column_name='token_purpose' AND table_schema='public';
+   g) activity_type column current type:
+      SELECT table_name, data_type, character_maximum_length FROM information_schema.columns WHERE column_name='activity_type' AND table_schema='public';
+   Report all.
+
+==============================================================
+COHORT INVENTORY — what tomorrow's sender will actually target on prod
+==============================================================
+
+P6. PROD user cohort (real external users who need a consent ask):
+   Note: if marketing_consent column does not yet exist on prod (per P2), substitute the query to assume all users would be in cohort (since they have no consent recorded by definition). Use this fallback:
+   SELECT COUNT(*) FROM users
+   WHERE is_active=true AND clerk_user_id IS NOT NULL
+     AND (user_company_id IS NULL OR user_company_id != 5);
+   Report. This is the count once we've added the columns and they all default to false.
+
+P7. PROD waitlist cohort:
+   SELECT COUNT(*) FROM waitlist
+   WHERE status IN ('new', 'approved');
+   Report. Same logic — once column added it'll all default false.
+
+P8. PROD test_internal cohort (co-founders + test accounts on company_id=5):
+   SELECT id, email, first_name, last_name, user_company_id
+   FROM users
+   WHERE user_company_id = 5
+   ORDER BY id;
+   Report. These get excluded by default (per sender script), included with --include-internal. Adam will want to know which are real co-founders vs test accounts so he can set their marketing_consent=true manually before sending (so they don't end up in the send and don't end up needing to click).
+
+P9. PROD waitlist sample (first 10 and any recent additions):
+   SELECT id, email, full_name, status, created_at FROM waitlist
+   WHERE status IN ('new','approved')
+   ORDER BY created_at DESC LIMIT 10;
+   Report. Lets Adam eyeball the cohort.
+
+==============================================================
+DEPLOYMENT CONFIG
+==============================================================
+
+P10. How does prod get the new code? Run:
+    cat .replit 2>/dev/null
+    Show the [deployment] block if present.
+    Report.
+
+P11. Check whether the prod deployment is on a separate Replit (and therefore needs a separate git pull / deploy trigger) or whether this Replit's [deployment] block targets prod:
+    grep -rn "deploy\|production\|prod" .replit 2>/dev/null
+    Report.
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering P1-P11. Stop. Absolutely no DDL on prod. No DDL on dev. No code changes. No deploys. This is pure inspection.
+
+If at any point a query fails because PROD_DATABASE_URL is malformed, missing, or refuses connection, STOP at that step and report. Do not attempt to fall back to DATABASE_URL.
