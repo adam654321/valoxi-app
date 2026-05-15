@@ -1,0 +1,329 @@
+PROD SHIP — Phase A: prod DDL replay (#189 + #177.1A-S1 + #177.2-1) + pre-set internal/test rows
+
+TARGET: PROD (write via PROD_DATABASE_URL)
+
+CONTEXT: All inspected today via PROD_DATABASE_URL read-only. Now applying the same DDL set that was applied to dev today. Three transactions in sequence. Each transaction is atomic; failure of any single transaction rolls that transaction back. If any transaction fails, STOP and report — do not proceed to subsequent transactions.
+
+Run all SQL via either:
+  psql "$PROD_DATABASE_URL" -f -    # heredoc pipe
+or one-shot Node:
+  node -e "import('pg').then(async ({default: pg}) => { const c = new pg.Client({connectionString: process.env.PROD_DATABASE_URL, ssl: {rejectUnauthorized: false}}); await c.connect(); await c.query(\`<SQL>\`); console.log('OK'); await c.end(); }).catch(e => {console.error(e); process.exit(1);});"
+
+Whichever method works. Use consistently.
+
+==============================================================
+PRE-FLIGHT (READ-ONLY)
+==============================================================
+
+P1. Confirm PROD_DATABASE_URL is set and reachable:
+    node -e "console.log('PROD_DATABASE_URL set:', Boolean(process.env.PROD_DATABASE_URL));"
+    Expected: true.
+
+P2. Confirm we are still looking at the prod DB (not accidentally pointing at dev):
+    psql "$PROD_DATABASE_URL" -c "SELECT COUNT(*) AS total_users FROM users;"
+    Expected: 75.
+    psql "$PROD_DATABASE_URL" -c "SELECT id, email FROM users WHERE id IN (1,2) ORDER BY id;"
+    Expected: id=1 adam@shiftopsconsulting.com, id=2 viv@shiftopsconsulting.com.
+    ABORT entire build if either differs from the inspection report taken today.
+
+P3. Re-verify no in-flight schema changes by another party. Run the four state queries:
+    a) Marketing consent columns: SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('users','waitlist') AND column_name LIKE 'marketing%';
+       Expected: 0 rows.
+    b) Tokens table: SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='marketing_consent_tokens') AS exists;
+       Expected: false.
+    c) Drifted constraints still present (sampling 3): SELECT conname FROM pg_constraint WHERE conname IN ('subscriptions_user_company_id_key','documents_public_token_key','magic_links_token_key');
+       Expected: 3 rows (all three names exist).
+    d) activity_types duplicate state: SELECT conname FROM pg_constraint WHERE conname IN ('activity_types_type_name_key','activity_types_type_name_unique') ORDER BY conname;
+       Expected: 2 rows (both names present — this is why we DROP the _key one).
+    ABORT and report if any of the above doesn't match.
+
+P4. Pre-flight row count snapshot for safety check (we'll re-check post-DDL to confirm no data was lost):
+    psql "$PROD_DATABASE_URL" -c "
+      SELECT 'users' AS t, COUNT(*) FROM users
+      UNION ALL SELECT 'waitlist', COUNT(*) FROM waitlist
+      UNION ALL SELECT 'subscriptions', COUNT(*) FROM subscriptions
+      UNION ALL SELECT 'subscription_events', COUNT(*) FROM subscription_events
+      UNION ALL SELECT 'user_company_memberships', COUNT(*) FROM user_company_memberships
+      UNION ALL SELECT 'user_deal_assignments', COUNT(*) FROM user_deal_assignments
+      UNION ALL SELECT 'document_stage_progression', COUNT(*) FROM document_stage_progression;
+    "
+    Report all 7 counts. Keep for post-DDL verification.
+
+==============================================================
+TX1 — #189 REPLAY: 17 constraint RENAMES + 1 DROP
+==============================================================
+
+Run as one atomic transaction against PROD:
+
+BEGIN;
+
+-- 16 RENAMES (matching the #189 dev pass from earlier today, minus the user_company_memberships one which has a named-unique flavour handled separately at the end)
+ALTER TABLE subscriptions
+  RENAME CONSTRAINT subscriptions_stripe_subscription_id_key
+  TO subscriptions_stripe_subscription_id_unique;
+
+ALTER TABLE subscriptions
+  RENAME CONSTRAINT subscriptions_user_company_id_key
+  TO subscriptions_user_company_id_unique;
+
+ALTER TABLE subscription_events
+  RENAME CONSTRAINT subscription_events_stripe_event_id_key
+  TO subscription_events_stripe_event_id_unique;
+
+ALTER TABLE portal_access_tokens
+  RENAME CONSTRAINT portal_access_tokens_access_token_key
+  TO portal_access_tokens_access_token_unique;
+
+ALTER TABLE dd_categories
+  RENAME CONSTRAINT dd_categories_ref_prefix_key
+  TO dd_categories_ref_prefix_unique;
+
+ALTER TABLE dd_categories
+  RENAME CONSTRAINT dd_categories_category_name_key
+  TO dd_categories_category_name_unique;
+
+ALTER TABLE dd_requirements
+  RENAME CONSTRAINT dd_requirements_ref_number_key
+  TO dd_requirements_ref_number_unique;
+
+ALTER TABLE document_categories
+  RENAME CONSTRAINT document_categories_category_name_key
+  TO document_categories_category_name_unique;
+
+ALTER TABLE documents
+  RENAME CONSTRAINT documents_public_token_key
+  TO documents_public_token_unique;
+
+ALTER TABLE pipeline_stages
+  RENAME CONSTRAINT pipeline_stages_stage_name_key
+  TO pipeline_stages_stage_name_unique;
+
+ALTER TABLE promo_codes
+  RENAME CONSTRAINT promo_codes_code_key
+  TO promo_codes_code_unique;
+
+ALTER TABLE nylas_grants
+  RENAME CONSTRAINT nylas_grants_grant_id_key
+  TO nylas_grants_grant_id_unique;
+
+ALTER TABLE marketing_unsubscribes
+  RENAME CONSTRAINT marketing_unsubscribes_resend_event_id_key
+  TO marketing_unsubscribes_resend_event_id_unique;
+
+ALTER TABLE user_invitations
+  RENAME CONSTRAINT user_invitations_invitation_token_key
+  TO user_invitations_invitation_token_unique;
+
+ALTER TABLE user_roles
+  RENAME CONSTRAINT user_roles_role_name_key
+  TO user_roles_role_name_unique;
+
+ALTER TABLE magic_links
+  RENAME CONSTRAINT magic_links_token_key
+  TO magic_links_token_unique;
+
+ALTER TABLE system_config
+  RENAME CONSTRAINT system_config_key_key
+  TO system_config_key_unique;
+
+-- Table-level named uniques (from dev's 3rd remediation round earlier today)
+ALTER TABLE user_company_memberships
+  RENAME CONSTRAINT user_company_memberships_user_id_user_company_id_key
+  TO unique_user_company;
+
+ALTER TABLE user_deal_assignments
+  RENAME CONSTRAINT user_deal_assignments_user_id_target_company_id_key
+  TO user_deal_assignments_user_id_target_company_id_unique;
+
+ALTER TABLE document_stage_progression
+  RENAME CONSTRAINT document_stage_progression_target_company_id_key
+  TO document_stage_progression_target_company_id_unique;
+
+-- 1 DROP: activity_types_type_name_key (redundant; _unique flavour already exists)
+ALTER TABLE activity_types
+  DROP CONSTRAINT activity_types_type_name_key;
+
+COMMIT;
+
+Report each ALTER TABLE result and the final COMMIT. If any statement fails (e.g. constraint doesn't exist or already renamed), the entire transaction rolls back; STOP and report verbatim.
+
+TX1 VERIFICATION:
+  Run on prod:
+    SELECT COUNT(*) FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public' AND c.contype='u' AND c.conname LIKE '%_key';
+  Expected: 0 (or up to 3 if any of the document_stage_progression, user_company_memberships, user_deal_assignments composites were declared via different paths on prod; the assess showed they all matched dev's pattern so expected 0).
+
+==============================================================
+TX2 — #177.1A-S1 REPLAY: marketing consent columns on users + waitlist
+==============================================================
+
+Run as one atomic transaction against PROD:
+
+BEGIN;
+
+ALTER TABLE users
+  ADD COLUMN marketing_consent boolean NOT NULL DEFAULT false;
+
+ALTER TABLE users
+  ADD COLUMN marketing_consent_at timestamp;
+
+ALTER TABLE waitlist
+  ADD COLUMN marketing_consent boolean NOT NULL DEFAULT false;
+
+ALTER TABLE waitlist
+  ADD COLUMN marketing_consent_at timestamp;
+
+COMMIT;
+
+Report each ALTER and COMMIT.
+
+TX2 VERIFICATION:
+  psql "$PROD_DATABASE_URL" -c "
+    SELECT table_name, column_name, data_type, is_nullable, column_default
+    FROM information_schema.columns
+    WHERE table_schema='public'
+      AND table_name IN ('users','waitlist')
+      AND column_name IN ('marketing_consent','marketing_consent_at')
+    ORDER BY table_name, column_name;
+  "
+  Expected 4 rows:
+    users     | marketing_consent     | boolean   | NO  | false
+    users     | marketing_consent_at  | timestamp without time zone | YES | NULL
+    waitlist  | marketing_consent     | boolean   | NO  | false
+    waitlist  | marketing_consent_at  | timestamp without time zone | YES | NULL
+
+  Default population verification:
+    psql "$PROD_DATABASE_URL" -c "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE marketing_consent=false) AS opted_out FROM users;"
+    Expected: total=75, opted_out=75.
+    psql "$PROD_DATABASE_URL" -c "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE marketing_consent=false) AS opted_out FROM waitlist;"
+    Expected: total=3, opted_out=3.
+
+==============================================================
+TX3 — #177.2-1 REPLAY: marketing_consent_tokens table
+==============================================================
+
+Run as one atomic transaction against PROD:
+
+BEGIN;
+
+CREATE TABLE marketing_consent_tokens (
+  id SERIAL PRIMARY KEY,
+  token VARCHAR(64) NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  waitlist_id UUID REFERENCES waitlist(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  resend_message_id VARCHAR(255),
+  sent_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  consent_recorded_at TIMESTAMP,
+  ip_address INET,
+  expires_at TIMESTAMP NOT NULL,
+  CONSTRAINT marketing_consent_tokens_token_unique UNIQUE (token),
+  CONSTRAINT marketing_consent_tokens_recipient_check
+    CHECK ((user_id IS NOT NULL AND waitlist_id IS NULL) OR (user_id IS NULL AND waitlist_id IS NOT NULL))
+);
+
+CREATE INDEX marketing_consent_tokens_user_id_idx
+  ON marketing_consent_tokens(user_id) WHERE user_id IS NOT NULL;
+
+CREATE INDEX marketing_consent_tokens_waitlist_id_idx
+  ON marketing_consent_tokens(waitlist_id) WHERE waitlist_id IS NOT NULL;
+
+COMMIT;
+
+Report each statement and COMMIT.
+
+TX3 VERIFICATION:
+  psql "$PROD_DATABASE_URL" -c "
+    SELECT column_name, data_type, is_nullable
+    FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='marketing_consent_tokens'
+    ORDER BY ordinal_position;
+  "
+  Expected: 10 columns matching the dev shape from earlier today (V4 of 177.2-1 build).
+
+  psql "$PROD_DATABASE_URL" -c "
+    SELECT conname FROM pg_constraint
+    WHERE conrelid='public.marketing_consent_tokens'::regclass
+    ORDER BY conname;
+  "
+  Expected 5 rows: pkey, recipient_check, token_unique, user_id_fkey, waitlist_id_fkey.
+
+  psql "$PROD_DATABASE_URL" -c "SELECT COUNT(*) FROM marketing_consent_tokens;"
+  Expected: 0.
+
+==============================================================
+TX4 — PRE-SET internal + test rows so they skip cohort
+==============================================================
+
+Run as one atomic transaction against PROD:
+
+BEGIN;
+
+-- Co-founders: Adam (id=1), Vivek (id=2), and any other user_company_id=5 users
+UPDATE users
+SET marketing_consent = true,
+    marketing_consent_at = NOW()
+WHERE user_company_id = 5;
+
+-- Adam's 3 test waitlist accounts (all 3 waitlist rows on prod are his test accounts per inspection)
+UPDATE waitlist
+SET marketing_consent = true,
+    marketing_consent_at = NOW()
+WHERE email IN (
+  'adam+meta@valoxi.ai',
+  'adam+test@valoxi.ai',
+  'adam@valoxi.ai'
+);
+
+COMMIT;
+
+Report rows affected by each UPDATE and the COMMIT.
+
+TX4 VERIFICATION:
+  psql "$PROD_DATABASE_URL" -c "
+    SELECT id, email, marketing_consent
+    FROM users
+    WHERE user_company_id = 5
+    ORDER BY id;
+  "
+  Expected: 2 rows (Adam, Vivek), both marketing_consent=true.
+
+  psql "$PROD_DATABASE_URL" -c "
+    SELECT id, email, marketing_consent
+    FROM waitlist
+    ORDER BY created_at DESC;
+  "
+  Expected: 3 rows, all marketing_consent=true.
+
+  Effective cohort for sender script after TX4:
+    psql "$PROD_DATABASE_URL" -c "
+      SELECT 'users_cohort' AS k, COUNT(*) FROM users
+      WHERE marketing_consent=false AND is_active=true AND clerk_user_id IS NOT NULL AND (user_company_id IS NULL OR user_company_id != 5)
+      UNION ALL
+      SELECT 'waitlist_cohort', COUNT(*) FROM waitlist
+      WHERE marketing_consent=false AND status IN ('new','approved');
+    "
+    Expected: users_cohort=37, waitlist_cohort=0.
+
+==============================================================
+POST-FLIGHT SAFETY CHECK
+==============================================================
+
+S1. Re-run P4's row count snapshot against PROD. All 7 counts must be IDENTICAL to P4. ABORT and report if any differ.
+
+S2. Final state summary against PROD:
+  - 75 users (unchanged)
+  - 3 waitlist (unchanged)
+  - 38 subscriptions (unchanged)
+  - marketing_consent columns present and populated
+  - tokens table present and empty
+  - 2 cofounders pre-consented (out of cohort)
+  - 3 test waitlist rows pre-consented (out of cohort)
+  - Effective live send cohort: 37
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering P1-P4, TX1-TX4 (each with statements + verification), S1-S2. Stop. Do not proceed to Phase B (Replit publish) — Adam will trigger that manually.
+
+If at any point any transaction fails or any verification doesn't match, STOP and report verbatim. Do not attempt rollback gymnastics; the BEGIN/COMMIT transactions are self-rolling-back on error.
