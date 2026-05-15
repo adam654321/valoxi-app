@@ -44,6 +44,8 @@ export const users = pgTable("users", {
   assignedPromoCampaignId: integer("assigned_promo_campaign_id"),
   assignedByAdminId: integer("assigned_by_admin_id").references((): AnyPgColumn => users.id),
   assignedAt: timestamp("assigned_at", { withTimezone: true }),
+  marketingConsent: boolean("marketing_consent").default(false).notNull(),
+  marketingConsentAt: timestamp("marketing_consent_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -108,6 +110,8 @@ export const waitlist = pgTable("waitlist", {
   statusChangedAt: timestamp("status_changed_at"),
   statusChangedBy: integer("status_changed_by").references(() => users.id),
   invitedUserId: integer("invited_user_id").references(() => users.id),
+  marketingConsent: boolean("marketing_consent").default(false).notNull(),
+  marketingConsentAt: timestamp("marketing_consent_at"),
 }, (table) => ({
   waitlistStatusCheck: check("waitlist_status_check", sql`${table.status} IN ('new','approved','invited','declined')`),
   waitlistStatusIdx: index("waitlist_status_idx").on(table.status),

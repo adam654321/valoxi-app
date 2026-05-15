@@ -15,6 +15,7 @@ const waitlistSubmissionSchema = z.object({
   sectors: z.array(z.string().max(100)).max(30),
   sectors_other: z.string().max(500).optional().nullable(),
   acquisitions_completed: z.string().min(1).max(100),
+  marketing_consent: z.boolean().optional().default(false),
 });
 
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
@@ -36,6 +37,8 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
       sectors: data.sectors,
       sectorsOther: data.sectors_other?.trim() || null,
       acquisitionsCompleted: data.acquisitions_completed,
+      marketingConsent: data.marketing_consent,
+      marketingConsentAt: data.marketing_consent ? new Date() : null,
     });
     return sendCreated(res, { id: created.id, alreadyRegistered: false });
   } catch (err: any) {
