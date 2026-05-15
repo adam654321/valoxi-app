@@ -156,6 +156,8 @@ router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
           assignedPromoCampaignId: promoCodeCampaignId,
           assignedByAdminId: promoCodeCampaignId ? adminUserId : null,
           assignedAt: promoCodeCampaignId ? new Date() : null,
+          marketingConsent: entry.marketingConsent,
+          marketingConsentAt: entry.marketingConsentAt,
         })
         .returning({ id: users.id });
 
