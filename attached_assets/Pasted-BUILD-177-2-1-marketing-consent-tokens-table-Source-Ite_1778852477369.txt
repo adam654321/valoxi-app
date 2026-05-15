@@ -1,0 +1,254 @@
+BUILD 177.2-1 — marketing_consent_tokens table
+
+Source: Item #177.2 sub-build 1 of 5. Schema declaration in shared/schema/marketing.ts + direct CREATE TABLE on live DB (db:push bypassed per #188).
+
+TSC baseline: 1 pre-existing error (portal.service.ts:81). Must not increase.
+
+==============================================================
+PRE-STEP VERIFICATIONS
+==============================================================
+
+P1. Working tree clean. Run: git status. Expected: clean on main, HEAD cdc3b29.
+
+P2. TSC baseline. Run: npm run check. Expected: 1 error.
+
+P3. Confirm shared/schema/marketing.ts unchanged from assess. Run:
+    wc -l shared/schema/marketing.ts
+    grep -n "marketingUnsubscribes\|broadcastsSent" shared/schema/marketing.ts
+    Expected: 38 lines, marketingUnsubscribes at line 4, broadcastsSent at line 21.
+
+P4. Confirm live DB has no existing marketing_consent_tokens table:
+    SELECT EXISTS (
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema='public' AND table_name='marketing_consent_tokens'
+    ) AS exists;
+    Expected: false. ABORT if true.
+
+==============================================================
+APPLY — schema declaration first, then DB
+==============================================================
+
+A1. Edit shared/schema/marketing.ts. Two changes:
+
+  A1a. Replace the import line.
+    Find (exact):
+      import { pgTable, serial, varchar, timestamp, jsonb, integer, text, boolean } from 'drizzle-orm/pg-core';
+      import { users } from './core';
+
+    Replace with (exact):
+      import { pgTable, serial, varchar, timestamp, jsonb, integer, text, boolean, uuid, inet, check } from 'drizzle-orm/pg-core';
+      import { sql } from 'drizzle-orm';
+      import { users, waitlist } from './core';
+
+  A1b. Append the new table declaration after the broadcastsSent type exports. The file currently ends at line 38 with:
+      export type NewBroadcastSent = typeof broadcastsSent.$inferInsert;
+
+    Find (exact):
+      export type BroadcastSent = typeof broadcastsSent.$inferSelect;
+      export type NewBroadcastSent = typeof broadcastsSent.$inferInsert;
+
+    Replace with (exact, preserving trailing newline at end of file):
+      export type BroadcastSent = typeof broadcastsSent.$inferSelect;
+      export type NewBroadcastSent = typeof broadcastsSent.$inferInsert;
+
+      export const marketingConsentTokens = pgTable('marketing_consent_tokens', {
+        id: serial('id').primaryKey(),
+        token: varchar('token', { length: 64 }).notNull().unique(),
+        userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+        waitlistId: uuid('waitlist_id').references(() => waitlist.id, { onDelete: 'cascade' }),
+        email: varchar('email', { length: 255 }).notNull(),
+        resendMessageId: varchar('resend_message_id', { length: 255 }),
+        sentAt: timestamp('sent_at').defaultNow().notNull(),
+        consentRecordedAt: timestamp('consent_recorded_at'),
+        ipAddress: inet('ip_address'),
+        expiresAt: timestamp('expires_at').notNull(),
+      }, (table) => ({
+        recipientCheck: check('marketing_consent_tokens_recipient_check',
+          sql`(${table.userId} IS NOT NULL AND ${table.waitlistId} IS NULL) OR (${table.userId} IS NULL AND ${table.waitlistId} IS NOT NULL)`),
+      }));
+
+      export type MarketingConsentToken = typeof marketingConsentTokens.$inferSelect;
+      export type NewMarketingConsentToken = typeof marketingConsentTokens.$inferInsert;
+
+A2. Run TSC after the edit. Run: npm run check. Expected: still 1 error (pre-existing only). ABORT if greater than 1; report new errors.
+
+A3. Direct CREATE TABLE on live DB. Run as single transaction:
+
+    BEGIN;
+
+    CREATE TABLE marketing_consent_tokens (
+      id SERIAL PRIMARY KEY,
+      token VARCHAR(64) NOT NULL,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      waitlist_id UUID REFERENCES waitlist(id) ON DELETE CASCADE,
+      email VARCHAR(255) NOT NULL,
+      resend_message_id VARCHAR(255),
+      sent_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      consent_recorded_at TIMESTAMP,
+      ip_address INET,
+      expires_at TIMESTAMP NOT NULL,
+      CONSTRAINT marketing_consent_tokens_token_unique UNIQUE (token),
+      CONSTRAINT marketing_consent_tokens_recipient_check
+        CHECK ((user_id IS NOT NULL AND waitlist_id IS NULL) OR (user_id IS NULL AND waitlist_id IS NOT NULL))
+    );
+
+    CREATE INDEX marketing_consent_tokens_user_id_idx
+      ON marketing_consent_tokens(user_id) WHERE user_id IS NOT NULL;
+
+    CREATE INDEX marketing_consent_tokens_waitlist_id_idx
+      ON marketing_consent_tokens(waitlist_id) WHERE waitlist_id IS NOT NULL;
+
+    COMMIT;
+
+    Report each statement's result and final COMMIT. ABORT and report on any failure.
+
+==============================================================
+V-CHECK
+==============================================================
+
+V1. TSC: npm run check. Expected: 1 error (pre-existing only).
+
+V2. Restart dev workflow. Confirm clean boot to "server listening".
+
+V3. Schema file assertions:
+    grep -c "marketingConsentTokens\|marketing_consent_tokens" shared/schema/marketing.ts
+    Expected: 5 (1 const declaration line, 1 pgTable arg, 1 export type select, 1 export type insert, 1 check constraint name).
+
+    wc -l shared/schema/marketing.ts
+    Expected: 58 (was 38, added 20 lines for table block + types + spacing).
+
+V4. Live DB column verification. Run:
+    SELECT column_name, data_type, is_nullable, column_default
+    FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='marketing_consent_tokens'
+    ORDER BY ordinal_position;
+
+    Expected rows (verbatim):
+      id                    | integer                       | NO  | nextval(...)
+      token                 | character varying             | NO  | NULL
+      user_id               | integer                       | YES | NULL
+      waitlist_id           | uuid                          | YES | NULL
+      email                 | character varying             | NO  | NULL
+      resend_message_id     | character varying             | YES | NULL
+      sent_at               | timestamp without time zone   | NO  | now()
+      consent_recorded_at   | timestamp without time zone   | YES | NULL
+      ip_address            | inet                          | YES | NULL
+      expires_at            | timestamp without time zone   | NO  | NULL
+
+V5. Constraint verification. Run:
+    SELECT conname, pg_get_constraintdef(oid) AS definition
+    FROM pg_constraint
+    WHERE conrelid = 'public.marketing_consent_tokens'::regclass
+    ORDER BY conname;
+
+    Expected constraints (4):
+      marketing_consent_tokens_pkey                    PRIMARY KEY (id)
+      marketing_consent_tokens_recipient_check         CHECK ...XOR...
+      marketing_consent_tokens_token_unique            UNIQUE (token)
+      marketing_consent_tokens_user_id_fkey            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      marketing_consent_tokens_waitlist_id_fkey        FOREIGN KEY (waitlist_id) REFERENCES waitlist(id) ON DELETE CASCADE
+
+    NOTE: no _key suffix on the unique constraint - explicit name matches Drizzle convention from day one (no #189-style drift on this new table).
+
+V6. Index verification. Run:
+    SELECT indexname, indexdef FROM pg_indexes
+    WHERE schemaname='public' AND tablename='marketing_consent_tokens'
+    ORDER BY indexname;
+
+    Expected:
+      marketing_consent_tokens_pkey
+      marketing_consent_tokens_token_unique           (this is the unique-constraint backing index)
+      marketing_consent_tokens_user_id_idx
+      marketing_consent_tokens_waitlist_id_idx
+
+V7. Functional smoke test for the check constraint. Run as a single test transaction (all should ROLLBACK at the end so no data persists):
+
+    BEGIN;
+
+    -- Test 1: insert with user_id only (should succeed)
+    INSERT INTO marketing_consent_tokens (token, user_id, email, expires_at)
+    VALUES ('test-token-user-only', 1, 'smoke-test@example.com', NOW() + INTERVAL '30 days');
+
+    -- Test 2: insert with waitlist_id only (should succeed)
+    INSERT INTO marketing_consent_tokens (token, waitlist_id, email, expires_at)
+    VALUES ('test-token-waitlist-only',
+            (SELECT id FROM waitlist LIMIT 1),
+            'smoke-test-wl@example.com',
+            NOW() + INTERVAL '30 days');
+
+    -- Test 3: both NULL (should fail with check constraint)
+    -- This should error. Wrap in a savepoint so the test continues.
+    SAVEPOINT before_both_null;
+    INSERT INTO marketing_consent_tokens (token, email, expires_at)
+    VALUES ('test-token-both-null', 'fail@example.com', NOW() + INTERVAL '30 days');
+    -- If we get here, the check constraint failed to fire. Report it.
+    ROLLBACK TO SAVEPOINT before_both_null;
+
+    -- Test 4: both set (should fail with check constraint)
+    SAVEPOINT before_both_set;
+    INSERT INTO marketing_consent_tokens (token, user_id, waitlist_id, email, expires_at)
+    VALUES ('test-token-both-set', 1,
+            (SELECT id FROM waitlist LIMIT 1),
+            'fail2@example.com',
+            NOW() + INTERVAL '30 days');
+    ROLLBACK TO SAVEPOINT before_both_set;
+
+    -- Confirm 2 rows survive (the two valid inserts)
+    SELECT COUNT(*) AS surviving_rows FROM marketing_consent_tokens;
+    -- Expected: 2
+
+    ROLLBACK;
+
+    Run the above. Report:
+    - Test 1 result (expected: INSERT 0 1)
+    - Test 2 result (expected: INSERT 0 1)
+    - Test 3 result (expected: ERROR: new row for relation "marketing_consent_tokens" violates check constraint "marketing_consent_tokens_recipient_check")
+    - Test 4 result (expected: same error as Test 3)
+    - surviving_rows count (expected: 2)
+    - Final ROLLBACK confirmation
+
+    Then verify the rollback worked:
+    SELECT COUNT(*) FROM marketing_consent_tokens;
+    Expected: 0.
+
+V8. FK cascade smoke test. Read-only verification, no inserts:
+    SELECT
+      tc.constraint_name,
+      tc.constraint_type,
+      rc.delete_rule
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.referential_constraints rc
+      ON tc.constraint_name = rc.constraint_name
+    WHERE tc.table_name = 'marketing_consent_tokens'
+      AND tc.constraint_type = 'FOREIGN KEY'
+    ORDER BY tc.constraint_name;
+
+    Expected: 2 rows, both with delete_rule = 'CASCADE'.
+
+V9. Git state. Run:
+    git status
+    git diff --stat shared/schema/marketing.ts
+    Expected: shared/schema/marketing.ts modified (about +20 lines), no other changes.
+
+==============================================================
+FORWARD-PREP — gather data for builds 2-2 and 2-4
+==============================================================
+
+F1. Confirm the exact express router mount path pattern for public routes. Run:
+    grep -n "app.use.*public" server/routes/index.ts
+    Show all lines. We need this for build 177.2-2 (the GET /api/v2/public/marketing-consent/:token endpoint).
+
+F2. Show the renderBrandedEmail signature and any block types currently available. Run:
+    grep -n "^export\|^type\|^interface" server/services/email-template.ts
+    head -80 server/services/email-template.ts
+    Report. Needed for build 177.2-4 (email template).
+
+F3. Check whether crypto.randomBytes is already in use anywhere for token generation:
+    grep -rn "randomBytes\|crypto.randomUUID" server/ 2>/dev/null | head -10
+    Report. Needed for build 177.2-5 (sender script's token generation).
+
+==============================================================
+REPORT
+==============================================================
+
+Single consolidated report covering P1-P4, A1-A3, V1-V9, F1-F3. Stop. Do not commit additional work. Do not proceed to 177.2-2.

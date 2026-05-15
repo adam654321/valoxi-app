@@ -1,5 +1,6 @@
-import { pgTable, serial, varchar, timestamp, jsonb, integer, text, boolean } from 'drizzle-orm/pg-core';
-import { users } from './core';
+import { pgTable, serial, varchar, timestamp, jsonb, integer, text, boolean, uuid, inet, check } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { users, waitlist } from './core';
 
 export const marketingUnsubscribes = pgTable('marketing_unsubscribes', {
   id: serial('id').primaryKey(),
@@ -36,3 +37,22 @@ export const broadcastsSent = pgTable('broadcasts_sent', {
 
 export type BroadcastSent = typeof broadcastsSent.$inferSelect;
 export type NewBroadcastSent = typeof broadcastsSent.$inferInsert;
+
+export const marketingConsentTokens = pgTable('marketing_consent_tokens', {
+  id: serial('id').primaryKey(),
+  token: varchar('token', { length: 64 }).notNull().unique(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  waitlistId: uuid('waitlist_id').references(() => waitlist.id, { onDelete: 'cascade' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  resendMessageId: varchar('resend_message_id', { length: 255 }),
+  sentAt: timestamp('sent_at').defaultNow().notNull(),
+  consentRecordedAt: timestamp('consent_recorded_at'),
+  ipAddress: inet('ip_address'),
+  expiresAt: timestamp('expires_at').notNull(),
+}, (table) => ({
+  recipientCheck: check('marketing_consent_tokens_recipient_check',
+    sql`(${table.userId} IS NOT NULL AND ${table.waitlistId} IS NULL) OR (${table.userId} IS NULL AND ${table.waitlistId} IS NOT NULL)`),
+}));
+
+export type MarketingConsentToken = typeof marketingConsentTokens.$inferSelect;
+export type NewMarketingConsentToken = typeof marketingConsentTokens.$inferInsert;
