@@ -1,0 +1,74 @@
+Read-only prod database check via PROD_DATABASE_URL. Do not run any writes, DDL, INSERT, UPDATE, DELETE, or schema changes. SELECT only.
+
+Goal: pre-deploy snapshot of prod DB state so we know baseline before today's deploy applies new schema (marketing_unsubscribes, broadcasts_sent) and prod backfill writes Resend contact data.
+
+Use psql connected via PROD_DATABASE_URL. Run each query and paste the full output.
+
+1. Connection sanity check:
+   SELECT current_database(), current_user, version();
+
+2. Confirm we are on prod (not dev). Count users:
+   SELECT COUNT(*) AS total_users,
+          COUNT(*) FILTER (WHERE "isActive" = true) AS active_users,
+          COUNT(*) FILTER (WHERE "isActive" = true AND "clerkUserId" IS NOT NULL) AS signed_up_users,
+          COUNT(*) FILTER (WHERE "isActive" = true AND "clerkUserId" IS NULL) AS invited_pending,
+          COUNT(*) FILTER (WHERE "isSystemAdmin" = true) AS system_admins
+   FROM users;
+   Expected: total/active in the dozens (16 paying customers + co-founders + others). NOT ~20 (which would be dev). NOT ~5 (which would suggest wrong DB).
+
+3. Confirm subscriptions table state (drives marketing segment membership at backfill time):
+   SELECT status, COUNT(*) AS count
+   FROM subscriptions
+   GROUP BY status
+   ORDER BY count DESC;
+   Expected: mostly 'active' + 'trialing' rows. Maybe some 'canceled' or 'past_due'.
+
+4. Confirm test_internal user company. TEST_INTERNAL_USER_COMPANY_ID=5. Confirm company id 5 in prod exists and is Valoxi:
+   SELECT id, name, created_at
+   FROM user_companies
+   WHERE id = 5;
+   Expected: row exists, name is something like "Valoxi" or the Valoxi-internal company name.
+
+5. Confirm the 4 co-founder emails are linked to user_company_id = 5 and are active + signed up:
+   SELECT id, email, "firstName", "lastName", "userCompanyId", "isActive", "clerkUserId" IS NOT NULL AS is_signed_up
+   FROM users
+   WHERE "userCompanyId" = 5
+   ORDER BY id;
+   Expected: Adam, Viv, Jag, Dee rows. All isActive=true. Note any not yet signed up (clerkUserId null) - those will be excluded from prod backfill but should be checked manually post-Friday.
+
+6. Confirm marketing_unsubscribes and broadcasts_sent tables DO NOT exist yet (we will create them in post-deploy step 2):
+   SELECT table_name
+   FROM information_schema.tables
+   WHERE table_schema = 'public'
+     AND table_name IN ('marketing_unsubscribes', 'broadcasts_sent');
+   Expected: zero rows. If either exists already, flag and stop - someone migrated already.
+
+7. Confirm subscription_events table exists and is populated (needed for #152 dunning fix to function correctly):
+   SELECT COUNT(*) AS total_events,
+          COUNT(*) FILTER (WHERE event_type = 'dunning.day0_sent') AS day0_dunning_count,
+          MAX(processed_at) AS latest_event
+   FROM subscription_events;
+
+8. Check users.email index for fast unsubscribe webhook lookup (Build 4 queries users by email):
+   SELECT indexname, indexdef
+   FROM pg_indexes
+   WHERE schemaname = 'public'
+     AND tablename = 'users'
+     AND indexdef LIKE '%email%';
+   Expected: a unique index on users.email (from the unique constraint).
+
+9. nylas_grants table snapshot - any existing prod Outlook grants we should know about?:
+   SELECT id, "userId", email, provider, status, "isCompanyDefault", "isPersonalDefault", "createdAt"
+   FROM nylas_grants
+   WHERE status = 'active'
+   ORDER BY "createdAt" DESC;
+   Expected: probably zero or very few. If there ARE active Outlook grants in prod, those users will have silent fallback to Resend (the Microsoft verification issue) - worth flagging for follow-up post-deploy.
+
+10. user_acceptances table state (for #146 T&Cs gate). Confirm table exists and is empty or near-empty (most existing users will hit the gate on next login):
+    SELECT COUNT(*) AS total_acceptances,
+           COUNT(DISTINCT "userId") AS distinct_users_accepted
+    FROM user_acceptances;
+
+Report each query's output. Highlight anything that looks unexpected (e.g. user count way higher or lower than expected, missing tables that should exist, etc.).
+
+Stop after reporting. Do NOT make any modifications.
