@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { BadRequestError } from '../utils/errors';
 import { dealDocuments, dealDocumentResponses, dealDocumentTemplates, currentOffers } from '@shared/schema/deal-documents';
 import { documents } from '@shared/schema/documents';
 import { dealModels, dealModelAdjustments, dealModelFundingLines } from '@shared/schema/deal-models';
@@ -687,10 +688,8 @@ export class DealDocumentService {
     const existingOffer = await this.getLatestActiveDocument(params.targetCompanyId, 'offer_letter');
 
     if (existingOffer && existingOffer.status === 'accepted') {
-      throw new Error(
-        'An accepted offer letter already exists for this company. ' +
-        'A new offer cannot be issued once an offer has been accepted. ' +
-        'Proceed to Heads of Terms.'
+      throw new BadRequestError(
+        'An offer letter has already been accepted for this company. To continue, proceed to Heads of Terms.'
       );
     }
 
