@@ -324,9 +324,7 @@ export function initializeBillingCron(): void {
             }
 
             // Paths B and C: coupon swap paths (user has Stripe customer, needs post-free-period coupon).
-            // Resolve couponId from either sub.promoCodeId (legacy typed-code claim) OR the company admin's
-            // users.assigned_promo_campaign_id (6F2 invite-assignment). Invite-assignment wins when both
-            // are present, because that reflects the current promotional truth.
+            // Resolve couponId from users.assigned_promo_campaign_id → promoCodeCampaigns.postFreePeriodCouponId.
             let couponId: string | null = null;
 
             // Fallback resolver: users.assigned_promo_campaign_id -> promoCodeCampaigns.postFreePeriodCouponId.

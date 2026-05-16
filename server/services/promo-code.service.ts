@@ -4,6 +4,13 @@ import { promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
 import { users } from '@shared/schema/core';
 import type { PromoCodeCampaign, Subscription } from '@shared/schema/billing';
 
+/**
+ * A query executor: either the base db handle or a transaction handle
+ * obtained inside db.transaction(async (tx) => ...). Lets service methods
+ * run inside or outside a caller's transaction without losing type safety.
+ */
+type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export function computeFreeMonthsElapsed(freeMonthsStartedAt: Date): number {
   const now = new Date();
   const months =
@@ -65,7 +72,7 @@ class PromoCodeService {
     userId: number,
     campaignId: number,
     attributedBy: number | null,
-    executor: typeof db
+    executor: DbExecutor
   ): Promise<void> {
     await executor
       .update(users)
