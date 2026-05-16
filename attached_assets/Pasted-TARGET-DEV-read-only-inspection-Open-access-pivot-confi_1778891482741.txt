@@ -1,0 +1,39 @@
+TARGET: DEV (read-only inspection)
+
+Open access pivot — confirming webhook match logic before Phase A1.
+
+We have 36 dormant DB rows in prod with clerk_user_id IS NULL (stale invites, never completed Clerk signup). Decision is to leave them in place. If any of them ever sign up later via /welcome with the same email, we need to know:
+
+1. Does handleUserCreated match on email alone, or email AND is_active=true (or other filters)?
+2. If a user matches on email but the DB row is is_active=false, does the webhook still link the Clerk account, or does it fall through to orphan-revoke?
+3. Is the email match case-sensitive?
+
+Steps:
+
+1. Open server/routes/webhooks.routes.ts. Find the handleUserCreated function. Paste the full function body verbatim, with line numbers.
+
+2. Trace the user lookup. Whatever repository method or db query it uses to find the existing DB row by email — open that and paste it verbatim with line numbers. Likely candidates:
+   - server/repositories/users.repository.ts
+   - server/services/auth.service.ts or similar
+   Look for any method named like findByEmail, getUserByEmail, lookupForClerkLink, etc.
+
+3. In the same file as handleUserCreated (or wherever orphan-revoke lives), find the revokeOrphanClerk function or equivalent and paste it verbatim with line numbers. We need to see what triggers the orphan-revoke path.
+
+4. Grep for case handling:
+   - grep -n "toLowerCase\|toLocaleLowerCase\|ILIKE\|lower(" server/repositories/users.repository.ts server/routes/webhooks.routes.ts | head -20
+   - Report what you find (we want to know if email comparison normalises case)
+
+5. Check for is_active in the lookup:
+   - grep -n "isActive\|is_active" server/routes/webhooks.routes.ts server/repositories/users.repository.ts | head -20
+   - Report. We want to know if any of these are in the email-match path.
+
+Do NOT change anything. Do NOT npm install. Pure inspection.
+
+Report back:
+- Full handleUserCreated function body
+- Full email-lookup method body
+- Full orphan-revoke function body
+- Grep outputs from steps 4 and 5
+- Your one-line summary of: "Soft-deleted user (is_active=false) signs up via Clerk — what happens?"
+
+Stop after report and wait for Adam.

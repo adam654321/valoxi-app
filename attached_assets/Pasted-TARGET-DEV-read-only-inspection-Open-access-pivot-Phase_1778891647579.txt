@@ -1,0 +1,77 @@
+TARGET: DEV (read-only inspection)
+
+Open access pivot — Phase A1 assess. Baselining current state before code residue removal. NO changes, pure inspection.
+
+Steps:
+
+1. TSC baseline:
+   npx tsc --noEmit 2>&1 | tail -40
+   Report: error count, or "clean" if zero.
+
+2. Git status baseline:
+   git status
+   Report verbatim. Should be clean (only scripts/list-unlinked-users.ts untracked from previous step).
+
+3. Confirm targets still exist and the line numbers in removals.md still match. For each file below, just confirm it EXISTS and show first 3 lines so we can spot if it's been edited recently:
+
+   ls -la server/services/magic-link.service.ts
+   ls -la server/services/password-reset.service.ts
+   ls -la server/repositories/password-reset.repository.ts
+   ls -la client/src/pages/auth/login.tsx
+   ls -la client/src/pages/auth/forgot-password.tsx
+   ls -la client/src/pages/auth/reset-password.tsx
+   ls -la client/src/pages/auth/magic-link.tsx
+   ls -la client/src/pages/auth/link-expired.tsx
+
+4. Confirm method signatures still in place in files we're editing (not deleting):
+
+   grep -n "register\|login\|SALT_ROUNDS\|bcrypt" server/services/auth.service.ts
+   grep -n "sendMagicLinkEmail\|sendLegacyFreePeriodWarningEmail\|sendLegacyFreePeriodTransitionEmail" server/services/email.service.ts
+   grep -n "createSession\|getSessionByToken\|deleteSession\|deleteExpiredSessions\|userSessions" server/repositories/users.repository.ts
+   grep -n "passwordHash" server/repositories/team.repository.ts
+   grep -n "community_free_months_remaining\|communityFreeMonthsRemaining" server/cron/billing.cron.ts | head -30
+
+5. Confirm route definitions still in place (line numbers from removals.md):
+
+   grep -n "POST.*['\"]/login['\"]" server/routes/auth.routes.ts
+   grep -n "POST.*['\"]/forgot-password['\"]\|POST.*['\"]/reset-password['\"]\|POST.*['\"]/magic['\"]\|POST.*['\"]/resend-magic-link['\"]" server/routes/auth.routes.ts
+   grep -n "POST.*['\"]/admin/verify-credentials['\"]\|POST.*['\"]/admin/resend-magic-link['\"]" server/routes/admin.routes.ts
+   grep -n "/login\|/forgot-password\|/reset-password\|/auth/magic\|/auth/link-expired" client/src/App.tsx
+
+6. Confirm middleware shape:
+
+   grep -n "CLERK_ENABLED" server/middleware/auth.ts server/middleware/clerk-auth.ts server/routes/webhooks.routes.ts
+   Show the full body of the legacy session-fallback path in server/middleware/auth.ts isAuthenticated function (paste the whole function with line numbers).
+   Show the full body of tryClerkAuth in server/middleware/clerk-auth.ts (paste with line numbers).
+
+7. Confirm dependencies:
+
+   grep -n "bcrypt\|@types/bcrypt" package.json
+   Note: package-lock.json check deferred until after npm uninstall in apply phase.
+
+8. Confirm account.routes.ts bcrypt usage:
+
+   sed -n '70,110p' server/routes/account.routes.ts
+   Report verbatim, with line numbers.
+
+9. Confirm seed scripts exist and grep their bcrypt usage:
+
+   ls -la server/scripts/seed-admins.ts
+   ls -la server/scripts/seed-test-team-users.ts
+   grep -n "bcrypt\|passwordHash\|password_hash" server/scripts/seed-admins.ts server/scripts/seed-test-team-users.ts
+
+10. Confirm impact-radius greps return EXACTLY the surfaces we expect. Report counts only for each:
+
+   grep -rn "bcrypt" server/ --include="*.ts" | wc -l
+   grep -rn "magicLink\|MagicLink\|magic-link\|magic_link" server/ --include="*.ts" | wc -l
+   grep -rn "passwordReset\|PasswordReset\|password_reset" server/ --include="*.ts" | wc -l
+   grep -rn "sendLegacyFreePeriod" server/ --include="*.ts" | wc -l
+   grep -rn "CLERK_ENABLED" server/ --include="*.ts" | wc -l
+
+11. Sanity: confirm no other consumer of authService.register or authService.login outside what we're removing:
+
+   grep -rn "authService.register\|authService.login\|authService\.register\|authService\.login" server/ client/ --include="*.ts" --include="*.tsx"
+
+Do NOT change anything. Do NOT npm uninstall. Do NOT delete files.
+
+Report all results, then stop. Wait for Adam.
