@@ -685,13 +685,22 @@ export class DealDocumentService {
     portalTokenId: number;
     createdBy: number;
   }) {
-    const existingOffer = await this.getLatestActiveDocument(params.targetCompanyId, 'offer_letter');
+    const [acceptedOffer] = await db.select({ id: dealDocuments.id })
+      .from(dealDocuments)
+      .where(and(
+        eq(dealDocuments.targetCompanyId, params.targetCompanyId),
+        eq(dealDocuments.documentType, 'offer_letter'),
+        eq(dealDocuments.status, 'accepted')
+      ))
+      .limit(1);
 
-    if (existingOffer && existingOffer.status === 'accepted') {
+    if (acceptedOffer) {
       throw new BadRequestError(
         'An offer letter has already been accepted for this company. To continue, proceed to Heads of Terms.'
       );
     }
+
+    const existingOffer = await this.getLatestActiveDocument(params.targetCompanyId, 'offer_letter');
 
     let doc;
     if (existingOffer && ['sent', 'viewed', 'countered', 'rejected'].includes(existingOffer.status)) {
