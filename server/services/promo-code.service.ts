@@ -1,19 +1,8 @@
-import { randomBytes } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { db } from '../db';
-import { promoCodes, promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
+import { promoCodeCampaigns, subscriptions } from '@shared/schema/billing';
 import { users } from '@shared/schema/core';
-import type { PromoCode, Subscription } from '@shared/schema/billing';
-
-function generateRandomCode(length: number): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const bytes = randomBytes(length);
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % chars.length];
-  }
-  return result;
-}
+import type { PromoCodeCampaign, Subscription } from '@shared/schema/billing';
 
 export function computeFreeMonthsElapsed(freeMonthsStartedAt: Date): number {
   const now = new Date();
@@ -35,45 +24,57 @@ export function isFreePeriodEndingSoon(
 }
 
 class PromoCodeService {
-  async generateCodes(campaignId: number, quantity: number): Promise<PromoCode[]> {
+  /**
+   * Resolve a promo campaign by URL slug.
+   * Returns null if slug not found, campaign inactive, expired, or claim cap reached.
+   * Used by the public signup flow (Phase C) and admin direct-add (Phase D).
+   */
+  async resolveCampaignBySlug(slug: string): Promise<PromoCodeCampaign | null> {
     const [campaign] = await db
       .select()
       .from(promoCodeCampaigns)
-      .where(eq(promoCodeCampaigns.id, campaignId));
+      .where(eq(promoCodeCampaigns.slug, slug));
 
-    if (!campaign) {
-      throw new Error('Campaign not found');
+    if (!campaign) return null;
+    if (!campaign.isActive) return null;
+    if (campaign.expiresAt && campaign.expiresAt < new Date()) return null;
+
+    if (campaign.maxTotalClaims !== null) {
+      const [{ claimed }] = await db
+        .select({ claimed: count() })
+        .from(users)
+        .where(eq(users.assignedPromoCampaignId, campaign.id));
+      if (claimed >= campaign.maxTotalClaims) return null;
     }
 
-    const prefix = campaign.codePrefix || '';
-    const codes: { campaignId: number; code: string; maxUses: number; expiresAt: Date | null }[] = [];
+    return campaign;
+  }
 
-    const existingCodes = await db
-      .select({ code: promoCodes.code })
-      .from(promoCodes)
-      .where(eq(promoCodes.campaignId, campaignId));
-    const existingSet = new Set(existingCodes.map((c) => c.code));
-
-    for (let i = 0; i < quantity; i++) {
-      let code: string;
-      let attempts = 0;
-      do {
-        const random = generateRandomCode(5);
-        code = prefix ? `${prefix}-${random}` : random;
-        attempts++;
-        if (attempts > 100) throw new Error('Too many collisions generating codes');
-      } while (existingSet.has(code));
-      existingSet.add(code);
-      codes.push({
-        campaignId,
-        code,
-        maxUses: campaign.maxUsesPerCode,
-        expiresAt: campaign.expiresAt,
-      });
-    }
-
-    const inserted = await db.insert(promoCodes).values(codes).returning();
-    return inserted;
+  /**
+   * Assign a promo campaign to a user. Single source of truth for all three
+   * allocation paths: admin-waitlist invite, admin direct-add, public signup.
+   *
+   * Executor parameter is required. Pass `db` for standalone calls, or a
+   * transaction handle (`tx`) when called inside a db.transaction(async (tx) => ...) block.
+   * Caller is responsible for transaction boundaries.
+   *
+   * Idempotent: re-assigning the same campaign updates assignedAt timestamp.
+   * Overwrites: re-assigning a different campaign replaces the previous assignment.
+   */
+  async assignCampaignToUser(
+    userId: number,
+    campaignId: number,
+    attributedBy: number | null,
+    executor: typeof db
+  ): Promise<void> {
+    await executor
+      .update(users)
+      .set({
+        assignedPromoCampaignId: campaignId,
+        assignedByAdminId: attributedBy,
+        assignedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
   }
 
   async resolveCheckoutCoupon(userId: number): Promise<{ stripeCouponId: string } | null> {
