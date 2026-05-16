@@ -51,7 +51,7 @@ const AdminWaitlist = lazy(() => import("@/pages/admin/waitlist"));
 const AdminWebhookEvents = lazy(() => import("@/pages/admin/webhook-events"));
 const AdminSubscriptions = lazy(() => import("@/pages/admin/subscriptions"));
 const AdminFunnel = lazy(() => import("@/pages/admin/funnel"));
-const AdminPromoCodes = lazy(() => import("@/pages/admin/promo-codes"));
+const AdminPromoCampaigns = lazy(() => import("@/pages/admin/promo-campaigns"));
 const AdminReferralInvoice = lazy(() => import("@/pages/admin/referral-invoice"));
 const AdminSettings = lazy(() => import("@/pages/admin/settings"));
 const AdminFeedback = lazy(() => import("@/pages/admin/feedback"));
@@ -155,7 +155,7 @@ function Router() {
                   <Route path="/admin/subscriptions" component={AdminSubscriptions} />
                   <Route path="/admin/funnel" component={AdminFunnel} />
                   <Route path="/admin/referral-invoice" component={AdminReferralInvoice} />
-                  <Route path="/admin/promo-codes" component={AdminPromoCodes} />
+                  <Route path="/admin/promo-campaigns" component={AdminPromoCampaigns} />
                   <Route path="/admin/settings" component={AdminSettings} />
                   <Route path="/admin/feedback" component={AdminFeedback} />
                   <Route path="/admin/database" component={AdminDatabase} />

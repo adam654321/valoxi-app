@@ -30,7 +30,7 @@ const adminNav = [
   { title: "Waitlist", url: "/admin/waitlist", icon: ClipboardList },
   { title: "Broadcasts", url: "/admin/broadcasts", icon: Send },
   { title: "Webhook Events", url: "/admin/webhook-events", icon: Webhook },
-  { title: "Promo Codes", url: "/admin/promo-codes", icon: Tag },
+  { title: "Promo Campaigns", url: "/admin/promo-campaigns", icon: Tag },
   { title: "5D Invoice", url: "/admin/referral-invoice", icon: Receipt },
   { title: "Settings", url: "/admin/settings", icon: Settings },
   { title: "Database", url: "/admin/database", icon: Database },
