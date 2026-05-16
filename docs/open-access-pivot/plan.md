@@ -3,7 +3,7 @@
 Status: IN PROGRESS
 Started: 2026-05-15 (action log v62)
 Owner: Adam
-Related: docs/open-access-pivot/assessment.md, docs/open-access-pivot/removals.md, action log v62–v69
+Related: docs/open-access-pivot/assessment.md, docs/open-access-pivot/removals.md, docs/open-access-pivot/lessons.md, action log v62–v69
 
 ---
 
@@ -18,7 +18,7 @@ After this pivot: marketing site visitors self-serve sign up. Anyone with a prom
 | Phase | Scope | Risk | Action log |
 |---|---|---|---|
 | Pre-build | Replit grep pass to lock dead-code baseline | None | v62 → v62.1 |
-| A1 | Code residue removal (bcrypt, magic links, password reset, legacy free-period) | Low (after 36-user resolution) | v62.1 → v63 |
+| A1 | Code residue removal (bcrypt, magic links, password reset, legacy free-period) | Low | v62.1 → v63 ✓ COMPLETE |
 | B | Promo model refactor: drop promo_codes table, add slug to campaigns | Low-Med | v63 → v64 |
 | C | Public signup flow: /welcome page, /public/signup endpoint, Clerk webhook branch | High | v64 → v65 |
 | D | Admin direct add user (with optional promo) | Low | v65 → v66 |
@@ -28,31 +28,40 @@ After this pivot: marketing site visitors self-serve sign up. Anyone with a prom
 | G | Hygiene: replit.md, email copy, marketing site minimal CTAs | Low | v68 → v69 |
 | E | Marketing site full overhaul | — | Deferred to separate session |
 
-## Pre-build blocker — 36 active users without Clerk link
+## Pre-build investigation — 36 users without Clerk link (RESOLVED 2026-05-16)
 
-Pre-build grep found 36 active users in prod with `clerk_user_id IS NULL AND is_active = true`. These are pre-Clerk early-access users who never linked. Phase A1 strips bcrypt — they get locked out.
+Pre-build grep found 36 active users in prod with `clerk_user_id IS NULL AND is_active = true`. Original assumption: pre-Clerk early-access users who never linked.
 
-Required action before Phase A1:
-1. List those 36 users (email, last activity, any sub status)
-2. For users worth retaining: send Clerk sign-up link with email pre-filled, or admin reset-password to issue Clerk sign-in token
-3. For inactive/abandoned accounts: set `is_active=false`
+Investigation result: WRONG assumption. The 36 are stale Clerk invites — admin clicked Invite, DB row was created with email pre-fill, invitation email sent — user never completed Clerk signup. Webhook `user.created` never fired, so `clerk_user_id` never got backfilled.
 
-Resolution gate before A1 applies.
+Confirmed via:
+- Clerk dashboard shows 39 active Clerk accounts; none of the 36 unlinked DB rows match
+- Only 4 users ever had `password_hash`: Adam, Viv, Dee, Jag — all migrated
+- All 36 are `lastLogin: (never)`, `sub: (none)`, company "Pending Setup"
+- 35 on Early Bird promo, 1 on 5D Standard
 
-## Phase A1: Code residue removal
+Decision: leave them as dormant rows. Webhook email match is case-insensitive (LOWER on both sides) with no isActive filter. If any return via /welcome with same email, they auto-link and get their assigned promo applied. Small generosity for the buyer. No code blocker.
 
-Removes pre-Clerk auth surface and legacy free-period community surface. Code only. Schema kept until A2 (proves stable in prod for 2 weeks first).
+See assessment.md "36-user investigation" for full detail.
+
+## Phase A1: Code residue removal (COMPLETE 2026-05-16, commit 1ac43a8)
+
+Removed pre-Clerk auth surface and legacy free-period community surface. Code only. Schema kept until A2.
+
+Outcome:
+- 25 files changed: -2027 / +392
+- 10 files deleted (8 dead auth pages/services + 2 unused seed scripts)
+- TSC clean (1 pre-existing portal.service.ts:81 error only, unrelated)
+- Smoke tests passed: Clerk sign-in, /account Clerk card, /admin/database access
+
+Scope creep handled cleanly:
+- admin/database.tsx bcrypt re-auth gate removed (page already gated by AdminRoute → isSystemAdmin)
+- /login redirect at App.tsx:192 removed (beta-era bookmark, no longer needed)
+- account.tsx legacy password change UI removed (lines 84-87, 124-135, 226-248)
+
+Build hiccup: direct `npm uninstall bcrypt @types/bcrypt` via code_execution broke node_modules (Nix Node PATH issue). Recovered via Replit Packager UI in ~30 minutes. No code damage. See lessons.md LN-001.
 
 Specific changes: see docs/open-access-pivot/removals.md section A1.
-
-V-check:
-- `npm run check` clean
-- `grep -rn "bcrypt" server/` returns zero
-- `grep -rn "magicLink\|MagicLink" server/ --exclude-dir=node_modules` returns zero
-- `grep -rn "passwordReset" server/ --exclude-dir=node_modules` returns zero
-- `grep -rn "CLERK_ENABLED" server/` returns zero
-- `grep -rn "sendLegacyFreePeriod" server/` returns zero
-- Smoke: /sign-in, /sign-up, /, /dashboard, /billing, /admin/* load. Clerk webhook still fires on new signup. Trial subscription still created.
 
 ## Phase B: Promo model refactor
 
@@ -107,6 +116,8 @@ Modified client:
 - `App.tsx`: add `/welcome` route to unauthenticated switch
 - `billing.tsx`: when no sub AND `?plan=` query param, auto-scroll-highlight that plan
 
+Phase C design item flagged during A1: `/welcome` flow needs to handle the case where submitted email already exists in DB (e.g. one of the 36 dormant rows, an active user, or a soft-deleted user). Sensible behaviour: redirect to /sign-in with "looks like you already have an account" message.
+
 V-check:
 - TSC clean
 - Manual end-to-end:
@@ -114,6 +125,7 @@ V-check:
   - `/welcome?plan=core&interval=month&promo=5d` → form → Clerk signup → onboarding → /dashboard (6-month free trial active)
   - `/welcome?promo=invalid-slug` → 400 with "promo not found" error on page
   - `OPEN_ACCESS_ENABLED=false` → /welcome page loads but submit returns 400 with "open access not enabled" message
+  - Email collision: existing email at /welcome submit → redirect to /sign-in with friendly message
 
 ## Phase D: Admin direct add user
 
@@ -185,14 +197,16 @@ V-check:
 
 | # | Risk | Likelihood | Severity | Mitigation |
 |---|---|---|---|---|
-| 1 | bcrypt strip locks out the 36 active users without Clerk link | **Confirmed** | High | Resolution gate before A1: investigate, migrate or soft-delete each |
+| 1 | ~~bcrypt strip locks out the 36 active users without Clerk link~~ FALSE ALARM | n/a (resolved) | n/a | Investigation 2026-05-16 confirmed all 36 are stale Clerk invites (admin invited via current flow, never completed Clerk signup). No bcrypt passwords. A1 affected none of them. See assessment.md. RESOLVED. |
 | 2 | Email mismatch: user fills /welcome with email A, signs into Clerk with Google email B | Medium | Medium | Welcome page warning copy. `?email_address=` Clerk pre-fill. Orphan-revoke kicks in if mismatch. |
 | 3 | Schema drop in A2 wipes needed data | Low | High | Pre-DROP queries confirm 0 rows. Backups in repo. A2 ships last. |
 | 4 | OPEN_ACCESS_ENABLED flipped on accidentally before C is ready | Low | Medium | Env var defaults false. Explicit set required. |
 | 5 | Marketing site CTA points to /welcome before app has the route | Medium | Low | Sequence: ship app side first, flip marketing CTAs as part of C apply |
 | 6 | Stripe `allow_promotion_codes: false` breaks existing user who relied on typing a code | Very low | Low | Promo today only attaches via assignedPromoCampaignId. Stripe field was parallel mechanism Adam wasn't using. |
-| 7 | New `getTeamMembers` filter loses users we want to keep | Low | Medium | Same as risk 1 — covered by 36-user resolution |
+| 7 | New `getTeamMembers` filter loses users we want to keep | Low | Medium | Same as risk 1 — resolved by investigation, no real exposure |
 | 8 | Welcome page race condition: signup succeeds, Clerk signup abandoned, orphan DB row | Medium | Very low | Don't care. Dormant row, no harm. If same email retries, Clerk webhook links it. |
+| 9 | Email collision at /welcome submit (email already in DB) | Medium | Low | Phase C design item. Sensible behaviour: redirect to /sign-in with "looks like you already have an account" message. Webhook handles linking on Clerk signup if user proceeds. |
+| 10 | Direct npm dependency changes break Replit node_modules | Confirmed (A1) | Medium | Use Replit Packager UI for npm install/uninstall, never direct npm via code_execution. See lessons.md LN-001. |
 
 ## Open decisions
 
@@ -207,20 +221,23 @@ V-check:
 | 7 | ENTERPRISE pricing display on marketing site | "Contact for pricing", not "unlimited". Confirmed. |
 | 8 | After 6-month free period, no payment → cancel (current behaviour) | Keep. Confirmed. |
 | 9 | Action log compression v57-v59 | Separate workstream. Adam handles via Claude Code skill. |
-| 10 | The 36 prod users without Clerk link — what to do | TBD. Resolution gate before A1. |
+| 10 | The 36 prod users without Clerk link — what to do | RESOLVED. Leave as dormant rows. Stale Clerk invites with no bcrypt hashes. If any return via /welcome with same email, webhook auto-links + applies their promo. |
+| 11 | admin/database.tsx bcrypt re-auth gate — keep, swap, or remove? | RESOLVED. Removed. Page already gated by AdminRoute → isSystemAdmin. Bcrypt gate was theatre. |
+| 12 | Seed scripts seed-admins/seed-test-team-users — keep, rewrite, or delete? | RESOLVED. Deleted both. Admin direct-add (Phase D) handles new admin onboarding manually. |
+| 13 | /login redirect at App.tsx:192 — keep as soft landing for old bookmarks? | RESOLVED. Removed. Beta cohort small, all migrated. 404 acceptable for stale bookmarks. |
 
 ## Action log progression
 
 | Version | Phase | Notes |
 |---|---|---|
-| v62 | Current | Open access kickoff |
-| v62.1 | Pre-build complete | Replit grep pass + docs written + plan locked |
-| v63 | A1 complete | Code residue removed |
-| v64 | B complete | Promo model refactored, slugs added |
-| v65 | C complete | Public signup live (flag still off) |
-| v66 | D complete | Admin direct add live |
-| v67 | F complete | 5D invoice rewrite live |
+| v62 | Open access kickoff | Pivot scoped, 4-wave codebase assess completed |
+| v62.1 | Pre-build complete | Replit grep pass + docs written + plan locked + 36-user investigation |
+| v63 | A1 complete ✓ | Code residue removed (2026-05-16, commit 1ac43a8) |
+| v64 | B in progress | Promo model refactor — slugs + drop promo_codes |
+| v65 | C in progress | Public signup live (flag still off) |
+| v66 | D in progress | Admin direct add live |
+| v67 | F in progress | 5D invoice rewrite live |
 | v67.1 | OPEN_ACCESS_ENABLED=true | Soft launch in prod |
-| v68 | A2 complete | Schema residue dropped |
-| v69 | G complete | Hygiene + marketing minimal CTAs live |
+| v68 | A2 in progress | Schema residue dropped |
+| v69 | G in progress | Hygiene + marketing minimal CTAs live |
 | Future | E | Marketing site full overhaul (separate workstream) |

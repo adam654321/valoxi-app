@@ -1,8 +1,8 @@
 # Open Access Pivot — Assessment
 
-Status: HISTORICAL (assessment complete 2026-05-15)
+Status: HISTORICAL (assessment complete 2026-05-15, amended 2026-05-16 with 36-user investigation)
 Owner: Adam
-Related: docs/open-access-pivot/plan.md, docs/open-access-pivot/removals.md, action log v62
+Related: docs/open-access-pivot/plan.md, docs/open-access-pivot/removals.md, docs/open-access-pivot/lessons.md, action log v62+
 
 ---
 
@@ -16,7 +16,7 @@ Knock-on consequences from a four-wave codebase assessment:
 - Pre-Clerk auth surface (bcrypt + magic links + password reset) is dead but still wired. Blocks clean signup flow design.
 - Legacy free-period community model from an earlier 5D variant has dead code + dead schema columns still in place
 - `/admin/referral-invoice` endpoint is broken on current data model (filters on a column nobody writes)
-- 36 active users in prod still on the pre-Clerk path. Resolution gate before any auth cleanup.
+- 36 active users in prod still appeared at first to be on the pre-Clerk path. Investigation 2026-05-16 disproved this — see "36-user investigation" section below.
 
 Cleaning these up is half the work. The signup flow itself is small once the dead surface is gone.
 
@@ -28,21 +28,23 @@ Migration trail in `migrations/`:
 - 0006: waitlist
 - 0007: idempotency
 
-Dead surfaces still in code:
+Dead surfaces still in code (REMOVED IN A1):
 - `server/services/magic-link.service.ts`, `server/services/password-reset.service.ts`, `server/repositories/password-reset.repository.ts`
 - `authService.register()`, `authService.login()` (bcrypt-based)
 - Routes: `/login`, `/forgot-password`, `/reset-password`, `/auth/magic`, `/auth/link-expired`, `/admin/verify-credentials`, `/admin/resend-magic-link`
 - Pages: `client/src/pages/auth/login.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `magic-link.tsx`, `link-expired.tsx`
-- Schema columns: `users.password_hash`, `users.last_login`
-- Schema tables: `user_sessions`, `password_reset_tokens`, `magic_links`, `resend_rate_limits`
 - Email templates: `sendMagicLinkEmail`, `sendLegacyFreePeriodWarningEmail`, `sendLegacyFreePeriodTransitionEmail`
 - `CLERK_ENABLED` env gate in middleware (Clerk now unconditional)
 
-Dead surfaces in the legacy free-period community model:
+Dead surfaces still in DB schema (KEPT for A2, code consumers removed in A1):
+- Schema columns: `users.password_hash`, `users.last_login`
+- Schema tables: `user_sessions`, `password_reset_tokens`, `magic_links`, `resend_rate_limits`
+
+Dead surfaces in the legacy free-period community model (CODE REMOVED IN A1, SCHEMA KEPT for A2):
 - `subscriptions.referralSource`, `subscriptions.promoCodeId`, `subscriptions.isCommunityMember`, `subscriptions.communityFreeMonthsRemaining` (read-only or unused)
-- `promo_codes` table (entire table — 0 rows in prod)
-- Monthly `community_free_months_remaining` decrement cron job
-- Legacy non-5D branch in 09:15 free-period cron
+- `promo_codes` table (entire table — 0 rows in prod) — drops in Phase B
+- Monthly `community_free_months_remaining` decrement cron job (REMOVED IN A1)
+- Legacy non-5D branch in 09:15 free-period cron (REMOVED IN A1)
 
 ## Wave 2 findings — current happy path
 
@@ -54,7 +56,7 @@ Today's user journey (admin-invited):
 5. `sendWaitlistInvitation` email sent (Resend)
 6. User clicks email link → `/sign-up?email_address=...` (Clerk hosted UI)
 7. User completes Clerk signup
-8. Clerk fires `user.created` webhook → `handleUserCreated` matches by email, links `clerkUserId`
+8. Clerk fires `user.created` webhook → `handleUserCreated` matches by email (case-insensitive, no isActive filter), links `clerkUserId`
 9. Webhook calls `createFiveDNewMemberTrial(userCompanyId)` if 5D campaign, else `createTrialSubscription(1)` for 24h trial
 10. Webhook seeds pipeline stages, sends welcome email, syncs to Resend marketing audiences
 11. User lands at `/`, routed to `/onboarding`
@@ -73,7 +75,8 @@ Key insight: the infrastructure for the open-access flow is mostly already there
 - Mounted at `/api/v2/*` via `clerkMiddleware()`
 - Webhook: `POST /api/v2/webhooks/clerk` (svix-verified)
 - Events: `user.created`, `user.updated`, `user.deleted`
-- Orphan-revoke: when Clerk webhook fires with no DB match, `clerkClient.users.deleteUser()` destroys the Clerk account. THIS IS THE ACCESS GATE — keep secure.
+- Webhook email match: case-insensitive (LOWER on both sides of comparison), NO isActive filter — selects across active and inactive rows, then checks isActive as application-level guard
+- Orphan-revoke: when Clerk webhook fires with no DB match, `clerkClient.users.deleteUser()` destroys the Clerk account. THIS IS THE ACCESS GATE — keep secure. Also triggers when matched row has `isActive=false` (reason: `matched_user_inactive`).
 - Admin reset-password: `clerkClient.signInTokens.createSignInToken({userId, expiresInSeconds: 86400})`
 
 ### Stripe
@@ -102,7 +105,7 @@ Key insight: the infrastructure for the open-access flow is mostly already there
 
 ### App client
 - Routes `/sign-up` and `/sign-in` conditional on `clerkEnabled` from `/api/v2/public/config`. Since `CLERK_ENABLED=true` in prod, they always render.
-- Legacy routes still wired: `/login`, `/forgot-password`, `/reset-password`, `/auth/magic`, `/auth/link-expired`
+- Legacy routes removed in A1: `/login`, `/forgot-password`, `/reset-password`, `/auth/magic`, `/auth/link-expired`
 - Sign-up page accepts `?email_address=` query param for Clerk pre-fill
 - Onboarding gate: `user.onboardingCompleted === false` forces redirect to `/onboarding`
 - Billing page already shows `?reason=subscription_required` banner when middleware 402s — infrastructure for "no sub → land on billing → pay" already there
@@ -148,17 +151,57 @@ Why: preserves orphan-revoke as the access gate. If we sent users to Clerk first
 
 Tradeoff: extra page on the signup flow. Acceptable — also gives space for promo benefit copy.
 
+## 36-user investigation (2026-05-16)
+
+Pre-build flagged 36 active users in prod with `clerk_user_id IS NULL`. Original assumption: pre-Clerk early-access users who never linked, would be locked out by A1's bcrypt strip.
+
+Investigation result: ASSUMPTION WAS WRONG.
+
+What they actually are: stale Clerk invites. Admin clicked Invite from waitlist, DB row created with email pre-fill, invitation email sent — user never completed Clerk signup. Webhook `user.created` never fired for them, so `clerk_user_id` never got backfilled.
+
+Confirmed via:
+- Clerk dashboard shows 39 active Clerk accounts; all 36 unlinked DB rows are NOT in Clerk
+- Only 4 users in prod ever had `password_hash`: Adam (Coxon), Viv (Kuvelker), Dee (Ludlow), Jag (Saran) — all migrated to Clerk
+- All 36 are `lastLogin: (never)`, `sub: (none)`, company name "Pending Setup"
+- 35 on Early Bird promo, 1 on 5D Standard
+
+Webhook match logic also confirmed during the same investigation:
+- Email comparison: case-insensitive via raw SQL `LOWER(${users.email}) = LOWER(${email.trim()})`
+- No `isActive` filter in the WHERE clause — selects across active and inactive rows
+- After match, application-level guard: if `isActive=false`, calls `revokeOrphanClerk('matched_user_inactive')` and deletes Clerk account
+- If `clerkUserId` already populated and matches incoming, idempotent no-op
+- If `clerkUserId` already populated but DIFFERENT to incoming, revokes the newer Clerk account (conflict path)
+
+Decision: leave the 36 as dormant rows. No soft-delete needed. Net effect: any of them who later sign up via open-access flow get their Early Bird (or 5D) promo applied automatically. Small generosity for the buyer.
+
+Implication for Phase C `/welcome` flow: the public/signup endpoint must handle the case where the submitted email already exists in DB (whether one of these 36, an active user, or a soft-deleted user). Sensible behaviour: redirect to /sign-in with "looks like you already have an account" message. To be designed in Phase C.
+
 ## Prod state at assessment time (2026-05-15)
 
 From pre-build grep verification:
-- 36 active users without `clerk_user_id` — **REQUIRES INVESTIGATION** before A1
+- 36 active users without `clerk_user_id` — RESOLVED 2026-05-16, see 36-user investigation
 - 0 user_sessions rows — safe to drop table
 - 1 password_reset_tokens row, 1 magic_links row — trivial, safe to drop
 - 0 community member subscriptions — safe to remove legacy free-period column/code
 - 2 subscriptions with `referralSource` non-null — historical writes, /admin/referral-invoice currently shows only these 2 (incomplete picture)
 - 0 promo_codes rows — safe to drop entire table
 - CORE monthly Stripe price confirmed at 8700 cents ($87.00)
-- CLERK_ENABLED=true confirmed in env
+- CLERK_ENABLED=true confirmed in env (removed unconditionally in A1)
+
+Seed table state in prod (confirmed during A1):
+- activity_types: 6 rows
+- pipeline_stages: 10 rows
+- dd_requirements: 121 rows
+- deal_document_templates: 4 rows
+- user_roles: 7 rows
+- system_config: 1 row
+
+All six seed tables already populated. The `/admin/database` seed-runner page is effectively a no-op in prod (all seed functions are idempotent).
+
+Auto-seeded on user signup vs manual-only:
+- ✅ seedDefaultPipelineStages — auto-seeded on first Clerk link (only if no subscription exists). Internally calls seedSystemConfig.
+- ✅ seedUserRoles — auto-seeded at server startup, every restart
+- ❌ seedActivityTypes, seedDDRequirements, seedDealDocumentTemplates — manual-only
 
 ## Deferred to other workstreams
 
@@ -171,3 +214,5 @@ From pre-build grep verification:
 | Action log compression v57-v59 | Adam handles via Claude Code skill, separate workstream. |
 | Admin "delete user" Clerk-aware path | Not needed for open access. Later if churn requires hard deletes. |
 | Sign-up funnel analytics refinement | funnelEvents already exists. Open-access events will show up post-launch. |
+| Offer letter send error (not checking both areas) | Backlog. Investigate post-pivot. Flagged 2026-05-16 during A1 V-check. |
+| portal.service.ts:81 TSC error | Pre-existing, unrelated. Backlog. |

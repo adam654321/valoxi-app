@@ -1,69 +1,83 @@
 # Open Access Pivot — Removals
 
-Status: IN PROGRESS
+Status: A1 COMPLETE / B IN PROGRESS
 Owner: Adam
-Related: docs/open-access-pivot/plan.md, docs/open-access-pivot/assessment.md
+Related: docs/open-access-pivot/plan.md, docs/open-access-pivot/assessment.md, docs/open-access-pivot/lessons.md
 
 Operational checklist. Items get ticked off as phases ship. Line references from the pre-build grep report (action log v62.1).
 
 ---
 
-## Phase A1: Code removal
+## Phase A1: Code removal — COMPLETE (2026-05-16, commit 1ac43a8)
 
-### Files to delete entirely
+### Files deleted entirely
 
-- [ ] `server/services/magic-link.service.ts`
-- [ ] `server/services/password-reset.service.ts`
-- [ ] `server/repositories/password-reset.repository.ts`
-- [ ] `client/src/pages/auth/login.tsx`
-- [ ] `client/src/pages/auth/forgot-password.tsx`
-- [ ] `client/src/pages/auth/reset-password.tsx`
-- [ ] `client/src/pages/auth/magic-link.tsx`
-- [ ] `client/src/pages/auth/link-expired.tsx`
+- [x] `server/services/magic-link.service.ts`
+- [x] `server/services/password-reset.service.ts`
+- [x] `server/repositories/password-reset.repository.ts`
+- [x] `client/src/pages/auth/login.tsx`
+- [x] `client/src/pages/auth/forgot-password.tsx`
+- [x] `client/src/pages/auth/reset-password.tsx`
+- [x] `client/src/pages/auth/magic-link.tsx`
+- [x] `client/src/pages/auth/link-expired.tsx`
+- [x] `server/scripts/seed-admins.ts` (Adam: not needed; admin direct-add in Phase D handles this)
+- [x] `server/scripts/seed-test-team-users.ts` (Adam: not needed)
 
-### Files to edit — methods to remove
+### Files edited — methods removed
 
-- [ ] `server/services/auth.service.ts` — delete `register()` and `login()`. Remove `bcrypt` import and `SALT_ROUNDS` constant.
-- [ ] `server/services/email.service.ts` — delete `sendMagicLinkEmail`, `sendLegacyFreePeriodWarningEmail`, `sendLegacyFreePeriodTransitionEmail`
-- [ ] `server/repositories/users.repository.ts` — delete `createSession`, `getSessionByToken`, `deleteSession`, `deleteExpiredSessions`. Remove `userSessions` import.
-- [ ] `server/repositories/team.repository.ts` — remove `passwordHash` from SELECT (line 177) and from filter (line 212). Remove `(clerkUserId OR passwordHash)` filter, keep just `clerkUserId IS NOT NULL`.
-- [ ] `server/cron/billing.cron.ts` — delete monthly `community_free_months_remaining` decrement cron (lines 263-273). Delete legacy non-5D branch in 09:15 free-period cron (lines ~440-475 and ~525-540).
+- [x] `server/services/auth.service.ts` — deleted `register()` and `login()`. Removed `bcrypt` import and `SALT_ROUNDS` constant.
+- [x] `server/services/email.service.ts` — deleted `sendMagicLinkEmail`, `sendLegacyFreePeriodWarningEmail`, `sendLegacyFreePeriodTransitionEmail`
+- [x] `server/repositories/users.repository.ts` — deleted `createSession`, `getSessionByToken`, `deleteSession`, `deleteExpiredSessions`. Removed `userSessions` import.
+- [x] `server/repositories/team.repository.ts` — removed `passwordHash` from SELECT (line 177) and from filter (line 212). Removed `(clerkUserId OR passwordHash)` filter, kept just `clerkUserId IS NOT NULL`.
+- [x] `server/cron/billing.cron.ts` — deleted monthly `community_free_months_remaining` decrement cron. Deleted legacy non-5D branch in 09:15 free-period cron.
 
-### Routes to delete
+### Routes deleted
 
-- [ ] `server/routes/auth.routes.ts`:
-  - DELETE `POST /login` (line 26 — `authService.login` consumer)
-  - DELETE `POST /forgot-password` (line 91)
-  - DELETE `POST /reset-password` (line 102)
-  - DELETE `POST /reset-password/validate` (line 112)
-  - DELETE `POST /magic` (line 122)
-  - DELETE `POST /resend-magic-link` (line 171)
-- [ ] `server/routes/admin.routes.ts`:
-  - DELETE `POST /admin/verify-credentials` (line 796 — bcrypt path)
-  - DELETE `POST /admin/resend-magic-link` (line 619)
-- [ ] `client/src/App.tsx`:
-  - DELETE routes `/login`, `/forgot-password`, `/reset-password`, `/auth/magic`, `/auth/link-expired`
-  - Remove imports for Login, ForgotPassword, ResetPassword, MagicLinkPage, LinkExpiredPage
+- [x] `server/routes/auth.routes.ts`:
+  - DELETED `POST /login`
+  - DELETED `POST /forgot-password`
+  - DELETED `POST /reset-password`
+  - DELETED `POST /reset-password/validate` (if existed)
+  - DELETED `POST /magic`
+  - DELETED `POST /resend-magic-link`
+- [x] `server/routes/admin.routes.ts`:
+  - DELETED `POST /admin/verify-credentials`
+  - DELETED `POST /admin/resend-magic-link`
+- [x] `client/src/App.tsx`:
+  - DELETED routes `/login`, `/forgot-password`, `/reset-password`, `/auth/magic`, `/auth/link-expired`
+  - DELETED duplicate route registrations at lines 189–190
+  - DELETED `/login` Redirect at line 192 (beta-era bookmark soft-landing, no longer needed)
+  - Removed imports for Login, ForgotPassword, ResetPassword, MagicLinkPage, LinkExpiredPage
 
-### Middleware env gates to remove
+### Middleware env gates removed
 
-- [ ] `server/middleware/auth.ts` — strip legacy session-fallback path in `isAuthenticated` (after Clerk auth attempt). Unauth = 401.
-- [ ] `server/middleware/clerk-auth.ts` — remove `CLERK_ENABLED` env gate in `tryClerkAuth`
-- [ ] `server/routes/webhooks.routes.ts` — remove `CLERK_ENABLED` check inside `revokeOrphanClerk`
+- [x] `server/middleware/auth.ts` — stripped legacy session-fallback path in `isAuthenticated`. Unauth = 401, no DB lookup.
+- [x] `server/middleware/clerk-auth.ts` — removed `CLERK_ENABLED` env gate in `tryClerkAuth`
+- [x] `server/routes/webhooks.routes.ts` — removed `CLERK_ENABLED` check inside `revokeOrphanClerk`
 
-### Dependencies to remove
+### Dependencies removed
 
-- [ ] `package.json` — remove `bcrypt` and `@types/bcrypt`
-- [ ] Confirm `bcrypt` not in `package-lock.json` after npm install
+- [x] `package.json` — removed `bcrypt` and `@types/bcrypt`
+- [x] `package-lock.json` confirmed clean after Replit Packager rebuild (note: direct `npm uninstall` failed in this Replit due to Nix Node PATH; recovery via Replit Packager UI took ~30 min. See lessons.md LN-001.)
 
 ### Account routes — bcrypt-dependent code
 
-- [ ] `server/routes/account.routes.ts` lines 81-95 — password change endpoint uses bcrypt. Either remove the endpoint (users change passwords via Clerk now) or rewrite to redirect users to Clerk's password management. Recommend: DELETE the endpoint, return 410 Gone with link to Clerk.
+- [x] `server/routes/account.routes.ts` PATCH `/password` endpoint replaced with `410 Gone` redirect to Clerk's password management. Adam confirmed: delete legacy bcrypt path, surface Clerk UI instead.
 
-### Seed scripts — bcrypt usage
+### Client account page — legacy password change UI
 
-- [ ] `server/scripts/seed-admins.ts` lines 47, 88 — bcrypt usage in admin seed. Rewrite to NOT set passwordHash (Clerk handles), or delete the script entirely if no longer used.
-- [ ] `server/scripts/seed-test-team-users.ts` lines 42, 55, 79 — same. Rewrite or delete.
+- [x] `client/src/pages/account.tsx` — deleted lines 84-87 (useState for currentPassword/newPassword/confirmPassword), lines 124-135 (passwordMutation), lines 226-248 ("Change Password" Card). Kept lines 211-220 (Clerk-managed "Password and Security" Card).
+
+### Admin database page — bcrypt re-auth gate
+
+- [x] `client/src/pages/admin/database.tsx` — removed bcrypt re-auth gate (useState for `verified`/`email`/`password`/`authError`, `verifyMutation`, the credential-form early return). Page now renders seed buttons directly. Already gated at route level by AdminRoute → isSystemAdmin (App.tsx lines 145-182). Net safer: bcrypt re-auth was theatre on a route already locked down.
+
+### A1 notes
+
+- admin/database.tsx bcrypt re-auth gate also removed (not in original removals.md, added during apply). All 5 seed endpoints are idempotent (onConflictDoNothing / count-and-skip / upsert) and all 6 seed tables already populated in prod. Drop was safe.
+- /login redirect at App.tsx:192 removed entirely (was a soft landing for old beta bookmarks; not needed).
+- account.tsx legacy password change UI removed (lines 84-87, 124-135, 226-248). Clerk's own password management at lines 211-220 remains as the only password UI.
+- Smoke tests after apply: Clerk sign-in ✓ / /account Clerk card ✓ / /admin/database access ✓
 
 ---
 
