@@ -175,27 +175,7 @@ export async function isAuthenticated(req: Request, res: Response, next: NextFun
     return next();
   }
 
-  // Fall through to existing session-based auth.
-  if (!req.session.userId) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  try {
-    const [user] = await db
-      .select({ id: users.id, isActive: users.isActive })
-      .from(users)
-      .where(eq(users.id, req.session.userId));
-
-    if (!user || !user.isActive) {
-      req.session.destroy(() => {});
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    next();
-  } catch (error) {
-    console.error('Error verifying user session:', error);
-    return res.status(500).json({ message: "Internal server error during authentication" });
-  }
+  return res.status(401).json({ message: "Unauthorized" });
 }
 
 export async function isSystemAdmin(req: Request, res: Response, next: NextFunction) {

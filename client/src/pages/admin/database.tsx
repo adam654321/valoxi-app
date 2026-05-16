@@ -1,14 +1,10 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, CheckCircle2, XCircle, Database, Play, LogOut } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Database, Play } from "lucide-react";
 
 const SEED_SCRIPTS = [
   {
@@ -80,27 +76,9 @@ async function adminPost(endpoint: string, body?: object): Promise<any> {
 
 export default function AdminDatabase() {
   const { toast } = useToast();
-  const [verified, setVerified] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authError, setAuthError] = useState("");
   const [seedStatuses, setSeedStatuses] = useState<Record<SeedKey, SeedStatus>>(
     Object.fromEntries(SEED_SCRIPTS.map((s) => [s.key, { status: "idle" }])) as Record<SeedKey, SeedStatus>
   );
-
-  const verifyMutation = useMutation({
-    mutationFn: async () => {
-      return adminPost("/api/v2/admin/verify-credentials", { email, password });
-    },
-    onSuccess: () => {
-      setVerified(true);
-      setAuthError("");
-      setPassword("");
-    },
-    onError: (err: any) => {
-      setAuthError(err.message || "Invalid credentials");
-    },
-  });
 
   const runSeed = async (script: typeof SEED_SCRIPTS[number]) => {
     setSeedStatuses((prev) => ({ ...prev, [script.key]: { status: "running" } }));
@@ -115,65 +93,6 @@ export default function AdminDatabase() {
     }
   };
 
-  if (!verified) {
-    return (
-      <div className="p-6 max-w-md mx-auto mt-16">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                <ShieldCheck className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              </div>
-            </div>
-            <CardTitle>Admin Verification Required</CardTitle>
-            <CardDescription>
-              Re-enter your admin credentials to access database operations. This is required every time you visit this page.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {authError && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription>{authError}</AlertDescription>
-              </Alert>
-            )}
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
-                autoComplete="username"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && verifyMutation.mutate()}
-                placeholder="••••••••"
-                autoComplete="current-password"
-              />
-            </div>
-            <Button
-              className="w-full"
-              onClick={() => verifyMutation.mutate()}
-              disabled={!email || !password || verifyMutation.isPending}
-            >
-              {verifyMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
-              Verify & Continue
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
@@ -186,10 +105,6 @@ export default function AdminDatabase() {
             Run seed scripts to populate default data. Safe to run — all scripts skip existing records.
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setVerified(false)}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Lock
-        </Button>
       </div>
 
       <Separator />

@@ -251,47 +251,6 @@ export function initializeBillingCron(): void {
 
   console.log('[billing-cron] Trial expiry job scheduled for 9:05 AM UK time daily');
 
-  cron.schedule('10 9 1 * *', async () => {
-    console.log('[billing-cron] Starting monthly community free month decrement...');
-    try {
-      const allSubs = await db
-        .select()
-        .from(subscriptions)
-        .where(
-          and(
-            eq(subscriptions.isCommunityMember, true),
-            gt(subscriptions.communityFreeMonthsRemaining, 0)
-          )
-        );
-
-      let count = 0;
-
-      for (const sub of allSubs) {
-        try {
-          const newRemaining = sub.communityFreeMonthsRemaining - 1;
-          await billingRepository.updateByCompanyId(sub.userCompanyId, {
-            communityFreeMonthsRemaining: newRemaining,
-          });
-          count++;
-
-          if (newRemaining === 0) {
-            console.log(`[billing-cron] Community free months exhausted for company ${sub.userCompanyId} — normal billing should resume (manual step required)`);
-          }
-        } catch (err) {
-          console.error(`[billing-cron] Failed to decrement community months for company ${sub.userCompanyId}:`, err);
-        }
-      }
-
-      console.log(`[billing-cron] Decremented community free months for ${count} subscription(s)`);
-    } catch (err) {
-      console.error('[billing-cron] Community free month decrement job failed:', err);
-    }
-  }, {
-    timezone: 'Europe/London',
-  });
-
-  console.log('[billing-cron] Community free month decrement scheduled for 1st of each month at 9:10 AM UK time');
-
   cron.schedule('15 9 * * *', async () => {
     const stripe = new Stripe(config.stripe.secretKey);
     console.log('[billing-cron] Starting daily free months check (warning + transition)...');
@@ -449,26 +408,6 @@ export function initializeBillingCron(): void {
               console.error('[billing-cron] Failed to track funnel event:', err);
             }
 
-            // Only send the legacy "discount now active" email when we actually applied a coupon AND
-            // the user has a Stripe customer. 5D New Member with Stripe customer gets this too
-            // because the coupon IS now applied and this is factually accurate.
-            if (couponId && sub.stripeCustomerId) {
-              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
-              if (!adminEmail) {
-                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping legacy transition email`);
-              } else {
-                try {
-                  await emailApiService.sendLegacyFreePeriodTransitionEmail({
-                    to: adminEmail.email,
-                    firstName: adminEmail.firstName || 'there',
-                    freeMonthsTotal: sub.freeMonthsTotal,
-                  });
-                } catch (emailErr) {
-                  console.error(`[billing-cron] Failed to send transition email for company ${sub.userCompanyId}:`, emailErr);
-                }
-              }
-            }
-
             transitionCount++;
             console.log(`[billing-cron] Transitioned company ${sub.userCompanyId} from free period: couponApplied=${couponId ?? 'none'}, hasStripeCustomer=${hasStripeCustomer}`);
           } catch (err) {
@@ -522,29 +461,6 @@ export function initializeBillingCron(): void {
 
               warningCount++;
               console.log(`[billing-cron] Sent 5D New Member payment-required warning to company ${sub.userCompanyId}`);
-            } else {
-              // Legacy community path: branded "no action needed" email.
-              const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
-              if (!adminEmail) {
-                console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping legacy free-period warning`);
-                continue;
-              }
-              try {
-                await emailApiService.sendLegacyFreePeriodWarningEmail({
-                  to: adminEmail.email,
-                  firstName: adminEmail.firstName || 'there',
-                  freeMonthsTotal: sub.freeMonthsTotal,
-                });
-              } catch (emailErr) {
-                console.error(`[billing-cron] Failed to send legacy warning email for company ${sub.userCompanyId}:`, emailErr);
-              }
-
-              await billingRepository.updateByCompanyId(sub.userCompanyId, {
-                freeMonthsWarningEmailSentAt: new Date(),
-              });
-
-              warningCount++;
-              console.log(`[billing-cron] Sent legacy free period warning email to company ${sub.userCompanyId}`);
             }
           } catch (err) {
             console.error(`[billing-cron] Failed to process warning for company ${sub.userCompanyId}:`, err);

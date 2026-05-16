@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
@@ -15,15 +14,6 @@ const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   jobTitle: z.string().max(100).optional().nullable(),
-});
-
-const updatePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
-  confirmPassword: z.string().min(1),
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
 });
 
 const updateCompanySchema = z.object({
@@ -71,31 +61,9 @@ router.patch('/profile', asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { message: 'Profile updated successfully' });
 }));
 
-router.patch('/password', asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.session?.userId;
-  if (!userId) throw new UnauthorizedError();
-
-  const data = updatePasswordSchema.parse(req.body);
-
-  const [user] = await db
-    .select({ passwordHash: users.passwordHash })
-    .from(users)
-    .where(eq(users.id, userId));
-
-  if (!user) throw new UnauthorizedError();
-
-  if (!user.passwordHash) {
-    throw new BadRequestError('This account uses single sign-on and does not have a password to change.');
-  }
-
-  const isValid = await bcrypt.compare(data.currentPassword, user.passwordHash);
-  if (!isValid) throw new BadRequestError('Current password is incorrect');
-
-  const newHash = await bcrypt.hash(data.newPassword, 10);
-  await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, userId));
-
-  sendSuccess(res, { message: 'Password changed successfully' });
-}));
+router.patch('/password', (_req: Request, res: Response) => {
+  res.status(410).json({ success: false, message: 'Password management is handled through the authentication provider.' });
+});
 
 router.patch('/company', requirePermission('canManageCompany'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;

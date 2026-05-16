@@ -14,7 +14,6 @@ import AdminRoute from "@/components/admin-route";
 import AdminLayout from "@/components/admin-layout";
 import { BetaFeedbackWidget } from "@/components/BetaFeedbackWidget";
 import NotFound from "@/pages/not-found";
-import Login from "@/pages/auth/login";
 import AcceptInvitation from "@/pages/accept-invitation";
 import MarketingConsentPage from "@/pages/marketing-consent";
 
@@ -22,10 +21,6 @@ const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
 const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
 const AccountSetupPending = lazy(() => import("@/pages/auth/account-setup-pending"));
 const AccountInactive = lazy(() => import("@/pages/auth/account-inactive"));
-const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
-const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
-const MagicLinkPage = lazy(() => import("@/pages/auth/magic-link"));
-const LinkExpiredPage = lazy(() => import("@/pages/auth/link-expired"));
 const OnboardingPage = lazy(() => import("@/pages/onboarding"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const EnhancedTargetCompanies = lazy(() => import("@/pages/enhanced-target-companies"));
@@ -104,12 +99,7 @@ function Router() {
           <Route path="/invite/:token" component={AcceptInvitation} />
           {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
           {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
-          <Route path="/">{() => clerkEnabled ? <Redirect to="/sign-in" /> : <Login />}</Route>
-          <Route path="/login" component={Login} />
-          <Route path="/forgot-password" component={ForgotPassword} />
-          <Route path="/reset-password" component={ResetPassword} />
-          <Route path="/auth/magic" component={MagicLinkPage} />
-          <Route path="/auth/link-expired" component={LinkExpiredPage} />
+          <Route path="/">{() => <Redirect to="/sign-in" />}</Route>
           <Route path="/accept-invitation" component={AcceptInvitation} />
           <Route path="/marketing-consent/:token" component={MarketingConsentPage} />
           <Route component={NotFound} />
@@ -186,8 +176,6 @@ function Router() {
           )}
         </Route>
 
-        <Route path="/auth/magic" component={MagicLinkPage} />
-        <Route path="/auth/link-expired" component={LinkExpiredPage} />
         <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/login">{() => <Redirect to="/" />}</Route>
         <Route path="/register">{() => <Redirect to="/" />}</Route>

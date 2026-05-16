@@ -4,7 +4,6 @@ import {
   users,
   userCompanies,
   userCompanyMemberships,
-  userSessions,
   userRoles,
   userDealAssignments,
   type User,
@@ -13,7 +12,6 @@ import {
   type InsertUserCompany,
   type UserCompanyMembership,
   type InsertUserCompanyMembership,
-  type UserSession,
   type UserRole,
 } from '@shared/schema';
 
@@ -102,32 +100,6 @@ export class UsersRepository {
       .set({ currentCompanyId: companyId })
       .where(eq(users.id, userId));
     return (result.rowCount ?? 0) > 0;
-  }
-
-  async createSession(userId: number, sessionToken: string, expiresAt: Date): Promise<UserSession> {
-    const [session] = await db
-      .insert(userSessions)
-      .values({ userId, sessionToken, expiresAt })
-      .returning();
-    return session;
-  }
-
-  async getSessionByToken(sessionToken: string): Promise<UserSession | undefined> {
-    const [session] = await db
-      .select()
-      .from(userSessions)
-      .where(eq(userSessions.sessionToken, sessionToken));
-    return session || undefined;
-  }
-
-  async deleteSession(sessionToken: string): Promise<void> {
-    await db.delete(userSessions).where(eq(userSessions.sessionToken, sessionToken));
-  }
-
-  async deleteExpiredSessions(): Promise<void> {
-    await db.delete(userSessions).where(
-      eq(userSessions.expiresAt, new Date())
-    );
   }
 
   async getUserRoles(): Promise<UserRole[]> {

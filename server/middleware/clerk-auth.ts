@@ -4,8 +4,6 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { users } from '@shared/schema';
 
-// Must be exactly 'true' — see CLERK_ENABLED in Replit Secrets.
-const CLERK_ENABLED = process.env.CLERK_ENABLED === 'true';
 
 declare global {
   namespace Express {
@@ -21,8 +19,6 @@ export type ClerkAuthResult =
   | { error: 'CLERK_USER_NOT_LINKED' | 'CLERK_USER_INACTIVE' };
 
 export async function tryClerkAuth(req: Request): Promise<ClerkAuthResult> {
-  if (!CLERK_ENABLED) return null;
-
   const auth = getAuth(req);
   const clerkUserId = auth?.userId;
   if (!clerkUserId) return null;

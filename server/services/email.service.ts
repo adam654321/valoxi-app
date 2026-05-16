@@ -402,37 +402,6 @@ export class EmailApiService {
     });
     return { success, message: success ? 'Payment linked email sent' : 'Failed to send payment linked email' };
   }
-  async sendMagicLinkEmail(params: {
-    to: string;
-    firstName: string;
-    magicLink: string;
-  }): Promise<SendInvitationResult> {
-    const { to, firstName, magicLink } = params;
-    const safeFirstName = escapeHtml(firstName);
-
-    const blocks: EmailBlock[] = [
-      { type: 'paragraph', text: `Hi ${safeFirstName},` },
-      { type: 'paragraph', text: 'Here is your Valoxi login link. Click below to access your account.' },
-      { type: 'cta', cta: { label: 'Log in to Valoxi', href: magicLink } },
-      { type: 'paragraph', text: 'This link expires in 72 hours. If you did not request this, you can safely ignore this email.' },
-    ];
-
-    const html = renderBrandedEmail({
-      preheader: 'Your Valoxi login link is ready.',
-      eyebrow: 'Login link',
-      heading: 'Your Valoxi login link',
-      blocks,
-      footerLine: 'You are receiving this because a login link was requested for your Valoxi account.',
-    });
-
-    const success = await (legacyEmailService as any).sendEmail({
-      to,
-      subject: 'Your Valoxi login link',
-      html,
-    });
-    return { success, message: success ? 'Magic link email sent' : 'Failed to send magic link email' };
-  }
-
   async sendAdminSignInLink(params: {
     to: string;
     firstName: string;
@@ -727,79 +696,6 @@ export class EmailApiService {
       html,
     });
     return { success, message: success ? 'Dunning cancellation email sent' : 'Failed to send dunning cancellation email' };
-  }
-
-  async sendLegacyFreePeriodWarningEmail(params: {
-    to: string;
-    firstName: string;
-    freeMonthsTotal: number;
-  }): Promise<SendInvitationResult> {
-    const { to, firstName, freeMonthsTotal } = params;
-    const safeFirstName = escapeHtml(firstName);
-
-    const blocks: EmailBlock[] = [
-      { type: 'paragraph', text: `Hi ${safeFirstName},` },
-      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${freeMonthsTotal} month</strong> free period will end next month. After that, your ongoing community discount will be applied automatically.` },
-      {
-        type: 'info_box',
-        box: {
-          tone: 'success',
-          body: 'No action is needed. We just wanted to give you a heads up.',
-        },
-      },
-    ];
-
-    const html = renderBrandedEmail({
-      preheader: 'Your Valoxi free period ends next month. No action needed.',
-      eyebrow: 'Heads up',
-      heading: 'Your free period is ending soon',
-      blocks,
-      footerLine: 'You are receiving this because you are on a Valoxi community free period.',
-    });
-
-    const success = await (legacyEmailService as any).sendEmail({
-      to,
-      subject: 'Your free period is ending soon',
-      html,
-    });
-    return { success, message: success ? 'Legacy free-period warning email sent' : 'Failed to send legacy free-period warning email' };
-  }
-
-  async sendLegacyFreePeriodTransitionEmail(params: {
-    to: string;
-    firstName: string;
-    freeMonthsTotal: number;
-  }): Promise<SendInvitationResult> {
-    const { to, firstName, freeMonthsTotal } = params;
-    const safeFirstName = escapeHtml(firstName);
-
-    const blocks: EmailBlock[] = [
-      { type: 'paragraph', text: `Hi ${safeFirstName},` },
-      { type: 'paragraph', text: `Your <strong style="color:#FFFFFF;">${freeMonthsTotal} month</strong> free period has now ended.` },
-      {
-        type: 'info_box',
-        box: {
-          tone: 'success',
-          body: 'Your ongoing community discount has been applied automatically. No action needed on your part.',
-        },
-      },
-      { type: 'paragraph', text: 'Thank you for being part of the community.' },
-    ];
-
-    const html = renderBrandedEmail({
-      preheader: 'Your free period has ended. Your community discount is now active.',
-      eyebrow: 'Free period ended',
-      heading: 'Your community discount is now active',
-      blocks,
-      footerLine: 'You are receiving this because your Valoxi community free period has ended.',
-    });
-
-    const success = await (legacyEmailService as any).sendEmail({
-      to,
-      subject: 'Your free period has ended, community discount now active',
-      html,
-    });
-    return { success, message: success ? 'Legacy free-period transition email sent' : 'Failed to send legacy free-period transition email' };
   }
 
   async sendMarketingConsentRequest(params: {

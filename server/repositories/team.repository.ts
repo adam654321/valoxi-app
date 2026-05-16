@@ -18,7 +18,7 @@ export interface InvitationWithDetails extends UserInvitation {
   companyName: string;
 }
 
-export interface TeamMember extends User {
+export interface TeamMember extends Omit<User, 'passwordHash'> {
   roleDescription: string;
   assignedDealsCount: number;
   currentCompanyId: number | null;
@@ -53,7 +53,6 @@ export class TeamRepository {
     return await db.transaction(async (tx) => {
       // 1. Insert the pre-created users shell row.
       //    clerkUserId NULL — Clerk webhook will populate on first sign-up.
-      //    passwordHash NULL — no password-based auth path for this user.
       //    isActive true — counts toward seats, eligible for orphan-link.
       //    emailVerified false — Clerk verifies on sign-up.
       await tx.insert(users).values({
@@ -174,7 +173,7 @@ export class TeamRepository {
 
   async getTeamMembers(userCompanyId: number): Promise<TeamMember[]> {
     const members = await db.select({
-      id: users.id, email: users.email, passwordHash: users.passwordHash, firstName: users.firstName, lastName: users.lastName,
+      id: users.id, email: users.email, firstName: users.firstName, lastName: users.lastName,
       userCompanyId: users.userCompanyId, role: users.role, userRole: users.userRole, isCompanyAdmin: users.isCompanyAdmin,
       lastLogin: users.lastLogin, isActive: users.isActive, emailVerified: users.emailVerified, createdAt: users.createdAt,
       currentCompanyId: users.currentCompanyId,
@@ -209,7 +208,7 @@ export class TeamRepository {
       .where(and(
         eq(users.userCompanyId, userCompanyId),
         eq(users.isActive, true),
-        sql`(${users.clerkUserId} IS NOT NULL OR ${users.passwordHash} IS NOT NULL)`
+        sql`${users.clerkUserId} IS NOT NULL`
       ))
       .orderBy(users.createdAt);
     return members.map((m) => {

@@ -1,20 +1,6 @@
-import bcrypt from 'bcrypt';
 import { usersRepository } from '../repositories/users.repository';
-import { BadRequestError, NotFoundError, UnauthorizedError } from '../utils/errors';
-import type { User, UserCompany, InsertUser, InsertUserCompany } from '@shared/schema';
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  companyName: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
+import { NotFoundError } from '../utils/errors';
+import type { User, UserCompany } from '@shared/schema';
 
 export interface AuthResult {
   user: {
@@ -30,83 +16,6 @@ export interface AuthResult {
 }
 
 export class AuthService {
-  private readonly SALT_ROUNDS = 10;
-
-  async register(data: RegisterData): Promise<AuthResult> {
-    const existingUser = await usersRepository.getByEmail(data.email);
-    if (existingUser) {
-      throw new BadRequestError('User already exists with this email');
-    }
-
-    const hashedPassword = await bcrypt.hash(data.password, this.SALT_ROUNDS);
-
-    const userCompany = await usersRepository.createUserCompany({
-      companyName: data.companyName,
-    });
-
-    const user = await usersRepository.create({
-      email: data.email,
-      passwordHash: hashedPassword,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      userCompanyId: userCompany.id,
-      role: 'user',
-      userRole: 'company_admin',
-      isCompanyAdmin: true,
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-      company: userCompany,
-    };
-  }
-
-  async login(data: LoginData): Promise<AuthResult> {
-    const user = await usersRepository.getByEmail(data.email);
-    if (!user) {
-      throw new UnauthorizedError('Invalid credentials');
-    }
-
-    if (!user.passwordHash) {
-      throw new UnauthorizedError('Invalid credentials');
-    }
-
-    const isValidPassword = await bcrypt.compare(data.password, user.passwordHash);
-    if (!isValidPassword) {
-      throw new UnauthorizedError('Invalid credentials');
-    }
-
-    let userCompany = user.userCompanyId 
-      ? await usersRepository.getUserCompany(user.userCompanyId)
-      : null;
-
-    if (!userCompany) {
-      const memberships = await usersRepository.getUserCompanies(user.id);
-      const activeMembership = memberships.find((m: any) => m.isActive);
-      if (activeMembership) {
-        userCompany = await usersRepository.getUserCompany(activeMembership.userCompanyId) ?? null;
-        if (userCompany) {
-          await usersRepository.update(user.id, { userCompanyId: userCompany.id });
-        }
-      }
-    }
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-      company: userCompany || null,
-    };
-  }
-
   async getCurrentUser(userId: number): Promise<AuthResult> {
     const user = await usersRepository.getById(userId);
     if (!user) {

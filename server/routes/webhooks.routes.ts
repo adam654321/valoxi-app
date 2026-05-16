@@ -32,10 +32,6 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
   }
 
   const revokeOrphanClerk = async (reason: string) => {
-    if (process.env.CLERK_ENABLED !== 'true') {
-      console.log(`[clerk-webhook] CLERK_ENABLED !== 'true', skipping revocation. Reason: ${reason}`);
-      return;
-    }
     try {
       await clerkClient.users.deleteUser(clerkUserId);
       console.log(`[clerk-webhook] orphan Clerk account ${clerkUserId} revoked (${reason}) for email ${email}`);

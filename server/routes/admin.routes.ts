@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { eq, and, sql, count, desc, gte, isNull, isNotNull } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
 import Stripe from 'stripe';
 import { db } from '../db';
 import { config } from '../config';
@@ -14,7 +13,6 @@ import { systemConfigService } from '../services/system-config.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
-import { magicLinkService } from '../services/magic-link.service';
 import { emailApiService } from '../services/email.service';
 import { clerkClient } from '@clerk/express';
 
@@ -603,31 +601,6 @@ router.post('/system-config', asyncHandler(async (req: Request, res: Response) =
   sendSuccess(res, { success: true });
 }));
 
-router.post('/resend-magic-link', asyncHandler(async (req: Request, res: Response) => {
-  const { userId } = req.body as { userId?: number };
-
-  if (!userId || typeof userId !== 'number') {
-    return res.status(400).json({ success: false, message: 'userId is required.' });
-  }
-
-  const user = await db.select().from(users).where(eq(users.id, userId));
-  if (!user.length) {
-    return res.status(404).json({ success: false, message: 'User not found.' });
-  }
-
-  const targetUser = user[0];
-  const magicLink = await magicLinkService.generateMagicLink(targetUser.id, 'login');
-
-  await emailApiService.sendMagicLinkEmail({
-    to: targetUser.email,
-    firstName: targetUser.firstName || 'there',
-    magicLink,
-  });
-
-  console.log(`[admin] Resent magic link to user ${targetUser.id} (${targetUser.email}) by admin ${req.session.userId}`);
-  sendSuccess(res, { success: true, message: `Magic link sent to ${targetUser.email}` });
-}));
-
 router.get('/feedback', asyncHandler(async (req: Request, res: Response) => {
   const conditions = [];
   if (req.query.status && req.query.status !== 'all') {
@@ -789,23 +762,6 @@ router.post('/seed-user-roles', asyncHandler(async (_req: Request, res: Response
   const { seedUserRoles } = await import('../scripts/seed-user-roles');
   await seedUserRoles();
   sendSuccess(res, { seeded: true });
-}));
-
-router.post('/verify-credentials', asyncHandler(async (req: Request, res: Response) => {
-  const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
-  const [user] = await db.select({ id: users.id, passwordHash: users.passwordHash, isSystemAdmin: users.isSystemAdmin })
-    .from(users).where(eq(users.email, email.toLowerCase())).limit(1);
-  if (!user?.isSystemAdmin) {
-    return res.status(403).json({ success: false, message: 'Not authorised' });
-  }
-  if (!user.passwordHash) {
-    return res.status(401).json({ success: false, message: 'Invalid credentials' });
-  }
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ success: false, message: 'Invalid credentials' });
-  }
-  sendSuccess(res, { verified: true });
 }));
 
 router.post('/users/:id/view-as', asyncHandler(async (req: Request, res: Response) => {
