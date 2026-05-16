@@ -1,0 +1,383 @@
+TASK: Phase C.3b (Welcome page + routing + useServerConfig) APPLY
+
+Context: Phase C, client slice. Builds the /welcome page — the public self-serve signup entry point. Adds openAccessEnabled to useServerConfig, creates client/src/pages/welcome.tsx, mounts /welcome in the unauthenticated route switch. The promo API contract is frozen from C.3a: GET /api/v2/public/promo/:slug returns { slug, name, freeMonthsTotal, benefitLabel }. POST /api/v2/public/signup returns { success, data: { existingAccount, userId?, redirectUrl } } or error envelopes.
+
+TARGET: Client only — useServerConfig.ts, new welcome.tsx, App.tsx. No server changes, no DB.
+
+RULES
+- Paste VERBATIM output for every step.
+- Pre-step confirm exact text; if a FIND block does not match, STOP and paste actual.
+- Stop after V-check.
+
+================================================================
+STEP 0 — Pre-flight
+================================================================
+0a) git status
+0b) npm run check
+   Paste verbatim. Expect: portal.service.ts:81 only.
+
+================================================================
+STEP 1 — Add openAccessEnabled to useServerConfig
+================================================================
+1a) Open client/src/hooks/useServerConfig.ts.
+
+   FIND EXACTLY:
+export interface ServerConfig {
+clerkEnabled: boolean;
+nylasConnectGmailVisible: boolean;
+nylasConnectOutlookVisible: boolean;
+}
+   REPLACE WITH:
+export interface ServerConfig {
+clerkEnabled: boolean;
+nylasConnectGmailVisible: boolean;
+nylasConnectOutlookVisible: boolean;
+openAccessEnabled: boolean;
+}
+
+1b) FIND EXACTLY:
+ return {
+   config: data ?? null,
+   clerkEnabled: data?.clerkEnabled ?? false,
+   nylasConnectGmailVisible: data?.nylasConnectGmailVisible ?? false,
+   nylasConnectOutlookVisible: data?.nylasConnectOutlookVisible ?? false,
+   isLoading,
+   error,
+ };
+   REPLACE WITH:
+ return {
+   config: data ?? null,
+   clerkEnabled: data?.clerkEnabled ?? false,
+   nylasConnectGmailVisible: data?.nylasConnectGmailVisible ?? false,
+   nylasConnectOutlookVisible: data?.nylasConnectOutlookVisible ?? false,
+   openAccessEnabled: data?.openAccessEnabled ?? false,
+   isLoading,
+   error,
+ };
+
+1c) Verify
+   grep -n "openAccessEnabled" client/src/hooks/useServerConfig.ts
+   Expect: 2 matches.
+
+================================================================
+STEP 2 — Create client/src/pages/welcome.tsx
+================================================================
+2a) Create client/src/pages/welcome.tsx with EXACTLY the following content:
+
+------------------------------------------------------------ FILE START
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerConfig } from "@/hooks/useServerConfig";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { ValoxiLogo } from "@/components/valoxi-logo";
+import { Loader2 } from "lucide-react";
+
+const MARKETING_REGISTER_URL = "https://valoxi.ai/#register";
+
+interface PromoInfo {
+  slug: string;
+  name: string;
+  freeMonthsTotal: number;
+  benefitLabel: string | null;
+}
+
+export default function WelcomePage() {
+  const { openAccessEnabled, isLoading: configLoading } = useServerConfig();
+  const { toast } = useToast();
+
+  // Parse URL params once.
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const promoSlug = params.get("promo")?.trim().toLowerCase() || null;
+  const planParam = params.get("plan")?.trim() || null;
+  const intervalParam = params.get("interval")?.trim() || null;
+
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Resolve promo benefit copy if a slug is present.
+  // A 404 here is non-fatal: the page still lets the user sign up without the promo.
+  const {
+    data: promoData,
+    isLoading: promoLoading,
+    isError: promoError,
+  } = useQuery<PromoInfo | null>({
+    queryKey: ["/api/v2/public/promo", promoSlug],
+    queryFn: async () => {
+      const res = await fetch(`/api/v2/public/promo/${encodeURIComponent(promoSlug as string)}`);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("promo_fetch_failed");
+      const json = await res.json();
+      return json?.data ?? null;
+    },
+    enabled: !!promoSlug && openAccessEnabled,
+    retry: false,
+    staleTime: Infinity,
+  });
+
+  // promoSlug is only sent to signup if it actually resolved. A bad slug is dropped.
+  const effectivePromoSlug = promoData?.slug ?? null;
+  const promoLinkInvalid = !!promoSlug && (promoError || (!promoLoading && promoData === null));
+
+  function buildRedirect(baseRedirect: string): string {
+    // Carry plan/interval through to the post-Clerk billing flow (C.3c reads them).
+    const url = new URL(baseRedirect, window.location.origin);
+    if (planParam) url.searchParams.set("plan", planParam);
+    if (intervalParam) url.searchParams.set("interval", intervalParam);
+    return url.pathname + url.search;
+  }
+
+  async function handleSubmit() {
+    if (!email.trim() || !firstName.trim()) {
+      toast({
+        title: "Missing details",
+        description: "Email and first name are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/v2/public/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          promoSlug: effectivePromoSlug,
+          marketingConsent,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+
+      if (res.ok && json?.data?.redirectUrl) {
+        window.location.href = buildRedirect(json.data.redirectUrl);
+        return;
+      }
+
+      // Error envelopes from /public/signup.
+      const errorCode = json?.error;
+      if (errorCode === "account_inactive") {
+        toast({
+          title: "Account unavailable",
+          description: "An account with this email is deactivated. Please contact support.",
+          variant: "destructive",
+        });
+      } else if (errorCode === "open_access_disabled") {
+        toast({
+          title: "Signup unavailable",
+          description: "Self-serve signup is not currently available.",
+          variant: "destructive",
+        });
+      } else if (errorCode === "promo_not_found") {
+        // Should not happen — bad slugs are dropped client-side — but handle defensively.
+        toast({
+          title: "Promo link invalid",
+          description: "That promo link is not valid. Please try again without it.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Something went wrong",
+          description: json?.message || "Could not complete signup. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Something went wrong",
+        description: "Could not reach the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // --- Render states ---
+
+  // Wait for config so we don't flash the wrong panel.
+  if (configLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Flag OFF — Valoxi is invite-only. Send them to register interest on the marketing site.
+  if (!openAccessEnabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
+        <div className="flex flex-col items-center gap-6 max-w-md text-center">
+          <ValoxiLogo />
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Valoxi is currently invite-only</CardTitle>
+              <CardDescription>
+                We're not open for self-serve signup just yet. Register your interest
+                and we'll be in touch.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="w-full"
+                onClick={() => { window.location.href = MARKETING_REGISTER_URL; }}
+              >
+                Register your interest
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Flag ON — the signup form.
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
+      <div className="flex flex-col items-center gap-6 w-full max-w-md">
+        <ValoxiLogo />
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Create your Valoxi account</CardTitle>
+            <CardDescription>
+              Enter your details to get started. You'll set your password on the next step.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {promoSlug && promoLoading && (
+              <p className="text-sm text-muted-foreground">Checking your promo link...</p>
+            )}
+            {promoData?.benefitLabel && (
+              <div className="rounded-md bg-muted p-3 text-sm">
+                {promoData.benefitLabel}
+              </div>
+            )}
+            {promoLinkInvalid && (
+              <div className="rounded-md border border-destructive/40 p-3 text-sm text-muted-foreground">
+                That promo link isn't valid, but you can still sign up below.
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="w-email">Email</Label>
+              <Input
+                id="w-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="w-first">First name</Label>
+                <Input
+                  id="w-first"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="w-last">Last name</Label>
+                <Input
+                  id="w-last"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                />
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="w-consent"
+                checked={marketingConsent}
+                onCheckedChange={(v) => setMarketingConsent(v === true)}
+              />
+              <Label htmlFor="w-consent" className="text-sm font-normal leading-snug">
+                Email me occasional Valoxi product updates. You can unsubscribe anytime.
+              </Label>
+            </div>
+
+            <Button className="w-full" onClick={handleSubmit} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Continue
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Already have an account?{" "}
+              <a href="/sign-in" className="underline hover:text-foreground">Sign in</a>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+------------------------------------------------------------ FILE END
+
+2b) ADAPTATION CHECKS — confirm these before finalising, adapt if wrong, and state what you changed:
+   - ValoxiLogo import path: confirm `@/components/valoxi-logo` exports `ValoxiLogo` (sign-up.tsx imports it — match exactly what sign-up.tsx uses).
+   - Checkbox component: confirm `@/components/ui/checkbox` exists and exports `Checkbox` (promo-campaigns.tsx from B.2 used it — should be fine).
+   - useToast path `@/hooks/use-toast` — confirmed in the assess.
+   - If any import path is wrong, fix to match the codebase and report the change.
+
+================================================================
+STEP 3 — Mount /welcome in App.tsx
+================================================================
+3a) Add the lazy import. FIND EXACTLY:
+const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
+   REPLACE WITH:
+const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
+const WelcomePage = lazy(() => import("@/pages/welcome"));
+
+3b) Add the route to the unauthenticated switch. FIND EXACTLY:
+       {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
+       {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
+   REPLACE WITH:
+       {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
+       {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
+       <Route path="/welcome" component={WelcomePage} />
+   Note: /welcome is NOT gated by clerkEnabled — it is the pre-Clerk step and must render regardless. It is placed before the catch-all <Route component={NotFound} />.
+
+3c) Verify
+   grep -n "WelcomePage\|/welcome" client/src/App.tsx
+   Expect: 2 matches (lazy import + route).
+
+================================================================
+STEP 4 — V-CHECK
+================================================================
+4a) npm run check
+   Paste VERBATIM. Expect: portal.service.ts:81 only. Any new error → STOP, paste.
+
+4b) Client build
+   Run the client build. Paste the tail verbatim. Confirm it completes without error. Watch specifically for unresolved imports in welcome.tsx.
+
+4c) Server boot
+   Restart dev workflow. Paste the "serving on port" line.
+
+4d) Browser-reachability smoke (curl the SPA — confirms route resolves, not a 404 from the server)
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/welcome
+   Paste verbatim. Expect 200 (SPA index served — wouter handles the route client-side).
+
+4e) Grep assertions
+   grep -rn "openAccessEnabled" client/src/
+   Expect: matches in useServerConfig.ts (2) and welcome.tsx (the destructure). Paste verbatim.
+   ls client/src/pages/ | grep welcome
+   Expect: welcome.tsx
+
+4f) Git
+   git status
+   git diff --stat
+   Paste verbatim. Expect: useServerConfig.ts, welcome.tsx (new), App.tsx.
+
+4g) STOP. Report results. Do NOT proceed to C.3c.

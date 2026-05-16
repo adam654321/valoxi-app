@@ -5,6 +5,7 @@ export interface ServerConfig {
   clerkEnabled: boolean;
   nylasConnectGmailVisible: boolean;
   nylasConnectOutlookVisible: boolean;
+  openAccessEnabled: boolean;
 }
 
 export function useServerConfig() {
@@ -21,6 +22,7 @@ export function useServerConfig() {
     clerkEnabled: data?.clerkEnabled ?? false,
     nylasConnectGmailVisible: data?.nylasConnectGmailVisible ?? false,
     nylasConnectOutlookVisible: data?.nylasConnectOutlookVisible ?? false,
+    openAccessEnabled: data?.openAccessEnabled ?? false,
     isLoading,
     error,
   };
