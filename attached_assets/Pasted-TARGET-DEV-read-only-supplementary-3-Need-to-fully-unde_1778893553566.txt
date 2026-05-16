@@ -1,0 +1,54 @@
+TARGET: DEV (read-only, supplementary 3)
+
+Need to fully understand the seed-runner page before A1 apply touches it. Adam thinks some seeds run on account creation, but we need certainty before deciding what to do with the gate.
+
+1. List every endpoint the seed-runner page calls:
+   sed -n '12,80p' client/src/pages/admin/database.tsx
+   Report all SEED_SCRIPTS entries with their endpoint values.
+
+2. For each seed endpoint above, find its route handler in server/ and report:
+   - File and line
+   - First 30 lines of the handler (so we can see what it actually does)
+   
+   Start with these greps, then sed for each:
+   grep -rn "seed-activity-types\|seed-pipeline-stages\|seed-dd-requirements\|seed-deal-document-templates\|seed-user-roles" server/routes/ --include="*.ts"
+
+3. Find every caller of seedDefaultPipelineStages and any other seed function across server/:
+   grep -rn "seedDefaultPipelineStages\|seedActivityTypes\|seedDDRequirements\|seedDealDocumentTemplates\|seedUserRoles\|seedSystemConfig" server/ --include="*.ts"
+
+   For each match, report file:line + the surrounding 3 lines of context so we can see what triggers the seed.
+
+4. Check the webhook flow specifically:
+   sed -n '108,140p' server/routes/webhooks.routes.ts
+   Report verbatim. We need to confirm what is and isn't auto-seeded on account creation.
+
+5. Confirm idempotency — find ON CONFLICT or "skip if exists" patterns in each seed function:
+   grep -rn "onConflict\|ON CONFLICT\|alreadyExists\|already exists\|skipDuplicates" server/ --include="*.ts" | head -30
+
+6. Check prod last-run signal. Are there any tables these seeds populate that already have data in prod? Run with PROD_DATABASE_URL:
+
+   DATABASE_URL="$PROD_DATABASE_URL" npx tsx -e "
+   import { db } from './server/db';
+   import { sql } from 'drizzle-orm';
+   const tables = ['activity_types','pipeline_stages','dd_requirements','deal_document_templates','user_roles','system_config'];
+   for (const t of tables) {
+     try {
+       const r = await db.execute(sql.raw('SELECT count(*) AS c FROM ' + t));
+       console.log(t, (r as any).rows?.[0]?.c ?? (r as any)[0]?.c ?? '?');
+     } catch (e: any) {
+       console.log(t, 'ERR:', e.message);
+     }
+   }
+   process.exit(0);
+   "
+
+   Report counts per table.
+
+7. Confirm whether system-admin route gating is in fact wired up at /admin/database (so we know what protects the page if we drop the bcrypt re-auth):
+   grep -n "isSystemAdmin\|requireSystemAdmin\|adminGuard\|admin-layout\|AdminLayout" client/src/App.tsx
+   sed -n '160,180p' client/src/App.tsx
+   sed -n '1,60p' client/src/components/admin-layout.tsx
+
+Do NOT change anything. Pure inspection.
+
+Report all six, then stop.
