@@ -1,0 +1,91 @@
+TASK: Phase C.3c (billing.tsx plan auto-highlight) APPLY
+
+Context: Phase C, final slice of C.3. When a user lands on /billing with ?plan=core (carried through from /welcome), the matching plan card should scroll into view and briefly highlight. billing.tsx already has data-plan={plan.key} on every card and an existing scrollIntoView pattern. The ?plan= value arrives LOWERCASE (marketing CTAs use ?plan=core); data-plan is UPPERCASE (PlanKey: CORE/PROFESSIONAL/EXPERT) — the code must normalise.
+
+TARGET: client/src/pages/billing.tsx only. No other file.
+
+RULES
+- Paste VERBATIM output for every step.
+- Pre-step confirm exact text; if a FIND block does not match, STOP and paste actual.
+- Stop after V-check.
+
+================================================================
+STEP 0 — Pre-flight
+================================================================
+0a) git status
+0b) npm run check
+   Paste verbatim. Expect: portal.service.ts:81 only.
+
+================================================================
+STEP 1 — Inspect the target regions
+================================================================
+1a) Paste VERBATIM:
+   - billing.tsx lines 180-210 (the component-top region where `location`, `redirectedForSubscription` and the existing URLSearchParams reads live)
+   - the existing scrollIntoView block (assess put it near line 920) with 15 lines of context each side — we need to see what triggers it and whether it is inside a useEffect or an event handler.
+1b) grep -n "useEffect\|useRef\|data-plan\|scrollIntoView\|VALID_PLAN_KEYS\|PLANS\b" client/src/pages/billing.tsx
+   Paste verbatim. Confirms: useEffect is already imported, where the plan list constant is, and the exact valid plan keys.
+1c) Paste the PLANS constant (or whatever array the plan cards .map over) — just the keys, so we confirm they are CORE / PROFESSIONAL / EXPERT.
+
+================================================================
+STEP 2 — Add the plan-highlight effect
+================================================================
+Decision points the apply must respect:
+- The ?plan= param is lowercased on arrival. Uppercase it before matching data-plan.
+- Only act if the uppercased value is a real plan key (CORE/PROFESSIONAL/EXPERT). Ignore anything else silently — no error, no scroll.
+- Highlight = scroll into view + a brief visual emphasis via a temporary ring class, then remove it. Must not permanently restyle the card.
+- The effect runs once on mount. Use a guard so it does not re-fire.
+
+2a) Confirm useEffect and useRef are imported (Step 1b). If useRef is NOT imported and the implementation below needs it, add it to the existing `import { ... } from "react"` line. Show before/after if changed.
+
+2b) In billing.tsx, near the other component-top URL-param reads (alongside `redirectedForSubscription`), ADD a useEffect. Place it AFTER the existing param reads and BEFORE the return statement. Insert:
+// Phase C.3c — when arriving from /welcome with ?plan=, scroll the matching
+// plan card into view and briefly highlight it. The param arrives lowercase
+// (marketing CTAs use ?plan=core); data-plan attributes are uppercase PlanKeys.
+const planHighlightDone = useRef(false);
+useEffect(() => {
+if (planHighlightDone.current) return;
+const raw = new URLSearchParams(window.location.search).get('plan');
+if (!raw) return;
+const planKey = raw.trim().toUpperCase();
+const validKeys = ['CORE', 'PROFESSIONAL', 'EXPERT'];
+if (!validKeys.includes(planKey)) return;
+// Defer to next frame so the plan cards are mounted.
+const t = window.setTimeout(() => {
+  const el = document.querySelector(`[data-plan="${planKey}"]`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+  window.setTimeout(() => {
+    el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+  }, 2400);
+  planHighlightDone.current = true;
+}, 150);
+return () => window.clearTimeout(t);
+}, []);
+
+   ADAPTATION: if Step 1c shows the valid plan keys are NOT exactly CORE/PROFESSIONAL/EXPERT, correct the `validKeys` array to match. If billing.tsx already exposes a VALID_PLAN_KEYS constant, use that instead of the inline array and state the change.
+
+2c) Verify
+   grep -n "planHighlightDone\|data-plan" client/src/pages/billing.tsx
+   Paste verbatim. Expect: the new effect's references plus the existing data-plan attributes on the cards.
+
+================================================================
+STEP 3 — V-CHECK
+================================================================
+3a) npm run check
+   Paste VERBATIM. Expect: portal.service.ts:81 only. Any new error → STOP, paste.
+   Particular watch: if useRef was not previously imported, a missing-import error surfaces here — fix and re-run.
+
+3b) Client build
+   Run the client build. Paste the tail verbatim. Confirm clean.
+
+3c) Server boot
+   Restart dev workflow. Paste the "serving on port" line.
+
+3d) git status + git diff --stat
+   Paste verbatim. Expect: billing.tsx only.
+
+3e) git diff client/src/pages/billing.tsx
+   Paste the FULL diff verbatim. Confirm the change is ONLY the new useEffect (and the useRef import if it was added) — nothing else in this large file should have moved.
+
+3f) STOP. Report results.
