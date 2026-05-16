@@ -69,28 +69,18 @@ export const addonPurchases = pgTable("addon_purchases", {
 export const promoCodeCampaigns = pgTable("promo_code_campaigns", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 50 }).notNull().unique(),
   stripeCouponId: varchar("stripe_coupon_id", { length: 50 }).notNull(),
   referralSource: varchar("referral_source", { length: 50 }).notNull(),
   freeMonthsTotal: integer("free_months_total").notNull().default(0),
-  codePrefix: varchar("code_prefix", { length: 10 }).notNull().default(''),
-  maxUsesPerCode: integer("max_uses_per_code").notNull().default(1),
+  maxTotalClaims: integer("max_total_claims"),
+  isActive: boolean("is_active").notNull().default(true),
   expiresAt: timestamp("expires_at"),
   postFreePeriodCouponId: varchar("post_free_period_coupon_id", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdByUserId: integer("created_by_user_id").references(() => users.id),
 });
 
-export const promoCodes = pgTable("promo_codes", {
-  id: serial("id").primaryKey(),
-  campaignId: integer("campaign_id").notNull().references(() => promoCodeCampaigns.id),
-  code: varchar("code", { length: 20 }).notNull().unique(),
-  usesCount: integer("uses_count").notNull().default(0),
-  maxUses: integer("max_uses").notNull().default(1),
-  claimedByUserCompanyId: integer("claimed_by_user_company_id").references(() => userCompanies.id),
-  claimedAt: timestamp("claimed_at"),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   id: true,
@@ -122,16 +112,10 @@ export const insertPromoCodeCampaignSchema = createInsertSchema(promoCodeCampaig
   createdAt: true,
 });
 
-export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
-  id: true,
-  createdAt: true,
-});
 
 export type PromoCodeCampaign = typeof promoCodeCampaigns.$inferSelect;
 export type InsertPromoCodeCampaign = z.infer<typeof insertPromoCodeCampaignSchema>;
 
-export type PromoCode = typeof promoCodes.$inferSelect;
-export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
 
 export type PlanKey = 'CORE' | 'PROFESSIONAL' | 'EXPERT' | 'ENTERPRISE';
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'admin_comped';
