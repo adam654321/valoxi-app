@@ -1,0 +1,62 @@
+TASK: Phase C.1 V-CHECK RE-VERIFY — READ-ONLY + smoke re-run. No code changes.
+
+The C.1 apply report was a narrative summary. Need raw verbatim evidence before authorising. The original smoke rows were deleted (prompt said keep them) — so this re-runs the smoke against the dev DB and leaves the rows in place this time.
+
+RULES
+- No code changes. No file edits.
+- Paste VERBATIM output of every command — actual terminal output, not descriptions.
+- Leave all rows created here IN the dev DB. Do not clean up. They are C.2 fixtures.
+
+STEP 1 — Confirm current code state
+  git log --oneline -3
+  git status
+  npm run check
+  Paste verbatim.
+
+STEP 2 — Confirm the new file and mount are actually present
+  cat server/routes/public-signup.routes.ts
+  Paste the FULL file verbatim. (Confirms what actually landed, vs what the summary described.)
+  grep -n "publicSignupRoutes\|openAccessEnabled" server/routes/index.ts server/config.ts server/routes/public.routes.ts
+  Paste verbatim.
+
+STEP 3 — Confirm DB is clean of prior smoke rows before re-run
+  psql "$DATABASE_URL" -c "SELECT id, email FROM users WHERE email LIKE 'openaccess-smoke-%' OR email LIKE 'smoketest%' OR email LIKE 'flagoff%';"
+  Paste verbatim. (Establishes the baseline — expect empty if cleanup happened.)
+
+STEP 4 — Smoke re-run, flag ON
+  Restart the dev workflow with OPEN_ACCESS_ENABLED=true for this run only. Do NOT commit it.
+  Run each curl, paste the FULL verbatim response of each:
+
+  4a) curl -s -i -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"oa-recheck-1@example.com","firstName":"Re","lastName":"Check"}'
+  4b) curl -s -i -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"oa-recheck-1@example.com","firstName":"Re","lastName":"Check"}'
+      (deliberate duplicate of 4a)
+  4c) curl -s -i -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"oa-recheck-2@example.com","firstName":"Promo","lastName":"User","promoSlug":"early-bird"}'
+  4d) curl -s -i -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"oa-recheck-3@example.com","firstName":"Bad","lastName":"Promo","promoSlug":"nonsense-slug"}'
+
+  Paste all four with status lines.
+
+STEP 5 — DB state after smoke — THIS IS THE KEY EVIDENCE
+  5a) Every user row created:
+  psql "$DATABASE_URL" -c "SELECT id, email, first_name, last_name, assigned_promo_campaign_id, user_company_id, current_company_id, role, user_role, is_company_admin, marketing_consent FROM users WHERE email LIKE 'oa-recheck-%' ORDER BY id;"
+
+  5b) Row COUNT per email — proves no duplicate on the 4a/4b collision:
+  psql "$DATABASE_URL" -c "SELECT email, count(*) FROM users WHERE email LIKE 'oa-recheck-%' GROUP BY email ORDER BY email;"
+
+  5c) Company + membership rows for those users:
+  psql "$DATABASE_URL" -c "SELECT m.user_id, m.user_company_id, m.membership_role, m.is_company_admin, c.company_name FROM user_company_memberships m JOIN user_companies c ON c.id = m.user_company_id WHERE m.user_id IN (SELECT id FROM users WHERE email LIKE 'oa-recheck-%') ORDER BY m.user_id;"
+
+  Paste all three verbatim.
+
+  EXPECTED, for my check (do not pre-judge — just paste, I will assess):
+  - 5b: oa-recheck-1 count = 1 (not 2 — collision created no duplicate), oa-recheck-2 count = 1, oa-recheck-3 absent (invalid promo = no row)
+  - 5a: oa-recheck-2 has assigned_promo_campaign_id = 10 (Early Bird). oa-recheck-1 has it null.
+  - 5c: one company + one membership per created user, role company_admin.
+
+STEP 6 — Flag-off recheck
+  Restart workflow WITHOUT OPEN_ACCESS_ENABLED.
+  curl -s -i -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"oa-recheck-flagoff@example.com","firstName":"Flag","lastName":"Off"}'
+  Paste verbatim. Then:
+  psql "$DATABASE_URL" -c "SELECT count(*) FROM users WHERE email = 'oa-recheck-flagoff@example.com';"
+  Paste verbatim. (Expect 400 + count 0.)
+
+STEP 7 — STOP. Leave all oa-recheck-* rows in the DB. Report verbatim. No cleanup, no code changes, no commit of the env var.
