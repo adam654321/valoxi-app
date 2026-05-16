@@ -5,7 +5,7 @@ import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
 import { eq, and, gt, isNull, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import { db } from '../db';
-import { subscriptions, promoCodes, promoCodeCampaigns } from '@shared/schema/billing';
+import { subscriptions, promoCodeCampaigns } from '@shared/schema/billing';
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
 import { emailService } from '../email';
 import { emailApiService } from '../services/email.service';
@@ -357,27 +357,6 @@ export function initializeBillingCron(): void {
               console.error(`[billing-cron] Failed to resolve assigned-campaign coupon for company ${sub.userCompanyId}:`, assignLookupErr);
             }
 
-            // Legacy path: if no assigned campaign resolved it, try sub.promoCodeId.
-            if (!couponId && sub.promoCodeId) {
-              try {
-                const [promoCode] = await db
-                  .select()
-                  .from(promoCodes)
-                  .where(eq(promoCodes.id, sub.promoCodeId));
-                if (promoCode) {
-                  const [campaign] = await db
-                    .select()
-                    .from(promoCodeCampaigns)
-                    .where(eq(promoCodeCampaigns.id, promoCode.campaignId));
-                  if (campaign?.postFreePeriodCouponId) {
-                    couponId = campaign.postFreePeriodCouponId;
-                  }
-                }
-              } catch (lookupErr) {
-                console.error(`[billing-cron] Failed to look up typed-code campaign coupon for company ${sub.userCompanyId}:`, lookupErr);
-              }
-            }
-
             if (couponId && sub.stripeSubscriptionId) {
               try {
                 await stripe.subscriptions.update(sub.stripeSubscriptionId, {
@@ -401,7 +380,6 @@ export function initializeBillingCron(): void {
                 freeMonthsTotal: sub.freeMonthsTotal,
                 elapsed,
                 referralSource: sub.referralSource,
-                campaignId: sub.promoCodeId,
                 couponApplied: couponId,
               });
             } catch (err) {

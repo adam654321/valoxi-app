@@ -7,7 +7,7 @@ import { db } from '../db';
 import { waitlist, users, userCompanies, userCompanyMemberships, promoCodeCampaigns } from '@shared/schema';
 import { waitlistRepository } from '../repositories/waitlist.repository';
 import { emailApiService } from '../services/email.service';
-import { getWaitlistPromoCopy } from '../services/promo-code.service';
+import { getWaitlistPromoCopy, promoCodeService } from '../services/promo-code.service';
 import { config } from '../config';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
@@ -153,13 +153,15 @@ router.post('/:id/invite', asyncHandler(async (req: Request, res: Response) => {
           role: 'user',
           userRole: 'company_admin',
           isCompanyAdmin: true,
-          assignedPromoCampaignId: promoCodeCampaignId,
-          assignedByAdminId: promoCodeCampaignId ? adminUserId : null,
-          assignedAt: promoCodeCampaignId ? new Date() : null,
           marketingConsent: entry.marketingConsent,
           marketingConsentAt: entry.marketingConsentAt,
         })
         .returning({ id: users.id });
+
+      // Step 6b: assign promo campaign via service (single source of truth)
+      if (promoCodeCampaignId !== null) {
+        await promoCodeService.assignCampaignToUser(newUser.id, promoCodeCampaignId, adminUserId, tx);
+      }
 
       // Step 7: insert user_company_membership
       await tx.insert(userCompanyMemberships).values({
