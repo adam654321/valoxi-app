@@ -104,6 +104,12 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
   if (linked && match.userCompanyId !== null) {
     const existingSubscription = await billingService.getSubscription(match.userCompanyId);
     if (existingSubscription === null) {
+      // Trial creation rule (open-access pivot, Phase C.2):
+      // ONLY the 5D New Member campaign creates a subscription — a 6-month
+      // free period. Every other case — Early Bird, Standard 5D community,
+      // or no promo at all — creates NO subscription row. Those users land
+      // on the billing wall after onboarding and pay to proceed (any promo
+      // discount still applies at checkout via resolveCheckoutCoupon).
       let use5DNewMemberTrial = false;
       if (match.assignedPromoCampaignId) {
         const [campaign] = await db
@@ -114,13 +120,15 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
           use5DNewMemberTrial = true;
         }
       }
-
       if (use5DNewMemberTrial) {
         await billingService.createFiveDNewMemberTrial(match.userCompanyId);
+        console.log(`[clerk-webhook] user.created: 5D New Member 6-month free period created for user ${match.id} (company ${match.userCompanyId})`);
       } else {
-        await billingService.createTrialSubscription(match.userCompanyId, 1);
+        console.log(`[clerk-webhook] user.created: no trial created for user ${match.id} (company ${match.userCompanyId}) — will hit billing wall after onboarding`);
       }
-      console.log(`[clerk-webhook] user.created: 24h trial subscription created for user ${match.id} (company ${match.userCompanyId})`);
+      // Pipeline stages are seeded for ALL new users regardless of whether a
+      // subscription was created — a user who pays later still needs them,
+      // and this is the only signup-path seed call.
       try {
         await seedDefaultPipelineStages();
         console.log(`[clerk-webhook] user.created: default pipeline stages seeded for company ${match.userCompanyId}`);
@@ -128,7 +136,7 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
         console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
       }
     } else {
-      console.log(`[clerk-webhook] user.created: trial subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping`);
+      console.log(`[clerk-webhook] user.created: subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping trial logic`);
     }
   } else if (linked && match.userCompanyId === null) {
     console.warn(`[clerk-webhook] user.created: user ${match.id} has no userCompanyId, cannot create trial subscription`);
