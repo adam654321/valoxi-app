@@ -1,0 +1,53 @@
+TASK: Phase B.2 (Promo client UI) READ-ONLY ASSESS
+
+Context: Phase B backend complete (B.1a–d, server boots clean, TSC = 1 pre-existing error). B.2 is the client UI slice: delete the old /admin/promo-codes page, build a new /admin/promo-campaigns page, swap the App.tsx route, update the sidebar nav. This is the inspection pass before the apply.
+
+RULES
+- READ-ONLY. No edits, no code changes.
+- Paste VERBATIM output for every step.
+- Grep wider than the target list (LN-005).
+
+STEPS
+
+1) App.tsx promo routing
+   grep -n "promo\|Promo" client/src/App.tsx
+   Paste verbatim. Then paste the exact import line(s) and Route line(s) for promo-codes, plus 3 lines of context each side so the surrounding route block structure is visible.
+
+2) Sidebar nav
+   Open client/src/components/admin-layout.tsx. Paste the full nav items array/list verbatim (the block containing the "Promo Codes" and "5D Invoice" entries). Note what icon import mechanism is used (lucide-react etc).
+
+3) Existing promo-codes.tsx structure
+   Open client/src/pages/admin/promo-codes.tsx. Do NOT paste the whole 444 lines. Paste:
+   - The full import block (top of file to first non-import line)
+   - The top-level component declaration line
+   - Every useQuery / useMutation call (the hook call + its config object, verbatim)
+   - The JSX component tags used for layout — list the distinct shadcn/ui component names imported and used (Card, Table, Dialog, Button, Input, Select, Badge, etc)
+   - Any auth/guard wrapper the page uses
+   We want the patterns to reuse, not the whole file.
+
+4) A reference admin page for pattern parity
+   Pick one OTHER admin page that has BOTH a list view AND a create/edit form with a dialog or modal — e.g. an admin users page or settings page. State which file you picked. Paste its import block + its useQuery/useMutation calls + the shadcn components it uses. This gives the create-campaign form a known-good pattern to match.
+
+5) The API contract the new page consumes
+   Confirm the current shape of these two endpoints in server/routes/admin.routes.ts (post B.1d):
+   - GET /promo-campaigns — paste the handler (should return campaigns with slug, isActive, maxTotalClaims, totalClaimedByUsers)
+   - POST /promo-campaigns — paste the handler + createPromoCampaignSchema
+   Paste verbatim.
+
+6) Query client / API helper pattern
+   grep -n "queryClient\|apiRequest\|fetch(" client/src/pages/admin/promo-codes.tsx
+   Paste verbatim. Then paste whatever shared API helper the admin pages use (e.g. client/src/lib/queryClient.ts or similar — find it and paste the request helper function). We need the exact mechanism for POST with a JSON body + auth.
+
+7) Wider sweep
+   grep -rn "promo-codes\|promoCodes\|promo-campaigns\|promoCampaigns\|PromoCode" client/src/
+   Paste verbatim. Surface every client reference, including any in components, hooks, or types outside the two files already known.
+
+8) Toast / notification pattern
+   grep -rn "useToast\|toast(" client/src/pages/admin/promo-codes.tsx
+   Paste verbatim. Confirms how success/error feedback is surfaced so the new page matches.
+
+9) TSC baseline
+   npm run check
+   Paste verbatim. Expect: portal.service.ts:81 only.
+
+10) Stop. Report only. No changes.
