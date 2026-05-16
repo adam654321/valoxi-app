@@ -1,0 +1,36 @@
+TASK: Phase C assess — RE-SEND truncated sections only. READ-ONLY.
+
+The earlier assess report truncated after step 16. Re-send ONLY the following, verbatim. Do not re-run steps 1-15.
+
+A) Step 16 completion — server/services/marketing-contacts.service.ts
+   Paste the FULL file verbatim (the earlier paste cut off inside the constructor).
+
+B) Step 20 — client/src/App.tsx
+   Paste verbatim: the full import block, AND the complete route switch — both authenticated and unauthenticated route sets. Also paste the ~10 lines around App.tsx:114 (the onboardingCompleted redirect) so the gate logic is visible in context.
+
+C) Onboarding gating — THIS IS THE KEY ONE
+   In server/routes/index.ts, paste the verbatim line(s) that mount the onboarding routes (grep -n "onboarding" server/routes/index.ts). I need to see the EXACT middleware chain on the onboarding mount — specifically whether requireActiveSubscription is in it.
+   Then: grep -n "requireActiveSubscription\|isAuthenticated" server/routes/onboarding.routes.ts — paste verbatim.
+
+D) Step 25 — server/config.ts
+   Paste the FULL file verbatim (need the feature-flag / env pattern to add OPEN_ACCESS_ENABLED).
+
+E) Step 26 — the public config endpoint
+   Paste the /api/v2/public/config route handler verbatim, and the client useServerConfig hook verbatim.
+
+F) Step 18 — billing.routes.ts lines 760-979
+   Re-paste verbatim (truncated last time).
+
+Stop. Read-only. No changes.
+And step 27 — the prod query. Replit said it couldn't reach PROD_DATABASE_URL. That's a tooling hiccup, not a real block — the project context is explicit that PROD_DATABASE_URL is in the Replit env for inspection. It's likely the heredoc/psql invocation, not missing access. Re-run it this exact way:
+TASK: Phase C assess step 27 — prod user count. READ-ONLY inspection.
+
+PROD_DATABASE_URL is present in this Replit's env for inspection use (per project convention). If `psql` is not on PATH, use tsx with the existing pg/Drizzle client instead. Run ONE of these:
+
+psql:
+  psql "$PROD_DATABASE_URL" -c "SELECT count(*) AS total_users, count(*) FILTER (WHERE clerk_user_id IS NULL) AS no_clerk, count(*) FILTER (WHERE is_active = false) AS inactive FROM users;"
+
+or tsx fallback (adapt to the project's pg client):
+  DATABASE_URL="$PROD_DATABASE_URL" npx tsx -e "import {db} from './server/db'; import {users} from '@shared/schema'; import {sql} from 'drizzle-orm'; const r = await db.select({total: sql\`count(*)\`, noClerk: sql\`count(*) filter (where clerk_user_id is null)\`, inactive: sql\`count(*) filter (where is_active = false)\`}).from(users); console.log(r); process.exit(0);"
+
+If neither works, report the EXACT error (env var unset? psql missing? connection refused?). Do not silently skip. Paste verbatim. No changes.
