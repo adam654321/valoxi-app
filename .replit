@@ -86,6 +86,8 @@ BETA_FEEDBACK_BUCKET_ID = "replit-objstore-c09af028-225c-4fd7-b187-f15a3b723b24"
 NYLAS_CONNECT_GMAIL_VISIBLE = "true"
 NYLAS_CONNECT_OUTLOOK_VISIBLE = "false"
 
+[userenv.development]
+
 [objectStorage]
 defaultBucketID = "replit-objstore-8c9b222f-19d6-4a20-806e-46d09c1d9424"
 

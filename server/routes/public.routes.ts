@@ -11,6 +11,7 @@ router.get(
       clerkEnabled: process.env.CLERK_ENABLED === 'true',
       nylasConnectGmailVisible: process.env.NYLAS_CONNECT_GMAIL_VISIBLE === 'true',
       nylasConnectOutlookVisible: process.env.NYLAS_CONNECT_OUTLOOK_VISIBLE === 'true',
+      openAccessEnabled: process.env.OPEN_ACCESS_ENABLED === 'true',
     });
   }),
 );

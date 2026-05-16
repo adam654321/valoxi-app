@@ -1,0 +1,279 @@
+TASK: Phase C.1 (Public signup endpoints + OPEN_ACCESS_ENABLED flag) APPLY
+
+Context: Phase C of open-access pivot, first slice. Backend only. Adds the OPEN_ACCESS_ENABLED config flag, exposes it in /api/v2/public/config, and creates two new public endpoints: POST /api/v2/public/signup and GET /api/v2/public/promo/:slug. No webhook changes (C.2), no client (C.3), no Stripe/Resend (C.4).
+
+TARGET: Code only. No DB changes, no npm.
+
+RULES
+- Paste VERBATIM output for every step.
+- Pre-step inspection before each edit; if a FIND block does not match, STOP and paste actual.
+- Stop after V-check.
+
+================================================================
+STEP 0 — Pre-flight
+================================================================
+0a) git status
+0b) npm run check
+   Paste verbatim. Expect: portal.service.ts:81 only.
+
+================================================================
+STEP 1 — Add OPEN_ACCESS_ENABLED to config
+================================================================
+1a) Open server/config.ts. Confirm the top-level shape of the exported `config` object (the keys: baseUrl, server, gemini, ...).
+
+1b) Add a top-level feature flag. FIND the line:
+export const config = {
+baseUrl: getBaseUrl(),
+   REPLACE WITH:
+export const config = {
+baseUrl: getBaseUrl(),
+openAccessEnabled: process.env.OPEN_ACCESS_ENABLED === 'true',
+
+1c) Verify
+   grep -n "openAccessEnabled" server/config.ts
+   Expect: 1 match.
+
+================================================================
+STEP 2 — Expose openAccessEnabled in /api/v2/public/config
+================================================================
+2a) Open server/routes/public.routes.ts. FIND EXACTLY:
+   sendSuccess(res, {
+     clerkEnabled: process.env.CLERK_ENABLED === 'true',
+     nylasConnectGmailVisible: process.env.NYLAS_CONNECT_GMAIL_VISIBLE === 'true',
+     nylasConnectOutlookVisible: process.env.NYLAS_CONNECT_OUTLOOK_VISIBLE === 'true',
+   });
+   REPLACE WITH:
+   sendSuccess(res, {
+     clerkEnabled: process.env.CLERK_ENABLED === 'true',
+     nylasConnectGmailVisible: process.env.NYLAS_CONNECT_GMAIL_VISIBLE === 'true',
+     nylasConnectOutlookVisible: process.env.NYLAS_CONNECT_OUTLOOK_VISIBLE === 'true',
+     openAccessEnabled: process.env.OPEN_ACCESS_ENABLED === 'true',
+   });
+   (Client useServerConfig wiring is C.3 — this just makes the field available now.)
+
+================================================================
+STEP 3 — Create server/routes/public-signup.routes.ts
+================================================================
+3a) Pre-inspect, to copy exact patterns:
+   - server/utils/response.ts — paste the signatures of sendSuccess, sendCreated, and any sendError/sendBadRequest helper. We need to know the exact error-response helper available.
+   - server/routes/public-waitlist.routes.ts already pasted in the assess — reuse its import style.
+   - Confirm the exact import path + symbol for: db, users, userCompanies, userCompanyMemberships, promoCodeService, asyncHandler.
+   Paste verbatim.
+
+3b) Create server/routes/public-signup.routes.ts with the following content. NOTE: the response-helper calls (sendSuccess / error helper) may need adapting to whatever 3a reveals — if the helper names differ, adapt and state what you changed.
+
+------------------------------------------------------------ FILE START
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import { sql } from 'drizzle-orm';
+import { asyncHandler } from '../utils/async-handler';
+import { sendSuccess } from '../utils/response';
+import { config } from '../config';
+import { db } from '../db';
+import { users, userCompanies, userCompanyMemberships } from '@shared/schema';
+import { promoCodeService } from '../services/promo-code.service';
+
+const router = Router();
+
+const signupSchema = z.object({
+  email: z.string().email().max(255),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().max(100).optional().default(''),
+  promoSlug: z.string().max(50).optional().nullable(),
+  marketingConsent: z.boolean().optional().default(false),
+});
+
+/**
+ * GET /api/v2/public/promo/:slug
+ * Lightweight public resolver for the /welcome page benefit copy.
+ * Returns campaign-safe fields only. Never returns Stripe coupon IDs or internal IDs.
+ */
+router.get('/promo/:slug', asyncHandler(async (req: Request, res: Response) => {
+  const slug = String(req.params.slug || '').trim().toLowerCase();
+  if (!slug) {
+    return res.status(400).json({ error: 'invalid_slug', message: 'No promo slug supplied.' });
+  }
+  const campaign = await promoCodeService.resolveCampaignBySlug(slug);
+  if (!campaign) {
+    return res.status(404).json({ error: 'promo_not_found', message: 'This promo link is not valid.' });
+  }
+  return sendSuccess(res, {
+    slug: campaign.slug,
+    name: campaign.name,
+    freeMonthsTotal: campaign.freeMonthsTotal,
+  });
+}));
+
+/**
+ * POST /api/v2/public/signup
+ * Public self-serve signup. Creates the DB row set BEFORE Clerk signup so the
+ * Clerk user.created webhook finds a match and does not orphan-revoke.
+ * Trial creation is NOT done here — the webhook handles it (C.2).
+ */
+router.post('/signup', asyncHandler(async (req: Request, res: Response) => {
+  if (!config.openAccessEnabled) {
+    return res.status(400).json({
+      error: 'open_access_disabled',
+      message: 'Self-serve signup is not currently available.',
+    });
+  }
+
+  const data = signupSchema.parse(req.body);
+  const email = data.email.trim().toLowerCase();
+  const firstName = data.firstName.trim().slice(0, 100);
+  const lastName = (data.lastName || '').trim().slice(0, 100);
+
+  // Resolve promo slug if supplied. Invalid slug is a hard error (open decision #1).
+  let campaignId: number | null = null;
+  if (data.promoSlug) {
+    const campaign = await promoCodeService.resolveCampaignBySlug(data.promoSlug.trim().toLowerCase());
+    if (!campaign) {
+      return res.status(400).json({
+        error: 'promo_not_found',
+        message: 'This promo link is not valid.',
+      });
+    }
+    campaignId = campaign.id;
+  }
+
+  // Email collision check. Mirrors the webhook's case-insensitive match.
+  const [existing] = await db
+    .select({ id: users.id, isActive: users.isActive, clerkUserId: users.clerkUserId })
+    .from(users)
+    .where(sql`LOWER(${users.email}) = LOWER(${email})`);
+
+  if (existing) {
+    if (existing.isActive === false) {
+      // Inactive row: Clerk signup would be orphan-revoked. Block, do not proceed.
+      return res.status(409).json({
+        error: 'account_inactive',
+        message: 'An account with this email is deactivated. Please contact support.',
+      });
+    }
+    // Active row (dormant invite OR already-linked). Do NOT create a second row.
+    // Send them to Clerk sign-up; the webhook links the existing row, applying any
+    // promo already attached. Clerk's own UI handles the already-registered case.
+    return sendSuccess(res, {
+      existingAccount: true,
+      redirectUrl: `/sign-up?email_address=${encodeURIComponent(email)}`,
+    });
+  }
+
+  // No collision: create the row set in one transaction (mirrors admin-waitlist invite).
+  const result = await db.transaction(async (tx) => {
+    const [newCompany] = await tx
+      .insert(userCompanies)
+      .values({ companyName: 'Pending Setup' })
+      .returning({ id: userCompanies.id });
+
+    const [newUser] = await tx
+      .insert(users)
+      .values({
+        email,
+        firstName,
+        lastName,
+        userCompanyId: newCompany.id,
+        currentCompanyId: newCompany.id,
+        role: 'user',
+        userRole: 'company_admin',
+        isCompanyAdmin: true,
+        marketingConsent: data.marketingConsent,
+        marketingConsentAt: data.marketingConsent ? new Date() : null,
+      })
+      .returning({ id: users.id });
+
+    if (campaignId !== null) {
+      // attributedBy null: self-serve signup, no admin attribution.
+      await promoCodeService.assignCampaignToUser(newUser.id, campaignId, null, tx);
+    }
+
+    await tx.insert(userCompanyMemberships).values({
+      userId: newUser.id,
+      userCompanyId: newCompany.id,
+      isCompanyAdmin: true,
+      membershipRole: 'company_admin',
+    });
+
+    return { userId: newUser.id, userCompanyId: newCompany.id };
+  });
+
+  return sendSuccess(res, {
+    existingAccount: false,
+    userId: result.userId,
+    redirectUrl: `/sign-up?email_address=${encodeURIComponent(email)}`,
+  });
+}));
+
+export default router;
+------------------------------------------------------------ FILE END
+
+3c) State any adaptation made to response-helper calls based on 3a.
+
+================================================================
+STEP 4 — Mount the new router
+================================================================
+4a) Open server/routes/index.ts. Show lines 100-112 verbatim (the public mount block).
+
+4b) Add the import alongside the other public route imports (near lines 34-36):
+import publicSignupRoutes from './public-signup.routes';
+
+4c) Mount it. The router defines BOTH /signup and /promo/:slug, so it mounts at /api/v2/public (not /api/v2/public/signup). It must be rate-limited. FIND the waitlist mount line:
+ app.use('/api/v2/public/waitlist', waitlistLimiter, publicWaitlistRoutes);
+   ADD IMMEDIATELY AFTER IT:
+ app.use('/api/v2/public', waitlistLimiter, publicSignupRoutes);
+   IMPORTANT: this must come BEFORE the existing `app.use('/api/v2/public', publicConfigRoutes);` line at ~106 is fine either way (Express tries each router; publicSignupRoutes only handles /signup and /promo/:slug, publicConfigRoutes only handles /config — no path overlap). But place the new mount adjacent to the waitlist mount for readability. Confirm the final order of all /api/v2/public* mounts in your report.
+
+================================================================
+STEP 5 — V-CHECK
+================================================================
+5a) npm run check
+   Paste VERBATIM. Expect: portal.service.ts:81 only. Any new error → STOP, paste.
+
+5b) Server boot
+   Restart dev workflow. Paste the "serving on port" line + any route-registration or import errors.
+
+5c) Endpoint smoke — flag OFF (default state, OPEN_ACCESS_ENABLED not set)
+   curl -s -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"smoketest1@example.com","firstName":"Smoke","lastName":"Test"}'
+   Paste verbatim. EXPECT: 400 open_access_disabled.
+
+5d) Endpoint smoke — promo resolver
+   curl -s http://localhost:5000/api/v2/public/promo/early-bird
+   curl -s http://localhost:5000/api/v2/public/promo/does-not-exist
+   Paste verbatim. EXPECT: first returns 200 with slug/name/freeMonthsTotal (dev has the 3 campaigns from B.1a); second returns 404 promo_not_found.
+
+5e) Endpoint smoke — flag ON
+   Restart the workflow with OPEN_ACCESS_ENABLED=true in the env for this run only (set it in the Replit env or inline for the dev process — do NOT commit it anywhere).
+   Then:
+   - New email, no promo:
+     curl -s -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"openaccess-smoke-1@example.com","firstName":"Open","lastName":"Access"}'
+     EXPECT: 200, existingAccount:false, a userId, redirectUrl to /sign-up.
+   - Same email again (now a collision):
+     curl -s -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"openaccess-smoke-1@example.com","firstName":"Open","lastName":"Access"}'
+     EXPECT: 200, existingAccount:true, redirectUrl to /sign-up. NO second row created.
+   - New email with valid promo:
+     curl -s -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"openaccess-smoke-2@example.com","firstName":"Promo","lastName":"User","promoSlug":"early-bird"}'
+     EXPECT: 200, existingAccount:false.
+   - New email with invalid promo:
+     curl -s -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"openaccess-smoke-3@example.com","firstName":"Bad","lastName":"Promo","promoSlug":"nonsense-slug"}'
+     EXPECT: 400 promo_not_found. NO row created.
+   Paste all verbatim.
+
+5f) Verify the smoke rows on DEV DB
+   psql "$DATABASE_URL" -c "SELECT u.id, u.email, u.first_name, u.assigned_promo_campaign_id, u.user_company_id FROM users u WHERE u.email LIKE 'openaccess-smoke-%' OR u.email LIKE 'smoketest%' ORDER BY u.id;"
+   Paste verbatim. EXPECT: openaccess-smoke-1 (one row only, no promo), openaccess-smoke-2 (one row, assigned_promo_campaign_id = 10 Early Bird). smoke-3 and smoketest1 should NOT appear (flag-off and invalid-promo cases created nothing).
+   Also confirm membership + company rows exist for smoke-1:
+   psql "$DATABASE_URL" -c "SELECT m.user_id, m.user_company_id, m.membership_role, c.company_name FROM user_company_memberships m JOIN user_companies c ON c.id = m.user_company_id WHERE m.user_id IN (SELECT id FROM users WHERE email LIKE 'openaccess-smoke-%');"
+   Paste verbatim.
+
+5g) Restart the workflow WITHOUT OPEN_ACCESS_ENABLED (back to default-off state). Confirm via:
+   curl -s -X POST http://localhost:5000/api/v2/public/signup -H "Content-Type: application/json" -d '{"email":"flagoff-recheck@example.com","firstName":"Flag","lastName":"Off"}'
+   EXPECT: 400 open_access_disabled. Paste verbatim.
+
+5h) Git
+   git status
+   git diff --stat
+   Paste verbatim.
+
+5i) STOP. Report results. Do NOT proceed to C.2. Leave OPEN_ACCESS_ENABLED unset.
+
+NOTE ON SMOKE DATA: the openaccess-smoke-* rows are left in the DEV database deliberately — they're useful fixtures for C.2 webhook testing. Do not delete them. They are dev-only; prod is untouched by this entire apply.
