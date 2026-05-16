@@ -6,7 +6,7 @@ import { sendSuccess } from '../utils/response';
 import { config } from '../config';
 import { db } from '../db';
 import { users, userCompanies, userCompanyMemberships } from '@shared/schema';
-import { promoCodeService } from '../services/promo-code.service';
+import { promoCodeService, getWaitlistPromoCopy } from '../services/promo-code.service';
 
 const router = Router();
 
@@ -32,10 +32,19 @@ router.get('/promo/:slug', asyncHandler(async (req: Request, res: Response) => {
   if (!campaign) {
     return res.status(404).json({ error: 'promo_not_found', message: 'This promo link is not valid.' });
   }
+  // benefitLabel is the human-facing benefit sentence shown on /welcome.
+  // Derived from getWaitlistPromoCopy (single source of truth for promo
+  // copy, already used for invite emails). Null if the campaign has no
+  // recognised copy mapping.
+  const promoCopy = getWaitlistPromoCopy({
+    referralSource: campaign.referralSource,
+    freeMonthsTotal: campaign.freeMonthsTotal,
+  });
   return sendSuccess(res, {
     slug: campaign.slug,
     name: campaign.name,
     freeMonthsTotal: campaign.freeMonthsTotal,
+    benefitLabel: promoCopy?.benefitSentence ?? null,
   });
 }));
 
