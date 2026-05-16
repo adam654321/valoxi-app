@@ -1,0 +1,141 @@
+TASK: Phase C (Public signup flow) READ-ONLY ASSESS
+
+Context: Phase B complete on dev (server boots, TSC = 1 pre-existing error). Phase C is the public self-serve signup flow: new /welcome page, new POST /api/v2/public/signup endpoint, new GET /api/v2/public/promo/:slug resolver, a branch in the Clerk user.created webhook to skip trial creation for open-access users, a new Resend marketing segment, and the Stripe allow_promotion_codes flip. This is the inspection pass before any apply.
+
+RULES
+- READ-ONLY. No edits, no code changes, no schema changes, no npm.
+- Paste VERBATIM output for every step. Raw output, not summaries.
+- Prod queries: PROD_DATABASE_URL inline, read-only.
+- Grep wider than the explicit target list (LN-005).
+
+================================================================
+PART 1 — Public route surface (where /signup and /promo/:slug will mount)
+================================================================
+
+1) Find the public router.
+   grep -rn "public" server/routes/ server/index.ts server/app.ts --include="*.ts" | grep -i "route\|router\|mount\|use("
+   Paste verbatim. Identify the file that defines the existing /api/v2/public/* routes (waitlist lives here).
+
+2) Open that public routes file in full. Paste it VERBATIM, start to end. We need every existing route, every import, the router export, and how validation + rate limiting are currently applied to the waitlist endpoint.
+
+3) Where is the public router mounted?
+   grep -rn "public" server/ --include="*.ts" | grep -i "\.use(\|router"
+   Paste verbatim. Confirm the mount path prefix (expect /api/v2/public).
+
+================================================================
+PART 2 — Rate limiter
+================================================================
+
+4) grep -rn "waitlistLimiter\|rateLimit\|express-rate-limit\|Limiter" server/ --include="*.ts"
+   Paste verbatim.
+
+5) Open the file defining waitlistLimiter. Paste the full limiter definition(s) verbatim — window, max, key, handler. We need to know whether to reuse waitlistLimiter for /public/signup or define a new one.
+
+================================================================
+PART 3 — Clerk webhook (handleUserCreated)
+================================================================
+
+6) Open server/routes/webhooks.routes.ts. Paste the FULL file VERBATIM. This is the highest-risk surface in Phase C — the webhook branch that skips trial creation for open-access users lands here, and the orphan-revoke access gate lives here. We need the whole thing, not excerpts.
+
+7) grep -rn "handleUserCreated\|createFiveDNewMemberTrial\|createTrialSubscription\|seedDefaultPipelineStages\|user.created" server/ --include="*.ts"
+   Paste verbatim. Maps every consumer of the trial-creation functions.
+
+8) Open the service file(s) defining createFiveDNewMemberTrial and createTrialSubscription. Paste both function bodies VERBATIM, plus their surrounding context (imports, any shared helpers they call). We need to see exactly what a trial subscription row looks like when created, because the open-access branch must NOT create one.
+
+================================================================
+PART 4 — Subscription / middleware gate
+================================================================
+
+9) grep -rn "requireActiveSubscription\|subscription_required\|402" server/ --include="*.ts"
+   Paste verbatim.
+
+10) Open the middleware file defining requireActiveSubscription. Paste the full middleware function VERBATIM. Plan says "no change required" — confirm that by reading it. We need to see what it does when a user has NO subscription row at all (open-access user pre-payment), vs an expired one.
+
+================================================================
+PART 5 — Onboarding gate + user shape
+================================================================
+
+11) grep -rn "onboardingCompleted\|onboarding" server/ shared/ client/src/ --include="*.ts" --include="*.tsx" | grep -iv "test"
+    Paste verbatim.
+
+12) Open shared/schema/core.ts. Paste the FULL users table definition VERBATIM (every column). Phase C's /public/signup inserts a users row directly — we need every NOT NULL column without a default, so the insert is complete.
+
+13) Same file — paste the userCompanies table definition and the userCompanyMemberships table definition VERBATIM. The signup transaction creates all three.
+
+================================================================
+PART 6 — The admin-waitlist invite transaction (the pattern /public/signup mirrors)
+================================================================
+
+14) Open server/routes/admin-waitlist.routes.ts. Paste the FULL invite handler VERBATIM — the entire transaction from start to commit, including the userCompany insert, users insert, membership insert, the assignCampaignToUser call (post B.1c), and the email send. /public/signup is essentially this minus the admin auth and minus the waitlist row. We need the exact working pattern.
+
+================================================================
+PART 7 — Resend marketing segments
+================================================================
+
+15) grep -rn "RESEND_SEGMENT\|marketingContactsService\|resend-marketing\|audiences\|SIGNED_UP" server/ --include="*.ts"
+    Paste verbatim.
+
+16) Open server/services/resend-marketing.ts (or whatever the marketing service file is). Paste VERBATIM: the segment env var list / config block, and the function that syncs a user to a segment. Phase C adds a SIGNED_UP_NO_PLAN segment — we need to see how the existing segments are declared and consumed.
+
+17) grep -rn "RESEND_SEGMENT" .env.example server/config.ts 2>/dev/null
+    Also: grep -rn "RESEND_SEGMENT\|broadcasts" server/routes/ --include="*.ts"
+    Paste verbatim. We need to know where the segment list is enumerated for the broadcasts admin feature (plan says new segment must be added there too).
+
+================================================================
+PART 8 — Stripe checkout (allow_promotion_codes)
+================================================================
+
+18) Open server/routes/billing.routes.ts. Paste lines 760-980 VERBATIM (the checkout + upgrade session creation region — covers both resolveCheckoutCoupon call sites and the allow_promotion_codes:true at line ~892 per the original Phase B assess).
+
+19) grep -rn "allow_promotion_codes" server/ --include="*.ts"
+    Paste verbatim. Confirm every site (expect 1).
+
+================================================================
+PART 9 — Client: routing, welcome page slot, billing page
+================================================================
+
+20) Open client/src/App.tsx. Paste VERBATIM: the full import block, and the COMPLETE route switch — both the authenticated and unauthenticated route sets. Phase C adds /welcome to the unauthenticated switch. We need to see how /sign-up and /sign-in are currently declared and gated.
+
+21) grep -rn "sign-up\|sign-in\|email_address\|clerkEnabled\|/onboarding" client/src/ --include="*.tsx" --include="*.ts"
+    Paste verbatim.
+
+22) Open client/src/pages/billing.tsx. Do NOT paste the whole file. Paste: the import block, every useQuery/useMutation, the part that reads the ?reason=subscription_required query param and renders the banner, and how it reads any ?plan= param if at all. Phase C adds plan auto-highlight here.
+
+23) Is there an existing /request-access or waitlist form page on the APP client (not the marketing site)? grep -rn "request-access\|waitlist" client/src/ --include="*.tsx"
+    Paste verbatim.
+
+================================================================
+PART 10 — Open-access env flag + config
+================================================================
+
+24) grep -rn "OPEN_ACCESS\|registration_mode\|REGISTRATION_MODE" server/ shared/ client/src/ --include="*.ts" --include="*.tsx"
+    Paste verbatim. Confirms whether OPEN_ACCESS_ENABLED already exists anywhere or is wholly new.
+
+25) Open server/config.ts. Paste VERBATIM the section where env vars / feature flags are read and exposed. We need the pattern for adding OPEN_ACCESS_ENABLED.
+
+26) grep -rn "public/config\|/api/v2/public/config" server/ client/src/ --include="*.ts" --include="*.tsx"
+    Paste verbatim. The client reads a public config endpoint for clerkEnabled — the /welcome page may need OPEN_ACCESS_ENABLED exposed there too. Paste the config endpoint handler.
+
+================================================================
+PART 11 — Prod data check: email collision surface
+================================================================
+
+27) Phase C must handle /welcome submit when the email already exists in DB (the 36 dormant rows, active users, soft-deleted users). Confirm the prod shape:
+   DATABASE_URL="$PROD_DATABASE_URL" psql -c "SELECT count(*) AS total_users, count(*) FILTER (WHERE clerk_user_id IS NULL) AS no_clerk, count(*) FILTER (WHERE is_active = false) AS inactive FROM users;"
+   Paste verbatim.
+
+28) grep -rn "isActive\|is_active\|soft.delete\|softDelete\|deletedAt" shared/schema/core.ts
+    Paste verbatim. Confirm whether users has a soft-delete column or just isActive.
+
+================================================================
+PART 12 — Wider sweep
+================================================================
+
+29) grep -rn "public/signup\|publicSignup\|/welcome\|welcomePage" server/ shared/ client/src/ --include="*.ts" --include="*.tsx"
+    Paste verbatim. Confirms none of the Phase C surfaces already exist (clean greenfield) or surfaces any partial work.
+
+30) TSC baseline
+    npm run check
+    Paste verbatim. Expect: portal.service.ts:81 only.
+
+31) Stop. No code changes, no file writes, no schema changes. Report findings only.
