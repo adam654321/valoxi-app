@@ -182,3 +182,30 @@ After A1 + B + C + D + F stable in prod for 2 weeks.
 ## Phase C: Stripe checkout config
 
 - [ ] `server/routes/billing.routes.ts` line 892 — change `allow_promotion_codes: true` to `allow_promotion_codes: false` for all checkouts (when no resolvedCoupon). Promo only flows via the three controlled paths.
+
+## Phase C-new: superseded surfaces (Stripe-first rework)
+
+### To delete
+- [ ] client/src/pages/welcome.tsx — entire file
+- [ ] client/src/App.tsx — /welcome route + WelcomePage lazy import
+- [ ] server/routes/public-signup.routes.ts — POST /signup handler
+      (KEEP GET /promo/:slug ONLY IF marketing site needs benefit copy — decide C-new.1)
+- [ ] client/src/pages/billing.tsx — the C.3c ?plan= highlight useEffect (moot)
+
+### To modify (not delete)
+- [ ] server/routes/webhooks.routes.ts handleUserCreated — REMOVE trial-creation
+      block (createFiveDNewMemberTrial call, isFiveDNewMember branch, the
+      existingSubscription===null trial logic). KEEP email match, clerkUserId
+      link, invitation flip, seedDefaultPipelineStages, welcome email.
+- [ ] server/routes/billing.routes.ts /verify-session — demote to read-only
+      status check, remove all activateSubscription / write calls.
+
+### To keep (confirmed still needed)
+- useServerConfig.openAccessEnabled — launch flag, stays
+- resolveCampaignBySlug — load-bearing for the new checkout endpoint
+- All of Phase B promo model
+
+### NEEDS CONFIRMATION before apply
+- Exact location of the in-app multi-company "no subscription → blocked" gate
+- Whether createTrialSubscription / createFiveDNewMemberTrial have any
+  remaining callers after C-new.4 (if none, candidates for A2 removal)

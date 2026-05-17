@@ -216,3 +216,39 @@ Auto-seeded on user signup vs manual-only:
 | Sign-up funnel analytics refinement | funnelEvents already exists. Open-access events will show up post-launch. |
 | Offer letter send error (not checking both areas) | Backlog. Investigate post-pivot. Flagged 2026-05-16 during A1 V-check. |
 | portal.service.ts:81 TSC error | Pre-existing, unrelated. Backlog. |
+
+## Stripe-first rework (2026-05-16)
+
+Phase C was re-planned mid-build after dev testing of the account-first
+/welcome flow. Reason: account-first added a redundant data-entry step
+(/welcome collects email+name; Stripe Checkout collects the same) and
+produced a confusing "trial has ended" billing state for open-access users
+who never had a trial.
+
+Decision: switch to Stripe-first / post-payment provisioning — the standard
+SaaS pattern for paid-first products. Stripe Checkout is the email+payment
+capture point; the signed checkout.session.completed webhook provisions the
+account.
+
+Stripe surface findings (assess 2026-05-16):
+- Stripe webhook EXISTS: billingWebhookRoutes in billing.routes.ts, mounted
+  at index.ts:109 without auth (correct). Signature-verified via
+  stripe.webhooks.constructEvent. Idempotent via getEventByStripeId.
+- Handles checkout.session.completed, customer.subscription.updated/deleted,
+  invoice.paid/payment_failed/upcoming.
+- checkout.session.completed currently provisions a SUBSCRIPTION only, keyed
+  on metadata.userCompanyId — assumes the user already exists.
+- /verify-session ALSO provisions (browser-triggered, post-redirect). This is
+  double-provisioning; only idempotency saves it. The rework demotes
+  /verify-session to read-only.
+- resolveCheckoutCoupon takes a userId — unusable pre-account. The rework
+  uses resolveCampaignBySlug (returns full campaign incl. stripeCouponId).
+- activateSubscription uses upsertByCompanyId (insert-or-update on
+  userCompanyId unique constraint).
+- Multi-company gate: in-app, no-subscription users blocked from adding
+  companies. Stripe-first satisfies this for free. Exact gate location
+  NEEDS CONFIRMATION.
+
+Consequence: C.1 (/public/signup) and C.3 (/welcome page) are superseded.
+C.2's trial-creation branch is removed. Phase B and resolveCampaignBySlug
+stand and are load-bearing for the new checkout path.

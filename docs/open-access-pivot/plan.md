@@ -1,230 +1,200 @@
 # Open Access Pivot — Plan
 
-Status: IN PROGRESS
+Status: IN PROGRESS — Phase C RE-PLANNED (Stripe-first rework)
 Started: 2026-05-15 (action log v62)
 Owner: Adam
-Related: docs/open-access-pivot/assessment.md, docs/open-access-pivot/removals.md, docs/open-access-pivot/lessons.md, action log v62–v69
+Related: assessment.md, removals.md, lessons.md, action log v62–v70
 
 ---
 
 ## What this pivot does
 
-Valoxi today: admin invites users from a waitlist. Users get a 24h trial (or 6-month 5D New Member free period) and access the app. After trial, they pay.
+Valoxi today: admin invites users from a waitlist. After this pivot: marketing
+site visitors self-serve. The signup flow is PAYMENT-FIRST (Stripe-first):
+the visitor picks a plan, pays via Stripe Checkout, and the account is
+provisioned from the verified Stripe webhook. Promo URLs apply a discount
+coupon at checkout. Waitlist preserved as a soft option.
 
-After this pivot: marketing site visitors self-serve sign up. Anyone with a promo URL slug gets the matching discount. No admin required for normal signups, but admin direct-add still available for edge cases. Waitlist preserved as a soft option for hesitant prospects.
+## Why Phase C was re-planned (2026-05-16)
+
+Original Phase C built an account-first flow: /welcome form → create DB row →
+Clerk signup → onboarding → billing wall → pay. Dev testing of that flow
+exposed it as longer than necessary and produced a confusing "trial has ended"
+state for users who never had a trial.
+
+Decision: switch to Stripe-first (post-payment provisioning), the industry-
+standard pattern for paid-first SaaS. The /welcome page and /public/signup
+endpoint are redundant in this model — Stripe Checkout itself collects email
+and name, and the DB row is created from the checkout.session.completed
+webhook. See assessment.md "Stripe-first rework" for full rationale.
+
+What survives from the original Phase C build:
+- C.2 webhook work is PARTIALLY superseded — the trial-creation branch is
+  removed entirely (Stripe owns subscriptions now); the email-match and
+  clerkUserId-linking logic survives and simplifies.
+- Phase B (promo model: slugs, dropped promo_codes) — fully stands.
+- resolveCampaignBySlug (B.1b) — stands and is now load-bearing for checkout.
+
+What is superseded:
+- C.1: /public/signup endpoint — superseded (row creation moves to the webhook).
+  GET /promo/:slug may survive for marketing benefit copy — TBD in C-new.1.
+- C.3: /welcome page — superseded (Stripe Checkout replaces it).
+  billing.tsx ?plan= highlight — moot (no /welcome to carry ?plan= from).
+  useServerConfig.openAccessEnabled — survives as the launch flag.
+
+## The Stripe-first flow (target state)
+
+1. Marketing site tier card (+ optional ?promo=slug) → POST /api/v2/public/checkout
+2. Public endpoint creates a Stripe Checkout Session: plan price + interval,
+   coupon resolved from promo slug via resolveCampaignBySlug, client_reference_id
+   set to a signup-intent token, success_url to /post-checkout?session_id=...
+3. Stripe Checkout collects email + name + card. 5D coupon = 100% off 6 months,
+   so 5D pays £0 today but still enters card (subscription auto-continues month 7).
+4. checkout.session.completed webhook (signature-verified, idempotent):
+   - Reads customer email from the session
+   - Email-collision check (case-insensitive, mirrors Clerk webhook)
+   - If no existing user: creates userCompany + user + userCompanyMembership
+     in one transaction (mirrors admin-waitlist invite pattern)
+   - Activates the subscription (existing activateSubscription path)
+   - Attaches promo campaign to the user row if a promo was used
+5. User redirected to /post-checkout — a polling page that waits for the
+   webhook to finish provisioning, then forwards to Clerk with email pre-filled.
+6. Clerk signup (password / Google / Microsoft). Clerk user.created webhook
+   finds the now-existing row, links clerkUserId. If no match (wrong email):
+   show "no account found for this email — did you pay with a different one?"
+7. Onboarding (company name, industry, role, T&C, DPA, + marketing consent
+   moved here from the old /welcome form).
+8. Into the app with a live Stripe subscription. Multi-company add is
+   unlocked because a subscription now exists.
 
 ## Phases
 
 | Phase | Scope | Risk | Action log |
 |---|---|---|---|
-| Pre-build | Replit grep pass to lock dead-code baseline | None | v62 → v62.1 |
-| A1 | Code residue removal (bcrypt, magic links, password reset, legacy free-period) | Low | v62.1 → v63 ✓ COMPLETE |
-| B | Promo model refactor: drop promo_codes table, add slug to campaigns | Low-Med | v63 → v64 |
-| C | Public signup flow: /welcome page, /public/signup endpoint, Clerk webhook branch | High | v64 → v65 |
-| D | Admin direct add user (with optional promo) | Low | v65 → v66 |
-| F | 5D invoice rewrite + CSV export | Low | v66 → v67 |
-| flip OPEN_ACCESS_ENABLED=true | Soft launch in prod | — | v67 → v67.1 |
-| A2 | Schema residue drop (dead columns, dead tables) | Medium | v67.1 → v68 |
-| G | Hygiene: replit.md, email copy, marketing site minimal CTAs | Low | v68 → v69 |
-| E | Marketing site full overhaul | — | Deferred to separate session |
+| Pre-build | grep baseline | None | v62 → v62.1 ✓ |
+| A1 | Code residue removal | Low | v62.1 → v63 ✓ |
+| B | Promo model: slugs, drop promo_codes | Low-Med | v63 → v64 ✓ |
+| C-old | Account-first signup (SUPERSEDED) | — | built v64-v66, re-planned |
+| C-new.1 | Public checkout endpoint + Stripe session creation | Med | v66 → v67 |
+| C-new.2 | Webhook provisioning: create user from checkout.session.completed | High | v67 → v67.1 |
+| C-new.3 | /post-checkout poll page + Clerk forward + email-mismatch handling | Med | v67.1 → v67.2 |
+| C-new.4 | Clerk webhook simplification (strip trial creation) | Med | v67.2 → v67.3 |
+| C-new.5 | Onboarding gains marketing consent | Low | v67.3 → v67.4 |
+| C-new.6 | Retire /welcome, /public/signup, dead C.3 client bits | Low | v67.4 → v67.5 |
+| flip OPEN_ACCESS_ENABLED | Soft launch | — | v67.5 → v67.6 |
+| D | Admin direct add user | Low | v68 |
+| F | 5D invoice rewrite | Low | v69 |
+| A2 | Schema residue drop | Med | v70 |
+| G | Hygiene + marketing site Stripe-bound CTAs | Low | v71 |
+| E | Marketing site full overhaul | — | Deferred |
 
-## Pre-build investigation — 36 users without Clerk link (RESOLVED 2026-05-16)
+## C-new.1: Public checkout endpoint
 
-Pre-build grep found 36 active users in prod with `clerk_user_id IS NULL AND is_active = true`. Original assumption: pre-Clerk early-access users who never linked.
+POST /api/v2/public/checkout — unauthenticated, rate-limited (waitlistLimiter).
+Body: { planKey, interval, promoSlug? }
+- Validates planKey in CORE/PROFESSIONAL/EXPERT, interval in month/year
+- If promoSlug: resolveCampaignBySlug → campaign.stripeCouponId for the
+  discount campaigns; for 5D New Member, the 100%-off-6-months coupon
+- Creates Stripe Checkout Session:
+  - mode: subscription, line_items: plan price from lookup key
+  - discounts: [{ coupon }] if a promo resolved
+  - client_reference_id: a generated signup-intent token (carries promo slug
+    + plan so the webhook can attribute without trusting metadata alone)
+  - success_url: {baseUrl}/post-checkout?session_id={CHECKOUT_SESSION_ID}
+  - cancel_url: marketing site pricing section
+- Returns { checkoutUrl }
+NEEDS CONFIRMATION: how 5D's £0 checkout behaves — confirm the 100%-off coupon
+is a 6-month duration:repeating coupon and that Stripe still collects a card in
+that case (it should, for the auto-continue).
 
-Investigation result: WRONG assumption. The 36 are stale Clerk invites — admin clicked Invite, DB row was created with email pre-fill, invitation email sent — user never completed Clerk signup. Webhook `user.created` never fired, so `clerk_user_id` never got backfilled.
+## C-new.2: Webhook provisioning (HIGH RISK)
 
-Confirmed via:
-- Clerk dashboard shows 39 active Clerk accounts; none of the 36 unlinked DB rows match
-- Only 4 users ever had `password_hash`: Adam, Viv, Dee, Jag — all migrated
-- All 36 are `lastLogin: (never)`, `sub: (none)`, company "Pending Setup"
-- 35 on Early Bird promo, 1 on 5D Standard
+Extend the existing checkout.session.completed branch in billing.routes.ts
+(the billingWebhookRoutes handler). Current branch reads metadata.userCompanyId
+and activates. New logic:
+- If session has a userCompanyId (existing user upgrading) → current path, unchanged
+- If NO userCompanyId (new self-serve buyer):
+  - Read customer email from session.customer_details.email
+  - Email-collision check against users (case-insensitive)
+  - If existing active user → do NOT create a row; the subscription still
+    activates against their company; log and continue
+  - If no existing user → create userCompany + user + userCompanyMembership
+    in a transaction (mirror admin-waitlist invite, companyName 'Pending Setup')
+  - Resolve promo from client_reference_id token → assignCampaignToUser
+  - activateSubscription against the new userCompanyId
+- Idempotency: the existing getEventByStripeId dedup covers webhook redelivery.
+  The transaction must also be safe if the email already got a row from a
+  concurrent event.
 
-Decision: leave them as dormant rows. Webhook email match is case-insensitive (LOWER on both sides) with no isActive filter. If any return via /welcome with same email, they auto-link and get their assigned promo applied. Small generosity for the buyer. No code blocker.
+This is the highest-risk slice. Webhook is the SINGLE provisioning source.
+/verify-session must be demoted to read-only (see C-new.3).
 
-See assessment.md "36-user investigation" for full detail.
+## C-new.3: /post-checkout page + /verify-session demotion
 
-## Phase A1: Code residue removal (COMPLETE 2026-05-16, commit 1ac43a8)
+- New client page /post-checkout?session_id=... — polls a read-only endpoint
+  ("has the webhook provisioned this session yet?"), shows a spinner, then
+  forwards to Clerk /sign-up?email_address=... once provisioning is confirmed.
+- /verify-session is DEMOTED: it must no longer write/activate. It becomes a
+  read-only status check. Provisioning is the webhook's job exclusively.
+  This removes the current double-provisioning (webhook + browser redirect).
+- Email-mismatch handling: if the user reaches Clerk and signs up with a
+  different email than they paid with, the Clerk webhook finds no row.
+  Message: "We couldn't find an account for this email. Did you use a
+  different email when you paid? Sign out and sign in with that email."
 
-Removed pre-Clerk auth surface and legacy free-period community surface. Code only. Schema kept until A2.
+## C-new.4: Clerk webhook simplification
 
-Outcome:
-- 25 files changed: -2027 / +392
-- 10 files deleted (8 dead auth pages/services + 2 unused seed scripts)
-- TSC clean (1 pre-existing portal.service.ts:81 error only, unrelated)
-- Smoke tests passed: Clerk sign-in, /account Clerk card, /admin/database access
+handleUserCreated in webhooks.routes.ts: REMOVE the entire trial-creation
+block (createFiveDNewMemberTrial, the isFiveDNewMember branch, the
+existingSubscription===null trial logic). Stripe owns subscription creation
+now. The webhook keeps: email match, clerkUserId linking, invitation flip,
+seedDefaultPipelineStages, welcome email, marketing sync.
+billingService.createFiveDNewMemberTrial and createTrialSubscription become
+unused by the signup path — leave defined (admin paths may use), or remove
+in A2 cleanup. TBD.
 
-Scope creep handled cleanly:
-- admin/database.tsx bcrypt re-auth gate removed (page already gated by AdminRoute → isSystemAdmin)
-- /login redirect at App.tsx:192 removed (beta-era bookmark, no longer needed)
-- account.tsx legacy password change UI removed (lines 84-87, 124-135, 226-248)
+## C-new.5: Onboarding marketing consent
 
-Build hiccup: direct `npm uninstall bcrypt @types/bcrypt` via code_execution broke node_modules (Nix Node PATH issue). Recovered via Replit Packager UI in ~30 minutes. No code damage. See lessons.md LN-001.
+Add the GDPR marketing-consent checkbox (unchecked default) to the onboarding
+form. It was on the old /welcome page; that page is gone. Onboarding is
+post-Clerk so the consenting user is authenticated — cleaner for GDPR audit.
 
-Specific changes: see docs/open-access-pivot/removals.md section A1.
+## C-new.6: Retire superseded surfaces
 
-## Phase B: Promo model refactor
+- Delete client/src/pages/welcome.tsx and its route in App.tsx
+- Delete server/routes/public-signup.routes.ts (POST /public/signup) — OR keep
+  GET /promo/:slug if the marketing site wants benefit copy. Decide at C-new.1.
+- Remove billing.tsx ?plan= highlight effect (C.3c) — moot
+- Keep useServerConfig.openAccessEnabled — it is the launch flag
 
-Drops promo_codes table. Adds slug + maxTotalClaims + isActive to promo_code_campaigns. Centralises allocation in service method.
+## Multi-company gate — resolved as a consequence
 
-Schema (direct ALTER):
-- `ALTER TABLE promo_code_campaigns ADD COLUMN slug VARCHAR(50) UNIQUE`
-- `ALTER TABLE promo_code_campaigns ADD COLUMN max_total_claims INTEGER`
-- `ALTER TABLE promo_code_campaigns ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE`
-- Backfill slugs on 3 existing campaigns (Adam confirms exact slugs at apply: suggest `5d`, `early-bird`, `5d-community`)
-- `ALTER TABLE promo_code_campaigns ALTER COLUMN slug SET NOT NULL` (after backfill)
-- `DROP TABLE promo_codes`
-
-Service:
-- Delete `generateCodes()` method
-- Add `resolveCampaignBySlug(slug)` method
-- Add `assignCampaignToUser(userId, campaignId, attributedBy)` method (used by all three allocation paths)
-
-V-check:
-- TSC clean
-- `grep -rn "promoCodes\b" server/ shared/ client/src/` returns zero
-- `grep -rn "generateCodes" server/` returns zero
-- Prod DB: `SELECT count(*) FROM promo_code_campaigns WHERE slug IS NULL` returns 0
-- Smoke: admin-waitlist invite flow still creates user + assigns campaign + sends invite
-
-## Phase C: Public signup flow
-
-The big one. New env var `OPEN_ACCESS_ENABLED` (default false, set true only when ready to launch).
-
-New backend:
-- `POST /api/v2/public/signup` (rate-limited via waitlistLimiter)
-  - Body: `{email, firstName, lastName, promoSlug?, intendedPlan?, intendedInterval?, marketingConsent?}`
-  - Validates open-access enabled, email not taken, promo slug resolves (if supplied)
-  - Creates userCompany + users + userCompanyMemberships in transaction
-  - If promo: calls `promoCodeService.assignCampaignToUser`
-  - Returns `{redirectUrl: '/sign-up?email_address=...'}`
-- `GET /api/v2/public/promo/:slug` — lightweight slug resolver for welcome page benefit copy
-
-Modified backend:
-- `handleUserCreated` Clerk webhook: if `OPEN_ACCESS_ENABLED && user.assignedPromoCampaignId IS NULL`, SKIP trial subscription creation. User signs in, onboards, lands on billing, middleware 402s, pays.
-- `requireActiveSubscription` middleware: continues to 402 with `?reason=subscription_required` redirect. No change required.
-- `marketingContactsService`: new segment `SIGNED_UP_NO_PLAN` for users with no subscription. Add `RESEND_SEGMENT_SIGNED_UP_NO_PLAN` env var to broadcasts service segments list.
-- `billing.routes.ts /checkout`: set `allow_promotion_codes: false` (currently true). Promo only via the three controlled paths.
-
-New client:
-- `client/src/pages/welcome.tsx` at route `/welcome?plan=...&interval=...&promo=...`
-- Form: email, first name, last name, optional marketing consent checkbox (default unchecked, GDPR)
-- If `?promo=` supplied, fetches `/api/v2/public/promo/:slug` to show benefit copy ("You'll get 6 months Core free + 15% off after")
-- Submit → `POST /api/v2/public/signup` → redirect to Clerk
-
-Modified client:
-- `App.tsx`: add `/welcome` route to unauthenticated switch
-- `billing.tsx`: when no sub AND `?plan=` query param, auto-scroll-highlight that plan
-
-Phase C design item flagged during A1: `/welcome` flow needs to handle the case where submitted email already exists in DB (e.g. one of the 36 dormant rows, an active user, or a soft-deleted user). Sensible behaviour: redirect to /sign-in with "looks like you already have an account" message.
-
-V-check:
-- TSC clean
-- Manual end-to-end:
-  - `/welcome?plan=core&interval=month` (no promo) → form → Clerk signup → onboarding → /billing (402 banner) → Core checkout → Stripe → pay → sub active
-  - `/welcome?plan=core&interval=month&promo=5d` → form → Clerk signup → onboarding → /dashboard (6-month free trial active)
-  - `/welcome?promo=invalid-slug` → 400 with "promo not found" error on page
-  - `OPEN_ACCESS_ENABLED=false` → /welcome page loads but submit returns 400 with "open access not enabled" message
-  - Email collision: existing email at /welcome submit → redirect to /sign-in with friendly message
-
-## Phase D: Admin direct add user
-
-`POST /api/v2/admin/users/direct-add`:
-- Body: `{email, firstName, lastName, promoCodeCampaignId?, sendInvitationEmail?}`
-- Same transaction pattern as admin-waitlist invite step 5–9
-- Optionally sends `sendWaitlistInvitation` email (template reuse)
-
-New client: "Add user manually" button on `/admin/users` page. Modal with form + promo campaign dropdown.
-
-V-check:
-- TSC clean
-- Manual: admin adds user with 5D campaign selected → user row created → invitation email sent → user clicks link → Clerk signup → 5D trial sub created
-
-## Phase F: 5D invoice rewrite
-
-Replaces broken `/admin/referral-invoice` with new query against current data model.
-
-Current state: 2 rows in prod subscriptions have `referralSource` set (historical writes only — current code doesn't write the column). Current invoice shows only those 2 — incomplete picture.
-
-New query: SELECT users with `assignedPromoCampaignId` joining `promo_code_campaigns` WHERE `referralSource='5d_community' AND freeMonthsTotal=6`, joining subscriptions on userCompany. Compute elapsed/remaining months from `freeMonthsStartedAt`.
-
-Files:
-- `server/config.ts`: add `billing.coreMonthlyDiscountedCents: 7395` constant
-- `server/routes/billing.routes.ts`: replace `INVOICE_RATE_CENTS = 7395` literal with config constant
-- `server/routes/admin.routes.ts`: rewrite `GET /admin/referral-invoice`, add `GET /admin/referral-invoice/csv`
-- `client/src/pages/admin/referral-invoice.tsx`: update display, add Download CSV button
-
-Rate: $73.95/member/month ($87 CORE × 0.85, the 15% discounted price).
-
-V-check:
-- Hit `GET /admin/referral-invoice` for current month → returns actual 5D New Member users with correct math
-- CSV downloads, opens cleanly in Excel
-
-## Phase A2: Schema residue drop
-
-After A1, B, C, D, F prove stable in prod for 2 weeks.
-
-Schema (direct ALTER):
-- DROP TABLE user_sessions
-- DROP TABLE password_reset_tokens
-- DROP TABLE magic_links
-- DROP TABLE resend_rate_limits
-- ALTER TABLE users DROP COLUMN password_hash
-- ALTER TABLE users DROP COLUMN last_login
-- ALTER TABLE subscriptions DROP COLUMN referral_source
-- ALTER TABLE subscriptions DROP COLUMN promo_code_id
-- ALTER TABLE subscriptions DROP COLUMN is_community_member
-- ALTER TABLE subscriptions DROP COLUMN community_free_months_remaining
-- Remove `registration_mode` from `setConfigSchema` enum
-
-Pre-DROP queries confirm 0 rows for each before drop.
-
-V-check:
-- TSC clean
-- `npm run build` clean
-- App boots, all flows work
-
-## Phase G: Hygiene
-
-- `replit.md`: Auth section to "Clerk + session for CSRF/view-as". Update env vars list (add OPEN_ACCESS_ENABLED, RESEND_SEGMENT_SIGNED_UP_NO_PLAN; remove dead SMTP_*). Update Drizzle Migration Strategy note (direct ALTER, not db:push, per #188 drift). Document promo slug model.
-- Marketing site `.env.local`: remove `SUPABASE_*` keys (confirmed unused per Adam)
-- Marketing site `functions/api/waitlist.ts`: update confirmation email copy (drop dated rollout language)
-- Marketing site `PricingToggle.tsx`: tier CTAs to `app.valoxi.ai/welcome?plan=...&interval=...`
-- Marketing site `Navigation.tsx`: primary CTA to `app.valoxi.ai/welcome`
-- Email service `sendWaitlistInvitation`: verify trial line copy reads sensibly when no promo
+Today: in-app, a user with no subscription is blocked from adding companies.
+NEEDS CONFIRMATION: exact location of that gate in the fresh extract.
+In Stripe-first, every user has a subscription from checkout completion, so
+the gate is naturally satisfied. No code change needed — but confirm the gate
+keys on "subscription exists" and not on some other flag.
 
 ## Risk register
 
 | # | Risk | Likelihood | Severity | Mitigation |
 |---|---|---|---|---|
-| 1 | ~~bcrypt strip locks out the 36 active users without Clerk link~~ FALSE ALARM | n/a (resolved) | n/a | Investigation 2026-05-16 confirmed all 36 are stale Clerk invites (admin invited via current flow, never completed Clerk signup). No bcrypt passwords. A1 affected none of them. See assessment.md. RESOLVED. |
-| 2 | Email mismatch: user fills /welcome with email A, signs into Clerk with Google email B | Medium | Medium | Welcome page warning copy. `?email_address=` Clerk pre-fill. Orphan-revoke kicks in if mismatch. |
-| 3 | Schema drop in A2 wipes needed data | Low | High | Pre-DROP queries confirm 0 rows. Backups in repo. A2 ships last. |
-| 4 | OPEN_ACCESS_ENABLED flipped on accidentally before C is ready | Low | Medium | Env var defaults false. Explicit set required. |
-| 5 | Marketing site CTA points to /welcome before app has the route | Medium | Low | Sequence: ship app side first, flip marketing CTAs as part of C apply |
-| 6 | Stripe `allow_promotion_codes: false` breaks existing user who relied on typing a code | Very low | Low | Promo today only attaches via assignedPromoCampaignId. Stripe field was parallel mechanism Adam wasn't using. |
-| 7 | New `getTeamMembers` filter loses users we want to keep | Low | Medium | Same as risk 1 — resolved by investigation, no real exposure |
-| 8 | Welcome page race condition: signup succeeds, Clerk signup abandoned, orphan DB row | Medium | Very low | Don't care. Dormant row, no harm. If same email retries, Clerk webhook links it. |
-| 9 | Email collision at /welcome submit (email already in DB) | Medium | Low | Phase C design item. Sensible behaviour: redirect to /sign-in with "looks like you already have an account" message. Webhook handles linking on Clerk signup if user proceeds. |
-| 10 | Direct npm dependency changes break Replit node_modules | Confirmed (A1) | Medium | Use Replit Packager UI for npm install/uninstall, never direct npm via code_execution. See lessons.md LN-001. |
+| 1 | Webhook provisioning races a concurrent event, creates duplicate user | Med | High | Email-collision check inside the transaction; unique constraint on users.email; getEventByStripeId dedup |
+| 2 | User pays with email A, signs into Clerk with email B → orphan-revoke kills the B Clerk account | Med | Low | Pre-fill Clerk email hard from Stripe email; clear copy; "no account found — wrong email?" message. Paid row is safe, only the wrong Clerk account is revoked. |
+| 3 | Provisioning from browser redirect instead of webhook | n/a | High | C-new.3 demotes /verify-session to read-only; webhook is sole writer |
+| 4 | 5D £0 checkout doesn't collect a card → no auto-continue | Med | Med | Confirm coupon config in C-new.1; Stripe Checkout in subscription mode collects card even at £0 |
+| 5 | OPEN_ACCESS_ENABLED flipped before C-new is ready | Low | Med | Flag defaults false |
+| 6 | Marketing CTAs point at checkout before endpoint exists | Med | Low | Sequence: app side first, marketing CTAs in G |
 
 ## Open decisions
 
 | # | Question | Resolved? |
 |---|---|---|
-| 1 | `/welcome?promo=invalid-slug` — silent ignore or hard error? | Hard error (400). Confirmed. |
-| 2 | New Resend segment name | `SIGNED_UP_NO_PLAN`. Confirmed. |
-| 3 | Welcome page marketing_consent default | Unchecked (GDPR). Confirmed. |
-| 4 | Marketing site keep /request-access standalone for demos | Yes. Confirmed. |
-| 5 | Exact slugs for 3 existing campaigns | Adam confirms at Phase B apply. Suggested: `5d`, `early-bird`, `5d-community`. |
-| 6 | 5D rate | $73.95/member/month. Confirmed. |
-| 7 | ENTERPRISE pricing display on marketing site | "Contact for pricing", not "unlimited". Confirmed. |
-| 8 | After 6-month free period, no payment → cancel (current behaviour) | Keep. Confirmed. |
-| 9 | Action log compression v57-v59 | Separate workstream. Adam handles via Claude Code skill. |
-| 10 | The 36 prod users without Clerk link — what to do | RESOLVED. Leave as dormant rows. Stale Clerk invites with no bcrypt hashes. If any return via /welcome with same email, webhook auto-links + applies their promo. |
-| 11 | admin/database.tsx bcrypt re-auth gate — keep, swap, or remove? | RESOLVED. Removed. Page already gated by AdminRoute → isSystemAdmin. Bcrypt gate was theatre. |
-| 12 | Seed scripts seed-admins/seed-test-team-users — keep, rewrite, or delete? | RESOLVED. Deleted both. Admin direct-add (Phase D) handles new admin onboarding manually. |
-| 13 | /login redirect at App.tsx:192 — keep as soft landing for old bookmarks? | RESOLVED. Removed. Beta cohort small, all migrated. 404 acceptable for stale bookmarks. |
+| 1 | Keep GET /promo/:slug after /welcome retires? | TBD at C-new.1 |
+| 2 | client_reference_id token format | TBD — short signed token carrying promo slug |
+| 3 | Email-mismatch: message only, or also a recovery flow? | Message only for launch (risk 2 is low — paid row survives) |
+| 4 | createTrialSubscription / createFiveDNewMemberTrial — remove or leave? | Leave for now, revisit A2 |
+| 5 | Multi-company gate exact location | NEEDS CONFIRMATION in fresh extract |
 
 ## Action log progression
 
