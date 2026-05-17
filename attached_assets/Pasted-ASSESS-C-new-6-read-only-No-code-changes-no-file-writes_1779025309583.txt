@@ -1,0 +1,74 @@
+ASSESS — C-new.6 (read-only). No code changes, no file writes.
+Verbatim output for every step.
+
+Context: Open Access Pivot, Stripe-first, v65 batch. C-new.6 retires
+the surfaces superseded by the Stripe-first rework: the /welcome page,
+the /public/signup endpoint, and the billing.tsx ?plan= highlight.
+This assess scopes the deletions and settles open decision #1 (keep
+GET /promo/:slug or not).
+
+PART A — welcome.tsx
+
+A1. Print client/src/pages/welcome.tsx in full with line numbers.
+A2. grep -rn "welcome" client/src/App.tsx — report the lazy import
+    and the <Route> registration, with line numbers.
+A3. grep -rn "pages/welcome\|WelcomePage\|/welcome" client/src/ —
+    every reference to the welcome page anywhere in the client. We
+    need to know if anything links to or navigates to /welcome.
+A4. grep -rn "/welcome" valoxi-site/ — does the marketing site link
+    to /welcome anywhere? (Report path + line for each hit, or "no
+    hits".)
+
+PART B — public-signup.routes.ts
+
+B1. Print server/routes/public-signup.routes.ts in full with line
+    numbers. We need every route it defines, not just POST /signup.
+B2. grep -rn "public-signup\|publicSignup\|public/signup" server/ —
+    every reference: the import, the router mount in index.ts, any
+    other use. Report with line numbers.
+B3. Within public-signup.routes.ts, identify every distinct route
+    handler (method + path). Specifically confirm whether
+    GET /promo/:slug exists in this file and quote its full handler.
+B4. grep -rn "promo/:slug\|/promo/" server/ client/ valoxi-site/ —
+    does anything CALL GET /promo/:slug? Report every hit. This
+    settles open decision #1.
+B5. Within public-signup.routes.ts, list every imported symbol and
+    every service/repo it calls. We need to know if deleting the file
+    orphans anything (e.g. resolveCampaignBySlug — confirm it has
+    OTHER callers so it survives, which the C-new.4 assess already
+    showed, but re-confirm none of its callers are ONLY this file).
+
+PART C — billing.tsx ?plan= highlight
+
+C1. grep -rn "plan=" client/src/pages/billing.tsx and
+    grep -rn "searchParams\|URLSearchParams\|useSearch\|?plan" 
+    client/src/pages/billing.tsx — locate the C.3c ?plan= highlight
+    useEffect.
+C2. Print the full useEffect (and any state/refs it touches) with
+    line numbers. We need to know exactly what to remove and whether
+    anything else in billing.tsx depends on that state.
+C3. Confirm whether removing it orphans any imports (e.g. useEffect
+    itself if it is the only one — unlikely, but check) or any state
+    variable.
+
+PART D — anything else superseded
+
+D1. removals.md Phase C-new "To delete" lists: welcome.tsx, the
+    App.tsx /welcome route + import, public-signup.routes.ts,
+    billing.tsx ?plan= effect. grep -rn "openAccessEnabled" 
+    client/src/ server/ — confirm useServerConfig.openAccessEnabled
+    still has live consumers (it must SURVIVE — it is the launch
+    flag). Report hits.
+D2. grep -rn "AccountSetupPending" client/src/ — the C-new.4b assess
+    found this page is only reachable on a race-window state. Is it
+    in the C-new.6 delete list? It is NOT — confirm it is left alone.
+    Just report its references, do not flag for deletion.
+
+PART E — baseline
+
+E1. npm run check — paste verbatim. Expected: 1 error
+    (portal.service.ts:81).
+E2. git status and git log --oneline -3 — paste verbatim. (C-new.5b
+    is uncommitted in the working tree — report as-is.)
+
+Read-only. Stop after E2. Do not chain to any build.
