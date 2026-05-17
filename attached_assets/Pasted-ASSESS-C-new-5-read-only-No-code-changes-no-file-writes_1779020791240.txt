@@ -1,0 +1,63 @@
+ASSESS — C-new.5 (read-only). No code changes, no file writes.
+Verbatim output for every step.
+
+Context: Open Access Pivot, Stripe-first. C-new.5 adds a GDPR
+marketing-consent checkbox (unchecked default) to the onboarding form.
+It was on the old /welcome page (now superseded). Onboarding is
+post-Clerk, so the consenting user is authenticated.
+
+PART A — the onboarding form
+
+A1. Locate the onboarding page. grep -rn "onboarding" client/src/App.tsx
+    and report the route + component file path.
+A2. Print the onboarding page component in full, with line numbers.
+A3. Within it, identify and quote with line numbers:
+    - every form field currently collected (company name, industry,
+      size, country, role, T&C, DPA — confirm the actual list)
+    - how form state is managed (useState per field, react-hook-form,
+      a single object) — quote the state declaration(s)
+    - the T&C and DPA fields specifically — are they checkboxes? What
+      component? Quote their JSX. This is the pattern the marketing
+      consent checkbox should mirror.
+    - the submit handler — what endpoint does it POST/PATCH to, and
+      what payload shape
+
+PART B — the submit endpoint
+
+B1. grep -rn the onboarding submit endpoint path in server/routes/ —
+    locate the handler.
+B2. Print the handler in full with line numbers.
+B3. Quote the request body validation (zod schema or manual) — the
+    exact shape it currently accepts.
+B4. Quote where it writes the onboarding fields — which table, which
+    columns. Confirm whether it writes T&C / DPA acceptance and how
+    (boolean column, timestamp, both).
+
+PART C — the marketing consent target column
+
+C1. The old /welcome page had a marketing consent field. grep -rn
+    "marketingConsent\|marketing_consent" server/ shared/ client/ —
+    every hit. We need to know if a column already exists.
+C2. If a marketingConsent column exists on a table, report: which
+    table, the column type, nullable, default. Run against DATABASE_URL:
+    SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE column_name IN ('marketing_consent','marketing_consent_at')
+      ORDER BY table_name, column_name;
+    Report which table(s) they sit on.
+C3. grep -rn "marketingConsent" the old welcome page if it still exists
+    (client/src/pages/welcome.tsx) — quote how /welcome captured and
+    submitted it, so C-new.5 mirrors the intent. If welcome.tsx is
+    already deleted, say so.
+C4. grep -rn "syncContactOnUserCreate\|marketingConsent" in
+    server/services/marketing-contacts.service.ts — does the marketing
+    sync already read a consent flag, or is consent currently unused
+    downstream?
+
+PART D — baseline
+
+D1. npm run check — paste verbatim. Expected: 1 error
+    (portal.service.ts:81).
+D2. git status and git log --oneline -3 — paste verbatim.
+
+Read-only. Stop after D2. Do not chain to any build.
