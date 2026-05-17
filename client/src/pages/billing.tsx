@@ -227,31 +227,6 @@ export default function BillingPage() {
       });
   }, [toast]);
 
-  // Phase C.3c — when arriving from /welcome with ?plan=, scroll the matching
-  // plan card into view and briefly highlight it. The param arrives lowercase
-  // (marketing CTAs use ?plan=core); data-plan attributes are uppercase PlanKeys.
-  const planHighlightDone = useRef(false);
-  useEffect(() => {
-    if (planHighlightDone.current) return;
-    const raw = new URLSearchParams(window.location.search).get('plan');
-    if (!raw) return;
-    const planKey = raw.trim().toUpperCase();
-    const validKeys = ['CORE', 'PROFESSIONAL', 'EXPERT'];
-    if (!validKeys.includes(planKey)) return;
-    // Defer to next frame so the plan cards are mounted.
-    const t = window.setTimeout(() => {
-      const el = document.querySelector(`[data-plan="${planKey}"]`);
-      if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
-      window.setTimeout(() => {
-        el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
-      }, 2400);
-      planHighlightDone.current = true;
-    }, 150);
-    return () => window.clearTimeout(t);
-  }, []);
-
   const [upgradePreview, setUpgradePreview] = useState<UpgradePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
   const [pendingUpgrade, setPendingUpgrade] = useState<{ planKey: PlanKey; interval: "month" | "year" } | null>(null);

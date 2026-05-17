@@ -34,7 +34,6 @@ import marketingWebhooksRoutes from './marketing-webhooks.routes';
 import publicConfigRoutes from './public.routes';
 import publicWaitlistRoutes from './public-waitlist.routes';
 import publicMarketingConsentRoutes from './public-marketing-consent.routes';
-import publicSignupRoutes from './public-signup.routes';
 import publicCheckoutRoutes from './public-checkout.routes';
 import billingAdminRoutes from './billing-admin.routes';
 import onboardingRoutes from './onboarding.routes';
@@ -105,7 +104,6 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/webhooks', marketingWebhooksRoutes);
   app.use('/api/v2/public/waitlist', waitlistLimiter, publicWaitlistRoutes);
   app.use('/api/v2/public/marketing-consent', waitlistLimiter, publicMarketingConsentRoutes);
-  app.use('/api/v2/public', waitlistLimiter, publicSignupRoutes);
   app.use('/api/v2/public', waitlistLimiter, publicCheckoutRoutes);
   app.use('/api/v2/public', publicConfigRoutes);
   app.use('/api/v2/billing', billingWebhookRoutes);

@@ -1,0 +1,135 @@
+APPLY — C-new.6 (Option B scope): retire superseded signup surfaces.
+Files: server/routes/public-signup.routes.ts (DELETE),
+       server/routes/index.ts (remove import + mount),
+       client/src/pages/billing.tsx (remove ?plan= effect),
+       client/src/pages/welcome.tsx (REPLACE with redirect shim).
+welcome.tsx route in App.tsx and promo-campaigns.tsx are DEFERRED to
+Phase G — do NOT touch them. Prod untouched.
+
+PRE-STEP VERIFICATION (report output, proceed only if all pass):
+
+P1. git status — expect clean tree. git log --oneline -2 — expect
+    HEAD 2ee367f.
+P2. ls server/routes/public-signup.routes.ts — confirm it exists.
+P3. grep -n "public-signup\|publicSignup" server/routes/index.ts —
+    expect 2 hits (import line, mount line). Report verbatim.
+P4. Print server/routes/index.ts lines 35-40 and 105-112. Confirm the
+    import and mount lines match below.
+P5. Print client/src/pages/billing.tsx lines 228-255. Confirm the
+    planHighlightDone ref + useEffect match the find-block below.
+P6. grep -rn "public/signup\|/api/v2/public/promo" client/src/ —
+    report every caller of the two endpoints being deleted. Expect
+    hits ONLY in welcome.tsx. If any hit is OUTSIDE welcome.tsx,
+    STOP and report — do not edit.
+
+If any pre-step fails, STOP and report. Do not edit.
+
+=== FILE 1: DELETE server/routes/public-signup.routes.ts ===
+
+CHANGE 1 — delete the file entirely.
+rm server/routes/public-signup.routes.ts
+
+=== FILE 2: server/routes/index.ts ===
+
+CHANGE 2 — remove the import.
+Delete this line (exact text from P3/P4 — match verbatim):
+    import publicSignupRoutes from './public-signup.routes';
+
+CHANGE 3 — remove the mount.
+Delete this line (exact text from P3/P4 — match verbatim):
+    app.use('/api/v2/public', waitlistLimiter, publicSignupRoutes);
+
+NOTE: if any OTHER router is also mounted on '/api/v2/public' with
+waitlistLimiter on a nearby line, LEAVE it. Only remove the line that
+references publicSignupRoutes. Report what you removed.
+
+=== FILE 3: client/src/pages/billing.tsx ===
+
+CHANGE 4 — remove the ?plan= highlight effect and its ref.
+Delete the planHighlightDone useRef declaration AND the full useEffect
+block AND the three comment lines above it — i.e. delete this entire
+span (lines ~230-253):
+
+  // Phase C.3c — when arriving from /welcome with ?plan=, scroll the matching
+  // plan card into view and briefly highlight it. The param arrives lowercase
+  // (marketing CTAs use ?plan=core); data-plan attributes are uppercase PlanKeys.
+  const planHighlightDone = useRef(false);
+  useEffect(() => {
+    if (planHighlightDone.current) return;
+    const raw = new URLSearchParams(window.location.search).get('plan');
+    if (!raw) return;
+    const planKey = raw.trim().toUpperCase();
+    const validKeys = ['CORE', 'PROFESSIONAL', 'EXPERT'];
+    if (!validKeys.includes(planKey)) return;
+    // Defer to next frame so the plan cards are mounted.
+    const t = window.setTimeout(() => {
+      const el = document.querySelector(`[data-plan="${planKey}"]`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+      window.setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+      }, 2400);
+      planHighlightDone.current = true;
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, []);
+
+Do NOT touch: the redirectedForSubscription line (~185), the
+verifyAttempted ref (~190), the session_id verification useEffect
+(~199), the data-plan attribute on the plan card (~674), or the
+document.querySelector('[data-plan="PROFESSIONAL"]') at (~945). useRef
+and useEffect imports STAY — both still used elsewhere in the file.
+
+=== FILE 4: client/src/pages/welcome.tsx ===
+
+CHANGE 5 — replace the entire file contents with a redirect shim.
+The page's signup form and promo fetch both depend on endpoints
+deleted above. Per C-new.6 Option B the /welcome route stays live
+until Phase G, but as an honest redirect, not a broken form.
+Replace the ENTIRE contents of client/src/pages/welcome.tsx with
+exactly this:
+
+import { useEffect } from "react";
+
+/**
+ * /welcome — retired surface (C-new.6, Option B).
+ *
+ * The account-first signup flow this page served was superseded by the
+ * Stripe-first checkout flow. The page's form depended on
+ * POST /api/v2/public/signup, which was removed in C-new.6.
+ *
+ * The /welcome route is kept alive only so that promo URLs already
+ * shared by admins (app.valoxi.ai/welcome?promo=...) still resolve
+ * instead of 404ing. It redirects to the marketing site. Full deletion
+ * of this file and its route, plus the promo-campaigns.tsx URL repoint,
+ * is deferred to Phase G alongside the marketing-site promo work.
+ */
+export default function WelcomePage() {
+  useEffect(() => {
+    window.location.replace("https://valoxi.ai/");
+  }, []);
+
+  return null;
+}
+
+V-CHECK (run, paste verbatim):
+V1. npm run check — full output. Expected: exactly 1 error,
+    server/services/portal.service.ts:81. Anything else is a regression.
+    NOTE: pay attention to any error in welcome.tsx, billing.tsx or
+    index.ts — flag it explicitly.
+V2. ls server/routes/public-signup.routes.ts — expect "No such file".
+    grep -n "publicSignup\|public-signup" server/routes/index.ts —
+    expect 0 hits.
+    grep -rn "public/signup\|/api/v2/public/promo" client/src/ —
+    expect 0 hits (welcome.tsx no longer calls them).
+    grep -n "planHighlightDone" client/src/pages/billing.tsx —
+    expect 0 hits.
+    wc -l client/src/pages/welcome.tsx — expect ~22 lines.
+V3. Restart the dev workflow. Confirm it boots clean. Paste startup
+    log. Confirm no route-registration error for the removed mount.
+V4. git diff --stat and git status — paste verbatim. Expect:
+    public-signup.routes.ts deleted, index.ts modified, billing.tsx
+    modified, welcome.tsx modified — 4 files.
+
+Stop after V-check and report results. Do not chain to any build.
