@@ -1,0 +1,68 @@
+ASSESS — C-new.5b (read-only). No code changes, no file writes.
+Verbatim output for every step.
+
+Context: Open Access Pivot, Stripe-first, v65 batch. C-new.5 now
+collects marketing consent at onboarding. C-new.5b makes the marketing
+sync honour it. Today syncContactOnUserCreate hardcodes
+unsubscribed: false and ignores users.marketingConsent. Timing wrinkle:
+the sync runs at Clerk-webhook time, BEFORE onboarding, so consent is
+always false when the sync fires. This assess scopes the exact fix.
+
+PART A — the marketing contacts service
+
+A1. Print server/services/marketing-contacts.service.ts in full, with
+    line numbers.
+A2. Within syncContactOnUserCreate, quote with line numbers:
+    - the resendMarketing.contacts.create call and every field passed,
+      especially the hardcoded unsubscribed: false
+    - which Resend audience/segment the contact is created in
+    - whether the user row it reads includes marketingConsent in its
+      SELECT (quote the select)
+A3. List every other exported method on this service with its
+    signature and a one-line description. Specifically report whether
+    any method already UPDATES an existing Resend contact (as opposed
+    to create), and whether an upsertContact method exists.
+A4. If an upsertContact method exists, print it in full. Note: BL-004
+    flags an undefined u.email bug in this file — quote the line BL-004
+    refers to if you can identify it, but do NOT fix anything.
+
+PART B — the Resend marketing client
+
+B1. grep -rn "resendMarketing\|RESEND_API_KEY_MARKETING" server/ —
+    locate the client wrapper.
+B2. Print the resendMarketing client wrapper file (likely
+    server/services/resend-marketing.ts or similar) in full with line
+    numbers. We need to know what contact methods are exposed:
+    create, update, get, remove.
+B3. Confirm: does the wrapper expose a contacts.update method, and
+    what is its signature (does it key on contact id, or on email)?
+    The Resend API supports updating a contact's unsubscribed flag —
+    confirm the wrapper surfaces it.
+
+PART C — where the sync is called
+
+C1. grep -rn "syncContactOnUserCreate" server/ — every call site.
+C2. For each call site, quote ~5 lines of surrounding context and
+    confirm at what point in the flow it runs (Clerk webhook
+    handleUserCreated, admin path, anywhere else).
+C3. Confirm: is syncContactOnUserCreate called anywhere in the
+    onboarding handler (server/routes/onboarding.routes.ts)? grep that
+    file for any marketing-contacts or resend calls.
+
+PART D — the onboarding handler write point
+
+D1. Re-print server/routes/onboarding.routes.ts lines 196-219 (the
+    users update + recordAcceptance + funnel track + sendSuccess) as
+    it now stands AFTER C-new.5. Confirm marketingConsent is written
+    at lines ~204-205.
+D2. Report what imports the file already has at the top (lines 1-25),
+    so we know if marketing-contacts.service is already imported.
+
+PART E — baseline
+
+E1. npm run check — paste verbatim. Expected: 1 error
+    (portal.service.ts:81).
+E2. git status and git log --oneline -3 — paste verbatim. (C-new.5 is
+    uncommitted in the working tree — report as-is.)
+
+Read-only. Stop after E2. Do not chain to any build.
