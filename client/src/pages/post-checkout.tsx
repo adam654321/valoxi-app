@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const POLL_INTERVAL_MS = 2500;
 const MAX_POLLS = 16; // ~40 seconds total
 
-type Status = "polling" | "timeout" | "error";
+type Status = "polling" | "ready" | "timeout" | "error";
 
 /**
  * /post-checkout — C-new.3
@@ -15,6 +16,7 @@ type Status = "polling" | "timeout" | "error";
  */
 export default function PostCheckoutPage() {
   const [status, setStatus] = useState<Status>("polling");
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
@@ -38,7 +40,8 @@ export default function PostCheckoutPage() {
         const data = await res.json();
         if (cancelled) return;
         if (data.provisioned && data.email) {
-          window.location.href = `/sign-up?email_address=${encodeURIComponent(data.email)}`;
+          setEmail(data.email);
+          setStatus("ready");
           return;
         }
       } catch {
@@ -70,6 +73,29 @@ export default function PostCheckoutPage() {
             <p className="mt-2 text-sm text-muted-foreground">
               Your payment went through. We are creating your Valoxi account now. This takes a few seconds.
             </p>
+          </>
+        )}
+
+        {status === "ready" && email && (
+          <>
+            <h1 className="text-xl font-bold text-foreground">Your account is ready</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Create your login next. Use this email when you sign up. It is linked to your payment:
+            </p>
+            <div className="mt-4 rounded-md border bg-muted px-4 py-3 font-medium text-foreground break-words">
+              {email}
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              A different email will not connect to your account.
+            </p>
+            <Button
+              className="mt-6 w-full"
+              onClick={() => {
+                window.location.href = `/sign-up?email_address=${encodeURIComponent(email)}`;
+              }}
+            >
+              Continue to sign-up
+            </Button>
           </>
         )}
 
