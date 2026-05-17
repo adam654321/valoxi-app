@@ -1,6 +1,6 @@
 # Open Access Pivot — Plan
 
-Status: IN PROGRESS — Phase C RE-PLANNED (Stripe-first rework)
+Status: IN PROGRESS — C-new.1, C-new.2, C-new.3 built and dev-verified (2026-05-17). Next: C-new.4.
 Started: 2026-05-15 (action log v62)
 Owner: Adam
 Related: assessment.md, removals.md, lessons.md, action log v62–v70
@@ -48,8 +48,11 @@ What is superseded:
 2. Public endpoint creates a Stripe Checkout Session: plan price + interval,
    coupon resolved from promo slug via resolveCampaignBySlug, client_reference_id
    set to a signup-intent token, success_url to /post-checkout?session_id=...
-3. Stripe Checkout collects email + name + card. 5D coupon = 100% off 6 months,
-   so 5D pays £0 today but still enters card (subscription auto-continues month 7).
+3. Stripe Checkout collects email + name + card. 5D New Member: a Stripe-native
+   6-month trial gives the free period (£0, card still collected) with the
+   15%-forever coupon attached from the start; at month 6 Stripe bills CORE at
+   15%. Early Bird / Standard 5D: the campaign's forever-discount coupon is
+   applied at checkout. No 100%-off coupon exists or is used.
 4. checkout.session.completed webhook (signature-verified, idempotent):
    - Reads customer email from the session
    - Email-collision check (case-insensitive, mirrors Clerk webhook)
@@ -75,10 +78,10 @@ What is superseded:
 | A1 | Code residue removal | Low | v62.1 → v63 ✓ |
 | B | Promo model: slugs, drop promo_codes | Low-Med | v63 → v64 ✓ |
 | C-old | Account-first signup (SUPERSEDED) | — | built v64-v66, re-planned |
-| C-new.1 | Public checkout endpoint + Stripe session creation | Med | v66 → v67 |
-| C-new.2 | Webhook provisioning: create user from checkout.session.completed | High | v67 → v67.1 |
-| C-new.3 | /post-checkout poll page + Clerk forward + email-mismatch handling | Med | v67.1 → v67.2 |
-| C-new.4 | Clerk webhook simplification (strip trial creation) | Med | v67.2 → v67.3 |
+| C-new.1 | Public checkout endpoint POST /api/v2/public/checkout | Med | v67 ✓ built+verified |
+| C-new.2 | Webhook self-serve provisioning from checkout.session.completed | High | v67.1 ✓ built+verified |
+| C-new.3 | /post-checkout poll page + GET /api/v2/public/checkout-status | Med | v67.2 ✓ built+verified |
+| C-new.4 | Clerk webhook simplification + email-mismatch message | Med | v67.2 → v67.3 |
 | C-new.5 | Onboarding gains marketing consent | Low | v67.3 → v67.4 |
 | C-new.6 | Retire /welcome, /public/signup, dead C.3 client bits | Low | v67.4 → v67.5 |
 | flip OPEN_ACCESS_ENABLED | Soft launch | — | v67.5 → v67.6 |
@@ -88,26 +91,82 @@ What is superseded:
 | G | Hygiene + marketing site Stripe-bound CTAs | Low | v71 |
 | E | Marketing site full overhaul | — | Deferred |
 
+## Build progress — C-new (2026-05-17, dev-verified)
+
+C-new.1, C-new.2, C-new.3 built, dev-verified against real signed Stripe
+test-mode events, not committed to a release tag yet. Prod untouched.
+
+Settled facts. Do not re-derive these:
+
+5D mechanism is Option B-prime, NOT a 100%-off coupon.
+- A 100%-off-6-months Stripe coupon does NOT exist and is not needed.
+- 5D New Member checkout sets a Stripe-native 6-month trial and attaches the
+  15%-forever coupon from day one. £0 during the trial, card collected. At
+  month 6 Stripe ends the trial and bills CORE at 15%. Stripe owns the whole
+  transition: no cron, no DB free-period row for new self-serve signups.
+- A Stripe-first 5D user has subscriptions.free_months_total = 0; the free
+  period lives entirely in the Stripe trial. The billing cron ignores them.
+- 5D New Member self-serve is CORE + monthly only. PRO/EXPERT or annual with
+  the 5d slug is rejected at the checkout endpoint.
+
+Verified coupon IDs (Stripe TEST mode):
+- cEGIKCtT — "5D New Member ongoing" — 15% off, forever
+- 8GXzaftB — "Early Bird" — 20% off, forever
+- YBzQWYzq — "Standard 5D community" — 15% off, forever
+Campaign id 11 carries cEGIKCtT in BOTH stripe_coupon_id and
+post_free_period_coupon_id; intentional, both stages use the same 15% coupon.
+Live-mode coupon IDs are separate and confirmed at the prod cutover.
+(Any earlier note citing BOWWbbs6 / t7DDiD9J / dIBdlJg2 was wrong: those IDs
+do not exist. coupons.list in test mode returned only the three above.)
+
+Collision behaviour (C-new.2): the webhook self-serve branch matches on email,
+case-insensitive. Existing user with NO live subscription → activate against
+their company (covers the 36 dormant invited users). Existing user who already
+holds an active/trialing/admin_comped subscription → do NOT activate, do NOT
+clobber, log DOUBLE-PAYMENT ALERT for manual review and refund. The new branch
+returns non-2xx on failure so Stripe retries; email-collision + activate
+idempotency make a retry converge.
+
+Stripe v20 discount shape: a coupon on a subscription is read at
+discount.source.coupon (string id), NOT discount.coupon. Anything that reads a
+discount back off a subscription must use source.coupon.
+
+Deferred out of C-new.3:
+- /verify-session demotion — its own slice or Phase G hygiene. It is
+  idempotency-protected and not on the open-access path; demoting it adds a
+  billing.tsx eventual-consistency race that needs handling properly.
+- Email-mismatch message — folded into C-new.4 (Clerk-webhook-coupled).
+
+Future slice — 5D early-upgrade credit: when a 5D member upgrades mid free
+period, carry the unused CORE value forward as a Stripe customer balance
+credit, capped at the CORE 5D rate of $73.95/month. Built against
+POST /api/v2/billing/upgrade, after C-new. Not in C-new scope.
+
 ## C-new.1: Public checkout endpoint
+
+> Built and dev-verified 2026-05-17. As-built correction: there is NO
+> 100%-off coupon. 5D New Member uses a Stripe-native 6-month trial plus the
+> 15%-forever coupon. See "Build progress — C-new" above.
 
 POST /api/v2/public/checkout — unauthenticated, rate-limited (waitlistLimiter).
 Body: { planKey, interval, promoSlug? }
 - Validates planKey in CORE/PROFESSIONAL/EXPERT, interval in month/year
 - If promoSlug: resolveCampaignBySlug → campaign.stripeCouponId for the
-  discount campaigns; for 5D New Member, the 100%-off-6-months coupon
+  discount campaigns; for 5D New Member, a Stripe-native 6-month trial plus the
+  15% coupon (NOT a 100%-off coupon)
 - Creates Stripe Checkout Session:
   - mode: subscription, line_items: plan price from lookup key
   - discounts: [{ coupon }] if a promo resolved
-  - client_reference_id: a generated signup-intent token (carries promo slug
-    + plan so the webhook can attribute without trusting metadata alone)
+  - metadata carries planKey / billingInterval / promoSlug (no signed token —
+    the webhook signature authenticates the event)
   - success_url: {baseUrl}/post-checkout?session_id={CHECKOUT_SESSION_ID}
   - cancel_url: marketing site pricing section
 - Returns { checkoutUrl }
-NEEDS CONFIRMATION: how 5D's £0 checkout behaves — confirm the 100%-off coupon
-is a 6-month duration:repeating coupon and that Stripe still collects a card in
-that case (it should, for the auto-continue).
 
 ## C-new.2: Webhook provisioning (HIGH RISK)
+
+> Built and dev-verified 2026-05-17, against real signed Stripe events. HIGH
+> RISK slice closed. See "Build progress — C-new" above.
 
 Extend the existing checkout.session.completed branch in billing.routes.ts
 (the billingWebhookRoutes handler). Current branch reads metadata.userCompanyId
@@ -120,26 +179,31 @@ and activates. New logic:
     activates against their company; log and continue
   - If no existing user → create userCompany + user + userCompanyMembership
     in a transaction (mirror admin-waitlist invite, companyName 'Pending Setup')
-  - Resolve promo from client_reference_id token → assignCampaignToUser
+  - Resolve promo from session metadata → assignCampaignToUser
   - activateSubscription against the new userCompanyId
 - Idempotency: the existing getEventByStripeId dedup covers webhook redelivery.
   The transaction must also be safe if the email already got a row from a
   concurrent event.
 
 This is the highest-risk slice. Webhook is the SINGLE provisioning source.
-/verify-session must be demoted to read-only (see C-new.3).
 
 ## C-new.3: /post-checkout page + /verify-session demotion
+
+> Built and dev-verified 2026-05-17. Scope as-built: the /post-checkout page +
+> GET /api/v2/public/checkout-status endpoint ONLY. The /verify-session
+> demotion and the email-mismatch message were split out — demotion deferred
+> (own slice / Phase G), message moved to C-new.4. See "Build progress" above.
 
 - New client page /post-checkout?session_id=... — polls a read-only endpoint
   ("has the webhook provisioned this session yet?"), shows a spinner, then
   forwards to Clerk /sign-up?email_address=... once provisioning is confirmed.
-- /verify-session is DEMOTED: it must no longer write/activate. It becomes a
-  read-only status check. Provisioning is the webhook's job exclusively.
-  This removes the current double-provisioning (webhook + browser redirect).
-- Email-mismatch handling: if the user reaches Clerk and signs up with a
-  different email than they paid with, the Clerk webhook finds no row.
-  Message: "We couldn't find an account for this email. Did you use a
+- /verify-session demotion: DEFERRED out of C-new.3. It must eventually become
+  a read-only status check with no write/activate, so the webhook is the sole
+  provisioner. Deferred because it is idempotency-protected, not on the
+  open-access path, and demoting it adds a billing.tsx race to handle properly.
+- Email-mismatch handling: MOVED to C-new.4. If the user reaches Clerk and
+  signs up with a different email than they paid with, the Clerk webhook finds
+  no row. Message: "We couldn't find an account for this email. Did you use a
   different email when you paid? Sign out and sign in with that email."
 
 ## C-new.4: Clerk webhook simplification
@@ -152,6 +216,7 @@ seedDefaultPipelineStages, welcome email, marketing sync.
 billingService.createFiveDNewMemberTrial and createTrialSubscription become
 unused by the signup path — leave defined (admin paths may use), or remove
 in A2 cleanup. TBD.
+Also in C-new.4: the email-mismatch message (moved here from C-new.3).
 
 ## C-new.5: Onboarding marketing consent
 
@@ -167,22 +232,27 @@ post-Clerk so the consenting user is authenticated — cleaner for GDPR audit.
 - Remove billing.tsx ?plan= highlight effect (C.3c) — moot
 - Keep useServerConfig.openAccessEnabled — it is the launch flag
 
-## Multi-company gate — resolved as a consequence
+## Multi-company gate — RESOLVED
 
-Today: in-app, a user with no subscription is blocked from adding companies.
-NEEDS CONFIRMATION: exact location of that gate in the fresh extract.
-In Stripe-first, every user has a subscription from checkout completion, so
-the gate is naturally satisfied. No code change needed — but confirm the gate
-keys on "subscription exists" and not on some other flag.
+Located: server/routes/index.ts, the requireActiveSubscription middleware on
+the /api/v2/user/companies mount. It is not a multi-company-specific gate; it
+gates ~20 route groups (the whole app). It keys on a subscriptions row existing
+AND status in {active, trialing, admin_comped} (ACTIVE_STATUSES in
+server/middleware/subscription.ts). The user-companies route handler itself has
+no subscription check, only a hard cap of 5 companies.
+
+Consequence for Stripe-first: satisfied for free, but C-new.2's
+activateSubscription must write an active or trialing status. It does; a 5D
+trial sub is trialing, a paid sub is active, both pass.
 
 ## Risk register
 
 | # | Risk | Likelihood | Severity | Mitigation |
 |---|---|---|---|---|
-| 1 | Webhook provisioning races a concurrent event, creates duplicate user | Med | High | Email-collision check inside the transaction; unique constraint on users.email; getEventByStripeId dedup |
+| 1 | Webhook provisioning races a concurrent event, creates duplicate user | Med | High | Email-collision check inside the transaction; unique constraint on users.email; getEventByStripeId dedup. VERIFIED in C-new.2. |
 | 2 | User pays with email A, signs into Clerk with email B → orphan-revoke kills the B Clerk account | Med | Low | Pre-fill Clerk email hard from Stripe email; clear copy; "no account found — wrong email?" message. Paid row is safe, only the wrong Clerk account is revoked. |
-| 3 | Provisioning from browser redirect instead of webhook | n/a | High | C-new.3 demotes /verify-session to read-only; webhook is sole writer |
-| 4 | 5D £0 checkout doesn't collect a card → no auto-continue | Med | Med | Confirm coupon config in C-new.1; Stripe Checkout in subscription mode collects card even at £0 |
+| 3 | Provisioning from browser redirect instead of webhook | n/a | High | Webhook is sole writer for the open-access flow. /verify-session demotion deferred (it is idempotency-protected and not on the open-access path). |
+| 4 | 5D £0 checkout doesn't collect a card → no auto-continue | Med | Med | RESOLVED — Stripe Checkout in subscription mode collects a card even at £0. 5D verified: 184-day trial, card collected, 15% coupon attached. |
 | 5 | OPEN_ACCESS_ENABLED flipped before C-new is ready | Low | Med | Flag defaults false |
 | 6 | Marketing CTAs point at checkout before endpoint exists | Med | Low | Sequence: app side first, marketing CTAs in G |
 
@@ -190,24 +260,32 @@ keys on "subscription exists" and not on some other flag.
 
 | # | Question | Resolved? |
 |---|---|---|
-| 1 | Keep GET /promo/:slug after /welcome retires? | TBD at C-new.1 |
-| 2 | client_reference_id token format | TBD — short signed token carrying promo slug |
-| 3 | Email-mismatch: message only, or also a recovery flow? | Message only for launch (risk 2 is low — paid row survives) |
+| 1 | Keep GET /promo/:slug after /welcome retires? | TBD at C-new.6 |
+| 2 | client_reference_id token format | RESOLVED — no token. planKey/billingInterval/promoSlug carried in Stripe session metadata; webhook signature already authenticates it. |
+| 3 | Email-mismatch: message only, or also a recovery flow? | Message only for launch (risk 2 is low — paid row survives). Built in C-new.4. |
 | 4 | createTrialSubscription / createFiveDNewMemberTrial — remove or leave? | Leave for now, revisit A2 |
-| 5 | Multi-company gate exact location | NEEDS CONFIRMATION in fresh extract |
+| 5 | Multi-company gate exact location | RESOLVED — requireActiveSubscription on /api/v2/user/companies mount. See Multi-company gate section. |
 
 ## Action log progression
+
+Actuals are dated and ticked. Rows below the C-new.3 line are projected.
 
 | Version | Phase | Notes |
 |---|---|---|
 | v62 | Open access kickoff | Pivot scoped, 4-wave codebase assess completed |
-| v62.1 | Pre-build complete | Replit grep pass + docs written + plan locked + 36-user investigation |
+| v62.1 | Pre-build complete ✓ | Replit grep pass + docs written + plan locked + 36-user investigation |
 | v63 | A1 complete ✓ | Code residue removed (2026-05-16, commit 1ac43a8) |
-| v64 | B in progress | Promo model refactor — slugs + drop promo_codes |
-| v65 | C in progress | Public signup live (flag still off) |
-| v66 | D in progress | Admin direct add live |
-| v67 | F in progress | 5D invoice rewrite live |
-| v67.1 | OPEN_ACCESS_ENABLED=true | Soft launch in prod |
-| v68 | A2 in progress | Schema residue dropped |
-| v69 | G in progress | Hygiene + marketing minimal CTAs live |
-| Future | E | Marketing site full overhaul (separate workstream) |
+| v64 | B complete ✓ | Promo model — slugs + drop promo_codes (see note below) |
+| v64–v66 | C-old (superseded) | Account-first signup built, then re-planned to Stripe-first |
+| v67 | C-new.1 complete ✓ | Public checkout endpoint (2026-05-17, dev-verified) |
+| v67.1 | C-new.2 complete ✓ | Webhook self-serve provisioning (2026-05-17, dev-verified incl. collision guard) |
+| v67.2 | C-new.3 complete ✓ | /post-checkout page + checkout-status endpoint (2026-05-17, dev-verified) |
+| v67.3 | C-new.4 (next) | Clerk webhook simplification + email-mismatch message |
+| v67.4 | C-new.5 (projected) | Onboarding gains marketing consent |
+| v67.5 | C-new.6 (projected) | Retire /welcome, /public/signup, dead C.3 client bits |
+| v67.6 | flip OPEN_ACCESS_ENABLED (projected) | Soft launch |
+| v68–v71 | D, F, A2, G (projected) | Admin direct add, 5D invoice rewrite, schema drop, hygiene |
+| later | E (projected) | Marketing site full overhaul (separate workstream) |
+
+Note on Phase B: this phase table marks B complete (✓). The removals.md Phase B
+checklist is still unticked. Confirm B's true state and reconcile the two docs.

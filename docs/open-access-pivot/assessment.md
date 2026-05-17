@@ -1,6 +1,6 @@
 # Open Access Pivot — Assessment
 
-Status: HISTORICAL (assessment complete 2026-05-15, amended 2026-05-16 with 36-user investigation)
+Status: HISTORICAL (assessment complete 2026-05-15, amended 2026-05-16 with 36-user investigation, amended 2026-05-17 with C-new build findings)
 Owner: Adam
 Related: docs/open-access-pivot/plan.md, docs/open-access-pivot/removals.md, docs/open-access-pivot/lessons.md, action log v62+
 
@@ -252,3 +252,37 @@ Stripe surface findings (assess 2026-05-16):
 Consequence: C.1 (/public/signup) and C.3 (/welcome page) are superseded.
 C.2's trial-creation branch is removed. Phase B and resolveCampaignBySlug
 stand and are load-bearing for the new checkout path.
+
+## C-new build findings (2026-05-17)
+
+C-new.1, C-new.2, C-new.3 built and dev-verified this session. Key findings
+that correct or close earlier open items:
+
+5D coupon — the assessed assumption was wrong. The plan assumed a
+100%-off-6-months Stripe coupon. It does not exist. coupons.list in Stripe test
+mode returned exactly three coupons, all forever percentage discounts:
+cEGIKCtT (15%), 8GXzaftB (20%, Early Bird), YBzQWYzq (15%, Standard 5D). In the
+pre-pivot model the 5D 6-month free period was a Valoxi DB trial plus a
+balance-credit on early conversion, never a Stripe coupon. Resolution: Option
+B-prime — deliver the free period as a Stripe-native trial, attach the
+15%-forever coupon (cEGIKCtT) from the start. See plan.md "Build progress".
+
+Multi-company gate — confirmed (closes the NEEDS CONFIRMATION item in the
+Stripe-first rework section above): requireActiveSubscription middleware on the
+/api/v2/user/companies mount in server/routes/index.ts, keyed on a subscriptions
+row with status in {active, trialing, admin_comped}. Not company-specific; it is
+the universal app entitlement gate, covering ~20 route groups.
+
+Stripe v20 discount shape — a subscription's coupon is at
+discount.source.coupon (string id), not discount.coupon. Recorded so a future
+slice reading discounts off a subscription does not trip.
+
+Webhook collision behaviour — verified live: an existing user with a live
+subscription triggers a DOUBLE-PAYMENT ALERT log and the new subscription is
+NOT applied; the existing row is untouched (manual review and refund). An
+existing user with no live sub (e.g. one of the 36 dormant) is activated
+against their company.
+
+C-new.3 scope — the /verify-session demotion and the email-mismatch message
+were split out of C-new.3. Demotion is deferred (own slice / Phase G hygiene);
+mismatch message moves to C-new.4.

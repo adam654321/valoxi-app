@@ -197,8 +197,10 @@ After A1 + B + C + D + F stable in prod for 2 weeks.
       block (createFiveDNewMemberTrial call, isFiveDNewMember branch, the
       existingSubscription===null trial logic). KEEP email match, clerkUserId
       link, invitation flip, seedDefaultPipelineStages, welcome email.
-- [ ] server/routes/billing.routes.ts /verify-session — demote to read-only
-      status check, remove all activateSubscription / write calls.
+- [ ] server/routes/billing.routes.ts /verify-session — demote to read-only.
+      DEFERRED out of C-new.3 (2026-05-17): own slice or Phase G hygiene.
+      Idempotency-protected and not on the open-access path; demotion adds a
+      billing.tsx eventual-consistency race to handle properly.
 
 ### To keep (confirmed still needed)
 - useServerConfig.openAccessEnabled — launch flag, stays
@@ -207,5 +209,7 @@ After A1 + B + C + D + F stable in prod for 2 weeks.
 
 ### NEEDS CONFIRMATION before apply
 - Exact location of the in-app multi-company "no subscription → blocked" gate
+  — RESOLVED 2026-05-17: requireActiveSubscription on the /api/v2/user/companies
+  mount in server/routes/index.ts. See plan.md "Multi-company gate".
 - Whether createTrialSubscription / createFiveDNewMemberTrial have any
   remaining callers after C-new.4 (if none, candidates for A2 removal)
