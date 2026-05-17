@@ -20,6 +20,7 @@ import MarketingConsentPage from "@/pages/marketing-consent";
 const SignInPage = lazy(() => import("@/pages/auth/sign-in"));
 const SignUpPage = lazy(() => import("@/pages/auth/sign-up"));
 const WelcomePage = lazy(() => import("@/pages/welcome"));
+const PostCheckoutPage = lazy(() => import("@/pages/post-checkout"));
 const AccountSetupPending = lazy(() => import("@/pages/auth/account-setup-pending"));
 const AccountInactive = lazy(() => import("@/pages/auth/account-inactive"));
 const OnboardingPage = lazy(() => import("@/pages/onboarding"));
@@ -101,6 +102,7 @@ function Router() {
           {clerkEnabled && <Route path="/sign-in" component={SignInPage} />}
           {clerkEnabled && <Route path="/sign-up" component={SignUpPage} />}
           <Route path="/welcome" component={WelcomePage} />
+          <Route path="/post-checkout" component={PostCheckoutPage} />
           <Route path="/">{() => <Redirect to="/sign-in" />}</Route>
           <Route path="/accept-invitation" component={AcceptInvitation} />
           <Route path="/marketing-consent/:token" component={MarketingConsentPage} />
