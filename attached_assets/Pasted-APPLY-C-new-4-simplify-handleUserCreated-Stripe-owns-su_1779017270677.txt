@@ -1,0 +1,105 @@
+APPLY — C-new.4: simplify handleUserCreated (Stripe owns subscriptions now).
+Single file: server/routes/webhooks.routes.ts. Prod untouched.
+
+PRE-STEP VERIFICATION (report output, then proceed only if all pass):
+
+P1. git status — expect clean working tree.
+    git log --oneline -3 — expect HEAD = 28969e4.
+P2. Print server/routes/webhooks.routes.ts lines 1-20 (imports) and
+    lines 100-150. Confirm the block at lines 104-134 still matches the
+    shape below (the existingSubscription === null trial block + the
+    else-if). If line numbers have shifted, locate by content, not number.
+P3. grep -n "billingService" server/routes/webhooks.routes.ts
+    grep -n "promoCodeCampaigns" server/routes/webhooks.routes.ts
+    grep -n "isFiveDNewMember" server/routes/webhooks.routes.ts
+    Report all hits. Needed to decide which imports go dead.
+
+If P1 or P2 fail, STOP and report. Do not edit.
+
+CHANGE 1 — remove the dead select field.
+In the db.select inside handleUserCreated, delete this line:
+    assignedPromoCampaignId: users.assignedPromoCampaignId,
+(It is only read inside the block being deleted in Change 2.)
+
+CHANGE 2 — replace the trial-creation block.
+Replace this entire block (currently lines 104-134, the
+`if (linked && match.userCompanyId !== null)` ... through its
+`} else if (linked && match.userCompanyId === null) { ... }`):
+
+  if (linked && match.userCompanyId !== null) {
+    const existingSubscription = await billingService.getSubscription(match.userCompanyId);
+    if (existingSubscription === null) {
+      let use5DNewMemberTrial = false;
+      if (match.assignedPromoCampaignId) {
+        const [campaign] = await db
+          .select()
+          .from(promoCodeCampaigns)
+          .where(eq(promoCodeCampaigns.id, match.assignedPromoCampaignId));
+        if (campaign && isFiveDNewMember(campaign)) {
+          use5DNewMemberTrial = true;
+        }
+      }
+      if (use5DNewMemberTrial) {
+        await billingService.createFiveDNewMemberTrial(match.userCompanyId);
+        console.log(`[clerk-webhook] user.created: 5D New Member 6-month free period created for user ${match.id} (company ${match.userCompanyId})`);
+      } else {
+        console.log(`[clerk-webhook] user.created: no trial created for user ${match.id} (company ${match.userCompanyId}) — will hit billing wall after onboarding`);
+      }
+      try {
+        await seedDefaultPipelineStages();
+        console.log(`[clerk-webhook] user.created: default pipeline stages seeded for company ${match.userCompanyId}`);
+      } catch (err) {
+        console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
+      }
+    } else {
+      console.log(`[clerk-webhook] user.created: subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping trial logic`);
+    }
+  } else if (linked && match.userCompanyId === null) {
+    console.warn(`[clerk-webhook] user.created: user ${match.id} has no userCompanyId, cannot create trial subscription`);
+  }
+
+WITH exactly this:
+
+  // C-new.4: Stripe owns subscription creation now (checkout.session.completed
+  // webhook). This handler no longer creates trials. Pipeline stages are a
+  // global, idempotent table; seed as a safety net on first link.
+  if (linked && match.userCompanyId !== null) {
+    try {
+      await seedDefaultPipelineStages();
+      console.log(`[clerk-webhook] user.created: default pipeline stages seeded (company ${match.userCompanyId})`);
+    } catch (err) {
+      console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
+    }
+  }
+
+CHANGE 3 — dead imports.
+Using the P3 grep output:
+- isFiveDNewMember: after Change 2 its only remaining hit in this file is
+  the import line. Remove the import:
+      import { isFiveDNewMember } from '../services/promo-code.service';
+- billingService: if P3 shows hits ONLY at the getSubscription and
+  createFiveDNewMemberTrial lines being deleted in Change 2, remove its
+  import. If it is used anywhere else in the file, LEAVE the import.
+- promoCodeCampaigns: if P3 shows hits ONLY inside the Change 2 block,
+  remove it from its import. If used elsewhere, LEAVE it.
+Report which imports you removed and which you left, with the reason.
+
+Do NOT touch: db, eq, and, sql, seedDefaultPipelineStages imports — all
+still used.
+Do NOT touch billing.service.ts — createFiveDNewMemberTrial /
+createTrialSubscription definitions stay (A2 cleanup, separate phase).
+
+V-CHECK (run, paste verbatim):
+V1. npm run check — paste full output. Expected: exactly 1 error,
+    server/services/portal.service.ts:81. Anything else is a regression.
+V2. grep -n "createFiveDNewMemberTrial" server/routes/webhooks.routes.ts — expect 0
+    grep -n "isFiveDNewMember" server/routes/webhooks.routes.ts — expect 0
+    grep -n "use5DNewMemberTrial" server/routes/webhooks.routes.ts — expect 0
+    grep -n "getSubscription" server/routes/webhooks.routes.ts — expect 0
+    grep -n "assignedPromoCampaignId" server/routes/webhooks.routes.ts — expect 0
+    grep -n "seedDefaultPipelineStages" server/routes/webhooks.routes.ts — expect 2 (import + call)
+V3. Restart the dev workflow. Confirm it boots with no errors. Paste the
+    startup log lines.
+V4. git diff --stat and git status — paste verbatim.
+
+Stop after V-check and report results. Do not chain to any build.

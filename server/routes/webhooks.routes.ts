@@ -5,11 +5,8 @@ import type { WebhookEvent, UserJSON, DeletedObjectJSON } from '@clerk/backend';
 import { clerkClient } from '@clerk/express';
 import { db } from '../db';
 import { users, userInvitations } from '@shared/schema';
-import { promoCodeCampaigns } from '@shared/schema/billing';
 import { emailApiService } from '../services/email.service';
-import { billingService } from '../services/billing.service';
 import { marketingContactsService } from '../services/marketing-contacts.service';
-import { isFiveDNewMember } from '../services/promo-code.service';
 import { seedDefaultPipelineStages } from '../scripts/seed-pipeline-stages';
 
 const router = Router();
@@ -48,7 +45,6 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
       firstName: users.firstName,
       welcomeEmailSentAt: users.welcomeEmailSentAt,
       userCompanyId: users.userCompanyId,
-      assignedPromoCampaignId: users.assignedPromoCampaignId,
     })
     .from(users)
     .where(sql`LOWER(${users.email}) = LOWER(${email.trim()})`);
@@ -101,45 +97,16 @@ async function handleUserCreated(data: UserJSON): Promise<void> {
     }
   }
 
+  // C-new.4: Stripe owns subscription creation now (checkout.session.completed
+  // webhook). This handler no longer creates trials. Pipeline stages are a
+  // global, idempotent table; seed as a safety net on first link.
   if (linked && match.userCompanyId !== null) {
-    const existingSubscription = await billingService.getSubscription(match.userCompanyId);
-    if (existingSubscription === null) {
-      // Trial creation rule (open-access pivot, Phase C.2):
-      // ONLY the 5D New Member campaign creates a subscription — a 6-month
-      // free period. Every other case — Early Bird, Standard 5D community,
-      // or no promo at all — creates NO subscription row. Those users land
-      // on the billing wall after onboarding and pay to proceed (any promo
-      // discount still applies at checkout via resolveCheckoutCoupon).
-      let use5DNewMemberTrial = false;
-      if (match.assignedPromoCampaignId) {
-        const [campaign] = await db
-          .select()
-          .from(promoCodeCampaigns)
-          .where(eq(promoCodeCampaigns.id, match.assignedPromoCampaignId));
-        if (campaign && isFiveDNewMember(campaign)) {
-          use5DNewMemberTrial = true;
-        }
-      }
-      if (use5DNewMemberTrial) {
-        await billingService.createFiveDNewMemberTrial(match.userCompanyId);
-        console.log(`[clerk-webhook] user.created: 5D New Member 6-month free period created for user ${match.id} (company ${match.userCompanyId})`);
-      } else {
-        console.log(`[clerk-webhook] user.created: no trial created for user ${match.id} (company ${match.userCompanyId}) — will hit billing wall after onboarding`);
-      }
-      // Pipeline stages are seeded for ALL new users regardless of whether a
-      // subscription was created — a user who pays later still needs them,
-      // and this is the only signup-path seed call.
-      try {
-        await seedDefaultPipelineStages();
-        console.log(`[clerk-webhook] user.created: default pipeline stages seeded for company ${match.userCompanyId}`);
-      } catch (err) {
-        console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
-      }
-    } else {
-      console.log(`[clerk-webhook] user.created: subscription already exists for user ${match.id} (company ${match.userCompanyId}), skipping trial logic`);
+    try {
+      await seedDefaultPipelineStages();
+      console.log(`[clerk-webhook] user.created: default pipeline stages seeded (company ${match.userCompanyId})`);
+    } catch (err) {
+      console.error(`[clerk-webhook] user.created: seedDefaultPipelineStages failed for company ${match.userCompanyId}:`, err);
     }
-  } else if (linked && match.userCompanyId === null) {
-    console.warn(`[clerk-webhook] user.created: user ${match.id} has no userCompanyId, cannot create trial subscription`);
   }
 
   if (linked && match.welcomeEmailSentAt === null) {
