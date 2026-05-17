@@ -1,0 +1,48 @@
+ASSESS — C-new.4 pre-apply gap check (read-only). No code changes, no
+file writes. Verbatim output for every step.
+
+Two gaps the C-new.4 assess surfaced. Both must close before the apply.
+
+PART A — pipeline-stage seeding
+
+seedDefaultPipelineStages sits INSIDE the existingSubscription === null
+block in handleUserCreated (webhooks.routes.ts:106-128). In Stripe-first,
+C-new.2 activates a subscription BEFORE the Clerk webhook runs, so for a
+self-serve user that block is already skipped today. Confirm C-new.2
+seeds stages itself, or that seeding is global and idempotent.
+
+A1. Open server/routes/billing.routes.ts. Find the
+    checkout.session.completed self-serve provisioning branch (the no
+    userCompanyId path that creates userCompany + user + membership +
+    subscription). Paste it verbatim with line numbers.
+A2. grep -n "seedDefaultPipelineStages\|seedSystemConfig" server/routes/billing.routes.ts
+A3. grep -rn "seedDefaultPipelineStages" server/ — every definition and
+    call site.
+A4. Open the seedDefaultPipelineStages definition. Paste the signature
+    and first ~20 lines. Confirm: does it take a userCompanyId or
+    operate globally? Is it idempotent (onConflictDoNothing /
+    count-and-skip)? Does it internally call seedSystemConfig?
+A5. On dev (DATABASE_URL): run
+    SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'pipeline_stages';
+    and SELECT COUNT(*) AS total FROM pipeline_stages;
+    If the table has a company FK column, also report — for the most
+    recently provisioned Stripe-first self-serve test user — its
+    userCompanyId and the stage count scoped to that company.
+
+PART B — email-mismatch surface
+
+AccountSetupPending renders only on authError CLERK_USER_NOT_LINKED,
+which needs a LIVE Clerk session. The no-match path revokes (deletes)
+the Clerk account, so the session dies and the user falls through to
+unauthenticated. Need the /post-checkout to Clerk handoff detail.
+
+B1. Open the /post-checkout client page. Paste the code that builds the
+    Clerk sign-up forward URL (the ?email_address= construction).
+B2. Confirm whether /post-checkout currently shows the user the email
+    they paid with, or any copy telling them to sign up with that
+    email. Quote it if present.
+B3. grep -rn "CLERK_USER_NOT_LINKED" server/ client/ — every hit, so we
+    know exactly which auth states render AccountSetupPending.
+
+Read-only. Stop after B3. Do not chain to any build.
