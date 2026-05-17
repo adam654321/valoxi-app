@@ -1,13 +1,13 @@
 import { Router, type Request, type Response } from 'express';
 import Stripe from 'stripe';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
 import { promoCodeService, computeFreeMonthsElapsed, getFreePeriodState } from '../services/promo-code.service';
 import { db } from '../db';
-import { webhookEvents, users } from '@shared/schema/core';
+import { webhookEvents, users, userCompanies, userCompanyMemberships } from '@shared/schema/core';
 import { subscriptions, promoCodeCampaigns } from '@shared/schema/billing';
 import type { PlanKey, BillingInterval, SubscriptionStatus } from '@shared/schema/billing';
 import { isAuthenticated, isSystemAdmin, requirePermission } from '../middleware/auth';
@@ -120,6 +120,166 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
             currentPeriodEnd: periodEnd,
             status: mappedStatus,
           });
+        } else if (!userCompanyId && session.customer && session.subscription) {
+          // C-new.2: self-serve provisioning. No metadata.userCompanyId means
+          // a public-checkout buyer with no account yet. Create the account
+          // from the verified session, then activate the subscription.
+          const email = session.customer_details?.email?.trim().toLowerCase();
+          if (!email) {
+            console.error(`[billing-webhook] checkout.session.completed ${session.id}: self-serve session has no customer email; cannot provision`);
+            await logWebhookEvent(event.type, event.id, event.data.object, 'error', 'self_serve_no_email');
+            return res.status(200).json({ received: true });
+          }
+
+          try {
+            const subscriptionId = session.subscription as string;
+            const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+            const primaryItem = stripeSub.items.data[0];
+            const periodStart = primaryItem?.current_period_start
+              ? new Date(primaryItem.current_period_start * 1000)
+              : new Date();
+            const periodEnd = primaryItem?.current_period_end
+              ? new Date(primaryItem.current_period_end * 1000)
+              : new Date();
+            const stripeStatusMap: Record<string, SubscriptionStatus> = {
+              active: 'active',
+              trialing: 'trialing',
+              past_due: 'past_due',
+              canceled: 'canceled',
+              incomplete: 'incomplete',
+              incomplete_expired: 'canceled',
+              unpaid: 'past_due',
+            };
+            const mappedStatus: SubscriptionStatus = stripeStatusMap[stripeSub.status] ?? 'active';
+
+            const activationData = {
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: subscriptionId,
+              planKey,
+              billingInterval,
+              currentPeriodStart: periodStart,
+              currentPeriodEnd: periodEnd,
+              status: mappedStatus,
+            };
+
+            // Email-collision check. Case-insensitive, selects across active
+            // and inactive rows. Mirrors the Clerk webhook and admin-waitlist.
+            const [existingUser] = await db
+              .select({ id: users.id, userCompanyId: users.userCompanyId })
+              .from(users)
+              .where(sql`LOWER(${users.email}) = LOWER(${email})`);
+
+            if (existingUser) {
+              // An account already exists for this email. Includes the dormant
+              // invited-but-never-signed-up rows. Do NOT create a second user.
+              if (!existingUser.userCompanyId) {
+                console.error(`[billing-webhook] ${session.id}: existing user ${existingUser.id} has no userCompanyId; cannot activate`);
+                await logWebhookEvent(event.type, event.id, event.data.object, 'error', 'existing_user_no_company');
+                return res.status(200).json({ received: true });
+              }
+
+              const existingSub = await billingRepository.getByCompanyId(existingUser.userCompanyId);
+              const LIVE_STATUSES = ['active', 'trialing', 'admin_comped'];
+              if (existingSub && LIVE_STATUSES.includes(existingSub.status)) {
+                // Existing user already has a live subscription. A second
+                // activation would overwrite their subscription row and orphan
+                // a paid Stripe sub. Do NOT activate. Flag for manual review.
+                console.error(`[billing-webhook] DOUBLE-PAYMENT ALERT: session ${session.id} email ${email} (user ${existingUser.id}, company ${existingUser.userCompanyId}) already has a ${existingSub.status} subscription. New Stripe sub ${subscriptionId} was NOT activated. Manual review and refund required.`);
+                await logWebhookEvent(event.type, event.id, event.data.object, 'error', 'duplicate_checkout_existing_subscription');
+                return res.status(200).json({ received: true });
+              }
+
+              // Existing user with no live subscription (dormant invited row,
+              // or a previously-cancelled subscriber). Safe to activate.
+              await billingService.activateSubscription(existingUser.userCompanyId, activationData);
+              console.log(`[billing-webhook] ${session.id}: activated subscription for existing user ${existingUser.id} (company ${existingUser.userCompanyId})`);
+              await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+              break;
+            }
+
+            // No existing user. Resolve the promo campaign (a read, before tx).
+            const promoSlug = (session.metadata?.promoSlug ?? '').trim().toLowerCase();
+            let campaignId: number | null = null;
+            if (promoSlug) {
+              const campaign = await promoCodeService.resolveCampaignBySlug(promoSlug);
+              if (campaign) {
+                campaignId = campaign.id;
+              } else {
+                console.warn(`[billing-webhook] ${session.id}: promoSlug '${promoSlug}' did not resolve; provisioning without a promo`);
+              }
+            }
+
+            // Parse first/last name from Stripe's collected billing name.
+            // Fall back to the email local-part if Stripe returned no name.
+            const rawName = (session.customer_details?.name ?? '').trim();
+            let firstName: string;
+            let lastName: string;
+            if (rawName) {
+              const firstSpace = rawName.indexOf(' ');
+              if (firstSpace === -1) {
+                firstName = rawName.slice(0, 100);
+                lastName = '';
+              } else {
+                firstName = rawName.slice(0, firstSpace).slice(0, 100);
+                lastName = rawName.slice(firstSpace + 1).slice(0, 100);
+              }
+            } else {
+              firstName = email.split('@')[0].slice(0, 100);
+              lastName = '';
+            }
+
+            // Provision the account in one transaction: userCompany + user +
+            // membership. Mirrors the admin-waitlist invite pattern. clerkUserId
+            // stays null (the Clerk webhook links it later, C-new.4),
+            // onboardingCompleted stays false, marketingConsent stays false
+            // (collected at onboarding, C-new.5).
+            const newUserCompanyId = await db.transaction(async (tx) => {
+              const [newCompany] = await tx
+                .insert(userCompanies)
+                .values({ companyName: 'Pending Setup' })
+                .returning({ id: userCompanies.id });
+
+              const [newUser] = await tx
+                .insert(users)
+                .values({
+                  email,
+                  firstName,
+                  lastName,
+                  userCompanyId: newCompany.id,
+                  currentCompanyId: newCompany.id,
+                  role: 'user',
+                  userRole: 'company_admin',
+                  isCompanyAdmin: true,
+                })
+                .returning({ id: users.id });
+
+              if (campaignId !== null) {
+                await promoCodeService.assignCampaignToUser(newUser.id, campaignId, null, tx);
+              }
+
+              await tx.insert(userCompanyMemberships).values({
+                userId: newUser.id,
+                userCompanyId: newCompany.id,
+                isCompanyAdmin: true,
+                membershipRole: 'company_admin',
+              });
+
+              return newCompany.id;
+            });
+
+            await billingService.activateSubscription(newUserCompanyId, activationData);
+            console.log(`[billing-webhook] ${session.id}: provisioned self-serve account (company ${newUserCompanyId})`);
+            await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
+            break;
+          } catch (provisionErr: any) {
+            // Provisioning failed. Return non-2xx so Stripe retries. The retry
+            // is safe: the collision check finds any user a failed attempt
+            // created, and activateSubscription's idempotency guard no-ops a
+            // duplicate.
+            console.error(`[billing-webhook] ${session.id}: self-serve provisioning failed:`, provisionErr);
+            await logWebhookEvent(event.type, event.id, event.data.object, 'error', provisionErr?.message ?? 'provisioning_failed');
+            return res.status(500).json({ error: 'provisioning_failed' });
+          }
         }
 
         await logWebhookEvent(event.type, event.id, event.data.object, 'processed');
