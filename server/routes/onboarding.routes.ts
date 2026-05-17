@@ -157,7 +157,7 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
     throw new UnauthorizedError();
   }
 
-  const { companyName, industry, companySize, country, role, hearAboutUs, acceptTerms, acceptDpa } = req.body as {
+  const { companyName, industry, companySize, country, role, hearAboutUs, acceptTerms, acceptDpa, marketingConsent } = req.body as {
     companyName?: string;
     industry?: string;
     companySize?: string;
@@ -166,6 +166,7 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
     hearAboutUs?: string;
     acceptTerms?: boolean;
     acceptDpa?: boolean;
+    marketingConsent?: boolean;
   };
 
   if (!companyName || !companyName.trim()) {
@@ -200,6 +201,8 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
       hearAboutUs: hearAboutUs?.trim() || null,
       onboardingCompleted: true,
       onboardingCompletedAt: new Date(),
+      marketingConsent: marketingConsent === true,
+      marketingConsentAt: marketingConsent === true ? new Date() : null,
     })
     .where(eq(users.id, userId));
 

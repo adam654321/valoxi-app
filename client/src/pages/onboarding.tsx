@@ -108,6 +108,7 @@ export default function OnboardingPage() {
   const [companyNamePreFilled, setCompanyNamePreFilled] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptDpa, setAcceptDpa] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
     if (!companyNamePreFilled && subData) {
@@ -141,6 +142,7 @@ export default function OnboardingPage() {
       hearAboutUs: string;
       acceptTerms: boolean;
       acceptDpa: boolean;
+      marketingConsent: boolean;
     }) => {
       const res = await apiRequest("POST", "/api/v2/onboarding/complete", data);
       return res.json();
@@ -186,6 +188,7 @@ export default function OnboardingPage() {
       hearAboutUs: hearAboutUs === "Other" ? `Other: ${hearAboutUsOther.trim()}` : hearAboutUs,
       acceptTerms,
       acceptDpa,
+      marketingConsent,
     });
   };
 
@@ -358,6 +361,18 @@ export default function OnboardingPage() {
                     Data Processing Agreement
                   </a>
                   .
+                </label>
+              </div>
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="marketingConsent"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                />
+                <label htmlFor="marketingConsent" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                  Email me occasional Valoxi product updates. You can unsubscribe at any time.
                 </label>
               </div>
               <p className="text-xs text-muted-foreground pl-7">

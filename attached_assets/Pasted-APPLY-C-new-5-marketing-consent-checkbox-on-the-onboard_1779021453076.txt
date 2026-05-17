@@ -1,0 +1,135 @@
+APPLY — C-new.5: marketing-consent checkbox on the onboarding form.
+Files: client/src/pages/onboarding.tsx, server/routes/onboarding.routes.ts.
+Schema NOT touched (users.marketing_consent already exists). Prod untouched.
+
+PRE-STEP VERIFICATION (report output, proceed only if all pass):
+
+P1. git status — expect clean tree. git log --oneline -2 — expect
+    HEAD a9c2e76.
+P2. Print client/src/pages/onboarding.tsx lines 100-111, 134-145,
+    180-190, and 328-372. Confirm the shapes match the find-blocks
+    below. Locate by content if line numbers shifted.
+P3. Print server/routes/onboarding.routes.ts lines 160-205. Confirm
+    the destructure block and the users update block match below.
+
+If P1, P2 or P3 fail, STOP and report. Do not edit.
+
+=== CLIENT: client/src/pages/onboarding.tsx ===
+
+CHANGE 1 — add marketingConsent state.
+Replace:
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptDpa, setAcceptDpa] = useState(false);
+With:
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptDpa, setAcceptDpa] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+
+CHANGE 2 — add marketingConsent to the mutation payload type.
+Replace:
+      acceptTerms: boolean;
+      acceptDpa: boolean;
+    }) => {
+With:
+      acceptTerms: boolean;
+      acceptDpa: boolean;
+      marketingConsent: boolean;
+    }) => {
+
+CHANGE 3 — add marketingConsent to the mutate call.
+Replace:
+      acceptTerms,
+      acceptDpa,
+    });
+  };
+With:
+      acceptTerms,
+      acceptDpa,
+      marketingConsent,
+    });
+  };
+
+CHANGE 4 — add the checkbox JSX.
+Insert this block immediately AFTER the acceptDpa checkbox's closing
+</div> (the </div> that closes the flex items-start gap-3 wrapper for
+acceptDpa) and immediately BEFORE the privacy policy <p> note
+(the <p className="text-xs text-muted-foreground pl-7"> line):
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="marketingConsent"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                />
+                <label htmlFor="marketingConsent" className="text-sm text-foreground leading-relaxed cursor-pointer">
+                  Email me occasional Valoxi product updates. You can unsubscribe at any time.
+                </label>
+              </div>
+
+Do NOT add this to the errors object or handleSubmit validation —
+marketing consent is optional, unchecked by default, never blocks submit.
+
+=== SERVER: server/routes/onboarding.routes.ts ===
+
+CHANGE 5 — add marketingConsent to the destructure + type.
+Replace:
+  const { companyName, industry, companySize, country, role, hearAboutUs, acceptTerms, acceptDpa } = req.body as {
+    companyName?: string;
+    industry?: string;
+    companySize?: string;
+    country?: string;
+    role?: string;
+    hearAboutUs?: string;
+    acceptTerms?: boolean;
+    acceptDpa?: boolean;
+  };
+With:
+  const { companyName, industry, companySize, country, role, hearAboutUs, acceptTerms, acceptDpa, marketingConsent } = req.body as {
+    companyName?: string;
+    industry?: string;
+    companySize?: string;
+    country?: string;
+    role?: string;
+    hearAboutUs?: string;
+    acceptTerms?: boolean;
+    acceptDpa?: boolean;
+    marketingConsent?: boolean;
+  };
+
+CHANGE 6 — write marketingConsent to the users table.
+Replace:
+    .set({
+      jobTitle: role?.trim() || null,
+      hearAboutUs: hearAboutUs?.trim() || null,
+      onboardingCompleted: true,
+      onboardingCompletedAt: new Date(),
+    })
+With:
+    .set({
+      jobTitle: role?.trim() || null,
+      hearAboutUs: hearAboutUs?.trim() || null,
+      onboardingCompleted: true,
+      onboardingCompletedAt: new Date(),
+      marketingConsent: marketingConsent === true,
+      marketingConsentAt: marketingConsent === true ? new Date() : null,
+    })
+
+Do NOT add marketingConsent validation — it is optional. Do NOT touch
+the recordAcceptance calls or the funnel track call.
+
+V-CHECK (run, paste verbatim):
+V1. npm run check — full output. Expected: exactly 1 error,
+    server/services/portal.service.ts:81. Anything else is a regression.
+V2. grep -n "marketingConsent" client/src/pages/onboarding.tsx —
+    expect 5 (state declaration, mutation type, mutate call, checkbox
+    id+checked+onChange counts as the JSX block — report the actual
+    hits verbatim).
+    grep -n "marketingConsent" server/routes/onboarding.routes.ts —
+    expect 3 (destructure, type, .set write — report verbatim).
+V3. Restart the dev workflow. Confirm it boots clean. Paste startup log.
+V4. git diff --stat and git status — paste verbatim. Expect 2 files
+    changed.
+
+Stop after V-check and report results. Do not chain to any build.
