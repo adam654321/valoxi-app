@@ -10,6 +10,7 @@ import { portalAccessTokens } from '@shared/schema/portal';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { UnauthorizedError } from '../utils/errors';
+import { marketingContactsService } from '../services/marketing-contacts.service';
 
 const router = Router();
 
@@ -216,6 +217,15 @@ router.post('/complete', asyncHandler(async (req: Request, res: Response) => {
   if (userCompanyId) {
     const { track } = await import('../services/funnel.service');
     track(userCompanyId, userId, 'onboarding.completed', { industry, companySize, hearAboutUs });
+  }
+
+  // C-new.5b: push the marketing-consent state to Resend now that it is
+  // known and persisted. upsertContact reads the freshly-written
+  // users.marketingConsent and sets the Resend unsubscribed flag to match.
+  // It never throws; a Resend failure must not break onboarding.
+  const consentSync = await marketingContactsService.upsertContact(userId);
+  if (consentSync.status === 'failed') {
+    console.error(`[onboarding] consent sync to Resend failed for user ${userId}: ${consentSync.reason}`);
   }
 
   sendSuccess(res, { success: true });

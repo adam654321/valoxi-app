@@ -97,7 +97,7 @@ class MarketingContactsService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        unsubscribed: false,
+        unsubscribed: user.marketingConsent !== true,
         segments: initial.map((id) => ({ id })),
       });
 
@@ -218,7 +218,7 @@ class MarketingContactsService {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          unsubscribed: false,
+          unsubscribed: user.marketingConsent !== true,
           segments: targetSegments.map((id) => ({ id })),
         });
         if (createError) {
@@ -231,7 +231,7 @@ class MarketingContactsService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        unsubscribed: false,
+        unsubscribed: user.marketingConsent !== true,
       });
       if (updateError) {
         return { status: 'failed', reason: `update: ${updateError.name} ${updateError.message}` };
