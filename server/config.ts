@@ -59,6 +59,10 @@ export const config = {
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   },
 
+  marketing: {
+    siteUrl: process.env.MARKETING_SITE_URL || 'https://valoxi.ai',
+  },
+
   nylas: {
     apiKey: process.env.NYLAS_API_KEY || '',
     clientId: process.env.NYLAS_CLIENT_ID || '',

@@ -402,8 +402,8 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
   }
 });
 
-const VALID_PLAN_KEYS: PlanKey[] = ['CORE', 'PROFESSIONAL', 'EXPERT'];
-const LOOKUP_KEY_MAP: Record<string, Record<'month' | 'year', string>> = {
+export const VALID_PLAN_KEYS: PlanKey[] = ['CORE', 'PROFESSIONAL', 'EXPERT'];
+export const LOOKUP_KEY_MAP: Record<string, Record<'month' | 'year', string>> = {
   CORE: { month: 'ma_core_monthly_usd', year: 'ma_core_annual_usd' },
   PROFESSIONAL: { month: 'ma_professional_monthly_usd', year: 'ma_professional_annual_usd' },
   EXPERT: { month: 'ma_expert_monthly_usd', year: 'ma_expert_annual_usd' },
