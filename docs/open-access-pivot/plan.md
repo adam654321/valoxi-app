@@ -116,9 +116,9 @@ site at the same time. Flipping back reverts both.
 | C-new.6 | Retire superseded signup surfaces | Low | v65 ✓ |
 | C-new functional test | E2E pass on dev, 3 runs | — | v66 ✓ collision finding surfaced |
 | **LAUNCH BLOCK — critical path to launch** | | | |
-| C-new.7a | Post-checkout collision fix (app) | Med | next |
-| C-new.7b | Admin collision alert + in-app admin notification (app) | Low | after 7a |
-| C-new.8 | CORS on public endpoints — checkout + config (app) | Med | launch block |
+| C-new.7a | Post-checkout collision fix (app) | Med | v66 ✓ |
+| C-new.7b | Admin collision filter on /admin/webhook-events (app) | Low | v66 ✓ |
+| C-new.8 | CORS on public endpoints — checkout + config (app) | Med | next |
 | C-new.9 | OPEN_ACCESS_ENABLED -> system_config + admin settings toggle (app) | Med | launch block |
 | M.1 | valoxi-site assess (PricingToggle, /pricing, waitlist form, CF functions) | None | launch block |
 | M.2 | Marketing tier cards -> app checkout endpoint | Med | launch block |
@@ -222,12 +222,21 @@ C-new.7a fixes the flow: checkout-status correlates the session to its
 webhook_events row and returns a real state (provisioned / pending /
 collision) plus whether the existing user has a Clerk account; /post-checkout
 gains a collision branch with honest copy, routing to sign-IN if the user has
-Clerk, sign-UP if not.
+Clerk, sign-UP if not. DONE v66, dev-verified by a live collision retest
+(functional-test.md, C-new.7a retest).
 
-C-new.7b adds the alert: an admin-only surface for collision events on a page
-Adam already checks, plus an in-app admin notification. No email, no Slack
-(Adam's Q2 decision). Auto-cancel of the orphaned Stripe sub is deliberately
-NOT done — manual review and refund stays, but now with a trigger.
+C-new.7b adds the admin surface. Scope revised 2026-05-18: Option 1 only — a
+"collisions only" filter and red highlight on the existing /admin/webhook-events
+page, showing the colliding email and the refused Stripe sub id inline. The
+in-app admin notification (the original Q2 answer) is DROPPED from 7b to
+post-launch: the only push option that does not hack the per-user, tenant-scoped
+team_notifications table is a fresh admin-alert build, not worth extending the
+critical path for a rare event. The launch blocker was collision INVISIBILITY,
+and the filter closes that. DONE v66, dev-verified live. The in-app admin
+notification is logged as a post-launch admin-hygiene item.
+
+Auto-cancel of the orphaned Stripe sub is deliberately NOT done — manual review
+and refund stays, but now with a trigger (the webhook-events collision filter).
 
 ## Settled facts. Do not re-derive these.
 
@@ -303,6 +312,7 @@ app entitlement gate, ~20 route groups. Stripe-first satisfies it for free.
 | 8 | Launch staging — soft launch then marketing, or one event | RESOLVED 2026-05-18 — one coordinated event |
 | 9 | Advertised promo code (typed code, e.g. an ad saying "use code X") | PARKED, post-launch. The slug model advertises a URL (?promo=slug), not a typed code. A typed-code box at checkout needs allow_promotion_codes:true, which Phase C deliberately sets false. Revisit as a separate decision after launch. |
 | 10 | Contact route — what form, where | M.4 scope. Replaces the waitlist as the soft contact path. Decide the form fields at M.1/M.4. |
+| 11 | In-app admin notification for collisions | PARKED, post-launch admin-hygiene item. 7b scoped to the webhook-events filter only (Option 1). A push notification needs a fresh admin-alert surface — team_notifications is per-user and tenant-scoped, reusing it is a hack. Pairs with Phase G or a small admin-hygiene slice. |
 
 ## Outstanding before launch
 
