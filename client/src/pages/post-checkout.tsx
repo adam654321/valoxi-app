@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 const POLL_INTERVAL_MS = 2500;
 const MAX_POLLS = 16; // ~40 seconds total
 
-type Status = "polling" | "ready" | "timeout" | "error";
+type Status = "polling" | "ready" | "timeout" | "error" | "collision";
 
 /**
  * /post-checkout — C-new.3
@@ -17,6 +17,7 @@ type Status = "polling" | "ready" | "timeout" | "error";
 export default function PostCheckoutPage() {
   const [status, setStatus] = useState<Status>("polling");
   const [email, setEmail] = useState<string | null>(null);
+  const [hasClerkAccount, setHasClerkAccount] = useState<boolean>(false);
 
   useEffect(() => {
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
@@ -39,7 +40,13 @@ export default function PostCheckoutPage() {
         );
         const data = await res.json();
         if (cancelled) return;
-        if (data.provisioned && data.email) {
+        if (data.state === "collision") {
+          setEmail(data.email ?? null);
+          setHasClerkAccount(!!data.hasClerkAccount);
+          setStatus("collision");
+          return;
+        }
+        if (data.state === "provisioned" && data.email) {
           setEmail(data.email);
           setStatus("ready");
           return;
@@ -95,6 +102,33 @@ export default function PostCheckoutPage() {
               }}
             >
               Continue to sign-up
+            </Button>
+          </>
+        )}
+
+        {status === "collision" && (
+          <>
+            <h1 className="text-xl font-bold text-foreground">You already have an account</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This email is already registered with Valoxi{email ? ":" : "."}
+            </p>
+            {email && (
+              <div className="mt-4 rounded-md border bg-muted px-4 py-3 font-medium text-foreground break-words">
+                {email}
+              </div>
+            )}
+            <p className="mt-3 text-sm text-muted-foreground">
+              You have not been charged twice. This duplicate payment is being refunded. No new subscription was created.
+            </p>
+            <Button
+              className="mt-6 w-full"
+              onClick={() => {
+                window.location.href = hasClerkAccount
+                  ? "/sign-in"
+                  : `/sign-up?email_address=${encodeURIComponent(email ?? "")}`;
+              }}
+            >
+              {hasClerkAccount ? "Sign in to your account" : "Create your login"}
             </Button>
           </>
         )}

@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess } from '../utils/response';
 import { config } from '../config';
 import { db } from '../db';
-import { users } from '@shared/schema/core';
+import { users, webhookEvents } from '@shared/schema/core';
 
 const router = Router();
 
@@ -51,15 +51,40 @@ router.get(
 
     const email = session.customer_details?.email?.trim().toLowerCase() ?? null;
     if (!email) {
-      return res.status(200).json({ provisioned: false, email: null });
+      return res.status(200).json({ state: 'pending', email: null });
     }
 
-    const [existingUser] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(sql`LOWER(${users.email}) = LOWER(${email})`);
+    const collisionRows = await db.execute(sql`
+      SELECT 1 FROM webhook_events
+      WHERE event_type = 'checkout.session.completed'
+        AND payload->>'id' = ${sessionId}
+        AND error = 'duplicate_checkout_existing_subscription'
+      LIMIT 1
+    `);
+    if (collisionRows.rows.length > 0) {
+      const [collisionUser] = await db
+        .select({ clerkUserId: users.clerkUserId })
+        .from(users)
+        .where(sql`LOWER(${users.email}) = LOWER(${email})`);
+      return res.status(200).json({
+        state: 'collision',
+        email,
+        hasClerkAccount: !!collisionUser?.clerkUserId,
+      });
+    }
 
-    return res.status(200).json({ provisioned: !!existingUser, email });
+    const processedRows = await db.execute(sql`
+      SELECT 1 FROM webhook_events
+      WHERE event_type = 'checkout.session.completed'
+        AND payload->>'id' = ${sessionId}
+        AND status = 'processed'
+      LIMIT 1
+    `);
+    if (processedRows.rows.length > 0) {
+      return res.status(200).json({ state: 'provisioned', email });
+    }
+
+    return res.status(200).json({ state: 'pending', email });
   }),
 );
 

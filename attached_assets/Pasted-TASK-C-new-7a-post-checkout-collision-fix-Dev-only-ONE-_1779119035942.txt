@@ -1,0 +1,132 @@
+TASK: C-new.7a — post-checkout collision fix. Dev only. ONE concern: make /post-checkout recognise a double-payment collision instead of showing false success.
+
+Work in order. If any PRE-STEP grep does not match, STOP and report — do not edit.
+
+=== PRE-STEP A — confirm checkout-status current shape ===
+Open server/routes/public.routes.ts. Confirm the GET /checkout-status handler still contains, verbatim:
+
+  const [existingUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(sql`LOWER(${users.email}) = LOWER(${email})`);
+  return res.status(200).json({ provisioned: !!existingUser, email });
+
+If it differs, STOP and report.
+
+=== PRE-STEP B — confirm post-checkout.tsx current shape ===
+Open client/src/pages/post-checkout.tsx. Confirm:
+- the Status type is exactly: type Status = "polling" | "ready" | "timeout" | "error";
+- the poll success branch is exactly: if (data.provisioned && data.email) {
+Confirm the file imports Button. Report the exact import line for Button.
+If anything differs, STOP and report.
+
+=== CHANGE 1 — checkout-status returns a real state ===
+File: server/routes/public.routes.ts, GET /checkout-status handler.
+
+Replace the users lookup + return (the PRE-STEP A block) with:
+
+  const collisionRows = await db.execute(sql`
+    SELECT 1 FROM webhook_events
+    WHERE event_type = 'checkout.session.completed'
+      AND payload->>'id' = ${sessionId}
+      AND error = 'duplicate_checkout_existing_subscription'
+    LIMIT 1
+  `);
+  if (collisionRows.rows.length > 0) {
+    const [collisionUser] = await db
+      .select({ clerkUserId: users.clerkUserId })
+      .from(users)
+      .where(sql`LOWER(${users.email}) = LOWER(${email})`);
+    return res.status(200).json({
+      state: 'collision',
+      email,
+      hasClerkAccount: !!collisionUser?.clerkUserId,
+    });
+  }
+
+  const processedRows = await db.execute(sql`
+    SELECT 1 FROM webhook_events
+    WHERE event_type = 'checkout.session.completed'
+      AND payload->>'id' = ${sessionId}
+      AND status = 'processed'
+    LIMIT 1
+  `);
+  if (processedRows.rows.length > 0) {
+    return res.status(200).json({ state: 'provisioned', email });
+  }
+
+  return res.status(200).json({ state: 'pending', email });
+
+Notes for you applying this:
+- sessionId is the variable already used in the handler for the trimmed session_id. Confirm that name from the surrounding code and use it exactly.
+- Keep the existing earlier-in-handler logic (session retrieve, the no-email guard returning { provisioned: false } or similar) UNCHANGED for now except: if the no-email guard currently returns { provisioned: false, email: null }, change it to { state: 'pending', email: null } for response-shape consistency. Report the exact before/after of that guard line.
+- db.execute + sql is the raw-query form already used elsewhere in the codebase; if this file uses a different raw-query accessor, match the file's existing pattern and report what you used.
+
+=== CHANGE 2 — post-checkout.tsx consumes state, adds collision branch ===
+File: client/src/pages/post-checkout.tsx.
+
+2a. Status type — change to:
+type Status = "polling" | "ready" | "timeout" | "error" | "collision";
+
+2b. Add a state value alongside email. Near const [email, setEmail] = useState<string | null>(null); add:
+  const [hasClerkAccount, setHasClerkAccount] = useState<boolean>(false);
+
+2c. Poll branch — replace:
+  if (data.provisioned && data.email) {
+    setEmail(data.email);
+    setStatus("ready");
+    return;
+  }
+with:
+  if (data.state === "collision") {
+    setEmail(data.email ?? null);
+    setHasClerkAccount(!!data.hasClerkAccount);
+    setStatus("collision");
+    return;
+  }
+  if (data.state === "provisioned" && data.email) {
+    setEmail(data.email);
+    setStatus("ready");
+    return;
+  }
+
+2d. Render — add a collision branch immediately AFTER the status === "ready" block and BEFORE the status === "timeout" block:
+
+        {status === "collision" && (
+          <>
+            <h1 className="text-xl font-bold text-foreground">You already have an account</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This email is already registered with Valoxi{email ? ":" : "."}
+            </p>
+            {email && (
+              <div className="mt-4 rounded-md border bg-muted px-4 py-3 font-medium text-foreground break-words">
+                {email}
+              </div>
+            )}
+            <p className="mt-3 text-sm text-muted-foreground">
+              You have not been charged twice. This duplicate payment is being refunded. No new subscription was created.
+            </p>
+            <Button
+              className="mt-6 w-full"
+              onClick={() => {
+                window.location.href = hasClerkAccount
+                  ? "/sign-in"
+                  : `/sign-up?email_address=${encodeURIComponent(email ?? "")}`;
+              }}
+            >
+              {hasClerkAccount ? "Sign in to your account" : "Create your login"}
+            </Button>
+          </>
+        )}
+
+=== V-CHECK ===
+1. Run npm run check. Paste full output. Baseline is exactly 1 pre-existing error (portal.service.ts:81). Any other error is a regression — report it.
+2. Restart the dev workflow (full restart — backend route change).
+3. grep -n "state: 'collision'" server/routes/public.routes.ts — expect 1.
+4. grep -n "state: 'provisioned'" server/routes/public.routes.ts — expect 1.
+5. grep -n "state: 'pending'" server/routes/public.routes.ts — expect 2 (the no-row return, and the no-email guard).
+6. grep -n "duplicate_checkout_existing_subscription" server/routes/public.routes.ts — expect 1.
+7. grep -cn "collision" client/src/pages/post-checkout.tsx — expect 4 (Status type, poll branch, render branch condition, and the comment-free occurrences; report the actual lines).
+8. git status and git diff --stat. Paste both.
+
+Stop after V-check and report results. Do NOT chain to anything else.
