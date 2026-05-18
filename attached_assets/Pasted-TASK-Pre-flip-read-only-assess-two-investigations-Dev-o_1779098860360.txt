@@ -1,0 +1,23 @@
+TASK: Pre-flip read-only assess, two investigations. Dev only. No code changes, no file writes, no DB writes.
+
+INVESTIGATION 1 — /post-checkout collision handling.
+
+Run C surfaced this: a double-payment collision (checkout webhook logged DOUBLE-PAYMENT ALERT, no provisioning, webhook_events row status=error) still walked the user through the /post-checkout "account is ready" interstitial into Clerk sign-up.
+
+1. Open the GET /api/v2/public/checkout-status endpoint (server/routes/public.routes.ts). Report exactly how it decides the provisioned flag: is it keyed on session_id or on email, and does it check the checkout session's webhook_events row, or just whether a users row exists for the email? Paste the relevant code.
+
+2. webhook_events shape — report the columns. Confirm whether there is a reason or detail column, and the exact value the collision path writes (CP2 step 4 showed status=error; confirm the exact reason string the DOUBLE-PAYMENT ALERT path records and where).
+
+3. Open client/src/pages/post-checkout.tsx. Report every state it renders off checkout-status (polling, provisioned/interstitial, timeout/error), and whether any branch handles an "email already exists / collision" case. Paste the state-handling logic.
+
+4. State plainly: for a collision session_id, what does checkout-status currently return, and what does /post-checkout render?
+
+INVESTIGATION 2 — 08:00 Stripe webhook failure alert cron.
+
+The boot log shows "[billing-cron] Stripe webhook failure alert scheduled for 08:00 London".
+
+1. Find that cron (server/cron/billing.cron.ts or similar). Report what it queries to detect failed webhooks: does it select webhook_events by status='error', and does it filter by reason or event_type? Paste the query.
+
+2. State plainly: would a collision event (checkout.session.completed, status=error, the duplicate-payment reason) be picked up by this cron and alerted as a webhook failure?
+
+Paste all output verbatim. Stop after the report. Change nothing.
