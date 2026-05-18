@@ -50,7 +50,7 @@ export class AdminService {
     return await adminRepository.getAllUsers();
   }
 
-  async getWebhookEvents(filters: { status?: string; source?: string; page: number; limit: number }) {
+  async getWebhookEvents(filters: { status?: string; source?: string; error?: string; page: number; limit: number }) {
     return await adminRepository.getWebhookEvents(filters);
   }
 }

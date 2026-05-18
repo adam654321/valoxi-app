@@ -124,10 +124,11 @@ router.get('/users', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.get('/webhook-events', asyncHandler(async (req: Request, res: Response) => {
-  const { status, source, page = '1', limit = '50' } = req.query;
+  const { status, source, error, page = '1', limit = '50' } = req.query;
   const data = await adminService.getWebhookEvents({
     status: status as string | undefined,
     source: source as string | undefined,
+    error: error as string | undefined,
     page: Math.max(1, parseInt(page as string, 10) || 1),
     limit: Math.min(100, Math.max(1, parseInt(limit as string, 10) || 50)),
   });

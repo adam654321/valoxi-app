@@ -233,10 +233,11 @@ export class AdminRepository {
       .orderBy(users.lastName, users.firstName);
   }
 
-  async getWebhookEvents(filters: { status?: string; source?: string; page: number; limit: number }) {
+  async getWebhookEvents(filters: { status?: string; source?: string; error?: string; page: number; limit: number }) {
     const conditions = [];
     if (filters.status) conditions.push(eq(webhookEvents.status, filters.status));
     if (filters.source) conditions.push(eq(webhookEvents.source, filters.source));
+    if (filters.error) conditions.push(eq(webhookEvents.error, filters.error));
     const where = conditions.length > 0 ? and(...conditions) : undefined;
     const offset = (filters.page - 1) * filters.limit;
 
