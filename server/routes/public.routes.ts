@@ -6,17 +6,19 @@ import { sendSuccess } from '../utils/response';
 import { config } from '../config';
 import { db } from '../db';
 import { users, webhookEvents } from '@shared/schema/core';
+import { systemConfigService } from '../services/system-config.service';
 
 const router = Router();
 
 router.get(
   '/config',
   asyncHandler(async (_req, res) => {
+    const openAccess = (await systemConfigService.getConfig('open_access_enabled')) === 'true';
     sendSuccess(res, {
       clerkEnabled: process.env.CLERK_ENABLED === 'true',
       nylasConnectGmailVisible: process.env.NYLAS_CONNECT_GMAIL_VISIBLE === 'true',
       nylasConnectOutlookVisible: process.env.NYLAS_CONNECT_OUTLOOK_VISIBLE === 'true',
-      openAccessEnabled: process.env.OPEN_ACCESS_ENABLED === 'true',
+      openAccessEnabled: openAccess,
     });
   }),
 );

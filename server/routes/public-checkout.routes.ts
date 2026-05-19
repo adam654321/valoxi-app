@@ -6,6 +6,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { promoCodeService, isFiveDNewMember } from '../services/promo-code.service';
 import { VALID_PLAN_KEYS, LOOKUP_KEY_MAP } from './billing.routes';
 import type { PlanKey } from '@shared/schema/billing';
+import { systemConfigService } from '../services/system-config.service';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ const checkoutSchema = z.object({
  * webhook uses to branch into self-serve provisioning.
  */
 router.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
-  if (!config.openAccessEnabled) {
+  if (!((await systemConfigService.getConfig('open_access_enabled')) === 'true')) {
     return res.status(400).json({
       error: 'open_access_disabled',
       message: 'Self-serve checkout is not currently available.',

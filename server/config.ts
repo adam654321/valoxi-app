@@ -13,8 +13,6 @@ function getBaseUrl(): string {
 
 export const config = {
   baseUrl: getBaseUrl(),
-  openAccessEnabled: process.env.OPEN_ACCESS_ENABLED === 'true',
-
   server: {
     port: parseInt(process.env.PORT || '5000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',

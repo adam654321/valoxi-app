@@ -10,6 +10,7 @@ const DEFAULT_SYSTEM_CONFIG: { key: string; value: string }[] = [
   { key: 'expert_analysis_enabled', value: 'true' },
   { key: 'beta_mode', value: 'true' },
   { key: 'issue_reporting_enabled', value: 'true' },
+  { key: 'open_access_enabled', value: 'false' },
 ];
 
 export async function seedSystemConfig(): Promise<void> {

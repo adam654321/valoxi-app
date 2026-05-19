@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ShieldCheck, Globe, MessageSquare, ArrowLeftRight } from "lucide-react";
+import { Loader2, ShieldCheck, Globe, MessageSquare, ArrowLeftRight, Unlock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface ConfigRow {
@@ -24,6 +24,7 @@ export default function AdminSettings() {
   const currentMode = configs.find((c) => c.key === "registration_mode")?.value ?? "invite_only";
   const issueReportingEnabled = configs.find((c) => c.key === "issue_reporting_enabled")?.value !== "false";
   const betaTierSwitchEnabled = configs.find((c) => c.key === "beta_tier_switch_enabled")?.value !== "false";
+  const openAccessEnabled = configs.find((c) => c.key === "open_access_enabled")?.value === "true";
 
   const mutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
@@ -195,6 +196,36 @@ export default function AdminSettings() {
                     checked={betaTierSwitchEnabled}
                     onCheckedChange={(checked) =>
                       mutation.mutate({ key: "beta_tier_switch_enabled", value: checked ? "true" : "false" })
+                    }
+                    disabled={mutation.isPending}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={`transition-all ${openAccessEnabled ? "border-amber-400/40" : ""}`}>
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${openAccessEnabled ? "bg-amber-500/10" : "bg-muted"}`}>
+                      <Unlock className={`h-5 w-5 ${openAccessEnabled ? "text-amber-500" : "text-muted-foreground"}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">Open Access (self-serve signup)</span>
+                        {openAccessEnabled && (
+                          <Badge className="text-xs bg-amber-500/15 text-amber-600 border-amber-400/30">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        When on, the marketing site routes visitors to Stripe checkout. When off, the waitlist.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={openAccessEnabled}
+                    onCheckedChange={(checked) =>
+                      mutation.mutate({ key: "open_access_enabled", value: checked ? "true" : "false" })
                     }
                     disabled={mutation.isPending}
                   />
