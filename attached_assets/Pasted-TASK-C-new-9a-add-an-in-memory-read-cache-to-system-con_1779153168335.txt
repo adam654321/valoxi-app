@@ -1,0 +1,122 @@
+TASK: C-new.9a — add an in-memory read cache to system-config.service.ts with cache-bust-on-write. Dev only. ONE concern: stop getConfig hitting the DB on every call, without making an admin flip lag.
+
+Work in order. If the PRE-STEP does not match, STOP and report — do not edit.
+
+=== PRE-STEP — confirm current file ===
+Open server/services/system-config.service.ts. Confirm it matches verbatim:
+
+import { eq } from 'drizzle-orm';
+import { db } from '../db';
+import { systemConfig } from '@shared/schema/core';
+class SystemConfigService {
+  async getConfig(key: string): Promise<string | null> {
+    const [row] = await db
+      .select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key));
+    return row?.value ?? null;
+  }
+  async setConfig(key: string, value: string, adminUserId: number): Promise<void> {
+    await db
+      .insert(systemConfig)
+      .values({ key, value, updatedAt: new Date(), updatedByUserId: adminUserId })
+      .onConflictDoUpdate({
+        target: systemConfig.key,
+        set: { value, updatedAt: new Date(), updatedByUserId: adminUserId },
+      });
+  }
+  async getAllConfig(): Promise<{ key: string; value: string }[]> {
+    const rows = await db.select().from(systemConfig);
+    return rows.map((r) => ({ key: r.key, value: r.value }));
+  }
+}
+export const systemConfigService = new SystemConfigService();
+
+If it differs in any way, STOP and report.
+
+=== CHANGE — replace the entire file contents with: ===
+
+import { eq } from 'drizzle-orm';
+import { db } from '../db';
+import { systemConfig } from '@shared/schema/core';
+
+const CACHE_TTL_MS = 30_000;
+
+type CacheEntry = { value: string | null; expiresAt: number };
+
+/**
+ * system_config access with a short-TTL in-memory read cache.
+ *
+ * - getConfig: serves from cache within TTL, else reads the DB and caches.
+ * - setConfig: writes the DB, then updates this process's cache entry
+ *   immediately (cache-bust-on-write) so an admin flip is instant locally.
+ *
+ * Multi-instance note: cache-bust-on-write only updates the cache in the
+ * process that handled the write. On a multi-instance deployment, other
+ * instances catch up within CACHE_TTL_MS. Acceptable for config flags — a
+ * deliberate flip propagates across instances within the TTL window.
+ */
+class SystemConfigService {
+  private cache = new Map<string, CacheEntry>();
+
+  async getConfig(key: string): Promise<string | null> {
+    const cached = this.cache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+    const [row] = await db
+      .select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key));
+    const value = row?.value ?? null;
+    this.cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+    return value;
+  }
+
+  async setConfig(key: string, value: string, adminUserId: number): Promise<void> {
+    await db
+      .insert(systemConfig)
+      .values({ key, value, updatedAt: new Date(), updatedByUserId: adminUserId })
+      .onConflictDoUpdate({
+        target: systemConfig.key,
+        set: { value, updatedAt: new Date(), updatedByUserId: adminUserId },
+      });
+    // cache-bust-on-write: refresh this process's entry so a flip is instant locally
+    this.cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+  }
+
+  async getAllConfig(): Promise<{ key: string; value: string }[]> {
+    const rows = await db.select().from(systemConfig);
+    return rows.map((r) => ({ key: r.key, value: r.value }));
+  }
+}
+
+export const systemConfigService = new SystemConfigService();
+
+Notes:
+- getAllConfig is intentionally NOT cached and NOT cache-busting. It is the admin settings read; leaving it uncached keeps the admin page always-fresh and avoids a whole-table cache. Do not change it.
+- setConfig caches the value it just wrote, not a re-read. That is correct — it is the value that was persisted.
+
+=== V-CHECK ===
+1. npm run check — paste full output. Baseline is exactly 1 pre-existing error (portal.service.ts:81). Any other error is a regression.
+2. Restart the dev workflow — FULL restart (not HMR). This is a backend service change; a full restart is required and also clears the in-memory cache for a clean test.
+3. grep -n "CACHE_TTL_MS\|this.cache" server/services/system-config.service.ts — report all lines (expect: the const, the Map field, two cache.set calls, one cache.get).
+
+4. Live test — cache-bust-on-write makes a flip instant.
+   a. Confirm the dev row: SELECT value FROM system_config WHERE key = 'open_access_enabled'; — expect 'true'.
+   b. curl -s "https://85fb53ef-8f2a-4b29-b64b-c651f49dfeb5-00-2ooxl8jy2uoof.kirk.replit.dev/api/v2/public/config" — expect openAccessEnabled true.
+   c. Flip via the ADMIN WRITE PATH, not a raw UPDATE — this is what proves cache-bust-on-write. POST the admin system-config endpoint to set open_access_enabled to false. If a raw curl to the admin endpoint needs an admin session and is not practical, instead call systemConfigService.setConfig('open_access_enabled', 'false', <an admin user id>) directly via a one-off tsx snippet. State which method you used.
+   d. IMMEDIATELY curl /config again — expect openAccessEnabled false with NO wait. If it still shows true, cache-bust-on-write failed — report it.
+   e. Set it back: same method, set open_access_enabled to 'true'. curl /config — expect true.
+   Paste all outputs.
+
+5. Live test — raw DB write is NOT seen until TTL (this is the expected multi-instance behaviour, confirming the TTL works).
+   a. Raw UPDATE system_config SET value = 'false' WHERE key = 'open_access_enabled'; (bypasses setConfig, so no cache bust).
+   b. IMMEDIATELY curl /config — openAccessEnabled MAY still show true (served from cache). Report what it shows.
+   c. Wait 35 seconds. curl /config again — expect false (TTL expired, DB re-read).
+   d. Set the row back to 'true' via raw UPDATE, wait 35s, curl, confirm true.
+   Paste all outputs with rough timestamps. This test is expected to show staleness in step b and freshness in step c — that is correct behaviour, not a bug.
+
+6. git status and git diff --stat — paste both. Expect 1 file modified, 0 new files.
+
+Stop after V-check and report results. Do NOT chain to anything else.

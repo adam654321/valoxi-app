@@ -118,8 +118,9 @@ site at the same time. Flipping back reverts both.
 | **LAUNCH BLOCK — critical path to launch** | | | |
 | C-new.7a | Post-checkout collision fix (app) | Med | v66 ✓ |
 | C-new.7b | Admin collision filter on /admin/webhook-events (app) | Low | v66 ✓ |
-| C-new.8 | CORS on public endpoints — checkout + config (app) | Med | next |
-| C-new.9 | OPEN_ACCESS_ENABLED -> system_config + admin settings toggle (app) | Med | launch block |
+| C-new.8 | CORS on public endpoints — checkout + config (app) | Med | v66 ✓ |
+| C-new.9 | OPEN_ACCESS_ENABLED -> system_config + admin settings toggle (app) | Med | v66 ✓ |
+| C-new.9a | system_config read cache with cache-bust-on-write (app) | Low | next |
 | M.1 | valoxi-site assess (PricingToggle, /pricing, waitlist form, CF functions) | None | launch block |
 | M.2 | Marketing tier cards -> app checkout endpoint | Med | launch block |
 | M.3 | Flag-aware rendering (pull from app config) + waitlist off | Med | launch block |
@@ -144,25 +145,32 @@ Ordered. App slices and marketing slices can overlap; the launch test pass
 needs all of them landed.
 
 App (Replit, architect/relay model):
-1. C-new.7a — post-checkout collision fix.
-2. C-new.7b — admin collision alert + in-app admin notification.
-3. C-new.8 — CORS on the public checkout and public config endpoints.
+1. C-new.7a — post-checkout collision fix. DONE v66.
+2. C-new.7b — admin collision filter on /admin/webhook-events. DONE v66.
+3. C-new.8 — CORS on the public checkout and public config endpoints. DONE v66.
 4. C-new.9 — relocate OPEN_ACCESS_ENABLED to system_config, add the admin
-   settings toggle.
+   settings toggle. DONE v66.
+5. C-new.9a — system_config read cache with cache-bust-on-write. Split out of
+   C-new.9 deliberately: the cache is a generic change to getConfig (affects
+   all config keys) and carries an invalidation requirement (setConfig must
+   bust the cache so an admin flip is instant). Kept off the launch-switch
+   slice so C-new.9's diff stayed small and provable. C-new.9 ships a correct
+   launch switch; 9a optimises the read path before the marketing site pulls
+   the flag at volume.
 
 Marketing site (valoxi-site, edited directly via filesystem, Adam commits/pushes):
-5. M.1 — assess valoxi-site.
-6. M.2 — tier cards to the app checkout endpoint.
-7. M.3 — flag-aware rendering (pull the flag from the app config endpoint),
+6. M.1 — assess valoxi-site.
+7. M.2 — tier cards to the app checkout endpoint.
+8. M.3 — flag-aware rendering (pull the flag from the app config endpoint),
    waitlist off when the flag is on, fail closed.
-8. M.4 — contact route.
+9. M.4 — contact route.
 
 Then:
-9. Launch test pass — full E2E on dev with the flag on, marketing site running
-   locally against the dev app: tier card -> checkout -> webhook provision ->
-   /post-checkout -> Clerk -> onboarding -> into the app; collision path;
-   waitlist-off rendering.
-10. LAUNCH — deploy the updated marketing site DORMANT (flag still false, it
+10. Launch test pass — full E2E on dev with the flag on, marketing site running
+    locally against the dev app: tier card -> checkout -> webhook provision ->
+    /post-checkout -> Clerk -> onboarding -> into the app; collision path;
+    waitlist-off rendering.
+11. LAUNCH — deploy the updated marketing site DORMANT (flag still false, it
     renders the waitlist), then flip the admin toggle. The flip is the launch.
 
 ---
@@ -321,12 +329,17 @@ completing and the launch test pass passing. The launch test pass must cover:
 - Full E2E with the flag on: tier card -> checkout -> webhook provision ->
   /post-checkout -> Clerk -> onboarding -> into the app with a live sub.
 - The collision path: /post-checkout shows the collision state, routes
-  correctly, the admin alert fires.
+  correctly, the admin collision filter shows the row.
 - Flag-aware marketing rendering: waitlist when off, checkout when on, fail
   closed on config fetch failure.
 - CORS: a real cross-origin POST from the marketing site to the checkout
   endpoint succeeds.
 - Webhook reachability to dev is a prerequisite. Use fresh adam+ aliases.
+
+Prod cutover checklist (C-new.8 dependency): MARKETING_SITE_URL must be
+confirmed set correctly in the prod environment. C-new.8's CORS allowed origin
+derives from it; the dev box runs on the 'https://valoxi.ai' default. If prod
+needs a different origin it must be set explicitly before the flip.
 
 ## Action log progression
 
