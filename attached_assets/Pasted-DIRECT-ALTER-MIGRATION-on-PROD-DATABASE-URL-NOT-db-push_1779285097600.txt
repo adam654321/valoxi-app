@@ -1,0 +1,59 @@
+DIRECT ALTER MIGRATION on PROD_DATABASE_URL. NOT db:push.
+
+CRITICAL: This runs against PROD. The Replit deploy currently paused
+at the Drizzle migration prompt must be CANCELLED before this runs.
+Do not let Drizzle and a manual ALTER both try to change the schema.
+
+The migration aligns prod promo_code_campaigns with the dev schema
+(Phase B of the Open Access Pivot). Reviewed against the live data,
+the three existing rows get slug values populated as part of the
+transaction.
+
+Slug values, matching dev:
+- id 9  (Standard 5D community)  → '5d-community'
+- id 10 (Early Bird)              → 'early-bird'
+- id 11 (5D New Member)           → '5d'
+
+Run this against $PROD_DATABASE_URL in a single transaction. Read
+the dry-run output. Do not commit without my authorisation.
+
+BEGIN;
+
+  -- Add new columns
+  ALTER TABLE promo_code_campaigns
+    ADD COLUMN slug VARCHAR NOT NULL DEFAULT '',
+    ADD COLUMN max_total_claims INTEGER,
+    ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+  -- Populate slug on existing rows
+  UPDATE promo_code_campaigns SET slug = '5d-community' WHERE id = 9;
+  UPDATE promo_code_campaigns SET slug = 'early-bird'   WHERE id = 10;
+  UPDATE promo_code_campaigns SET slug = '5d'           WHERE id = 11;
+
+  -- Add unique constraint on slug now that values are populated
+  ALTER TABLE promo_code_campaigns
+    ADD CONSTRAINT promo_code_campaigns_slug_unique UNIQUE (slug);
+
+  -- Drop the empty default so future rows must supply a slug
+  ALTER TABLE promo_code_campaigns
+    ALTER COLUMN slug DROP DEFAULT;
+
+  -- Drop legacy codegen columns
+  ALTER TABLE promo_code_campaigns
+    DROP COLUMN code_prefix,
+    DROP COLUMN max_uses_per_code;
+
+  -- Drop the empty legacy promo_codes table
+  DROP TABLE IF EXISTS promo_codes;
+
+  -- Verify the new shape and the three rows look right
+  SELECT id, name, slug, stripe_coupon_id, post_free_period_coupon_id,
+         free_months_total, is_active, max_total_claims
+  FROM promo_code_campaigns
+  ORDER BY id;
+
+ROLLBACK;  -- dry-run, change to COMMIT after Adam reviews
+
+The closing ROLLBACK is the safety net. Run as-is, paste the SELECT
+output back. I review the rows look correct (three rows, three slugs,
+coupons still attached, no surprises). Then a second run with COMMIT.
