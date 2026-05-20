@@ -120,8 +120,8 @@ site at the same time. Flipping back reverts both.
 | C-new.7b | Admin collision filter on /admin/webhook-events (app) | Low | v66 ✓ |
 | C-new.8 | CORS on public endpoints — checkout + config (app) | Med | v66 ✓ |
 | C-new.9 | OPEN_ACCESS_ENABLED -> system_config + admin settings toggle (app) | Med | v66 ✓ |
-| C-new.9a | system_config read cache with cache-bust-on-write (app) | Low | next |
-| M.1 | valoxi-site assess (PricingToggle, /pricing, waitlist form, CF functions) | None | launch block |
+| C-new.9a | system_config read cache with cache-bust-on-write (app) | Low | v66 ✓ |
+| M.1 | valoxi-site assess (PricingToggle, /pricing, waitlist form, CF functions) | None | next |
 | M.2 | Marketing tier cards -> app checkout endpoint | Med | launch block |
 | M.3 | Flag-aware rendering (pull from app config) + waitlist off | Med | launch block |
 | M.4 | Contact route (replaces waitlist as soft contact) | Low | launch block |
@@ -156,7 +156,7 @@ App (Replit, architect/relay model):
    bust the cache so an admin flip is instant). Kept off the launch-switch
    slice so C-new.9's diff stayed small and provable. C-new.9 ships a correct
    launch switch; 9a optimises the read path before the marketing site pulls
-   the flag at volume.
+   the flag at volume. DONE v66.
 
 Marketing site (valoxi-site, edited directly via filesystem, Adam commits/pushes):
 6. M.1 — assess valoxi-site.
@@ -350,8 +350,8 @@ needs a different origin it must be set explicitly before the flip.
 | v63 | A1 complete ✓ | Code residue removed (commit 1ac43a8) |
 | v64 | B + C-new.1/.2/.3 ✓ | Promo model; checkout endpoint; webhook provisioning; /post-checkout |
 | v65 | C-new.4/.4b/.5/.5b/.6 ✓ | C-new build block closed on dev |
-| v66 | C-new functional test pass ✓ | 3 runs passed; collision-flow finding surfaced; launch model changed to coordinated |
-| next | Launch block | C-new.7a/.7b/.8/.9 + M.1-M.4, then launch test pass |
+| v66 | C-new functional test pass + app-side launch block ✓ | 3 runs passed; collision-flow finding surfaced and fixed (7a/7b); CORS (8); flag to system_config + toggle (9) + read cache (9a); launch model changed to coordinated |
+| next | Marketing build | M.1-M.4 (valoxi-site), then launch test pass |
 | next | LAUNCH | Coordinated release: marketing deploy + flag on |
 | later | D, F, A2, G | Post-launch |
 | later | E | Marketing site full overhaul (separate workstream) |
