@@ -1,0 +1,56 @@
+ASSESS ONLY. Read-only diagnostic. DO NOT WRITE, DO NOT MIGRATE,
+DO NOT COMMIT.
+
+CRITICAL: Run these against PROD_DATABASE_URL, NOT the default
+DATABASE_URL. Use the explicit override:
+
+  DATABASE_URL="$PROD_DATABASE_URL" <command>
+
+Or however the prod read pattern is invoked in this Replit. The
+queries are read-only but must hit prod, not dev.
+
+Context: a prod deploy is paused at a Drizzle migration prompt because
+the prod promo_code_campaigns table still has the legacy code_prefix
+and max_uses_per_code columns and lacks slug, max_total_claims,
+is_active. Phase B was applied to dev in v64 but never to prod. The
+prod schema needs aligning before the deploy can proceed cleanly.
+
+Run the queries and paste back the verbatim output.
+
+1. Current prod schema of promo_code_campaigns:
+
+   SELECT column_name, data_type, is_nullable, column_default
+   FROM information_schema.columns
+   WHERE table_name = 'promo_code_campaigns'
+   ORDER BY ordinal_position;
+
+2. Current prod constraints and indexes on promo_code_campaigns:
+
+   SELECT conname, contype, pg_get_constraintdef(c.oid)
+   FROM pg_constraint c
+   JOIN pg_class t ON c.conrelid = t.oid
+   WHERE t.relname = 'promo_code_campaigns';
+
+   SELECT indexname, indexdef FROM pg_indexes
+   WHERE tablename = 'promo_code_campaigns';
+
+3. Current prod data in promo_code_campaigns (need to see what is in
+   the rows before any schema change):
+
+   SELECT * FROM promo_code_campaigns ORDER BY id;
+
+4. Does prod still have the promo_codes table?
+
+   SELECT to_regclass('public.promo_codes') AS exists;
+
+   And if it exists, count rows and show first 5:
+
+   SELECT COUNT(*) FROM promo_codes;
+   SELECT * FROM promo_codes ORDER BY id LIMIT 5;
+
+5. Check what env DATABASE_URL was resolved to (sanity-check we hit prod):
+
+   SELECT current_database(), inet_server_addr(), inet_server_port();
+
+Paste all results back. NO writes, NO deploy, NO migration. The deploy
+is currently paused, do not unpause it.
