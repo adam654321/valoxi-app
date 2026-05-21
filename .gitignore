@@ -1,9 +1,52 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build artefacts
+dist/
+build/
+server/public/
+
+# Editor / OS
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz# Playwright artifacts
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Database dumps and backups
+*.sql
+*.dump
+*.dump.gz
+backup_*
+backup-*
+
+# Secrets, certificates, keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+id_rsa*
+
+# Compressed archives in root
+*.tar.gz
+*.zip
+
+# Local workspace
+uploads/
+attached_assets/
+data/local/
+.local/
+
+# Test artefacts
 playwright-report/
 test-results/
 tests/.auth/
+
+# Vite leftovers
+vite.config.ts.*
