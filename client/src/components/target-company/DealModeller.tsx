@@ -140,15 +140,75 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     enabled: !!companyId,
   });
 
+  const { data: expertResults } = useQuery<any[]>({
+    queryKey: ['/api/v2/expert-analysis/results', companyId],
+    select: (response: any) => response?.data || response,
+    enabled: !!companyId,
+  });
+
+  const financialExpertMetrics = useMemo<Record<string, any> | null>(() => {
+    if (!expertResults) return null;
+    const financialExpert = expertResults.find((r: any) => r.expertType === 'financial' && r.status === 'completed');
+    if (!financialExpert?.analysisData) return null;
+    const data = typeof financialExpert.analysisData === 'string'
+      ? JSON.parse(financialExpert.analysisData)
+      : financialExpert.analysisData;
+    return data?.yearly_metrics || null;
+  }, [expertResults]);
+
+  const financialsFromExpert = useMemo<FinancialsData | null>(() => {
+    if (!financialExpertMetrics) return null;
+    const years = Object.keys(financialExpertMetrics).sort();
+    const periods: any[] = [];
+    const incomeStatements: any[] = [];
+    years.forEach((yearStr, idx) => {
+      const m = financialExpertMetrics[yearStr];
+      const year = parseInt(yearStr, 10);
+      const syntheticId = -(year);
+      periods.push({
+        id: syntheticId,
+        targetCompanyId: companyId,
+        periodType: 'statutory',
+        periodEnd: `${yearStr}-12-31T00:00:00.000Z`,
+        fiscalYear: year,
+        periodLabel: `FY ${yearStr}`,
+      });
+      incomeStatements.push({
+        id: idx,
+        financialPeriodId: syntheticId,
+        revenue: m.revenue != null ? String(m.revenue) : null,
+        costOfSales: m.cost_of_sales != null ? String(m.cost_of_sales) : null,
+        grossProfit: m.gross_profit != null ? String(m.gross_profit) : null,
+        administrativeExpenses: m.administrative_expenses != null ? String(m.administrative_expenses) : null,
+        operatingProfit: m.operating_profit != null ? String(m.operating_profit) : null,
+        depreciationAmortisation: m.depreciation_amortisation != null ? String(m.depreciation_amortisation) : null,
+        directorsRemuneration: null,
+        staffCosts: null,
+      });
+    });
+    return { periods, incomeStatements, staffData: [] };
+  }, [financialExpertMetrics, companyId]);
+
   const financialYears = useMemo<string[]>(() => {
+    if (financialExpertMetrics) {
+      return Object.keys(financialExpertMetrics).sort();
+    }
     if (!financialsRaw?.periods) return [];
     return financialsRaw.periods
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime())
       .map((p: any) => String(p.fiscalYear));
-  }, [financialsRaw]);
+  }, [financialsRaw, financialExpertMetrics]);
 
   const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
+    if (financialExpertMetrics) {
+      const result: Record<string, number> = {};
+      for (const [year, m] of Object.entries(financialExpertMetrics)) {
+        const ebitda = (m as any).ebitda;
+        if (ebitda != null) result[year] = Number(ebitda);
+      }
+      return result;
+    }
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
     const result: Record<string, number> = {};
     for (const period of financialsRaw.periods) {
@@ -160,7 +220,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       result[String(period.fiscalYear)] = op + da;
     }
     return result;
-  }, [financialsRaw]);
+  }, [financialsRaw, financialExpertMetrics]);
 
   const calculations = useMemo<CalculationResult | null>(() => {
     if (!modelDetails) return null;
@@ -582,10 +642,11 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                 </Card>
 
                 <PLSummarySection
-                  financialData={financialsRaw}
+                  financialData={financialsFromExpert ?? financialsRaw}
                   adjustments={modelDetails?.adjustments || []}
                   calculations={calculations}
                   averagingYears={modelDetails?.averagingYears ?? 3}
+                  dataSource={financialsFromExpert ? 'expert' : 'raw'}
                 />
 
                 {selectedModelId && modelDetails && (

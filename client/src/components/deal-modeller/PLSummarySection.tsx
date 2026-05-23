@@ -12,6 +12,7 @@ interface PLSummarySectionProps {
   adjustments: DealModelAdjustment[];
   calculations: CalculationResult | null;
   averagingYears: number;
+  dataSource?: 'expert' | 'raw';
 }
 
 interface PeriodColumn {
@@ -23,7 +24,7 @@ interface PeriodColumn {
   staff: any;
 }
 
-export default function PLSummarySection({ financialData, adjustments, calculations, averagingYears }: PLSummarySectionProps) {
+export default function PLSummarySection({ financialData, adjustments, calculations, averagingYears, dataSource }: PLSummarySectionProps) {
   const columns = useMemo<PeriodColumn[]>(() => {
     if (!financialData?.periods || !financialData?.incomeStatements) return [];
 
@@ -260,6 +261,9 @@ export default function PLSummarySection({ financialData, adjustments, calculati
         <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5 shrink-0" />
           EBITDA averaged over {averagingYears} most recent year{averagingYears !== 1 ? 's' : ''}. Adjustments applied in Section 2.
+          {dataSource === 'expert' && (
+            <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-medium">· Sourced from Phase 2 holistic analysis</span>
+          )}
         </div>
       </CardContent>
     </Card>
