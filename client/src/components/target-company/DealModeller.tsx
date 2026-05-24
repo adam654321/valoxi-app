@@ -148,7 +148,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
   const financialExpertMetrics = useMemo<Record<string, any> | null>(() => {
     if (!expertResults) return null;
-    const financialExpert = expertResults.find((r: any) => r.expertType === 'financial' && r.status === 'completed');
+    const financialExpert = expertResults.find((r: any) => r.expertType === 'financial' && r.status === 'success');
     if (!financialExpert?.analysisData) return null;
     const data = typeof financialExpert.analysisData === 'string'
       ? JSON.parse(financialExpert.analysisData)
@@ -286,6 +286,16 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     return Math.round((adjustedTotal - calculations.totalFunded) * 100) / 100;
   }, [calculations, netCashFromBusiness]);
 
+  const retriggerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/v2/financial-data/company/${companyId}/retrigger-normalization`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/financial-data/company', companyId, 'financials'] });
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest('POST', `/api/v2/deal-models/create/${companyId}`);
@@ -309,6 +319,21 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       });
     },
   });
+
+  const financialsHaveData = !!(
+    financialsRaw?.incomeStatements?.some(is => is.operatingProfit !== null)
+  );
+
+  const handleCreateDealModel = async () => {
+    if (!financialsHaveData) {
+      try {
+        await retriggerMutation.mutateAsync();
+      } catch {
+        // retrigger failure is non-fatal — proceed anyway and let the server handle it
+      }
+    }
+    createMutation.mutate();
+  };
 
   const duplicateMutation = useMutation({
     mutationFn: async () => {
@@ -410,13 +435,17 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                 Create a deal model to calculate the offer price, build a funding structure, and assess deal viability. Data is automatically pulled from your expert analysis.
               </p>
             </div>
-            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
-              {createMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Button onClick={handleCreateDealModel} disabled={createMutation.isPending || retriggerMutation.isPending}>
+              {retriggerMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Preparing financial data…
+                </>
+              ) : createMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating…</>
               ) : (
-                <Plus className="h-4 w-4 mr-2" />
+                <><Plus className="h-4 w-4 mr-2" />Create Deal Model</>
               )}
-              Create Deal Model
             </Button>
             <p className="text-xs text-muted-foreground">Requires completed expert analysis.</p>
           </CardContent>

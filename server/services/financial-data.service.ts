@@ -68,13 +68,21 @@ export class FinancialDataService {
     const years = data.years || {};
     const periodType: PeriodType = data.source === 'statutory' ? 'statutory' : 'management';
 
+    // Identify the primary year: the highest fiscal year present in this document.
+    // In statutory accounts the most recent year is the primary; all others are comparatives.
+    const yearKeys = Object.keys(years).map(Number).filter(n => !isNaN(n));
+    const primaryYear = data.years_covered
+      ? Math.max(...(data.years_covered as number[]))
+      : yearKeys.length > 0 ? Math.max(...yearKeys) : null;
+
     for (const [yearKey, yearData] of Object.entries(years)) {
       try {
         const fiscalYear = parseInt(yearKey);
         if (isNaN(fiscalYear)) continue;
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
-        
+        const isPrimary = primaryYear === null || fiscalYear === primaryYear;
+
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
           targetCompanyId,
           periodType,
@@ -110,7 +118,7 @@ export class FinancialDataService {
           overheadsBreakdown: yd.overheads_breakdown || pl.overheads_breakdown || null,
           exceptionalItems: yd.exceptional_items || pl.exceptional_items || null,
           sourceDocumentId,
-        });
+        }, isPrimary);
 
         recordsCreated++;
         console.log(`[FINANCIAL_DATA] Created income statement for ${fiscalYear}`);

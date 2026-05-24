@@ -91,7 +91,8 @@ export class FinancialDataRepository {
   async upsertIncomeStatement(
     financialPeriodId: number,
     targetCompanyId: number,
-    data: Partial<InsertIncomeStatement>
+    data: Partial<InsertIncomeStatement>,
+    isPrimary: boolean = true
   ): Promise<IncomeStatement> {
     const existing = await db
       .select()
@@ -100,9 +101,26 @@ export class FinancialDataRepository {
       .limit(1);
 
     if (existing.length > 0) {
+      let updateData: Record<string, any>;
+
+      if (isPrimary) {
+        // Primary year: full overwrite — this is the year the document was filed for
+        updateData = { ...data, updatedAt: new Date() };
+      } else {
+        // Comparative year: only fill in fields that are currently null
+        // Never overwrite good data with partial comparative figures
+        const existingRow = existing[0] as Record<string, any>;
+        updateData = { updatedAt: new Date() };
+        for (const [key, value] of Object.entries(data as Record<string, any>)) {
+          if (value !== null && value !== undefined && existingRow[key] === null) {
+            updateData[key] = value;
+          }
+        }
+      }
+
       const [updated] = await db
         .update(incomeStatements)
-        .set({ ...data, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(incomeStatements.id, existing[0].id))
         .returning();
       return updated;
@@ -118,6 +136,36 @@ export class FinancialDataRepository {
       .returning();
 
     return created;
+  }
+
+  async clearIncomeStatementData(targetCompanyId: number): Promise<void> {
+    const nullFields = {
+      revenue: null,
+      costOfSales: null,
+      grossProfit: null,
+      administrativeExpenses: null,
+      depreciationAmortisation: null,
+      otherOperatingIncome: null,
+      operatingProfit: null,
+      interestReceivable: null,
+      interestPayable: null,
+      profitBeforeTax: null,
+      corporationTax: null,
+      netProfit: null,
+      staffCosts: null,
+      directorsRemuneration: null,
+      dividendsPaid: null,
+      revenueBreakdown: null,
+      costOfSalesBreakdown: null,
+      overheadsBreakdown: null,
+      exceptionalItems: null,
+      sourceDocumentId: null,
+      updatedAt: new Date(),
+    };
+    await db
+      .update(incomeStatements)
+      .set(nullFields)
+      .where(eq(incomeStatements.targetCompanyId, targetCompanyId));
   }
 
   async getIncomeStatementsByCompany(targetCompanyId: number): Promise<(IncomeStatement & { period: FinancialPeriod })[]> {

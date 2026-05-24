@@ -5,6 +5,9 @@ import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
 import { UnauthorizedError, NotFoundError, BadRequestError } from '../utils/errors';
 import { targetCompaniesRepository } from '../repositories/target-companies.repository';
+import { db } from '../db';
+import { documents, documentAnalysisResults } from '@shared/schema';
+import { eq, inArray } from 'drizzle-orm';
 
 const router = Router();
 
@@ -310,6 +313,84 @@ router.get('/company/:companyId/deal-sheet', asyncHandler(async (req: Request, r
   }
 
   sendSuccess(res, dealSheet);
+}));
+
+// Retrigger normalization for a company: clears existing income statement data and
+// re-runs it from stored document analysis results. Useful for fixing companies
+// affected by the comparative-year overwrite bug.
+router.post('/company/:companyId/retrigger-normalization', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  const targetCompanyId = parseInt(req.params.companyId);
+  if (!userCompanyId) throw new UnauthorizedError();
+  if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
+  const company = await targetCompaniesRepository.getById(targetCompanyId, userCompanyId);
+  if (!company) throw new NotFoundError('Company not found');
+
+  // 1. Get all documents for this company
+  const companyDocs = await db
+    .select({ id: documents.id })
+    .from(documents)
+    .where(eq(documents.targetCompanyId, targetCompanyId));
+
+  if (companyDocs.length === 0) {
+    return sendSuccess(res, { message: 'No documents found', recordsProcessed: 0 });
+  }
+
+  const docIds = companyDocs.map(d => d.id);
+
+  // 2. Get all profit_and_loss analysis results for these documents
+  const analysisResults = await db
+    .select()
+    .from(documentAnalysisResults)
+    .where(
+      inArray(documentAnalysisResults.documentId, docIds)
+    )
+    .then(rows => rows.filter(r => r.documentType === 'profit_and_loss'));
+
+  if (analysisResults.length === 0) {
+    return sendSuccess(res, { message: 'No P&L analysis results found to retrigger', recordsProcessed: 0 });
+  }
+
+  // 3. Sort by primary year ascending so oldest primary year writes first,
+  //    then later docs fill comparative years for periods not yet populated.
+  const sortedResults = [...analysisResults].sort((a, b) => {
+    const dataA = a.analysisData as any;
+    const dataB = b.analysisData as any;
+    const yearsA: number[] = dataA?.years_covered ?? Object.keys(dataA?.years ?? {}).map(Number);
+    const yearsB: number[] = dataB?.years_covered ?? Object.keys(dataB?.years ?? {}).map(Number);
+    const maxA = yearsA.length ? Math.max(...yearsA) : 0;
+    const maxB = yearsB.length ? Math.max(...yearsB) : 0;
+    return maxA - maxB;
+  });
+
+  // 4. Clear existing income statement data so COALESCE logic starts fresh
+  await financialDataRepository.clearIncomeStatementData(targetCompanyId);
+  console.log(`[RETRIGGER] Cleared income statement data for company ${targetCompanyId}`);
+
+  // 5. Re-run normalization for each document's P&L result in order
+  const outcomes: { documentId: number; result: string }[] = [];
+  for (const result of sortedResults) {
+    try {
+      const normResult = await financialDataService.processExtractedData(
+        'profit_and_loss',
+        result.analysisData,
+        targetCompanyId,
+        result.documentId
+      );
+      outcomes.push({ documentId: result.documentId, result: normResult.message });
+      console.log(`[RETRIGGER] doc ${result.documentId}: ${normResult.message}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      outcomes.push({ documentId: result.documentId, result: `Error: ${msg}` });
+      console.error(`[RETRIGGER] doc ${result.documentId} failed:`, err);
+    }
+  }
+
+  sendSuccess(res, {
+    message: `Normalization complete for company ${targetCompanyId}`,
+    recordsProcessed: sortedResults.length,
+    outcomes,
+  });
 }));
 
 export default router;
