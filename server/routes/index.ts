@@ -105,8 +105,8 @@ export function registerModularRoutes(app: Express) {
   app.use('/api/v2/webhooks', marketingWebhooksRoutes);
   app.use('/api/v2/public/waitlist', waitlistLimiter, publicWaitlistRoutes);
   app.use('/api/v2/public/marketing-consent', waitlistLimiter, publicMarketingConsentRoutes);
-  app.use('/api/v2/public', publicCors, waitlistLimiter, publicCheckoutRoutes);
   app.use('/api/v2/public', publicCors, publicConfigRoutes);
+  app.use('/api/v2/public', publicCors, waitlistLimiter, publicCheckoutRoutes);
   app.use('/api/v2/billing', billingWebhookRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingRoutes);
   app.use('/api/v2/billing', isAuthenticated, validateCsrfToken, billingAdminRoutes);
