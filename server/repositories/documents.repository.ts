@@ -9,6 +9,15 @@ import {
   externalDocumentSubmissions,
   targetCompanies,
   users,
+  financialPeriods,
+  incomeStatements,
+  balanceSheets,
+  staffData,
+  agedDebtors,
+  fixedAssetsRegister,
+  loanFacilities,
+  ddRequirementStatus,
+  ddRequirementDocuments,
   type Document,
   type DocumentCategory,
   type InsertDocument,
@@ -292,19 +301,31 @@ export class DocumentsRepository {
 
       if (allDocumentIds.length > 0) {
         const analysisResultsDeleted = await db.delete(documentAnalysisResults)
-          .where(sql`${documentAnalysisResults.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+          .where(inArray(documentAnalysisResults.documentId, allDocumentIds));
         deletedAnalysisResults = analysisResultsDeleted.rowCount || 0;
 
         const accessLogsDeleted = await db.delete(documentAccessLog)
-          .where(sql`${documentAccessLog.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+          .where(inArray(documentAccessLog.documentId, allDocumentIds));
         deletedDocumentAccessLogs = accessLogsDeleted.rowCount || 0;
 
         const uploadEventsDeleted = await db.delete(fileUploadEvents)
-          .where(sql`${fileUploadEvents.documentId} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+          .where(inArray(fileUploadEvents.documentId, allDocumentIds));
         deletedUploadEvents = uploadEventsDeleted.rowCount || 0;
 
+        // NULL out nullable FK references in financials and due-diligence tables
+        // before deleting documents to avoid FK constraint violations.
+        await db.update(financialPeriods).set({ sourceDocumentId: null }).where(inArray(financialPeriods.sourceDocumentId, allDocumentIds));
+        await db.update(incomeStatements).set({ sourceDocumentId: null }).where(inArray(incomeStatements.sourceDocumentId, allDocumentIds));
+        await db.update(balanceSheets).set({ sourceDocumentId: null }).where(inArray(balanceSheets.sourceDocumentId, allDocumentIds));
+        await db.update(staffData).set({ sourceDocumentId: null }).where(inArray(staffData.sourceDocumentId, allDocumentIds));
+        await db.update(agedDebtors).set({ sourceDocumentId: null }).where(inArray(agedDebtors.sourceDocumentId, allDocumentIds));
+        await db.update(fixedAssetsRegister).set({ sourceDocumentId: null }).where(inArray(fixedAssetsRegister.sourceDocumentId, allDocumentIds));
+        await db.update(loanFacilities).set({ sourceDocumentId: null }).where(inArray(loanFacilities.sourceDocumentId, allDocumentIds));
+        await db.update(ddRequirementStatus).set({ documentId: null }).where(inArray(ddRequirementStatus.documentId, allDocumentIds));
+        await db.update(ddRequirementDocuments).set({ documentId: null }).where(inArray(ddRequirementDocuments.documentId, allDocumentIds));
+
         const documentsDeleted = await db.delete(documents)
-          .where(sql`${documents.id} IN (${sql.join(allDocumentIds.map(id => sql`${id}`), sql`, `)})`);
+          .where(inArray(documents.id, allDocumentIds));
         deletedDocuments = documentsDeleted.rowCount || 0;
       }
 
