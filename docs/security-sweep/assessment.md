@@ -205,3 +205,27 @@ upload sharedFileFilter requires both MIME and extension match.
 | GBP price set in Stripe | USD-only confirmed |
 | Admin "delete user" Clerk-aware path | Not needed for security; later if churn requires |
 | Funnel analytics refinement | Out of scope |
+
+---
+
+## v69 build findings (2026-05-28)
+
+### F1 — T2.1 partially pre-applied via unverified checkpoint
+
+Discovered at assess time in pull (17): `server/routes.ts` (the real `registerRoutes` entrypoint, NOT `server/index.ts` as the original plan assumed) already contained `app.set('trust proxy', 1)` and `app.use('/api/', generalLimiter)`. The sweep assessment (against pull 16) had both as absent. Git history attributes them to a Replit auto-checkpoint commit (`cd2fe9d "Saved progress at the end of the loop"` or adjacent), i.e. an unverified landing outside the assess/apply/V-check cycle.
+
+Methodology implication: when checkpoint auto-commits land outside the cycle, the next assess must read against live, not against a pull that may pre-date or lag them. Read mount points, not search.
+
+### F2 — Original PROD DATA CHECK for T2 was mis-targeted
+
+removals.md spec'd "sample RateLimit-Remaining on 2-3 authenticated requests" to determine the trust-proxy failure mode. This cannot work: authenticated limiters (analysisTriggerLimiter, explainLimiter, uploadLimiter) are user-keyed and behave identically regardless of trust-proxy state. The trust-proxy failure mode manifests on IP-keyed limiters (portalLimiter, waitlistLimiter, generalLimiter's unauth fallback). The decisive question was hop count, which is an architectural fact: `app.valoxi.ai` is DNS-only to Replit autoscale (one LB hop), so `trust proxy: 1` is correct regardless. The PROD DATA CHECK was dropped entirely. Logged as LN-012 (second instance of the same class: mis-targeted check against the wrong variable).
+
+### F3 — Router fall-through under shared mount prefix
+
+PROD curl of `GET /api/v2/public/config` returned `ratelimit-policy: 10;w=900` — the waitlistLimiter, not generalLimiter. `routes/index.ts` mounts `publicCheckoutRoutes` and `publicConfigRoutes` at the same `/api/v2/public` prefix in that order. Express walks the first stack: publicCors → waitlistLimiter decrements the IP counter → publicCheckoutRoutes finds no `/config` route → `next()`. Express moves to the second stack and publicConfigRoutes serves. Net: every `/config` GET burns a waitlistLimiter token.
+
+Pre-existing, not T2-caused. But it's an M.3 blocker — flag-aware marketing rendering will hit /config on every visitor page load. Tracked as T3.11. Logged as LN-013.
+
+### F4 — Runtime config field values should be captured in assess
+
+The v69 V-check returned a 403 for the `https://valoxi.ai` curl. Root cause: dev secret `MARKETING_SITE_URL=http://localhost:3002` overrides the config default, so `config.marketing.siteUrl` at runtime was not `https://valoxi.ai`. The assess captured the source-default fallback but not the runtime-resolved value. Caught at V-check + diagnostic (`printenv` + `npx tsx -e import.then(console.log(config.marketing.siteUrl))`). One round wasted. Logged as LN-012.

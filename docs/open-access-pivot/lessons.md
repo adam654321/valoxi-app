@@ -43,3 +43,23 @@ The original removals.md scoped A1 to 8 files + a handful of edits. Actual A1 en
 - duplicate route registrations at App.tsx:189-190 (not flagged in original)
 
 Mitigation: assess prompts should always include "grep wider than the explicit target list" to surface adjacent surfaces. Done in A1's assess — saved us from at least three would-be misses.
+
+---
+
+## Security sweep T2 (2026-05-28, v69)
+
+### LN-012 — When matching depends on a runtime config value, print the value, not the source default
+
+The T2 V-check 403'd a `https://valoxi.ai` curl in dev because `MARKETING_SITE_URL` was set as a dev secret to `http://localhost:3002`. The assess captured `config.marketing.siteUrl`'s source-code default (`https://valoxi.ai`) but never resolved its runtime value. The mismatch cost one verification round.
+
+Mitigation: when an assess targets behaviour gated by a config field (exact-match origins, ID lookups, env-derived constants), the assess must include both `printenv <VAR>` and a runtime dump such as `npx tsx -e "import('./module').then(m => console.log(m.config.<path>))"`. Source defaults are not what runs.
+
+A second instance of the same class: the original T2 PROD DATA CHECK was spec'd against authenticated requests, which are user-keyed and trust-proxy-independent. The state we needed was the IP-keyed limiters' behaviour. Mis-targeted prod checks waste cycles. Read the spec against the variable that actually changes.
+
+### LN-013 — Two `app.use` mounts at the same prefix share middleware effects via `next()`; assess must trace router fall-through
+
+`routes/index.ts` mounts `publicCheckoutRoutes` and `publicConfigRoutes` at the same `/api/v2/public` prefix. Express walks them in order. A GET to `/config` matches the first prefix, runs publicCors + waitlistLimiter, the router finds no `/config` route, calls `next()`, and Express falls through to the second mount. Net: a GET that "belongs to" publicConfigRoutes still burns a waitlistLimiter token.
+
+The T2 assess noted the middleware on each mount but did not trace what happens when the first router has no matching route. Caught at prod V-check, surfaced as `ratelimit-policy: 10` on /config. Pre-existing, not T2-caused, but the assess should have flagged it as a router-design concern.
+
+Mitigation: when two `app.use` mounts share a prefix, the assess must explicitly list which subpaths each router handles, and confirm there is no overlap. If overlap exists, middleware on the earlier mount runs for requests that ultimately the later mount serves. Either swap the order so the broader router runs second, or split the prefix.

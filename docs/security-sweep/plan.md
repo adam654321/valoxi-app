@@ -1,8 +1,6 @@
 # Security Sweep — Plan
 
-Status: ASSESS COMPLETE. Apply phase opens with Tier 1 (Adam-direct, no
-Replit) and Tier 2 (single combined Replit slice). Tier 3 onwards is
-post-launch.
+Status: T1 substance APPLIED (T1.2 valoxi-site outstanding); T2 APPLIED + PROD VERIFIED 2026-05-28 (v69). Tier 3 onwards post-launch. M.* unblocked except T3.11 (config mount swap — must land before M.3).
 Started: 2026-05-21 (action log v68)
 Owner: Adam
 Related: assessment.md, removals.md, action log v68+
@@ -42,8 +40,8 @@ Three findings withdrawn or downgraded after Adam pushback:
 
 | Tier | Scope | Action mode | Status |
 |---|---|---|---|
-| 1 | File/config edits | Adam-direct, no Replit | NEXT |
-| 2 | Combined launch-block slice | One Replit slice | BEFORE M.* |
+| 1 | File/config edits | Adam-direct, no Replit | T1.1 + T1.3 APPLIED (substance); T1.2 outstanding (valoxi-site) |
+| 2 | Combined launch-block slice | One Replit slice | APPLIED + PROD VERIFIED v69 |
 | 3 | Defence-in-depth | Individual Replit slices | POST-LAUNCH |
 | 4 | Operational hardening | Sequenced into normal cycle | POST-LAUNCH |
 | 5 | Cleanup | Opportunistic | POST-LAUNCH |
@@ -119,8 +117,8 @@ limiter to behave correctly. One assess, one apply, one V-check.
 | 2 | Backup strategy: Neon snapshot branches vs Replit Object Storage push vs delete-cron + document-only | OPEN (T3.8) |
 | 3 | admin-tools /switch-plan: keep with audit log or remove (entitlements derive from subscriptions.planKey anyway) | OPEN (T4.3) |
 | 4 | Orphan-revoke buffer: in-memory queue vs DB-backed retry table | OPEN (T3.6) |
-| 5 | Are the 10 backup dumps in repo root in git history? | OPEN (T1.1 PROD DATA CHECK) |
-| 6 | Does the Supabase project still exist / is the key active? | OPEN (T1.2 PROD DATA CHECK) |
+| 5 | Are the 10 backup dumps in repo root in git history? | CLOSED — 12 files in history. Scenario 1 (Replit-only remote). Filter-repo deferred to coordinated weekend within 30 days. |
+| 6 | Does the Supabase project still exist / is the key active? | CLOSED — project deleted. T1.2 re-scoped to wrangler.toml remove-only. |
 | 7 | Which CSP shape: `sandbox` alone vs full `default-src 'none'; sandbox`? | OPEN (T3.4) |
 
 ## Outstanding before launch
@@ -140,6 +138,6 @@ slices ship. Reasoning:
 |---|---|---|
 | v67 | Open Access Pivot LAUNCH | Live in prod |
 | v68 | Security sweep ASSESS complete ✓ | This entry |
-| next | T1.1 + T1.2 + T1.3 applied | Adam-direct edits |
-| next | T2 applied | Single Replit slice |
+| v69 | T1 substance + T2 APPLIED + PROD VERIFIED ✓ | trust-proxy already in tree pre-slice (verified); publicCors multi-origin + 403; validateOrigin prod-throw; authLimiter dropped; PROD curl all green |
+| next | T3.11 (config mount swap) | Pre-M.3 prerequisite — small assess/apply/V-check |
 | later | T3.* T4.* T5.* | Post-launch, sequenced |
