@@ -60,9 +60,15 @@ const _originAllowlist = (() => {
   }
 
   if (origins.size === 0) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '[Security] APP_URL and REPLIT_DOMAINS are both unset in production. ' +
+        'Refusing to boot with validateOrigin in fail-open mode. Set APP_URL.'
+      );
+    }
     console.warn(
-      '[Security] APP_URL and REPLIT_DOMAINS are both unset — ' +
-      'validateOrigin is running in fail-open mode. Set APP_URL in production.'
+      '[Security] APP_URL and REPLIT_DOMAINS are both unset. ' +
+      'validateOrigin is in fail-open mode (development only). Set APP_URL in production.'
     );
   }
 
