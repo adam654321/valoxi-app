@@ -771,7 +771,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
       </div>)}
 
       <Dialog open={!!selectedExpert} onOpenChange={() => setSelectedExpert(null)}>
-        <DialogContent className="max-w-4xl max-h-[85vh] p-0">
+        <DialogContent className="max-w-5xl w-[90vw] max-h-[92vh] p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2">
               {selectedExpert && EXPERT_CONFIG[selectedExpert.expertType] && (
@@ -792,7 +792,7 @@ export default function ExpertAnalysisDashboard({ targetCompanyId, companyName }
               </div>
             )}
           </DialogHeader>
-          <ScrollArea className="max-h-[calc(85vh-120px)]">
+          <ScrollArea className="max-h-[calc(92vh-120px)]">
             <div className="px-6 py-4">
               {selectedExpert && selectedExpert.analysisData && (
                 getReportViewForExpert(selectedExpert.expertType, selectedExpert.analysisData)
