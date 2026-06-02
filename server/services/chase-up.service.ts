@@ -203,16 +203,25 @@ export class ChaseUpService {
       await this.sendInternalAlert(schedule, 'manual_intervention');
       await chaseUpRepository.completeSchedule(schedule.id, 'manual_intervention');
       return { emailSent: false };
-    } else if (daysOverdue >= (schedule.email4DelayDays || 8) && !sentSequences.has(4)) {
-      emailToSend = 4;
-      requiresInternalAlert = true;
-    } else if (daysOverdue >= (schedule.email3DelayDays || 5) && !sentSequences.has(3)) {
-      emailToSend = 3;
-      requiresInternalAlert = true;
-    } else if (daysOverdue >= (schedule.email2DelayDays || 2) && !sentSequences.has(2)) {
-      emailToSend = 2;
-    } else if (daysOverdue >= (schedule.email1DelayDays || 0) && !sentSequences.has(1)) {
-      emailToSend = 1;
+    }
+
+    // Send the LOWEST unsent sequence whose threshold has been crossed,
+    // not the highest. Catches up one step at a time across consecutive
+    // cron runs after an outage, rather than jumping straight to Final
+    // Notice as the first contact email.
+    const sequenceConfig: Array<{ seq: number; threshold: number; alert: boolean }> = [
+      { seq: 1, threshold: schedule.email1DelayDays ?? 0, alert: false },
+      { seq: 2, threshold: schedule.email2DelayDays ?? 2, alert: false },
+      { seq: 3, threshold: schedule.email3DelayDays ?? 5, alert: true },
+      { seq: 4, threshold: schedule.email4DelayDays ?? 8, alert: true },
+    ];
+
+    for (const { seq, threshold, alert } of sequenceConfig) {
+      if (daysOverdue >= threshold && !sentSequences.has(seq)) {
+        emailToSend = seq;
+        requiresInternalAlert = alert;
+        break;
+      }
     }
 
     if (emailToSend) {
@@ -230,16 +239,33 @@ export class ChaseUpService {
     const { token, company, contact } = details;
     const emailConfig = EMAIL_TYPES[sequenceNumber as keyof typeof EMAIL_TYPES];
 
-    const emailRecord = await chaseUpRepository.createChaseUpEmail({
-      portalTokenId: schedule.portalTokenId,
-      targetCompanyId: schedule.targetCompanyId,
-      emailSequenceNumber: sequenceNumber,
-      emailType: emailConfig.type,
-      emailSubject: `${emailConfig.subject} - ${company.companyName}`,
-      sentToContacts: [contact.email || ''],
-      deliveryStatus: 'pending',
-      internalAlertSent: sendInternalAlert,
-    });
+    let emailRecord;
+    try {
+      emailRecord = await chaseUpRepository.createChaseUpEmail({
+        portalTokenId: schedule.portalTokenId,
+        targetCompanyId: schedule.targetCompanyId,
+        emailSequenceNumber: sequenceNumber,
+        emailType: emailConfig.type,
+        emailSubject: `${emailConfig.subject} - ${company.companyName}`,
+        sentToContacts: [contact.email || ''],
+        deliveryStatus: 'pending',
+        internalAlertSent: sendInternalAlert,
+      });
+    } catch (err: any) {
+      // Unique-violation on (portal_token_id, email_sequence_number)
+      // means a concurrent process already wrote this row and is
+      // responsible for sending the email. Skip cleanly without
+      // throwing or alerting. Matches the codebase catch pattern at
+      // server/routes/public-waitlist.routes.ts:45.
+      if (err?.code === '23505' && err?.constraint === 'chase_up_emails_token_seq_unique') {
+        console.log(
+          `[CHASE-UP] Seq ${sequenceNumber} for token ${schedule.portalTokenId} ` +
+          `already written by concurrent process. Skipping send.`
+        );
+        return;
+      }
+      throw err;
+    }
 
     try {
       if (contact.email) {

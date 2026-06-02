@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, date, inet, numeric, unique } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, date, inet, numeric, unique, uniqueIndex } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { userCompanies, users } from './core';
@@ -117,7 +117,10 @@ export const chaseUpEmails = pgTable("chase_up_emails", {
   deliveryStatus: varchar("delivery_status", { length: 50 }).default("pending"),
   internalAlertSent: boolean("internal_alert_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  tokenSeqUnique: uniqueIndex('chase_up_emails_token_seq_unique')
+    .on(table.portalTokenId, table.emailSequenceNumber),
+}));
 
 // Chase-up schedules table
 export const chaseUpSchedules = pgTable("chase_up_schedules", {
