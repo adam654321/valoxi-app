@@ -107,11 +107,12 @@ export class ChaseUpRepository {
     }).where(eq(portalAccessTokens.id, tokenId));
   }
 
-  async updateTokenDeadline(tokenId: number, deadline: string, finalDeadlineDate?: string): Promise<void> {
+  async updateTokenDeadline(tokenId: number, deadline: string, finalDeadlineDate?: string, expiresAt?: Date): Promise<void> {
     await db.update(portalAccessTokens).set({
       submissionDeadline: deadline,
       manualDeadlineSet: new Date(),
       ...(finalDeadlineDate !== undefined ? { finalDeadlineDate } : {}),
+      ...(expiresAt !== undefined ? { expiresAt } : {}),
     }).where(eq(portalAccessTokens.id, tokenId));
   }
 

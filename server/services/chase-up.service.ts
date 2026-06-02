@@ -52,21 +52,26 @@ export class ChaseUpService {
   }
 
   async extendTimeframe(portalTokenId: number, additionalDays: number, userId: number): Promise<ChaseUpSchedule | { extended: true; newExpiresAt: string }> {
+    const [token] = await db.select().from(portalAccessTokens).where(eq(portalAccessTokens.id, portalTokenId));
+    if (!token) throw new NotFoundError('Portal token not found');
+
+    // Anchor the new expiry to whichever is later, the current expiry or now.
+    // Guarantees "extend by N days" always yields N days of access from now,
+    // even when the token has already expired. Applied to both paths (#203).
+    const now = new Date();
+    const base = token.expiresAt ? new Date(token.expiresAt) : now;
+    const anchor = base > now ? new Date(base) : new Date(now);
+    anchor.setDate(anchor.getDate() + additionalDays);
+
     const schedule = await chaseUpRepository.getScheduleByTokenId(portalTokenId);
 
     if (!schedule) {
-      const [token] = await db.select().from(portalAccessTokens).where(eq(portalAccessTokens.id, portalTokenId));
-      if (!token) throw new NotFoundError('Portal token not found');
-
-      const currentExpiry = token.expiresAt ? new Date(token.expiresAt) : new Date();
-      currentExpiry.setDate(currentExpiry.getDate() + additionalDays);
-
       await db.update(portalAccessTokens).set({
-        expiresAt: currentExpiry,
-        submissionDeadline: currentExpiry.toISOString().split('T')[0],
+        expiresAt: anchor,
+        submissionDeadline: anchor.toISOString().split('T')[0],
       }).where(eq(portalAccessTokens.id, portalTokenId));
 
-      return { extended: true, newExpiresAt: currentExpiry.toISOString() };
+      return { extended: true, newExpiresAt: anchor.toISOString() };
     }
 
     const currentDeadline = new Date(schedule.submissionDeadline);
@@ -79,7 +84,7 @@ export class ChaseUpService {
     newFinalDeadline.setDate(newFinalDeadline.getDate() + (schedule.manualDeadlineDelayDays || 11));
     const newFinalDeadlineString = newFinalDeadline.toISOString().split('T')[0];
 
-    await chaseUpRepository.updateTokenDeadline(portalTokenId, newDeadlineString, newFinalDeadlineString);
+    await chaseUpRepository.updateTokenDeadline(portalTokenId, newDeadlineString, newFinalDeadlineString, anchor);
 
     const updated = await chaseUpRepository.updateSchedule(schedule.id, {
       submissionDeadline: newDeadlineString,
