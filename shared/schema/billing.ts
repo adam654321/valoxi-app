@@ -81,6 +81,22 @@ export const promoCodeCampaigns = pgTable("promo_code_campaigns", {
   createdByUserId: integer("created_by_user_id").references(() => users.id),
 });
 
+// One row per 5D member, written by the upfront-invoice cron BEFORE the email
+// fires. UNIQUE(user_company_id) is the idempotency guard: a member is invoiced
+// once, ever (upfront model). invoice_month is recorded for history, not keyed.
+export const referralInvoiceRecords = pgTable("referral_invoice_records", {
+  id: serial("id").primaryKey(),
+  userCompanyId: integer("user_company_id").notNull().references(() => userCompanies.id),
+  invoiceMonth: varchar("invoice_month", { length: 7 }).notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  memberEmail: varchar("member_email", { length: 255 }),
+  status: varchar("status", { length: 20 }).notNull().default('pending'),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqCompany: unique("referral_invoice_records_user_company_id_unique").on(t.userCompanyId),
+}));
+
 
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   id: true,
@@ -115,6 +131,14 @@ export const insertPromoCodeCampaignSchema = createInsertSchema(promoCodeCampaig
 
 export type PromoCodeCampaign = typeof promoCodeCampaigns.$inferSelect;
 export type InsertPromoCodeCampaign = z.infer<typeof insertPromoCodeCampaignSchema>;
+
+export const insertReferralInvoiceRecordSchema = createInsertSchema(referralInvoiceRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ReferralInvoiceRecord = typeof referralInvoiceRecords.$inferSelect;
+export type InsertReferralInvoiceRecord = z.infer<typeof insertReferralInvoiceRecordSchema>;
 
 
 export type PlanKey = 'CORE' | 'PROFESSIONAL' | 'EXPERT' | 'ENTERPRISE';
