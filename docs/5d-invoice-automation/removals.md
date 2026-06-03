@@ -1,79 +1,66 @@
 # 5D Invoice Automation — Removals / Cleanup
 
-Status: checklist for the 1b rebuild and the pre-go-live purge.
+Status: 1b COMPLETE on dev. Checklist for pre-go-live purge and later slices.
 Owner: Adam
 Related: plan.md, assessment.md, docs/open-access-pivot/removals.md (A2)
 
-Operational checklist. Items tick off as slices ship. This workstream tidies
-INVOICE-SPECIFIC dead code only. Broader schema residue stays in open-access A2.
+This workstream tidies INVOICE-SPECIFIC dead code only. Broader schema residue
+stays in open-access A2.
 
 ---
 
-## 1b — invoice rebuild + rate consolidation
+## 1b — invoice rebuild + rate consolidation — DONE (dev, 2026-06-03)
 
-### Query (server)
-
-- [ ] `server/routes/admin.routes.ts` referral-invoice handler (~line 365-380):
-      replace the dead-model WHERE
-      (`referral_source = '5d_community' AND free_months_total > 0 AND
-      free_months_started_at IS NOT NULL`) with the locked model:
-      cohort = users joined where `assigned_promo_campaign_id` -> campaign
-      `free_months_total > 0`; window = COALESCE(trial_start, sub.created_at)
-      to start + campaign.free_months_total months; month-overlap test; cancel
-      cap at canceled_at. See plan.md "Invoice selection model".
-
-### Rate (consolidate to one constant)
-
-- [ ] `server/config.ts` — add `billing.coreMonthlyDiscountedCents: 7395` (shared
-      with open-access Phase G; if Phase G already added it, reuse, do not
-      duplicate).
-- [ ] `server/routes/admin.routes.ts:382` — delete `INVOICE_RATE = 50.25`; compute
-      from `config.billing.coreMonthlyDiscountedCents` (cents -> currency as the
-      handler needs).
-- [ ] `client/src/pages/admin/referral-invoice.tsx:11` — remove the hardcoded
-      `73.95`; render the rate the server returns rather than a client literal.
-- [ ] Leave `INVOICE_RATE_CENTS = 7395` in billing.routes.ts UNTOUCHED — separate
-      purpose (Stripe early-conversion balance credit).
-
-### Confirm at 1b assess
-
-- [ ] Current page title/nav label — is it still "5D Invoice" or renamed "5D
-      Subsidy Report" (handover change 6A5)? Grep before editing.
+- [x] `server/routes/admin.routes.ts` referral-invoice handler: dead-model WHERE
+      replaced with the campaign-keyed upfront model (users ->
+      promo_code_campaigns where referral_source = source AND free_months_total
+      > 0; per-member start = COALESCE(trial_start, created_at); appears in
+      signup month; amount = rate x campaign.free_months upfront; no cancel cap).
+- [x] Rate: stale `INVOICE_RATE = 50.25` removed; single USD constant
+      `MONTHLY_RATE_CENTS = 7395` in the handler; server returns it.
+- [x] `computeFreeMonthsElapsed` import removed (now unused).
+- [x] `client/src/pages/admin/referral-invoice.tsx`: client `INVOICE_RATE`
+      literal removed, renders the server value; dead "Codes Remaining
+      Unclaimed" card + `codesRemainingUnclaimed` + unused `Tag` import removed;
+      columns/cards relabelled to the upfront model (Signed Up / Free Months /
+      Upfront Subsidy).
+- [ ] `server/config.ts` `billing.coreMonthlyDiscountedCents: 7395` + five-site
+      consolidation (the 4 INVOICE_RATE_CENTS in billing.routes.ts + this
+      handler + billing.tsx) — LEFT to open-access Phase G. The handler uses a
+      correct USD constant meanwhile. Do not pull live billing-credit code into
+      this workstream.
+- [ ] Nav label "5D Invoice" vs page "5D Subsidy Report" — optional cosmetic
+      reconcile, not required for the invoice to be correct.
 
 ## Pre-go-live — prod test-row purge (DESTRUCTIVE, deliberate)
 
-Once the invoice keys on `assigned_promo_campaign_id IN (billable campaigns)`, the
-leftover prod test rows would surface as billable against a real partner invoice.
-They are pre-cutover test data, not real users (Adam confirmed no real users on
-live yet).
+Once the invoice keys on campaign 11, leftover prod test rows would appear as
+billable on a real partner invoice. They are pre-cutover test data, not real
+users (Adam confirmed no real users on live yet).
 
-- [ ] Identify the full prod test cohort: campaign-9 and campaign-11 assigned
-      users and their subscription rows (known so far: users 35, 36, 37, plus the
-      2 campaign-assigned users with no subscription row). Re-confirm at purge
-      time, do not work from this stale list.
-- [ ] Decide purge method (soft-delete vs hard delete) deliberately. This touches
-      users + subscriptions + user_companies. TARGET: PROD header, dry-run cohort
-      eyeball before any live delete, per the prod-touching discipline.
-- [ ] Any dev controlled-test rows (e.g. user 112, adam+stripe5dtest@valoxi.ai) are
-      dev-only and do not need prod purge — but clear them from dev before the
-      cron is enabled there so test sends do not fire.
+- [ ] Re-confirm the full prod test cohort at purge time (campaign-9 and
+      campaign-11 assigned users + their subscription rows; known so far: 35,
+      36, 37 plus the 2 campaign-assigned users with no sub row). Do NOT work
+      from a stale list.
+- [ ] Decide purge method (soft vs hard delete) deliberately. Touches users +
+      subscriptions + user_companies. TARGET: PROD header, dry-run cohort
+      eyeball before any live delete.
+- [ ] Clear dev test rows (110, 112, the May Shape A/B test set) before the cron
+      is enabled on dev, or test sends will fire.
 
-## NOT in this workstream (pointers only — stays in open-access A2)
+## NOT in this workstream (pointers — stays in open-access A2)
 
-- [ ] DROP `subscriptions.referral_source` — A2.
-- [ ] DROP `subscriptions.free_months_total`, `free_months_started_at`,
-      `community_free_months_remaining`, `is_community_member` — A2.
-- [ ] Remove `createTrialSubscription` / `createFiveDNewMemberTrial` (0 callers) —
-      A2.
+- [ ] DROP subscriptions.referral_source — A2.
+- [ ] DROP subscriptions.free_months_total / free_months_started_at /
+      community_free_months_remaining / is_community_member — A2.
+- [ ] Remove createTrialSubscription / createFiveDNewMemberTrial (0 callers) — A2.
 
-Do NOT pull these into the invoice workstream. The invoice routes around all of
-them by design; removing them is open-access cleanup, sequenced there.
+Do not pull these in. The invoice routes around them by design.
 
 ## sub-build 2 (cron) — cleanup items, when built
 
-- [ ] Confirm no second scheduler already sends a 5D invoice (grep cron registry)
-      before adding the 7th-of-month job, to avoid a duplicate send path.
+- [ ] Grep the cron registry to confirm no second scheduler already sends a 5D
+      invoice before adding the 7th-of-month job.
+- [ ] Enforce USD on the partner charge explicitly; never read member currency.
 
 ## sub-build 3 (admin UI) — none yet
-
-- [ ] (populate when scoped)

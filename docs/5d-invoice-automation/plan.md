@@ -1,9 +1,9 @@
 # 5D Invoice Automation — Plan
 
-Status: IN PROGRESS. Sub-build 1 (assess) COMPLETE on dev/prod inspection.
-Invoice selection model LOCKED 2026-06-03. Next: the invoice-rebuild slice
-(was not in the original handover scope — see "Scope correction" below), then
-the auto-send cron, then the admin override UI.
+Status: IN PROGRESS. Sub-build 1 (assess) and sub-build 1b (invoice rebuild)
+COMPLETE and proven on dev 2026-06-03. Billing model is UPFRONT (corrected
+2026-06-03 — see "Billing model correction"). Next: sub-build 2 (auto-send
+cron), then sub-build 3 (admin override UI).
 Started: 2026-06-03 (action log v70+)
 Owner: Adam
 Related: assessment.md, removals.md, docs/open-access-pivot/* (A2 schema drops)
@@ -12,109 +12,137 @@ Related: assessment.md, removals.md, docs/open-access-pivot/* (A2 schema drops)
 
 ## What this workstream does
 
-Automates the monthly partner invoice for the 5D New Member subsidy. A 5D New
-Member gets a 6-month free period (the Stripe-native trial); during that period
-the 5D partner pays Valoxi $73.95 per member per month. The invoice gathers the
-billable members for a given month, renders the amount, and (sub-build 2) emails
-the partner contact on a schedule, with an audit trail and idempotency.
+Automates the partner invoice for the 5D New Member subsidy. A 5D New Member
+gets a 6-month free period (the Stripe-native trial). 5D (the partner) pays
+Valoxi the whole free period UPFRONT at the member's signup: one charge of
+$73.95 x free_months per member ($443.70 for campaign 11). The member then
+converts to paying monthly themselves once the Stripe trial ends. The report
+gathers new members per month and renders the upfront amount; sub-build 2 emails
+the partner on a schedule with an audit trail and idempotency.
+
+## Billing model correction (2026-06-03)
+
+The original handover and the first cut of these docs described MONTHLY
+collection ("$73.95 per member per month", a per-month cron). That was wrong on
+cadence. Adam confirmed the actual commercial model:
+
+- 5D is billed UPFRONT at signup: one charge of $73.95 x free_months
+  ($443.70 for campaign 11's 6 months).
+- The member converts to their own monthly billing after the trial ends.
+- Mid-trial cancellation is NON-REFUNDABLE. The upfront charge is final. No
+  proration.
+
+The unit rate ($73.95/member/month) is unchanged; only the collection cadence
+changed. The 1b rebuild was redone on the upfront model. The cancel-cap
+proration from the monthly cut was removed.
 
 ## Scope correction (2026-06-03)
 
-The handover framed this as "the invoice page mostly works, just convert it to a
-sendable email." The sub-build 1 assess disproved that:
+The handover framed 1b as "the invoice page mostly works, just send it." The
+assess disproved that on two counts:
 
-- The invoice query sits on the DEAD pre-pivot data model. It filters
-  `subscriptions.referral_source = '5d_community' AND free_months_total > 0 AND
-  free_months_started_at IS NOT NULL`. No live Stripe-first signup writes any of
-  those three fields. The query returns 2 legacy prod rows and zero real members.
-- The rate is wrong and divergent. Server computes at `INVOICE_RATE = 50.25`
-  (admin.routes.ts:382); client displays `73.95` (referral-invoice.tsx:11).
-  Correct is $73.95. No money has moved only because the query returns the wrong
-  cohort.
+- The invoice query sat on the DEAD pre-pivot model
+  (`subscriptions.referral_source = '5d_community' AND free_months_total > 0 AND
+  free_months_started_at NOT NULL`). No live Stripe-first signup writes those
+  fields. It returned 2 legacy prod rows and zero real members.
+- The rate was wrong and divergent (server $50.25, client display $73.95).
 
-Consequence: there is a build slice the handover did not anticipate — rebuild the
-invoice query onto the live data model and consolidate the rate — and it must
-land BEFORE the cron, because the cron renders this invoice.
+So a rebuild slice (1b) had to land before any cron. It is now done.
 
-## The corrected sub-build sequence
+## The sub-build sequence
 
 | # | Slice | Status |
 |---|---|---|
 | 1 | ASSESS attribution + invoice state (read-only) | COMPLETE 2026-06-03 |
-| 1b | REBUILD invoice query onto the live model + consolidate rate | next |
-| 2 | Auto-send cron, 7th of month 04:00 UK, idempotent, audit row | after 1b |
+| 1b | REBUILD invoice query onto live model (upfront) + consolidate rate | COMPLETE, proven on dev 2026-06-03 |
+| 2 | Auto-send cron, 7th of month 04:00 UK, USD, once-per-member, idempotent | next |
 | 3 | Admin override (mark invoiced / resend / view history) UI | after 2 |
 
-## Invoice selection model — LOCKED 2026-06-03
+## Invoice selection model — LOCKED 2026-06-03 (upfront)
 
-Confirmed against two independent live Stripe-first signups (user 110, 20 May;
-user 112, 03 June), both clean "Shape B" (see assessment.md).
+Proven on dev against the live signups (user 110 in May, user 112 on 3 June),
+both clean Shape B, plus mixed Shape A/B rows in the May cohort all rendering
+identically.
 
 - Cohort: users whose `users.assigned_promo_campaign_id` points at a campaign
-  with `promo_code_campaigns.free_months_total > 0`. Campaign 11 today; campaign
-  9 (value 0) correctly excluded; not hardcoded to id 11, so future billable
-  campaigns are picked up automatically.
-- Free-period window per member:
-  - start = `COALESCE(subscriptions.trial_start, subscriptions.created_at)`
-    (Shape B has `trial_start` NULL, so it uses `created_at`, which is within
-    seconds of the real signup time)
-  - end = start + campaign `free_months_total` months
-- Billable for invoice month M: the window overlaps M.
-- Cancelled members: billable for months consumed up to `canceled_at`, NOT the
-  full entitlement, NOT excluded.
-- Rate: one constant, $73.95 = 7395 cents = $87 CORE x 0.85. Reuse the planned
-  `config.billing.coreMonthlyDiscountedCents` home (see open-access removals.md
-  Phase G) so this consolidates rather than adding a fourth literal.
-- The model IGNORES `subscriptions.free_months_total`, `free_months_started_at`,
-  and `referral_source` entirely. Those are dead-by-design on the live path and
-  are A2 drop candidates. Reading entitlement off the CAMPAIGN row, not the
-  subscription row, is what lets one model serve both data shapes with no branch.
+  with `promo_code_campaigns.free_months_total > 0`, filtered by the campaign's
+  `referral_source` (the `source` param, default `5d_community`). Resolves to
+  campaign 11 today; campaign 9 (free_months 0) correctly excluded. Not
+  hardcoded to id 11.
+- Join: users INNER JOIN promo_code_campaigns INNER JOIN user_companies INNER
+  JOIN subscriptions. subscriptions.user_company_id is unique, so one row per
+  member.
+- Free-period start per member: `COALESCE(subscriptions.trial_start,
+  subscriptions.created_at)`. Shape B leaves trial_start NULL, so created_at is
+  used (within seconds of signup).
+- The member appears on the report for the month their free period STARTED
+  (signup month), ONCE.
+- Amount: `rate x campaign.free_months_total`, billed UPFRONT. $73.95 x 6 =
+  $443.70 for campaign 11.
+- No proration. Mid-trial cancellation does not refund. No cancel logic in the
+  handler.
+- Entitlement (free_months) is read off the CAMPAIGN row, never the
+  subscription's zeroed `free_months_total`. This is why one model serves both
+  data shapes with no branch.
+- Rate: USD always. `MONTHLY_RATE_CENTS = 7395` in the handler. Never derived
+  from the member's subscription currency (members can check out GBP or USD;
+  5D is always billed USD). Five-site consolidation into
+  `config.billing.coreMonthlyDiscountedCents` stays in open-access Phase G.
 
 ## Settled facts. Do not re-derive these.
 
 - Billable 5D campaign = id 11, slug `5d`, "5D New Member", `free_months_total = 6`.
-  Campaign 9 (`5d-community`, `free_months_total = 0`) is forever-discount only,
-  NOT billable.
-- Coupons: campaign 11 test-mode `cEGIKCtT`, live-mode `dIBdlJg2`. Campaign 11
-  also carries `post_free_period_coupon_id = dIBdlJg2` (same coupon continues
-  after the free period). 15% off forever.
-- Live Stripe-first 5D row = Shape B: `assigned_promo_campaign_id = 11`,
-  `free_months_total = 0`, `free_months_started_at` NULL, `trial_start` NULL,
-  `trial_end` NULL, `current_period_end` ~6 months out, `stripe_subscription_id`
-  present, `status = trialing`, `plan_key = CORE`, `billing_interval = month`.
-- `free_months_total = 0` on a live 5D row is CORRECT by design, not a bug. The
-  free period lives entirely in the Stripe trial; the DB free-months cron is
-  retired.
-- Rate = $73.95/member/month. Stale literal is `INVOICE_RATE = 50.25` at
-  admin.routes.ts:382. Client literal `73.95` at referral-invoice.tsx:11.
-  `INVOICE_RATE_CENTS = 7395` in billing.routes.ts is a SEPARATE purpose (Stripe
-  balance-credit on early conversion), not the invoice rate. Do not conflate.
-- `current_period_end` equals the Stripe trial end ONLY while `status = trialing`.
-  It rolls forward once the sub converts to active. Do NOT key the free-period
-  window off it. Compute the window from campaign entitlement + a stable start.
+  Campaign 9 (`5d-community`, free_months 0) is forever-discount only, NOT billable.
+- Coupons: campaign 11 test `cEGIKCtT`, live `dIBdlJg2`, 15% off forever.
+- Live Stripe-first 5D row = Shape B: assigned_promo_campaign_id 11,
+  free_months_total 0, free_months_started_at/trial_start/trial_end NULL,
+  current_period_end ~6 months out, stripe_subscription_id present, trialing,
+  CORE, monthly. `free_months_total = 0` on the sub is CORRECT by design.
+- 5D billing is UPFRONT: one charge of $73.95 x free_months ($443.70) at signup.
+  Member converts to own monthly billing after the trial.
+- Mid-trial cancellation: NO refund, charge final, no proration.
+- 5D partner billed USD ALWAYS, regardless of the member's GBP/USD checkout
+  currency. The partner invoice/charge must be USD-denominated.
+- Rate $73.95 = CORE $87 x 0.85 = 7395 cents.
+- Do NOT key the window off `current_period_end` (it rolls forward on
+  conversion). Window start is COALESCE(trial_start, created_at).
 
 ## Risk register
 
 | # | Risk | Likelihood | Severity | Mitigation |
 |---|---|---|---|---|
-| 1 | Invoice keyed on `current_period_end` breaks the month a member converts | Med | High | Window computed from entitlement + COALESCE(trial_start, created_at), never from current_period_end. LOCKED in the model. |
-| 2 | Prod test rows (pre-cutover) appear on a real partner invoice once the query keys on campaign 11 | High | High | Purge prod test rows before go-live. See removals.md. No real users on live yet (Adam confirmed). |
-| 3 | Cron double-sends for the same period | Med | Med | Idempotent on a subscription_events audit row keyed (user_id, billing_period_yyyymm). Sub-build 2. |
-| 4 | Cancelled member over- or under-billed | Med | Med | Cap billable months at canceled_at. LOCKED in the model. |
-| 5 | Rate stays divergent server vs client | resolved at 1b | Med | Single config constant; both surfaces read it. |
+| 1 | Prod pre-cutover test rows appear on a real partner invoice once the query keys on campaign 11 | High | High | Purge prod test rows before go-live. No real users on live yet (Adam confirmed). removals.md. |
+| 2 | Member signs up then cancels same month before cron runs | Med | Low | By design billed full upfront, no proration. Not a bug. |
+| 3 | Partner invoice billed in member's currency (GBP) instead of USD | Med | High | Settled fact: partner invoice USD-denominated, never from member currency. Enforce in sub-build 2. |
+| 4 | Cron double-charges a member | Med | High | Idempotent on a subscription_events audit row keyed once-per-member. Sub-build 2. |
+| 5 | A company with two campaign-11 users double-counts the subsidy | Low | Med | Self-serve 5D writes the campaign assignment to one user (the signer). Assumption noted; revisit if multi-user 5D companies appear. |
 
 ## Open decisions
 
 | # | Question | Resolved? |
 |---|---|---|
-| 1 | Partner contact email for the invoice send | OPEN — Dee to confirm. Currently believed to go to herself. Decide before sub-build 2. |
-| 2 | Whether to fold the #99 "referral_source NULL" item in | RESOLVED 2026-06-03 — #99 is a symptom of the dead model, not a NULL-population bug. The rebuild routes around referral_source entirely. Do NOT back-populate it. Column drops in A2. |
-| 3 | Annual-interval 5D | Out of scope. 5D New Member self-serve is CORE + monthly only (settled fact, open-access). |
+| 1 | Partner contact email for the invoice send | OPEN — Dee to confirm. Believed to go to herself today. Decide before sub-build 2. |
+| 2 | #99 "referral_source NULL" fold-in | RESOLVED 2026-06-03 — #99 is a symptom of the dead model, not a NULL bug. Rebuild routes around referral_source. Column drops in A2. Treat #99 as closed-by-rebuild. |
+| 3 | Mid-trial cancel handling | RESOLVED 2026-06-03 — no refund, charge final. |
+| 4 | Member checkout currency vs partner billing | RESOLVED 2026-06-03 — partner always billed USD. |
+
+## Sub-build 2 spec (upfront cron)
+
+- Schedule: 7th of each month, 04:00 UK (buffer if first delivery fails).
+- Gathers members whose free period STARTED in the prior month and have not yet
+  been invoiced.
+- One charge per member, USD, $73.95 x campaign.free_months.
+- Audit row in subscription_events, event_type `referral.invoiced`, keyed
+  once-per-member (NOT per billing period — it is a one-time charge).
+- Idempotent: a re-run finds the per-member audit row and skips. Also gates
+  accidental admin re-runs.
+- Emails the 5D partner contact (open decision 1).
+- Pre-req: prod test-row purge (removals.md) so no test member is invoiced.
 
 ## Action log progression
 
 | Version | Slice | Notes |
 |---|---|---|
-| v70+ | Sub-build 1 assess | Attribution-broken finding; two-shape finding; rate bug; model locked |
-| next | 1b invoice rebuild | Query onto live model, rate consolidation |
-| later | 2 cron, 3 admin UI | |
+| v70.1 | Sub-build 1 assess + 1b rebuild | Attribution-broken + rate findings; model locked UPFRONT; query rebuilt and proven on dev; #203 closed in same pack |
+| next | 2 cron | once-per-member, USD, idempotent |
+| later | 3 admin UI | |
