@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Copy, Users, DollarSign, TrendingUp, Tag, Loader2 } from "lucide-react";
-
-const INVOICE_RATE = 73.95;
+import { Download, Copy, Users, DollarSign, TrendingUp, Loader2 } from "lucide-react";
 
 interface InvoiceMember {
   companyName: string;
@@ -25,7 +23,6 @@ interface InvoiceSummary {
   totalMembersOnFreePeriod: number;
   totalInvoiceAmount: number;
   avgPerMember: number;
-  codesRemainingUnclaimed: number;
 }
 
 interface InvoiceData {
@@ -96,7 +93,7 @@ export default function AdminReferralInvoice() {
     const lines = [
       `5D Community Subsidy Report — ${monthLabel}`,
       `Source: ${invoice.source}`,
-      `Rate: $${INVOICE_RATE.toFixed(2)}/member/month`,
+      `Rate: $${(invoice.invoiceRate).toFixed(2)}/member/month`,
       "",
       `Total Members on Free Period: ${summary.totalMembersOnFreePeriod}`,
       `Total Subsidy Amount: $${summary.totalInvoiceAmount.toFixed(2)}`,
@@ -151,13 +148,13 @@ export default function AdminReferralInvoice() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
       ) : summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -187,17 +184,6 @@ export default function AdminReferralInvoice() {
                 <div>
                   <p className="text-2xl font-bold">${summary.avgPerMember.toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground">Avg per Member</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <Tag className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-2xl font-bold">{summary.codesRemainingUnclaimed}</p>
-                  <p className="text-xs text-muted-foreground">Codes Remaining Unclaimed</p>
                 </div>
               </div>
             </CardContent>
@@ -273,7 +259,7 @@ export default function AdminReferralInvoice() {
                 <p className="text-sm text-muted-foreground">Total Subsidy</p>
                 <p className="text-xl font-bold">${summary.totalInvoiceAmount.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {summary.totalMembersOnFreePeriod} member{summary.totalMembersOnFreePeriod !== 1 ? "s" : ""} × ${INVOICE_RATE.toFixed(2)}
+                  {summary.totalMembersOnFreePeriod} member{summary.totalMembersOnFreePeriod !== 1 ? "s" : ""} × ${(invoice?.invoiceRate ?? 0).toFixed(2)}
                 </p>
               </div>
             </div>

@@ -12,7 +12,7 @@ import { adminService } from '../services/admin.service';
 import { systemConfigService } from '../services/system-config.service';
 import { sendSuccess } from '../utils/response';
 import { asyncHandler } from '../utils/async-handler';
-import { promoCodeService, computeFreeMonthsElapsed } from '../services/promo-code.service';
+import { promoCodeService } from '../services/promo-code.service';
 import { emailApiService } from '../services/email.service';
 import { clerkClient } from '@clerk/express';
 
@@ -362,58 +362,85 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
   }
   targetMonth.setHours(0, 0, 0, 0);
 
-  const subs = await db
+  // Billable cohort is keyed on the CAMPAIGN, not the subscription. The live
+  // Stripe-first path writes users.assigned_promo_campaign_id and leaves the
+  // subscription's referral_source / free_months_* columns unwritten (the free
+  // period lives in the Stripe trial). So join users -> assigned campaign, take
+  // billable campaigns (free_months_total > 0), and read entitlement length off
+  // the campaign row. referralSource selects which partner's campaign(s) this is.
+  const rows = await db
     .select({
       subscription: subscriptions,
       companyName: userCompanies.companyName,
       email: users.email,
+      campaignFreeMonths: promoCodeCampaigns.freeMonthsTotal,
     })
-    .from(subscriptions)
-    .innerJoin(userCompanies, eq(subscriptions.userCompanyId, userCompanies.id))
-    .leftJoin(users, eq(userCompanies.id, users.userCompanyId))
+    .from(users)
+    .innerJoin(promoCodeCampaigns, eq(users.assignedPromoCampaignId, promoCodeCampaigns.id))
+    .innerJoin(userCompanies, eq(users.userCompanyId, userCompanies.id))
+    .innerJoin(subscriptions, eq(subscriptions.userCompanyId, userCompanies.id))
     .where(
       and(
-        eq(subscriptions.referralSource, referralSource),
-        sql`${subscriptions.freeMonthsTotal} > 0`,
-        isNotNull(subscriptions.freeMonthsStartedAt)
+        eq(promoCodeCampaigns.referralSource, referralSource),
+        sql`${promoCodeCampaigns.freeMonthsTotal} > 0`
       )
     );
 
-  const INVOICE_RATE = 50.25;
+  // $73.95 = CORE $87 x 0.85. Matches billing.routes.ts credit rate. Phase G
+  // consolidates all sites to config.billing.coreMonthlyDiscountedCents.
+  const INVOICE_RATE_CENTS = 7395;
+  const INVOICE_RATE = INVOICE_RATE_CENTS / 100;
 
   const firstDayOfMonth = targetMonth;
   const lastDayOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
 
-  const members = subs
-    .filter((s) => s.subscription.freeMonthsStartedAt !== null)
-    .map((s) => {
-      const startedAt = s.subscription.freeMonthsStartedAt!;
-      const elapsed = computeFreeMonthsElapsed(startedAt);
-      const total = s.subscription.freeMonthsTotal;
-      const remaining = Math.max(0, total - elapsed);
-      const isInFreePeriod = elapsed < total;
+  const members = rows
+    .map((r) => {
+      const total = r.campaignFreeMonths;
+      // Stable free-period start: trial_start if Stripe set it, else the sub
+      // creation time (Shape B leaves trial_start null).
+      const start = r.subscription.trialStart ?? r.subscription.createdAt;
+      if (!start) return null;
+      const startDate = new Date(start);
 
-      const endDate = new Date(startedAt);
+      const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + total);
 
-      const overlapsSelectedMonth = startedAt <= lastDayOfMonth && endDate >= firstDayOfMonth;
+      // Cancelled members are subsidised only for months actually consumed, so
+      // cap the billable window at the cancellation date.
+      let effectiveEnd = endDate;
+      if (r.subscription.status === 'canceled' && r.subscription.canceledAt) {
+        const canceled = new Date(r.subscription.canceledAt);
+        effectiveEnd = canceled < endDate ? canceled : endDate;
+      }
 
-      if (!overlapsSelectedMonth || !isInFreePeriod) return null;
+      const billableThisMonth = startDate <= lastDayOfMonth && effectiveEnd >= firstDayOfMonth;
+      if (!billableThisMonth) return null;
+
+      const elapsed = Math.min(
+        total,
+        Math.max(
+          0,
+          (lastDayOfMonth.getFullYear() - startDate.getFullYear()) * 12 +
+            (lastDayOfMonth.getMonth() - startDate.getMonth()) + 1
+        )
+      );
+      const remaining = Math.max(0, total - elapsed);
 
       return {
-        companyName: s.companyName,
-        email: s.email,
-        planKey: s.subscription.planKey,
-        freeMonthsStartedAt: startedAt.toISOString(),
+        companyName: r.companyName,
+        email: r.email,
+        planKey: r.subscription.planKey,
+        freeMonthsStartedAt: startDate.toISOString(),
         monthsElapsed: elapsed,
         monthsRemaining: remaining,
         invoiceAmount: INVOICE_RATE,
-        isInFreePeriod,
+        isInFreePeriod: true,
       };
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
 
-  const activeMembers = members.filter((m) => m.isInFreePeriod);
+  const activeMembers = members;
   const totalInvoice = activeMembers.length * INVOICE_RATE;
 
   sendSuccess(res, {
