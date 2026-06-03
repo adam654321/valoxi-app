@@ -749,6 +749,58 @@ export class EmailApiService {
         : 'Failed to send marketing consent request email',
     };
   }
+
+  // 5D partner subsidy digest. ONE email per cron run listing the new members
+  // billed this period and the total. Upfront model: each member is the full
+  // free-period subsidy. Amounts are USD cents (5D is always billed USD).
+  async sendFiveDPartnerInvoice(params: {
+    to: string;
+    billingMonth: string; // 'YYYY-MM'
+    members: Array<{ companyName: string | null; email: string | null; freeMonths: number; amountCents: number }>;
+    totalCents: number;
+  }): Promise<SendInvitationResult> {
+    const { to, billingMonth, members, totalCents } = params;
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const [yr, mo] = billingMonth.split('-');
+    const monthIdx = Math.max(0, Math.min(11, parseInt(mo, 10) - 1));
+    const monthLabel = `${months[monthIdx]} ${yr}`;
+    const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+    const lines = members
+      .map((m) =>
+        `${escapeHtml(m.companyName || 'Unknown company')} (${escapeHtml(m.email || 'no email')}) &mdash; ${m.freeMonths} months &mdash; <strong>${fmt(m.amountCents)}</strong>`
+      )
+      .join('<br>');
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `New Valoxi 5D members for <strong style="color:#FFFFFF;">${escapeHtml(monthLabel)}</strong>. The 6 month free period is subsidised upfront at the discounted Core rate.` },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          title: `New members this period: ${members.length}`,
+          body: lines || 'No new members.',
+        },
+      },
+      { type: 'paragraph', text: `<strong style="color:#FFFFFF;">Total due: ${fmt(totalCents)}</strong>` },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: `Valoxi 5D subsidy invoice for ${monthLabel}: ${members.length} new members, ${fmt(totalCents)}.`,
+      eyebrow: 'Subsidy invoice',
+      heading: `5D New Member subsidy &mdash; ${monthLabel}`,
+      blocks,
+      footerLine: 'You are receiving this because you are the registered 5D partner billing contact.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: `Valoxi 5D New Member subsidy invoice — ${monthLabel}`,
+      html,
+    });
+    return { success, message: success ? '5D partner invoice sent' : 'Failed to send 5D partner invoice' };
+  }
 }
 
 export const emailApiService = new EmailApiService();
