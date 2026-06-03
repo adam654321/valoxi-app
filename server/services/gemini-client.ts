@@ -388,10 +388,40 @@ export class GeminiClient {
       cleaned = cleaned.replace(/\n?\s*```\s*$/, "");
     }
 
+    // Find the start of the first top-level object or array, then
+    // balance-scan to its matching close. This discards any spurious
+    // trailing characters (e.g. a stray extra `}`) that Gemini sometimes
+    // emits after the complete JSON in thinking/JSON-mode responses, which
+    // `lastIndexOf("}")` cannot handle — it picks the WRONG closing brace.
     const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    const firstBracket = cleaned.indexOf("[");
+    const startIdx =
+      firstBrace === -1 ? firstBracket
+      : firstBracket === -1 ? firstBrace
+      : Math.min(firstBrace, firstBracket);
+
+    if (startIdx !== -1) {
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+      let endIdx = -1;
+      for (let i = startIdx; i < cleaned.length; i++) {
+        const ch = cleaned[i];
+        if (escaped) { escaped = false; continue; }
+        if (ch === "\\" && inString) { escaped = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === "{" || ch === "[") depth++;
+        else if (ch === "}" || ch === "]") {
+          depth--;
+          if (depth === 0) { endIdx = i; break; }
+        }
+      }
+      if (endIdx !== -1) {
+        cleaned = cleaned.substring(startIdx, endIdx + 1);
+      } else if (firstBrace !== -1) {
+        cleaned = cleaned.substring(firstBrace);
+      }
     }
 
     cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
