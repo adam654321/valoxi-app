@@ -12,15 +12,13 @@ interface InvoiceMember {
   companyName: string;
   email: string | null;
   planKey: string;
-  freeMonthsStartedAt: string;
-  monthsElapsed: number;
-  monthsRemaining: number;
+  signedUpAt: string;
+  freeMonths: number;
   invoiceAmount: number;
-  isInFreePeriod: boolean;
 }
 
 interface InvoiceSummary {
-  totalMembersOnFreePeriod: number;
+  newMembers: number;
   totalInvoiceAmount: number;
   avgPerMember: number;
 }
@@ -28,7 +26,7 @@ interface InvoiceSummary {
 interface InvoiceData {
   month: string;
   source: string;
-  invoiceRate: number;
+  monthlyRate: number;
   summary: InvoiceSummary;
   members: InvoiceMember[];
 }
@@ -66,15 +64,13 @@ export default function AdminReferralInvoice() {
   const invoice = data?.data;
   const summary = invoice?.summary;
   const members = invoice?.members ?? [];
-  const activeMembers = members.filter((m) => m.isInFreePeriod);
 
   const handleExportCsv = () => {
     if (!members.length) return;
-    const header = "Company Name,Email,Plan,Free Period Start,Months Elapsed,Months Remaining,Subsidy Amount\n";
+    const header = "Company Name,Email,Plan,Signed Up,Free Months,Upfront Subsidy\n";
     const rows = members
-      .filter((m) => m.isInFreePeriod)
       .map((m) =>
-        `"${m.companyName || ""}","${m.email || ""}","${m.planKey}","${m.freeMonthsStartedAt ? new Date(m.freeMonthsStartedAt).toLocaleDateString() : ""}",${m.monthsElapsed},${m.monthsRemaining},${m.invoiceAmount.toFixed(2)}`
+        `"${m.companyName || ""}","${m.email || ""}","${m.planKey}","${m.signedUpAt ? new Date(m.signedUpAt).toLocaleDateString() : ""}",${m.freeMonths},${m.invoiceAmount.toFixed(2)}`
       )
       .join("\n");
 
@@ -93,15 +89,15 @@ export default function AdminReferralInvoice() {
     const lines = [
       `5D Community Subsidy Report — ${monthLabel}`,
       `Source: ${invoice.source}`,
-      `Rate: $${(invoice.invoiceRate).toFixed(2)}/member/month`,
+      `Rate: $${invoice.monthlyRate.toFixed(2)}/member/month, billed upfront for the full free period`,
       "",
-      `Total Members on Free Period: ${summary.totalMembersOnFreePeriod}`,
-      `Total Subsidy Amount: $${summary.totalInvoiceAmount.toFixed(2)}`,
+      `New Members This Month: ${summary.newMembers}`,
+      `Total Upfront Subsidy: $${summary.totalInvoiceAmount.toFixed(2)}`,
       "",
       "Members:",
-      ...activeMembers.map(
+      ...members.map(
         (m) =>
-          `  ${m.companyName || "Unknown"} (${m.email || "N/A"}) — ${m.planKey} — Elapsed: ${m.monthsElapsed}m, Remaining: ${m.monthsRemaining}m — $${m.invoiceAmount.toFixed(2)}`
+          `  ${m.companyName || "Unknown"} (${m.email || "N/A"}) — ${m.planKey} — ${m.freeMonths} months upfront — $${m.invoiceAmount.toFixed(2)}`
       ),
       "",
       `Total: $${summary.totalInvoiceAmount.toFixed(2)}`,
@@ -118,7 +114,7 @@ export default function AdminReferralInvoice() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">5D Subsidy Report</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Monthly subsidy report for community referral free-period members.
+            New 5D members billed upfront for their full free period.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -160,8 +156,8 @@ export default function AdminReferralInvoice() {
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-blue-600" />
                 <div>
-                  <p className="text-2xl font-bold">{summary.totalMembersOnFreePeriod}</p>
-                  <p className="text-xs text-muted-foreground">Members on Free Period</p>
+                  <p className="text-2xl font-bold">{summary.newMembers}</p>
+                  <p className="text-xs text-muted-foreground">New Members This Month</p>
                 </div>
               </div>
             </CardContent>
@@ -172,7 +168,7 @@ export default function AdminReferralInvoice() {
                 <DollarSign className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold">${summary.totalInvoiceAmount.toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">Total Subsidy Amount</p>
+                  <p className="text-xs text-muted-foreground">Total Upfront Subsidy</p>
                 </div>
               </div>
             </CardContent>
@@ -196,7 +192,7 @@ export default function AdminReferralInvoice() {
           <div className="flex items-center justify-between">
             <CardTitle>Members</CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={activeMembers.length === 0}>
+              <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={members.length === 0}>
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
@@ -219,32 +215,28 @@ export default function AdminReferralInvoice() {
                   <TableHead>Company Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>Free Period Start</TableHead>
-                  <TableHead className="text-right">Months Elapsed</TableHead>
-                  <TableHead className="text-right">Months Remaining</TableHead>
-                  <TableHead className="text-right">This Month's Subsidy</TableHead>
+                  <TableHead>Signed Up</TableHead>
+                  <TableHead className="text-right">Free Months</TableHead>
+                  <TableHead className="text-right">Upfront Subsidy</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activeMembers.length === 0 ? (
+                {members.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No members on free period for this month
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      No new members for this month
                     </TableCell>
                   </TableRow>
                 ) : (
-                  activeMembers.map((m, i) => (
+                  members.map((m, i) => (
                     <TableRow key={i}>
                       <TableCell className="font-medium">{m.companyName || "—"}</TableCell>
                       <TableCell>{m.email || "—"}</TableCell>
                       <TableCell>{m.planKey.charAt(0) + m.planKey.slice(1).toLowerCase()}</TableCell>
                       <TableCell>
-                        {m.freeMonthsStartedAt
-                          ? new Date(m.freeMonthsStartedAt).toLocaleDateString()
-                          : "—"}
+                        {m.signedUpAt ? new Date(m.signedUpAt).toLocaleDateString() : "—"}
                       </TableCell>
-                      <TableCell className="text-right">{m.monthsElapsed}</TableCell>
-                      <TableCell className="text-right">{m.monthsRemaining}</TableCell>
+                      <TableCell className="text-right">{m.freeMonths}</TableCell>
                       <TableCell className="text-right font-medium">${m.invoiceAmount.toFixed(2)}</TableCell>
                     </TableRow>
                   ))
@@ -253,13 +245,13 @@ export default function AdminReferralInvoice() {
             </Table>
           )}
 
-          {activeMembers.length > 0 && summary && (
+          {members.length > 0 && summary && (
             <div className="flex justify-end mt-4 pt-4 border-t">
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">Total Subsidy</p>
+                <p className="text-sm text-muted-foreground">Total Upfront Subsidy</p>
                 <p className="text-xl font-bold">${summary.totalInvoiceAmount.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {summary.totalMembersOnFreePeriod} member{summary.totalMembersOnFreePeriod !== 1 ? "s" : ""} × ${(invoice?.invoiceRate ?? 0).toFixed(2)}
+                  {summary.newMembers} new member{summary.newMembers !== 1 ? "s" : ""} billed upfront
                 </p>
               </div>
             </div>

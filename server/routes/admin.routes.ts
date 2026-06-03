@@ -365,9 +365,9 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
   // Billable cohort is keyed on the CAMPAIGN, not the subscription. The live
   // Stripe-first path writes users.assigned_promo_campaign_id and leaves the
   // subscription's referral_source / free_months_* columns unwritten (the free
-  // period lives in the Stripe trial). So join users -> assigned campaign, take
-  // billable campaigns (free_months_total > 0), and read entitlement length off
-  // the campaign row. referralSource selects which partner's campaign(s) this is.
+  // period lives in the Stripe trial). Join users -> assigned campaign, take
+  // billable campaigns (free_months_total > 0), read entitlement off the
+  // campaign row. referralSource selects which partner's campaign(s) this is.
   const rows = await db
     .select({
       subscription: subscriptions,
@@ -386,71 +386,52 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
       )
     );
 
-  // $73.95 = CORE $87 x 0.85. Matches billing.routes.ts credit rate. Phase G
-  // consolidates all sites to config.billing.coreMonthlyDiscountedCents.
-  const INVOICE_RATE_CENTS = 7395;
-  const INVOICE_RATE = INVOICE_RATE_CENTS / 100;
+  // $73.95 = CORE $87 x 0.85. Matches billing.routes.ts. Phase G consolidates
+  // all sites to config.billing.coreMonthlyDiscountedCents.
+  const MONTHLY_RATE_CENTS = 7395;
+  const MONTHLY_RATE = MONTHLY_RATE_CENTS / 100;
 
   const firstDayOfMonth = targetMonth;
   const lastDayOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
 
+  // 5D pays the whole free period UPFRONT at signup: one charge of
+  // MONTHLY_RATE x free_months per member, in the member's signup month. The
+  // member converts to paying monthly themselves after the trial ends.
+  // Mid-trial cancellation is non-refundable, so there is no proration. Each
+  // member appears once, in the month their free period started.
   const members = rows
     .map((r) => {
-      const total = r.campaignFreeMonths;
-      // Stable free-period start: trial_start if Stripe set it, else the sub
-      // creation time (Shape B leaves trial_start null).
+      const freeMonths = r.campaignFreeMonths;
       const start = r.subscription.trialStart ?? r.subscription.createdAt;
       if (!start) return null;
       const startDate = new Date(start);
 
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + total);
+      const signedUpThisMonth = startDate >= firstDayOfMonth && startDate <= lastDayOfMonth;
+      if (!signedUpThisMonth) return null;
 
-      // Cancelled members are subsidised only for months actually consumed, so
-      // cap the billable window at the cancellation date.
-      let effectiveEnd = endDate;
-      if (r.subscription.status === 'canceled' && r.subscription.canceledAt) {
-        const canceled = new Date(r.subscription.canceledAt);
-        effectiveEnd = canceled < endDate ? canceled : endDate;
-      }
-
-      const billableThisMonth = startDate <= lastDayOfMonth && effectiveEnd >= firstDayOfMonth;
-      if (!billableThisMonth) return null;
-
-      const elapsed = Math.min(
-        total,
-        Math.max(
-          0,
-          (lastDayOfMonth.getFullYear() - startDate.getFullYear()) * 12 +
-            (lastDayOfMonth.getMonth() - startDate.getMonth()) + 1
-        )
-      );
-      const remaining = Math.max(0, total - elapsed);
+      const upfrontAmount = MONTHLY_RATE * freeMonths;
 
       return {
         companyName: r.companyName,
         email: r.email,
         planKey: r.subscription.planKey,
-        freeMonthsStartedAt: startDate.toISOString(),
-        monthsElapsed: elapsed,
-        monthsRemaining: remaining,
-        invoiceAmount: INVOICE_RATE,
-        isInFreePeriod: true,
+        signedUpAt: startDate.toISOString(),
+        freeMonths,
+        invoiceAmount: upfrontAmount,
       };
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
 
-  const activeMembers = members;
-  const totalInvoice = activeMembers.length * INVOICE_RATE;
+  const totalInvoice = members.reduce((sum, m) => sum + m.invoiceAmount, 0);
 
   sendSuccess(res, {
     month: targetMonth.toISOString().slice(0, 7),
     source: referralSource,
-    invoiceRate: INVOICE_RATE,
+    monthlyRate: MONTHLY_RATE,
     summary: {
-      totalMembersOnFreePeriod: activeMembers.length,
+      newMembers: members.length,
       totalInvoiceAmount: totalInvoice,
-      avgPerMember: activeMembers.length > 0 ? totalInvoice / activeMembers.length : 0,
+      avgPerMember: members.length > 0 ? totalInvoice / members.length : 0,
     },
     members,
   });
