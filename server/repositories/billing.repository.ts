@@ -1,11 +1,13 @@
-import { eq, and, desc, or, lt, sql, gte } from 'drizzle-orm';
+import { eq, and, desc, or, lt, sql, gte, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import {
   subscriptions,
   subscriptionEvents,
   addonPurchases,
   promoCodeCampaigns,
+  referralInvoiceRecords,
   type Subscription,
+  type ReferralInvoiceRecord,
   type InsertSubscription,
   type SubscriptionEvent,
   type InsertSubscriptionEvent,
@@ -239,6 +241,48 @@ export class BillingRepository {
           sql`${promoCodeCampaigns.freeMonthsTotal} > 0`
         )
       );
+  }
+
+  async getReferralInvoiceRecord(userCompanyId: number): Promise<ReferralInvoiceRecord | null> {
+    const [row] = await db
+      .select()
+      .from(referralInvoiceRecords)
+      .where(eq(referralInvoiceRecords.userCompanyId, userCompanyId));
+    return row ?? null;
+  }
+
+  async upsertReferralInvoicePending(data: {
+    userCompanyId: number;
+    invoiceMonth: string;
+    amountCents: number;
+    memberEmail: string | null;
+  }): Promise<void> {
+    await db
+      .insert(referralInvoiceRecords)
+      .values({
+        userCompanyId: data.userCompanyId,
+        invoiceMonth: data.invoiceMonth,
+        amountCents: data.amountCents,
+        memberEmail: data.memberEmail,
+        status: 'pending',
+      })
+      .onConflictDoUpdate({
+        target: referralInvoiceRecords.userCompanyId,
+        set: {
+          invoiceMonth: data.invoiceMonth,
+          amountCents: data.amountCents,
+          memberEmail: data.memberEmail,
+          status: 'pending',
+        },
+      });
+  }
+
+  async markReferralInvoicesSent(userCompanyIds: number[], sentAt: Date): Promise<void> {
+    if (userCompanyIds.length === 0) return;
+    await db
+      .update(referralInvoiceRecords)
+      .set({ status: 'sent', sentAt })
+      .where(inArray(referralInvoiceRecords.userCompanyId, userCompanyIds));
   }
 }
 

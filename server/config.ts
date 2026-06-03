@@ -61,6 +61,11 @@ export const config = {
     siteUrl: process.env.MARKETING_SITE_URL || 'https://valoxi.ai',
   },
 
+  fiveD: {
+    partnerInvoiceEmail: process.env.FIVE_D_PARTNER_INVOICE_EMAIL || '',
+    billingStart: process.env.FIVE_D_BILLING_START || '',
+  },
+
   nylas: {
     apiKey: process.env.NYLAS_API_KEY || '',
     clientId: process.env.NYLAS_CLIENT_ID || '',

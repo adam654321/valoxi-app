@@ -463,6 +463,16 @@ export function initializeBillingCron(): void {
     }
   }, { timezone: 'Europe/London' });
   console.log('[billing-cron] Stripe webhook failure alert scheduled for 08:00 London');
+
+  cron.schedule('0 4 7 * *', async () => {
+    console.log('[billing-cron] Starting monthly 5D partner invoice...');
+    try {
+      await runFiveDPartnerInvoiceJob();
+    } catch (err) {
+      console.error('[billing-cron] 5D partner invoice job failed:', err);
+    }
+  }, { timezone: 'Europe/London' });
+  console.log('[billing-cron] 5D partner invoice scheduled for 04:00 London on the 7th');
 }
 
 export async function runStripeWebhookFailureAlertJob(): Promise<void> {
@@ -552,5 +562,74 @@ export async function runStripeWebhookFailureAlertJob(): Promise<void> {
     }
   } catch (err) {
     console.error('[billing-cron] Exception sending webhook failure alert:', err);
+  }
+}
+
+export async function runFiveDPartnerInvoiceJob(): Promise<void> {
+  const cutoff = config.fiveD.billingStart;             // 'YYYY-MM-DD' or ''
+  const partnerEmail = config.fiveD.partnerInvoiceEmail; // '' if unset
+
+  if (!cutoff) {
+    console.warn('[billing-cron] 5D invoice: FIVE_D_BILLING_START not set, skipping');
+    return;
+  }
+  if (!partnerEmail) {
+    console.warn('[billing-cron] 5D invoice: FIVE_D_PARTNER_INVOICE_EMAIL not set, skipping');
+    return;
+  }
+
+  const now = new Date();
+  const prior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const priorMonth = `${prior.getFullYear()}-${String(prior.getMonth() + 1).padStart(2, '0')}`;
+  const cutoffYM = cutoff.slice(0, 7);
+
+  if (priorMonth < cutoffYM) {
+    console.log(`[billing-cron] 5D invoice: prior month ${priorMonth} precedes billing start ${cutoffYM}, skipping`);
+    return;
+  }
+
+  const cutoffDate = new Date(cutoff);
+  const { members } = await billingService.getBillableMembers(priorMonth, '5d_community');
+
+  // Per-member cutoff guard, covers a mid-month billing start.
+  const eligible = members.filter((m) => new Date(m.signedUpAt) >= cutoffDate);
+
+  const toBill: typeof eligible = [];
+  for (const m of eligible) {
+    const existing = await billingRepository.getReferralInvoiceRecord(m.userCompanyId);
+    if (existing && existing.status === 'sent') continue; // already invoiced, ever
+    await billingRepository.upsertReferralInvoicePending({
+      userCompanyId: m.userCompanyId,
+      invoiceMonth: priorMonth,
+      amountCents: Math.round(m.invoiceAmount * 100),
+      memberEmail: m.email,
+    });
+    toBill.push(m);
+  }
+
+  if (toBill.length === 0) {
+    console.log(`[billing-cron] 5D invoice: no new members to bill for ${priorMonth}`);
+    return;
+  }
+
+  const totalCents = toBill.reduce((sum, m) => sum + Math.round(m.invoiceAmount * 100), 0);
+
+  const result = await emailApiService.sendFiveDPartnerInvoice({
+    to: partnerEmail,
+    billingMonth: priorMonth,
+    members: toBill.map((m) => ({
+      companyName: m.companyName,
+      email: m.email,
+      freeMonths: m.freeMonths,
+      amountCents: Math.round(m.invoiceAmount * 100),
+    })),
+    totalCents,
+  });
+
+  if (result.success) {
+    await billingRepository.markReferralInvoicesSent(toBill.map((m) => m.userCompanyId), new Date());
+    console.log(`[billing-cron] 5D invoice: sent ${priorMonth} digest, ${toBill.length} member(s), $${(totalCents / 100).toFixed(2)} to ${partnerEmail}`);
+  } else {
+    console.error(`[billing-cron] 5D invoice: ${priorMonth} digest send FAILED, ${toBill.length} member(s) left pending: ${result.message}`);
   }
 }
