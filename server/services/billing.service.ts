@@ -448,6 +448,83 @@ class BillingService {
     if (max === null) return true;
     return currentSeatCount < max;
   }
+
+  // Shared 5D subsidy selection, used by both the admin invoice route and the
+  // monthly cron. Returns members whose free period STARTED in the target
+  // month, each billed UPFRONT at the discounted CORE rate x the campaign's
+  // free_months. Entitlement is read off the campaign, not the subscription
+  // (the live Stripe-first path leaves subscription.free_months_total at 0).
+  async getBillableMembers(month?: string, source?: string): Promise<{
+    month: string;
+    source: string;
+    monthlyRate: number;
+    summary: { newMembers: number; totalInvoiceAmount: number; avgPerMember: number };
+    members: Array<{
+      userCompanyId: number;
+      companyName: string | null;
+      email: string | null;
+      planKey: string;
+      signedUpAt: string;
+      freeMonths: number;
+      invoiceAmount: number;
+    }>;
+  }> {
+    const referralSource = source || '5d_community';
+
+    let targetMonth: Date;
+    if (month) {
+      targetMonth = new Date(month + '-01');
+    } else {
+      targetMonth = new Date();
+      targetMonth.setDate(1);
+    }
+    targetMonth.setHours(0, 0, 0, 0);
+
+    const rows = await billingRepository.getReferralBillableRows(referralSource);
+
+    // $73.95 = CORE $87 x 0.85. Phase G consolidates to config.billing.coreMonthlyDiscountedCents.
+    const MONTHLY_RATE_CENTS = 7395;
+    const MONTHLY_RATE = MONTHLY_RATE_CENTS / 100;
+
+    const firstDayOfMonth = targetMonth;
+    const lastDayOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+
+    const members = rows
+      .map((r) => {
+        const freeMonths = r.campaignFreeMonths;
+        const start = r.subscription.trialStart ?? r.subscription.createdAt;
+        if (!start) return null;
+        const startDate = new Date(start);
+
+        const signedUpThisMonth = startDate >= firstDayOfMonth && startDate <= lastDayOfMonth;
+        if (!signedUpThisMonth) return null;
+
+        return {
+          userCompanyId: r.subscription.userCompanyId,
+          companyName: r.companyName,
+          email: r.email,
+          planKey: r.subscription.planKey,
+          signedUpAt: startDate.toISOString(),
+          freeMonths,
+          invoiceAmount: MONTHLY_RATE * freeMonths,
+        };
+      })
+      .filter((m): m is NonNullable<typeof m> => m !== null);
+
+    const totalInvoiceAmount = members.reduce((sum, m) => sum + m.invoiceAmount, 0);
+
+    return {
+      month: targetMonth.toISOString().slice(0, 7),
+      source: referralSource,
+      monthlyRate: MONTHLY_RATE,
+      summary: {
+        newMembers: members.length,
+        totalInvoiceAmount,
+        avgPerMember: members.length > 0 ? totalInvoiceAmount / members.length : 0,
+      },
+      members,
+    };
+  }
 }
 
 export const billingService = new BillingService();

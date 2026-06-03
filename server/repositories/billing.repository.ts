@@ -4,6 +4,7 @@ import {
   subscriptions,
   subscriptionEvents,
   addonPurchases,
+  promoCodeCampaigns,
   type Subscription,
   type InsertSubscription,
   type SubscriptionEvent,
@@ -214,6 +215,30 @@ export class BillingRepository {
       .limit(1);
     if (!row || !row.email) return null;
     return { email: row.email, firstName: row.firstName || '' };
+  }
+
+  // Rows for the 5D referral/subsidy invoice: users assigned to a billable
+  // promo campaign (free_months_total > 0) with the given referral_source,
+  // joined to company and subscription. Month selection and amount are applied
+  // by billingService.getBillableMembers, not here.
+  async getReferralBillableRows(referralSource: string) {
+    return db
+      .select({
+        subscription: subscriptions,
+        companyName: userCompanies.companyName,
+        email: users.email,
+        campaignFreeMonths: promoCodeCampaigns.freeMonthsTotal,
+      })
+      .from(users)
+      .innerJoin(promoCodeCampaigns, eq(users.assignedPromoCampaignId, promoCodeCampaigns.id))
+      .innerJoin(userCompanies, eq(users.userCompanyId, userCompanies.id))
+      .innerJoin(subscriptions, eq(subscriptions.userCompanyId, userCompanies.id))
+      .where(
+        and(
+          eq(promoCodeCampaigns.referralSource, referralSource),
+          sql`${promoCodeCampaigns.freeMonthsTotal} > 0`
+        )
+      );
   }
 }
 
