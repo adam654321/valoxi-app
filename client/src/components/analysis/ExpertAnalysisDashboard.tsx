@@ -210,9 +210,11 @@ function ExpertCard({
             )}
             {status === "failed" && onRetry && (
               <div className="mt-2">
-                {analysisData?.error ? (
-                  <p className="text-xs text-red-500 mb-2 line-clamp-2">
-                    {String(analysisData.error as string)}
+                {analysisData ? (
+                  <p className="text-xs text-red-500 mb-2">
+                    {(analysisData as any).failure_type === "parse_failure"
+                      ? "The AI returned an unexpected response. Click Retry to try again."
+                      : "Analysis failed. Click Retry to try again."}
                   </p>
                 ) : null}
                 <Button
