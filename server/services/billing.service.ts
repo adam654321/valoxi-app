@@ -565,6 +565,76 @@ class BillingService {
     await billingRepository.markReferralInvoicesSent([userCompanyId], new Date());
     return { success: true, message: 'Invoice resent' };
   }
+
+  // Batch resend. Groups the selected companies by their record's invoice month
+  // and sends ONE digest per month (mirrors the cron). Rebuilds each month's
+  // payload from the live billable selection, not stored fields. Members no
+  // longer billable are skipped and reported. Marks sent on success.
+  async resendFiveDInvoices(userCompanyIds: number[]): Promise<{ success: boolean; message: string; sentCount: number; skipped: number[] }> {
+    if (userCompanyIds.length === 0) {
+      return { success: false, message: 'No invoices selected', sentCount: 0, skipped: [] };
+    }
+    const partnerEmail = ((await systemConfigService.getConfig('five_d_partner_invoice_email')) || '').trim();
+    if (!partnerEmail) {
+      return { success: false, message: 'Partner invoice email is not configured', sentCount: 0, skipped: [] };
+    }
+
+    const byMonth = new Map<string, number[]>();
+    for (const id of userCompanyIds) {
+      const record = await billingRepository.getReferralInvoiceRecord(id);
+      if (!record) continue;
+      const arr = byMonth.get(record.invoiceMonth) || [];
+      arr.push(record.userCompanyId);
+      byMonth.set(record.invoiceMonth, arr);
+    }
+
+    let sentCount = 0;
+    const skipped: number[] = [];
+    const sentIds: number[] = [];
+
+    for (const [month, ids] of byMonth) {
+      const { members } = await this.getBillableMembers(month, '5d_community');
+      const selected = members.filter((m) => ids.includes(m.userCompanyId));
+      const selectedIds = selected.map((m) => m.userCompanyId);
+      for (const id of ids) if (!selectedIds.includes(id)) skipped.push(id); // no longer billable
+
+      if (selected.length === 0) continue;
+
+      const totalCents = selected.reduce((s, m) => s + Math.round(m.invoiceAmount * 100), 0);
+      const res = await emailApiService.sendFiveDPartnerInvoice({
+        to: partnerEmail,
+        billingMonth: month,
+        members: selected.map((m) => ({
+          companyName: m.companyName,
+          email: m.email,
+          freeMonths: m.freeMonths,
+          amountCents: Math.round(m.invoiceAmount * 100),
+        })),
+        totalCents,
+      });
+
+      if (res.success) {
+        sentCount += selected.length;
+        sentIds.push(...selectedIds);
+      } else {
+        skipped.push(...selectedIds); // send failed, leave pending
+      }
+    }
+
+    if (sentIds.length > 0) {
+      await billingRepository.markReferralInvoicesSent(sentIds, new Date());
+    }
+
+    const ok = sentCount > 0;
+    return {
+      success: ok,
+      message: ok
+        ? `Resent ${sentCount} invoice(s) across ${byMonth.size} month(s)${skipped.length ? `, ${skipped.length} skipped (no longer billable or send failed)` : ''}`
+        : (skipped.length ? 'Nothing resent: selected members are no longer billable or sends failed' : 'Nothing resent'),
+      sentCount,
+      skipped,
+    };
+  }
 }
 
 export const billingService = new BillingService();

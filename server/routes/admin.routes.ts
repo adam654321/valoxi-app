@@ -370,6 +370,12 @@ router.post('/referral-invoice-records/:userCompanyId/resend', asyncHandler(asyn
   sendSuccess(res, result);
 }));
 
+router.post('/referral-invoice-records/resend', asyncHandler(async (req: Request, res: Response) => {
+  const { userCompanyIds } = z.object({ userCompanyIds: z.array(z.number()).min(1) }).parse(req.body);
+  const result = await billingService.resendFiveDInvoices(userCompanyIds);
+  sendSuccess(res, result);
+}));
+
 
 router.get('/funnel', asyncHandler(async (req: Request, res: Response) => {
   const thirtyDaysAgo = new Date();
