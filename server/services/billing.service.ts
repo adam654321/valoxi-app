@@ -1,4 +1,6 @@
 import { billingRepository } from '../repositories/billing.repository';
+import { emailApiService } from './email.service';
+import { systemConfigService } from './system-config.service';
 import { marketingContactsService } from './marketing-contacts.service';
 import {
   type Subscription,
@@ -524,6 +526,44 @@ class BillingService {
       },
       members,
     };
+  }
+
+  async listReferralInvoiceRecords() {
+    return billingRepository.listReferralInvoiceRecords();
+  }
+
+  // Resend a single member's subsidy line. Rebuilds the payload from the live
+  // billable selection for the record's month (authoritative), not from stored
+  // fields. Fails clearly if the member is no longer billable or no partner
+  // email is configured. Marks the record sent on success.
+  async resendFiveDInvoice(userCompanyId: number): Promise<{ success: boolean; message: string }> {
+    const record = await billingRepository.getReferralInvoiceRecord(userCompanyId);
+    if (!record) return { success: false, message: 'No invoice record for this company' };
+
+    const partnerEmail = ((await systemConfigService.getConfig('five_d_partner_invoice_email')) || '').trim();
+    if (!partnerEmail) return { success: false, message: 'Partner invoice email is not configured' };
+
+    const { members } = await this.getBillableMembers(record.invoiceMonth, '5d_community');
+    const member = members.find((m) => m.userCompanyId === userCompanyId);
+    if (!member) return { success: false, message: 'Member is no longer in the billable cohort' };
+
+    const amountCents = Math.round(member.invoiceAmount * 100);
+    const sendResult = await emailApiService.sendFiveDPartnerInvoice({
+      to: partnerEmail,
+      billingMonth: record.invoiceMonth,
+      members: [{
+        companyName: member.companyName,
+        email: member.email,
+        freeMonths: member.freeMonths,
+        amountCents,
+      }],
+      totalCents: amountCents,
+    });
+
+    if (!sendResult.success) return { success: false, message: sendResult.message };
+
+    await billingRepository.markReferralInvoicesSent([userCompanyId], new Date());
+    return { success: true, message: 'Invoice resent' };
   }
 }
 

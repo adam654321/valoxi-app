@@ -359,6 +359,17 @@ router.get('/referral-invoice', asyncHandler(async (req: Request, res: Response)
   sendSuccess(res, result);
 }));
 
+router.get('/referral-invoice-records', asyncHandler(async (_req: Request, res: Response) => {
+  const records = await billingService.listReferralInvoiceRecords();
+  sendSuccess(res, { records });
+}));
+
+router.post('/referral-invoice-records/:userCompanyId/resend', asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = parseInt(req.params.userCompanyId, 10);
+  const result = await billingService.resendFiveDInvoice(userCompanyId);
+  sendSuccess(res, result);
+}));
+
 
 router.get('/funnel', asyncHandler(async (req: Request, res: Response) => {
   const thirtyDaysAgo = new Date();

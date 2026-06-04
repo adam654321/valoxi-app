@@ -284,6 +284,17 @@ export class BillingRepository {
       .set({ status: 'sent', sentAt })
       .where(inArray(referralInvoiceRecords.userCompanyId, userCompanyIds));
   }
+
+  async listReferralInvoiceRecords() {
+    return db
+      .select({
+        record: referralInvoiceRecords,
+        companyName: userCompanies.companyName,
+      })
+      .from(referralInvoiceRecords)
+      .innerJoin(userCompanies, eq(referralInvoiceRecords.userCompanyId, userCompanies.id))
+      .orderBy(desc(referralInvoiceRecords.createdAt));
+  }
 }
 
 export const billingRepository = new BillingRepository();
