@@ -62,7 +62,6 @@ export const config = {
   },
 
   fiveD: {
-    partnerInvoiceEmail: process.env.FIVE_D_PARTNER_INVOICE_EMAIL || '',
     billingStart: process.env.FIVE_D_BILLING_START || '',
   },
 

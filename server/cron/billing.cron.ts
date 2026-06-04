@@ -9,6 +9,7 @@ import { subscriptions, promoCodeCampaigns } from '@shared/schema/billing';
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
 import { emailService } from '../email';
 import { emailApiService } from '../services/email.service';
+import { systemConfigService } from '../services/system-config.service';
 import { userCompanies, users } from '@shared/schema/core';
 
 export async function runDunningDay7ReminderJob(): Promise<void> {
@@ -464,15 +465,18 @@ export function initializeBillingCron(): void {
   }, { timezone: 'Europe/London' });
   console.log('[billing-cron] Stripe webhook failure alert scheduled for 08:00 London');
 
-  cron.schedule('0 4 7 * *', async () => {
-    console.log('[billing-cron] Starting monthly 5D partner invoice...');
+  cron.schedule('0 4 * * *', async () => {
     try {
+      const sendDayRaw = await systemConfigService.getConfig('five_d_invoice_send_day');
+      const sendDay = Math.min(28, Math.max(1, parseInt(sendDayRaw || '7', 10) || 7));
+      if (new Date().getDate() !== sendDay) return; // only fire on the configured send-day
+      console.log('[billing-cron] Starting monthly 5D partner invoice...');
       await runFiveDPartnerInvoiceJob();
     } catch (err) {
       console.error('[billing-cron] 5D partner invoice job failed:', err);
     }
   }, { timezone: 'Europe/London' });
-  console.log('[billing-cron] 5D partner invoice scheduled for 04:00 London on the 7th');
+  console.log('[billing-cron] 5D partner invoice scheduled daily at 04:00 London, fires on the configured send-day');
 }
 
 export async function runStripeWebhookFailureAlertJob(): Promise<void> {
@@ -566,8 +570,8 @@ export async function runStripeWebhookFailureAlertJob(): Promise<void> {
 }
 
 export async function runFiveDPartnerInvoiceJob(): Promise<void> {
-  const cutoff = config.fiveD.billingStart;             // 'YYYY-MM-DD' or ''
-  const partnerEmail = config.fiveD.partnerInvoiceEmail; // '' if unset
+  const cutoff = config.fiveD.billingStart;             // 'YYYY-MM-DD' or '' (env, set once at go-live)
+  const partnerEmail = ((await systemConfigService.getConfig('five_d_partner_invoice_email')) || '').trim(); // system_config, UI-editable
 
   if (!cutoff) {
     console.warn('[billing-cron] 5D invoice: FIVE_D_BILLING_START not set, skipping');

@@ -11,6 +11,8 @@ const DEFAULT_SYSTEM_CONFIG: { key: string; value: string }[] = [
   { key: 'beta_mode', value: 'true' },
   { key: 'issue_reporting_enabled', value: 'true' },
   { key: 'open_access_enabled', value: 'false' },
+  { key: 'five_d_invoice_send_day', value: '7' },
+  { key: 'five_d_partner_invoice_email', value: '' },
 ];
 
 export async function seedSystemConfig(): Promise<void> {
