@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Copy, Users, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { Download, Copy, Users, DollarSign, TrendingUp, Loader2, RefreshCw, Save } from "lucide-react";
 
 interface InvoiceMember {
   companyName: string;
@@ -31,6 +32,17 @@ interface InvoiceData {
   members: InvoiceMember[];
 }
 
+interface InvoiceRecord {
+  id: number;
+  userCompanyId: number;
+  invoiceMonth: string;
+  amountCents: number;
+  memberEmail: string | null;
+  status: string;
+  sentAt: string | null;
+  createdAt: string;
+}
+
 function getMonthOptions() {
   const options: { value: string; label: string }[] = [];
   const now = new Date();
@@ -45,6 +57,7 @@ function getMonthOptions() {
 
 export default function AdminReferralInvoice() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const now = new Date();
   const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
   const [source, setSource] = useState("5d_community");
@@ -64,6 +77,86 @@ export default function AdminReferralInvoice() {
   const invoice = data?.data;
   const summary = invoice?.summary;
   const members = invoice?.members ?? [];
+
+  // History
+  const { data: historyData, isLoading: historyLoading } = useQuery<{
+    success: boolean;
+    data: { records: Array<{ record: InvoiceRecord; companyName: string | null }> };
+  }>({
+    queryKey: ["/api/v2/admin/referral-invoice-records"],
+    queryFn: async () => {
+      const res = await fetch("/api/v2/admin/referral-invoice-records", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch invoice history");
+      return res.json();
+    },
+  });
+  const historyRecords = historyData?.data?.records ?? [];
+
+  const resend = useMutation<unknown, Error, number>({
+    mutationFn: async (userCompanyId: number) => {
+      const res = await fetch(`/api/v2/admin/referral-invoice-records/${userCompanyId}/resend`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.data?.success) throw new Error(json?.data?.message || "Resend failed");
+      return json;
+    },
+    onSuccess: () => {
+      toast({ title: "Resent", description: "Invoice resent to the partner." });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/referral-invoice-records"] });
+    },
+    onError: (e) => toast({ title: "Resend failed", description: e.message, variant: "destructive" }),
+  });
+
+  // Settings (system_config)
+  const { data: configData } = useQuery<{ success: boolean; data: unknown }>({
+    queryKey: ["/api/v2/admin/system-config"],
+    queryFn: async () => {
+      const res = await fetch("/api/v2/admin/system-config", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      return res.json();
+    },
+  });
+
+  const configList: { key: string; value: string }[] = (() => {
+    const raw: any = configData?.data;
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw?.configs)) return raw.configs;
+    return [];
+  })();
+  const configMap: Record<string, string> = Object.fromEntries(configList.map((c) => [c.key, c.value]));
+
+  const [sendDay, setSendDay] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
+
+  useEffect(() => {
+    if (configMap["five_d_invoice_send_day"] !== undefined) setSendDay(configMap["five_d_invoice_send_day"]);
+    if (configMap["five_d_partner_invoice_email"] !== undefined) setPartnerEmail(configMap["five_d_partner_invoice_email"]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configData]);
+
+  const saveSettings = useMutation<unknown, Error, void>({
+    mutationFn: async () => {
+      const day = String(Math.min(28, Math.max(1, parseInt(sendDay || "7", 10) || 7)));
+      const post = async (key: string, value: string) => {
+        const res = await fetch("/api/v2/admin/system-config", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, value }),
+        });
+        if (!res.ok) throw new Error(`Failed to save ${key}`);
+      };
+      await post("five_d_invoice_send_day", day);
+      await post("five_d_partner_invoice_email", partnerEmail.trim());
+    },
+    onSuccess: () => {
+      toast({ title: "Saved", description: "Invoice settings updated." });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/system-config"] });
+    },
+    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
 
   const handleExportCsv = () => {
     if (!members.length) return;
@@ -107,6 +200,13 @@ export default function AdminReferralInvoice() {
       toast({ title: "Copied", description: "Subsidy text copied to clipboard." });
     });
   };
+
+  const statusClass = (s: string) =>
+    s === "sent"
+      ? "bg-green-100 text-green-800"
+      : s === "failed"
+      ? "bg-red-100 text-red-800"
+      : "bg-amber-100 text-amber-800";
 
   return (
     <div className="p-6 space-y-6">
@@ -256,6 +356,107 @@ export default function AdminReferralInvoice() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoice History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {historyLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Month</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Sent</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historyRecords.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      No invoices recorded yet
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  historyRecords.map(({ record, companyName }) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">{companyName || "—"}</TableCell>
+                      <TableCell>{record.invoiceMonth}</TableCell>
+                      <TableCell className="text-right">${(record.amountCents / 100).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${statusClass(record.status)}`}>
+                          {record.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{record.sentAt ? new Date(record.sentAt).toLocaleDateString() : "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => resend.mutate(record.userCompanyId)}
+                          disabled={resend.isPending}
+                        >
+                          {resend.isPending && resend.variables === record.userCompanyId ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Resend
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoice Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-1 max-w-xs">
+            <label className="text-sm font-medium">Send day of month (1–28)</label>
+            <Input
+              type="number"
+              min={1}
+              max={28}
+              value={sendDay}
+              onChange={(e) => setSendDay(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              The digest runs on this day each month, billing the prior month. Default 7.
+            </p>
+          </div>
+          <div className="flex flex-col gap-1 max-w-md">
+            <label className="text-sm font-medium">Partner invoice email</label>
+            <Input
+              type="email"
+              value={partnerEmail}
+              onChange={(e) => setPartnerEmail(e.target.value)}
+              placeholder="partner@example.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              The monthly digest is sent here. Leave blank to pause sending.
+            </p>
+          </div>
+          <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+            {saveSettings.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Save settings
+          </Button>
         </CardContent>
       </Card>
     </div>
