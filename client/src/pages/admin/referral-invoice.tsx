@@ -107,6 +107,32 @@ export default function AdminReferralInvoice() {
     onError: (e) => toast({ title: "Resend failed", description: e.message, variant: "destructive" }),
   });
 
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const batchResend = useMutation<{ data: { message?: string } }, Error, number[]>({
+    mutationFn: async (ids: number[]) => {
+      const res = await apiRequest("POST", "/api/v2/admin/referral-invoice-records/resend", { userCompanyIds: ids });
+      const json = await res.json();
+      if (!json?.data?.success) throw new Error(json?.data?.message || "Resend failed");
+      return json;
+    },
+    onSuccess: (json) => {
+      toast({ title: "Resent", description: json?.data?.message || "Invoices resent." });
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/admin/referral-invoice-records"] });
+    },
+    onError: (e) => toast({ title: "Resend failed", description: e.message, variant: "destructive" }),
+  });
+
   // Settings (system_config)
   const { data: configData } = useQuery<{ success: boolean; data: unknown }>({
     queryKey: ["/api/v2/admin/system-config"],
@@ -350,7 +376,22 @@ export default function AdminReferralInvoice() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Invoice History</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Invoice History</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => batchResend.mutate(Array.from(selectedIds))}
+              disabled={selectedIds.size === 0 || batchResend.isPending}
+            >
+              {batchResend.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Resend selected ({selectedIds.size})
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {historyLoading ? (
@@ -361,6 +402,20 @@ export default function AdminReferralInvoice() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={historyRecords.length > 0 && selectedIds.size === historyRecords.length}
+                      onChange={(e) =>
+                        setSelectedIds(
+                          e.target.checked
+                            ? new Set(historyRecords.map((r) => r.record.userCompanyId))
+                            : new Set()
+                        )
+                      }
+                    />
+                  </TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Month</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
@@ -372,13 +427,21 @@ export default function AdminReferralInvoice() {
               <TableBody>
                 {historyRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No invoices recorded yet
                     </TableCell>
                   </TableRow>
                 ) : (
                   historyRecords.map(({ record, companyName }) => (
                     <TableRow key={record.id}>
+                      <TableCell className="w-10">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${companyName || record.userCompanyId}`}
+                          checked={selectedIds.has(record.userCompanyId)}
+                          onChange={() => toggleSelected(record.userCompanyId)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{companyName || "—"}</TableCell>
                       <TableCell>{record.invoiceMonth}</TableCell>
                       <TableCell className="text-right">${(record.amountCents / 100).toFixed(2)}</TableCell>
