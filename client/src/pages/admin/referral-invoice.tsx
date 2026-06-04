@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Download, Copy, Users, DollarSign, TrendingUp, Loader2, RefreshCw, Save } from "lucide-react";
 
 interface InvoiceMember {
@@ -94,12 +95,9 @@ export default function AdminReferralInvoice() {
 
   const resend = useMutation<unknown, Error, number>({
     mutationFn: async (userCompanyId: number) => {
-      const res = await fetch(`/api/v2/admin/referral-invoice-records/${userCompanyId}/resend`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await apiRequest("POST", `/api/v2/admin/referral-invoice-records/${userCompanyId}/resend`);
       const json = await res.json();
-      if (!res.ok || !json?.data?.success) throw new Error(json?.data?.message || "Resend failed");
+      if (!json?.data?.success) throw new Error(json?.data?.message || "Resend failed");
       return json;
     },
     onSuccess: () => {
@@ -139,17 +137,8 @@ export default function AdminReferralInvoice() {
   const saveSettings = useMutation<unknown, Error, void>({
     mutationFn: async () => {
       const day = String(Math.min(28, Math.max(1, parseInt(sendDay || "7", 10) || 7)));
-      const post = async (key: string, value: string) => {
-        const res = await fetch("/api/v2/admin/system-config", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key, value }),
-        });
-        if (!res.ok) throw new Error(`Failed to save ${key}`);
-      };
-      await post("five_d_invoice_send_day", day);
-      await post("five_d_partner_invoice_email", partnerEmail.trim());
+      await apiRequest("POST", "/api/v2/admin/system-config", { key: "five_d_invoice_send_day", value: day });
+      await apiRequest("POST", "/api/v2/admin/system-config", { key: "five_d_partner_invoice_email", value: partnerEmail.trim() });
     },
     onSuccess: () => {
       toast({ title: "Saved", description: "Invoice settings updated." });
