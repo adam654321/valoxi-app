@@ -36,7 +36,7 @@ export class PortalSubmissionsService {
     return await portalSubmissionsRepository.getSimplePortalData(token.id);
   }
 
-  async submitDocument(accessToken: string, file: Express.Multer.File, r2Key: string, body: any, baseUrl: string, ipAddress?: string, userAgent?: string) {
+  async submitDocument(accessToken: string, file: { originalname: string; size: number; mimetype: string }, r2Key: string, body: any, baseUrl: string, ipAddress?: string, userAgent?: string) {
     const token = await this.validateToken(accessToken);
     const allowedActions = JSON.parse(token.allowedActions || '{}');
     if (!allowedActions.upload) {

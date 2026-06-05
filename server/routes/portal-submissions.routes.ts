@@ -9,7 +9,7 @@ import { BadRequestError } from '../utils/errors';
 import { db } from '../db';
 import { ddRequirementStatus } from '@shared/schema/due-diligence';
 import { and, eq } from 'drizzle-orm';
-import { sharedFileFilter } from '../utils/upload';
+import { sharedFileFilter, isAllowedFile, sanitizeFilename } from '../utils/upload';
 
 const router = Router();
 
@@ -45,6 +45,50 @@ router.post('/:token/submit', (req: Request, res: Response) => {
     }
   });
 });
+
+router.post('/:token/upload-url', asyncHandler(async (req: Request, res: Response) => {
+  const token = await portalSubmissionsService.validateToken(req.params.token);
+  const allowedActions = JSON.parse(token.allowedActions || '{}');
+  if (!allowedActions.upload) throw new BadRequestError('Document upload not permitted for this portal');
+
+  const originalFilename = sanitizeFilename(typeof req.body.filename === 'string' ? req.body.filename : '');
+  if (!originalFilename || originalFilename === 'unnamed-file') throw new BadRequestError('A filename is required');
+  const contentType = (typeof req.body.contentType === 'string' && req.body.contentType.trim()) ? req.body.contentType.trim() : 'application/octet-stream';
+  if (!isAllowedFile(originalFilename, contentType)) throw new BadRequestError('File rejected: must have both a permitted file type and extension.');
+  const declaredSize = Number(req.body.fileSize);
+  if (Number.isFinite(declaredSize) && declaredSize > 10 * 1024 * 1024) throw new BadRequestError('File too large. Max 10MB.');
+
+  const key = fileStorageService.generateKey(`portal/${token.targetCompanyId}`, originalFilename);
+  const uploadUrl = await fileStorageService.getPresignedPutUrl(key, contentType, 300);
+  sendSuccess(res, { uploadUrl, key, contentType, originalFilename });
+}));
+
+router.post('/:token/register', asyncHandler(async (req: Request, res: Response) => {
+  const token = await portalSubmissionsService.validateToken(req.params.token);
+  const key = typeof req.body.key === 'string' ? req.body.key : '';
+  const expectedPrefix = `portal/${token.targetCompanyId}/`;
+  if (!key.startsWith(expectedPrefix)) throw new BadRequestError('Invalid storage key for this portal');
+
+  const head = await fileStorageService.head(key);
+  if (!head) throw new BadRequestError('Uploaded file not found. Please retry the upload.');
+  if (head.size > 10 * 1024 * 1024) { await fileStorageService.delete(key); throw new BadRequestError('File too large. Max 10MB.'); }
+  if (head.size === 0) { await fileStorageService.delete(key); throw new BadRequestError('Uploaded file is empty.'); }
+
+  const originalFilename = sanitizeFilename(req.body.fileName || req.body.originalFilename || 'unnamed-file');
+  if (!isAllowedFile(originalFilename, head.contentType)) { await fileStorageService.delete(key); throw new BadRequestError('File rejected: must have both a permitted file type and extension.'); }
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const result = await portalSubmissionsService.submitDocument(
+    req.params.token,
+    { originalname: originalFilename, size: head.size, mimetype: head.contentType },
+    key,
+    req.body,
+    baseUrl,
+    req.ip,
+    req.get('User-Agent'),
+  );
+  sendSuccess(res, { success: true, submissionId: result.submissionId, message: 'Document submitted successfully', filename: result.filename });
+}));
 
 router.get('/:token/submissions', asyncHandler(async (req: Request, res: Response) => {
   const submissions = await portalSubmissionsService.getSubmissions(req.params.token, req.ip, req.get('User-Agent'));
