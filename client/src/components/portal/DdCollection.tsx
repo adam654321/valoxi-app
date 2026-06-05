@@ -212,17 +212,34 @@ export default function DdCollection({ token, onDocumentUploaded }: DdCollection
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('document', selectedFile);
-      formData.append('documentType', 'due_diligence');
-      formData.append('requirement_id', uploadingRequirementId.toString());
-      if (submissionNotes.trim()) {
-        formData.append('submissionNotes', submissionNotes.trim());
-      }
-
-      const response = await fetch(`/api/v2/portal-submit/${token}/submit`, {
+      // 1. Presigned PUT URL from the app
+      const presignRes = await fetch(`/api/v2/portal-submit/${token}/upload-url`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: selectedFile.name, contentType: selectedFile.type || 'application/octet-stream', fileSize: selectedFile.size }),
+      });
+      if (!presignRes.ok) {
+        const e = await presignRes.json().catch(() => ({}));
+        throw new Error(e.message || e.error || 'Could not prepare the upload.');
+      }
+      const presign = (await presignRes.json())?.data;
+      if (!presign?.uploadUrl || !presign?.key) throw new Error('Could not prepare the upload.');
+
+      // 2. PUT straight to R2, bypassing the app edge.
+      const putRes = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': presign.contentType }, body: selectedFile });
+      if (!putRes.ok) throw new Error(`Upload to storage failed (${putRes.status}).`);
+
+      // 3. Register: app verifies, creates submission + document + DD link, queues analysis.
+      const response = await fetch(`/api/v2/portal-submit/${token}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: presign.key,
+          fileName: presign.originalFilename || selectedFile.name,
+          documentType: 'due_diligence',
+          requirement_id: uploadingRequirementId,
+          submissionNotes: submissionNotes.trim() || undefined,
+        }),
       });
 
       if (!response.ok) {

@@ -529,21 +529,33 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   // Submit document mutation
   const submitDocumentMutation = useMutation({
     mutationFn: async ({ file, documentType, notes }: { file: File; documentType: string; notes: string }) => {
-      const formData = new FormData();
-      formData.append('document', file);
-      formData.append('documentType', documentType);
-      formData.append('submissionNotes', notes);
-
-      const response = await fetch(`/api/v2/portal-submit/${token}/submit`, {
+      // 1. Presigned PUT URL from the app (small JSON, crosses the edge fine)
+      const presignRes = await fetch(`/api/v2/portal-submit/${token}/upload-url`, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || 'application/octet-stream', fileSize: file.size }),
       });
+      if (!presignRes.ok) {
+        const e = await presignRes.json().catch(() => ({}));
+        throw new Error(e.message || e.error || 'Could not prepare the upload.');
+      }
+      const presign = (await presignRes.json())?.data;
+      if (!presign?.uploadUrl || !presign?.key) throw new Error('Could not prepare the upload.');
 
+      // 2. PUT straight to R2, bypassing the app edge. Content-Type must match the signed value.
+      const putRes = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': presign.contentType }, body: file });
+      if (!putRes.ok) throw new Error(`Upload to storage failed (${putRes.status}).`);
+
+      // 3. Register the object: app verifies it, creates submission + document, queues analysis.
+      const response = await fetch(`/api/v2/portal-submit/${token}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: presign.key, fileName: presign.originalFilename || file.name, documentType, submissionNotes: notes }),
+      });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Upload failed');
       }
-
       return response.json();
     },
     onSuccess: () => {
