@@ -811,15 +811,41 @@ export function DocumentManagement({ targetCompanyId, companyName }: DocumentMan
   // Upload document mutation using v2 endpoint
   const uploadMutation = useMutation({
     mutationFn: async (data: DocumentFormData & { file: File }) => {
-      const formData = new FormData();
-      formData.append('document', data.file);
-      formData.append('document_name', data.document_name);
-      formData.append('document_category', data.document_category);
-      formData.append('description', data.description || '');
-      formData.append('is_confidential', data.is_confidential.toString());
+      const file = data.file;
 
-      const response = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/upload`, formData);
-      return response.json();
+      // 1. Ask the app for a short-lived presigned PUT URL (small JSON, crosses the edge fine)
+      const presignRes = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/upload-url`, {
+        filename: file.name,
+        contentType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+      });
+      const presign = (await presignRes.json())?.data;
+      if (!presign?.uploadUrl || !presign?.key) {
+        throw new Error('Could not prepare the upload. Please try again.');
+      }
+
+      // 2. PUT the file straight to R2, bypassing the app edge. Bare fetch: no cookies, no CSRF.
+      //    Content-Type MUST equal the value the server signed (presign.contentType).
+      const putRes = await fetch(presign.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': presign.contentType },
+        body: file,
+      });
+      if (!putRes.ok) {
+        throw new Error(`Upload to storage failed (${putRes.status}). Please try again.`);
+      }
+
+      // 3. Register the uploaded object: the app verifies it, creates the document row, queues analysis.
+      const registerRes = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/register`, {
+        key: presign.key,
+        fileName: presign.originalFilename || file.name,
+        fileType: presign.contentType,
+        document_name: data.document_name,
+        document_category: data.document_category,
+        description: data.description || '',
+        is_confidential: data.is_confidential,
+      });
+      return registerRes.json();
     },
     onSuccess: (data) => {
       toast({
