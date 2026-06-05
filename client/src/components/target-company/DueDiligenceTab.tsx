@@ -701,14 +701,28 @@ export function DueDiligenceTab({ targetCompanyId }: DueDiligenceTabProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   const handleUploadAndLink = async (requirementId: number, file: File, docName: string) => {
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('document_name', docName);
-    formData.append('document_category', 'Due Diligence');
-    formData.append('description', '');
-    formData.append('is_confidential', 'true');
+    // 1. Presigned PUT URL from the app
+    const presignRes = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/upload-url`, {
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      fileSize: file.size,
+    });
+    const presign = (await presignRes.json())?.data;
+    if (!presign?.uploadUrl || !presign?.key) throw new Error('Could not prepare the upload.');
 
-    const uploadRes = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/upload`, formData);
+    // 2. PUT straight to R2, bypassing the app edge. Bare fetch: no cookies, no CSRF.
+    const putRes = await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': presign.contentType }, body: file });
+    if (!putRes.ok) throw new Error(`Upload to storage failed (${putRes.status}).`);
+
+    // 3. Register: app verifies the object, creates the document row, queues analysis.
+    const uploadRes = await apiRequest('POST', `/api/v2/files/company/${targetCompanyId}/register`, {
+      key: presign.key,
+      fileName: presign.originalFilename || file.name,
+      document_name: docName,
+      document_category: 'Due Diligence',
+      description: '',
+      is_confidential: true,
+    });
     const result = await uploadRes.json();
     const docId = result?.data?.document?.id || result?.data?.id || result?.id;
     if (!docId) throw new Error('No document ID returned');
