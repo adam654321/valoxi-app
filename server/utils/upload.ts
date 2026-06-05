@@ -61,12 +61,13 @@ const ALLOWED_EXTENSIONS = new Set([
   'numbers', 'pages', 'key', 'odt', 'ods', 'odp', 'rtf',
 ]);
 
-export function sharedFileFilter(req: any, file: Express.Multer.File, cb: (error: Error | null, acceptFile?: boolean) => void) {
-  const ext = file.originalname?.toLowerCase()?.split('.').pop() || '';
-  const hasValidMime = ALLOWED_MIME_TYPES.has(file.mimetype);
-  const hasValidExt = ALLOWED_EXTENSIONS.has(ext);
+export function isAllowedFile(filename: string, mimetype: string): boolean {
+  const ext = filename?.toLowerCase()?.split('.').pop() || '';
+  return ALLOWED_MIME_TYPES.has(mimetype) && ALLOWED_EXTENSIONS.has(ext);
+}
 
-  if (hasValidMime && hasValidExt) {
+export function sharedFileFilter(req: any, file: Express.Multer.File, cb: (error: Error | null, acceptFile?: boolean) => void) {
+  if (isAllowedFile(file.originalname, file.mimetype)) {
     cb(null, true);
   } else {
     cb(new Error('File rejected: must have both a permitted file type and extension. Allowed: PDF, Office documents, text files, and images.'));

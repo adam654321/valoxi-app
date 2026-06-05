@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import path from 'path';
 
 let s3Client: S3Client | null = null;
@@ -42,6 +43,29 @@ export const fileStorageService = {
       Body: buffer,
     }));
     console.log(`[FILE_STORAGE] Uploaded to R2: ${key}`);
+  },
+
+  async getPresignedPutUrl(key: string, contentType: string, expiresInSeconds = 300): Promise<string> {
+    const client = getClient();
+    const command = new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      ContentType: contentType,
+    });
+    return await getSignedUrl(client, command, { expiresIn: expiresInSeconds });
+  },
+
+  async head(key: string): Promise<{ size: number; contentType: string } | null> {
+    const client = getClient();
+    try {
+      const response = await client.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
+      return {
+        size: response.ContentLength ?? 0,
+        contentType: response.ContentType ?? 'application/octet-stream',
+      };
+    } catch {
+      return null;
+    }
   },
 
   async download(key: string): Promise<Buffer> {
