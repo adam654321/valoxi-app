@@ -82,6 +82,7 @@ export const dealModelAdjustments = pgTable("deal_model_adjustments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// DEPRECATED (#98): upfrontCash, deferredAmount, deferredTerms, earnoutMaximum, earnoutMetric, earnoutPeriodMonths, retentionEscrow on deal_models are vestigial. Seller/earnout now live in deal_model_seller_payments and deal_model_contingent_consideration. Do not drop until the AI pipeline writes to the new tables (later slice).
 export const dealModelFundingLines = pgTable("deal_model_funding_lines", {
   id: serial("id").primaryKey(),
   dealModelId: integer("deal_model_id").references(() => dealModels.id).notNull(),
@@ -96,12 +97,47 @@ export const dealModelFundingLines = pgTable("deal_model_funding_lines", {
   termMonths: integer("term_months"),
   monthlyRepayment: decimal("monthly_repayment"),
   isDebt: boolean("is_debt").default(false),
+  repaymentStructure: varchar("repayment_structure", { length: 50 }).notNull().default('amortizing'),
   isActive: boolean("is_active").default(false),
   notes: text("notes"),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const dealModelSellerPayments = pgTable("deal_model_seller_payments", {
+  id: serial("id").primaryKey(),
+  dealModelId: integer("deal_model_id").references(() => dealModels.id).notNull(),
+  paymentType: varchar("payment_type", { length: 50 }).notNull().default('fixed_schedule'),
+  amount: decimal("amount").default('0'),
+  termMonths: integer("term_months"),
+  interestRate: decimal("interest_rate"),
+  label: varchar("label", { length: 255 }),
+  includeInDscr: boolean("include_in_dscr").notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const dealModelContingentConsideration = pgTable("deal_model_contingent_consideration", {
+  id: serial("id").primaryKey(),
+  dealModelId: integer("deal_model_id").references(() => dealModels.id).notNull(),
+  considerationType: varchar("consideration_type", { length: 50 }).notNull().default('custom'),
+  maximumAmount: decimal("maximum_amount").default('0'),
+  termMonths: integer("term_months"),
+  triggerDescription: text("trigger_description"),
+  includeInDscr: boolean("include_in_dscr").notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DealModelSellerPayment = typeof dealModelSellerPayments.$inferSelect;
+export type InsertDealModelSellerPayment = typeof dealModelSellerPayments.$inferInsert;
+export type DealModelContingentConsideration = typeof dealModelContingentConsideration.$inferSelect;
+export type InsertDealModelContingentConsideration = typeof dealModelContingentConsideration.$inferInsert;
 
 export const dealMetricsSnapshots = pgTable("deal_metrics_snapshots", {
   id: serial("id").primaryKey(),

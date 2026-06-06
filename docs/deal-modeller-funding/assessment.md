@@ -31,9 +31,9 @@ The docx is the pre-review plan. It proposed lifting seller payments and earnout
 Day-one block = funding sources (debt + equity) for the upfront payment. Seller and earnout = deferred consideration the business services over time. DSCR denominator = day-one debt service + seller payments + earnout-at-max. Reconciliation = day-one total + deferred + earnout = offer price.
 
 ## Migration (verify at the migration assess, do not assume)
-- 21 seller + 3 earnout funding-line rows across 22 deal models / 8 user companies (per docx). Read the live isDebt on these at assess.
+- 28 seller + 4 earnout funding-line rows across 29 deal models (live prod counts 2026-06-06; docx's 21/3/22 was stale). Read the live isDebt on these at assess.
 - Seller already isDebt=true: near-neutral IF the new per-type calc reproduces today's PMT monthly figure exactly (a 0% seller deferred currently falls through PMT to principal/term).
-- Earnout default isDebt=false: adding earnout-at-max to the denominator WILL move the DSCR for those deals. Intended, but quantify and tell the 8 owners; not a silent migration.
+- Live isDebt read 2026-06-06: 3 of 4 earnout rows already isDebt=true (in the DSCR), 2 of 28 seller rows isDebt=false (opted out). Migration preserves each row's current membership via a new include_in_dscr flag, so zero saved numbers move.
 - Existing day-one funding lines default to repayment_structure = amortizing: PMT unchanged, no shift.
 
 ## Surfaces to locate at their slice assess (not yet read)

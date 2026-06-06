@@ -45,7 +45,7 @@ Related: assessment.md, removals.md.
 | 1 | Earnout in offer-price headline and DSCR at maximum | RESOLVED 2026-06-06 (Adam): yes, at max, shown, assessed as payable; non-payment is upside. |
 | 2 | PIK / bullet in scope | Deferred, pending Dee. Build 3 modes, leave design open. |
 | 3 | Instalments payment type under seller vs earnout | Keep under seller, flag at build (Jag noted it may suit earnout). |
-| 4 | Migration ratio-neutrality | VERIFY at slice 3 assess. Earnout expected to shift (isDebt=false today). |
+| 4 | Migration ratio-neutrality | RESOLVED 2026-06-06 (Adam): per-row include_in_dscr flag, default true for new rows, migrate existing is_debt verbatim. Zero saved-number shift. New tables carry include_in_dscr. |
 
 ## Sequencing
 Schema, then calc+tests, then migration, then UI, then doc-gen+bug. Each: assess, apply, V-check, authorise. No commits until functionally confirmed on dev. Migration not run until calc+tests pass.
