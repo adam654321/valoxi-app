@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useServerConfig } from '@/hooks/useServerConfig';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -103,6 +104,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const nylasConnectVisible = nylasConnectGmailVisible || nylasConnectOutlookVisible;
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [transactionType, setTransactionType] = useState<string>('share_sale');
+  const [activeStatement, setActiveStatement] = useState<string>('income');
 
   const { data: targetCompany } = useQuery<any>({
     queryKey: ['/api/v2/target-companies', companyId],
@@ -670,13 +672,39 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   </CardContent>
                 </Card>
 
-                <PLSummarySection
-                  financialData={financialsFromExpert ?? financialsRaw}
-                  adjustments={modelDetails?.adjustments || []}
-                  calculations={calculations}
-                  averagingYears={modelDetails?.averagingYears ?? 3}
-                  dataSource={financialsFromExpert ? 'expert' : 'raw'}
-                />
+                <Tabs value={activeStatement} onValueChange={setActiveStatement} className="space-y-4">
+                  <TabsList className="hidden md:inline-flex">
+                    <TabsTrigger value="income">Income Statement</TabsTrigger>
+                    <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
+                  </TabsList>
+                  <div className="md:hidden">
+                    <Select value={activeStatement} onValueChange={setActiveStatement}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="income">Income Statement</SelectItem>
+                        <SelectItem value="balance">Balance Sheet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <TabsContent value="income" className="mt-0">
+                    <PLSummarySection
+                      financialData={financialsFromExpert ?? financialsRaw}
+                      adjustments={modelDetails?.adjustments || []}
+                      calculations={calculations}
+                      averagingYears={modelDetails?.averagingYears ?? 3}
+                      dataSource={financialsFromExpert ? 'expert' : 'raw'}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="balance" className="mt-0">
+                    <div className="text-sm text-muted-foreground py-8 text-center">
+                      Balance Sheet coming soon.
+                    </div>
+                  </TabsContent>
+                </Tabs>
 
                 {selectedModelId && modelDetails && (
                   <AdjustmentsSection
