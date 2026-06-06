@@ -22,6 +22,7 @@ import {
 import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
 import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
+import BalanceSheetSection from '@/components/deal-modeller/BalanceSheetSection';
 import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import FundingSection from '@/components/deal-modeller/FundingSection';
@@ -80,6 +81,7 @@ interface IncomeStatement {
 interface FinancialsData {
   periods: FinancialPeriod[];
   incomeStatements: IncomeStatement[];
+  balanceSheets?: any[];
 }
 
 const STATUS_COLOURS: Record<string, string> = {
@@ -700,9 +702,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   </TabsContent>
 
                   <TabsContent value="balance" className="mt-0">
-                    <div className="text-sm text-muted-foreground py-8 text-center">
-                      Balance Sheet coming soon.
-                    </div>
+                    <BalanceSheetSection financialData={financialsRaw} />
                   </TabsContent>
                 </Tabs>
 
