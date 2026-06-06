@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
 import { portalSubmissionsService } from '../services/portal-submissions.service';
 import { dueDiligenceService } from '../services/due-diligence.service';
 import { fileStorageService } from '../services/file-storage.service';
@@ -9,42 +8,15 @@ import { BadRequestError } from '../utils/errors';
 import { db } from '../db';
 import { ddRequirementStatus } from '@shared/schema/due-diligence';
 import { and, eq } from 'drizzle-orm';
-import { sharedFileFilter, isAllowedFile, sanitizeFilename } from '../utils/upload';
+import { isAllowedFile, sanitizeFilename } from '../utils/upload';
 
 const router = Router();
-
-const portalUpload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: sharedFileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }
-});
 
 router.get('/:token', asyncHandler(async (req: Request, res: Response) => {
   if (req.params.token.includes('/')) return res.status(404).json({ message: 'Not found' });
   const data = await portalSubmissionsService.getPortalData(req.params.token, req.ip, req.get('User-Agent'));
   sendSuccess(res, data);
 }));
-
-router.post('/:token/submit', (req: Request, res: Response) => {
-  portalUpload.single('document')(req, res, async (err) => {
-    let r2Key: string | null = null;
-    try {
-      if (err) {
-        if ((err as any).code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File too large. Max 10MB.' });
-        return res.status(400).json({ error: err.message });
-      }
-      if (!req.file) throw new BadRequestError('No document uploaded');
-      r2Key = fileStorageService.generateKey('portal', req.file.originalname);
-      await fileStorageService.upload(r2Key, req.file.buffer);
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const result = await portalSubmissionsService.submitDocument(req.params.token, req.file, r2Key, req.body, baseUrl, req.ip, req.get('User-Agent'));
-      sendSuccess(res, { success: true, submissionId: result.submissionId, message: 'Document submitted successfully', filename: result.filename });
-    } catch (error) {
-      if (r2Key) await fileStorageService.delete(r2Key);
-      sendError(res, error);
-    }
-  });
-});
 
 router.post('/:token/upload-url', asyncHandler(async (req: Request, res: Response) => {
   const token = await portalSubmissionsService.validateToken(req.params.token);

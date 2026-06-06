@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
-import multer from 'multer';
 import { documentsFilesService } from '../services/documents-files.service';
 import { documentsRepository } from '../repositories/documents.repository';
 import { fileStorageService } from '../services/file-storage.service';
@@ -8,13 +7,11 @@ import { sendSuccess, sendCreated, sendError } from '../utils/response';
 import { UnauthorizedError, BadRequestError } from '../utils/errors';
 import { requirePermission } from '../middleware/auth';
 import { asyncHandler } from '../utils/async-handler';
-import { sanitizeFilename, sharedFileFilter, isAllowedFile } from '../utils/upload';
+import { sanitizeFilename, isAllowedFile } from '../utils/upload';
 
 import { uploadLimiter } from '../middleware/rate-limit';
 
 const router = Router();
-
-const upload = multer({ storage: multer.memoryStorage(), fileFilter: sharedFileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 async function serveFile(
   res: Response,
@@ -61,59 +58,6 @@ router.get('/categories', asyncHandler(async (req: Request, res: Response) => {
   const categories = await documentsFilesService.getDocumentCategories();
   sendSuccess(res, categories);
 }));
-
-router.post('/company/:id/upload', uploadLimiter, requirePermission('canUploadDocuments'), (req: Request, res: Response) => {
-  upload.single('document')(req, res, async (err) => {
-    try {
-      const userId = req.session?.userId;
-      const userCompanyId = req.session?.userCompanyId;
-      if (!userId || !userCompanyId) throw new UnauthorizedError();
-      const targetCompanyId = parseInt(req.params.id);
-      if (isNaN(targetCompanyId)) throw new BadRequestError('Invalid company ID');
-      if (err) {
-        if ((err as any).code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File too large. Max 10MB.' });
-        return res.status(400).json({ error: err.message });
-      }
-      if (!req.file) throw new BadRequestError('No file uploaded');
-      await documentsFilesService.verifyCompanyAccess(targetCompanyId, userCompanyId);
-      const documentCategory = req.body.document_category || 'Company Accounts';
-      const originalFilename = sanitizeFilename(req.file.originalname);
-      const r2Key = fileStorageService.generateKey(`companies/${targetCompanyId}`, originalFilename);
-      await fileStorageService.upload(r2Key, req.file.buffer);
-      const document = await documentsFilesService.createDocument({
-        targetCompanyId,
-        uploadedBy: userId,
-        documentName: req.body.document_name || originalFilename,
-        originalFilename: originalFilename,
-        filePath: r2Key,
-        fileSize: req.file.size,
-        fileType: req.file.mimetype,
-        documentCategory,
-        description: req.body.description || '',
-        isConfidential: req.body.is_confidential !== 'false',
-      });
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const uploadEvent = await documentsFilesService.createFileUploadEvent({
-        documentId: document.id,
-        targetCompanyId,
-        uploadedBy: userId,
-        fileName: originalFilename,
-        fileUrl: `${baseUrl}/api/v2/public/documents/${document.publicToken}/download`,
-      });
-      
-      const { analysisQueue } = await import('../services/analysis-queue.service');
-      analysisQueue.enqueue({
-        eventId: uploadEvent.id,
-        targetCompanyId: parseInt(req.params.id),
-      });
-      
-      const { track } = await import('../services/funnel.service');
-      track(userCompanyId, userId, 'document.uploaded', { documentType: documentCategory, fileSize: req.file.size });
-
-      sendCreated(res, { success: true, document, uploadEventId: uploadEvent.id, message: 'Document uploaded successfully' });
-    } catch (error) { sendError(res, error); }
-  });
-});
 
 router.post('/company/:id/upload-url', uploadLimiter, requirePermission('canUploadDocuments'), asyncHandler(async (req: Request, res: Response) => {
   const userId = req.session?.userId;
