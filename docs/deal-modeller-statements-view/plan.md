@@ -1,6 +1,6 @@
 # Deal Modeller — Three-Statement View (#202): Plan
 
-Status: scoped 2026-06-06. Additive. Balance Sheet now, Cashflow later.
+Status: BUILT ON DEV 2026-06-06. Slices 1, 2, 2b shipped and dev-verified. Additive. Balance Sheet now, Cashflow later. Not yet deployed.
 Related: assessment.md, removals.md.
 
 ## Slices
@@ -32,3 +32,17 @@ Related: assessment.md, removals.md.
 
 ## Sequencing
 Slice 1, V-check, authorise, then Slice 2. One concern per slice, no chaining. Each Replit prompt ends "Stop after V-check and report results."
+
+## Build progress (2026-06-06, dev-verified)
+
+- Slice 1 — tabs shell. P&L (PLSummarySection) relocated into an Income Statement tab, Balance Sheet tab added, md+ tabs / sub-md Select dropdown. No calc change. Commit 3971f86.
+- Slice 2 — BalanceSheetSection.tsx. Reads the raw /financials balanceSheets. Grouped (Fixed Assets / Current Assets / Current Liabilities + computed Net Current Assets / Long-term Liabilities / Equity), stored total_* subtotals, null rows hidden, columns driven off periods that have a balance_sheets row (management periods excluded), horizontal scroll. No Average column. Commit 55f4f75.
+- Slice 2b — undisclosed-items reconciling line. The extracted subtotal is independent of the line items (confirmed in step2-balance-sheet-prompt.ts: total is its own extracted field, not a sum). Where disclosed lines fall short of the reported subtotal, an italic "Undisclosed items" line shows the remainder so the group reconciles to the reported total. Shows only when at least one line is disclosed and the remainder is positive; negative remainder renders a dash. No fabricated data — the remainder is directly derived from the stored subtotal. Commit 2660f9a.
+- TSC held at the 1-error baseline (portal.service.ts:81) throughout.
+
+## Deferred / backlog
+
+- Slice 2c (not built): fixed-asset components ("of which" plant, vehicles, fixtures indented under Tangible Fixed Assets). Invisible on demo company 23 (components null); only affects companies whose accounts itemise them. Hold until a company needs it.
+- Cashflow tab (tab 3): from scratch, derived indirect method from P&L + year-on-year balance-sheet movements. Not extraction. Future.
+- Management-period balance sheets excluded by design (statutory/historic only). Revisit if Dee wants management periods shown.
+- Deploy #202 to prod (pending).
