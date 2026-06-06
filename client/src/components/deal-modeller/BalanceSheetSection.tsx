@@ -170,6 +170,41 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
       );
     }
 
+    if (group.subtotal && subtotalHasValue && visibleItems.length > 0) {
+      const usf = group.subtotal[0];
+      const undisclosedFor = (col: BSColumn): number | null => {
+        const sub = col.bs?.[usf];
+        if (sub == null) return null;
+        const disclosed = visibleItems.reduce(
+          (acc, [f]) => acc + (col.bs?.[f] != null ? toNum(col.bs[f]) : 0),
+          0
+        );
+        return toNum(sub) - disclosed;
+      };
+      const showUndisclosed = columns.some(col => {
+        const r = undisclosedFor(col);
+        return r != null && r > 0.5;
+      });
+      if (showUndisclosed) {
+        bodyRows.push(
+          <TableRow key={`${usf}-undisclosed`}>
+            <TableCell className="text-sm italic text-muted-foreground pl-6">Undisclosed items</TableCell>
+            {columns.map(col => {
+              const r = undisclosedFor(col);
+              let content: JSX.Element | string;
+              if (r == null || r < -0.5) content = <span className="text-muted-foreground">—</span>;
+              else content = formatCurrency(Math.abs(r) <= 0.5 ? 0 : r);
+              return (
+                <TableCell key={col.periodId} className="text-right tabular-nums px-3 py-2 italic text-muted-foreground">
+                  {content}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+        );
+      }
+    }
+
     if (group.subtotal && subtotalHasValue) {
       const [sf, sl] = group.subtotal;
       bodyRows.push(
