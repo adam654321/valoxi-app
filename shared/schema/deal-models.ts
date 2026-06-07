@@ -98,6 +98,7 @@ export const dealModelFundingLines = pgTable("deal_model_funding_lines", {
   monthlyRepayment: decimal("monthly_repayment"),
   isDebt: boolean("is_debt").default(false),
   repaymentStructure: varchar("repayment_structure", { length: 50 }).notNull().default('amortizing'),
+  interestAsEbitdaAdjustment: boolean("interest_as_ebitda_adjustment").notNull().default(false),
   isActive: boolean("is_active").default(false),
   notes: text("notes"),
   sortOrder: integer("sort_order").default(0),

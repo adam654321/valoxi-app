@@ -39,6 +39,10 @@ async function run() {
     ALTER TABLE deal_model_funding_lines
     ADD COLUMN IF NOT EXISTS repayment_structure varchar(50) NOT NULL DEFAULT 'amortizing';
   `);
+  await db.execute(sql`
+    ALTER TABLE deal_model_funding_lines
+    ADD COLUMN IF NOT EXISTS interest_as_ebitda_adjustment boolean NOT NULL DEFAULT false;
+  `);
   console.log('098 funding schema applied');
 }
 run().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

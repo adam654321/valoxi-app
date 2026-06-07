@@ -415,3 +415,59 @@ describe('calculateFullDealModel - seller and earnout in DSCR', () => {
     expect(asSellerRow).toBe(12_000);
   });
 });
+
+describe('calculateFullDealModel - invoice finance interest as EBITDA deduction', () => {
+  const model: DealModelInput = {
+    averagingYears: 1, ebitdaMultiple: 5,
+    plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
+    minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
+    feeLegalDdPercent: 0, feeAccountingDdPercent: 0, feeBrokerPercent: 0,
+    feeLoanArrangementPercent: 0, feeDealMakerPercent: 0,
+  };
+  const ebitda = { '2024': 1_000_000 };
+  const ifLine = (over = {}): FundingLineInput => ({ fundingType: 'receivables_finance', amountUsed: 200_000, interestRate: 10, termMonths: 0, isDebt: true, isActive: true, interestAsEbitdaAdjustment: true, ...over });
+  const termLoan: FundingLineInput = { fundingType: 'new_senior_debt', amountUsed: 500_000, interestRate: 0, termMonths: 50, isDebt: true, isActive: true, repaymentStructure: 'principal_only' };
+
+  it('IF interest is kept out of debt service and surfaced as revolving interest', () => {
+    const r = calculateFullDealModel(ebitda, [], [ifLine()], model, [], []);
+    expect(r.totalAnnualDebtService).toBe(0);
+    expect(r.revolvingInterestAnnual).toBe(20_000);
+    expect(r.paymentCoverRatio).toBeNull();
+    expect(r.paymentCoverRating).toBe('no_debt');
+  });
+
+  it('IF interest reduces the DSCR numerator when other debt exists', () => {
+    const r = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
+    expect(r.totalAnnualDebtService).toBe(120_000);
+    expect(r.revolvingInterestAnnual).toBe(20_000);
+    expect(r.paymentCoverRatio).toBeCloseTo(980_000 / 120_000, 4);
+  });
+
+  it('the same line UNflagged sits in debt service and leaves the numerator full', () => {
+    const r = calculateFullDealModel(ebitda, [], [ifLine({ interestAsEbitdaAdjustment: false }), termLoan], model, [], []);
+    expect(r.totalAnnualDebtService).toBe(140_000);
+    expect(r.revolvingInterestAnnual).toBe(0);
+    expect(r.paymentCoverRatio).toBeCloseTo(1_000_000 / 140_000, 4);
+  });
+
+  it('a normal debt line is unchanged and contributes no revolving interest', () => {
+    const r = calculateFullDealModel(ebitda, [], [termLoan], model, [], []);
+    expect(r.totalAnnualDebtService).toBe(120_000);
+    expect(r.revolvingInterestAnnual).toBe(0);
+  });
+
+  it('flag false equals flag omitted (migration safety)', () => {
+    const a = calculateFullDealModel(ebitda, [], [ifLine({ interestAsEbitdaAdjustment: false })], model, [], []);
+    const b = calculateFullDealModel(ebitda, [], [ifLine({ interestAsEbitdaAdjustment: undefined })], model, [], []);
+    expect(a.totalAnnualDebtService).toBe(b.totalAnnualDebtService);
+    expect(a.revolvingInterestAnnual).toBe(b.revolvingInterestAnnual);
+  });
+
+  it('offer price and valuation EBITDA are untouched by IF interest', () => {
+    const withIf = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
+    const without = calculateFullDealModel(ebitda, [], [termLoan], model, [], []);
+    expect(withIf.offerPrice).toBe(5_000_000);
+    expect(withIf.offerPrice).toBe(without.offerPrice);
+    expect(withIf.averageAdjustedEbitda).toBe(1_000_000);
+  });
+});

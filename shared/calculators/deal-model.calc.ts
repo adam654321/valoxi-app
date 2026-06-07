@@ -16,6 +16,7 @@ export interface FundingLineInput {
   arrangementFeePercent?: string | number | null;
   isDebt?: boolean;
   repaymentStructure?: string | null;
+  interestAsEbitdaAdjustment?: boolean;
   isActive: boolean;
 }
 export interface SellerPaymentInput {
@@ -89,6 +90,7 @@ export interface CalculationResult {
   fundingGap: number;
 
   totalAnnualDebtService: number;
+  revolvingInterestAnnual: number;
   paymentCoverRatio: number | null;
   paymentCoverRating: 'strong' | 'fundable' | 'challenging' | 'critical' | 'unfundable' | 'no_debt';
 }
@@ -243,11 +245,13 @@ export function calculateFundingStack(
   fundingGap: number;
   totalAnnualDebtService: number;
   totalArrangementFees: number;
+  totalRevolvingInterest: number;
 } {
   const results: FundingLineResult[] = [];
   let totalFunded = 0;
   let totalAnnualDebtService = 0;
   let totalArrangementFees = 0;
+  let totalRevolvingInterest = 0;
 
   for (const line of fundingLines) {
     if (!line.isActive) {
@@ -262,7 +266,8 @@ export function calculateFundingStack(
     const used = toNum(line.amountUsed);
     const rate = toNum(line.interestRate);
     const term = line.termMonths ?? 0;
-    const structure = line.repaymentStructure ?? 'amortizing';
+    const isRevolvingIf = line.interestAsEbitdaAdjustment === true;
+    const structure = isRevolvingIf ? 'interest_only' : (line.repaymentStructure ?? 'amortizing');
     const monthlyRepayment = computeMonthlyService(used, rate, term, structure);
 
     const annualRepayment = monthlyRepayment * 12;
@@ -272,14 +277,17 @@ export function calculateFundingStack(
 
     totalFunded += used;
     totalArrangementFees += arrangementFee;
-    if (line.isDebt) {
+    if (isRevolvingIf) {
+      // invoice/revolving finance: interest reduces the DSCR numerator, not a debt-service line
+      totalRevolvingInterest += annualRepayment;
+    } else if (line.isDebt) {
       totalAnnualDebtService += annualRepayment;
     }
   }
 
   const fundingGap = Math.round((totalFundingRequired - totalFunded) * 100) / 100;
 
-  return { fundingLines: results, totalFunded, fundingGap, totalAnnualDebtService, totalArrangementFees };
+  return { fundingLines: results, totalFunded, fundingGap, totalAnnualDebtService, totalArrangementFees, totalRevolvingInterest };
 }
 
 export function calculatePaymentCover(
@@ -349,8 +357,10 @@ export function calculateFullDealModel(
     return sum + monthly * 12;
   }, 0);
   const combinedAnnualDebtService = funding.totalAnnualDebtService + sellerAnnualDebtService + earnoutAnnualDebtService;
+  // Invoice-finance interest reduces the DSCR numerator only. offerPrice/valuation keep the full EBITDA.
+  const dscrNumerator = averageAdjustedEbitda - funding.totalRevolvingInterest;
   const { paymentCoverRatio, paymentCoverRating } = calculatePaymentCover(
-    averageAdjustedEbitda, combinedAnnualDebtService
+    dscrNumerator, combinedAnnualDebtService
   );
 
   return {
@@ -365,6 +375,7 @@ export function calculateFullDealModel(
     totalFunded: funding.totalFunded,
     fundingGap: adjustedFundingGap,
     totalAnnualDebtService: combinedAnnualDebtService,
+    revolvingInterestAnnual: funding.totalRevolvingInterest,
     paymentCoverRatio,
     paymentCoverRating,
   };
