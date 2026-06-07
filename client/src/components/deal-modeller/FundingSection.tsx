@@ -641,7 +641,7 @@ export default function FundingSection({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(FUNDING_TYPE_CONFIG).map(([key, cfg]) => (
+                  {Object.entries(FUNDING_TYPE_CONFIG).filter(([key]) => key !== 'seller_financing' && key !== 'earnout').map(([key, cfg]) => (
                     <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
                   ))}
                 </SelectContent>
