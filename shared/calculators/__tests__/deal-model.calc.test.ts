@@ -471,3 +471,58 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(withIf.averageAdjustedEbitda).toBe(1_000_000);
   });
 });
+
+describe('calculateFullDealModel - seller/earnout funding footprint (migration parity)', () => {
+  const model: DealModelInput = {
+    averagingYears: 1, ebitdaMultiple: 5,
+    plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
+    minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
+    feeLegalDdPercent: 0, feeAccountingDdPercent: 0, feeBrokerPercent: 0,
+    feeLoanArrangementPercent: 2, feeDealMakerPercent: 0,
+  };
+  const ebitda = { '2024': 1_000_000 };
+
+  it('a seller row reproduces the equivalent funding line across funded, gap, loan fee and DSCR', () => {
+    const asLine = calculateFullDealModel(ebitda, [],
+      [{ fundingType: 'seller_financing', amountUsed: 300_000, termMonths: 60, interestRate: 0, isDebt: true, isActive: true }],
+      model, [], []);
+    const asRow = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 300_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }], []);
+    expect(asRow.totalFunded).toBe(asLine.totalFunded);
+    expect(asRow.fundingGap).toBe(asLine.fundingGap);
+    expect(asRow.feeLoanArrangement).toBe(asLine.feeLoanArrangement);
+    expect(asRow.totalFees).toBe(asLine.totalFees);
+    expect(asRow.totalAnnualDebtService).toBe(asLine.totalAnnualDebtService);
+    expect(asRow.paymentCoverRatio).toBe(asLine.paymentCoverRatio);
+  });
+
+  it('an earnout row reproduces the equivalent funding line across funded, gap and loan fee', () => {
+    const asLine = calculateFullDealModel(ebitda, [],
+      [{ fundingType: 'earnout', amountUsed: 200_000, termMonths: 60, interestRate: 0, isDebt: true, isActive: true }],
+      model, [], []);
+    const asRow = calculateFullDealModel(ebitda, [], [], model, [],
+      [{ maximumAmount: 200_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }]);
+    expect(asRow.totalFunded).toBe(asLine.totalFunded);
+    expect(asRow.fundingGap).toBe(asLine.fundingGap);
+    expect(asRow.feeLoanArrangement).toBe(asLine.feeLoanArrangement);
+  });
+
+  it('an inactive seller row adds nothing to funded or fee base', () => {
+    const r = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 300_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: false }], []);
+    expect(r.totalFunded).toBe(0);
+    expect(r.feeLoanArrangement).toBe(0);
+  });
+
+  it('includeInDscr=false seller still counts toward funded and fee base, only out of the denominator (mirrors an isDebt=false funding line)', () => {
+    const asLine = calculateFullDealModel(ebitda, [],
+      [{ fundingType: 'seller_financing', amountUsed: 300_000, termMonths: 60, interestRate: 0, isDebt: false, isActive: true }],
+      model, [], []);
+    const asRow = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 300_000, termMonths: 60, interestRate: 0, includeInDscr: false, isActive: true }], []);
+    expect(asRow.totalFunded).toBe(asLine.totalFunded);
+    expect(asRow.totalAnnualDebtService).toBe(asLine.totalAnnualDebtService);
+    expect(asRow.totalAnnualDebtService).toBe(0);
+    expect(asRow.feeLoanArrangement).toBe(asLine.feeLoanArrangement);
+  });
+});

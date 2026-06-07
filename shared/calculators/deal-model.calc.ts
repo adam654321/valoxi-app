@@ -335,9 +335,19 @@ export function calculateFullDealModel(
 
   const { enterpriseValue, offerPrice } = calculateOfferPrice(averageAdjustedEbitda, model);
 
+  const sellerActiveTotal = sellerPayments
+    .filter(s => s.isActive)
+    .reduce((sum, s) => sum + toNum(s.amount), 0);
+  const earnoutActiveTotal = contingentConsideration
+    .filter(c => c.isActive)
+    .reduce((sum, c) => sum + toNum(c.maximumAmount), 0);
+  // NOTE (#98 backlog): seller + earnout are included in the loan-arrangement-fee base to reproduce
+  // current behaviour exactly for a zero-shift migration. This is wrong (a loan fee is for lending,
+  // not deferred consideration); a separate slice removes them from totalLoanAmount.
   const totalLoanAmount = fundingLines
     .filter(l => l.isActive)
-    .reduce((sum, l) => sum + toNum(l.amountUsed), 0);
+    .reduce((sum, l) => sum + toNum(l.amountUsed), 0)
+    + sellerActiveTotal + earnoutActiveTotal;
 
   const fees = calculateFees(offerPrice, model, totalLoanAmount);
 
@@ -357,6 +367,8 @@ export function calculateFullDealModel(
     return sum + monthly * 12;
   }, 0);
   const combinedAnnualDebtService = funding.totalAnnualDebtService + sellerAnnualDebtService + earnoutAnnualDebtService;
+  const combinedTotalFunded = funding.totalFunded + sellerActiveTotal + earnoutActiveTotal;
+  const combinedFundingGap = Math.round((offerPrice - combinedTotalFunded) * 100) / 100;
   // Invoice-finance interest reduces the DSCR numerator only. offerPrice/valuation keep the full EBITDA.
   const dscrNumerator = averageAdjustedEbitda - funding.totalRevolvingInterest;
   const { paymentCoverRatio, paymentCoverRating } = calculatePaymentCover(
@@ -372,8 +384,8 @@ export function calculateFullDealModel(
     totalFees: adjustedTotalFees,
     totalFundingRequired: adjustedTotalFundingRequired,
     fundingLines: funding.fundingLines,
-    totalFunded: funding.totalFunded,
-    fundingGap: adjustedFundingGap,
+    totalFunded: combinedTotalFunded,
+    fundingGap: combinedFundingGap,
     totalAnnualDebtService: combinedAnnualDebtService,
     revolvingInterestAnnual: funding.totalRevolvingInterest,
     paymentCoverRatio,
