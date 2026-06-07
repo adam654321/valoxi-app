@@ -106,4 +106,40 @@ function buildModelInput(model: any) {
   };
 }
 
-run().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
+async function verify() {
+  const rows: any[] = (await db.execute(
+    `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
+  )).rows ?? [];
+  const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
+  let bad = 0;
+  for (const id of modelIds) {
+    const m: any = await dealModelRepository.getByIdWithDetails(id);
+    if (!m) { console.log(`model ${id}: NOT FOUND`); continue; }
+    const calcEbitda = Number(m.calculatedEbitda ?? 0);
+    const afterFunding: FundingLineInput[] = m.fundingLines
+      .filter((f: any) => f.fundingType !== 'seller_financing' && f.fundingType !== 'earnout')
+      .map(toFundingInput);
+    const afterSeller: SellerPaymentInput[] = (m.sellerPayments ?? []).map((s: any) => ({ amount: s.amount, termMonths: s.termMonths, interestRate: s.interestRate, includeInDscr: s.includeInDscr ?? true, isActive: s.isActive ?? false }));
+    const afterCc: ContingentConsiderationInput[] = (m.contingentConsideration ?? []).map((c: any) => ({ maximumAmount: c.maximumAmount, termMonths: c.termMonths, includeInDscr: c.includeInDscr ?? true, isActive: c.isActive ?? false }));
+    const mi = { ...buildModelInput(m), averagingYears: 1 };
+    const res = calculateFullDealModel({ '1': calcEbitda }, [], afterFunding, mi as any, afterSeller, afterCc);
+    const refPrice = Number(m.totalPurchasePrice ?? 0);
+    const refFunded = Number(m.totalFundingAvailable ?? 0);
+    const refGap = Number(m.equityRequired ?? 0);
+    const near = (a: number, b: number) => Math.abs(a - b) <= 1;
+    const okPrice = near(res.offerPrice, refPrice);
+    const okFunded = near(res.totalFunded, refFunded);
+    const okGap = near(res.fundingGap, refGap);
+    if (okPrice && okFunded && okGap) {
+      console.log(`model ${id}: VERIFIED (price=${res.offerPrice.toFixed(2)}, funded=${res.totalFunded}, gap=${res.fundingGap.toFixed(2)}, seller=${afterSeller.length}, earnout=${afterCc.length})`);
+    } else {
+      bad++;
+      console.log(`model ${id}: MISMATCH price ${res.offerPrice.toFixed(2)} vs ${refPrice} | funded ${res.totalFunded} vs ${refGap} | gap ${res.fundingGap.toFixed(2)} vs ${refGap}`);
+    }
+  }
+  if (bad > 0) { console.error(`VERIFY FAILED: ${bad} model(s) moved.`); process.exit(1); }
+  console.log('All models verified against persisted reference.');
+}
+
+const entry = process.argv.includes('--verify') ? verify : run;
+entry().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

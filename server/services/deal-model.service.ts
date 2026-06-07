@@ -76,7 +76,9 @@ function buildCalcInputs(model: DealModelWithDetails): {
     userOverrideAmount: null,
   }));
 
-  const fundingLines: FundingLineInput[] = model.fundingLines.map((f) => ({
+  const fundingLines: FundingLineInput[] = model.fundingLines
+    .filter((f) => f.fundingType !== 'seller_financing' && f.fundingType !== 'earnout')
+    .map((f) => ({
     fundingType: f.fundingType,
     assetBaseValue: f.assetBaseValue,
     ltvPercent: f.ltvPercent,
