@@ -239,6 +239,42 @@ export class DealModelRepository {
     return db.insert(dealModelContingentConsideration).values(data).returning();
   }
 
+  async createSellerPayment(data: InsertDealModelSellerPayment): Promise<DealModelSellerPayment> {
+    const [record] = await db.insert(dealModelSellerPayments).values(data).returning();
+    return record;
+  }
+
+  async updateSellerPayment(id: number, data: Partial<InsertDealModelSellerPayment>): Promise<DealModelSellerPayment> {
+    const [record] = await db
+      .update(dealModelSellerPayments)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(dealModelSellerPayments.id, id))
+      .returning();
+    return record;
+  }
+
+  async deleteSellerPayment(id: number): Promise<void> {
+    await db.delete(dealModelSellerPayments).where(eq(dealModelSellerPayments.id, id));
+  }
+
+  async createContingentConsideration(data: InsertDealModelContingentConsideration): Promise<DealModelContingentConsideration> {
+    const [record] = await db.insert(dealModelContingentConsideration).values(data).returning();
+    return record;
+  }
+
+  async updateContingentConsideration(id: number, data: Partial<InsertDealModelContingentConsideration>): Promise<DealModelContingentConsideration> {
+    const [record] = await db
+      .update(dealModelContingentConsideration)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(dealModelContingentConsideration.id, id))
+      .returning();
+    return record;
+  }
+
+  async deleteContingentConsideration(id: number): Promise<void> {
+    await db.delete(dealModelContingentConsideration).where(eq(dealModelContingentConsideration.id, id));
+  }
+
   async deleteFundingLine(id: number): Promise<void> {
     await db.delete(dealModelFundingLines).where(eq(dealModelFundingLines.id, id));
   }

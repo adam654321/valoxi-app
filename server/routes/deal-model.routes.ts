@@ -118,6 +118,48 @@ router.delete('/:id/funding-lines/:lineId', requirePermission('canCreateOffers')
   sendSuccess(res, result);
 }));
 
+router.post('/:id/seller-payments', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const result = await dealModelService.addSellerPayment(parseInt(req.params.id), userCompanyId, req.body);
+  sendCreated(res, result);
+}));
+
+router.put('/:id/seller-payments/:paymentId', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const result = await dealModelService.updateSellerPayment(parseInt(req.params.id), parseInt(req.params.paymentId), userCompanyId, req.body);
+  sendSuccess(res, result);
+}));
+
+router.delete('/:id/seller-payments/:paymentId', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const result = await dealModelService.deleteSellerPayment(parseInt(req.params.id), parseInt(req.params.paymentId), userCompanyId);
+  sendSuccess(res, result);
+}));
+
+router.post('/:id/contingent-consideration', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const result = await dealModelService.addContingentConsideration(parseInt(req.params.id), userCompanyId, req.body);
+  sendCreated(res, result);
+}));
+
+router.put('/:id/contingent-consideration/:ccId', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const result = await dealModelService.updateContingentConsideration(parseInt(req.params.id), parseInt(req.params.ccId), userCompanyId, req.body);
+  sendSuccess(res, result);
+}));
+
+router.delete('/:id/contingent-consideration/:ccId', requirePermission('canCreateOffers'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+  const result = await dealModelService.deleteContingentConsideration(parseInt(req.params.id), parseInt(req.params.ccId), userCompanyId);
+  sendSuccess(res, result);
+}));
+
 router.post('/:id/lock', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();

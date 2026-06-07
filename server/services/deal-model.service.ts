@@ -19,7 +19,7 @@ import {
 } from '../../shared/calculators/deal-model.calc';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { captureMetricsSnapshot } from './metrics-snapshot.service';
-import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
+import type { DealModel, DealModelAdjustment, DealModelFundingLine, DealModelSellerPayment, DealModelContingentConsideration, InsertDealModelSellerPayment, InsertDealModelContingentConsideration } from '@shared/schema';
 
 async function verifyOwnership(targetCompanyId: number, userCompanyId: number): Promise<void> {
   const [company] = await db
@@ -326,6 +326,80 @@ export class DealModelService {
 
     const calculations = await this.recalculate(fullModel);
 
+    return { ...fullModel, calculations };
+  }
+
+  async addSellerPayment(modelId: number, userCompanyId: number, data: Omit<DealModelSellerPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    const model = await dealModelRepository.getById(modelId);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (model.isLocked) throw new BadRequestError('Cannot add seller payments to a locked deal model');
+    await dealModelRepository.createSellerPayment({ ...data, dealModelId: modelId });
+    const fullModel = await dealModelRepository.getByIdWithDetails(modelId);
+    if (!fullModel) throw new NotFoundError('Deal model not found');
+    const calculations = await this.recalculate(fullModel);
+    return { ...fullModel, calculations };
+  }
+
+  async updateSellerPayment(modelId: number, paymentId: number, userCompanyId: number, data: Partial<DealModelSellerPayment>): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    const model = await dealModelRepository.getById(modelId);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (model.isLocked) throw new BadRequestError('Cannot update seller payments on a locked deal model');
+    const { id: _id, createdAt: _ca, updatedAt: _ua, ...safeUpdates } = data as any;
+    await dealModelRepository.updateSellerPayment(paymentId, safeUpdates);
+    const fullModel = await dealModelRepository.getByIdWithDetails(modelId);
+    if (!fullModel) throw new NotFoundError('Deal model not found');
+    const calculations = await this.recalculate(fullModel);
+    return { ...fullModel, calculations };
+  }
+
+  async deleteSellerPayment(modelId: number, paymentId: number, userCompanyId: number): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    const model = await dealModelRepository.getById(modelId);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (model.isLocked) throw new BadRequestError('Cannot delete seller payments from a locked deal model');
+    await dealModelRepository.deleteSellerPayment(paymentId);
+    const fullModel = await dealModelRepository.getByIdWithDetails(modelId);
+    if (!fullModel) throw new NotFoundError('Deal model not found');
+    const calculations = await this.recalculate(fullModel);
+    return { ...fullModel, calculations };
+  }
+
+  async addContingentConsideration(modelId: number, userCompanyId: number, data: Omit<DealModelContingentConsideration, 'id' | 'createdAt' | 'updatedAt'>): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    const model = await dealModelRepository.getById(modelId);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (model.isLocked) throw new BadRequestError('Cannot add earnout to a locked deal model');
+    await dealModelRepository.createContingentConsideration({ ...data, dealModelId: modelId });
+    const fullModel = await dealModelRepository.getByIdWithDetails(modelId);
+    if (!fullModel) throw new NotFoundError('Deal model not found');
+    const calculations = await this.recalculate(fullModel);
+    return { ...fullModel, calculations };
+  }
+
+  async updateContingentConsideration(modelId: number, ccId: number, userCompanyId: number, data: Partial<DealModelContingentConsideration>): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    const model = await dealModelRepository.getById(modelId);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (model.isLocked) throw new BadRequestError('Cannot update earnout on a locked deal model');
+    const { id: _id, createdAt: _ca, updatedAt: _ua, ...safeUpdates } = data as any;
+    await dealModelRepository.updateContingentConsideration(ccId, safeUpdates);
+    const fullModel = await dealModelRepository.getByIdWithDetails(modelId);
+    if (!fullModel) throw new NotFoundError('Deal model not found');
+    const calculations = await this.recalculate(fullModel);
+    return { ...fullModel, calculations };
+  }
+
+  async deleteContingentConsideration(modelId: number, ccId: number, userCompanyId: number): Promise<DealModelWithDetails & { calculations: CalculationResult }> {
+    const model = await dealModelRepository.getById(modelId);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (model.isLocked) throw new BadRequestError('Cannot delete earnout from a locked deal model');
+    await dealModelRepository.deleteContingentConsideration(ccId);
+    const fullModel = await dealModelRepository.getByIdWithDetails(modelId);
+    if (!fullModel) throw new NotFoundError('Deal model not found');
+    const calculations = await this.recalculate(fullModel);
     return { ...fullModel, calculations };
   }
 
