@@ -158,15 +158,15 @@ describe('calculateFees', () => {
     feeDealMakerPercent: 0.5,
   };
 
-  it('calculates percentage-based fees off the offer price', () => {
+  it('calculates percentage fees off offer price, loan fee off loan amount', () => {
     const offerPrice = 1_000_000;
-    const result = calculateFees(offerPrice, baseModel);
+    const result = calculateFees(offerPrice, baseModel, 800_000);
     expect(result.feeLegalDd).toBe(20_000);
     expect(result.feeAccountingDd).toBe(15_000);
-    expect(result.feeLoanArrangement).toBe(10_000);
+    expect(result.feeLoanArrangement).toBe(8_000); // 1% of loan amount, not offer price (949397d)
     expect(result.feeDealMaker).toBe(5_000);
-    expect(result.totalFees).toBe(50_000);
-    expect(result.totalFundingRequired).toBe(1_050_000);
+    expect(result.totalFees).toBe(48_000);
+    expect(result.totalFundingRequired).toBe(1_048_000);
   });
 
   it('handles fixed fee type', () => {
@@ -177,9 +177,9 @@ describe('calculateFees', () => {
 
   it('includes custom fees based on percent', () => {
     const model = { ...baseModel, customFees: [{ label: 'Advisory', percent: 0.5 }] };
-    const result = calculateFees(1_000_000, model);
+    const result = calculateFees(1_000_000, model, 1_000_000);
     expect(result.customFeeAmounts).toEqual([{ label: 'Advisory', amount: 5_000 }]);
-    expect(result.totalFees).toBe(85_000);
+    expect(result.totalFees).toBe(55_000);
   });
 });
 
