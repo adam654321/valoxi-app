@@ -10,6 +10,8 @@ import {
   type AdjustmentInput,
   type DealModelInput,
   type FundingLineInput,
+  type SellerPaymentInput,
+  type ContingentConsiderationInput,
 } from '../deal-model.calc';
 
 describe('toNum', () => {
@@ -351,5 +353,65 @@ describe('calculateFundingStack - repayment structures', () => {
     const po = calculateFundingStack([line({ amountUsed: 60_000, termMonths: 60, interestRate: 0, repaymentStructure: 'principal_only' })], 0);
     const am = calculateFundingStack([line({ amountUsed: 60_000, termMonths: 60, interestRate: 0, repaymentStructure: 'amortizing' })], 0);
     expect(po.fundingLines[0].monthlyRepayment).toBe(am.fundingLines[0].monthlyRepayment);
+  });
+});
+
+describe('calculateFullDealModel - seller and earnout in DSCR', () => {
+  const model: DealModelInput = {
+    averagingYears: 1, ebitdaMultiple: 5,
+    plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
+    minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
+    feeLegalDdPercent: 0, feeAccountingDdPercent: 0, feeBrokerPercent: 0,
+    feeLoanArrangementPercent: 0, feeDealMakerPercent: 0,
+  };
+  const ebitda = { '2024': 1_000_000 };
+
+  it('seller payment in DSCR adds straight-line service to the denominator', () => {
+    const r = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 60_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }], []);
+    expect(r.totalAnnualDebtService).toBe(12_000);
+  });
+
+  it('seller payment excluded when includeInDscr is false', () => {
+    const r = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 60_000, termMonths: 60, interestRate: 0, includeInDscr: false, isActive: true }], []);
+    expect(r.totalAnnualDebtService).toBe(0);
+  });
+
+  it('inactive seller payment contributes nothing', () => {
+    const r = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 60_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: false }], []);
+    expect(r.totalAnnualDebtService).toBe(0);
+  });
+
+  it('earnout serviced at its maximum amount', () => {
+    const r = calculateFullDealModel(ebitda, [], [], model, [],
+      [{ maximumAmount: 120_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }]);
+    expect(r.totalAnnualDebtService).toBe(24_000);
+  });
+
+  it('earnout excluded when includeInDscr is false', () => {
+    const r = calculateFullDealModel(ebitda, [], [], model, [],
+      [{ maximumAmount: 120_000, termMonths: 60, interestRate: 0, includeInDscr: false, isActive: true }]);
+    expect(r.totalAnnualDebtService).toBe(0);
+  });
+
+  it('combines funding, seller and earnout in the denominator', () => {
+    const funding: FundingLineInput[] = [{ fundingType: 'term_loan', amountUsed: 100_000, interestRate: 0, termMonths: 50, isDebt: true, isActive: true, repaymentStructure: 'principal_only' }];
+    const r = calculateFullDealModel(ebitda, [], funding, model,
+      [{ amount: 60_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }],
+      [{ maximumAmount: 120_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }]);
+    expect(r.totalAnnualDebtService).toBe(60_000);
+  });
+
+  it('migration equivalence: a seller row equals the equivalent funding line in the denominator', () => {
+    const asFundingLine = calculateFundingStack(
+      [{ fundingType: 'seller_financing', amountUsed: 60_000, termMonths: 60, interestRate: 0, isDebt: true, isActive: true }], 0
+    ).totalAnnualDebtService;
+    const asSellerRow = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 60_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }], []
+    ).totalAnnualDebtService;
+    expect(asSellerRow).toBe(asFundingLine);
+    expect(asSellerRow).toBe(12_000);
   });
 });

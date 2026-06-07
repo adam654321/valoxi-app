@@ -18,6 +18,21 @@ export interface FundingLineInput {
   repaymentStructure?: string | null;
   isActive: boolean;
 }
+export interface SellerPaymentInput {
+  amount?: string | number | null;
+  termMonths?: number | null;
+  interestRate?: string | number | null;
+  repaymentStructure?: string | null;
+  includeInDscr?: boolean;
+  isActive: boolean;
+}
+export interface ContingentConsiderationInput {
+  maximumAmount?: string | number | null;
+  termMonths?: number | null;
+  interestRate?: string | number | null;
+  includeInDscr?: boolean;
+  isActive: boolean;
+}
 
 export interface DealModelInput {
   averagingYears: number;
@@ -204,6 +219,20 @@ function pmt(principal: number, monthlyRate: number, numPayments: number): numbe
   const factor = Math.pow(1 + monthlyRate, numPayments);
   return (principal * monthlyRate * factor) / (factor - 1);
 }
+function computeMonthlyService(used: number, rate: number, term: number, structure: string): number {
+  if (structure === 'interest_only') {
+    return rate > 0 ? used * rate / 100 / 12 : 0;
+  } else if (structure === 'principal_only') {
+    return term > 0 ? used / term : 0;
+  } else {
+    // amortizing (default) - preserves prior behaviour exactly
+    if (term <= 1) {
+      return rate > 0 ? used * rate / 100 / 12 : 0;
+    } else {
+      return pmt(used, rate / 100 / 12, term);
+    }
+  }
+}
 
 export function calculateFundingStack(
   fundingLines: FundingLineInput[],
@@ -234,19 +263,7 @@ export function calculateFundingStack(
     const rate = toNum(line.interestRate);
     const term = line.termMonths ?? 0;
     const structure = line.repaymentStructure ?? 'amortizing';
-    let monthlyRepayment: number;
-    if (structure === 'interest_only') {
-      monthlyRepayment = rate > 0 ? used * rate / 100 / 12 : 0;
-    } else if (structure === 'principal_only') {
-      monthlyRepayment = term > 0 ? used / term : 0;
-    } else {
-      // amortizing (default) - preserves prior behaviour exactly
-      if (term <= 1) {
-        monthlyRepayment = rate > 0 ? used * rate / 100 / 12 : 0;
-      } else {
-        monthlyRepayment = pmt(used, rate / 100 / 12, term);
-      }
-    }
+    const monthlyRepayment = computeMonthlyService(used, rate, term, structure);
 
     const annualRepayment = monthlyRepayment * 12;
     const arrangementFee = used * toNum(line.arrangementFeePercent) / 100;
@@ -298,7 +315,9 @@ export function calculateFullDealModel(
   reportedEbitdaByYear: Record<string, number>,
   adjustments: AdjustmentInput[],
   fundingLines: FundingLineInput[],
-  model: DealModelInput
+  model: DealModelInput,
+  sellerPayments: SellerPaymentInput[] = [],
+  contingentConsideration: ContingentConsiderationInput[] = []
 ): CalculationResult {
   const { adjustedEbitdaByYear, averageAdjustedEbitda } = calculateAdjustedEbitda(
     reportedEbitdaByYear,
@@ -319,10 +338,19 @@ export function calculateFullDealModel(
   const adjustedTotalFees = fees.totalFees + funding.totalArrangementFees;
   const adjustedTotalFundingRequired = offerPrice + adjustedTotalFees;
   const adjustedFundingGap = Math.round((offerPrice - funding.totalFunded) * 100) / 100;
-
+  const sellerAnnualDebtService = sellerPayments.reduce((sum, s) => {
+    if (!s.isActive || s.includeInDscr === false) return sum;
+    const monthly = computeMonthlyService(toNum(s.amount), toNum(s.interestRate), s.termMonths ?? 0, s.repaymentStructure ?? 'amortizing');
+    return sum + monthly * 12;
+  }, 0);
+  const earnoutAnnualDebtService = contingentConsideration.reduce((sum, c) => {
+    if (!c.isActive || c.includeInDscr === false) return sum;
+    const monthly = computeMonthlyService(toNum(c.maximumAmount), toNum(c.interestRate), c.termMonths ?? 0, 'amortizing');
+    return sum + monthly * 12;
+  }, 0);
+  const combinedAnnualDebtService = funding.totalAnnualDebtService + sellerAnnualDebtService + earnoutAnnualDebtService;
   const { paymentCoverRatio, paymentCoverRating } = calculatePaymentCover(
-    averageAdjustedEbitda,
-    funding.totalAnnualDebtService
+    averageAdjustedEbitda, combinedAnnualDebtService
   );
 
   return {
@@ -336,7 +364,7 @@ export function calculateFullDealModel(
     fundingLines: funding.fundingLines,
     totalFunded: funding.totalFunded,
     fundingGap: adjustedFundingGap,
-    totalAnnualDebtService: funding.totalAnnualDebtService,
+    totalAnnualDebtService: combinedAnnualDebtService,
     paymentCoverRatio,
     paymentCoverRating,
   };
