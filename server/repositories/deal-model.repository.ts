@@ -4,17 +4,23 @@ import {
   dealModels,
   dealModelAdjustments,
   dealModelFundingLines,
+  dealModelSellerPayments,
+  dealModelContingentConsideration,
   type DealModel,
   type InsertDealModel,
   type DealModelAdjustment,
   type InsertDealModelAdjustment,
   type DealModelFundingLine,
   type InsertDealModelFundingLine,
+  type DealModelSellerPayment,
+  type DealModelContingentConsideration,
 } from '@shared/schema';
 
 export interface DealModelWithDetails extends DealModel {
   adjustments: DealModelAdjustment[];
   fundingLines: DealModelFundingLine[];
+  sellerPayments: DealModelSellerPayment[];
+  contingentConsideration: DealModelContingentConsideration[];
 }
 
 export class DealModelRepository {
@@ -35,12 +41,14 @@ export class DealModelRepository {
     const model = await this.getById(id);
     if (!model) return undefined;
 
-    const [adjustments, fundingLines] = await Promise.all([
+    const [adjustments, fundingLines, sellerPayments, contingentConsideration] = await Promise.all([
       this.getAdjustmentsByModelId(id),
       this.getFundingLinesByModelId(id),
+      this.getSellerPaymentsByModelId(id),
+      this.getContingentConsiderationByModelId(id),
     ]);
 
-    return { ...model, adjustments, fundingLines };
+    return { ...model, adjustments, fundingLines, sellerPayments, contingentConsideration };
   }
 
   async listByCompany(targetCompanyId: number): Promise<DealModel[]> {
@@ -203,6 +211,20 @@ export class DealModelRepository {
       .from(dealModelFundingLines)
       .where(eq(dealModelFundingLines.dealModelId, dealModelId))
       .orderBy(dealModelFundingLines.sortOrder);
+  }
+  async getSellerPaymentsByModelId(dealModelId: number): Promise<DealModelSellerPayment[]> {
+    return db
+      .select()
+      .from(dealModelSellerPayments)
+      .where(eq(dealModelSellerPayments.dealModelId, dealModelId))
+      .orderBy(dealModelSellerPayments.sortOrder);
+  }
+  async getContingentConsiderationByModelId(dealModelId: number): Promise<DealModelContingentConsideration[]> {
+    return db
+      .select()
+      .from(dealModelContingentConsideration)
+      .where(eq(dealModelContingentConsideration.dealModelId, dealModelId))
+      .orderBy(dealModelContingentConsideration.sortOrder);
   }
 
   async deleteFundingLine(id: number): Promise<void> {

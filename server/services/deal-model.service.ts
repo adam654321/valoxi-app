@@ -12,6 +12,8 @@ import {
   toNum,
   type AdjustmentInput,
   type FundingLineInput,
+  type SellerPaymentInput,
+  type ContingentConsiderationInput,
   type DealModelInput,
   type CalculationResult,
 } from '../../shared/calculators/deal-model.calc';
@@ -62,6 +64,8 @@ async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Recor
 function buildCalcInputs(model: DealModelWithDetails): {
   adjustments: AdjustmentInput[];
   fundingLines: FundingLineInput[];
+  sellerPayments: SellerPaymentInput[];
+  contingentConsideration: ContingentConsiderationInput[];
   modelInput: DealModelInput;
 } {
   const adjustments: AdjustmentInput[] = model.adjustments.map((a) => ({
@@ -84,6 +88,19 @@ function buildCalcInputs(model: DealModelWithDetails): {
     repaymentStructure: f.repaymentStructure ?? 'amortizing',
     interestAsEbitdaAdjustment: f.interestAsEbitdaAdjustment ?? false,
     isActive: f.isActive ?? false,
+  }));
+  const sellerPayments: SellerPaymentInput[] = model.sellerPayments.map((s) => ({
+    amount: s.amount,
+    termMonths: s.termMonths,
+    interestRate: s.interestRate,
+    includeInDscr: s.includeInDscr ?? true,
+    isActive: s.isActive ?? false,
+  }));
+  const contingentConsideration: ContingentConsiderationInput[] = model.contingentConsideration.map((c) => ({
+    maximumAmount: c.maximumAmount,
+    termMonths: c.termMonths,
+    includeInDscr: c.includeInDscr ?? true,
+    isActive: c.isActive ?? false,
   }));
 
   const modelInput: DealModelInput = {
@@ -109,7 +126,7 @@ function buildCalcInputs(model: DealModelWithDetails): {
     customFees: null,
   };
 
-  return { adjustments, fundingLines, modelInput };
+  return { adjustments, fundingLines, sellerPayments, contingentConsideration, modelInput };
 }
 
 export class DealModelService {
@@ -418,16 +435,16 @@ export class DealModelService {
     await verifyOwnership(model.targetCompanyId, userCompanyId);
 
     const reportedEbitda = await fetchReportedEbitdaByYear(model.targetCompanyId);
-    const { adjustments, fundingLines, modelInput } = buildCalcInputs(model);
+    const { adjustments, fundingLines, sellerPayments, contingentConsideration, modelInput } = buildCalcInputs(model);
 
-    return calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput);
+    return calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput, sellerPayments, contingentConsideration);
   }
 
   private async recalculate(model: DealModelWithDetails): Promise<CalculationResult> {
     const reportedEbitda = await fetchReportedEbitdaByYear(model.targetCompanyId);
-    const { adjustments, fundingLines, modelInput } = buildCalcInputs(model);
+    const { adjustments, fundingLines, sellerPayments, contingentConsideration, modelInput } = buildCalcInputs(model);
 
-    const result = calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput);
+    const result = calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput, sellerPayments, contingentConsideration);
 
     await dealModelRepository.update(model.id, {
       calculatedEbitda: String(result.averageAdjustedEbitda),
