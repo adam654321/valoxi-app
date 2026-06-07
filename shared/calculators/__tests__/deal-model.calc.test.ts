@@ -310,3 +310,46 @@ describe('calculateFullDealModel', () => {
     expect(result.paymentCoverRating).toBe('no_debt');
   });
 });
+
+describe('calculateFundingStack - repayment structures', () => {
+  const line = (over: Partial<FundingLineInput>): FundingLineInput => ({
+    fundingType: 'term_loan',
+    amountUsed: 100_000,
+    interestRate: 10,
+    termMonths: 60,
+    isDebt: true,
+    isActive: true,
+    ...over,
+  });
+
+  it('interest_only services interest only, ignores principal', () => {
+    const r = calculateFundingStack([line({ repaymentStructure: 'interest_only' })], 0);
+    expect(r.fundingLines[0].monthlyRepayment).toBeCloseTo(833.333, 2);
+    expect(r.fundingLines[0].annualRepayment).toBeCloseTo(10_000, 2);
+    expect(r.totalAnnualDebtService).toBeCloseTo(10_000, 2);
+  });
+
+  it('principal_only repays straight-line principal, ignores interest', () => {
+    const r = calculateFundingStack([line({ amountUsed: 60_000, termMonths: 60, interestRate: 8, repaymentStructure: 'principal_only' })], 0);
+    expect(r.fundingLines[0].monthlyRepayment).toBe(1_000);
+    expect(r.fundingLines[0].annualRepayment).toBe(12_000);
+  });
+
+  it('amortizing default equals explicit amortizing', () => {
+    const def = calculateFundingStack([line({})], 0);
+    const exp = calculateFundingStack([line({ repaymentStructure: 'amortizing' })], 0);
+    expect(def.fundingLines[0].monthlyRepayment).toBe(exp.fundingLines[0].monthlyRepayment);
+  });
+
+  it('amortizing amortises above straight-line principal when rate > 0', () => {
+    const r = calculateFundingStack([line({ amountUsed: 120_000, termMonths: 60, interestRate: 6, repaymentStructure: 'amortizing' })], 0);
+    expect(r.fundingLines[0].monthlyRepayment).toBeGreaterThan(2_000);
+    expect(r.fundingLines[0].monthlyRepayment).toBeLessThan(2_400);
+  });
+
+  it('principal_only equals zero-rate amortizing for term > 1 (migration equivalence)', () => {
+    const po = calculateFundingStack([line({ amountUsed: 60_000, termMonths: 60, interestRate: 0, repaymentStructure: 'principal_only' })], 0);
+    const am = calculateFundingStack([line({ amountUsed: 60_000, termMonths: 60, interestRate: 0, repaymentStructure: 'amortizing' })], 0);
+    expect(po.fundingLines[0].monthlyRepayment).toBe(am.fundingLines[0].monthlyRepayment);
+  });
+});

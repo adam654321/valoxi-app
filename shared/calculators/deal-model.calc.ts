@@ -15,6 +15,7 @@ export interface FundingLineInput {
   termMonths?: number | null;
   arrangementFeePercent?: string | number | null;
   isDebt?: boolean;
+  repaymentStructure?: string | null;
   isActive: boolean;
 }
 
@@ -232,13 +233,19 @@ export function calculateFundingStack(
     const used = toNum(line.amountUsed);
     const rate = toNum(line.interestRate);
     const term = line.termMonths ?? 0;
-
+    const structure = line.repaymentStructure ?? 'amortizing';
     let monthlyRepayment: number;
-
-    if (term <= 1) {
+    if (structure === 'interest_only') {
       monthlyRepayment = rate > 0 ? used * rate / 100 / 12 : 0;
+    } else if (structure === 'principal_only') {
+      monthlyRepayment = term > 0 ? used / term : 0;
     } else {
-      monthlyRepayment = pmt(used, rate / 100 / 12, term);
+      // amortizing (default) - preserves prior behaviour exactly
+      if (term <= 1) {
+        monthlyRepayment = rate > 0 ? used * rate / 100 / 12 : 0;
+      } else {
+        monthlyRepayment = pmt(used, rate / 100 / 12, term);
+      }
     }
 
     const annualRepayment = monthlyRepayment * 12;

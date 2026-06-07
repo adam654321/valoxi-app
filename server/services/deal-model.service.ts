@@ -81,6 +81,7 @@ function buildCalcInputs(model: DealModelWithDetails): {
     termMonths: f.termMonths,
     arrangementFeePercent: f.arrangementFeePercent ?? null,
     isDebt: f.isDebt ?? false,
+    repaymentStructure: f.repaymentStructure ?? 'amortizing',
     isActive: f.isActive ?? false,
   }));
 
