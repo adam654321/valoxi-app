@@ -14,6 +14,8 @@ import {
   type InsertDealModelFundingLine,
   type DealModelSellerPayment,
   type DealModelContingentConsideration,
+  type InsertDealModelSellerPayment,
+  type InsertDealModelContingentConsideration,
 } from '@shared/schema';
 
 export interface DealModelWithDetails extends DealModel {
@@ -225,6 +227,16 @@ export class DealModelRepository {
       .from(dealModelContingentConsideration)
       .where(eq(dealModelContingentConsideration.dealModelId, dealModelId))
       .orderBy(dealModelContingentConsideration.sortOrder);
+  }
+
+  async createSellerPayments(data: InsertDealModelSellerPayment[]): Promise<DealModelSellerPayment[]> {
+    if (data.length === 0) return [];
+    return db.insert(dealModelSellerPayments).values(data).returning();
+  }
+
+  async createContingentConsiderations(data: InsertDealModelContingentConsideration[]): Promise<DealModelContingentConsideration[]> {
+    if (data.length === 0) return [];
+    return db.insert(dealModelContingentConsideration).values(data).returning();
   }
 
   async deleteFundingLine(id: number): Promise<void> {
