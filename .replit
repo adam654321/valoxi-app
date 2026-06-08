@@ -92,5 +92,5 @@ NYLAS_CONNECT_OUTLOOK_VISIBLE = "false"
 defaultBucketID = "replit-objstore-8c9b222f-19d6-4a20-806e-46d09c1d9424"
 
 [postMerge]
-path = ""
-timeoutMs = 0
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
