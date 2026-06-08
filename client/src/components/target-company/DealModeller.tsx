@@ -19,7 +19,7 @@ import {
   type DealModelInput,
   type CalculationResult,
 } from '@shared/calculators/deal-model.calc';
-import type { DealModel, DealModelAdjustment, DealModelFundingLine } from '@shared/schema';
+import type { DealModel, DealModelAdjustment, DealModelFundingLine, DealModelSellerPayment, DealModelContingentConsideration } from '@shared/schema';
 import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import BalanceSheetSection from '@/components/deal-modeller/BalanceSheetSection';
@@ -60,6 +60,8 @@ interface DealModellerProps {
 interface DealModelWithDetails extends DealModel {
   adjustments: DealModelAdjustment[];
   fundingLines: DealModelFundingLine[];
+  sellerPayments: DealModelSellerPayment[];
+  contingentConsideration: DealModelContingentConsideration[];
   calculations?: CalculationResult;
 }
 
@@ -742,7 +744,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   <FundingSection
                     modelId={selectedModelId}
                     fundingLines={modelDetails.fundingLines || []}
-                    sellerPayments={(modelDetails as any).sellerPayments || []}
+                    sellerPayments={modelDetails.sellerPayments || []}
                     calculations={calculations}
                     totalFundingRequired={calculations?.offerPrice ?? 0}
                     cashFromBusiness={netCashFromBusiness}
