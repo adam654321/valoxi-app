@@ -759,6 +759,9 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                 <PaymentTermsPanel
                   calculations={calculations}
                   fundingLines={modelDetails?.fundingLines || []}
+                  sellerPayments={modelDetails?.sellerPayments || []}
+                  contingentConsideration={modelDetails?.contingentConsideration || []}
+                  cashFromBusiness={netCashFromBusiness}
                   transactionType={transactionType}
                 />
 
