@@ -1138,11 +1138,15 @@ export default function FundingSection({
                   <Input
                     type="number"
                     min="0"
-                    value={newTermMonths}
+                    value={newType === 'receivables_finance' ? 0 : newTermMonths}
                     onChange={e => setNewTermMonths(e.target.value)}
+                    disabled={newType === 'receivables_finance'}
                     className="text-right"
                     placeholder="0"
                   />
+                  {newType === 'receivables_finance' && (
+                    <p className="text-[11px] text-muted-foreground">Revolving facility (no fixed term)</p>
+                  )}
                 </div>
               </div>
             )}
@@ -1165,7 +1169,11 @@ export default function FundingSection({
                 }
                 if (newIsDebt) {
                   if (newInterestRate) body.interestRate = newInterestRate;
-                  if (newTermMonths) body.termMonths = parseInt(newTermMonths) || 0;
+                  if (newType === 'receivables_finance') {
+                    body.termMonths = 0;
+                  } else if (newTermMonths) {
+                    body.termMonths = parseInt(newTermMonths) || 0;
+                  }
                 }
                 addMutation.mutate(body);
               }}
