@@ -164,7 +164,9 @@ export class DealModelService {
 
     await verifyOwnership(model.targetCompanyId, userCompanyId);
 
-    const calculations = await this.recalculate(model);
+    const calculations = model.isLocked
+      ? await this.computeFor(model)
+      : await this.recalculate(model);
 
     return { ...model, calculations };
   }
@@ -513,6 +515,12 @@ export class DealModelService {
     const reportedEbitda = await fetchReportedEbitdaByYear(model.targetCompanyId);
     const { adjustments, fundingLines, sellerPayments, contingentConsideration, modelInput } = buildCalcInputs(model);
 
+    return calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput, sellerPayments, contingentConsideration);
+  }
+
+  private async computeFor(model: DealModelWithDetails): Promise<CalculationResult> {
+    const reportedEbitda = await fetchReportedEbitdaByYear(model.targetCompanyId);
+    const { adjustments, fundingLines, sellerPayments, contingentConsideration, modelInput } = buildCalcInputs(model);
     return calculateFullDealModel(reportedEbitda, adjustments, fundingLines, modelInput, sellerPayments, contingentConsideration);
   }
 
