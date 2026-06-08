@@ -104,3 +104,15 @@ Then: 4b-iv earnout block, 4b-v three reconciling subtotals, 4c PaymentTermsPane
 
 Eyeballs owed: seller block with real data (model 11/23); 4b-ii alignment on a live screen.
 Action log: hold the whole #98 entry until the build lands, then log as v72.x or v73 (Adam to set).
+
+## Session note addendum (2026-06-07, end of session 2)
+
+4b-iii COMPLETE on dev: seller financing is addable, editable, deletable, and moves the DSCR by its true annual service.
+- 4b-iii-a: read-only seller block + client type fix (DealModelWithDetails now declares sellerPayments + contingentConsideration; as-any cast on the prop removed).
+- 4b-iii-b: interactive SellerPaymentCard (label/amount/term/interest/include_in_dscr/active/delete, debounced save) + Add Seller Payment dialog, against /seller-payments endpoints. payment_type not surfaced (deferred to bullet/PIK).
+- 4b-iii-c: BUG FIXED - the client-side calculations call in DealModeller.tsx line 279 was four-arg, so the live on-screen DSCR ignored seller/earnout. Now passes modelDetails.sellerPayments + contingentConsideration. Verified live: adding a £250k/60mo/0% seller payment to model 51 (company 23) raised annual debt service by £50k and moved the DSCR. Also removed the "Also known as Payment Cover Ratio" subtitle from ViabilitySection.
+- Client double-count check: the client fundingLines mapper (DealModeller.tsx line 242) does NOT filter seller_financing/earnout, but dormant funding-line rows are isActive=false (skipped by calculateFundingStack) and hidden from the day-one UI by 4b-ii, so there is no live double-count. The client-mapper filter is belt-and-braces, folded into the dormant-row deletion cleanup slice (deleting the rows makes it moot).
+
+Resume = 4b-iv (earnout block): mirror SellerPaymentCard for contingent consideration against /contingent-consideration endpoints, earnout-at-max framing, maximumAmount field. Then 4b-v (three reconciling subtotals), 4c (PaymentTermsPanel re-point + fix the stale "add a Seller Financing funding line in Section 4" hint - that dropdown option is gone), slice 5 (doc-gen + locked-model bug), fee-base fix, prod cutover.
+
+Eyeballs owed: 4b-ii alignment on a live multi-debt-line screen (model 23 confirmed by script, not eyeballed); seller block with data was confirmed live via the DSCR-move test.
