@@ -742,6 +742,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   <FundingSection
                     modelId={selectedModelId}
                     fundingLines={modelDetails.fundingLines || []}
+                    sellerPayments={(modelDetails as any).sellerPayments || []}
                     calculations={calculations}
                     totalFundingRequired={calculations?.offerPrice ?? 0}
                     cashFromBusiness={netCashFromBusiness}

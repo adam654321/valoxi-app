@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { formatCurrency } from '@/lib/format-utils';
 import { toNum, type CalculationResult, type FundingLineInput } from '@shared/calculators/deal-model.calc';
-import type { DealModelFundingLine } from '@shared/schema';
+import type { DealModelFundingLine, DealModelSellerPayment } from '@shared/schema';
 import {
   CreditCard,
   ChevronDown,
@@ -35,6 +35,7 @@ import {
 interface FundingSectionProps {
   modelId: number;
   fundingLines: DealModelFundingLine[];
+  sellerPayments: DealModelSellerPayment[];
   calculations: CalculationResult | null;
   totalFundingRequired: number;
   cashFromBusiness: number;
@@ -465,6 +466,7 @@ function FundingLineCard({
 export default function FundingSection({
   modelId,
   fundingLines,
+  sellerPayments,
   calculations,
   totalFundingRequired,
   cashFromBusiness,
@@ -634,6 +636,31 @@ export default function FundingSection({
             </div>
           )}
         </div>
+
+        {sellerPayments.length > 0 && (
+          <div className="space-y-4 mt-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Seller Financing (Deferred)</h4>
+            </div>
+            <div className="space-y-3">
+              {[...sellerPayments].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id).map(sp => (
+                <div key={sp.id} className={`border rounded-lg px-4 py-3 flex items-center gap-3 ${sp.isActive ? '' : 'opacity-50'}`}>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm font-medium truncate">{sp.label || 'Seller Deferred'}</span>
+                    <Badge variant="outline" className="text-xs shrink-0">{sp.termMonths ? `${sp.termMonths} mo` : 'No term'}</Badge>
+                    {!sp.includeInDscr && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-50 text-blue-700 border-blue-200">Excluded from DSCR</Badge>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-base font-semibold">{formatCurrency(toNum(sp.amount))}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
 
       <Dialog open={addOpen} onOpenChange={v => { if (!v) resetAddDialog(); else setAddOpen(true); }}>
