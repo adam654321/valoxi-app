@@ -790,6 +790,8 @@ export default function FundingSection({
   const [newIsDebt, setNewIsDebt] = useState(false);
   const [newInterestRate, setNewInterestRate] = useState('');
   const [newTermMonths, setNewTermMonths] = useState('');
+  const [newAssetBaseValue, setNewAssetBaseValue] = useState('');
+  const [newLtvPercent, setNewLtvPercent] = useState('');
 
   useEffect(() => {
     setNewIsDebt(getDefaultIsDebt(newType));
@@ -803,6 +805,8 @@ export default function FundingSection({
     setNewIsDebt(false);
     setNewInterestRate('');
     setNewTermMonths('');
+    setNewAssetBaseValue('');
+    setNewLtvPercent('');
   }, []);
 
   const addMutation = useMutation({
@@ -1067,9 +1071,40 @@ export default function FundingSection({
               </p>
             </div>
 
+            {ASSET_BACKED_TYPES.includes(newType) && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Asset Base Value</Label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                    <Input
+                      type="number"
+                      value={newAssetBaseValue}
+                      onChange={e => setNewAssetBaseValue(e.target.value)}
+                      className="pl-7 text-right"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">LTV %</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="100"
+                    value={newLtvPercent}
+                    onChange={e => setNewLtvPercent(e.target.value)}
+                    className="text-right"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label className="text-sm">
-                {!newIsDebt ? 'Amount to Introduce' : 'Initial Amount'}
+                {!newIsDebt ? 'Amount to Introduce' : ASSET_BACKED_TYPES.includes(newType) ? 'Amount to Draw' : 'Initial Amount'}
               </Label>
               <div className="relative">
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
@@ -1124,6 +1159,10 @@ export default function FundingSection({
                   isActive: true,
                   sortOrder: sortedLines.length,
                 };
+                if (ASSET_BACKED_TYPES.includes(newType)) {
+                  if (newAssetBaseValue) body.assetBaseValue = parseFloat(newAssetBaseValue) || 0;
+                  if (newLtvPercent) body.ltvPercent = parseFloat(newLtvPercent) || 0;
+                }
                 if (newIsDebt) {
                   if (newInterestRate) body.interestRate = newInterestRate;
                   if (newTermMonths) body.termMonths = parseInt(newTermMonths) || 0;
