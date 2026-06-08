@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { formatCurrency } from '@/lib/format-utils';
 import { toNum, type CalculationResult, type FundingLineInput } from '@shared/calculators/deal-model.calc';
-import type { DealModelFundingLine, DealModelSellerPayment } from '@shared/schema';
+import type { DealModelFundingLine, DealModelSellerPayment, DealModelContingentConsideration } from '@shared/schema';
 import {
   CreditCard,
   ChevronDown,
@@ -36,6 +36,7 @@ interface FundingSectionProps {
   modelId: number;
   fundingLines: DealModelFundingLine[];
   sellerPayments: DealModelSellerPayment[];
+  contingentConsideration: DealModelContingentConsideration[];
   calculations: CalculationResult | null;
   totalFundingRequired: number;
   cashFromBusiness: number;
@@ -621,10 +622,160 @@ function SellerPaymentCard({
   );
 }
 
+function ContingentConsiderationCard({
+  cc, modelId, isLocked, onDataChange,
+}: {
+  cc: DealModelContingentConsideration;
+  modelId: number;
+  isLocked: boolean;
+  onDataChange: () => void;
+}) {
+  const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const [maximumAmount, setMaximumAmount] = useState(toNum(cc.maximumAmount));
+  const [termMonths, setTermMonths] = useState(cc.termMonths ?? 0);
+  const [includeInDscr, setIncludeInDscr] = useState(cc.includeInDscr ?? true);
+  const [isActive, setIsActive] = useState(cc.isActive ?? true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Record<string, any> | null>(null);
+  const isEditingRef = useRef(false);
+  const prevRef = useRef(cc.updatedAt);
+  useEffect(() => {
+    if (cc.updatedAt !== prevRef.current) {
+      prevRef.current = cc.updatedAt;
+      if (!isEditingRef.current) {
+        setMaximumAmount(toNum(cc.maximumAmount));
+        setTermMonths(cc.termMonths ?? 0);
+        setIncludeInDscr(cc.includeInDscr ?? true);
+        setIsActive(cc.isActive ?? true);
+      }
+    }
+  }, [cc]);
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Record<string, any>) => {
+      const res = await apiRequest('PUT', `/api/v2/deal-models/${modelId}/contingent-consideration/${cc.id}`, updates);
+      return res.json();
+    },
+    onSuccess: () => {
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 1500);
+      if (!isEditingRef.current) onDataChange();
+    },
+    onError: (e: Error) => { setSaveStatus('idle'); toast({ title: 'Save failed', description: e.message, variant: 'destructive' }); },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('DELETE', `/api/v2/deal-models/${modelId}/contingent-consideration/${cc.id}`);
+      return res.json();
+    },
+    onSuccess: () => { setDeleteOpen(false); onDataChange(); toast({ title: 'Earnout removed' }); },
+    onError: (e: Error) => { toast({ title: 'Delete failed', description: e.message, variant: 'destructive' }); },
+  });
+  const debounceSave = useCallback((updates: Record<string, any>) => {
+    pendingRef.current = { ...(pendingRef.current || {}), ...updates };
+    setSaveStatus('saving');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (pendingRef.current) { updateMutation.mutate(pendingRef.current); pendingRef.current = null; }
+    }, 600);
+  }, [updateMutation]);
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  const handleFocus = useCallback(() => { isEditingRef.current = true; }, []);
+  const handleBlur = useCallback(() => { isEditingRef.current = false; setTimeout(() => { if (!isEditingRef.current) onDataChange(); }, 100); }, [onDataChange]);
+  const monthly = isActive && termMonths > 0 ? maximumAmount / termMonths : 0;
+  return (
+    <>
+      <div className={`border rounded-lg transition-opacity ${isActive ? '' : 'opacity-50'}`}>
+        <Collapsible open={expanded} onOpenChange={setExpanded}>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Switch checked={isActive} onCheckedChange={(c) => { setIsActive(c); if (!isLocked) updateMutation.mutate({ isActive: c }); }} disabled={isLocked} />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm font-medium truncate">{cc.triggerDescription || 'Earnout'}</span>
+              <Badge variant="outline" className="text-xs shrink-0">{termMonths > 0 ? `${termMonths} mo` : 'No term'}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 bg-amber-50 text-amber-700 border-amber-200">At max</Badge>
+              {!includeInDscr && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-50 text-blue-700 border-blue-200">Excluded from DSCR</Badge>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-base font-semibold">{formatCurrency(maximumAmount)}</p>
+              {isActive && monthly > 0 && <p className="text-xs text-muted-foreground">{formatCurrency(monthly)}/mo</p>}
+            </div>
+            {saveStatus !== 'idle' && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                {saveStatus === 'saving' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3 text-green-600" />}
+              </span>
+            )}
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 pt-1 border-t">
+              <div className="flex items-center gap-4 mt-3 mb-4 py-2 px-3 bg-muted/50 rounded-md">
+                <Label className="text-sm font-medium flex-1">Include in DSCR</Label>
+                <Switch checked={includeInDscr} onCheckedChange={(c) => { setIncludeInDscr(c); if (!isLocked) updateMutation.mutate({ includeInDscr: c }); }} disabled={isLocked} />
+                <p className="text-[11px] text-muted-foreground">{includeInDscr ? 'Counts toward debt service' : 'Excluded from cover ratio'}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Maximum Amount</Label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                    <Input type="number" value={maximumAmount || ''} onFocus={handleFocus} onBlur={handleBlur}
+                      onChange={e => { const v = parseFloat(e.target.value) || 0; setMaximumAmount(v); if (!isLocked) debounceSave({ maximumAmount: String(v) }); }}
+                      disabled={isLocked} className="pl-7 text-right" placeholder="0" />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Serviced at maximum as though payable</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Term (months)</Label>
+                  <Input type="number" min="0" value={termMonths || ''} onFocus={handleFocus} onBlur={handleBlur}
+                    onChange={e => { const v = parseInt(e.target.value) || 0; setTermMonths(v); if (!isLocked) debounceSave({ termMonths: v }); }}
+                    disabled={isLocked} className="text-right" placeholder="0" />
+                </div>
+                {isActive && monthly > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Monthly (at max)</Label>
+                    <p className="text-base font-medium py-2">{formatCurrency(monthly)}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteOpen(true)} disabled={isLocked}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Remove
+                </Button>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Remove Earnout</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Remove "{cc.triggerDescription || 'Earnout'}"? This cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export default function FundingSection({
   modelId,
   fundingLines,
   sellerPayments,
+  contingentConsideration,
   calculations,
   totalFundingRequired,
   cashFromBusiness,
@@ -687,6 +838,21 @@ export default function FundingSection({
     },
     onSuccess: () => { resetSellerAdd(); onDataChange(); toast({ title: 'Seller payment added' }); },
     onError: (e: Error) => { toast({ title: 'Could not add seller payment', description: e.message, variant: 'destructive' }); },
+  });
+  const [ccAddOpen, setCcAddOpen] = useState(false);
+  const [ccNewDesc, setCcNewDesc] = useState('');
+  const [ccNewAmount, setCcNewAmount] = useState('');
+  const [ccNewTerm, setCcNewTerm] = useState('');
+  const resetCcAdd = useCallback(() => {
+    setCcAddOpen(false); setCcNewDesc(''); setCcNewAmount(''); setCcNewTerm('');
+  }, []);
+  const ccAddMutation = useMutation({
+    mutationFn: async (body: Record<string, any>) => {
+      const res = await apiRequest('POST', `/api/v2/deal-models/${modelId}/contingent-consideration`, body);
+      return res.json();
+    },
+    onSuccess: () => { resetCcAdd(); onDataChange(); toast({ title: 'Earnout added' }); },
+    onError: (e: Error) => { toast({ title: 'Could not add earnout', description: e.message, variant: 'destructive' }); },
   });
   const dayOneLines = useMemo(() =>
     sortedLines.filter(l => !DEFERRED_FUNDING_TYPES.includes(l.fundingType)),
@@ -826,6 +992,28 @@ export default function FundingSection({
               <div className="space-y-3">
                 {[...sellerPayments].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id).map(sp => (
                   <SellerPaymentCard key={sp.id} payment={sp} modelId={modelId} isLocked={isLocked} onDataChange={onDataChange} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(contingentConsideration.length > 0 || !isLocked) && (
+          <div className="space-y-4 mt-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Earnout / Contingent Consideration</h4>
+              {!isLocked && (
+                <Button variant="outline" size="sm" onClick={() => setCcAddOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Earnout
+                </Button>
+              )}
+            </div>
+            {contingentConsideration.length === 0 ? (
+              <div className="text-center py-6 text-sm text-muted-foreground">No earnout. Add a contingent payment to model it at maximum.</div>
+            ) : (
+              <div className="space-y-3">
+                {[...contingentConsideration].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id).map(cc => (
+                  <ContingentConsiderationCard key={cc.id} cc={cc} modelId={modelId} isLocked={isLocked} onDataChange={onDataChange} />
                 ))}
               </div>
             )}
@@ -982,6 +1170,43 @@ export default function FundingSection({
               sellerAddMutation.mutate(body);
             }} disabled={sellerAddMutation.isPending}>
               {sellerAddMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={ccAddOpen} onOpenChange={v => { if (!v) resetCcAdd(); else setCcAddOpen(true); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Earnout</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm">Description / trigger (optional)</Label>
+              <Input value={ccNewDesc} onChange={e => setCcNewDesc(e.target.value)} placeholder="Earnout" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Maximum Amount</Label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                <Input type="number" value={ccNewAmount} onChange={e => setCcNewAmount(e.target.value)} className="pl-7 text-right" placeholder="0" />
+              </div>
+              <p className="text-[11px] text-muted-foreground">Modelled at maximum as though payable</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Term (months)</Label>
+              <Input type="number" min="0" value={ccNewTerm} onChange={e => setCcNewTerm(e.target.value)} className="text-right" placeholder="0" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetCcAdd}>Cancel</Button>
+            <Button onClick={() => {
+              const body: Record<string, any> = {
+                triggerDescription: ccNewDesc || null, maximumAmount: ccNewAmount || '0',
+                termMonths: ccNewTerm ? parseInt(ccNewTerm) || 0 : null,
+                includeInDscr: true, isActive: true, sortOrder: contingentConsideration.length,
+              };
+              ccAddMutation.mutate(body);
+            }} disabled={ccAddMutation.isPending}>
+              {ccAddMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}Add
             </Button>
           </DialogFooter>
         </DialogContent>
