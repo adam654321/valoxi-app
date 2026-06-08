@@ -49,3 +49,36 @@ Related: assessment.md, removals.md.
 
 ## Sequencing
 Schema, then calc+tests, then migration, then UI, then doc-gen+bug. Each: assess, apply, V-check, authorise. No commits until functionally confirmed on dev. Migration not run until calc+tests pass.
+
+## Build progress (dev, 2026-06-07)
+
+Calculator, schema, migration and backend CRUD COMPLETE and proven on dev. UI part-built. Not deployed.
+
+- Slice 1 (schema): two new tables + repayment_structure + interest_as_ebitda_adjustment columns. Direct ALTER via scripts/098-create-funding-schema.ts. Done.
+- Slice 2a: three repayment modes (amortizing/interest_only/principal_only) on funding lines. Done.
+- Slice 2b: seller + earnout-at-max into the DSCR denominator via includeInDscr. Done.
+- Slice 2c: invoice-finance interest as an EBITDA deduction (DSCR numerator only; offer price/valuation keep full EBITDA), gated by interest_as_ebitda_adjustment. Done.
+- Slice 2d: seller + earnout reproduce the full funding-line footprint (totalFunded, fundingGap, loan-fee base) for zero-shift migration. Done. Calc suite 50/50.
+- Slice 3a: repo getByIdWithDetails + buildCalcInputs read and pass the two new tables. Done.
+- Slice 3b: pure migration mappers + branch tests (8/8) + repo bulk-insert helpers. Done.
+- Slice 3c: atomic migration. 11 seller rows (0 earnout) moved into deal_model_seller_payments on dev, is_debt -> include_in_dscr verbatim; funding mapper now excludes seller_financing/earnout. Parity proven both-ways on all 11 models; --verify clean on 10, model 11 flagged a PRE-EXISTING stale persisted price (minus_corp_tax_due NULL, unrelated to migration). Old funding-line rows left DORMANT for later cleanup.
+- Slice 4a: single-row CRUD (repo + service + routes) for both new tables, mirroring funding-line CRUD (lock guard + ownership + recalculate). Routes under canCreateOffers. Done.
+- Slice 4b-i: removed seller_financing/earnout from the funding add dropdown. Done.
+- Slice 4b-ii: fixed per-line calc-result mis-attribution (calcResults zipped positionally against the now-shorter server calc array; added DEFERRED_FUNDING_TYPES, render + zip both use dayOneLines). Code done; FUNCTIONAL EYEBALL on model 11 (4 day-one cards, correct per-line monthlies) still OWED by Adam.
+
+### Remaining on #98
+- 4b-iii: seller block (collapsible, add/edit/delete vs /seller-payments).
+- 4b-iv: earnout block (collapsible, vs /contingent-consideration, earnout-at-max framing).
+- 4b-v: three reconciling subtotals (day-one / deferred / earnout) = offer price.
+- 4c: PaymentTermsPanel re-pointed to the new tables.
+- Slice 5: doc-gen re-point (offer letter / heads of terms read seller/earnout from new tables, earnout shown) + locked-model read-overwrite bug.
+- Fee-base fix (separate, end of session intent): exclude seller + earnout from totalLoanAmount (loan-arrangement-fee base). Will lower the loan fee on deals with a % loan fee + seller/earnout. Deliberate, surfaced.
+- Coordinated prod cutover: run scripts/098-create-funding-schema.ts on prod, run scripts/098-migrate-seller-earnout.ts --commit on prod, deploy code, then --verify on prod (expect possible pre-existing stale-snapshot flags to triage, not block).
+
+### Backlog spun off
+- Model 11 (and possibly others) persisted total_purchase_price stale vs current inputs; deal models do not auto-recompute on input edits. Investigate separately.
+- payment_type (fixed_schedule/instalments/bullet) is descriptive only today; wiring it to servicing is owed when bullet lands (with PIK, pending Dee).
+- Dormant deal_model_funding_lines seller/earnout rows: delete in a cleanup slice once prod is stable.
+
+### Dev state to resume from
+Migrated seller data lives in the new tables and feeds the calc; the funding mapper excludes the old types; backend CRUD is complete; the day-one funding list is filtered and correctly aligned. There is no seller/earnout editing UI yet, so seller/earnout currently have no front-end surface (the dropdown no longer offers them and the dormant rows are hidden). TSC baseline: 1 (portal.service.ts:81).
