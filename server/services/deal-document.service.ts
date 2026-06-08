@@ -2,7 +2,7 @@ import { db } from '../db';
 import { BadRequestError } from '../utils/errors';
 import { dealDocuments, dealDocumentResponses, dealDocumentTemplates, currentOffers } from '@shared/schema/deal-documents';
 import { documents } from '@shared/schema/documents';
-import { dealModels, dealModelAdjustments, dealModelFundingLines } from '@shared/schema/deal-models';
+import { dealModels, dealModelAdjustments, dealModelFundingLines, dealModelSellerPayments, dealModelContingentConsideration } from '@shared/schema/deal-models';
 import { financialPeriods, incomeStatements } from '@shared/schema/financials';
 import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
@@ -781,6 +781,12 @@ export class DealDocumentService {
     const fundingLines = await db.select().from(dealModelFundingLines)
       .where(eq(dealModelFundingLines.dealModelId, dealModelId));
 
+    const sellerPaymentRows = await db.select().from(dealModelSellerPayments)
+      .where(eq(dealModelSellerPayments.dealModelId, dealModelId));
+
+    const contingentConsiderationRows = await db.select().from(dealModelContingentConsideration)
+      .where(eq(dealModelContingentConsideration.dealModelId, dealModelId));
+
     const adjustments = await db.select().from(dealModelAdjustments)
       .where(eq(dealModelAdjustments.dealModelId, dealModelId));
 
@@ -869,28 +875,32 @@ export class DealDocumentService {
     const corpTaxDue = Number(model.minusCorpTaxDue) || 0;
     const workingCapitalAdj = Number(model.minusWorkingCapitalAdj) || 0;
 
-    const sellerFinanceLines = fundingLines.filter(
-      fl => fl.fundingType === 'seller_financing' && fl.isActive
-    );
-    const deferredAmount = sellerFinanceLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
-    const deferredTermMonths = sellerFinanceLines.length > 0 ? (sellerFinanceLines[0].termMonths || 0) : 0;
-    const deferredNotes = sellerFinanceLines.length > 0 ? (sellerFinanceLines[0].notes || '') : '';
-    const deferredTerms = deferredNotes
-      || (deferredTermMonths > 0 ? `Payable over ${deferredTermMonths} months post-completion` : '');
-    const deferredInstalmentAmount = deferredAmount > 0 && deferredTermMonths > 0
-      ? Math.round((deferredAmount / deferredTermMonths) * 100) / 100
+    const activeSellerPayments = sellerPaymentRows.filter(s => s.isActive);
+    const deferredAmount = activeSellerPayments.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
+    const singleSeller = activeSellerPayments.length === 1 ? activeSellerPayments[0] : null;
+    const deferredTermMonths = singleSeller ? (singleSeller.termMonths || 0) : 0;
+    const deferredTerms = deferredTermMonths > 0
+      ? `Payable over ${deferredTermMonths} months post-completion`
+      : '';
+    const monthlyInstalment = (principal: number, ratePct: number, months: number): number => {
+      if (principal <= 0 || months <= 0) return 0;
+      const r = ratePct / 100 / 12;
+      if (r === 0) return principal / months;
+      const f = Math.pow(1 + r, months);
+      return (principal * r * f) / (f - 1);
+    };
+    const deferredInstalmentAmount = singleSeller && deferredTermMonths > 0
+      ? Math.round(monthlyInstalment(Number(singleSeller.amount) || 0, Number(singleSeller.interestRate) || 0, deferredTermMonths) * 100) / 100
       : 0;
     const deferredInstalment = deferredInstalmentAmount > 0
       ? `${fmt(deferredInstalmentAmount)} per month over ${deferredTermMonths} months`
       : '';
 
-    const earnoutLines = fundingLines.filter(
-      fl => fl.fundingType === 'earnout' && fl.isActive
-    );
-    const earnoutMaximum = earnoutLines.reduce((sum, fl) => sum + (Number(fl.amountUsed) || 0), 0);
-    const earnoutTermMonths = earnoutLines.length > 0 ? (earnoutLines[0].termMonths || 0) : 0;
-    const earnoutNotes = earnoutLines.length > 0 ? (earnoutLines[0].notes || '') : '';
-    const earnoutMetric = earnoutNotes || (earnoutLines.length > 0 ? (earnoutLines[0].label || '') : '');
+    const activeEarnouts = contingentConsiderationRows.filter(c => c.isActive);
+    const earnoutMaximum = activeEarnouts.reduce((sum, c) => sum + (Number(c.maximumAmount) || 0), 0);
+    const singleEarnout = activeEarnouts.length === 1 ? activeEarnouts[0] : null;
+    const earnoutTermMonths = singleEarnout ? (singleEarnout.termMonths || 0) : 0;
+    const earnoutMetric = singleEarnout ? (singleEarnout.triggerDescription || '') : '';
 
     const dayOnePayment = offerPrice - deferredAmount - earnoutMaximum;
     const transactionType = (model as any).transactionType || 'share_sale';
