@@ -309,7 +309,6 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                   {rating.label}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mb-2">Also known as Payment Cover Ratio</p>
 
               <div className="flex items-baseline gap-2 mb-3">
                 <span className={`text-3xl font-bold ${rating.color}`}>

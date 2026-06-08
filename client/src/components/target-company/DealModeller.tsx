@@ -276,7 +276,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       workingCapitalMonthlyAmount: toNum((modelDetails as any).workingCapitalMonthlyAmount),
     };
 
-    return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput);
+    return calculateFullDealModel(reportedEbitdaByYear, adjustments, fundingLines, modelInput, modelDetails.sellerPayments || [], modelDetails.contingentConsideration || []);
   }, [modelDetails, reportedEbitdaByYear]);
 
   const netCashFromBusiness = useMemo(() => {
