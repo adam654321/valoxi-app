@@ -56,6 +56,10 @@ const FUNDING_TYPE_CONFIG: Record<string, { label: string; icon: typeof CreditCa
 };
 
 const ASSET_BACKED_TYPES = ['receivables_finance', 'asset_finance', 'property_finance'];
+// Seller financing and earnout are managed in their own blocks and fed to the calc as separate
+// inputs (server excludes them from calculations.fundingLines). They must be filtered out of the
+// day-one funding list on BOTH the render and the positional calc-result zip, or the zip misaligns.
+const DEFERRED_FUNDING_TYPES = ['seller_financing', 'earnout'];
 
 const DEBT_DEFAULT_TYPES = ['receivables_finance', 'asset_finance', 'property_finance', 'new_senior_debt', 'mezzanine', 'seller_financing', 'cashflow_loan'];
 
@@ -509,6 +513,10 @@ export default function FundingSection({
     [...fundingLines].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id),
     [fundingLines]
   );
+  const dayOneLines = useMemo(() =>
+    sortedLines.filter(l => !DEFERRED_FUNDING_TYPES.includes(l.fundingType)),
+    [sortedLines]
+  );
 
   const totalFunded = calculations?.totalFunded ?? 0;
   const adjustedTotal = Math.max(0, totalFundingRequired - cashFromBusiness);
@@ -531,14 +539,14 @@ export default function FundingSection({
   const calcResults = useMemo(() => {
     if (!calculations) return {};
     const map: Record<number, { availableAmount: number; monthlyRepayment: number; annualRepayment: number }> = {};
-    sortedLines.forEach((line, idx) => {
+    dayOneLines.forEach((line, idx) => {
       const cr = calculations.fundingLines[idx];
       if (cr) {
         map[line.id] = { availableAmount: cr.availableAmount, monthlyRepayment: cr.monthlyRepayment, annualRepayment: cr.annualRepayment };
       }
     });
     return map;
-  }, [calculations, sortedLines]);
+  }, [calculations, dayOneLines]);
 
   return (
     <Card>
@@ -607,13 +615,13 @@ export default function FundingSection({
             )}
           </div>
 
-          {sortedLines.length === 0 ? (
+          {dayOneLines.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
               No funding sources yet. Add one to start building the funding stack.
             </div>
           ) : (
             <div className="space-y-3">
-              {sortedLines.map(line => (
+              {dayOneLines.map(line => (
                 <FundingLineCard
                   key={line.id}
                   line={line}
