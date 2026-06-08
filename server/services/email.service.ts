@@ -198,9 +198,9 @@ export class EmailApiService {
     const planLabel = planLabels[planKey] || planKey;
 
     const planDescriptions: Record<string, string> = {
-      CORE: '5 target companies &middot; Deal Modeller &middot; AI Screening',
-      PROFESSIONAL: '20 target companies &middot; Full Expert Analysis &middot; Data Room &middot; Team Seats',
-      EXPERT: '100 target companies &middot; All features &middot; Priority support',
+      CORE: '3 target companies &middot; Deal Modeller &middot; AI Screening',
+      PROFESSIONAL: '15 target companies &middot; Full Expert Analysis &middot; Data Room &middot; Team Seats',
+      EXPERT: '50 target companies &middot; All features &middot; Priority support',
     };
     const planDesc = planDescriptions[planKey] || '';
 
