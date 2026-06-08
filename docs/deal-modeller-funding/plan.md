@@ -82,3 +82,25 @@ Calculator, schema, migration and backend CRUD COMPLETE and proven on dev. UI pa
 
 ### Dev state to resume from
 Migrated seller data lives in the new tables and feeds the calc; the funding mapper excludes the old types; backend CRUD is complete; the day-one funding list is filtered and correctly aligned. There is no seller/earnout editing UI yet, so seller/earnout currently have no front-end surface (the dropdown no longer offers them and the dormant rows are hidden). TSC baseline: 1 (portal.service.ts:81).
+
+## Session note (2026-06-07, end)
+
+Stopped after 4b-iii-a + client type fix. Resume at 4b-iii-b.
+
+Done since the last progress block:
+- 4b-i: seller_financing/earnout removed from the funding add dropdown.
+- 4b-ii: per-line calc-result mis-attribution fixed (DEFERRED_FUNDING_TYPES, dayOneLines used for render + calc-zip). Proven aligned on model 23 (script). Live-screen eyeball with seller data still owed.
+- 4b-iii-a: sellerPayments threaded through DealModeller -> FundingSection; read-only "Seller Financing (Deferred)" block renders when sellerPayments.length > 0. Screenshot confirmed 4b-i/4b-ii live on a no-seller deal; block-with-data not yet eyeballed.
+- Client DealModelWithDetails (local interface in DealModeller.tsx lines 60-64) now declares sellerPayments + contingentConsideration; the as-any cast on the sellerPayments prop removed. Other pre-existing as-any casts (transactionType, minusCorpTaxDue, workingCapital*) left as-is - separate typing tidy-up later.
+
+Resume = 4b-iii-b (NEXT, assess already done):
+- Build a lean SellerPaymentCard (NOT a clone of the 330-line FundingLineCard). Fields: label, amount, term_months, interest_rate, include_in_dscr toggle, is_active toggle, delete. NO asset-base/LTV, NO debt/equity classification. Reuse FundingLineCard's debounced-save + focus/blur pattern (debounceRef/pendingRef/isEditingRef, 600ms).
+- Add an "Add Seller Payment" button to the seller block header + an add dialog. Parallel add-state names must NOT collide with: addOpen, newType, newLabel, newAmount, newIsDebt, newInterestRate, newTermMonths, resetAddDialog, addMutation. Use seller-prefixed names.
+- Endpoints (from 4a, confirmed): POST /:id/seller-payments, PUT /:id/seller-payments/:paymentId, DELETE /:id/seller-payments/:paymentId. apiRequest + onDataChange invalidates ['/api/v2/deal-models', selectedModelId].
+- payment_type deliberately NOT surfaced (descriptive only until bullet/PIK land; new rows default fixed_schedule server-side).
+- Helper shapes captured: calcLineLocally / LocalLineValues / initLineLocal are funding-line-shaped (asset/ltv/debt); the seller card needs its own trimmed local-state, do not reuse initLineLocal directly.
+
+Then: 4b-iv earnout block, 4b-v three reconciling subtotals, 4c PaymentTermsPanel re-point (also fixes the stale "add a Seller Financing funding line in Section 4" hint, that control is gone), slice 5 doc-gen + locked-model bug, fee-base fix (exclude seller/earnout from totalLoanAmount), coordinated prod cutover.
+
+Eyeballs owed: seller block with real data (model 11/23); 4b-ii alignment on a live screen.
+Action log: hold the whole #98 entry until the build lands, then log as v72.x or v73 (Adam to set).
