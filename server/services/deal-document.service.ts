@@ -932,7 +932,7 @@ export class DealDocumentService {
     }
     if (earnoutMaximum > 0) {
       paymentLines.push('');
-      paymentLines.push(`Earnout (maximum): ${fmt(earnoutMaximum)}`);
+      paymentLines.push(`Earnout: ${fmt(earnoutMaximum)}`);
       if (earnoutMetric) {
         paymentLines.push(`Earnout details: ${earnoutMetric}`);
       }
