@@ -463,6 +463,164 @@ function FundingLineCard({
   );
 }
 
+function SellerPaymentCard({
+  payment, modelId, isLocked, onDataChange,
+}: {
+  payment: DealModelSellerPayment;
+  modelId: number;
+  isLocked: boolean;
+  onDataChange: () => void;
+}) {
+  const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const [amount, setAmount] = useState(toNum(payment.amount));
+  const [termMonths, setTermMonths] = useState(payment.termMonths ?? 0);
+  const [interestRate, setInterestRate] = useState(toNum(payment.interestRate));
+  const [includeInDscr, setIncludeInDscr] = useState(payment.includeInDscr ?? true);
+  const [isActive, setIsActive] = useState(payment.isActive ?? true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<Record<string, any> | null>(null);
+  const isEditingRef = useRef(false);
+  const prevRef = useRef(payment.updatedAt);
+  useEffect(() => {
+    if (payment.updatedAt !== prevRef.current) {
+      prevRef.current = payment.updatedAt;
+      if (!isEditingRef.current) {
+        setAmount(toNum(payment.amount));
+        setTermMonths(payment.termMonths ?? 0);
+        setInterestRate(toNum(payment.interestRate));
+        setIncludeInDscr(payment.includeInDscr ?? true);
+        setIsActive(payment.isActive ?? true);
+      }
+    }
+  }, [payment]);
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Record<string, any>) => {
+      const res = await apiRequest('PUT', `/api/v2/deal-models/${modelId}/seller-payments/${payment.id}`, updates);
+      return res.json();
+    },
+    onSuccess: () => {
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 1500);
+      if (!isEditingRef.current) onDataChange();
+    },
+    onError: (e: Error) => { setSaveStatus('idle'); toast({ title: 'Save failed', description: e.message, variant: 'destructive' }); },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('DELETE', `/api/v2/deal-models/${modelId}/seller-payments/${payment.id}`);
+      return res.json();
+    },
+    onSuccess: () => { setDeleteOpen(false); onDataChange(); toast({ title: 'Seller payment removed' }); },
+    onError: (e: Error) => { toast({ title: 'Delete failed', description: e.message, variant: 'destructive' }); },
+  });
+  const debounceSave = useCallback((updates: Record<string, any>) => {
+    pendingRef.current = { ...(pendingRef.current || {}), ...updates };
+    setSaveStatus('saving');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (pendingRef.current) { updateMutation.mutate(pendingRef.current); pendingRef.current = null; }
+    }, 600);
+  }, [updateMutation]);
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  const handleFocus = useCallback(() => { isEditingRef.current = true; }, []);
+  const handleBlur = useCallback(() => { isEditingRef.current = false; setTimeout(() => { if (!isEditingRef.current) onDataChange(); }, 100); }, [onDataChange]);
+  const monthly = isActive && termMonths > 0
+    ? (interestRate > 0 ? pmt(amount, interestRate / 100 / 12, termMonths) : amount / termMonths)
+    : 0;
+  return (
+    <>
+      <div className={`border rounded-lg transition-opacity ${isActive ? '' : 'opacity-50'}`}>
+        <Collapsible open={expanded} onOpenChange={setExpanded}>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Switch checked={isActive} onCheckedChange={(c) => { setIsActive(c); if (!isLocked) updateMutation.mutate({ isActive: c }); }} disabled={isLocked} />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm font-medium truncate">{payment.label || 'Seller Deferred'}</span>
+              <Badge variant="outline" className="text-xs shrink-0">{termMonths > 0 ? `${termMonths} mo` : 'No term'}</Badge>
+              {!includeInDscr && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-50 text-blue-700 border-blue-200">Excluded from DSCR</Badge>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-base font-semibold">{formatCurrency(amount)}</p>
+              {isActive && monthly > 0 && <p className="text-xs text-muted-foreground">{formatCurrency(monthly)}/mo</p>}
+            </div>
+            {saveStatus !== 'idle' && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                {saveStatus === 'saving' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3 text-green-600" />}
+              </span>
+            )}
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 pt-1 border-t">
+              <div className="flex items-center gap-4 mt-3 mb-4 py-2 px-3 bg-muted/50 rounded-md">
+                <Label className="text-sm font-medium flex-1">Include in DSCR</Label>
+                <Switch checked={includeInDscr} onCheckedChange={(c) => { setIncludeInDscr(c); if (!isLocked) updateMutation.mutate({ includeInDscr: c }); }} disabled={isLocked} />
+                <p className="text-[11px] text-muted-foreground">{includeInDscr ? 'Counts toward debt service' : 'Excluded from cover ratio'}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Amount</Label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                    <Input type="number" value={amount || ''} onFocus={handleFocus} onBlur={handleBlur}
+                      onChange={e => { const v = parseFloat(e.target.value) || 0; setAmount(v); if (!isLocked) debounceSave({ amount: String(v) }); }}
+                      disabled={isLocked} className="pl-7 text-right" placeholder="0" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Term (months)</Label>
+                  <Input type="number" min="0" value={termMonths || ''} onFocus={handleFocus} onBlur={handleBlur}
+                    onChange={e => { const v = parseInt(e.target.value) || 0; setTermMonths(v); if (!isLocked) debounceSave({ termMonths: v }); }}
+                    disabled={isLocked} className="text-right" placeholder="0" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Interest Rate %</Label>
+                  <Input type="number" step="0.1" min="0" max="30" value={interestRate || ''} onFocus={handleFocus} onBlur={handleBlur}
+                    onChange={e => { const v = parseFloat(e.target.value) || 0; setInterestRate(v); if (!isLocked) debounceSave({ interestRate: String(v) }); }}
+                    disabled={isLocked} className="text-right" placeholder="0" />
+                  <p className="text-[11px] text-muted-foreground">Usually 0 for seller deferred</p>
+                </div>
+                {isActive && monthly > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Monthly</Label>
+                    <p className="text-base font-medium py-2">{formatCurrency(monthly)}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteOpen(true)} disabled={isLocked}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Remove
+                </Button>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Remove Seller Payment</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Remove "{payment.label || 'Seller Deferred'}"? This cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export default function FundingSection({
   modelId,
   fundingLines,
@@ -515,6 +673,21 @@ export default function FundingSection({
     [...fundingLines].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id),
     [fundingLines]
   );
+  const [sellerAddOpen, setSellerAddOpen] = useState(false);
+  const [sellerNewLabel, setSellerNewLabel] = useState('');
+  const [sellerNewAmount, setSellerNewAmount] = useState('');
+  const [sellerNewTerm, setSellerNewTerm] = useState('');
+  const resetSellerAdd = useCallback(() => {
+    setSellerAddOpen(false); setSellerNewLabel(''); setSellerNewAmount(''); setSellerNewTerm('');
+  }, []);
+  const sellerAddMutation = useMutation({
+    mutationFn: async (body: Record<string, any>) => {
+      const res = await apiRequest('POST', `/api/v2/deal-models/${modelId}/seller-payments`, body);
+      return res.json();
+    },
+    onSuccess: () => { resetSellerAdd(); onDataChange(); toast({ title: 'Seller payment added' }); },
+    onError: (e: Error) => { toast({ title: 'Could not add seller payment', description: e.message, variant: 'destructive' }); },
+  });
   const dayOneLines = useMemo(() =>
     sortedLines.filter(l => !DEFERRED_FUNDING_TYPES.includes(l.fundingType)),
     [sortedLines]
@@ -637,28 +810,25 @@ export default function FundingSection({
           )}
         </div>
 
-        {sellerPayments.length > 0 && (
+        {(sellerPayments.length > 0 || !isLocked) && (
           <div className="space-y-4 mt-6">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Seller Financing (Deferred)</h4>
+              {!isLocked && (
+                <Button variant="outline" size="sm" onClick={() => setSellerAddOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Seller Payment
+                </Button>
+              )}
             </div>
-            <div className="space-y-3">
-              {[...sellerPayments].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id).map(sp => (
-                <div key={sp.id} className={`border rounded-lg px-4 py-3 flex items-center gap-3 ${sp.isActive ? '' : 'opacity-50'}`}>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium truncate">{sp.label || 'Seller Deferred'}</span>
-                    <Badge variant="outline" className="text-xs shrink-0">{sp.termMonths ? `${sp.termMonths} mo` : 'No term'}</Badge>
-                    {!sp.includeInDscr && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-50 text-blue-700 border-blue-200">Excluded from DSCR</Badge>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-base font-semibold">{formatCurrency(toNum(sp.amount))}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {sellerPayments.length === 0 ? (
+              <div className="text-center py-6 text-sm text-muted-foreground">No seller financing. Add a deferred payment to model it.</div>
+            ) : (
+              <div className="space-y-3">
+                {[...sellerPayments].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id).map(sp => (
+                  <SellerPaymentCard key={sp.id} payment={sp} modelId={modelId} isLocked={isLocked} onDataChange={onDataChange} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -776,6 +946,42 @@ export default function FundingSection({
             >
               {addMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
               Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={sellerAddOpen} onOpenChange={v => { if (!v) resetSellerAdd(); else setSellerAddOpen(true); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Seller Payment</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm">Label (optional)</Label>
+              <Input value={sellerNewLabel} onChange={e => setSellerNewLabel(e.target.value)} placeholder="Seller Deferred" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Amount</Label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
+                <Input type="number" value={sellerNewAmount} onChange={e => setSellerNewAmount(e.target.value)} className="pl-7 text-right" placeholder="0" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Term (months)</Label>
+              <Input type="number" min="0" value={sellerNewTerm} onChange={e => setSellerNewTerm(e.target.value)} className="text-right" placeholder="0" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetSellerAdd}>Cancel</Button>
+            <Button onClick={() => {
+              const body: Record<string, any> = {
+                label: sellerNewLabel || null, amount: sellerNewAmount || '0',
+                termMonths: sellerNewTerm ? parseInt(sellerNewTerm) || 0 : null,
+                includeInDscr: true, isActive: true, sortOrder: sellerPayments.length,
+              };
+              sellerAddMutation.mutate(body);
+            }} disabled={sellerAddMutation.isPending}>
+              {sellerAddMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}Add
             </Button>
           </DialogFooter>
         </DialogContent>
