@@ -412,7 +412,7 @@ export class DealModelMappingService {
             availableAmount: String(Math.round(available)),
             amountUsed: '0',
             interestRate: '4.5',
-            termMonths: 1,
+            termMonths: 0,
             isDebt: true,
             isActive: false,
             sortOrder: sortOrder++,

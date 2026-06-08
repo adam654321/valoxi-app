@@ -401,14 +401,17 @@ function FundingLineCard({
                     <Input
                       type="number"
                       min="0"
-                      value={localVals.termMonths || ''}
+                      value={line.fundingType === 'receivables_finance' ? 0 : (localVals.termMonths || '')}
                       onFocus={handleFocus}
                       onBlur={handleBlur}
                       onChange={e => updateField('termMonths', parseInt(e.target.value) || 0)}
-                      disabled={isLocked}
+                      disabled={isLocked || line.fundingType === 'receivables_finance'}
                       className="text-right"
                       placeholder="0"
                     />
+                    {line.fundingType === 'receivables_finance' && (
+                      <p className="text-[11px] text-muted-foreground">Revolving facility (no fixed term)</p>
+                    )}
                   </div>
                 )}
 
