@@ -67,21 +67,23 @@ Calculator, schema, migration and backend CRUD COMPLETE and proven on dev. UI pa
 - Slice 4b-ii: fixed per-line calc-result mis-attribution (calcResults zipped positionally against the now-shorter server calc array; added DEFERRED_FUNDING_TYPES, render + zip both use dayOneLines). Code done; FUNCTIONAL EYEBALL on model 11 (4 day-one cards, correct per-line monthlies) still OWED by Adam.
 
 ### Remaining on #98
-- 4b-iii: seller block (collapsible, add/edit/delete vs /seller-payments).
-- 4b-iv: earnout block (collapsible, vs /contingent-consideration, earnout-at-max framing).
-- 4b-v: three reconciling subtotals (day-one / deferred / earnout) = offer price.
-- 4c: PaymentTermsPanel re-pointed to the new tables.
-- Slice 5: doc-gen re-point (offer letter / heads of terms read seller/earnout from new tables, earnout shown) + locked-model read-overwrite bug.
-- Fee-base fix (separate, end of session intent): exclude seller + earnout from totalLoanAmount (loan-arrangement-fee base). Will lower the loan fee on deals with a % loan fee + seller/earnout. Deliberate, surfaced.
-- Coordinated prod cutover: run scripts/098-create-funding-schema.ts on prod, run scripts/098-migrate-seller-earnout.ts --commit on prod, deploy code, then --verify on prod (expect possible pre-existing stale-snapshot flags to triage, not block).
+- ~~4b-iii: seller block (collapsible, add/edit/delete vs /seller-payments).~~ DONE
+- ~~4b-iv: earnout block (collapsible, vs /contingent-consideration, earnout-at-max framing).~~ DONE
+- ~~4b-v: three reconciling subtotals (day-one / deferred / earnout) = offer price.~~ DONE
+- ~~4c: PaymentTermsPanel re-pointed to the new tables.~~ DONE (all three sub-slices)
+- ~~Slice 5: doc-gen re-point (offer letter / heads of terms read seller/earnout from new tables, earnout shown) + locked-model read-overwrite bug.~~ DONE
+- ~~Fee-base fix: exclude seller + earnout from totalLoanAmount (loan-arrangement-fee base).~~ DONE
+- **Coordinated prod cutover** (NEXT): run scripts/098-create-funding-schema.ts on prod, run scripts/098-migrate-seller-earnout.ts --commit on prod, autoscale deploy of #98 + #202 + R2 removal, then --verify on prod (expect possible pre-existing stale-snapshot flags to triage, not block), then acceptance checks.
 
 ### Backlog spun off
 - Model 11 (and possibly others) persisted total_purchase_price stale vs current inputs; deal models do not auto-recompute on input edits. Investigate separately.
 - payment_type (fixed_schedule/instalments/bullet) is descriptive only today; wiring it to servicing is owed when bullet lands (with PIK, pending Dee).
 - Dormant deal_model_funding_lines seller/earnout rows: delete in a cleanup slice once prod is stable.
+- Deal model lock: endpoint and service wired but no UI calls them; Send Offer does not lock; lock takes no snapshot. Lock-intent review (snap on lock, surface a "Lock" button) added to backlog.
+- Fee structure redesign (new workstream, post-#98 cutover): flexible fee lines, multiple loan fees, remove dead broker column. Scoping kickoff = edited-vs-untouched prod fee assess.
 
-### Dev state to resume from
-Migrated seller data lives in the new tables and feeds the calc; the funding mapper excludes the old types; backend CRUD is complete; the day-one funding list is filtered and correctly aligned. There is no seller/earnout editing UI yet, so seller/earnout currently have no front-end surface (the dropdown no longer offers them and the dormant rows are hidden). TSC baseline: 1 (portal.service.ts:81).
+### Dev state (feature-complete, awaiting cutover)
+All dev build work done. No locked prod models today (lock is dead client-side). TSC baseline: 1 (portal.service.ts:81). 69 calc tests passing.
 
 ## Session note (2026-06-07, end)
 
@@ -93,18 +95,6 @@ Done since the last progress block:
 - 4b-iii-a: sellerPayments threaded through DealModeller -> FundingSection; read-only "Seller Financing (Deferred)" block renders when sellerPayments.length > 0. Screenshot confirmed 4b-i/4b-ii live on a no-seller deal; block-with-data not yet eyeballed.
 - Client DealModelWithDetails (local interface in DealModeller.tsx lines 60-64) now declares sellerPayments + contingentConsideration; the as-any cast on the sellerPayments prop removed. Other pre-existing as-any casts (transactionType, minusCorpTaxDue, workingCapital*) left as-is - separate typing tidy-up later.
 
-Resume = 4b-iii-b (NEXT, assess already done):
-- Build a lean SellerPaymentCard (NOT a clone of the 330-line FundingLineCard). Fields: label, amount, term_months, interest_rate, include_in_dscr toggle, is_active toggle, delete. NO asset-base/LTV, NO debt/equity classification. Reuse FundingLineCard's debounced-save + focus/blur pattern (debounceRef/pendingRef/isEditingRef, 600ms).
-- Add an "Add Seller Payment" button to the seller block header + an add dialog. Parallel add-state names must NOT collide with: addOpen, newType, newLabel, newAmount, newIsDebt, newInterestRate, newTermMonths, resetAddDialog, addMutation. Use seller-prefixed names.
-- Endpoints (from 4a, confirmed): POST /:id/seller-payments, PUT /:id/seller-payments/:paymentId, DELETE /:id/seller-payments/:paymentId. apiRequest + onDataChange invalidates ['/api/v2/deal-models', selectedModelId].
-- payment_type deliberately NOT surfaced (descriptive only until bullet/PIK land; new rows default fixed_schedule server-side).
-- Helper shapes captured: calcLineLocally / LocalLineValues / initLineLocal are funding-line-shaped (asset/ltv/debt); the seller card needs its own trimmed local-state, do not reuse initLineLocal directly.
-
-Then: 4b-iv earnout block, 4b-v three reconciling subtotals, 4c PaymentTermsPanel re-point (also fixes the stale "add a Seller Financing funding line in Section 4" hint, that control is gone), slice 5 doc-gen + locked-model bug, fee-base fix (exclude seller/earnout from totalLoanAmount), coordinated prod cutover.
-
-Eyeballs owed: seller block with real data (model 11/23); 4b-ii alignment on a live screen.
-Action log: hold the whole #98 entry until the build lands, then log as v72.x or v73 (Adam to set).
-
 ## Session note addendum (2026-06-07, end of session 2)
 
 4b-iii COMPLETE on dev: seller financing is addable, editable, deletable, and moves the DSCR by its true annual service.
@@ -113,6 +103,24 @@ Action log: hold the whole #98 entry until the build lands, then log as v72.x or
 - 4b-iii-c: BUG FIXED - the client-side calculations call in DealModeller.tsx line 279 was four-arg, so the live on-screen DSCR ignored seller/earnout. Now passes modelDetails.sellerPayments + contingentConsideration. Verified live: adding a £250k/60mo/0% seller payment to model 51 (company 23) raised annual debt service by £50k and moved the DSCR. Also removed the "Also known as Payment Cover Ratio" subtitle from ViabilitySection.
 - Client double-count check: the client fundingLines mapper (DealModeller.tsx line 242) does NOT filter seller_financing/earnout, but dormant funding-line rows are isActive=false (skipped by calculateFundingStack) and hidden from the day-one UI by 4b-ii, so there is no live double-count. The client-mapper filter is belt-and-braces, folded into the dormant-row deletion cleanup slice (deleting the rows makes it moot).
 
-Resume = 4b-iv (earnout block): mirror SellerPaymentCard for contingent consideration against /contingent-consideration endpoints, earnout-at-max framing, maximumAmount field. Then 4b-v (three reconciling subtotals), 4c (PaymentTermsPanel re-point + fix the stale "add a Seller Financing funding line in Section 4" hint - that dropdown option is gone), slice 5 (doc-gen + locked-model bug), fee-base fix, prod cutover.
+## Session note (2026-06-09, action log v72.2) — #98 FEATURE-COMPLETE
 
-Eyeballs owed: 4b-ii alignment on a live multi-debt-line screen (model 23 confirmed by script, not eyeballed); seller block with data was confirmed live via the DSCR-move test.
+#98 is feature-complete on dev and ready for coordinated prod cutover.
+
+Done this session:
+- 4b-iv: earnout block (collapsible, ContingentConsiderationCard against /contingent-consideration, earnout-at-max framing, maximumAmount field). COMPLETE.
+- 4c-i: Section 5 re-pointed to the new seller/earnout tables; day-one breakdown added (your consideration vs total to seller, cash handled by subtraction not a separate line).
+- 4c-ii: Offer letter and HoT re-pointed to the new tables; earnout shown.
+- 4c-iii: Dropped seller-facing "(maximum)" qualifier from the earnout figure.
+- Add Source: asset-base/LTV surfaced on the add funding dialog.
+- Receivables term-lock: term field locked in Add dialog, edit card, and seed data normalised.
+- Locked-model read-overwrite fix: `getModel` now routes locked models through `computeFor` (no DB write) instead of `recalculate`. Read-only hardening — no locked prod models today so no active risk.
+- Fee-base fix: removed `sellerActiveTotal + earnoutActiveTotal` from `totalLoanAmount`. Loan-arrangement-fee base is now genuine lending only. Prod impact assessed read-only: 26 of 63 prod models affected (all draft/unlocked), £152,212.98 total loan-fee overstatement corrected on deploy. Fee amounts are never persisted so no DB backfill needed. Calc suite updated: 4 old migration-parity tests replaced with 7 correct exclusion tests; 69/69 passing.
+
+Findings settled:
+- Section 5 and the offer letter were reading seller/earnout off the dormant seller_financing/earnout funding-line rows from the 3c migration, showing the full offer price as day-one with no deferred/earnout. Re-pointed to the new tables fixes this.
+- Offer price is cash-inclusive by design (valuation bridge adds excess cash); Section 4 handles cash by subtraction. Section 5 shows day-one funded by you plus business cash, with two totals: your consideration (cash excluded) and total to seller (cash included = offer price). No separate cash line that double-counts.
+- Deal model lock is dead client-side: endpoint and service wired but no UI calls them; Send Offer does not lock; lock takes no snapshot. Read-overwrite fix is correct hardening. Lock-intent review deferred to backlog.
+- Fee-base fix is correct under any future fee model and changes only the indicative loan fee on draft, unlocked deals.
+
+Deferred to new workstream after #98: fee structure redesign (flexible fee lines, multiple loan fees, remove dead broker column), with an edited-vs-untouched prod fee assess as its scoping kickoff.
