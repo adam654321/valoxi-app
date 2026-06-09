@@ -341,13 +341,9 @@ export function calculateFullDealModel(
   const earnoutActiveTotal = contingentConsideration
     .filter(c => c.isActive)
     .reduce((sum, c) => sum + toNum(c.maximumAmount), 0);
-  // NOTE (#98 backlog): seller + earnout are included in the loan-arrangement-fee base to reproduce
-  // current behaviour exactly for a zero-shift migration. This is wrong (a loan fee is for lending,
-  // not deferred consideration); a separate slice removes them from totalLoanAmount.
   const totalLoanAmount = fundingLines
     .filter(l => l.isActive)
-    .reduce((sum, l) => sum + toNum(l.amountUsed), 0)
-    + sellerActiveTotal + earnoutActiveTotal;
+    .reduce((sum, l) => sum + toNum(l.amountUsed), 0);
 
   const fees = calculateFees(offerPrice, model, totalLoanAmount);
 
