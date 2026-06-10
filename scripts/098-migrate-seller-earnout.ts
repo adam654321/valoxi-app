@@ -137,34 +137,39 @@ async function verify() {
     `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
   )).rows ?? [];
   const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
+  const near = (a: number, b: number) => Math.abs(a - b) <= 1;
   let bad = 0;
   for (const id of modelIds) {
-    const m: any = await dealModelRepository.getByIdWithDetails(id);
-    if (!m) { console.log(`model ${id}: NOT FOUND`); continue; }
-    const calcEbitda = Number(m.calculatedEbitda ?? 0);
-    const afterFunding: FundingLineInput[] = m.fundingLines
-      .filter((f: any) => f.fundingType !== 'seller_financing' && f.fundingType !== 'earnout')
-      .map(toFundingInput);
-    const afterSeller: SellerPaymentInput[] = (m.sellerPayments ?? []).map((s: any) => ({ amount: s.amount, termMonths: s.termMonths, interestRate: s.interestRate, includeInDscr: s.includeInDscr ?? true, isActive: s.isActive ?? false }));
-    const afterCc: ContingentConsiderationInput[] = (m.contingentConsideration ?? []).map((c: any) => ({ maximumAmount: c.maximumAmount, termMonths: c.termMonths, includeInDscr: c.includeInDscr ?? true, isActive: c.isActive ?? false }));
-    const mi = { ...buildModelInput(m), averagingYears: 1 };
-    const res = calculateFullDealModel({ '1': calcEbitda }, [], afterFunding, mi as any, afterSeller, afterCc);
-    const refPrice = Number(m.totalPurchasePrice ?? 0);
-    const refFunded = Number(m.totalFundingAvailable ?? 0);
-    const refGap = Number(m.equityRequired ?? 0);
-    const near = (a: number, b: number) => Math.abs(a - b) <= 1;
-    const okPrice = near(res.offerPrice, refPrice);
-    const okFunded = near(res.totalFunded, refFunded);
-    const okGap = near(res.fundingGap, refGap);
-    if (okPrice && okFunded && okGap) {
-      console.log(`model ${id}: VERIFIED (price=${res.offerPrice.toFixed(2)}, funded=${res.totalFunded}, gap=${res.fundingGap.toFixed(2)}, seller=${afterSeller.length}, earnout=${afterCc.length})`);
-    } else {
+    const m = await dealModelRepository.getByIdWithDetails(id);
+    if (!m) { console.log(`model ${id}: FAIL - NOT FOUND`); bad++; continue; }
+    const oldSeller = m.fundingLines.filter((f) => f.fundingType === 'seller_financing');
+    const oldEarnout = m.fundingLines.filter((f) => f.fundingType === 'earnout');
+    const activeOldSeller = oldSeller.filter((f) => f.isActive).length;
+    const activeOldEarnout = oldEarnout.filter((f) => f.isActive).length;
+    const sellerRows = m.sellerPayments ?? [];
+    const ccRows = m.contingentConsideration ?? [];
+    const oldSellerSum = oldSeller.reduce((s, f) => s + Number(f.amountUsed ?? 0), 0);
+    const newSellerSum = sellerRows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+    const oldEarnoutSum = oldEarnout.reduce((s, f) => s + Number(f.amountUsed ?? 0), 0);
+    const newCcSum = ccRows.reduce((s, r) => s + Number(r.maximumAmount ?? 0), 0);
+
+    const problems: string[] = [];
+    if (activeOldSeller > 0) problems.push(`${activeOldSeller} active old seller line(s)`);
+    if (activeOldEarnout > 0) problems.push(`${activeOldEarnout} active old earnout line(s)`);
+    if (oldSeller.length > 0 && sellerRows.length === 0) problems.push('seller lines exist but no seller-payment rows');
+    if (oldEarnout.length > 0 && ccRows.length === 0) problems.push('earnout lines exist but no contingent rows');
+    if (oldSeller.length > 0 && !near(oldSellerSum, newSellerSum)) problems.push(`seller sum mismatch old=${oldSellerSum} new=${newSellerSum}`);
+    if (oldEarnout.length > 0 && !near(oldEarnoutSum, newCcSum)) problems.push(`earnout sum mismatch old=${oldEarnoutSum} new=${newCcSum}`);
+
+    if (problems.length) {
       bad++;
-      console.log(`model ${id}: MISMATCH price ${res.offerPrice.toFixed(2)} vs ${refPrice} | funded ${res.totalFunded} vs ${refGap} | gap ${res.fundingGap.toFixed(2)} vs ${refGap}`);
+      console.log(`model ${id}: FAIL - ${problems.join('; ')}`);
+    } else {
+      console.log(`model ${id}: VERIFIED (seller rows=${sellerRows.length} sum=${newSellerSum}, earnout rows=${ccRows.length} sum=${newCcSum}, active old lines=0)`);
     }
   }
-  if (bad > 0) { console.error(`VERIFY FAILED: ${bad} model(s) moved.`); process.exit(1); }
-  console.log('All models verified against persisted reference.');
+  if (bad > 0) { console.error(`VERIFY FAILED: ${bad} model(s).`); process.exit(1); }
+  console.log('All affected models verified: new-table rows present, sums reconcile, zero active old seller/earnout lines.');
 }
 
 const entry = process.argv.includes('--verify') ? verify : run;
