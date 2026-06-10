@@ -57,7 +57,10 @@ async function run() {
     const before = calculateFullDealModel({ '1': 0 }, [], beforeFunding, buildModelInput(model), beforeSeller, beforeContingent);
     const after  = calculateFullDealModel({ '1': 0 }, [], afterFunding,  buildModelInput(model), afterSeller,  afterContingent);
 
-    const fields: (keyof typeof before)[] = ['totalFunded','fundingGap','totalAnnualDebtService','paymentCoverRatio','feeLoanArrangement','totalFees'];
+    // Fee fields deliberately excluded: the fee-base fix changes feeLoanArrangement/totalFees
+    // by design when seller/earnout leave the loan base. Parity proves the MOVE is
+    // funded/gap/DSCR neutral, not fee-neutral.
+    const fields: (keyof typeof before)[] = ['totalFunded','fundingGap','totalAnnualDebtService','paymentCoverRatio'];
     const diffs = fields.filter((k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]));
     if (diffs.length) {
       mismatches++;
@@ -73,20 +76,43 @@ async function run() {
 
   if (dryRun) { console.log('Dry run complete. No writes. Re-run with --commit to migrate.'); return; }
 
-  // COMMIT: per-model idempotent insert. Skip any model that already has target rows.
+  // COMMIT: per affected model, ensure new-table rows exist (insert ONLY if missing),
+  // then deactivate the old seller/earnout funding lines so old and new never coexist active.
+  // Insert runs BEFORE deactivation so a freshly inserted row inherits the active flag.
   for (const id of modelIds) {
-    const existing = await dealModelRepository.getSellerPaymentsByModelId(id);
-    const existingCc = await dealModelRepository.getContingentConsiderationByModelId(id);
-    if (existing.length > 0 || existingCc.length > 0) { console.log(`model ${id}: target rows already exist, skipping`); continue; }
     const model = await dealModelRepository.getByIdWithDetails(id);
     if (!model) continue;
-    const sellerRows = model.fundingLines.filter((f) => f.fundingType === 'seller_financing').map(fundingLineToSellerPayment);
-    const ccRows = model.fundingLines.filter((f) => f.fundingType === 'earnout').map(fundingLineToContingent);
-    await dealModelRepository.createSellerPayments(sellerRows);
-    await dealModelRepository.createContingentConsiderations(ccRows);
-    console.log(`model ${id}: inserted ${sellerRows.length} seller, ${ccRows.length} earnout`);
+    const oldSeller = model.fundingLines.filter((f) => f.fundingType === 'seller_financing');
+    const oldEarnout = model.fundingLines.filter((f) => f.fundingType === 'earnout');
+
+    let sellerRowsPresent = (await dealModelRepository.getSellerPaymentsByModelId(id)).length;
+    if (sellerRowsPresent === 0 && oldSeller.length > 0) {
+      await dealModelRepository.createSellerPayments(oldSeller.map(fundingLineToSellerPayment));
+      sellerRowsPresent = oldSeller.length;
+      console.log(`model ${id}: inserted ${oldSeller.length} seller`);
+    } else if (oldSeller.length > 0) {
+      console.log(`model ${id}: seller rows present (${sellerRowsPresent}), insert skipped`);
+    }
+
+    let ccRowsPresent = (await dealModelRepository.getContingentConsiderationByModelId(id)).length;
+    if (ccRowsPresent === 0 && oldEarnout.length > 0) {
+      await dealModelRepository.createContingentConsiderations(oldEarnout.map(fundingLineToContingent));
+      ccRowsPresent = oldEarnout.length;
+      console.log(`model ${id}: inserted ${oldEarnout.length} earnout`);
+    } else if (oldEarnout.length > 0) {
+      console.log(`model ${id}: earnout rows present (${ccRowsPresent}), insert skipped`);
+    }
+
+    let deactivated = 0;
+    for (const line of oldSeller) {
+      if (sellerRowsPresent > 0 && line.isActive) { await dealModelRepository.updateFundingLine(line.id, { isActive: false }); deactivated++; }
+    }
+    for (const line of oldEarnout) {
+      if (ccRowsPresent > 0 && line.isActive) { await dealModelRepository.updateFundingLine(line.id, { isActive: false }); deactivated++; }
+    }
+    console.log(`model ${id}: deactivated ${deactivated} old funding line(s)`);
   }
-  console.log('Migration complete. Old funding-line rows left dormant.');
+  console.log('Migration complete. New-table rows ensured; old seller/earnout funding lines deactivated.');
 }
 
 // Build the calculator's DealModelInput from a model row (mirror of buildCalcInputs modelInput).
