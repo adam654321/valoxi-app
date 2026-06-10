@@ -239,7 +239,9 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       userOverrideAmount: null,
     }));
 
-    const fundingLines: FundingLineInput[] = (modelDetails.fundingLines || []).map(f => ({
+    const fundingLines: FundingLineInput[] = (modelDetails.fundingLines || [])
+      .filter(f => f.fundingType !== 'seller_financing' && f.fundingType !== 'earnout')
+      .map(f => ({
       fundingType: f.fundingType,
       assetBaseValue: f.assetBaseValue,
       ltvPercent: f.ltvPercent,
