@@ -74,6 +74,17 @@ function getFundingLabel(type: string, customLabel?: string | null): string {
   return FUNDING_TYPE_CONFIG[type]?.label || type;
 }
 
+// Per-type label for the asset base field. Wording is deliberate liability protection:
+// only trade debtors are leverageable, only identified leverageable assets, etc.
+function getAssetBaseLabel(type: string): string {
+  switch (type) {
+    case 'receivables_finance': return 'Value of trade receivables (trade debtors)';
+    case 'asset_finance': return 'Value of leverageable assets';
+    case 'property_finance': return 'Property value';
+    default: return 'Asset Base Value';
+  }
+}
+
 function getFundingIcon(type: string) {
   return FUNDING_TYPE_CONFIG[type]?.icon || CreditCard;
 }
@@ -313,7 +324,7 @@ function FundingLineCard({
                 {isAssetBacked && (
                   <>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">Asset Base Value</Label>
+                      <Label className="text-sm">{getAssetBaseLabel(line.fundingType)}</Label>
                       <div className="relative">
                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
                         <Input
@@ -1077,7 +1088,7 @@ export default function FundingSection({
             {ASSET_BACKED_TYPES.includes(newType) && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Asset Base Value</Label>
+                  <Label className="text-sm">{getAssetBaseLabel(newType)}</Label>
                   <div className="relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">£</span>
                     <Input
