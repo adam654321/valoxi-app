@@ -907,7 +907,16 @@ export class DealDocumentService {
     const transactionTypeLabel = transactionType === 'asset_sale' ? 'Asset Sale' : 'Share Sale';
 
     const breakdownLines: string[] = [];
-    breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
+    const ifCostForValuation = calculations.receivablesInterestAnnual || 0;
+    const valuationEbitdaForDoc = calculations.valuationEbitda || calculations.averageAdjustedEbitda || 0;
+    if (ifCostForValuation > 0) {
+      breakdownLines.push(`Average Adjusted EBITDA: ${fmt(calculations.averageAdjustedEbitda || 0)}`);
+      breakdownLines.push(`Less invoice finance cost (revolving working capital): (${fmt(ifCostForValuation)})`);
+      breakdownLines.push(`Valuation EBITDA: ${fmt(valuationEbitdaForDoc)}`);
+      breakdownLines.push(`Enterprise Value (Valuation EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
+    } else {
+      breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
+    }
     if (excessCash > 0) breakdownLines.push(`Plus Excess Cash: ${fmt(excessCash)}`);
     if (propertyValue > 0) breakdownLines.push(`Plus Property Value: ${fmt(propertyValue)}`);
     if (primaryDebt > 0) breakdownLines.push(`Less Primary Debt: (${fmt(primaryDebt)})`);

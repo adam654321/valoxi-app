@@ -276,6 +276,8 @@ export default function ValuationSection({
   const ev = localCalcs?.enterpriseValue ?? 0;
   const offerPrice = localCalcs?.offerPrice ?? 0;
   const avgEbitda = localCalcs?.averageAdjustedEbitda ?? 0;
+  const receivablesInterestAnnual = localCalcs?.receivablesInterestAnnual ?? 0;
+  const valuationEbitda = localCalcs?.valuationEbitda ?? avgEbitda;
 
   type NumericLocalField = Exclude<keyof LocalValues, 'workingCapitalOverride'>;
   const bridgeItems: Array<{
@@ -455,10 +457,31 @@ export default function ValuationSection({
           </div>
 
           <div className="bg-muted/50 rounded-lg p-4">
+            {receivablesInterestAnnual > 0 && (
+              <div className="mb-3 space-y-1 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Average Adjusted EBITDA</span>
+                  <span className="tabular-nums">{formatCurrency(avgEbitda)}</span>
+                </div>
+                <div className="flex items-center justify-between text-amber-700 dark:text-amber-400">
+                  <span>Less invoice finance cost</span>
+                  <span className="tabular-nums">−{formatCurrency(receivablesInterestAnnual)}</span>
+                </div>
+                <div className="flex items-center justify-between font-medium border-t pt-1">
+                  <span>Valuation EBITDA</span>
+                  <span className="tabular-nums">{formatCurrency(valuationEbitda)}</span>
+                </div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">Enterprise Value</p>
             <p className="text-xl font-bold">
-              EV = {formatCurrency(avgEbitda)} × {local.ebitdaMultiple.toFixed(1)}x = {formatCurrency(ev)}
+              EV = {formatCurrency(valuationEbitda)} × {local.ebitdaMultiple.toFixed(1)}x = {formatCurrency(ev)}
             </p>
+            {receivablesInterestAnnual > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Invoice finance is a revolving working capital cost, so it reduces the EBITDA the business is valued on. The interest is still serviced in the debt cover ratio.
+              </p>
+            )}
           </div>
         </div>
 
