@@ -255,6 +255,28 @@ function FundingLineCard({
   const isAssetBacked = ASSET_BACKED_TYPES.includes(line.fundingType);
   const overDrawn = isAssetBacked && localCalc.availableAmount > 0 && localVals.amountUsed > localCalc.availableAmount;
 
+  // Hard stop: an asset-backed draw cannot exceed the LTV-derived available amount. On blur we
+  // clamp the draw down to the cap and explain why, so a user cannot push an over-LTV figure into
+  // the model (Jag, Jun 2026). We cancel any pending debounced save (which would still hold the
+  // over-draw figure) and write the capped value immediately, then skip the normal resync so the
+  // field does not flash back to the old value. Clamp only when a cap exists (base value and LTV set).
+  const handleDrawBlur = () => {
+    isEditingRef.current = false;
+    const cap = localCalc.availableAmount;
+    if (isAssetBacked && cap > 0 && localVals.amountUsed > cap && !isLocked) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      pendingRef.current = null;
+      setLocalVals(prev => ({ ...prev, amountUsed: cap }));
+      updateMutation.mutate({ amountUsed: String(cap) });
+      toast({
+        title: 'Draw capped to available',
+        description: `Capped to ${formatCurrency(cap)} at ${localVals.ltvPercent}% LTV. You cannot draw more than the facility allows.`,
+      });
+      return;
+    }
+    handleBlur();
+  };
+
   return (
     <>
       <div className={`border rounded-lg transition-opacity ${localVals.isActive ? '' : 'opacity-50'}`}>
@@ -372,7 +394,7 @@ function FundingLineCard({
                       type="number"
                       value={localVals.amountUsed || ''}
                       onFocus={handleFocus}
-                      onBlur={handleBlur}
+                      onBlur={handleDrawBlur}
                       onChange={e => updateField('amountUsed', parseFloat(e.target.value) || 0)}
                       disabled={isLocked}
                       className="pl-7 text-right"
