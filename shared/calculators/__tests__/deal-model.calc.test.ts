@@ -463,12 +463,37 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(a.revolvingInterestAnnual).toBe(b.revolvingInterestAnnual);
   });
 
-  it('offer price and valuation EBITDA are untouched by IF interest', () => {
-    const withIf = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
+  it('IF interest reduces valuation EBITDA, EV and offer price (Jag/Dee model)', () => {
+    const withIf = calculateFullDealModel(ebitda, [], [ifLine({ interestAsEbitdaAdjustment: false }), termLoan], model, [], []);
     const without = calculateFullDealModel(ebitda, [], [termLoan], model, [], []);
-    expect(withIf.offerPrice).toBe(5_000_000);
-    expect(withIf.offerPrice).toBe(without.offerPrice);
-    expect(withIf.averageAdjustedEbitda).toBe(1_000_000);
+    expect(withIf.receivablesInterestAnnual).toBe(20_000);
+    expect(withIf.valuationEbitda).toBe(980_000);
+    expect(withIf.enterpriseValue).toBe(4_900_000);
+    expect(withIf.offerPrice).toBe(4_900_000);
+    expect(without.offerPrice).toBe(5_000_000);
+  });
+
+  it('IF interest leaves full EBITDA in the DSCR numerator and stays serviced in debt service', () => {
+    const r = calculateFullDealModel(ebitda, [], [ifLine({ interestAsEbitdaAdjustment: false }), termLoan], model, [], []);
+    expect(r.averageAdjustedEbitda).toBe(1_000_000);
+    expect(r.totalAnnualDebtService).toBe(140_000);
+    expect(r.paymentCoverRatio).toBeCloseTo(1_000_000 / 140_000, 4);
+  });
+
+  it('asset and property finance do not reduce valuation EBITDA', () => {
+    const assetLine: FundingLineInput = { fundingType: 'asset_finance', amountUsed: 200_000, interestRate: 10, termMonths: 60, isDebt: true, isActive: true };
+    const propLine: FundingLineInput = { fundingType: 'property_finance', amountUsed: 300_000, interestRate: 6, termMonths: 240, isDebt: true, isActive: true };
+    const r = calculateFullDealModel(ebitda, [], [assetLine, propLine], model, [], []);
+    expect(r.receivablesInterestAnnual).toBe(0);
+    expect(r.valuationEbitda).toBe(1_000_000);
+    expect(r.enterpriseValue).toBe(5_000_000);
+  });
+
+  it('an undrawn receivables line costs nothing in valuation', () => {
+    const r = calculateFullDealModel(ebitda, [], [ifLine({ interestAsEbitdaAdjustment: false, amountUsed: 0 })], model, [], []);
+    expect(r.receivablesInterestAnnual).toBe(0);
+    expect(r.valuationEbitda).toBe(1_000_000);
+    expect(r.offerPrice).toBe(5_000_000);
   });
 });
 

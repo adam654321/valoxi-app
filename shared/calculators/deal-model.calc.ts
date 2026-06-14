@@ -91,6 +91,8 @@ export interface CalculationResult {
 
   totalAnnualDebtService: number;
   revolvingInterestAnnual: number;
+  receivablesInterestAnnual: number;
+  valuationEbitda: number;
   paymentCoverRatio: number | null;
   paymentCoverRating: 'strong' | 'fundable' | 'challenging' | 'critical' | 'unfundable' | 'no_debt';
 }
@@ -333,7 +335,19 @@ export function calculateFullDealModel(
     model.averagingYears
   );
 
-  const { enterpriseValue, offerPrice } = calculateOfferPrice(averageAdjustedEbitda, model);
+  // Invoice finance (receivables) is a revolving working-capital cost. Per the Jag/Dee decision
+  // (Jun 2026), its interest element reduces the EBITDA used for valuation only, so EV falls at the
+  // same multiple. The interest stays serviced in debt service for DSCR and the DSCR numerator keeps
+  // the full EBITDA (below), so it is never double-counted. Receivables only; asset and property
+  // finance are amortising acquisition debt and are untouched. Interest is drawn x rate (interest-only).
+  // NB the older interest_as_ebitda_adjustment flag path is superseded by this and left dormant
+  // (never set, absent on prod). Remove in a later cleanup once all references are confirmed clear.
+  const receivablesInterestAnnual = fundingLines
+    .filter((l) => l.isActive && l.fundingType === 'receivables_finance')
+    .reduce((sum, l) => sum + toNum(l.amountUsed) * toNum(l.interestRate) / 100, 0);
+  const valuationEbitda = averageAdjustedEbitda - receivablesInterestAnnual;
+
+  const { enterpriseValue, offerPrice } = calculateOfferPrice(valuationEbitda, model);
 
   const sellerActiveTotal = sellerPayments
     .filter(s => s.isActive)
@@ -384,6 +398,8 @@ export function calculateFullDealModel(
     fundingGap: combinedFundingGap,
     totalAnnualDebtService: combinedAnnualDebtService,
     revolvingInterestAnnual: funding.totalRevolvingInterest,
+    receivablesInterestAnnual,
+    valuationEbitda,
     paymentCoverRatio,
     paymentCoverRating,
   };
