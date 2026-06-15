@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { config } from '../config';
 import { billingService } from '../services/billing.service';
 import { billingRepository } from '../repositories/billing.repository';
-import { eq, and, gt, isNull, isNotNull, lt, lte, sql } from 'drizzle-orm';
+import { eq, and, gt, gte, isNull, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { subscriptions, promoCodeCampaigns } from '@shared/schema/billing';
 import { computeFreeMonthsElapsed, isFreePeriodEndingSoon } from '../services/promo-code.service';
@@ -225,6 +225,148 @@ export async function runTrialExpiryJob(): Promise<void> {
   } catch (err) {
     console.error('[billing-cron] Trial expiry job failed:', err);
     throw err;
+  }
+}
+
+export async function runTrialExtensionJob(): Promise<void> {
+  const stripe = new Stripe(config.stripe.secretKey);
+  const now = new Date();
+  const windowEnd = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+
+  const candidates = await db
+    .select({ subscription: subscriptions })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, 'trialing'),
+        eq(subscriptions.freeMonthsTotal, 0),
+        isNull(subscriptions.trialExtensionSentAt),
+        isNotNull(subscriptions.trialEndsAt),
+        gte(subscriptions.trialEndsAt, now),
+        lte(subscriptions.trialEndsAt, windowEnd),
+        isNotNull(subscriptions.stripeSubscriptionId)
+      )
+    );
+
+  console.log(`[billing-cron] Trial extension: ${candidates.length} candidate(s)`);
+
+  for (const row of candidates) {
+    const sub = row.subscription;
+    try {
+      const latest = await billingRepository.getByCompanyId(sub.userCompanyId);
+      if (
+        !latest ||
+        latest.status !== 'trialing' ||
+        latest.freeMonthsTotal !== 0 ||
+        latest.trialExtensionSentAt ||
+        !latest.trialEndsAt ||
+        !latest.stripeSubscriptionId
+      ) continue;
+
+      const newTrialEnd = new Date(latest.trialEndsAt.getTime() + 24 * 60 * 60 * 1000);
+
+      await stripe.subscriptions.update(latest.stripeSubscriptionId, {
+        trial_end: Math.floor(newTrialEnd.getTime() / 1000),
+      });
+
+      await billingRepository.updateByCompanyId(sub.userCompanyId, {
+        trialEndsAt: newTrialEnd,
+        trialEnd: newTrialEnd,
+        trialExtensionSentAt: new Date(),
+      });
+
+      const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+      if (!adminEmail) {
+        console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping trial extension email`);
+      } else {
+        await emailApiService.sendTrialExtensionEmail({
+          to: adminEmail.email,
+          firstName: adminEmail.firstName || 'there',
+          newTrialEnd,
+        });
+      }
+
+      await billingRepository.logEvent({
+        userCompanyId: sub.userCompanyId,
+        eventType: 'trial.extended',
+        previousStatus: latest.status,
+        previousPlanKey: latest.planKey,
+        newStatus: 'trialing',
+        newPlanKey: latest.planKey,
+        payload: { originalTrialEnd: latest.trialEndsAt, newTrialEnd, extensionHours: 24 },
+      });
+
+      console.log(`[billing-cron] Trial extension: extended company ${sub.userCompanyId} to ${newTrialEnd.toISOString()}`);
+    } catch (err) {
+      console.error(`[billing-cron] Trial extension failed for company ${sub.userCompanyId}:`, err);
+    }
+  }
+}
+
+export async function runTrialWarningJob(): Promise<void> {
+  const now = new Date();
+  const windowEnd = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+
+  const candidates = await db
+    .select({ subscription: subscriptions })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, 'trialing'),
+        eq(subscriptions.freeMonthsTotal, 0),
+        isNull(subscriptions.trialWarningEmailSentAt),
+        isNotNull(subscriptions.trialExtensionSentAt),
+        isNotNull(subscriptions.trialEndsAt),
+        gte(subscriptions.trialEndsAt, now),
+        lte(subscriptions.trialEndsAt, windowEnd)
+      )
+    );
+
+  console.log(`[billing-cron] Trial warning: ${candidates.length} candidate(s)`);
+
+  for (const row of candidates) {
+    const sub = row.subscription;
+    try {
+      const latest = await billingRepository.getByCompanyId(sub.userCompanyId);
+      if (
+        !latest ||
+        latest.status !== 'trialing' ||
+        latest.freeMonthsTotal !== 0 ||
+        latest.trialWarningEmailSentAt ||
+        !latest.trialExtensionSentAt ||
+        !latest.trialEndsAt
+      ) continue;
+
+      const adminEmail = await billingRepository.getAdminEmailForCompany(sub.userCompanyId);
+      if (!adminEmail) {
+        console.warn(`[billing-cron] No admin email for company ${sub.userCompanyId}, skipping trial warning email`);
+        continue;
+      }
+
+      await emailApiService.sendTrialWarningEmail({
+        to: adminEmail.email,
+        firstName: adminEmail.firstName || 'there',
+        trialEndsAt: latest.trialEndsAt,
+      });
+
+      await billingRepository.updateByCompanyId(sub.userCompanyId, {
+        trialWarningEmailSentAt: new Date(),
+      });
+
+      await billingRepository.logEvent({
+        userCompanyId: sub.userCompanyId,
+        eventType: 'trial.warning_sent',
+        previousStatus: latest.status,
+        previousPlanKey: latest.planKey,
+        newStatus: 'trialing',
+        newPlanKey: latest.planKey,
+        payload: { trialEndsAt: latest.trialEndsAt },
+      });
+
+      console.log(`[billing-cron] Trial warning: sent to company ${sub.userCompanyId}, trial ends ${latest.trialEndsAt.toISOString()}`);
+    } catch (err) {
+      console.error(`[billing-cron] Trial warning failed for company ${sub.userCompanyId}:`, err);
+    }
   }
 }
 
@@ -477,6 +619,13 @@ export function initializeBillingCron(): void {
     }
   }, { timezone: 'Europe/London' });
   console.log('[billing-cron] 5D partner invoice scheduled daily at 04:00 London, fires on the configured send-day');
+
+  cron.schedule('0 * * * *', async () => {
+    console.log('[billing-cron] Starting hourly trial extension + warning check...');
+    try { await runTrialExtensionJob(); } catch (err) { console.error('[billing-cron] Trial extension job failed:', err); }
+    try { await runTrialWarningJob(); } catch (err) { console.error('[billing-cron] Trial warning job failed:', err); }
+  }, { timezone: 'Europe/London' });
+  console.log('[billing-cron] Trial extension + warning job scheduled hourly');
 }
 
 export async function runStripeWebhookFailureAlertJob(): Promise<void> {

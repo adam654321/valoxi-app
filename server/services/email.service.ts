@@ -753,6 +753,95 @@ export class EmailApiService {
   // 5D partner subsidy digest. ONE email per cron run listing the new members
   // billed this period and the total. Upfront model: each member is the full
   // free-period subsidy. Amounts are USD cents (5D is always billed USD).
+  async sendTrialExtensionEmail(params: {
+    to: string;
+    firstName: string;
+    newTrialEnd: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, newTrialEnd } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const formatDateTime = (d: Date): string => {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hh}:${mm}`;
+    };
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: 'We hope you have had a chance to explore Valoxi over the last 48 hours.' },
+      { type: 'paragraph', text: 'We would love you to have a little more time, so we have added an extra 24 hours to your trial - no action needed on your part.' },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          body: `Your trial now ends on <strong>${escapeHtml(formatDateTime(newTrialEnd))}</strong>.`,
+        },
+      },
+      { type: 'paragraph', text: 'After that, your card will be charged and your subscription will begin automatically.' },
+      { type: 'paragraph', text: 'If you have any questions or want to talk through what you have seen so far, just reply to this email.' },
+      { type: 'paragraph', text: 'Adam Auty<br/>Founder, Valoxi' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'We have added an extra 24 hours to your Valoxi trial.',
+      eyebrow: 'Trial extended',
+      heading: 'You have got an extra 24 hours on us',
+      blocks,
+      footerLine: 'You are receiving this because you have an active Valoxi trial.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'You have got an extra 24 hours on us',
+      html,
+    });
+    return { success, message: success ? 'Trial extension email sent' : 'Failed to send trial extension email' };
+  }
+
+  async sendTrialWarningEmail(params: {
+    to: string;
+    firstName: string;
+    trialEndsAt: Date;
+  }): Promise<SendInvitationResult> {
+    const { to, firstName, trialEndsAt } = params;
+    const safeFirstName = escapeHtml(firstName);
+
+    const formatDateTime = (d: Date): string => {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hh}:${mm}`;
+    };
+
+    const appUrl = process.env.APP_URL || 'https://test.valoxi.ai';
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: `Hi ${safeFirstName},` },
+      { type: 'paragraph', text: `Your free trial ends on <strong>${escapeHtml(formatDateTime(trialEndsAt))}</strong>.` },
+      { type: 'paragraph', text: 'After that, your subscription will begin and your card will be charged automatically.' },
+      { type: 'paragraph', text: `If you would like to cancel before then, you can do so from your <a href="${appUrl}/settings">account settings</a>.` },
+      { type: 'paragraph', text: 'If you have any questions, just reply to this email.' },
+      { type: 'paragraph', text: 'Adam Auty<br/>Founder, Valoxi' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Your Valoxi free trial is ending soon.',
+      eyebrow: 'Trial ending',
+      heading: 'Your Valoxi trial ends soon',
+      blocks,
+      footerLine: 'You are receiving this because you have an active Valoxi trial.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your Valoxi trial ends soon',
+      html,
+    });
+    return { success, message: success ? 'Trial warning email sent' : 'Failed to send trial warning email' };
+  }
+
   async sendFiveDPartnerInvoice(params: {
     to: string;
     billingMonth: string; // 'YYYY-MM'
