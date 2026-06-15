@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, Clock, User, Phone, Mail, MessageSquare, FileText, Plus, Search, CheckCircle, RotateCcw } from "lucide-react";
+import { Calendar, Clock, User, Phone, Mail, MessageSquare, FileText, Plus, Search, CheckCircle, RotateCcw, Pencil } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -116,11 +116,27 @@ const getActivityColor = (type: string) => {
 export function DealActivitySection({ targetCompanyId, companyName, contacts }: DealActivitySectionProps) {
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
+  const [editingActivity, setEditingActivity] = useState<ActivityWithDetails | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const activityForm = useForm<ActivityFormData>({
+    resolver: zodResolver(activityFormSchema),
+    defaultValues: {
+      activityType: "",
+      title: "",
+      description: "",
+      activityDate: new Date().toISOString().split('T')[0],
+      activityTime: "",
+      durationMinutes: undefined,
+      contactId: undefined,
+      followUpDate: "",
+    },
+  });
+
+  const editForm = useForm<ActivityFormData>({
     resolver: zodResolver(activityFormSchema),
     defaultValues: {
       activityType: "",
@@ -155,23 +171,52 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
       };
       return apiRequest("POST", `/api/v2/activities/company/${targetCompanyId}`, payload);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId, "timeline"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/recent"] });
-      
       queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", targetCompanyId.toString(), "profile"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/pipeline"] });
       queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/pipeline-overview"] });
-      
       setIsActivityDialogOpen(false);
       activityForm.reset();
       toast({ title: "Success", description: "Activity logged successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to log activity", variant: "destructive" });
+    },
+  });
+
+  const updateActivityMutation = useMutation({
+    mutationFn: async (data: ActivityFormData) => {
+      const payload = {
+        ...data,
+        activityDate: new Date(data.activityDate).toISOString(),
+        followUpDate: data.followUpDate ? new Date(data.followUpDate).toISOString() : null,
+        contactId: data.contactId || null,
+        durationMinutes: data.durationMinutes || null,
+        isCompleted: false,
+      };
+      return apiRequest("PUT", `/api/v2/activities/${editingActivity?.id}`, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId, "timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/recent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies", targetCompanyId.toString(), "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/target-companies/search"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/dashboard/data/pipeline-overview"] });
+      setIsEditDialogOpen(false);
+      editForm.reset();
+      setEditingActivity(null);
+      toast({ title: "Success", description: "Activity updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update activity", variant: "destructive" });
     },
   });
 
@@ -187,8 +232,26 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
     },
   });
 
+  const openEditDialog = (activity: ActivityWithDetails) => {
+    setEditingActivity(activity);
+    editForm.reset({
+      activityType: activity.activityType,
+      title: activity.title,
+      description: activity.description ?? "",
+      activityDate: format(new Date(activity.activityDate), "yyyy-MM-dd"),
+      activityTime: activity.activityTime ?? "",
+      durationMinutes: activity.durationMinutes ?? undefined,
+      contactId: activity.contactId ?? undefined,
+      followUpDate: activity.followUpDate ? format(new Date(activity.followUpDate), "yyyy-MM-dd") : "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
   const watchedActivityType = activityForm.watch("activityType");
   const selectedActivityType = activityTypes.find(type => type.typeName === watchedActivityType);
+
+  const watchedEditActivityType = editForm.watch("activityType");
+  const selectedEditActivityType = activityTypes.find(type => type.typeName === watchedEditActivityType);
 
   useEffect(() => {
     if (selectedActivityType) {
@@ -203,6 +266,10 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
 
   const onActivitySubmit = (data: ActivityFormData) => {
     createActivityMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: ActivityFormData) => {
+    updateActivityMutation.mutate(data);
   };
 
   const timelineItems: ActivityWithDetails[] = [];
@@ -226,7 +293,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
     groupedByDate[dateKey].push(item);
   });
 
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
     new Date(b).getTime() - new Date(a).getTime()
   );
 
@@ -329,8 +396,8 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Contact</FormLabel>
-                              <Select 
-                                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                              <Select
+                                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
                                 defaultValue={field.value?.toString()}
                               >
                                 <FormControl>
@@ -361,8 +428,8 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                             <FormItem>
                               <FormLabel>Duration (minutes)</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
+                                <Input
+                                  type="number"
                                   {...field}
                                   onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                                 />
@@ -381,7 +448,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                         <FormItem>
                           <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea 
+                            <Textarea
                               placeholder="Detailed notes about this activity"
                               className="min-h-[100px]"
                               {...field}
@@ -421,6 +488,192 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
           </div>
         </div>
       </CardHeader>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsEditDialogOpen(false);
+          editForm.reset();
+          setEditingActivity(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Activity</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="activityType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Activity Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {activityTypes.map((type) => (
+                            <SelectItem key={type.typeName} value={type.typeName}>
+                              {type.typeName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="activityDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Brief description of activity" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="activityTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time (optional)</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedEditActivityType?.requiresContact && (
+                  <FormField
+                    control={editForm.control}
+                    name="contactId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select contact" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {contacts.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id.toString()}>
+                                {contact.firstName} {contact.lastName}
+                                {contact.title && ` - ${contact.title}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {selectedEditActivityType?.defaultDuration !== null && (
+                  <FormField
+                    control={editForm.control}
+                    name="durationMinutes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duration (minutes)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Detailed notes about this activity"
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="followUpDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Follow-up Date (optional)</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsEditDialogOpen(false);
+                  editForm.reset();
+                  setEditingActivity(null);
+                }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateActivityMutation.isPending}>
+                  {updateActivityMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
       <CardContent>
         {isLoading ? (
           <div className="space-y-4">
@@ -446,12 +699,12 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                       <div className="absolute -left-[25px] top-4 w-4 h-4 rounded-full bg-background border-2 border-muted flex items-center justify-center">
                         {getActivityIcon(activity.activityType)}
                       </div>
-                      
+
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <Badge 
-                              variant="secondary" 
+                            <Badge
+                              variant="secondary"
                               className={`text-xs ${getActivityColor(activity.activityType)}`}
                             >
                               {activity.activityType}
@@ -463,7 +716,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                             )}
                             <h5 className={`font-medium ${activity.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{activity.title}</h5>
                           </div>
-                          
+
                           <div className="text-sm text-muted-foreground space-y-1">
                             <div className="flex items-center gap-4">
                               {activity.userName && (
@@ -490,11 +743,11 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                               </div>
                             )}
                           </div>
-                          
+
                           {activity.description && (
                             <p className="text-sm mt-2 whitespace-pre-wrap">{activity.description}</p>
                           )}
-                          
+
                           {activity.followUpDate && (
                             <div className="flex items-center gap-1 mt-2 text-sm text-orange-600 dark:text-orange-400">
                               <Calendar className="h-3 w-3" />
@@ -503,16 +756,33 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                           )}
                         </div>
 
-                        <button
-                          title={activity.isCompleted ? "Reopen" : "Mark complete"}
-                          disabled={toggleCompleteMutation.isPending}
-                          onClick={() => toggleCompleteMutation.mutate({ id: activity.id, isCompleted: activity.isCompleted })}
-                          className="ml-3 shrink-0 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-                        >
-                          {activity.isCompleted
-                            ? <RotateCcw className="h-4 w-4" />
-                            : <CheckCircle className="h-4 w-4" />}
-                        </button>
+                        <div className="ml-3 flex items-center gap-1 shrink-0">
+                          <button
+                            title="Edit"
+                            onClick={() => openEditDialog(activity)}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          {activity.isCompleted ? (
+                            <button
+                              title="Reopen"
+                              onClick={() => openEditDialog(activity)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <button
+                              title="Mark complete"
+                              disabled={toggleCompleteMutation.isPending}
+                              onClick={() => toggleCompleteMutation.mutate({ id: activity.id, isCompleted: activity.isCompleted })}
+                              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
