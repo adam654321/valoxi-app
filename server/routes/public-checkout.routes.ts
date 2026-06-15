@@ -160,6 +160,13 @@ router.post('/checkout', asyncHandler(async (req: Request, res: Response) => {
     trialEnd.setMonth(trialEnd.getMonth() + campaign.freeMonthsTotal);
     const trialDays = Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
     checkoutParams.subscription_data = { trial_period_days: trialDays };
+  } else {
+    checkoutParams.subscription_data = {
+      trial_period_days: 2,
+      metadata: {
+        trial_type: 'standard_48h',
+      },
+    };
   }
 
   const session = await stripe.checkout.sessions.create(checkoutParams);

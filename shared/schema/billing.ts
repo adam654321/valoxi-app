@@ -35,6 +35,8 @@ export const subscriptions = pgTable("subscriptions", {
   communityDiscountCouponId: varchar("community_discount_coupon_id", { length: 50 }),
   freeMonthsWarningEmailSentAt: timestamp("free_months_warning_email_sent_at"),
   trialEndsAt: timestamp("trial_ends_at"),
+  trialExtensionSentAt: timestamp("trial_extension_sent_at"),
+  trialWarningEmailSentAt: timestamp("trial_warning_email_sent_at"),
   currency: varchar("currency", { length: 3 }).default('usd'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
