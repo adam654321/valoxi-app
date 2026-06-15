@@ -19,28 +19,16 @@ function toFundingInput(f: any): FundingLineInput {
   };
 }
 
-async function run() {
-  const dryRun = !process.argv.includes('--commit');
-  console.log(dryRun ? '=== DRY RUN (parity proof only, no writes). Pass --commit to migrate. ===' : '=== COMMIT MODE ===');
-
-  // Find every model holding a seller_financing or earnout funding line.
-  const rows: any[] = (await db.execute(
-    `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
-  )).rows ?? [];
-  const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
-  console.log('Affected models:', modelIds.join(', '));
-
+async function parityProof(modelIds: number[]): Promise<boolean> {
   let mismatches = 0;
   for (const id of modelIds) {
     const model = await dealModelRepository.getByIdWithDetails(id);
     if (!model) { console.log(`model ${id}: NOT FOUND, skipping`); continue; }
 
-    // BEFORE: today's path - all funding lines feed as funding lines; new tables (empty) feed nothing.
     const beforeFunding: FundingLineInput[] = model.fundingLines.map(toFundingInput);
     const beforeSeller: SellerPaymentInput[] = [];
     const beforeContingent: ContingentConsiderationInput[] = [];
 
-    // AFTER: deferred types excluded from funding; seller/earnout fed as table rows mapped from those same lines.
     const afterFunding: FundingLineInput[] = model.fundingLines
       .filter((f) => !DEFERRED_TYPES.includes(f.fundingType))
       .map(toFundingInput);
@@ -51,15 +39,9 @@ async function run() {
       .filter((f) => f.fundingType === 'earnout')
       .map((f) => { const c = fundingLineToContingent(f); return { maximumAmount: c.maximumAmount, termMonths: c.termMonths, includeInDscr: c.includeInDscr ?? true, isActive: c.isActive ?? false }; });
 
-    const ebitda: Record<string, number> = {};
-    for (const [k, v] of Object.entries(model as any)) { /* ebitda comes via service normally; reuse persisted calc inputs below */ }
-
     const before = calculateFullDealModel({ '1': 0 }, [], beforeFunding, buildModelInput(model), beforeSeller, beforeContingent);
     const after  = calculateFullDealModel({ '1': 0 }, [], afterFunding,  buildModelInput(model), afterSeller,  afterContingent);
 
-    // Fee fields deliberately excluded: the fee-base fix changes feeLoanArrangement/totalFees
-    // by design when seller/earnout leave the loan base. Parity proves the MOVE is
-    // funded/gap/DSCR neutral, not fee-neutral.
     const fields: (keyof typeof before)[] = ['totalFunded','fundingGap','totalAnnualDebtService','paymentCoverRatio'];
     const diffs = fields.filter((k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]));
     if (diffs.length) {
@@ -70,50 +52,165 @@ async function run() {
       console.log(`model ${id}: parity OK (funded=${after.totalFunded}, gap=${after.fundingGap}, dscr=${after.paymentCoverRatio}, loanFee=${after.feeLoanArrangement})`);
     }
   }
-
-  if (mismatches > 0) { console.error(`ABORT: ${mismatches} model(s) failed parity. No writes performed.`); process.exit(1); }
+  if (mismatches > 0) {
+    console.error(`ABORT: ${mismatches} model(s) failed parity. No writes performed.`);
+    return false;
+  }
   console.log('All models parity OK.');
+  return true;
+}
 
-  if (dryRun) { console.log('Dry run complete. No writes. Re-run with --commit to migrate.'); return; }
+async function run() {
+  const args = process.argv;
+  const insertOnly    = args.includes('--insert-only');
+  const deactivateOnly = args.includes('--deactivate-only');
 
-  // COMMIT: per affected model, ensure new-table rows exist (insert ONLY if missing),
-  // then deactivate the old seller/earnout funding lines so old and new never coexist active.
-  // Insert runs BEFORE deactivation so a freshly inserted row inherits the active flag.
+  if (insertOnly) {
+    console.log('=== MODE: INSERT-ONLY (pre-deploy) — old lines remain active ===');
+  } else {
+    console.log('=== MODE: DRY RUN — no writes ===');
+  }
+
+  const rows: any[] = (await db.execute(
+    `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
+  )).rows ?? [];
+  const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
+  console.log('Affected models:', modelIds.join(', '));
+
+  const ok = await parityProof(modelIds);
+  if (!ok) { process.exit(1); }
+
+  if (!insertOnly) {
+    console.log('Dry run complete. No writes. Re-run with --insert-only to insert into new tables.');
+    return;
+  }
+
+  // INSERT-ONLY: insert new-table rows; old funding lines left active throughout.
   for (const id of modelIds) {
     const model = await dealModelRepository.getByIdWithDetails(id);
     if (!model) continue;
-    const oldSeller = model.fundingLines.filter((f) => f.fundingType === 'seller_financing');
+    const oldSeller  = model.fundingLines.filter((f) => f.fundingType === 'seller_financing');
     const oldEarnout = model.fundingLines.filter((f) => f.fundingType === 'earnout');
 
-    let sellerRowsPresent = (await dealModelRepository.getSellerPaymentsByModelId(id)).length;
+    const sellerRowsPresent = (await dealModelRepository.getSellerPaymentsByModelId(id)).length;
     if (sellerRowsPresent === 0 && oldSeller.length > 0) {
       await dealModelRepository.createSellerPayments(oldSeller.map(fundingLineToSellerPayment));
-      sellerRowsPresent = oldSeller.length;
-      console.log(`model ${id}: inserted ${oldSeller.length} seller`);
+      console.log(`model ${id}: inserted ${oldSeller.length} seller row(s) — old lines remain active`);
     } else if (oldSeller.length > 0) {
-      console.log(`model ${id}: seller rows present (${sellerRowsPresent}), insert skipped`);
+      console.log(`model ${id}: seller rows already present (${sellerRowsPresent}), insert skipped`);
     }
 
-    let ccRowsPresent = (await dealModelRepository.getContingentConsiderationByModelId(id)).length;
+    const ccRowsPresent = (await dealModelRepository.getContingentConsiderationByModelId(id)).length;
     if (ccRowsPresent === 0 && oldEarnout.length > 0) {
       await dealModelRepository.createContingentConsiderations(oldEarnout.map(fundingLineToContingent));
-      ccRowsPresent = oldEarnout.length;
-      console.log(`model ${id}: inserted ${oldEarnout.length} earnout`);
+      console.log(`model ${id}: inserted ${oldEarnout.length} earnout row(s) — old lines remain active`);
     } else if (oldEarnout.length > 0) {
-      console.log(`model ${id}: earnout rows present (${ccRowsPresent}), insert skipped`);
+      console.log(`model ${id}: earnout rows already present (${ccRowsPresent}), insert skipped`);
     }
+  }
+  console.log('INSERT-ONLY complete. New-table rows ensured; old seller/earnout funding lines still active.');
+}
+
+async function deactivateOnly() {
+  console.log('=== MODE: DEACTIVATE-ONLY (post-deploy) — removes old funding lines ===');
+
+  const rows: any[] = (await db.execute(
+    `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
+  )).rows ?? [];
+  const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
+  console.log('Affected models:', modelIds.join(', '));
+
+  for (const id of modelIds) {
+    const model = await dealModelRepository.getByIdWithDetails(id);
+    if (!model) { console.log(`model ${id}: NOT FOUND, skipping`); continue; }
+    const oldSeller  = model.fundingLines.filter((f) => f.fundingType === 'seller_financing');
+    const oldEarnout = model.fundingLines.filter((f) => f.fundingType === 'earnout');
+
+    const sellerRowsPresent = (await dealModelRepository.getSellerPaymentsByModelId(id)).length;
+    const ccRowsPresent     = (await dealModelRepository.getContingentConsiderationByModelId(id)).length;
 
     let deactivated = 0;
+
     for (const line of oldSeller) {
-      if (sellerRowsPresent > 0 && line.isActive) { await dealModelRepository.updateFundingLine(line.id, { isActive: false }); deactivated++; }
+      if (sellerRowsPresent === 0) {
+        console.warn(`model ${id}: WARNING — no seller-payment rows found; skipping deactivation of funding line ${line.id}`);
+        continue;
+      }
+      if (line.isActive) { await dealModelRepository.updateFundingLine(line.id, { isActive: false }); deactivated++; }
     }
+
     for (const line of oldEarnout) {
-      if (ccRowsPresent > 0 && line.isActive) { await dealModelRepository.updateFundingLine(line.id, { isActive: false }); deactivated++; }
+      if (ccRowsPresent === 0) {
+        console.warn(`model ${id}: WARNING — no contingent-consideration rows found; skipping deactivation of funding line ${line.id}`);
+        continue;
+      }
+      if (line.isActive) { await dealModelRepository.updateFundingLine(line.id, { isActive: false }); deactivated++; }
     }
+
     console.log(`model ${id}: deactivated ${deactivated} old funding line(s)`);
   }
-  console.log('Migration complete. New-table rows ensured; old seller/earnout funding lines deactivated.');
+  console.log('DEACTIVATE-ONLY complete. Old seller/earnout funding lines deactivated.');
 }
+
+async function verify() {
+  console.log('=== MODE: VERIFY ===');
+  const rows: any[] = (await db.execute(
+    `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
+  )).rows ?? [];
+  const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
+  const near = (a: number, b: number) => Math.abs(a - b) <= 1;
+  let bad = 0;
+  for (const id of modelIds) {
+    const m = await dealModelRepository.getByIdWithDetails(id);
+    if (!m) { console.log(`model ${id}: FAIL - NOT FOUND`); bad++; continue; }
+    const oldSeller  = m.fundingLines.filter((f) => f.fundingType === 'seller_financing');
+    const oldEarnout = m.fundingLines.filter((f) => f.fundingType === 'earnout');
+    const activeOldSeller  = oldSeller.filter((f) => f.isActive).length;
+    const activeOldEarnout = oldEarnout.filter((f) => f.isActive).length;
+    const sellerRows = m.sellerPayments ?? [];
+    const ccRows     = m.contingentConsideration ?? [];
+    const oldSellerSum  = oldSeller.reduce((s, f) => s + Number(f.amountUsed ?? 0), 0);
+    const newSellerSum  = sellerRows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+    const oldEarnoutSum = oldEarnout.reduce((s, f) => s + Number(f.amountUsed ?? 0), 0);
+    const newCcSum      = ccRows.reduce((s, r) => s + Number(r.maximumAmount ?? 0), 0);
+
+    const problems: string[] = [];
+    if (activeOldSeller > 0)  problems.push(`${activeOldSeller} active old seller line(s)`);
+    if (activeOldEarnout > 0) problems.push(`${activeOldEarnout} active old earnout line(s)`);
+    if (oldSeller.length > 0 && sellerRows.length === 0)  problems.push('seller lines exist but no seller-payment rows');
+    if (oldEarnout.length > 0 && ccRows.length === 0)     problems.push('earnout lines exist but no contingent rows');
+    if (oldSeller.length > 0 && !near(oldSellerSum, newSellerSum))    problems.push(`seller sum mismatch old=${oldSellerSum} new=${newSellerSum}`);
+    if (oldEarnout.length > 0 && !near(oldEarnoutSum, newCcSum))      problems.push(`earnout sum mismatch old=${oldEarnoutSum} new=${newCcSum}`);
+
+    if (problems.length) {
+      bad++;
+      console.log(`model ${id}: FAIL - ${problems.join('; ')}`);
+    } else {
+      console.log(`model ${id}: VERIFIED (seller rows=${sellerRows.length} sum=${newSellerSum}, earnout rows=${ccRows.length} sum=${newCcSum}, active old lines=0)`);
+    }
+  }
+  if (bad > 0) { console.error(`VERIFY FAILED: ${bad} model(s).`); process.exit(1); }
+  console.log('All affected models verified: new-table rows present, sums reconcile, zero active old seller/earnout lines.');
+}
+
+// CLI dispatch
+const args = process.argv;
+if (args.includes('--commit')) {
+  console.error('ERROR: --commit is no longer valid. Use --insert-only or --deactivate-only.');
+  process.exit(1);
+}
+
+let entry: () => Promise<void>;
+if (args.includes('--verify')) {
+  entry = verify;
+} else if (args.includes('--deactivate-only')) {
+  entry = deactivateOnly;
+} else {
+  // Handles both --insert-only and dry run (no flags); run() reads args internally.
+  entry = run;
+}
+
+entry().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
 
 // Build the calculator's DealModelInput from a model row (mirror of buildCalcInputs modelInput).
 function buildModelInput(model: any) {
@@ -131,46 +228,3 @@ function buildModelInput(model: any) {
     feeDealMakerType: (model.feeDealMakerType as any) ?? 'percent', customFees: null,
   };
 }
-
-async function verify() {
-  const rows: any[] = (await db.execute(
-    `SELECT DISTINCT deal_model_id FROM deal_model_funding_lines WHERE funding_type IN ('seller_financing','earnout') ORDER BY deal_model_id` as any
-  )).rows ?? [];
-  const modelIds: number[] = rows.map((r: any) => Number(r.deal_model_id));
-  const near = (a: number, b: number) => Math.abs(a - b) <= 1;
-  let bad = 0;
-  for (const id of modelIds) {
-    const m = await dealModelRepository.getByIdWithDetails(id);
-    if (!m) { console.log(`model ${id}: FAIL - NOT FOUND`); bad++; continue; }
-    const oldSeller = m.fundingLines.filter((f) => f.fundingType === 'seller_financing');
-    const oldEarnout = m.fundingLines.filter((f) => f.fundingType === 'earnout');
-    const activeOldSeller = oldSeller.filter((f) => f.isActive).length;
-    const activeOldEarnout = oldEarnout.filter((f) => f.isActive).length;
-    const sellerRows = m.sellerPayments ?? [];
-    const ccRows = m.contingentConsideration ?? [];
-    const oldSellerSum = oldSeller.reduce((s, f) => s + Number(f.amountUsed ?? 0), 0);
-    const newSellerSum = sellerRows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
-    const oldEarnoutSum = oldEarnout.reduce((s, f) => s + Number(f.amountUsed ?? 0), 0);
-    const newCcSum = ccRows.reduce((s, r) => s + Number(r.maximumAmount ?? 0), 0);
-
-    const problems: string[] = [];
-    if (activeOldSeller > 0) problems.push(`${activeOldSeller} active old seller line(s)`);
-    if (activeOldEarnout > 0) problems.push(`${activeOldEarnout} active old earnout line(s)`);
-    if (oldSeller.length > 0 && sellerRows.length === 0) problems.push('seller lines exist but no seller-payment rows');
-    if (oldEarnout.length > 0 && ccRows.length === 0) problems.push('earnout lines exist but no contingent rows');
-    if (oldSeller.length > 0 && !near(oldSellerSum, newSellerSum)) problems.push(`seller sum mismatch old=${oldSellerSum} new=${newSellerSum}`);
-    if (oldEarnout.length > 0 && !near(oldEarnoutSum, newCcSum)) problems.push(`earnout sum mismatch old=${oldEarnoutSum} new=${newCcSum}`);
-
-    if (problems.length) {
-      bad++;
-      console.log(`model ${id}: FAIL - ${problems.join('; ')}`);
-    } else {
-      console.log(`model ${id}: VERIFIED (seller rows=${sellerRows.length} sum=${newSellerSum}, earnout rows=${ccRows.length} sum=${newCcSum}, active old lines=0)`);
-    }
-  }
-  if (bad > 0) { console.error(`VERIFY FAILED: ${bad} model(s).`); process.exit(1); }
-  console.log('All affected models verified: new-table rows present, sums reconcile, zero active old seller/earnout lines.');
-}
-
-const entry = process.argv.includes('--verify') ? verify : run;
-entry().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
