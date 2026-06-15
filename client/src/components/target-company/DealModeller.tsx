@@ -24,6 +24,7 @@ import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import BalanceSheetSection from '@/components/deal-modeller/BalanceSheetSection';
 import CashFlowSection from '@/components/deal-modeller/CashFlowSection';
+import WorkingCapitalSection from '@/components/deal-modeller/WorkingCapitalSection';
 import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import FundingSection from '@/components/deal-modeller/FundingSection';
@@ -706,6 +707,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   <TabsList className="hidden md:inline-flex">
                     <TabsTrigger value="income">Income Statement</TabsTrigger>
                     <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
+                    <TabsTrigger value="workingcapital">Working Capital</TabsTrigger>
                     <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
                   </TabsList>
                   <div className="md:hidden">
@@ -716,6 +718,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                       <SelectContent>
                         <SelectItem value="income">Income Statement</SelectItem>
                         <SelectItem value="balance">Balance Sheet</SelectItem>
+                        <SelectItem value="workingcapital">Working Capital</SelectItem>
                         <SelectItem value="cashflow">Cash Flow</SelectItem>
                       </SelectContent>
                     </Select>
@@ -735,8 +738,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                     <BalanceSheetSection financialData={financialsRaw} />
                   </TabsContent>
 
+                  <TabsContent value="workingcapital" className="mt-0">
+                    <WorkingCapitalSection operationalExpert={operationalExpertData} />
+                  </TabsContent>
+
                   <TabsContent value="cashflow" className="mt-0">
-                    <CashFlowSection financialData={financialsRaw} operationalExpert={operationalExpertData} />
+                    <CashFlowSection financialData={financialsRaw} />
                   </TabsContent>
                 </Tabs>
 
