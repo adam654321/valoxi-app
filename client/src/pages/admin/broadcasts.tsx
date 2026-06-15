@@ -206,7 +206,7 @@ export default function AdminBroadcasts() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Note: this is a rough preview. The actual email applies the Valoxi brand template (logo, footer, orange #E05115). Use <code className="bg-muted px-1 rounded text-xs">{"{{first_name}}"}</code> to personalise — test sends substitute your own name so you can see how it looks; real sends pass the token to Resend, which fills in each contact's first name automatically.
+              Note: this is a rough preview. The actual email applies the Valoxi brand template (logo, footer, orange #E05115). Use <code className="bg-muted px-1 rounded text-xs">{"{{first_name}}"}</code> to personalise — test sends substitute your own name; real sends use "there" as a fallback (e.g. "Hi there,").
             </p>
           </CardContent>
         </Card>
