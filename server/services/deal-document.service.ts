@@ -861,7 +861,6 @@ export class DealDocumentService {
     const contingentConsiderationInputs = contingentConsiderationRows.map(c => ({
       maximumAmount: c.maximumAmount,
       termMonths: c.termMonths,
-      interestRate: c.interestRate,
       isActive: c.isActive ?? false,
     }));
 
@@ -937,6 +936,7 @@ export class DealDocumentService {
       breakdownLines.push(`Valuation EBITDA: ${fmt(valuationEbitdaForDoc)}`);
       breakdownLines.push(`Enterprise Value (Valuation EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
     } else {
+      breakdownLines.push(`Average Adjusted EBITDA: ${fmt(calculations.averageAdjustedEbitda || 0)}`);
       breakdownLines.push(`Enterprise Value (Adjusted EBITDA × ${Number(model.ebitdaMultiple) || 0} multiple): ${fmt(enterpriseValue)}`);
     }
     if (excessCash > 0) breakdownLines.push(`Plus Excess Cash: ${fmt(excessCash)}`);
