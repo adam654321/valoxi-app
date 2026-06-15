@@ -87,11 +87,12 @@ class BroadcastsService {
     return summaries;
   }
 
-  private renderBroadcastHtml(subject: string, bodyMarkdown: string, firstName: string): string {
-    const resolvedMarkdown = substituteMergeVars(bodyMarkdown, firstName);
+  private renderBroadcastHtml(subject: string, bodyMarkdown: string, firstName: string | null): string {
+    const resolvedMarkdown = firstName !== null ? substituteMergeVars(bodyMarkdown, firstName) : bodyMarkdown;
+    const resolvedSubject = firstName !== null ? substituteMergeVars(subject, firstName) : subject;
     const bodyHtml = marked.parse(resolvedMarkdown, { async: false }) as string;
     return renderBrandedEmail({
-      heading: substituteMergeVars(subject, firstName),
+      heading: resolvedSubject,
       blocks: [
         { type: 'raw_html', html: bodyHtml },
       ],
@@ -142,14 +143,15 @@ class BroadcastsService {
       testInternalUserCompanyId,
     );
 
-    const [sender] = await db.select({ firstName: users.firstName }).from(users).where(eq(users.id, input.sentByUserId));
-    const rawFirst = sender?.firstName;
-    const firstName = input.isTest
-      ? (rawFirst != null && rawFirst !== '' ? rawFirst : 'there')
-      : 'there';
-    console.log(`[broadcasts] sentByUserId=${input.sentByUserId} rawFirst=${JSON.stringify(rawFirst)} → firstName="${firstName}" isTest=${input.isTest}`);
-
-    const html = this.renderBroadcastHtml(input.subject, input.bodyMarkdown, firstName);
+    let html: string;
+    if (input.isTest) {
+      const [sender] = await db.select({ firstName: users.firstName }).from(users).where(eq(users.id, input.sentByUserId));
+      const rawFirst = sender?.firstName;
+      const firstName = rawFirst != null && rawFirst !== '' ? rawFirst : 'there';
+      html = this.renderBroadcastHtml(input.subject, input.bodyMarkdown, firstName);
+    } else {
+      html = this.renderBroadcastHtml(input.subject, input.bodyMarkdown, null);
+    }
     const targetSegmentId = input.isTest ? this.getSegmentId('test_internal') : segmentId;
     if (!targetSegmentId) {
       return { status: 'failed', error: 'Target segment not configured', recipientCountEstimate };
