@@ -175,7 +175,7 @@ export function buildOfferLetterHtml(data: any): string {
     }
   }
   if (raw.earnoutMaximum > 0) {
-    paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
+    paymentHtml += `<p>Earnout: <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
     if (raw.earnoutMetric) {
       paymentHtml += `<p>Earnout details: ${raw.earnoutMetric}</p>`;
     }
@@ -251,7 +251,7 @@ export function buildHoTHtml(data: any): string {
     }
   }
   if (raw.earnoutMaximum > 0) {
-    paymentHtml += `<p>Earnout (maximum): <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
+    paymentHtml += `<p>Earnout: <strong>${fmt(raw.earnoutMaximum)}</strong></p>`;
     if (raw.earnoutMetric)         paymentHtml += `<p style="color:#555;font-size:0.95em;">Metric: ${raw.earnoutMetric}</p>`;
     if (raw.earnoutTermMonths > 0) paymentHtml += `<p style="color:#555;font-size:0.95em;">Period: ${raw.earnoutTermMonths} months</p>`;
   }
