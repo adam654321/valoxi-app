@@ -163,6 +163,15 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     return data?.yearly_metrics || null;
   }, [expertResults]);
 
+  const operationalExpertData = useMemo<any | null>(() => {
+    if (!expertResults) return null;
+    const opExpert = expertResults.find((r: any) => r.expertType === 'operational' && r.status === 'success');
+    if (!opExpert?.analysisData) return null;
+    return typeof opExpert.analysisData === 'string'
+      ? JSON.parse(opExpert.analysisData)
+      : opExpert.analysisData;
+  }, [expertResults]);
+
   const financialsFromExpert = useMemo<FinancialsData | null>(() => {
     if (!financialExpertMetrics) return null;
     const years = Object.keys(financialExpertMetrics).sort();
@@ -727,7 +736,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   </TabsContent>
 
                   <TabsContent value="cashflow" className="mt-0">
-                    <CashFlowSection financialData={financialsRaw} />
+                    <CashFlowSection financialData={financialsRaw} operationalExpert={operationalExpertData} />
                   </TabsContent>
                 </Tabs>
 
