@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, Clock, User, Phone, Mail, MessageSquare, FileText, Plus, Search } from "lucide-react";
+import { Calendar, Clock, User, Phone, Mail, MessageSquare, FileText, Plus, Search, CheckCircle, RotateCcw } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -172,6 +172,18 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to log activity", variant: "destructive" });
+    },
+  });
+
+  const toggleCompleteMutation = useMutation({
+    mutationFn: ({ id, isCompleted }: { id: number; isCompleted: boolean }) =>
+      apiRequest("PUT", `/api/v2/activities/${id}`, { isCompleted: !isCompleted }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/company", targetCompanyId, "timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v2/activities/recent"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update activity", variant: "destructive" });
     },
   });
 
@@ -429,7 +441,7 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                   {groupedByDate[dateKey].map((activity) => (
                     <div
                       key={activity.id}
-                      className="relative border rounded-lg p-4 hover:bg-muted/30 transition-colors border-l-4 border-l-blue-500"
+                      className={`relative border rounded-lg p-4 hover:bg-muted/30 transition-colors border-l-4 ${activity.isCompleted ? 'border-l-green-500' : 'border-l-blue-500'}`}
                     >
                       <div className="absolute -left-[25px] top-4 w-4 h-4 rounded-full bg-background border-2 border-muted flex items-center justify-center">
                         {getActivityIcon(activity.activityType)}
@@ -444,7 +456,12 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                             >
                               {activity.activityType}
                             </Badge>
-                            <h5 className="font-medium">{activity.title}</h5>
+                            {activity.isCompleted && (
+                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                                Completed
+                              </Badge>
+                            )}
+                            <h5 className={`font-medium ${activity.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{activity.title}</h5>
                           </div>
                           
                           <div className="text-sm text-muted-foreground space-y-1">
@@ -485,6 +502,17 @@ export function DealActivitySection({ targetCompanyId, companyName, contacts }: 
                             </div>
                           )}
                         </div>
+
+                        <button
+                          title={activity.isCompleted ? "Reopen" : "Mark complete"}
+                          disabled={toggleCompleteMutation.isPending}
+                          onClick={() => toggleCompleteMutation.mutate({ id: activity.id, isCompleted: activity.isCompleted })}
+                          className="ml-3 shrink-0 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                        >
+                          {activity.isCompleted
+                            ? <RotateCcw className="h-4 w-4" />
+                            : <CheckCircle className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
                   ))}
