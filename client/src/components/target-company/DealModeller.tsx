@@ -374,6 +374,13 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
   const sendOfferMutation = useMutation({
     mutationFn: async () => {
+      // Wait for any in-flight model saves (debounced fields) to complete before
+      // generating the offer — ensures the server reads the latest model state.
+      const deadline = Date.now() + 2500;
+      while (queryClient.isMutating() > 0 && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 80));
+      }
+
       const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
         targetCompanyId: companyId,
         dealModelId: selectedModelId,
@@ -381,6 +388,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       return res.json();
     },
     onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-documents/company', companyId] });
       const version = data?.document?.version ?? data?.data?.document?.version;
       const versionSuffix = version ? ` v${version}` : '';
       handleSendResult(data, toast, `Offer letter${versionSuffix} sent to seller portal`, nylasConnectVisible);
@@ -392,6 +400,12 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
   const downloadOfferMutation = useMutation({
     mutationFn: async () => {
+      // Wait for any in-flight model saves to settle before generating the document.
+      const deadline = Date.now() + 2500;
+      while (queryClient.isMutating() > 0 && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 80));
+      }
+
       const res = await apiRequest('POST', '/api/v2/deal-documents/create-offline', {
         targetCompanyId: companyId,
         documentType: 'offer_letter',

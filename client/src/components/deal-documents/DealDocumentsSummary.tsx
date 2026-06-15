@@ -121,6 +121,12 @@ export default function DealDocumentsSummary({ targetCompanyId }: DealDocumentsS
 
   const sendOfferPortalMutation = useMutation({
     mutationFn: async () => {
+      // Wait for any in-flight model saves to settle before generating the offer.
+      const deadline = Date.now() + 2500;
+      while (queryClient.isMutating() > 0 && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 80));
+      }
+
       const res = await apiRequest('POST', '/api/v2/deal-documents/send-offer', {
         targetCompanyId,
         dealModelId: latestDealModelId,

@@ -851,9 +851,30 @@ export class DealDocumentService {
       isActive: fl.isActive ?? false,
     }));
 
+    const sellerPaymentInputs = sellerPaymentRows.map(s => ({
+      amount: s.amount,
+      termMonths: s.termMonths,
+      interestRate: s.interestRate,
+      isActive: s.isActive ?? false,
+    }));
+
+    const contingentConsiderationInputs = contingentConsiderationRows.map(c => ({
+      maximumAmount: c.maximumAmount,
+      termMonths: c.termMonths,
+      interestRate: c.interestRate,
+      isActive: c.isActive ?? false,
+    }));
+
     let calculations: any = {};
     try {
-      calculations = calculateFullDealModel(reportedEbitdaByYear, adjustmentInputs, fundingLineInputs, modelInput);
+      calculations = calculateFullDealModel(
+        reportedEbitdaByYear,
+        adjustmentInputs,
+        fundingLineInputs,
+        modelInput,
+        sellerPaymentInputs,
+        contingentConsiderationInputs
+      );
     } catch (err) {
       console.error('[DEAL_DOCS] Calculator error:', err);
     }
