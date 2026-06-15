@@ -23,6 +23,7 @@ import type { DealModel, DealModelAdjustment, DealModelFundingLine, DealModelSel
 import { formatCurrency } from '@/lib/format-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import BalanceSheetSection from '@/components/deal-modeller/BalanceSheetSection';
+import CashFlowSection from '@/components/deal-modeller/CashFlowSection';
 import AdjustmentsSection from '@/components/deal-modeller/AdjustmentsSection';
 import ValuationSection from '@/components/deal-modeller/ValuationSection';
 import FundingSection from '@/components/deal-modeller/FundingSection';
@@ -696,6 +697,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                   <TabsList className="hidden md:inline-flex">
                     <TabsTrigger value="income">Income Statement</TabsTrigger>
                     <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
+                    <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
                   </TabsList>
                   <div className="md:hidden">
                     <Select value={activeStatement} onValueChange={setActiveStatement}>
@@ -705,6 +707,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
                       <SelectContent>
                         <SelectItem value="income">Income Statement</SelectItem>
                         <SelectItem value="balance">Balance Sheet</SelectItem>
+                        <SelectItem value="cashflow">Cash Flow</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -721,6 +724,10 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
                   <TabsContent value="balance" className="mt-0">
                     <BalanceSheetSection financialData={financialsRaw} />
+                  </TabsContent>
+
+                  <TabsContent value="cashflow" className="mt-0">
+                    <CashFlowSection financialData={financialsRaw} />
                   </TabsContent>
                 </Tabs>
 
