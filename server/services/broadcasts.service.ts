@@ -6,6 +6,12 @@ import { broadcastsSent, type BroadcastSent } from '@shared/schema/marketing';
 import { resendMarketing } from '../lib/resend-marketing';
 import { renderBrandedEmail } from './email-template';
 
+function substituteMergeVars(text: string, firstName: string): string {
+  return text
+    .replace(/\{\{\s*subscriber\.first_name\s*\}\}/gi, firstName)
+    .replace(/\{\{\s*first_name\s*\}\}/gi, firstName);
+}
+
 type SegmentKey = 'all_users' | 'active_subscribers' | 'cancelled_subscribers' | 'past_due' | 'trialing' | 'test_internal';
 
 interface SegmentConfig {
@@ -81,10 +87,11 @@ class BroadcastsService {
     return summaries;
   }
 
-  private renderBroadcastHtml(subject: string, bodyMarkdown: string): string {
-    const bodyHtml = marked.parse(bodyMarkdown, { async: false }) as string;
+  private renderBroadcastHtml(subject: string, bodyMarkdown: string, firstName: string): string {
+    const resolvedMarkdown = substituteMergeVars(bodyMarkdown, firstName);
+    const bodyHtml = marked.parse(resolvedMarkdown, { async: false }) as string;
     return renderBrandedEmail({
-      heading: subject,
+      heading: substituteMergeVars(subject, firstName),
       blocks: [
         { type: 'raw_html', html: bodyHtml },
       ],
@@ -135,7 +142,12 @@ class BroadcastsService {
       testInternalUserCompanyId,
     );
 
-    const html = this.renderBroadcastHtml(input.subject, input.bodyMarkdown);
+    const [sender] = await db.select({ firstName: users.firstName }).from(users).where(eq(users.id, input.sentByUserId));
+    const firstName = input.isTest
+      ? (sender?.firstName ?? 'there')
+      : 'there';
+
+    const html = this.renderBroadcastHtml(input.subject, input.bodyMarkdown, firstName);
     const targetSegmentId = input.isTest ? this.getSegmentId('test_internal') : segmentId;
     if (!targetSegmentId) {
       return { status: 'failed', error: 'Target segment not configured', recipientCountEstimate };
