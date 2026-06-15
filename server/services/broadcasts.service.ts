@@ -143,9 +143,11 @@ class BroadcastsService {
     );
 
     const [sender] = await db.select({ firstName: users.firstName }).from(users).where(eq(users.id, input.sentByUserId));
+    const rawFirst = sender?.firstName;
     const firstName = input.isTest
-      ? (sender?.firstName ?? 'there')
+      ? (rawFirst != null && rawFirst !== '' ? rawFirst : 'there')
       : 'there';
+    console.log(`[broadcasts] sentByUserId=${input.sentByUserId} rawFirst=${JSON.stringify(rawFirst)} → firstName="${firstName}" isTest=${input.isTest}`);
 
     const html = this.renderBroadcastHtml(input.subject, input.bodyMarkdown, firstName);
     const targetSegmentId = input.isTest ? this.getSegmentId('test_internal') : segmentId;
