@@ -100,6 +100,9 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
           const periodEnd = primaryItem?.current_period_end
             ? new Date(primaryItem.current_period_end * 1000)
             : new Date();
+          const trialEnd = stripeSub.trial_end
+            ? new Date(stripeSub.trial_end * 1000)
+            : null;
           const stripeStatusMap: Record<string, SubscriptionStatus> = {
             active: 'active',
             trialing: 'trialing',
@@ -119,6 +122,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
             currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
             status: mappedStatus,
+            trialEnd,
           });
         } else if (!userCompanyId && session.customer && session.subscription) {
           // C-new.2: self-serve provisioning. No metadata.userCompanyId means
@@ -141,6 +145,9 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
             const periodEnd = primaryItem?.current_period_end
               ? new Date(primaryItem.current_period_end * 1000)
               : new Date();
+            const trialEnd = stripeSub.trial_end
+              ? new Date(stripeSub.trial_end * 1000)
+              : null;
             const stripeStatusMap: Record<string, SubscriptionStatus> = {
               active: 'active',
               trialing: 'trialing',
@@ -160,6 +167,7 @@ billingWebhookRoutes.post('/webhook/stripe', async (req: Request, res: Response)
               currentPeriodStart: periodStart,
               currentPeriodEnd: periodEnd,
               status: mappedStatus,
+              trialEnd,
             };
 
             // Email-collision check. Case-insensitive, selects across active

@@ -156,6 +156,7 @@ class BillingService {
       currentPeriodStart: Date;
       currentPeriodEnd: Date;
       status?: SubscriptionStatus;
+      trialEnd?: Date | null;
     }
   ): Promise<Subscription> {
     const existing = await billingRepository.getByCompanyId(userCompanyId);
@@ -180,6 +181,8 @@ class BillingService {
       currentPeriodStart: data.currentPeriodStart,
       currentPeriodEnd: data.currentPeriodEnd,
       canceledAt: null,
+      trialEnd: data.trialEnd ?? null,
+      trialEndsAt: data.trialEnd ?? null,
     });
 
     // Marketing segment sync, fire-and-forget — must never break billing flows
