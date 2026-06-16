@@ -12,7 +12,7 @@ const allowedOrigins: string[] = [
   config.marketing.siteUrl,
   ...(config.server.isProduction
     ? []
-    : ['http://localhost:3002', 'http://127.0.0.1:3002']),
+    : ['http://localhost:3002', 'http://127.0.0.1:3002', 'http://localhost:3008']),
 ];
 
 export function publicCors(req: Request, res: Response, next: NextFunction) {
