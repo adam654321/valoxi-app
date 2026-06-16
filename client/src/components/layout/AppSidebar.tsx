@@ -11,6 +11,7 @@ import {
   Shield,
   CreditCard,
   Settings2,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -27,6 +28,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NavUser } from "./NavUser";
+import { useSubscriptionContext } from "@/context/subscription-context";
 
 const navGroups = [
   {
@@ -63,6 +65,16 @@ const navGroups = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [location] = useLocation();
   const { isSystemAdmin } = useAuth();
+  const { subscription } = useSubscriptionContext();
+
+  const isTrialing = subscription?.status === 'trialing';
+  const trialEnd = subscription?.trialEnd ? new Date(subscription.trialEnd) : null;
+  const hoursRemaining = trialEnd ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60))) : null;
+  const daysRemaining = hoursRemaining !== null ? Math.ceil(hoursRemaining / 24) : null;
+
+  const trialLabel = hoursRemaining !== null && hoursRemaining < 24
+    ? `${hoursRemaining} hours remaining`
+    : `${daysRemaining} days remaining`;
 
   const isActiveRoute = (path: string) => {
     if (path === "/dashboard" && location === "/") return true;
@@ -102,6 +114,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        {isTrialing && (
+          <SidebarGroup>
+            <div className="hidden group-data-[collapsible=icon]:flex justify-center px-1">
+              <SidebarMenuButton tooltip={`Free trial — ${trialLabel}`} className="text-orange-400 hover:text-orange-300">
+                <Clock className="text-orange-400" />
+              </SidebarMenuButton>
+            </div>
+            <div className="group-data-[collapsible=icon]:hidden border-l-2 border-orange-400 bg-orange-500/10 p-3 mx-2 rounded-md mb-2">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="size-3 text-orange-400 shrink-0" />
+                <span className="text-xs font-bold text-orange-400">Free Trial</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">{trialLabel}</p>
+              <Link href="/billing" className="text-xs text-orange-400 hover:text-orange-300 font-medium">
+                Upgrade
+              </Link>
+            </div>
+          </SidebarGroup>
+        )}
         {navGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
