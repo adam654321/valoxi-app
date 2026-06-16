@@ -506,7 +506,7 @@ export class EmailApiService {
 
     const blocks: EmailBlock[] = [
       { type: 'paragraph', text: `Hi ${safeFirstName},` },
-      { type: 'paragraph', text: `Your 6 month free period of Valoxi Core ends on <strong style="color:#FFFFFF;">${safeDateStr}</strong>. To keep your access active, add payment details before that date.` },
+      { type: 'paragraph', text: `Your 3 month free period of Valoxi Core ends on <strong style="color:#FFFFFF;">${safeDateStr}</strong>. To keep your access active, add payment details before that date.` },
       { type: 'paragraph', text: 'When you add payment details, your 15 percent member discount applies automatically to your Core subscription and to any plan you upgrade to later.' },
       { type: 'cta', cta: { label: 'Add payment details', href: billingUrl } },
       {
@@ -553,7 +553,7 @@ export class EmailApiService {
 
     const blocks: EmailBlock[] = [
       { type: 'paragraph', text: `Hi ${safeFirstName},` },
-      { type: 'paragraph', text: `Your 6 month free period of Valoxi Core ended on <strong style="color:#FFFFFF;">${safeEndDate}</strong> and your access has now paused because no payment details were added.` },
+      { type: 'paragraph', text: `Your 3 month free period of Valoxi Core ended on <strong style="color:#FFFFFF;">${safeEndDate}</strong> and your access has now paused because no payment details were added.` },
       { type: 'paragraph', text: `Your data is preserved for 30 days. You can restore everything by signing back in with the same email and completing signup before <strong style="color:#FFFFFF;">${safeRestoreByDate}</strong>. After that date the account will be closed.` },
       { type: 'paragraph', text: 'If you want to continue with Valoxi, use the link below with the same email address.' },
       { type: 'cta', cta: { label: 'Restore your account', href: signupUrl } },
@@ -863,7 +863,7 @@ export class EmailApiService {
       .join('<br>');
 
     const blocks: EmailBlock[] = [
-      { type: 'paragraph', text: `New Valoxi 5D members for <strong style="color:#FFFFFF;">${escapeHtml(monthLabel)}</strong>. The 6 month free period is subsidised upfront at the discounted Core rate.` },
+      { type: 'paragraph', text: `New Valoxi 5D members for <strong style="color:#FFFFFF;">${escapeHtml(monthLabel)}</strong>. The 3 month free period is subsidised upfront at the discounted Core rate.` },
       {
         type: 'info_box',
         box: {
