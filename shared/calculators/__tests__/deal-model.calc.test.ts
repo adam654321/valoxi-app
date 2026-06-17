@@ -118,11 +118,10 @@ describe('calculateOfferPrice', () => {
     minusCorpTaxDue: 50_000,
     minusWorkingCapitalAdj: 30_000,
     plusPropertyValue: 500_000,
-    feeLegalDdPercent: 0,
-    feeAccountingDdPercent: 0,
-    feeBrokerPercent: 0,
-    feeLoanArrangementPercent: 0,
-    feeDealMakerPercent: 0,
+    feeLegalDdAmount: 0,
+    feeAccountingDdAmount: 0,
+    feeLoanArrangementAmount: 0,
+    feeDealMakerAmount: 0,
   };
 
   it('calculates enterprise value as EBITDA × multiple', () => {
@@ -153,11 +152,10 @@ describe('calculateFees', () => {
     minusCorpTaxDue: 0,
     minusWorkingCapitalAdj: 0,
     plusPropertyValue: 0,
-    feeLegalDdPercent: 2,
-    feeAccountingDdPercent: 1.5,
-    feeBrokerPercent: 3,
-    feeLoanArrangementPercent: 1,
-    feeDealMakerPercent: 0.5,
+    feeLegalDdAmount: 20_000,
+    feeAccountingDdAmount: 15_000,
+    feeLoanArrangementAmount: 8_000,
+    feeDealMakerAmount: 5_000,
   };
 
   it('calculates percentage fees off offer price, loan fee off loan amount', () => {
@@ -172,16 +170,16 @@ describe('calculateFees', () => {
   });
 
   it('handles fixed fee type', () => {
-    const model = { ...baseModel, feeLegalDdPercent: 25_000, feeLegalDdType: 'fixed' as const };
+    const model = { ...baseModel, feeLegalDdAmount: 25_000 };
     const result = calculateFees(1_000_000, model);
     expect(result.feeLegalDd).toBe(25_000);
   });
 
   it('includes custom fees based on percent', () => {
-    const model = { ...baseModel, customFees: [{ label: 'Advisory', percent: 0.5 }] };
+    const model = { ...baseModel, customFees: [{ label: 'Advisory', amount: 5_000 }] };
     const result = calculateFees(1_000_000, model, 1_000_000);
     expect(result.customFeeAmounts).toEqual([{ label: 'Advisory', amount: 5_000 }]);
-    expect(result.totalFees).toBe(55_000);
+    expect(result.totalFees).toBe(53_000);
   });
 });
 
@@ -294,11 +292,10 @@ describe('calculateFullDealModel', () => {
       minusCorpTaxDue: 0,
       minusWorkingCapitalAdj: 0,
       plusPropertyValue: 0,
-      feeLegalDdPercent: 1,
-      feeAccountingDdPercent: 0,
-      feeBrokerPercent: 0,
-      feeLoanArrangementPercent: 0,
-      feeDealMakerPercent: 0,
+      feeLegalDdAmount: 0,
+      feeAccountingDdAmount: 0,
+      feeLoanArrangementAmount: 0,
+      feeDealMakerAmount: 0,
     };
     const funding: FundingLineInput[] = [];
 
@@ -361,8 +358,8 @@ describe('calculateFullDealModel - seller and earnout in DSCR', () => {
     averagingYears: 1, ebitdaMultiple: 5,
     plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
     minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
-    feeLegalDdPercent: 0, feeAccountingDdPercent: 0, feeBrokerPercent: 0,
-    feeLoanArrangementPercent: 0, feeDealMakerPercent: 0,
+    feeLegalDdAmount: 0, feeAccountingDdAmount: 0,
+    feeLoanArrangementAmount: 0, feeDealMakerAmount: 0,
   };
   const ebitda = { '2024': 1_000_000 };
 
@@ -421,8 +418,8 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     averagingYears: 1, ebitdaMultiple: 5,
     plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
     minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
-    feeLegalDdPercent: 0, feeAccountingDdPercent: 0, feeBrokerPercent: 0,
-    feeLoanArrangementPercent: 0, feeDealMakerPercent: 0,
+    feeLegalDdAmount: 0, feeAccountingDdAmount: 0,
+    feeLoanArrangementAmount: 0, feeDealMakerAmount: 0,
   };
   const ebitda = { '2024': 1_000_000 };
   const ifLine = (over = {}): FundingLineInput => ({ fundingType: 'receivables_finance', amountUsed: 200_000, interestRate: 10, termMonths: 0, isDebt: true, isActive: true, interestAsEbitdaAdjustment: true, ...over });
@@ -502,8 +499,8 @@ describe('calculateFullDealModel - seller/earnout funding footprint and fee-base
     averagingYears: 1, ebitdaMultiple: 5,
     plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
     minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
-    feeLegalDdPercent: 0, feeAccountingDdPercent: 0, feeBrokerPercent: 0,
-    feeLoanArrangementPercent: 2, feeDealMakerPercent: 0,
+    feeLegalDdAmount: 0, feeAccountingDdAmount: 0,
+    feeLoanArrangementAmount: 0, feeDealMakerAmount: 0,
   };
   const ebitda = { '2024': 1_000_000 };
 

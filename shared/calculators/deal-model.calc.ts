@@ -50,17 +50,11 @@ export interface DealModelInput {
   workingCapitalOverride?: boolean;
   otherAdjustments?: Array<{ label: string; amount: number }> | null;
 
-  feeLegalDdPercent: string | number;
-  feeAccountingDdPercent: string | number;
-  feeBrokerPercent: string | number;
-  feeLoanArrangementPercent: string | number;
-  feeDealMakerPercent: string | number;
-  feeLegalDdType?: 'percent' | 'fixed';
-  feeAccountingDdType?: 'percent' | 'fixed';
-  feeBrokerType?: 'percent' | 'fixed';
-  feeLoanArrangementType?: 'percent' | 'fixed';
-  feeDealMakerType?: 'percent' | 'fixed';
-  customFees?: Array<{ label: string; percent?: number; amount?: number }> | null;
+  feeLegalDdAmount?: string | number;
+  feeAccountingDdAmount?: string | number;
+  feeLoanArrangementAmount?: string | number;
+  feeDealMakerAmount?: string | number;
+  customFees?: Array<{ label: string; amount: string | number }>;
 }
 
 export interface FundingLineResult {
@@ -182,23 +176,15 @@ export function calculateFees(
   totalFees: number;
   totalFundingRequired: number;
 } {
-  function calcFee(value: string | number, type: 'percent' | 'fixed' | undefined, base: number): number {
-    const numValue = toNum(value);
-    return type === 'fixed' ? numValue : base * numValue / 100;
-  }
-
-  const feeLegalDd = calcFee(model.feeLegalDdPercent, model.feeLegalDdType, offerPrice);
-  const feeAccountingDd = calcFee(model.feeAccountingDdPercent, model.feeAccountingDdType, offerPrice);
-  const feeLoanArrangement = calcFee(model.feeLoanArrangementPercent, model.feeLoanArrangementType, totalLoanAmount);
-  const feeDealMaker = calcFee(model.feeDealMakerPercent, model.feeDealMakerType, offerPrice);
+  const feeLegalDd = toNum(model.feeLegalDdAmount);
+  const feeAccountingDd = toNum(model.feeAccountingDdAmount);
+  const feeLoanArrangement = toNum(model.feeLoanArrangementAmount);
+  const feeDealMaker = toNum(model.feeDealMakerAmount);
 
   const customFeeAmounts: Array<{ label: string; amount: number }> = [];
   if (model.customFees && Array.isArray(model.customFees)) {
     for (const fee of model.customFees) {
-      const amount = fee.percent != null
-        ? offerPrice * toNum(fee.percent) / 100
-        : toNum(fee.amount);
-      customFeeAmounts.push({ label: fee.label, amount });
+      customFeeAmounts.push({ label: fee.label, amount: toNum(fee.amount) });
     }
   }
 
