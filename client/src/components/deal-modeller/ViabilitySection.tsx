@@ -121,25 +121,32 @@ function getRatioBarWidth(ratio: number | null): number {
 
 export default function ViabilitySection({ modelId, model, calculations, fundingLines, isLocked, onDataChange, explainContext, cashFromBusiness }: ViabilitySectionProps) {
   const FEE_FIELDS = [
-    { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdPercent', typeField: 'feeLegalDdType' },
-    { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdPercent', typeField: 'feeAccountingDdType' },
-    { key: 'feeLoanArrangement', label: 'Loan Arrangement Fee', valueField: 'feeLoanArrangementPercent', typeField: 'feeLoanArrangementType' },
-    { key: 'feeDealMaker', label: 'Deal Maker Fee', valueField: 'feeDealMakerPercent', typeField: 'feeDealMakerType' },
+    { key: 'feeLegalDd', label: 'Legal Due Diligence', valueField: 'feeLegalDdAmount' },
+    { key: 'feeAccountingDd', label: 'Accounting Due Diligence', valueField: 'feeAccountingDdAmount' },
+    { key: 'feeLoanArrangement', label: 'Loan Arrangement Fee', valueField: 'feeLoanArrangementAmount' },
+    { key: 'feeDealMaker', label: 'Deal Maker Fee', valueField: 'feeDealMakerAmount' },
   ] as const;
 
   type FeeLocalValues = Record<string, string>;
+  type CustomFee = { label: string; amount: string };
 
   const initFeeValues = (m: any): FeeLocalValues => {
     if (!m) return {};
     const vals: FeeLocalValues = {};
     for (const f of FEE_FIELDS) {
-      vals[f.valueField] = m[f.valueField] ?? '';
-      vals[f.typeField] = m[f.typeField] ?? 'percent';
+      vals[f.valueField] = m[f.valueField] ?? '0';
     }
     return vals;
   };
 
+  const initCustomFees = (m: any): CustomFee[] => {
+    if (!m?.customFees) return [];
+    const raw = typeof m.customFees === 'string' ? JSON.parse(m.customFees) : m.customFees;
+    return Array.isArray(raw) ? raw.map((f: any) => ({ label: f.label ?? '', amount: String(f.amount ?? '0') })) : [];
+  };
+
   const [feeValues, setFeeValues] = useState<FeeLocalValues>(() => initFeeValues(model));
+  const [customFees, setCustomFees] = useState<CustomFee[]>(() => initCustomFees(model));
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const isEditingRef = useRef(false);
   const savePendingRef = useRef(false);
@@ -152,10 +159,12 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     if (model.id !== prevModelIdRef.current) {
       prevModelIdRef.current = model.id;
       setFeeValues(initFeeValues(model));
+      setCustomFees(initCustomFees(model));
       return;
     }
     if (!isEditingRef.current && !savePendingRef.current) {
       setFeeValues(initFeeValues(model));
+      setCustomFees(initCustomFees(model));
     }
   }, [model?.id, model?.updatedAt]);
 
@@ -202,16 +211,22 @@ export default function ViabilitySection({ modelId, model, calculations, funding
     debounceSave(field, value);
   };
 
-  const handleFeeTypeToggle = (valueField: string, typeField: string) => {
-    const currentType = feeValues[typeField] || 'percent';
-    const newType = currentType === 'percent' ? 'fixed' : 'percent';
-    setFeeValues(prev => ({ ...prev, [typeField]: newType }));
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const allUpdates = { ...pendingRef.current, [typeField]: newType };
-    pendingRef.current = {};
-    savePendingRef.current = true;
-    setSaveStatus('saving');
-    updateMutation.mutate(allUpdates);
+  const handleCustomFeeChange = (index: number, key: 'label' | 'amount', value: string) => {
+    const updated = customFees.map((f, i) => i === index ? { ...f, [key]: value } : f);
+    setCustomFees(updated);
+    debounceSave('customFees', updated.map(f => ({ label: f.label, amount: Number(f.amount) || 0 })));
+  };
+
+  const handleAddCustomFee = () => {
+    const updated = [...customFees, { label: '', amount: '0' }];
+    setCustomFees(updated);
+    debounceSave('customFees', updated.map(f => ({ label: f.label, amount: Number(f.amount) || 0 })));
+  };
+
+  const handleRemoveCustomFee = (index: number) => {
+    const updated = customFees.filter((_, i) => i !== index);
+    setCustomFees(updated);
+    debounceSave('customFees', updated.map(f => ({ label: f.label, amount: Number(f.amount) || 0 })));
   };
 
   const handleFocus = useCallback(() => { isEditingRef.current = true; }, []);
@@ -543,8 +558,8 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                 <thead>
                   <tr className="border-b text-xs text-muted-foreground">
                     <th className="px-3 py-1.5 text-left font-medium">Fee</th>
-                    <th className="px-3 py-1.5 text-right font-medium">Rate / Amount</th>
-                    <th className="px-3 py-1.5 text-right font-medium">Calculated</th>
+                    <th className="px-3 py-1.5 text-right font-medium">Amount</th>
+                    <th className="px-3 py-1.5 text-right font-medium">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -554,31 +569,21 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                       <td className="px-3 py-2">
                         {!isLocked && modelId ? (
                           <div className="flex items-center gap-1.5 justify-end">
-                            <button
-                              type="button"
-                              onClick={() => handleFeeTypeToggle(f.valueField, f.typeField)}
-                              className="text-xs px-1.5 py-0.5 rounded border bg-background hover:bg-muted transition-colors min-w-[28px] text-center font-medium"
-                              title={feeValues[f.typeField] === 'fixed' ? 'Fixed amount — click to switch to percentage' : 'Percentage — click to switch to fixed amount'}
-                            >
-                              {feeValues[f.typeField] === 'fixed' ? '£' : '%'}
-                            </button>
+                            <span className="text-xs text-muted-foreground">£</span>
                             <input
                               type="number"
-                              value={feeValues[f.valueField] ?? ''}
+                              value={feeValues[f.valueField] ?? '0'}
                               onChange={(e) => handleFeeValueChange(f.valueField, e.target.value)}
                               onFocus={handleFocus}
                               onBlur={handleBlur}
-                              className="w-24 text-right text-sm px-2 py-1 border rounded bg-background tabular-nums"
-                              step={feeValues[f.typeField] === 'fixed' ? '1000' : '0.1'}
+                              className="w-28 text-right text-sm px-2 py-1 border rounded bg-background tabular-nums"
+                              step="1000"
                               min="0"
                             />
                           </div>
                         ) : (
                           <span className="text-right font-medium tabular-nums block">
-                            {feeValues[f.typeField] === 'fixed'
-                              ? formatCurrency(Number(feeValues[f.valueField]) || 0)
-                              : `${feeValues[f.valueField] || 0}%`
-                            }
+                            {formatCurrency(Number(feeValues[f.valueField]) || 0)}
                           </span>
                         )}
                       </td>
@@ -587,6 +592,70 @@ export default function ViabilitySection({ modelId, model, calculations, funding
                       </td>
                     </tr>
                   ))}
+                  {customFees.map((cf, idx) => (
+                    <tr key={`custom-${idx}`} className={(FEE_FIELDS.length + idx) % 2 === 0 ? 'bg-muted/30' : ''}>
+                      <td className="px-3 py-2">
+                        {!isLocked && modelId ? (
+                          <input
+                            type="text"
+                            value={cf.label}
+                            onChange={(e) => handleCustomFeeChange(idx, 'label', e.target.value)}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            placeholder="Fee label"
+                            className="w-full text-sm px-2 py-1 border rounded bg-background"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">{cf.label || 'Other fee'}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {!isLocked && modelId ? (
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <span className="text-xs text-muted-foreground">£</span>
+                            <input
+                              type="number"
+                              value={cf.amount}
+                              onChange={(e) => handleCustomFeeChange(idx, 'amount', e.target.value)}
+                              onFocus={handleFocus}
+                              onBlur={handleBlur}
+                              className="w-28 text-right text-sm px-2 py-1 border rounded bg-background tabular-nums"
+                              step="1000"
+                              min="0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomFee(idx)}
+                              className="text-xs text-red-500 hover:text-red-700 px-1"
+                              title="Remove this fee"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-right font-medium tabular-nums block">
+                            {formatCurrency(Number(cf.amount) || 0)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium tabular-nums">
+                        {formatCurrency(Number(cf.amount) || 0)}
+                      </td>
+                    </tr>
+                  ))}
+                  {!isLocked && modelId && (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={handleAddCustomFee}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          + Add fee
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                   {calculations && calculations.fundingLines.reduce((s, fl) => s + fl.arrangementFee, 0) > 0 && (
                     <tr className={FEE_FIELDS.length % 2 === 0 ? 'bg-muted/30' : ''}>
                       <td className="px-3 py-2 text-muted-foreground">Funding Arrangement Fees</td>
