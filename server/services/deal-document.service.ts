@@ -819,16 +819,11 @@ export class DealDocumentService {
       minusCorpTaxDue: model.minusCorpTaxDue || '0',
       minusWorkingCapitalAdj: model.minusWorkingCapitalAdj || '0',
       plusPropertyValue: model.propertyValue || '0',
-      feeLegalDdPercent: model.feeLegalDdPercent || '2.5',
-      feeAccountingDdPercent: model.feeAccountingDdPercent || '1.5',
-      feeBrokerPercent: model.feeBrokerPercent || '2.0',
-      feeLoanArrangementPercent: model.feeLoanArrangementPercent || '1.0',
-      feeDealMakerPercent: model.feeDealMakerPercent || '5.0',
-      feeLegalDdType: (model.feeLegalDdType as any) || 'percent',
-      feeAccountingDdType: (model.feeAccountingDdType as any) || 'percent',
-      feeBrokerType: (model.feeBrokerType as any) || 'percent',
-      feeLoanArrangementType: (model.feeLoanArrangementType as any) || 'percent',
-      feeDealMakerType: (model.feeDealMakerType as any) || 'percent',
+      feeLegalDdAmount: model.feeLegalDdAmount ?? '0',
+      feeAccountingDdAmount: model.feeAccountingDdAmount ?? '0',
+      feeLoanArrangementAmount: model.feeLoanArrangementAmount ?? '0',
+      feeDealMakerAmount: model.feeDealMakerAmount ?? '0',
+      customFees: (model.customFees as Array<{ label: string; amount: string | number }>) ?? [],
     };
 
     const adjustmentInputs = adjustments.map(a => ({

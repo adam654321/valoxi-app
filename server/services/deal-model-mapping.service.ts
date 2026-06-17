@@ -165,16 +165,11 @@ export class DealModelMappingService {
       console.log(`[DEAL_MODEL_MAPPING] Warning: Error parsing deal structure data`, err);
     }
 
-    modelValues.feeLegalDdPercent = '25000';
-    modelValues.feeLegalDdType = 'fixed';
-    modelValues.feeAccountingDdPercent = '15000';
-    modelValues.feeAccountingDdType = 'fixed';
-    modelValues.feeBrokerPercent = '2.0';
-    modelValues.feeBrokerType = 'percent';
-    modelValues.feeLoanArrangementPercent = '1.0';
-    modelValues.feeLoanArrangementType = 'percent';
-    modelValues.feeDealMakerPercent = '5.0';
-    modelValues.feeDealMakerType = 'percent';
+    modelValues.feeLegalDdAmount = '25000';
+    modelValues.feeAccountingDdAmount = '15000';
+    modelValues.feeLoanArrangementAmount = '0';
+    modelValues.feeDealMakerAmount = '0';
+    modelValues.customFees = [];
 
     const latestBalance = await this.getLatestBalanceSheet(targetCompanyId);
     const latestAssets = await this.getLatestFixedAssets(targetCompanyId);

@@ -115,17 +115,11 @@ function buildCalcInputs(model: DealModelWithDetails): {
     minusWorkingCapitalAdj: model.minusWorkingCapitalAdj ?? '0',
     plusPropertyValue: model.propertyValue ?? '0',
     otherAdjustments: null,
-    feeLegalDdPercent: model.feeLegalDdPercent ?? '2.5',
-    feeAccountingDdPercent: model.feeAccountingDdPercent ?? '1.5',
-    feeBrokerPercent: model.feeBrokerPercent ?? '2.0',
-    feeLoanArrangementPercent: model.feeLoanArrangementPercent ?? '1.0',
-    feeDealMakerPercent: model.feeDealMakerPercent ?? '5.0',
-    feeLegalDdType: (model.feeLegalDdType as 'percent' | 'fixed') ?? 'percent',
-    feeAccountingDdType: (model.feeAccountingDdType as 'percent' | 'fixed') ?? 'percent',
-    feeBrokerType: (model.feeBrokerType as 'percent' | 'fixed') ?? 'percent',
-    feeLoanArrangementType: (model.feeLoanArrangementType as 'percent' | 'fixed') ?? 'percent',
-    feeDealMakerType: (model.feeDealMakerType as 'percent' | 'fixed') ?? 'percent',
-    customFees: null,
+    feeLegalDdAmount: model.feeLegalDdAmount ?? '0',
+    feeAccountingDdAmount: model.feeAccountingDdAmount ?? '0',
+    feeLoanArrangementAmount: model.feeLoanArrangementAmount ?? '0',
+    feeDealMakerAmount: model.feeDealMakerAmount ?? '0',
+    customFees: (model.customFees as Array<{ label: string; amount: string | number }>) ?? [],
   };
 
   return { adjustments, fundingLines, sellerPayments, contingentConsideration, modelInput };
