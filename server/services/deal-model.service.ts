@@ -88,7 +88,6 @@ function buildCalcInputs(model: DealModelWithDetails): {
     arrangementFeePercent: f.arrangementFeePercent ?? null,
     isDebt: f.isDebt ?? false,
     repaymentStructure: f.repaymentStructure ?? 'amortizing',
-    interestAsEbitdaAdjustment: f.interestAsEbitdaAdjustment ?? false,
     isActive: f.isActive ?? false,
   }));
   const sellerPayments: SellerPaymentInput[] = model.sellerPayments.map((s) => ({

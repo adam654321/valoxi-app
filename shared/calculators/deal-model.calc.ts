@@ -16,7 +16,6 @@ export interface FundingLineInput {
   arrangementFeePercent?: string | number | null;
   isDebt?: boolean;
   repaymentStructure?: string | null;
-  interestAsEbitdaAdjustment?: boolean;
   isActive: boolean;
 }
 export interface SellerPaymentInput {
