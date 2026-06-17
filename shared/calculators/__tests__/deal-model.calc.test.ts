@@ -440,11 +440,11 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(r.paymentCoverRatio).toBeCloseTo(980_000 / 120_000, 4);
   });
 
-  it('the same line UNflagged sits in debt service and leaves the numerator full', () => {
+  it('receivables finance is always revolving — interest reduces valuation EBITDA, not debt service', () => {
     const r = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
-    expect(r.totalAnnualDebtService).toBe(140_000);
-    expect(r.revolvingInterestAnnual).toBe(0);
-    expect(r.paymentCoverRatio).toBeCloseTo(1_000_000 / 140_000, 4);
+    expect(r.totalAnnualDebtService).toBe(120_000);
+    expect(r.revolvingInterestAnnual).toBe(20_000);
+    expect(r.paymentCoverRatio).toBeCloseTo(980_000 / 120_000, 4);
   });
 
   it('a normal debt line is unchanged and contributes no revolving interest', () => {
@@ -470,11 +470,11 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(without.offerPrice).toBe(5_000_000);
   });
 
-  it('IF interest leaves full EBITDA in the DSCR numerator and stays serviced in debt service', () => {
+  it('IF interest reduces the DSCR numerator (revolving deduction) and does not appear in debt service', () => {
     const r = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
     expect(r.averageAdjustedEbitda).toBe(1_000_000);
-    expect(r.totalAnnualDebtService).toBe(140_000);
-    expect(r.paymentCoverRatio).toBeCloseTo(1_000_000 / 140_000, 4);
+    expect(r.totalAnnualDebtService).toBe(120_000);
+    expect(r.paymentCoverRatio).toBeCloseTo(980_000 / 120_000, 4);
   });
 
   it('asset and property finance do not reduce valuation EBITDA', () => {

@@ -253,8 +253,8 @@ export function calculateFundingStack(
     const used = toNum(line.amountUsed);
     const rate = toNum(line.interestRate);
     const term = line.termMonths ?? 0;
-    const isRevolvingIf = line.interestAsEbitdaAdjustment === true;
-    const structure = isRevolvingIf ? 'interest_only' : (line.repaymentStructure ?? 'amortizing');
+    const isRevolvingIf = line.fundingType === 'receivables_finance';
+    const structure = line.repaymentStructure ?? 'amortizing';
     const monthlyRepayment = computeMonthlyService(used, rate, term, structure);
 
     const annualRepayment = monthlyRepayment * 12;
@@ -325,8 +325,6 @@ export function calculateFullDealModel(
   // same multiple. The interest stays serviced in debt service for DSCR and the DSCR numerator keeps
   // the full EBITDA (below), so it is never double-counted. Receivables only; asset and property
   // finance are amortising acquisition debt and are untouched. Interest is drawn x rate (interest-only).
-  // NB the older interest_as_ebitda_adjustment flag path is superseded by this and left dormant
-  // (never set, absent on prod). Remove in a later cleanup once all references are confirmed clear.
   const receivablesInterestAnnual = fundingLines
     .filter((l) => l.isActive && l.fundingType === 'receivables_finance')
     .reduce((sum, l) => sum + toNum(l.amountUsed) * toNum(l.interestRate) / 100, 0);
