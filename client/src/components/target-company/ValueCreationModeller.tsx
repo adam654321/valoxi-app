@@ -337,12 +337,12 @@ export default function ValueCreationModeller({ companyId }: ValueCreationModell
     if (!modelDetails) return 0;
     const offerPrice = toNum(modelDetails.totalPurchasePrice) || toNum(modelDetails.enterpriseValue);
     if (offerPrice <= 0) return 0;
-    const fee = (val: any, type: any) => type === 'fixed' ? toNum(val) : offerPrice * toNum(val) / 100;
-    return fee(modelDetails.feeLegalDdPercent, modelDetails.feeLegalDdType)
-         + fee(modelDetails.feeAccountingDdPercent, modelDetails.feeAccountingDdType)
-         + fee(modelDetails.feeBrokerPercent, modelDetails.feeBrokerType)
-         + fee(modelDetails.feeLoanArrangementPercent, modelDetails.feeLoanArrangementType)
-         + fee(modelDetails.feeDealMakerPercent, modelDetails.feeDealMakerType);
+    return toNum(modelDetails.feeLegalDdAmount)
+         + toNum(modelDetails.feeAccountingDdAmount)
+         + toNum(modelDetails.feeLoanArrangementAmount)
+         + toNum(modelDetails.feeDealMakerAmount)
+         + ((modelDetails.customFees as Array<{ label: string; amount: string | number }> | null) ?? [])
+             .reduce((sum, f) => sum + toNum(f.amount), 0);
   }, [modelDetails]);
 
   const hasActiveFunding = fundingLineInputs.some(f => f.isActive);
