@@ -158,18 +158,18 @@ describe('calculateFees', () => {
     feeDealMakerAmount: 5_000,
   };
 
-  it('calculates percentage fees off offer price, loan fee off loan amount', () => {
+  it('returns stored fee amounts directly', () => {
     const offerPrice = 1_000_000;
     const result = calculateFees(offerPrice, baseModel, 800_000);
     expect(result.feeLegalDd).toBe(20_000);
     expect(result.feeAccountingDd).toBe(15_000);
-    expect(result.feeLoanArrangement).toBe(8_000); // 1% of loan amount, not offer price (949397d)
+    expect(result.feeLoanArrangement).toBe(8_000);
     expect(result.feeDealMaker).toBe(5_000);
     expect(result.totalFees).toBe(48_000);
     expect(result.totalFundingRequired).toBe(1_048_000);
   });
 
-  it('handles fixed fee type', () => {
+  it('handles fixed fee amount directly', () => {
     const model = { ...baseModel, feeLegalDdAmount: 25_000 };
     const result = calculateFees(1_000_000, model);
     expect(result.feeLegalDd).toBe(25_000);
@@ -292,7 +292,7 @@ describe('calculateFullDealModel', () => {
       minusCorpTaxDue: 0,
       minusWorkingCapitalAdj: 0,
       plusPropertyValue: 0,
-      feeLegalDdAmount: 0,
+      feeLegalDdAmount: 10_000,
       feeAccountingDdAmount: 0,
       feeLoanArrangementAmount: 0,
       feeDealMakerAmount: 0,
@@ -422,7 +422,7 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     feeLoanArrangementAmount: 0, feeDealMakerAmount: 0,
   };
   const ebitda = { '2024': 1_000_000 };
-  const ifLine = (over = {}): FundingLineInput => ({ fundingType: 'receivables_finance', amountUsed: 200_000, interestRate: 10, termMonths: 0, isDebt: true, isActive: true, ...over });
+  const ifLine = (over: Partial<FundingLineInput> = {}): FundingLineInput => ({ fundingType: 'receivables_finance', amountUsed: 200_000, interestRate: 10, termMonths: 0, isDebt: true, isActive: true, ...over });
   const termLoan: FundingLineInput = { fundingType: 'new_senior_debt', amountUsed: 500_000, interestRate: 0, termMonths: 50, isDebt: true, isActive: true, repaymentStructure: 'principal_only' };
 
   it('IF interest is kept out of debt service and surfaced as revolving interest', () => {
@@ -453,11 +453,10 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(r.revolvingInterestAnnual).toBe(0);
   });
 
-  it('flag false equals flag omitted (migration safety)', () => {
+  it('flag omitted: no revolving interest and no debt service without other debt', () => {
     const a = calculateFullDealModel(ebitda, [], [ifLine()], model, [], []);
-    const b = calculateFullDealModel(ebitda, [], [ifLine()], model, [], []);
-    expect(a.totalAnnualDebtService).toBe(b.totalAnnualDebtService);
-    expect(a.revolvingInterestAnnual).toBe(b.revolvingInterestAnnual);
+    expect(a.totalAnnualDebtService).toBe(0);
+    expect(a.revolvingInterestAnnual).toBe(20_000);
   });
 
   it('IF interest reduces valuation EBITDA, EV and offer price (Jag/Dee model)', () => {
@@ -467,6 +466,7 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(withIf.valuationEbitda).toBe(980_000);
     expect(withIf.enterpriseValue).toBe(4_900_000);
     expect(withIf.offerPrice).toBe(4_900_000);
+    // note: withIf uses ifLine() which has no interestAsEbitdaAdjustment flag
     expect(without.offerPrice).toBe(5_000_000);
   });
 
