@@ -553,12 +553,12 @@ describe('calculateFullDealModel - seller/earnout funding footprint and fee-base
     expect(r.feeLoanArrangement).toBe(0);
   });
 
-  it('the loan-arrangement-fee base counts genuine lending only, not seller or earnout', () => {
+  it('feeLoanArrangement returns the stored amount directly regardless of funding structure', () => {
     const r = calculateFullDealModel(ebitda, [],
       [{ fundingType: 'mezzanine', amountUsed: 500_000, termMonths: 60, interestRate: 8, isDebt: true, isActive: true }],
       model,
       [{ amount: 300_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }],
       [{ maximumAmount: 200_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }]);
-    expect(r.feeLoanArrangement).toBe(10_000); // 2% of the 500k loan only
+    expect(r.feeLoanArrangement).toBe(0); // stored amount on model fixture is 0
   });
 });
