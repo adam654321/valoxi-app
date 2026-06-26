@@ -21,12 +21,12 @@ export function buildSignatureBlock(documentType: string, docData: any, response
   const docTitle = docTitleMap[documentType] || 'Agreement';
 
   const buyerLabelMap: Record<string, string> = {
-    'nda': 'Disclosing Party (Buyer)',
+    'nda': 'Receiving Party (Buyer)',
     'offer_letter': 'Buyer',
     'heads_of_terms': 'Buyer',
   };
   const sellerLabelMap: Record<string, string> = {
-    'nda': 'Receiving Party (Seller)',
+    'nda': 'Disclosing Party (Seller)',
     'offer_letter': 'Seller',
     'heads_of_terms': 'Seller',
   };
@@ -377,13 +377,13 @@ export function buildPhysicalSignatureBlock(documentType: string, docData: any, 
   };
 
   const buyerLabelMap: Record<string, string> = {
-    'nda': 'Disclosing Party (Buyer)',
+    'nda': 'Receiving Party (Buyer)',
     'offer_letter': 'Buyer',
     'heads_of_terms': 'Buyer',
   };
 
   const sellerLabelMap: Record<string, string> = {
-    'nda': 'Receiving Party (Seller)',
+    'nda': 'Disclosing Party (Seller)',
     'offer_letter': 'Seller',
     'heads_of_terms': 'Seller',
   };
