@@ -893,3 +893,23 @@ export class EmailApiService {
 }
 
 export const emailApiService = new EmailApiService();
+
+// Patch: add sendCustomAdminEmail to the instance after class definition
+(emailApiService as any).sendCustomAdminEmail = async function({
+  to,
+  subject,
+  heading,
+  blocks,
+}: {
+  to: string;
+  subject: string;
+  heading: string;
+  blocks: Array<{ type: 'paragraph'; text: string }>;
+}): Promise<{ success: boolean }> {
+  const html = renderBrandedEmail({
+    heading,
+    blocks,
+    footerLine: 'This message was sent by the Valoxi team.',
+  });
+  return this.sendCustomEmail(to, subject, html);
+};

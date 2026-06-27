@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, KeyRound, Eye } from "lucide-react";
+import { Loader2, KeyRound, Eye, Mail } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +29,26 @@ export default function AdminUsers() {
     },
     onError: (error) => {
       toast({ title: "Error", description: error.message || "Failed to send sign-in link.", variant: "destructive" });
+    },
+  });
+
+  const [emailTarget, setEmailTarget] = useState<{ id: number; name: string; email: string } | null>(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+
+  const emailMutation = useMutation({
+    mutationFn: async ({ userId, subject, body }: { userId: number; subject: string; body: string }) => {
+      const res = await apiRequest("POST", `/api/v2/admin/users/${userId}/email`, { subject, body });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Email sent", description: data?.data?.message || "Email delivered." });
+      setEmailTarget(null);
+      setEmailSubject('');
+      setEmailBody('');
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message || "Failed to send email.", variant: "destructive" });
     },
   });
 

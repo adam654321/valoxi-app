@@ -136,6 +136,33 @@ router.get('/webhook-events', asyncHandler(async (req: Request, res: Response) =
   sendSuccess(res, data);
 }));
 
+router.post('/users/:id/email', asyncHandler(async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.id);
+  const { subject, body } = req.body;
+  if (!subject?.trim() || !body?.trim()) {
+    return res.status(400).json({ error: 'Subject and body are required' });
+  }
+  const [user] = await db
+    .select({ id: users.id, email: users.email, firstName: users.firstName })
+    .from(users)
+    .where(eq(users.id, userId));
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const paragraphs = body.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean);
+  const blocks = paragraphs.map((p: string) => ({ type: 'paragraph' as const, text: p }));
+  const result = await (emailApiService as any).sendCustomAdminEmail({
+    to: user.email,
+    subject: subject.trim(),
+    heading: subject.trim(),
+    blocks,
+  });
+  if (!result.success) {
+    console.error(`[admin] Custom email delivery failed for user ${user.id} (${user.email})`);
+    return res.status(500).json({ error: 'Email delivery failed' });
+  }
+  console.log(`[admin] Custom email sent to user ${user.id} (${user.email}) by admin ${req.session?.userId}`);
+  sendSuccess(res, { success: true, message: `Email sent to ${user.email}` });
+}));
+
 router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: Response) => {
   const userId = Number(req.params.id);
   if (isNaN(userId)) {
