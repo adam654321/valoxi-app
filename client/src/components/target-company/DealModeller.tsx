@@ -384,7 +384,13 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', companyId] });
+      queryClient.setQueryData(
+        ['/api/v2/deal-models/company', companyId],
+        (old: any) => old
+          ? { ...old, data: old.data?.map((m: any) => m.id === selectedModelId ? { ...m, isLocked: true } : m) }
+          : old
+      );
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
       toast({ title: 'Model locked', description: 'This deal model is now locked and cannot be edited.' });
     },
     onError: (err: Error) => {
@@ -398,7 +404,13 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', companyId] });
+      queryClient.setQueryData(
+        ['/api/v2/deal-models/company', companyId],
+        (old: any) => old
+          ? { ...old, data: old.data?.map((m: any) => m.id === selectedModelId ? { ...m, isLocked: false } : m) }
+          : old
+      );
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models/company', companyId] });
       toast({ title: 'Model unlocked', description: 'This deal model can now be edited.' });
     },
     onError: (err: Error) => {
