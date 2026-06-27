@@ -133,6 +133,14 @@ export default function AdminUsers() {
                         >
                           <KeyRound className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEmailTarget({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })}
+                          title="Send branded email"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -142,6 +150,49 @@ export default function AdminUsers() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!emailTarget} onOpenChange={(open) => { if (!open) { setEmailTarget(null); setEmailSubject(''); setEmailBody(''); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send email to {emailTarget?.name}</DialogTitle>
+            <DialogDescription>{emailTarget?.email}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Subject</label>
+              <input
+                type="text"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Email subject"
+                className="w-full px-3 py-2 text-sm border rounded bg-background"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Body</label>
+              <textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                placeholder="Write your message here. Separate paragraphs with a blank line."
+                rows={8}
+                className="w-full px-3 py-2 text-sm border rounded bg-background resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              disabled={!emailSubject.trim() || !emailBody.trim() || emailMutation.isPending}
+              onClick={() => emailTarget && emailMutation.mutate({ userId: emailTarget.id, subject: emailSubject, body: emailBody })}
+            >
+              {emailMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!resetTarget} onOpenChange={(open) => { if (!open) setResetTarget(null); }}>
         <DialogContent>
