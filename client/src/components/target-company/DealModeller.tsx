@@ -111,6 +111,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [transactionType, setTransactionType] = useState<string>('share_sale');
   const [activeStatement, setActiveStatement] = useState<string>('income');
+  const [showLockPrompt, setShowLockPrompt] = useState(false);
 
   const { data: targetCompany } = useQuery<any>({
     queryKey: ['/api/v2/target-companies', companyId],
@@ -476,7 +477,6 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const hasModels = models.length > 0;
   const selectedModel = models.find(m => m.id === selectedModelId);
   const isLocked = selectedModel?.isLocked ?? false;
-  const [showLockPrompt, setShowLockPrompt] = useState(false);
 
   return (
     <div className="space-y-6">
