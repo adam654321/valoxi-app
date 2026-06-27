@@ -4,6 +4,7 @@ import {
   targetCompanies,
   incomeStatements,
   financialPeriods,
+  dealModels,
 } from '@shared/schema';
 import { dealModelRepository, type DealModelWithDetails } from '../repositories/deal-model.repository';
 import { dealModelMappingService } from './deal-model-mapping.service';
@@ -434,7 +435,29 @@ export class DealModelService {
       throw new BadRequestError('Deal model is already locked');
     }
 
-    return dealModelRepository.lock(id);
+    const locked = await dealModelRepository.lock(id);
+    captureMetricsSnapshot(id, model.createdBy).catch(err =>
+      console.error('[LOCK] Failed to capture snapshot on lock:', err)
+    );
+    return locked;
+  }
+
+  async unlockModel(
+    id: number,
+    userCompanyId: number
+  ): Promise<DealModel> {
+    const model = await dealModelRepository.getById(id);
+    if (!model) throw new NotFoundError('Deal model not found');
+    await verifyOwnership(model.targetCompanyId, userCompanyId);
+    if (!model.isLocked) {
+      throw new BadRequestError('Deal model is not locked');
+    }
+    return db
+      .update(dealModels)
+      .set({ isLocked: false, updatedAt: new Date() })
+      .where(eq(dealModels.id, id))
+      .returning()
+      .then(rows => rows[0]);
   }
 
   async deleteAdjustment(

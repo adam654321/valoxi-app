@@ -377,6 +377,34 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     },
   });
 
+  const lockMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/v2/deal-models/${selectedModelId}/lock`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', companyId] });
+      toast({ title: 'Model locked', description: 'This deal model is now locked and cannot be edited.' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Could not lock model', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  const unlockMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/v2/deal-models/${selectedModelId}/unlock`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/v2/deal-models', companyId] });
+      toast({ title: 'Model unlocked', description: 'This deal model can now be edited.' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Could not unlock model', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const sendOfferMutation = useMutation({
     mutationFn: async () => {
       // Wait for any in-flight model saves (debounced fields) to complete before
@@ -397,6 +425,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const version = data?.document?.version ?? data?.data?.document?.version;
       const versionSuffix = version ? ` v${version}` : '';
       handleSendResult(data, toast, `Offer letter${versionSuffix} sent to seller portal`, nylasConnectVisible);
+      if (!isLocked) setShowLockPrompt(true);
     },
     onError: (err: Error) => {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -447,6 +476,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const hasModels = models.length > 0;
   const selectedModel = models.find(m => m.id === selectedModelId);
   const isLocked = selectedModel?.isLocked ?? false;
+  const [showLockPrompt, setShowLockPrompt] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -502,11 +532,64 @@ export default function DealModeller({ companyId }: DealModellerProps) {
               </Badge>
             )}
 
-            {isLocked && (
-              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Lock className="h-4 w-4" />
-                Locked
-              </span>
+            {selectedModelId && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={lockMutation.isPending || unlockMutation.isPending}
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    {isLocked ? 'Unlock' : 'Lock'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {isLocked ? 'Unlock this model?' : 'Lock this model?'}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {isLocked
+                        ? 'Unlocking will allow figures to be changed. A snapshot of the current state has already been saved.'
+                        : 'This model will no longer be editable unless unlocked. A snapshot will be taken at the point of locking.'}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => isLocked ? unlockMutation.mutate() : lockMutation.mutate()}
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      {isLocked ? 'Unlock' : 'Lock'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {showLockPrompt && !isLocked && (
+              <AlertDialog open={showLockPrompt} onOpenChange={setShowLockPrompt}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Lock this deal model?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Your offer has been sent. Lock this model now to preserve the figures it was based on. You can unlock it at any time.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setShowLockPrompt(false)}>Not now</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        setShowLockPrompt(false);
+                        lockMutation.mutate();
+                      }}
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      Lock model
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
 
             <div className="ml-auto flex items-center gap-2">

@@ -169,6 +169,15 @@ router.post('/:id/lock', requirePermission('canCreateDeals'), asyncHandler(async
   sendSuccess(res, result);
 }));
 
+router.post('/:id/unlock', requirePermission('canCreateDeals'), asyncHandler(async (req: Request, res: Response) => {
+  const userCompanyId = req.session?.userCompanyId;
+  if (!userCompanyId) throw new UnauthorizedError();
+
+  const id = parseInt(req.params.id);
+  const result = await dealModelService.unlockModel(id, userCompanyId);
+  sendSuccess(res, result);
+}));
+
 router.post('/:id/duplicate', requireFeature('fullDealModeller'), asyncHandler(async (req: Request, res: Response) => {
   const userCompanyId = req.session?.userCompanyId;
   if (!userCompanyId) throw new UnauthorizedError();
