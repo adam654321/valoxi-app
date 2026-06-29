@@ -807,7 +807,7 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                       {
                         n: '4',
                         title: 'What happens next',
-                        detail: 'Once these are in, we will review them. If we agree Heads of Terms, a further stage opens for fuller due diligence.',
+                        detail: 'Once these are in, we will review the financials in detail and assess whether the business fits our acquisition criteria. If it does, we will put a formal offer to you. Should we then agree Heads of Terms, a further stage opens for fuller due diligence.',
                       },
                     ].map(({ n, title, detail }) => (
                       <div key={n} className="flex items-start gap-4 p-4">
