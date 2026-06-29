@@ -399,6 +399,13 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
   const [expandedDealDocs, setExpandedDealDocs] = useState<Set<string>>(new Set());
   const [ndaHtml, setNdaHtml] = useState<string | null>(null);
   const [ndaHtmlLoading, setNdaHtmlLoading] = useState(false);
+  const [showStage1Intro, setShowStage1Intro] = useState(() => {
+    try {
+      return !localStorage.getItem(`stage1-intro-dismissed-${token}`);
+    } catch {
+      return true;
+    }
+  });
   const [showDdIntro, setShowDdIntro] = useState(() => {
     try {
       return !localStorage.getItem(`dd-intro-dismissed-${token}`);
@@ -761,6 +768,74 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
           </TabsList>
 
           <TabsContent value="stage1" className="space-y-6">
+            {showStage1Intro ? (
+              <div className="min-h-[60vh] flex items-center justify-center py-8 px-4">
+                <div className="max-w-xl w-full space-y-8">
+
+                  <div className="text-center space-y-4">
+                    <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-[#E05115] shadow-lg mx-auto">
+                      <FileText className="h-10 w-10 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-bold text-foreground">Stage 1: Financial Documents</h2>
+                      <p className="text-muted-foreground mt-2 text-base leading-relaxed">
+                        To move your deal forward, the buyer needs a clear picture of the
+                        company's finances. This first stage collects the core financial
+                        documents so they can build an accurate view of the business.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-card border border-border rounded-xl divide-y divide-border">
+                    {[
+                      {
+                        n: '1',
+                        title: 'Upload your financial documents',
+                        detail: "Use the upload panel to submit each document type. Accounts, profit and loss, balance sheet and the rest. You can add more than one file where you need to.",
+                      },
+                      {
+                        n: '2',
+                        title: 'Watch the analysis progress',
+                        detail: 'Each document is checked automatically as it comes in. The progress panel shows what has been received and what is still outstanding.',
+                      },
+                      {
+                        n: '3',
+                        title: 'Fill any gaps',
+                        detail: 'Anything still needed stays clearly marked as remaining, so nothing gets missed before the buyer reviews.',
+                      },
+                      {
+                        n: '4',
+                        title: 'That is Stage 1 done',
+                        detail: 'Once the core financials are in, the buyer reviews them. If the deal progresses to Heads of Terms, a second stage opens for fuller due diligence.',
+                      },
+                    ].map(({ n, title, detail }) => (
+                      <div key={n} className="flex items-start gap-4 p-4">
+                        <span className="flex-shrink-0 h-8 w-8 rounded-full bg-[#E05115] text-white text-sm font-bold flex items-center justify-center">
+                          {n}
+                        </span>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">{title}</p>
+                          <p className="text-muted-foreground text-sm mt-0.5">{detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    size="lg"
+                    className="w-full bg-[#E05115] hover:bg-[#A33A0E] text-white text-base font-semibold py-4"
+                    onClick={() => {
+                      try { localStorage.setItem(`stage1-intro-dismissed-${token}`, '1'); } catch {}
+                      setShowStage1Intro(false);
+                    }}
+                  >
+                    Get started
+                  </Button>
+
+                </div>
+              </div>
+            ) : (
+              <>
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1031,6 +1106,8 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                   </div>
                 </CardContent>
               </Card>
+            )}
+              </>
             )}
           </TabsContent>
 
