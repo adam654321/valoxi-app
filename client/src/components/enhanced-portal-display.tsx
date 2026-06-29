@@ -779,9 +779,10 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                     <div>
                       <h2 className="text-3xl font-bold text-foreground">Stage 1: Financial Documents</h2>
                       <p className="text-muted-foreground mt-2 text-base leading-relaxed">
-                        To move your deal forward, the buyer needs a clear picture of the
-                        company's finances. This first stage collects the core financial
-                        documents so they can build an accurate view of the business.
+                        To take this forward, we need a clear view of the company's
+                        finances. These documents let us value the business properly and
+                        put a fair offer to you. The sooner they are in, the sooner we
+                        can move things on.
                       </p>
                     </div>
                   </div>
@@ -790,23 +791,23 @@ export function EnhancedPortalDisplay({ token }: EnhancedPortalDisplayProps) {
                     {[
                       {
                         n: '1',
-                        title: 'Upload your financial documents',
-                        detail: "Use the upload panel to submit each document type. Accounts, profit and loss, balance sheet and the rest. You can add more than one file where you need to.",
+                        title: 'Upload each document requested',
+                        detail: 'Work through the document types listed. Each one builds part of the financial picture we need.',
                       },
                       {
                         n: '2',
                         title: 'Watch the analysis progress',
-                        detail: 'Each document is checked automatically as it comes in. The progress panel shows what has been received and what is still outstanding.',
+                        detail: 'Each document is checked as it arrives. The progress panel shows what has come in and what is still outstanding.',
                       },
                       {
                         n: '3',
-                        title: 'Fill any gaps',
-                        detail: 'Anything still needed stays clearly marked as remaining, so nothing gets missed before the buyer reviews.',
+                        title: 'Keep personal details out',
+                        detail: 'For the staff matrix and sales ledger, we do not need names or personal information at this stage. Roles, figures and dates are enough. No staff names, and no customer names, whether individual or business. That level of detail comes later, and only if we progress.',
                       },
                       {
                         n: '4',
-                        title: 'That is Stage 1 done',
-                        detail: 'Once the core financials are in, the buyer reviews them. If the deal progresses to Heads of Terms, a second stage opens for fuller due diligence.',
+                        title: 'What happens next',
+                        detail: 'Once these are in, we will review them. If we agree Heads of Terms, a further stage opens for fuller due diligence.',
                       },
                     ].map(({ n, title, detail }) => (
                       <div key={n} className="flex items-start gap-4 p-4">
