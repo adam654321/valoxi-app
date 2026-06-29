@@ -335,13 +335,33 @@ export default function ViabilitySection({ modelId, model, calculations, funding
 
               {hasDebtService && calculations && (
                 <div className="bg-card/60 rounded border p-3 mb-3">
-                  <p className="text-sm font-mono text-muted-foreground">
-                    DSCR = {formatCurrency(calculations.averageAdjustedEbitda)}{' '}
-                    <span className="text-xs">(Adjusted EBITDA)</span>{' '}
-                    &divide; {formatCurrency(calculations.totalAnnualDebtService)}{' '}
-                    <span className="text-xs">(Annual Debt Service)</span>{' '}
-                    = <span className={`font-bold ${rating.color}`}>{calculations.paymentCoverRatio?.toFixed(2)}x</span>
-                  </p>
+                  {calculations.revolvingInterestAnnual > 0 ? (
+                    <div className="text-sm font-mono text-muted-foreground space-y-0.5">
+                      <p>
+                        {formatCurrency(calculations.averageAdjustedEbitda)}{' '}
+                        <span className="text-xs">(Adjusted EBITDA)</span>
+                      </p>
+                      <p className="text-red-700 dark:text-red-400">
+                        &minus; {formatCurrency(calculations.revolvingInterestAnnual)}{' '}
+                        <span className="text-xs">(less invoice finance interest)</span>
+                      </p>
+                      <p className="border-t pt-0.5">
+                        DSCR = {formatCurrency(calculations.averageAdjustedEbitda - calculations.revolvingInterestAnnual)}{' '}
+                        <span className="text-xs">(Net EBITDA for debt cover)</span>{' '}
+                        &divide; {formatCurrency(calculations.totalAnnualDebtService)}{' '}
+                        <span className="text-xs">(Annual Debt Service)</span>{' '}
+                        = <span className={`font-bold ${rating.color}`}>{calculations.paymentCoverRatio?.toFixed(2)}x</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-mono text-muted-foreground">
+                      DSCR = {formatCurrency(calculations.averageAdjustedEbitda)}{' '}
+                      <span className="text-xs">(Adjusted EBITDA)</span>{' '}
+                      &divide; {formatCurrency(calculations.totalAnnualDebtService)}{' '}
+                      <span className="text-xs">(Annual Debt Service)</span>{' '}
+                      = <span className={`font-bold ${rating.color}`}>{calculations.paymentCoverRatio?.toFixed(2)}x</span>
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -440,6 +440,14 @@ describe('calculateFullDealModel - invoice finance interest as EBITDA deduction'
     expect(r.paymentCoverRatio).toBeCloseTo(980_000 / 120_000, 4);
   });
 
+  it('display invariant: shown DSCR numerator equals averageAdjustedEbitda minus revolvingInterestAnnual', () => {
+    const r = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
+    const shownNumerator = r.averageAdjustedEbitda - r.revolvingInterestAnnual;
+    expect(shownNumerator).toBe(980_000);
+    // the ratio the UI prints must reconcile with the numerator the UI prints
+    expect(r.paymentCoverRatio).toBeCloseTo(shownNumerator / r.totalAnnualDebtService, 4);
+  });
+
   it('receivables finance is always revolving — interest reduces valuation EBITDA, not debt service', () => {
     const r = calculateFullDealModel(ebitda, [], [ifLine(), termLoan], model, [], []);
     expect(r.totalAnnualDebtService).toBe(120_000);
