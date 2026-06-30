@@ -29,7 +29,7 @@ interface PromoCampaign {
 }
 
 const SITE_BASE = "https://valoxi.ai/";
-const WELCOME_APP_BASE = "https://app.valoxi.ai/welcome";
+const APP_BASE = "https://app.valoxi.ai/";
 const WELCOME_SLUG = "welcome";
 
 const emptyForm = {
