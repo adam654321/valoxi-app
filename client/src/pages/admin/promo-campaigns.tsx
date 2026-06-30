@@ -29,8 +29,6 @@ interface PromoCampaign {
 }
 
 const SITE_BASE = "https://valoxi.ai/";
-const APP_BASE = "https://app.valoxi.ai/";
-const WELCOME_SLUG = "welcome";
 
 const emptyForm = {
   name: "",
@@ -69,14 +67,8 @@ export default function AdminPromoCampaigns() {
     },
   });
 
-  function promoUrl(slug: string) {
-    return slug === WELCOME_SLUG
-      ? `${WELCOME_APP_BASE}?promo=${slug}`
-      : `${SITE_BASE}?promo=${slug}`;
-  }
-
   function copyPromoUrl(slug: string) {
-    const url = promoUrl(slug);
+    const url = `${SITE_BASE}?promo=${slug}`;
     navigator.clipboard.writeText(url);
     toast({ title: "URL copied", description: url });
   }
@@ -185,7 +177,7 @@ export default function AdminPromoCampaigns() {
           <DialogHeader>
             <DialogTitle>New promo campaign</DialogTitle>
             <DialogDescription>
-              {`The slug becomes the public URL: ${SITE_BASE}?promo=<slug> (or ${WELCOME_APP_BASE}?promo=welcome for the welcome campaign)`}
+              {`The slug becomes the public URL: ${SITE_BASE}?promo=<slug>`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
