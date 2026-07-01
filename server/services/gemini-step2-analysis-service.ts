@@ -7,6 +7,7 @@ import { buildStaffMatrixAnalysisPrompt } from "../prompts/step2-staff-matrix-pr
 import { geminiClient } from "./gemini-client";
 import type { DocumentTrackingContext } from "./gemini-document-classification-service";
 import { fileStorageService } from './file-storage.service';
+import { isSpreadsheetMimeType, convertSpreadsheetToText } from '../utils/spreadsheet-to-text';
 
 export type DocumentType = 'asset_register' | 'balance_sheet' | 'profit_and_loss' | 'sales_ledger' | 'staff_matrix';
 
@@ -104,8 +105,18 @@ export async function analyzeDocumentWithGemini(
     let inlineData: { mimeType: string; data: string } | undefined;
 
     const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
+    const isSpreadsheet = isSpreadsheetMimeType(request.mimeType);
 
-    if (isTextFile) {
+    if (isSpreadsheet) {
+      const buffer = await readFileBuffer(request.filePath);
+      if (buffer) {
+        const textContent = convertSpreadsheetToText(buffer, request.fileName);
+        prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
+        console.log(`[GEMINI_STEP2] Converted spreadsheet to ${textContent.length} chars of text inline`);
+      } else {
+        console.error(`[GEMINI_STEP2] Failed to read spreadsheet buffer for ${request.fileName}`);
+      }
+    } else if (isTextFile) {
       const textContent = await readFileContent(request.filePath);
       if (textContent) {
         prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;

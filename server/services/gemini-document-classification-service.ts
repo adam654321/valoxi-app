@@ -2,6 +2,7 @@ import { buildDocumentClassificationPrompt } from "../prompts/document-classific
 // Uses the app's geminiClient (GOOGLE_GEMINI_API_KEY) — never swap for replit_integrations/
 import { geminiClient } from "./gemini-client";
 import { fileStorageService } from './file-storage.service';
+import { isSpreadsheetMimeType, convertSpreadsheetToText } from '../utils/spreadsheet-to-text';
 
 const TEXT_MIME_TYPES = ['text/csv', 'text/tab-separated-values', 'text/plain'];
 
@@ -85,8 +86,18 @@ export async function classifyDocumentWithGemini(
     let prompt = buildDocumentClassificationPrompt();
     let inlineData: { mimeType: string; data: string } | undefined;
     const isTextFile = TEXT_MIME_TYPES.includes(request.mimeType);
+    const isSpreadsheet = isSpreadsheetMimeType(request.mimeType);
 
-    if (isTextFile) {
+    if (isSpreadsheet) {
+      const buffer = await readFileBuffer(request.filePath);
+      if (buffer) {
+        const textContent = convertSpreadsheetToText(buffer, request.fileName);
+        prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
+        console.log(`[GEMINI_CLASSIFICATION] Converted spreadsheet to ${textContent.length} chars of text inline`);
+      } else {
+        console.error(`[GEMINI_CLASSIFICATION] Failed to read spreadsheet buffer for ${request.fileName}`);
+      }
+    } else if (isTextFile) {
       const textContent = await readFileContent(request.filePath);
       if (textContent) {
         prompt = `${prompt}\n\n--- DOCUMENT CONTENT (${request.fileName}) ---\n${textContent}\n--- END OF DOCUMENT ---`;
