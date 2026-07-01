@@ -223,6 +223,13 @@ function computeMonthlyService(used: number, rate: number, term: number, structu
   }
 }
 
+function annualiseService(monthly: number, termMonths: number | null | undefined): number {
+  // Revolving / no fixed term (0 or unset): facility runs all year.
+  if (!termMonths || termMonths <= 0) return monthly * 12;
+  // Fixed term: year-1 burden is monthly x months serviced this year, capped at 12.
+  return monthly * Math.min(termMonths, 12);
+}
+
 export function calculateFundingStack(
   fundingLines: FundingLineInput[],
   totalFundingRequired: number
@@ -257,7 +264,7 @@ export function calculateFundingStack(
     const structure = line.repaymentStructure ?? 'amortizing';
     const monthlyRepayment = computeMonthlyService(used, rate, term, structure);
 
-    const annualRepayment = monthlyRepayment * 12;
+    const annualRepayment = annualiseService(monthlyRepayment, term);
     const arrangementFee = used * toNum(line.arrangementFeePercent) / 100;
 
     results.push({ availableAmount, monthlyRepayment, annualRepayment, arrangementFee });
@@ -352,12 +359,12 @@ export function calculateFullDealModel(
   const sellerAnnualDebtService = sellerPayments.reduce((sum, s) => {
     if (!s.isActive || s.includeInDscr === false) return sum;
     const monthly = computeMonthlyService(toNum(s.amount), toNum(s.interestRate), s.termMonths ?? 0, s.repaymentStructure ?? 'amortizing');
-    return sum + monthly * 12;
+    return sum + annualiseService(monthly, s.termMonths ?? 0);
   }, 0);
   const earnoutAnnualDebtService = contingentConsideration.reduce((sum, c) => {
     if (!c.isActive || c.includeInDscr === false) return sum;
     const monthly = computeMonthlyService(toNum(c.maximumAmount), toNum(c.interestRate), c.termMonths ?? 0, 'amortizing');
-    return sum + monthly * 12;
+    return sum + annualiseService(monthly, c.termMonths ?? 0);
   }, 0);
   const combinedAnnualDebtService = funding.totalAnnualDebtService + sellerAnnualDebtService + earnoutAnnualDebtService;
   const combinedTotalFunded = funding.totalFunded + sellerActiveTotal + earnoutActiveTotal;
