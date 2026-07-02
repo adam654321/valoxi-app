@@ -570,3 +570,42 @@ describe('calculateFullDealModel - seller/earnout funding footprint and fee-base
     expect(r.feeLoanArrangement).toBe(0); // stored amount on model fixture is 0
   });
 });
+
+describe('annualiseService behaviour - sub-12-month terms (DSCR annualisation fix)', () => {
+  const model: DealModelInput = {
+    averagingYears: 1, ebitdaMultiple: 5,
+    plusExcessCash: 0, minusPrimaryDebt: 0, minusOtherDebt: 0,
+    minusCorpTaxDue: 0, minusWorkingCapitalAdj: 0, plusPropertyValue: 0,
+    feeLegalDdAmount: 0, feeAccountingDdAmount: 0,
+    feeLoanArrangementAmount: 0, feeDealMakerAmount: 0,
+  };
+  const ebitda = { '2024': 1_000_000 };
+
+  it('a sub-12-month seller note contributes monthly x term, not monthly x 12', () => {
+    // 250k over 5 months at 0% = 50k/month. Year-1 burden = 250k, NOT 600k.
+    const r = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 250_000, termMonths: 5, interestRate: 0, includeInDscr: true, isActive: true }], []);
+    expect(r.totalAnnualDebtService).toBe(250_000);
+  });
+
+  it('a sub-12-month earnout contributes monthly x term, not monthly x 12', () => {
+    // 120k over 6 months at 0% = 20k/month. Annual = 120k, NOT 240k.
+    const r = calculateFullDealModel(ebitda, [], [], model, [],
+      [{ maximumAmount: 120_000, termMonths: 6, interestRate: 0, includeInDscr: true, isActive: true }]);
+    expect(r.totalAnnualDebtService).toBe(120_000);
+  });
+
+  it('a 12-month-plus seller note still annualises at monthly x 12 (unchanged)', () => {
+    // 300k over 60 months at 0% = 5k/month. Annual = 60k. Pre-fix behaviour preserved.
+    const r = calculateFullDealModel(ebitda, [], [], model,
+      [{ amount: 300_000, termMonths: 60, interestRate: 0, includeInDscr: true, isActive: true }], []);
+    expect(r.totalAnnualDebtService).toBe(60_000);
+  });
+
+  it('a term-0 revolving receivables line keeps full-year interest (unchanged)', () => {
+    // 200k at 10%, term 0 = revolving. Annual revolving interest = 20k, x 12 preserved.
+    const funding: FundingLineInput[] = [{ fundingType: 'receivables_finance', amountUsed: 200_000, interestRate: 10, termMonths: 0, isDebt: true, isActive: true, repaymentStructure: 'amortizing' }];
+    const r = calculateFullDealModel(ebitda, [], funding, model, [], []);
+    expect(r.revolvingInterestAnnual).toBe(20_000);
+  });
+});
