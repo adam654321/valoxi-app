@@ -235,7 +235,7 @@ export default function ViabilitySection({ modelId, model, calculations, funding
   }, []);
 
   const debtServiceBreakdown = useMemo(() => {
-    if (!calculations || !fundingLines.length) return [];
+    if (!calculations) return [];
     const items: Array<{ label: string; annualRepayment: number }> = [];
 
     fundingLines.forEach((fl, idx) => {
@@ -246,6 +246,12 @@ export default function ViabilitySection({ modelId, model, calculations, funding
       items.push({ label, annualRepayment: calcLine.annualRepayment });
     });
 
+    if (calculations.sellerAnnualDebtService > 0) {
+      items.push({ label: 'Seller deferred', annualRepayment: calculations.sellerAnnualDebtService });
+    }
+    if (calculations.earnoutAnnualDebtService > 0) {
+      items.push({ label: 'Earnout', annualRepayment: calculations.earnoutAnnualDebtService });
+    }
     return items;
   }, [calculations, fundingLines]);
 

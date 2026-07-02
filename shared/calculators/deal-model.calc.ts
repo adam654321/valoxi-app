@@ -83,6 +83,8 @@ export interface CalculationResult {
   fundingGap: number;
 
   totalAnnualDebtService: number;
+  sellerAnnualDebtService: number;
+  earnoutAnnualDebtService: number;
   revolvingInterestAnnual: number;
   receivablesInterestAnnual: number;
   valuationEbitda: number;
@@ -388,6 +390,8 @@ export function calculateFullDealModel(
     totalFunded: combinedTotalFunded,
     fundingGap: combinedFundingGap,
     totalAnnualDebtService: combinedAnnualDebtService,
+    sellerAnnualDebtService,
+    earnoutAnnualDebtService,
     revolvingInterestAnnual: funding.totalRevolvingInterest,
     receivablesInterestAnnual,
     valuationEbitda,
