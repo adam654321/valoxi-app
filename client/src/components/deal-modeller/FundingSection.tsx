@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { formatCurrency } from '@/lib/format-utils';
-import { toNum, type CalculationResult, type FundingLineInput } from '@shared/calculators/deal-model.calc';
+import { toNum, annualiseService, type CalculationResult, type FundingLineInput } from '@shared/calculators/deal-model.calc';
 import type { DealModelFundingLine, DealModelSellerPayment, DealModelContingentConsideration } from '@shared/schema';
 import {
   CreditCard,
@@ -119,7 +119,7 @@ function calcLineLocally(line: {
   } else {
     monthlyRepayment = pmt(used, rate / 100 / 12, term);
   }
-  return { availableAmount, monthlyRepayment, annualRepayment: monthlyRepayment * 12 };
+  return { availableAmount, monthlyRepayment, annualRepayment: annualiseService(monthlyRepayment, term) };
 }
 
 interface LocalLineValues {

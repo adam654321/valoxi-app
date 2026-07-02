@@ -225,7 +225,7 @@ function computeMonthlyService(used: number, rate: number, term: number, structu
   }
 }
 
-function annualiseService(monthly: number, termMonths: number | null | undefined): number {
+export function annualiseService(monthly: number, termMonths: number | null | undefined): number {
   // Revolving / no fixed term / interest-only sentinel (term <= 1, matching
   // computeMonthlyService): facility runs all year.
   if (!termMonths || termMonths <= 1) return monthly * 12;
