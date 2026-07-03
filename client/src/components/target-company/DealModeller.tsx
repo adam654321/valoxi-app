@@ -204,8 +204,23 @@ export default function DealModeller({ companyId }: DealModellerProps) {
         staffCosts: null,
       });
     });
+    // Union with raw: any fiscal year present in income_statements but absent
+    // from the expert payload is appended from financialsRaw, so a stale
+    // expert snapshot cannot hide fresher extracted data.
+    const expertYears = new Set(periods.map(p => p.fiscalYear));
+    const rawPeriods = (financialsRaw?.periods ?? []).filter(
+      (p: any) => (p.periodType === 'statutory' || p.periodType === 'historic')
+        && p.fiscalYear && !expertYears.has(p.fiscalYear)
+    );
+    rawPeriods.forEach((p: any) => {
+      periods.push(p);
+      const income = financialsRaw?.incomeStatements?.find(
+        (i: any) => i.financialPeriodId === p.id
+      );
+      if (income) incomeStatements.push(income);
+    });
     return { periods, incomeStatements, staffData: [] };
-  }, [financialExpertMetrics, companyId]);
+  }, [financialExpertMetrics, companyId, financialsRaw]);
 
   const financialYears = useMemo<string[]>(() => {
     if (financialExpertMetrics) {
