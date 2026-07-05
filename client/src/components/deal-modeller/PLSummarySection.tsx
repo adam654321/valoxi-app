@@ -40,11 +40,34 @@ export default function PLSummarySection({ financialData, adjustments, calculati
 
     const ytdMap = detectYtdPeriods(statutory.map((p: any) => ({ periodEnd: p.periodEnd })));
 
+    // Determine the fiscal year end month (1-12) from full-year (non-YTD) periods so
+    // that months-elapsed for a YTD period is computed relative to the fiscal year
+    // start, not the raw calendar month of periodEnd. Using the raw calendar month
+    // is a no-op for December-ending YTD periods on a non-calendar fiscal year
+    // (e.g. periodEnd month 12 divided by 12 and multiplied by 12 cancels out).
+    const fullYearMonths = statutory
+      .filter((p: any) => !(ytdMap.get(p.periodEnd) ?? false))
+      .map((p: any) => new Date(p.periodEnd).getMonth() + 1);
+    const monthFrequency = new Map<number, number>();
+    fullYearMonths.forEach((m: number) => monthFrequency.set(m, (monthFrequency.get(m) ?? 0) + 1));
+    let fiscalYearEndMonth = fullYearMonths[0] ?? 12;
+    let highestFrequency = -1;
+    monthFrequency.forEach((count, month) => {
+      if (count > highestFrequency) {
+        highestFrequency = count;
+        fiscalYearEndMonth = month;
+      }
+    });
+    const fiscalYearStartMonth = (fiscalYearEndMonth % 12) + 1;
+
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
       const isYtd = ytdMap.get(p.periodEnd) ?? false;
-      const ytdMonths = new Date(p.periodEnd).getMonth() + 1;
+      const periodEndMonth = new Date(p.periodEnd).getMonth() + 1;
+      const ytdMonths = isYtd
+        ? ((periodEndMonth - fiscalYearStartMonth + 12) % 12) + 1
+        : periodEndMonth;
       return {
         periodId: p.id,
         label: p.periodLabel || String(p.fiscalYear),
