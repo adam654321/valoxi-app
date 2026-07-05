@@ -38,6 +38,5 @@ export function formatYtdLabel(periodEnd: string): string {
   const date = new Date(periodEnd);
   const monthName = MONTH_NAMES[date.getMonth()];
   const year = date.getFullYear();
-  const months = getYtdMonths(periodEnd);
-  return `YTD ${monthName} ${year} (${months} month${months !== 1 ? 's' : ''})`;
+  return `YTD ${monthName} ${year}`;
 }
