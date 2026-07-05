@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Landmark, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel, computeYtdMonths, isGenuineYtd } from '@/lib/period-utils';
+import { detectYtdPeriods, formatYtdLabel, computeYtdMonths } from '@/lib/period-utils';
 
 interface BalanceSheetSectionProps {
   financialData: any;
@@ -127,7 +127,7 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
         if (!bs) return null;
         const isOutlier = ytdMap.get(p.periodEnd) ?? false;
         const ytdMonths = computeYtdMonths(p.periodEnd, fiscalYearEndMonth);
-        const isYtd = isOutlier && isGenuineYtd(ytdMonths);
+        const isYtd = isOutlier && p.periodType === 'management';
         return {
           periodId: p.id,
           label: p.periodLabel || String(p.fiscalYear),

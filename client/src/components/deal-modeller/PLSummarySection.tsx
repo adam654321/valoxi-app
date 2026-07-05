@@ -7,7 +7,7 @@ import { toNum } from '@shared/calculators/deal-model.calc';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelAdjustment } from '@shared/schema';
 import { formatCurrency, formatPercent } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel, computeYtdMonths, isGenuineYtd } from '@/lib/period-utils';
+import { detectYtdPeriods, formatYtdLabel, computeYtdMonths } from '@/lib/period-utils';
 
 interface PLSummarySectionProps {
   financialData: any;
@@ -64,7 +64,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
       const isOutlier = ytdMap.get(p.periodEnd) ?? false;
       const ytdMonths = computeYtdMonths(p.periodEnd, fiscalYearEndMonth);
-      const isYtd = isOutlier && isGenuineYtd(ytdMonths);
+      const isYtd = isOutlier && p.periodType === 'management';
       return {
         periodId: p.id,
         label: p.periodLabel || String(p.fiscalYear),
