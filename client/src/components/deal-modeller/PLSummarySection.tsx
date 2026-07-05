@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { TrendingUp, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelAdjustment } from '@shared/schema';
 import { formatCurrency, formatPercent } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel, computeYtdMonths } from '@/lib/period-utils';
+import { detectYtdPeriods, formatYtdLabel } from '@/lib/period-utils';
 
 interface PLSummarySectionProps {
   financialData: any;
@@ -25,12 +24,9 @@ interface PeriodColumn {
   income: any;
   staff: any;
   isYtd: boolean;
-  ytdMonths: number;
 }
 
 export default function PLSummarySection({ financialData, adjustments, calculations, averagingYears, dataSource }: PLSummarySectionProps) {
-  const [annualisedCols, setAnnualisedCols] = useState<Set<string>>(new Set());
-
   const columns = useMemo<PeriodColumn[]>(() => {
     if (!financialData?.periods || !financialData?.incomeStatements) return [];
 
@@ -40,30 +36,10 @@ export default function PLSummarySection({ financialData, adjustments, calculati
 
     const ytdMap = detectYtdPeriods(statutory.map((p: any) => ({ periodEnd: p.periodEnd })));
 
-    // Determine the fiscal year end month (1-12) from full-year (non-YTD) periods so
-    // that months-elapsed for a YTD period is computed relative to the fiscal year
-    // start, not the raw calendar month of periodEnd. Using the raw calendar month
-    // is a no-op for December-ending YTD periods on a non-calendar fiscal year
-    // (e.g. periodEnd month 12 divided by 12 and multiplied by 12 cancels out).
-    const fullYearMonths = statutory
-      .filter((p: any) => !(ytdMap.get(p.periodEnd) ?? false))
-      .map((p: any) => new Date(p.periodEnd).getMonth() + 1);
-    const monthFrequency = new Map<number, number>();
-    fullYearMonths.forEach((m: number) => monthFrequency.set(m, (monthFrequency.get(m) ?? 0) + 1));
-    let fiscalYearEndMonth = fullYearMonths[0] ?? 12;
-    let highestFrequency = -1;
-    monthFrequency.forEach((count, month) => {
-      if (count > highestFrequency) {
-        highestFrequency = count;
-        fiscalYearEndMonth = month;
-      }
-    });
-
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
       const isOutlier = ytdMap.get(p.periodEnd) ?? false;
-      const ytdMonths = computeYtdMonths(p.periodEnd, fiscalYearEndMonth);
       const isYtd = isOutlier && p.periodType === 'management';
       return {
         periodId: p.id,
@@ -73,7 +49,6 @@ export default function PLSummarySection({ financialData, adjustments, calculati
         income: income || null,
         staff: staff || null,
         isYtd,
-        ytdMonths,
       };
     });
   }, [financialData]);
@@ -131,48 +106,24 @@ export default function PLSummarySection({ financialData, adjustments, calculati
     );
   }
 
-  const isAnnualised = (col: PeriodColumn) => col.isYtd && annualisedCols.has(col.periodEnd);
-
-  const annualiseIfNeeded = (col: PeriodColumn, value: number | null): number | null => {
-    if (value === null) return null;
-    if (!isAnnualised(col)) return value;
-    if (!col.ytdMonths) return value;
-    return (value / col.ytdMonths) * 12;
-  };
-
   const val = (income: any, staff: any, field: string, col?: PeriodColumn): number | null => {
-    let raw: number | null;
     if (field === 'directorsRemuneration') {
       const v = income?.directorsRemuneration ?? staff?.directorRemuneration;
-      raw = v != null ? toNum(v) : null;
+      return v != null ? toNum(v) : null;
     } else if (field === 'staffCosts') {
       const v = income?.staffCosts ?? staff?.totalStaffCosts;
-      raw = v != null ? toNum(v) : null;
+      return v != null ? toNum(v) : null;
     } else {
       const v = income?.[field];
-      raw = v != null ? toNum(v) : null;
+      return v != null ? toNum(v) : null;
     }
-    return col ? annualiseIfNeeded(col, raw) : raw;
   };
 
   const ebitdaVal = (income: any, col?: PeriodColumn): number | null => {
     const op = val(income, null, 'operatingProfit');
     const da = val(income, null, 'depreciationAmortisation');
     if (op === null) return null;
-    const raw = op + (da ?? 0);
-    return col ? annualiseIfNeeded(col, raw) : raw;
-  };
-
-  const toggleAnnualised = (periodEnd: string) => {
-    setAnnualisedCols(prev => {
-      const next = new Set(prev);
-      if (next.has(periodEnd)) {
-        next.delete(periodEnd);
-      } else {
-        next.add(periodEnd);
-      }
-      return next;
-    });
+    return op + (da ?? 0);
   };
 
   const cellClass = (col: PeriodColumn, isAvg?: boolean) => {
@@ -262,15 +213,6 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                 >
                   <div className="flex flex-col items-end gap-0.5">
                     <span>{formatYtdLabel(col.periodEnd)}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 text-xs font-normal underline text-muted-foreground hover:text-foreground"
-                      onClick={() => toggleAnnualised(col.periodEnd)}
-                    >
-                      {isAnnualised(col) ? 'YTD' : 'Annualise'}
-                    </Button>
                   </div>
                 </TableHead>
               ))}
