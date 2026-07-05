@@ -35,7 +35,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
     if (!financialData?.periods || !financialData?.incomeStatements) return [];
 
     const statutory = financialData.periods
-      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
+      .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
     const ytdMap = detectYtdPeriods(statutory.map((p: any) => ({ periodEnd: p.periodEnd })));
@@ -59,6 +59,9 @@ export default function PLSummarySection({ financialData, adjustments, calculati
   }, [financialData]);
 
   const hasYtdColumn = useMemo(() => columns.some(c => c.isYtd), [columns]);
+
+  const fullYearColumns = useMemo(() => columns.filter(c => !c.isYtd), [columns]);
+  const ytdColumns = useMemo(() => columns.filter(c => c.isYtd), [columns]);
 
   const averagingYearSet = useMemo<Set<number | null>>(() => {
     if (columns.length === 0) return new Set();
@@ -214,24 +217,13 @@ export default function PLSummarySection({ financialData, adjustments, calculati
           <TableHeader>
             <TableRow>
               <TableHead className="w-[220px] min-w-[180px]"></TableHead>
-              {columns.map(col => (
+              {fullYearColumns.map(col => (
                 <TableHead
                   key={col.periodId}
-                  className={`text-right px-3 ${col.isYtd ? 'bg-amber-50/60 dark:bg-amber-950/20' : averagingYearSet.has(col.year) ? 'bg-blue-50/60 dark:bg-blue-950/20' : ''}`}
+                  className={`text-right px-3 ${averagingYearSet.has(col.year) ? 'bg-blue-50/60 dark:bg-blue-950/20' : ''}`}
                 >
                   <div className="flex flex-col items-end gap-0.5">
-                    <span>{col.isYtd ? formatYtdLabel(col.periodEnd) : col.label}</span>
-                    {col.isYtd && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 text-xs font-normal underline text-muted-foreground hover:text-foreground"
-                        onClick={() => toggleAnnualised(col.periodEnd)}
-                      >
-                        {isAnnualised(col) ? 'YTD' : 'Annualise'}
-                      </Button>
-                    )}
+                    <span>{col.label}</span>
                   </div>
                 </TableHead>
               ))}
@@ -243,6 +235,25 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                   )}
                 </div>
               </TableHead>
+              {ytdColumns.map(col => (
+                <TableHead
+                  key={col.periodId}
+                  className="text-right px-3 bg-amber-50/60 dark:bg-amber-950/20"
+                >
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span>{formatYtdLabel(col.periodEnd)}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 text-xs font-normal underline text-muted-foreground hover:text-foreground"
+                      onClick={() => toggleAnnualised(col.periodEnd)}
+                    >
+                      {isAnnualised(col) ? 'YTD' : 'Annualise'}
+                    </Button>
+                  </div>
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -259,44 +270,46 @@ export default function PLSummarySection({ financialData, adjustments, calculati
 
               const rowCls = row.highlight ? 'bg-primary/5 font-semibold' : row.margin ? '' : '';
 
+              const renderPeriodCell = (col: PeriodColumn) => {
+                const cc = cellClass(col);
+
+                if (row.computed === 'gpMargin') {
+                  const gp = val(col.income, col.staff, 'grossProfit');
+                  const rev = val(col.income, col.staff, 'revenue');
+                  return <TableCell key={col.periodId} className={cc}>{renderMargin(gp, rev)}</TableCell>;
+                }
+                if (row.computed === 'ebitMargin') {
+                  const op = val(col.income, col.staff, 'operatingProfit');
+                  const rev = val(col.income, col.staff, 'revenue');
+                  return <TableCell key={col.periodId} className={cc}>{renderMargin(op, rev)}</TableCell>;
+                }
+                if (row.computed === 'ebitda') {
+                  const e = ebitdaVal(col.income, col);
+                  return (
+                    <TableCell key={col.periodId} className={`${cellClass(col)} ${row.highlight ? 'bg-primary/5 font-semibold' : ''}`}>
+                      {renderCell(e)}
+                    </TableCell>
+                  );
+                }
+                if (row.computed === 'ebitdaMargin') {
+                  const e = ebitdaVal(col.income);
+                  const rev = val(col.income, col.staff, 'revenue');
+                  return <TableCell key={col.periodId} className={cc}>{renderMargin(e, rev)}</TableCell>;
+                }
+
+                const v = val(col.income, col.staff, row.field!, col);
+                return <TableCell key={col.periodId} className={cc}>{renderCell(v, row.negative)}</TableCell>;
+              };
+
               return (
                 <TableRow key={row.label} className={rowCls}>
                   <TableCell className={`text-sm ${row.bold ? 'font-semibold' : ''} ${row.margin ? 'text-muted-foreground italic text-xs' : ''}`}>
                     {row.label}
                   </TableCell>
 
-                  {columns.map(col => {
-                    const cc = cellClass(col);
+                  {fullYearColumns.map(col => renderPeriodCell(col))}
 
-                    if (row.computed === 'gpMargin') {
-                      const gp = val(col.income, col.staff, 'grossProfit');
-                      const rev = val(col.income, col.staff, 'revenue');
-                      return <TableCell key={col.periodId} className={cc}>{renderMargin(gp, rev)}</TableCell>;
-                    }
-                    if (row.computed === 'ebitMargin') {
-                      const op = val(col.income, col.staff, 'operatingProfit');
-                      const rev = val(col.income, col.staff, 'revenue');
-                      return <TableCell key={col.periodId} className={cc}>{renderMargin(op, rev)}</TableCell>;
-                    }
-                    if (row.computed === 'ebitda') {
-                      const e = ebitdaVal(col.income, col);
-                      return (
-                        <TableCell key={col.periodId} className={`${cellClass(col)} ${row.highlight ? 'bg-primary/5 font-semibold' : ''}`}>
-                          {renderCell(e)}
-                        </TableCell>
-                      );
-                    }
-                    if (row.computed === 'ebitdaMargin') {
-                      const e = ebitdaVal(col.income);
-                      const rev = val(col.income, col.staff, 'revenue');
-                      return <TableCell key={col.periodId} className={cc}>{renderMargin(e, rev)}</TableCell>;
-                    }
-
-                    const v = val(col.income, col.staff, row.field!, col);
-                    return <TableCell key={col.periodId} className={cc}>{renderCell(v, row.negative)}</TableCell>;
-                  })}
-
-                  <TableCell className={cellClass(columns[0], true)}>
+                  <TableCell className={cellClass(fullYearColumns[0] ?? columns[0], true)}>
                     {!averages ? '—' : (() => {
                       if (row.computed === 'gpMargin') return renderMargin(averages.grossProfit, averages.revenue);
                       if (row.computed === 'ebitMargin') return renderMargin(averages.operatingProfit, averages.revenue);
@@ -313,6 +326,8 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                       return '—';
                     })()}
                   </TableCell>
+
+                  {ytdColumns.map(col => renderPeriodCell(col))}
                 </TableRow>
               );
             })}
