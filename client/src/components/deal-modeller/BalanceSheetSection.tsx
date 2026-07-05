@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Landmark, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel } from '@/lib/period-utils';
+import { formatYtdLabel } from '@/lib/period-utils';
 
 interface BalanceSheetSectionProps {
   financialData: any;
@@ -98,14 +98,11 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
-    const ytdMap = detectYtdPeriods(statutory.map((p: any) => ({ periodEnd: p.periodEnd })));
-
     return statutory
       .map((p: any) => {
         const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id);
         if (!bs) return null;
-        const isOutlier = ytdMap.get(p.periodEnd) ?? false;
-        const isYtd = isOutlier && p.periodType === 'management';
+        const isYtd = p.documentCategory === 'YTD Balance Sheet';
         return {
           periodId: p.id,
           label: p.periodLabel || String(p.fiscalYear),

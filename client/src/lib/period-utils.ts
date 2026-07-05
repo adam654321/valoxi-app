@@ -1,8 +1,3 @@
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
 export function getYtdMonths(periodEnd: string): number {
   return new Date(periodEnd).getMonth() + 1;
 }
@@ -35,8 +30,6 @@ export function detectYtdPeriods(periods: Array<{ periodEnd: string }>): Map<str
 }
 
 export function formatYtdLabel(periodEnd: string): string {
-  const date = new Date(periodEnd);
-  const monthName = MONTH_NAMES[date.getMonth()];
-  const year = date.getFullYear();
-  return `YTD ${monthName} ${year}`;
+  const year = new Date(periodEnd).getFullYear();
+  return `YTD ${year}`;
 }

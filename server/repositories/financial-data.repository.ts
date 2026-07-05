@@ -9,6 +9,7 @@ import {
   fixedAssetsRegister,
   loanFacilities,
   ebitdaAdjustments,
+  documents,
   type FinancialPeriod,
   type InsertFinancialPeriod,
   type IncomeStatement,
@@ -80,12 +81,18 @@ export class FinancialDataRepository {
     return created;
   }
 
-  async getFinancialPeriodsByCompany(targetCompanyId: number): Promise<FinancialPeriod[]> {
-    return await db
-      .select()
+  async getFinancialPeriodsByCompany(targetCompanyId: number): Promise<(FinancialPeriod & { documentCategory: string | null })[]> {
+    const results = await db
+      .select({
+        period: financialPeriods,
+        documentCategory: documents.documentCategory,
+      })
       .from(financialPeriods)
+      .leftJoin(documents, eq(financialPeriods.sourceDocumentId, documents.id))
       .where(eq(financialPeriods.targetCompanyId, targetCompanyId))
       .orderBy(desc(financialPeriods.periodEnd));
+
+    return results.map(r => ({ ...r.period, documentCategory: r.documentCategory ?? null }));
   }
 
   async upsertIncomeStatement(

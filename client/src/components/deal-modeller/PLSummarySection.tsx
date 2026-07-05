@@ -6,7 +6,7 @@ import { toNum } from '@shared/calculators/deal-model.calc';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelAdjustment } from '@shared/schema';
 import { formatCurrency, formatPercent } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel } from '@/lib/period-utils';
+import { formatYtdLabel } from '@/lib/period-utils';
 
 interface PLSummarySectionProps {
   financialData: any;
@@ -34,13 +34,10 @@ export default function PLSummarySection({ financialData, adjustments, calculati
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
-    const ytdMap = detectYtdPeriods(statutory.map((p: any) => ({ periodEnd: p.periodEnd })));
-
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
-      const isOutlier = ytdMap.get(p.periodEnd) ?? false;
-      const isYtd = isOutlier && p.periodType === 'management';
+      const isYtd = p.documentCategory === 'YTD Profit & Loss';
       return {
         periodId: p.id,
         label: p.periodLabel || String(p.fiscalYear),
