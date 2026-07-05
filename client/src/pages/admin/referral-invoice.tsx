@@ -107,6 +107,22 @@ export default function AdminReferralInvoice() {
     onError: (e) => toast({ title: "Resend failed", description: e.message, variant: "destructive" }),
   });
 
+  const [welcomeEmail, setWelcomeEmail] = useState("");
+
+  const sendWelcome = useMutation<unknown, Error, void>({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/v2/admin/5d-member-welcome", { email: welcomeEmail.trim() });
+      const json = await res.json();
+      if (!json?.success) throw new Error(json?.message || "Send failed");
+      return json;
+    },
+    onSuccess: () => {
+      toast({ title: "Sent", description: "Welcome email dispatched." });
+      setWelcomeEmail("");
+    },
+    onError: (e) => toast({ title: "Send failed", description: e.message, variant: "destructive" }),
+  });
+
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const toggleSelected = (id: number) => {
@@ -472,6 +488,33 @@ export default function AdminReferralInvoice() {
               </TableBody>
             </Table>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Send 5D Welcome Email</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Sends a branded welcome email to a new 5D member with their Valoxi access link and instructions.
+          </p>
+          <div className="flex flex-col gap-1 max-w-md">
+            <label className="text-sm font-medium">New member email address</label>
+            <Input
+              type="email"
+              value={welcomeEmail}
+              onChange={(e) => setWelcomeEmail(e.target.value)}
+              placeholder="member@example.com"
+            />
+          </div>
+          <Button
+            onClick={() => sendWelcome.mutate()}
+            disabled={sendWelcome.isPending || !welcomeEmail.trim()}
+          >
+            {sendWelcome.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            Send welcome email
+          </Button>
         </CardContent>
       </Card>
 

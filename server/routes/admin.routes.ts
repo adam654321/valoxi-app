@@ -163,6 +163,20 @@ router.post('/users/:id/email', asyncHandler(async (req: Request, res: Response)
   sendSuccess(res, { success: true, message: `Email sent to ${user.email}` });
 }));
 
+router.post('/5d-member-welcome', asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'invalid_email', message: 'A valid email address is required.' });
+  }
+  try {
+    const result = await emailApiService.sendFiveDNewMemberWelcome({ to: email.trim() });
+    sendSuccess(res, { success: true, message: result.message });
+  } catch (error) {
+    console.error('[Admin] 5D welcome email error', error);
+    return res.status(500).json({ error: 'internal_error', message: 'Failed to send welcome email.' });
+  }
+}));
+
 router.post('/users/:id/reset-password', asyncHandler(async (req: Request, res: Response) => {
   const userId = Number(req.params.id);
   if (isNaN(userId)) {

@@ -890,6 +890,50 @@ export class EmailApiService {
     });
     return { success, message: success ? '5D partner invoice sent' : 'Failed to send 5D partner invoice' };
   }
+
+  async sendFiveDNewMemberWelcome(params: { to: string }): Promise<{ success: boolean; message: string }> {
+    const { to } = params;
+
+    const blocks: EmailBlock[] = [
+      { type: 'paragraph', text: 'Welcome to 5D Accelerator. We work in close partnership with 5D to support members throughout their acquisition journey.' },
+      { type: 'paragraph', text: 'As part of your 5D membership, you get three months free access to Valoxi - the AI-powered platform built for UK SME acquisitions.' },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'success',
+          title: 'What you can do with Valoxi',
+          body: 'Screen and analyse target companies using AI &bull; Build deal models and stress-test your numbers &bull; Generate offers, Heads of Terms, and due diligence documents &bull; Manage the seller portal and document exchange',
+        },
+      },
+      { type: 'paragraph', text: 'To claim your access, click the button below. On the pricing page, select the <strong style="color:#FFFFFF;">Core plan</strong> - your three months free will apply automatically at checkout.' },
+      {
+        type: 'info_box',
+        box: {
+          tone: 'info',
+          title: '',
+          body: 'If you decide to upgrade to a higher plan later, your remaining free period credit is applied pro-rata to the higher level. You will never lose time you have already paid for.',
+        },
+      },
+      { type: 'cta', cta: { label: 'Claim your Valoxi access', href: 'https://valoxi.ai/?promo=5d' } },
+      { type: 'paragraph', text: 'If you have any questions, reply to this email or contact <a href="mailto:support@valoxi.ai" style="color:#E05115;text-decoration:none;">support@valoxi.ai</a>.' },
+      { type: 'paragraph', text: 'Welcome from the Valoxi team.' },
+    ];
+
+    const html = renderBrandedEmail({
+      preheader: 'Welcome to 5D - your three months free Valoxi access is waiting.',
+      eyebrow: 'Welcome to 5D',
+      heading: 'Your Valoxi access as a 5D member',
+      blocks,
+      footerLine: 'You are receiving this because you are a member of 5D Accelerator and have been granted complimentary Valoxi access.',
+    });
+
+    const success = await (legacyEmailService as any).sendEmail({
+      to,
+      subject: 'Your three months free Valoxi access - welcome from the team',
+      html,
+    });
+    return { success, message: success ? '5D welcome email sent' : 'Failed to send 5D welcome email' };
+  }
 }
 
 export const emailApiService = new EmailApiService();
