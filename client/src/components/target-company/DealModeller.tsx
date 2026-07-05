@@ -212,7 +212,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     // expert snapshot cannot hide fresher extracted data.
     const expertYears = new Set(periods.map(p => p.fiscalYear));
     const rawPeriods = (financialsRaw?.periods ?? []).filter(
-      (p: any) => (p.periodType === 'statutory' || p.periodType === 'historic')
+      (p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management')
         && p.fiscalYear && !expertYears.has(p.fiscalYear)
     );
     rawPeriods.forEach((p: any) => {

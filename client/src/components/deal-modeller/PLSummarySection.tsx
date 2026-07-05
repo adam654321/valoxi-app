@@ -220,7 +220,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
               {fullYearColumns.map(col => (
                 <TableHead
                   key={col.periodId}
-                  className={`text-right px-3 ${averagingYearSet.has(col.year) ? 'bg-blue-50/60 dark:bg-blue-950/20' : ''}`}
+                  className={`text-right px-3 w-32 min-w-[128px] ${averagingYearSet.has(col.year) ? 'bg-blue-50/60 dark:bg-blue-950/20' : ''}`}
                 >
                   <div className="flex flex-col items-end gap-0.5">
                     <span>{col.label}</span>
@@ -238,7 +238,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
               {ytdColumns.map(col => (
                 <TableHead
                   key={col.periodId}
-                  className="text-right px-3 bg-amber-50/60 dark:bg-amber-950/20"
+                  className="text-right px-3 w-32 min-w-[128px] bg-amber-50/60 dark:bg-amber-950/20"
                 >
                   <div className="flex flex-col items-end gap-0.5">
                     <span>{formatYtdLabel(col.periodEnd)}</span>
