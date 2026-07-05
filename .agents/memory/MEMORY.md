@@ -1,0 +1,2 @@
+- [resend-broadcasts-no-merge-tags](resend-broadcasts-no-merge-tags.md) — Resend broadcast templates cannot use merge tags the way transactional emails can.
+- [YTD period detection](ytd-period-detection.md) — fiscal-year-end month is inferred by frequency across a company's periods, not assumed to be December.

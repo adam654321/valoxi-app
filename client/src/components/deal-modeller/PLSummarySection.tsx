@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { TrendingUp, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelAdjustment } from '@shared/schema';
 import { formatCurrency, formatPercent } from '@/lib/format-utils';
+import { detectYtdPeriods, formatYtdLabel } from '@/lib/period-utils';
 
 interface PLSummarySectionProps {
   financialData: any;
@@ -22,9 +24,13 @@ interface PeriodColumn {
   periodEnd: string;
   income: any;
   staff: any;
+  isYtd: boolean;
+  ytdMonths: number;
 }
 
 export default function PLSummarySection({ financialData, adjustments, calculations, averagingYears, dataSource }: PLSummarySectionProps) {
+  const [annualisedCols, setAnnualisedCols] = useState<Set<string>>(new Set());
+
   const columns = useMemo<PeriodColumn[]>(() => {
     if (!financialData?.periods || !financialData?.incomeStatements) return [];
 
@@ -32,9 +38,13 @@ export default function PLSummarySection({ financialData, adjustments, calculati
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
+    const ytdMap = detectYtdPeriods(statutory.map((p: any) => ({ periodEnd: p.periodEnd })));
+
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
+      const isYtd = ytdMap.get(p.periodEnd) ?? false;
+      const ytdMonths = new Date(p.periodEnd).getMonth() + 1;
       return {
         periodId: p.id,
         label: p.periodLabel || String(p.fiscalYear),
@@ -42,19 +52,25 @@ export default function PLSummarySection({ financialData, adjustments, calculati
         periodEnd: p.periodEnd,
         income: income || null,
         staff: staff || null,
+        isYtd,
+        ytdMonths,
       };
     });
   }, [financialData]);
 
+  const hasYtdColumn = useMemo(() => columns.some(c => c.isYtd), [columns]);
+
   const averagingYearSet = useMemo<Set<number | null>>(() => {
     if (columns.length === 0) return new Set();
-    const recent = columns.slice(-averagingYears);
+    const fullYearCols = columns.filter(c => !c.isYtd);
+    const recent = fullYearCols.slice(-averagingYears);
     return new Set(recent.map(c => c.year));
   }, [columns, averagingYears]);
 
   const averages = useMemo(() => {
     if (columns.length === 0) return null;
-    const avgCols = columns.slice(-averagingYears);
+    const fullYearCols = columns.filter(c => !c.isYtd);
+    const avgCols = fullYearCols.slice(-averagingYears);
     const n = avgCols.length;
     if (n === 0) return null;
 
@@ -92,29 +108,54 @@ export default function PLSummarySection({ financialData, adjustments, calculati
     );
   }
 
-  const val = (income: any, staff: any, field: string): number | null => {
-    if (field === 'directorsRemuneration') {
-      const v = income?.directorsRemuneration ?? staff?.directorRemuneration;
-      return v != null ? toNum(v) : null;
-    }
-    if (field === 'staffCosts') {
-      const v = income?.staffCosts ?? staff?.totalStaffCosts;
-      return v != null ? toNum(v) : null;
-    }
-    const v = income?.[field];
-    return v != null ? toNum(v) : null;
+  const isAnnualised = (col: PeriodColumn) => col.isYtd && annualisedCols.has(col.periodEnd);
+
+  const annualiseIfNeeded = (col: PeriodColumn, value: number | null): number | null => {
+    if (value === null) return null;
+    if (!isAnnualised(col)) return value;
+    if (!col.ytdMonths) return value;
+    return (value / col.ytdMonths) * 12;
   };
 
-  const ebitdaVal = (income: any): number | null => {
+  const val = (income: any, staff: any, field: string, col?: PeriodColumn): number | null => {
+    let raw: number | null;
+    if (field === 'directorsRemuneration') {
+      const v = income?.directorsRemuneration ?? staff?.directorRemuneration;
+      raw = v != null ? toNum(v) : null;
+    } else if (field === 'staffCosts') {
+      const v = income?.staffCosts ?? staff?.totalStaffCosts;
+      raw = v != null ? toNum(v) : null;
+    } else {
+      const v = income?.[field];
+      raw = v != null ? toNum(v) : null;
+    }
+    return col ? annualiseIfNeeded(col, raw) : raw;
+  };
+
+  const ebitdaVal = (income: any, col?: PeriodColumn): number | null => {
     const op = val(income, null, 'operatingProfit');
     const da = val(income, null, 'depreciationAmortisation');
     if (op === null) return null;
-    return op + (da ?? 0);
+    const raw = op + (da ?? 0);
+    return col ? annualiseIfNeeded(col, raw) : raw;
+  };
+
+  const toggleAnnualised = (periodEnd: string) => {
+    setAnnualisedCols(prev => {
+      const next = new Set(prev);
+      if (next.has(periodEnd)) {
+        next.delete(periodEnd);
+      } else {
+        next.add(periodEnd);
+      }
+      return next;
+    });
   };
 
   const cellClass = (col: PeriodColumn, isAvg?: boolean) => {
     const base = 'text-right tabular-nums px-3 py-2';
     if (isAvg) return `${base} bg-primary/5 font-semibold`;
+    if (col.isYtd) return `${base} bg-amber-50/60 dark:bg-amber-950/20`;
     if (averagingYearSet.has(col.year)) return `${base} bg-blue-50/60 dark:bg-blue-950/20`;
     return `${base}`;
   };
@@ -176,12 +217,32 @@ export default function PLSummarySection({ financialData, adjustments, calculati
               {columns.map(col => (
                 <TableHead
                   key={col.periodId}
-                  className={`text-right px-3 ${averagingYearSet.has(col.year) ? 'bg-blue-50/60 dark:bg-blue-950/20' : ''}`}
+                  className={`text-right px-3 ${col.isYtd ? 'bg-amber-50/60 dark:bg-amber-950/20' : averagingYearSet.has(col.year) ? 'bg-blue-50/60 dark:bg-blue-950/20' : ''}`}
                 >
-                  {col.label}
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span>{col.isYtd ? formatYtdLabel(col.periodEnd) : col.label}</span>
+                    {col.isYtd && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 text-xs font-normal underline text-muted-foreground hover:text-foreground"
+                        onClick={() => toggleAnnualised(col.periodEnd)}
+                      >
+                        {isAnnualised(col) ? 'YTD' : 'Annualise'}
+                      </Button>
+                    )}
+                  </div>
                 </TableHead>
               ))}
-              <TableHead className="text-right px-3 bg-primary/5 font-semibold">Average</TableHead>
+              <TableHead className="text-right px-3 bg-primary/5 font-semibold">
+                <div className="flex flex-col items-end gap-0.5">
+                  <span>Average</span>
+                  {hasYtdColumn && (
+                    <span className="text-xs font-normal text-muted-foreground">(full years only)</span>
+                  )}
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -218,7 +279,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                       return <TableCell key={col.periodId} className={cc}>{renderMargin(op, rev)}</TableCell>;
                     }
                     if (row.computed === 'ebitda') {
-                      const e = ebitdaVal(col.income);
+                      const e = ebitdaVal(col.income, col);
                       return (
                         <TableCell key={col.periodId} className={`${cellClass(col)} ${row.highlight ? 'bg-primary/5 font-semibold' : ''}`}>
                           {renderCell(e)}
@@ -231,7 +292,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                       return <TableCell key={col.periodId} className={cc}>{renderMargin(e, rev)}</TableCell>;
                     }
 
-                    const v = val(col.income, col.staff, row.field!);
+                    const v = val(col.income, col.staff, row.field!, col);
                     return <TableCell key={col.periodId} className={cc}>{renderCell(v, row.negative)}</TableCell>;
                   })}
 
@@ -260,7 +321,10 @@ export default function PLSummarySection({ financialData, adjustments, calculati
 
         <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5 shrink-0" />
-          EBITDA averaged over {averagingYears} most recent year{averagingYears !== 1 ? 's' : ''}. Adjustments applied in Section 2.
+          EBITDA averaged over {averagingYears} most recent full year{averagingYears !== 1 ? 's' : ''}. Adjustments applied in Section 2.
+          {hasYtdColumn && (
+            <span className="ml-2">YTD columns are excluded from the average.</span>
+          )}
           {dataSource === 'expert' && (
             <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-medium">· Sourced from Phase 2 holistic analysis</span>
           )}

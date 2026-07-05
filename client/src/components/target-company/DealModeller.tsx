@@ -21,6 +21,7 @@ import {
 } from '@shared/calculators/deal-model.calc';
 import type { DealModel, DealModelAdjustment, DealModelFundingLine, DealModelSellerPayment, DealModelContingentConsideration } from '@shared/schema';
 import { formatCurrency } from '@/lib/format-utils';
+import { detectYtdPeriods } from '@/lib/period-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import BalanceSheetSection from '@/components/deal-modeller/BalanceSheetSection';
 import CashFlowSection from '@/components/deal-modeller/CashFlowSection';
@@ -73,6 +74,7 @@ interface FinancialPeriod {
   periodType: string;
   periodEnd: string;
   fiscalYear: number | null;
+  periodLabel?: string | null;
 }
 
 interface IncomeStatement {
@@ -183,13 +185,14 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const m = financialExpertMetrics[yearStr];
       const year = parseInt(yearStr, 10);
       const syntheticId = -(year);
+      const rawMatch = (financialsRaw?.periods ?? []).find((p: any) => p.fiscalYear === year);
       periods.push({
         id: syntheticId,
         targetCompanyId: companyId,
-        periodType: 'statutory',
-        periodEnd: `${yearStr}-12-31T00:00:00.000Z`,
+        periodType: rawMatch?.periodType ?? 'statutory',
+        periodEnd: rawMatch?.periodEnd ?? `${yearStr}-12-31T00:00:00.000Z`,
         fiscalYear: year,
-        periodLabel: `FY ${yearStr}`,
+        periodLabel: rawMatch?.periodLabel ?? `FY ${yearStr}`,
       });
       incomeStatements.push({
         id: idx,
@@ -235,17 +238,23 @@ export default function DealModeller({ companyId }: DealModellerProps) {
 
   const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
     if (financialExpertMetrics) {
+      const expertPeriods = financialsFromExpert?.periods ?? [];
+      const ytdMap = detectYtdPeriods(expertPeriods.map((p: any) => ({ periodEnd: p.periodEnd })));
       const result: Record<string, number> = {};
       for (const [year, m] of Object.entries(financialExpertMetrics)) {
+        const period = expertPeriods.find((p: any) => String(p.fiscalYear) === year);
+        if (period && ytdMap.get(period.periodEnd)) continue;
         const ebitda = (m as any).ebitda;
         if (ebitda != null) result[year] = Number(ebitda);
       }
       return result;
     }
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
+    const ytdMap = detectYtdPeriods(financialsRaw.periods.map((p: any) => ({ periodEnd: p.periodEnd })));
     const result: Record<string, number> = {};
     for (const period of financialsRaw.periods) {
       if (period.periodType !== 'statutory' || !period.fiscalYear) continue;
+      if (ytdMap.get(period.periodEnd)) continue;
       const income = financialsRaw.incomeStatements.find(i => i.financialPeriodId === period.id);
       if (!income) continue;
       const op = toNum(income.operatingProfit);
@@ -253,7 +262,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       result[String(period.fiscalYear)] = op + da;
     }
     return result;
-  }, [financialsRaw, financialExpertMetrics]);
+  }, [financialsRaw, financialExpertMetrics, financialsFromExpert]);
 
   const calculations = useMemo<CalculationResult | null>(() => {
     if (!modelDetails) return null;
