@@ -7,7 +7,7 @@ import { toNum } from '@shared/calculators/deal-model.calc';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelAdjustment } from '@shared/schema';
 import { formatCurrency, formatPercent } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel } from '@/lib/period-utils';
+import { detectYtdPeriods, formatYtdLabel, computeYtdMonths, isGenuineYtd } from '@/lib/period-utils';
 
 interface PLSummarySectionProps {
   financialData: any;
@@ -58,16 +58,13 @@ export default function PLSummarySection({ financialData, adjustments, calculati
         fiscalYearEndMonth = month;
       }
     });
-    const fiscalYearStartMonth = (fiscalYearEndMonth % 12) + 1;
 
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
-      const isYtd = ytdMap.get(p.periodEnd) ?? false;
-      const periodEndMonth = new Date(p.periodEnd).getMonth() + 1;
-      const ytdMonths = isYtd
-        ? ((periodEndMonth - fiscalYearStartMonth + 12) % 12) + 1
-        : periodEndMonth;
+      const isOutlier = ytdMap.get(p.periodEnd) ?? false;
+      const ytdMonths = computeYtdMonths(p.periodEnd, fiscalYearEndMonth);
+      const isYtd = isOutlier && isGenuineYtd(ytdMonths);
       return {
         periodId: p.id,
         label: p.periodLabel || String(p.fiscalYear),

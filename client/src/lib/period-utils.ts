@@ -34,6 +34,16 @@ export function detectYtdPeriods(periods: Array<{ periodEnd: string }>): Map<str
   return result;
 }
 
+export function computeYtdMonths(periodEnd: string, fiscalYearEndMonth: number): number {
+  const fiscalYearStartMonth = (fiscalYearEndMonth % 12) + 1;
+  const periodEndMonth = new Date(periodEnd).getMonth() + 1;
+  return ((periodEndMonth - fiscalYearStartMonth + 12) % 12) + 1;
+}
+
+export function isGenuineYtd(ytdMonths: number): boolean {
+  return ytdMonths <= 8;
+}
+
 export function formatYtdLabel(periodEnd: string): string {
   const date = new Date(periodEnd);
   const monthName = MONTH_NAMES[date.getMonth()];

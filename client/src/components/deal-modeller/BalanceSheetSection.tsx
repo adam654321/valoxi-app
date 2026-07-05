@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Landmark, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
-import { detectYtdPeriods, formatYtdLabel } from '@/lib/period-utils';
+import { detectYtdPeriods, formatYtdLabel, computeYtdMonths, isGenuineYtd } from '@/lib/period-utils';
 
 interface BalanceSheetSectionProps {
   financialData: any;
@@ -120,17 +120,14 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
         fiscalYearEndMonth = month;
       }
     });
-    const fiscalYearStartMonth = (fiscalYearEndMonth % 12) + 1;
 
     return statutory
       .map((p: any) => {
         const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id);
         if (!bs) return null;
-        const isYtd = ytdMap.get(p.periodEnd) ?? false;
-        const periodEndMonth = new Date(p.periodEnd).getMonth() + 1;
-        const ytdMonths = isYtd
-          ? ((periodEndMonth - fiscalYearStartMonth + 12) % 12) + 1
-          : periodEndMonth;
+        const isOutlier = ytdMap.get(p.periodEnd) ?? false;
+        const ytdMonths = computeYtdMonths(p.periodEnd, fiscalYearEndMonth);
+        const isYtd = isOutlier && isGenuineYtd(ytdMonths);
         return {
           periodId: p.id,
           label: p.periodLabel || String(p.fiscalYear),
