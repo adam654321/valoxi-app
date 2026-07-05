@@ -315,7 +315,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                   );
                 }
                 if (row.computed === 'ebitdaMargin') {
-                  const e = ebitdaVal(col.income);
+                  const e = ebitdaVal(col.income, col);
                   const rev = val(col.income, col.staff, 'revenue');
                   return <TableCell key={col.periodId} className={cc}>{renderMargin(e, rev)}</TableCell>;
                 }
