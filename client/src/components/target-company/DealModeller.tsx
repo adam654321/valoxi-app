@@ -21,7 +21,6 @@ import {
 } from '@shared/calculators/deal-model.calc';
 import type { DealModel, DealModelAdjustment, DealModelFundingLine, DealModelSellerPayment, DealModelContingentConsideration } from '@shared/schema';
 import { formatCurrency } from '@/lib/format-utils';
-import { detectYtdPeriods } from '@/lib/period-utils';
 import PLSummarySection from '@/components/deal-modeller/PLSummarySection';
 import BalanceSheetSection from '@/components/deal-modeller/BalanceSheetSection';
 import CashFlowSection from '@/components/deal-modeller/CashFlowSection';
@@ -75,6 +74,7 @@ interface FinancialPeriod {
   periodEnd: string;
   fiscalYear: number | null;
   periodLabel?: string | null;
+  documentCategory?: string | null;
 }
 
 interface IncomeStatement {
@@ -193,6 +193,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
         periodEnd: rawMatch?.periodEnd ?? `${yearStr}-12-31T00:00:00.000Z`,
         fiscalYear: year,
         periodLabel: rawMatch?.periodLabel ?? `FY ${yearStr}`,
+        documentCategory: rawMatch?.documentCategory ?? null,
       });
       incomeStatements.push({
         id: idx,
@@ -239,22 +240,20 @@ export default function DealModeller({ companyId }: DealModellerProps) {
   const reportedEbitdaByYear = useMemo<Record<string, number>>(() => {
     if (financialExpertMetrics) {
       const expertPeriods = financialsFromExpert?.periods ?? [];
-      const ytdMap = detectYtdPeriods(expertPeriods.map((p: any) => ({ periodEnd: p.periodEnd })));
       const result: Record<string, number> = {};
       for (const [year, m] of Object.entries(financialExpertMetrics)) {
         const period = expertPeriods.find((p: any) => String(p.fiscalYear) === year);
-        if (period && ytdMap.get(period.periodEnd)) continue;
+        if (period && period.documentCategory === 'YTD Profit & Loss') continue;
         const ebitda = (m as any).ebitda;
         if (ebitda != null) result[year] = Number(ebitda);
       }
       return result;
     }
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
-    const ytdMap = detectYtdPeriods(financialsRaw.periods.map((p: any) => ({ periodEnd: p.periodEnd })));
     const result: Record<string, number> = {};
     for (const period of financialsRaw.periods) {
       if (period.periodType !== 'statutory' || !period.fiscalYear) continue;
-      if (ytdMap.get(period.periodEnd)) continue;
+      if (period.documentCategory === 'YTD Profit & Loss') continue;
       const income = financialsRaw.incomeStatements.find(i => i.financialPeriodId === period.id);
       if (!income) continue;
       const op = toNum(income.operatingProfit);
