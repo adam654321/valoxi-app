@@ -96,16 +96,19 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
     if (!financialData?.periods || !financialData?.balanceSheets) return [];
     const statutory = financialData.periods
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
+      .filter((p: any) => financialData.balanceSheets.some(
+        (s: any) => s.financialPeriodId === p.id
+      ))
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
     return statutory
       .map((p: any) => {
         const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id);
         if (!bs) return null;
-        const isYtd = p.documentCategory === 'YTD Balance Sheet';
+        const isYtd = !!(p.documentCategory?.toLowerCase().includes('ytd'));
         return {
           periodId: p.id,
-          label: p.periodLabel || String(p.fiscalYear),
+          label: isYtd && p.fiscalYear ? formatYtdLabel(p.fiscalYear) : (p.periodLabel || String(p.fiscalYear)),
           year: p.fiscalYear,
           periodEnd: p.periodEnd,
           bs,
@@ -286,7 +289,7 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
               {ytdColumns.map(col => (
                 <TableHead key={col.periodId} className="text-right px-3 w-32 min-w-[128px] bg-amber-50/60 dark:bg-amber-950/20">
                   <div className="flex flex-col items-end gap-0.5">
-                    <span>{formatYtdLabel(col.periodEnd)}</span>
+                    <span>{col.label}</span>
                   </div>
                 </TableHead>
               ))}

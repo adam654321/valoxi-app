@@ -1,4 +1,3 @@
-export function formatYtdLabel(periodEnd: string): string {
-  const year = new Date(periodEnd).getFullYear();
-  return `YTD ${year}`;
+export function formatYtdLabel(fiscalYear: number): string {
+  return `YTD ${fiscalYear}`;
 }

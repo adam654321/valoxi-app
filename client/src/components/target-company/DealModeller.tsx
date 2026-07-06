@@ -243,7 +243,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const result: Record<string, number> = {};
       for (const [year, m] of Object.entries(financialExpertMetrics)) {
         const period = expertPeriods.find((p: any) => String(p.fiscalYear) === year);
-        if (period && period.documentCategory === 'YTD Profit & Loss') continue;
+        if (period && period.documentCategory?.toLowerCase().includes('ytd')) continue;
         const ebitda = (m as any).ebitda;
         if (ebitda != null) result[year] = Number(ebitda);
       }
@@ -253,7 +253,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     const result: Record<string, number> = {};
     for (const period of financialsRaw.periods) {
       if (period.periodType !== 'statutory' || !period.fiscalYear) continue;
-      if (period.documentCategory === 'YTD Profit & Loss') continue;
+      if (period.documentCategory?.toLowerCase().includes('ytd')) continue;
       const income = financialsRaw.incomeStatements.find(i => i.financialPeriodId === period.id);
       if (!income) continue;
       const op = toNum(income.operatingProfit);

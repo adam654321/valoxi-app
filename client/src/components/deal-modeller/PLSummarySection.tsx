@@ -40,10 +40,10 @@ export default function PLSummarySection({ financialData, adjustments, calculati
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
-      const isYtd = p.documentCategory === 'YTD Profit & Loss';
+      const isYtd = !!(p.documentCategory?.toLowerCase().includes('ytd'));
       return {
         periodId: p.id,
-        label: p.periodLabel || String(p.fiscalYear),
+        label: isYtd && p.fiscalYear ? formatYtdLabel(p.fiscalYear) : (p.periodLabel || String(p.fiscalYear)),
         year: p.fiscalYear,
         periodEnd: p.periodEnd,
         income: income || null,
@@ -212,7 +212,7 @@ export default function PLSummarySection({ financialData, adjustments, calculati
                   className="text-right px-3 w-32 min-w-[128px] bg-amber-50/60 dark:bg-amber-950/20"
                 >
                   <div className="flex flex-col items-end gap-0.5">
-                    <span>{formatYtdLabel(col.periodEnd)}</span>
+                    <span>{col.label}</span>
                   </div>
                 </TableHead>
               ))}
