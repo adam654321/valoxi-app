@@ -32,6 +32,9 @@ export default function PLSummarySection({ financialData, adjustments, calculati
 
     const statutory = financialData.periods
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
+      .filter((p: any) => financialData.incomeStatements.some(
+        (i: any) => i.financialPeriodId === p.id
+      ))
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
     return statutory.map((p: any) => {
