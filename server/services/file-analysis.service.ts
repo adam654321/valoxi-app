@@ -210,6 +210,20 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
       console.log(`[FILE_ANALYSIS] Category override: uploaded as 'Company Accounts' but Gemini returned [${classificationResult.documentTypes.join(', ')}] — overriding to [company_accounts]`);
       classificationResult.documentTypes = ['company_accounts'];
     }
+    if (
+      document.documentCategory === 'YTD Profit & Loss' &&
+      !classificationResult.documentTypes.includes('profit_and_loss')
+    ) {
+      console.log(`[FILE_ANALYSIS] Category override: uploaded as 'YTD Profit & Loss' but Gemini returned [${classificationResult.documentTypes.join(', ')}] — overriding to [profit_and_loss]`);
+      classificationResult.documentTypes = ['profit_and_loss'];
+    }
+    if (
+      document.documentCategory === 'YTD Balance Sheet' &&
+      !classificationResult.documentTypes.includes('balance_sheet')
+    ) {
+      console.log(`[FILE_ANALYSIS] Category override: uploaded as 'YTD Balance Sheet' but Gemini returned [${classificationResult.documentTypes.join(', ')}] — overriding to [balance_sheet]`);
+      classificationResult.documentTypes = ['balance_sheet'];
+    }
 
     const classificationData = {
       step: 'classification',
