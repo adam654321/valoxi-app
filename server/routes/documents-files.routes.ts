@@ -36,23 +36,6 @@ async function serveFile(
   }
 }
 
-router.delete('/clear-all', requirePermission('canEditAllDeals'), asyncHandler(async (req: Request, res: Response) => {
-  const userCompanyId = req.session?.userCompanyId;
-  const userId = req.session?.userId;
-  if (!userCompanyId || !userId) throw new UnauthorizedError();
-
-  console.log(`[API] Clearing all documents for user company ${userCompanyId}, requested by user ${userId}`);
-
-  const result = await documentsFilesService.clearAllCompanyDocuments(userCompanyId);
-
-  console.log(`[API] Document clearing completed: ${result.deletedDocuments} doc(s), ${result.deletedExternalSubmissions} submission(s), ${result.filesDeleted.length} file(s) removed from storage`);
-
-  sendSuccess(res, {
-    success: true,
-    message: 'All company documents have been cleared successfully',
-    details: result
-  });
-}));
 
 router.get('/categories', asyncHandler(async (req: Request, res: Response) => {
   const categories = await documentsFilesService.getDocumentCategories();
