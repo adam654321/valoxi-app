@@ -10,6 +10,7 @@ STAGE 1 — DATA EXTRACTION & CALCULATION
 1. Identify the financial years covered
 • Extract all consecutive financial years present (e.g. 2022, 2023, 2024).
 • Identify the period end dates if shown (e.g., "31 March 2024").
+• months_covered: for each year, the number of months the reported period covers, as an integer. A full statutory year is 12. Management accounts or year-to-date figures covering a partial year must state the actual months (e.g. April-only accounts = 1, January to May = 5). If the document states the period (e.g. 'for the period 1 April 2026 to 30 April 2026'), derive months from it. If genuinely unstated, omit that year from months_covered.
 
 2. Extract the following Balance Sheet fields per year
 Only extract or calculate numeric values:
@@ -116,6 +117,11 @@ FINAL OUTPUT FORMAT
     "2022": "2022-03-31",
     "2023": "2023-03-31",
     "2024": "2024-03-31"
+  },
+  "months_covered": {
+    "2022": 12,
+    "2023": 12,
+    "2024": 12
   },
   "years": {
     "2022": {

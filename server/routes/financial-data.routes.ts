@@ -328,7 +328,7 @@ router.post('/company/:companyId/retrigger-normalization', asyncHandler(async (r
 
   // 1. Get all documents for this company
   const companyDocs = await db
-    .select({ id: documents.id })
+    .select({ id: documents.id, documentCategory: documents.documentCategory })
     .from(documents)
     .where(eq(documents.targetCompanyId, targetCompanyId));
 
@@ -337,6 +337,7 @@ router.post('/company/:companyId/retrigger-normalization', asyncHandler(async (r
   }
 
   const docIds = companyDocs.map(d => d.id);
+  const docCategoryMap = new Map(companyDocs.map(d => [d.id, d.documentCategory]));
 
   // 2. Get all profit_and_loss analysis results for these documents
   const analysisResults = await db
@@ -375,7 +376,8 @@ router.post('/company/:companyId/retrigger-normalization', asyncHandler(async (r
         'profit_and_loss',
         result.analysisData,
         targetCompanyId,
-        result.documentId
+        result.documentId,
+        docCategoryMap.get(result.documentId) ?? undefined
       );
       outcomes.push({ documentId: result.documentId, result: normResult.message });
       console.log(`[RETRIGGER] doc ${result.documentId}: ${normResult.message}`);

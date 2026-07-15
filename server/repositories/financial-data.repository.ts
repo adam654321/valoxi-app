@@ -37,6 +37,8 @@ export class FinancialDataRepository {
       periodStart?: string;
       fiscalYear?: number;
       periodLabel?: string;
+      monthsCovered?: number | null;
+      isFullYear?: boolean;
       sourceDocumentId?: number;
     }
   ): Promise<FinancialPeriod> {
@@ -53,13 +55,18 @@ export class FinancialDataRepository {
       .limit(1);
 
     if (existing.length > 0) {
+      const updates: Record<string, any> = { updatedAt: new Date() };
       if (options?.sourceDocumentId && !existing[0].sourceDocumentId) {
+        updates.sourceDocumentId = options.sourceDocumentId;
+      }
+      if (options?.monthsCovered != null && existing[0].monthsCovered == null) {
+        updates.monthsCovered = options.monthsCovered;
+        updates.isFullYear = options.isFullYear ?? true;
+      }
+      if (Object.keys(updates).length > 1) {
         await db
           .update(financialPeriods)
-          .set({ 
-            sourceDocumentId: options.sourceDocumentId,
-            updatedAt: new Date(),
-          })
+          .set(updates)
           .where(eq(financialPeriods.id, existing[0].id));
       }
       return existing[0];
@@ -74,6 +81,8 @@ export class FinancialDataRepository {
         periodStart: options?.periodStart,
         fiscalYear: options?.fiscalYear,
         periodLabel: options?.periodLabel,
+        monthsCovered: options?.monthsCovered,
+        isFullYear: options?.isFullYear ?? true,
         sourceDocumentId: options?.sourceDocumentId,
       })
       .returning();

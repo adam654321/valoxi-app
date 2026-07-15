@@ -15,7 +15,8 @@ export class FinancialDataService {
     documentType: string,
     analysisData: any,
     targetCompanyId: number,
-    sourceDocumentId?: number
+    sourceDocumentId?: number,
+    documentCategory?: string
   ): Promise<ProcessingResult> {
     console.log(`[FINANCIAL_DATA] Processing ${documentType} for company ${targetCompanyId}`);
     
@@ -24,13 +25,13 @@ export class FinancialDataService {
         case 'profit_and_loss':
         case 'profit_loss':
         case 'p_and_l':
-          return await this.processProfitAndLoss(analysisData, targetCompanyId, sourceDocumentId);
+          return await this.processProfitAndLoss(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
         
         case 'balance_sheet':
-          return await this.processBalanceSheet(analysisData, targetCompanyId, sourceDocumentId);
+          return await this.processBalanceSheet(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
         
         case 'staff_matrix':
-          return await this.processStaffMatrix(analysisData, targetCompanyId, sourceDocumentId);
+          return await this.processStaffMatrix(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
         
         case 'sales_ledger':
         case 'aged_debtors':
@@ -41,7 +42,7 @@ export class FinancialDataService {
           return await this.processAssetRegister(analysisData, targetCompanyId, sourceDocumentId);
         
         case 'company_accounts':
-          return await this.processCompanyAccounts(analysisData, targetCompanyId, sourceDocumentId);
+          return await this.processCompanyAccounts(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
         
         default:
           console.log(`[FINANCIAL_DATA] Unknown document type: ${documentType}, skipping normalization`);
@@ -57,10 +58,22 @@ export class FinancialDataService {
     }
   }
 
+  private deriveSpan(data: any, yearKey: string, documentCategory?: string): { monthsCovered: number | null; isFullYear: boolean } {
+    const m = data.months_covered?.[yearKey];
+    if (typeof m === 'number' && m > 0) {
+      return { monthsCovered: Math.round(m), isFullYear: m >= 11 };
+    }
+    if (documentCategory?.toLowerCase().includes('ytd')) {
+      return { monthsCovered: null, isFullYear: false };
+    }
+    return { monthsCovered: null, isFullYear: true };
+  }
+
   private async processProfitAndLoss(
     data: any,
     targetCompanyId: number,
-    sourceDocumentId?: number
+    sourceDocumentId?: number,
+    documentCategory?: string
   ): Promise<ProcessingResult> {
     const errors: string[] = [];
     let recordsCreated = 0;
@@ -82,6 +95,7 @@ export class FinancialDataService {
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
         const isPrimary = primaryYear === null || fiscalYear === primaryYear;
+        const span = this.deriveSpan(data, yearKey, documentCategory);
 
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
           targetCompanyId,
@@ -90,6 +104,7 @@ export class FinancialDataService {
           {
             fiscalYear,
             periodLabel: `FY ${fiscalYear}`,
+            ...span,
             sourceDocumentId,
           }
         );
@@ -133,11 +148,12 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || `${fiscalYear}-12-31`;
         
+        const fallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory);
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
           targetCompanyId,
           'management',
           periodEnd,
-          { fiscalYear, periodLabel: `Current Period`, sourceDocumentId }
+          { fiscalYear, periodLabel: `Current Period`, ...fallbackSpan, sourceDocumentId }
         );
 
         await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, {
@@ -178,7 +194,8 @@ export class FinancialDataService {
   private async processBalanceSheet(
     data: any,
     targetCompanyId: number,
-    sourceDocumentId?: number
+    sourceDocumentId?: number,
+    documentCategory?: string
   ): Promise<ProcessingResult> {
     const errors: string[] = [];
     let recordsCreated = 0;
@@ -192,12 +209,13 @@ export class FinancialDataService {
         if (isNaN(fiscalYear)) continue;
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
+        const bsSpan = this.deriveSpan(data, yearKey, documentCategory);
         
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
           targetCompanyId,
           periodType,
           periodEnd,
-          { fiscalYear, periodLabel: `FY ${fiscalYear}`, sourceDocumentId }
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, ...bsSpan, sourceDocumentId }
         );
 
         const bs = (yearData as any).balance_sheet || yearData;
@@ -262,11 +280,12 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || data.report_date || `${fiscalYear}-12-31`;
         
+        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory);
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
           targetCompanyId,
           'management',
           periodEnd,
-          { fiscalYear, periodLabel: `Current Period`, sourceDocumentId }
+          { fiscalYear, periodLabel: `Current Period`, ...bsFallbackSpan, sourceDocumentId }
         );
 
         const fixedAssets = bs.fixed_assets || {};
@@ -332,7 +351,8 @@ export class FinancialDataService {
   private async processStaffMatrix(
     data: any,
     targetCompanyId: number,
-    sourceDocumentId?: number
+    sourceDocumentId?: number,
+    _documentCategory?: string
   ): Promise<ProcessingResult> {
     try {
       const reportDate = data.report_date || data.period_end || new Date().toISOString().split('T')[0];
@@ -342,7 +362,7 @@ export class FinancialDataService {
         targetCompanyId,
         'management',
         reportDate,
-        { fiscalYear, periodLabel: 'Staff Matrix', sourceDocumentId }
+        { fiscalYear, periodLabel: 'Staff Matrix', monthsCovered: null, isFullYear: false, sourceDocumentId }
       );
 
       const summary = data.summary || data;
@@ -473,7 +493,8 @@ export class FinancialDataService {
   private async processCompanyAccounts(
     data: any,
     targetCompanyId: number,
-    sourceDocumentId?: number
+    sourceDocumentId?: number,
+    documentCategory?: string
   ): Promise<ProcessingResult> {
     const results: ProcessingResult[] = [];
 
@@ -481,7 +502,8 @@ export class FinancialDataService {
       const plResult = await this.processProfitAndLoss(
         { ...data, source: 'statutory' },
         targetCompanyId,
-        sourceDocumentId
+        sourceDocumentId,
+        documentCategory
       );
       results.push(plResult);
     }
@@ -490,7 +512,8 @@ export class FinancialDataService {
       const bsResult = await this.processBalanceSheet(
         { ...data, source: 'statutory' },
         targetCompanyId,
-        sourceDocumentId
+        sourceDocumentId,
+        documentCategory
       );
       results.push(bsResult);
     }

@@ -312,7 +312,8 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
                 result.documentType,
                 result.analysisData,
                 event.targetCompanyId,
-                event.documentId
+                event.documentId,
+                document.documentCategory ?? undefined
               );
               console.log(`[FILE_ANALYSIS] Financial data normalization for ${result.documentType}: ${normalizationResult.message}`);
               if (normalizationResult.errors && normalizationResult.errors.length > 0) {
