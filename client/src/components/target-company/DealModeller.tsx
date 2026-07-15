@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useServerConfig } from '@/hooks/useServerConfig';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { handleSendResult } from '@/lib/send-result-toast';
+import { isPartYearPeriod } from '@/lib/period-utils';
 import {
   calculateFullDealModel,
   toNum,
@@ -185,7 +186,17 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const m = financialExpertMetrics[yearStr];
       const year = parseInt(yearStr, 10);
       const syntheticId = -(year);
-      const rawMatch = (financialsRaw?.periods ?? []).find((p: any) => p.fiscalYear === year);
+      const rawMatches = (financialsRaw?.periods ?? [])
+        .filter((p: any) => p.fiscalYear === year && !isPartYearPeriod(p))
+        .sort((a: any, b: any) => {
+          const aInc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === a.id) as any;
+          const bInc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === b.id) as any;
+          const aScore = (aInc?.operatingProfit != null ? 2 : 0) + (aInc?.revenue != null ? 1 : 0);
+          const bScore = (bInc?.operatingProfit != null ? 2 : 0) + (bInc?.revenue != null ? 1 : 0);
+          if (bScore !== aScore) return bScore - aScore;
+          return new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime();
+        });
+      const rawMatch = rawMatches[0] ?? null;
       periods.push({
         id: syntheticId,
         targetCompanyId: companyId,
@@ -211,11 +222,31 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     // Union with raw: any fiscal year present in income_statements but absent
     // from the expert payload is appended from financialsRaw, so a stale
     // expert snapshot cannot hide fresher extracted data.
-    const expertYears = new Set(periods.map(p => p.fiscalYear));
-    const rawPeriods = (financialsRaw?.periods ?? []).filter(
+    const expertYears = new Set(periods.map((p: any) => p.fiscalYear));
+    const rawCandidates = (financialsRaw?.periods ?? []).filter(
       (p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management')
         && p.fiscalYear && !expertYears.has(p.fiscalYear)
     );
+    // Dedup: at most one full-year and one part-year per fiscalYear, richest income preferred
+    const rawIncomeScore = (p: any): number => {
+      const inc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === p.id) as any;
+      return (inc?.operatingProfit != null ? 2 : 0) + (inc?.revenue != null ? 1 : 0);
+    };
+    const rawPeriodMap = new Map<string, any>();
+    for (const p of rawCandidates) {
+      const key = `${p.fiscalYear}:${isPartYearPeriod(p)}`;
+      const existing = rawPeriodMap.get(key);
+      if (!existing) {
+        rawPeriodMap.set(key, p);
+      } else {
+        const pScore = rawIncomeScore(p);
+        const eScore = rawIncomeScore(existing);
+        if (pScore > eScore || (pScore === eScore && new Date(p.periodEnd) > new Date(existing.periodEnd))) {
+          rawPeriodMap.set(key, p);
+        }
+      }
+    }
+    const rawPeriods = Array.from(rawPeriodMap.values());
     rawPeriods.forEach((p: any) => {
       periods.push(p);
       const income = financialsRaw?.incomeStatements?.find(
@@ -243,7 +274,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const result: Record<string, number> = {};
       for (const [year, m] of Object.entries(financialExpertMetrics)) {
         const period = expertPeriods.find((p: any) => String(p.fiscalYear) === year);
-        if (period && period.documentCategory?.toLowerCase().includes('ytd')) continue;
+        if (period && isPartYearPeriod(period)) continue;
         const ebitda = (m as any).ebitda;
         if (ebitda != null) result[year] = Number(ebitda);
       }
@@ -251,14 +282,24 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     }
     if (!financialsRaw?.periods || !financialsRaw?.incomeStatements) return {};
     const result: Record<string, number> = {};
-    for (const period of financialsRaw.periods) {
-      if (period.periodType !== 'statutory' || !period.fiscalYear) continue;
-      if (period.documentCategory?.toLowerCase().includes('ytd')) continue;
-      const income = financialsRaw.incomeStatements.find(i => i.financialPeriodId === period.id);
+    const candidatePeriods = financialsRaw.periods
+      .filter((period: any) => period.periodType === 'statutory' && period.fiscalYear && !isPartYearPeriod(period))
+      .sort((a: any, b: any) => {
+        const aInc = financialsRaw.incomeStatements.find((i: any) => i.financialPeriodId === a.id);
+        const bInc = financialsRaw.incomeStatements.find((i: any) => i.financialPeriodId === b.id);
+        const aOp = aInc?.operatingProfit != null ? 1 : 0;
+        const bOp = bInc?.operatingProfit != null ? 1 : 0;
+        if (bOp !== aOp) return bOp - aOp;
+        return new Date(b.periodEnd).getTime() - new Date(a.periodEnd).getTime();
+      });
+    for (const period of candidatePeriods) {
+      const year = String(period.fiscalYear);
+      if (year in result) continue;
+      const income = financialsRaw.incomeStatements.find((i: any) => i.financialPeriodId === period.id);
       if (!income) continue;
       const op = toNum(income.operatingProfit);
       const da = toNum(income.depreciationAmortisation);
-      result[String(period.fiscalYear)] = op + da;
+      result[year] = op + da;
     }
     return result;
   }, [financialsRaw, financialExpertMetrics, financialsFromExpert]);

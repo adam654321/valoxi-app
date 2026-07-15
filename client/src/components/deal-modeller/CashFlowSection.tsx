@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertTriangle, ChevronDown, ChevronRight, TrendingUp, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
+import { isPartYearPeriod } from '@/lib/period-utils';
 
 interface CashFlowSectionProps {
   financialData: any;
@@ -63,14 +64,37 @@ function formatCF(value: number | null | undefined): React.ReactNode {
 function deriveColumns(financialData: any): CFCol[] {
   if (!financialData?.periods || !financialData?.balanceSheets) return [];
 
-  const statutory = financialData.periods
-    .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear)
-    .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
+  // Full-year periods only
+  const fullYear = financialData.periods.filter(
+    (p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear && !isPartYearPeriod(p)
+  );
+
+  // Dedup per fiscalYear: prefer the period with a balance sheet row, then later periodEnd
+  const periodMap = new Map<number, any>();
+  for (const p of fullYear) {
+    const existing = periodMap.get(p.fiscalYear);
+    if (!existing) {
+      periodMap.set(p.fiscalYear, p);
+    } else {
+      const hasBs = financialData.balanceSheets.some((s: any) => s.financialPeriodId === p.id);
+      const existingHasBs = financialData.balanceSheets.some((s: any) => s.financialPeriodId === existing.id);
+      if (hasBs && !existingHasBs) {
+        periodMap.set(p.fiscalYear, p);
+      } else if (hasBs === existingHasBs && new Date(p.periodEnd) > new Date(existing.periodEnd)) {
+        periodMap.set(p.fiscalYear, p);
+      }
+    }
+  }
+
+  const statutory = Array.from(periodMap.values())
+    .sort((a: any, b: any) => a.fiscalYear - b.fiscalYear);
 
   const cols: CFCol[] = [];
   for (let i = 1; i < statutory.length; i++) {
     const current = statutory[i];
     const prior = statutory[i - 1];
+    // Only pair consecutive fiscal years — non-consecutive deltas are not meaningful cash flow years
+    if (current.fiscalYear !== prior.fiscalYear + 1) continue;
     const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === current.id);
     const priorBs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === prior.id);
     if (!bs || !priorBs) continue;

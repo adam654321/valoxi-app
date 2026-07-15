@@ -6,7 +6,7 @@ import { toNum } from '@shared/calculators/deal-model.calc';
 import type { CalculationResult } from '@shared/calculators/deal-model.calc';
 import type { DealModelAdjustment } from '@shared/schema';
 import { formatCurrency, formatPercent } from '@/lib/format-utils';
-import { formatYtdLabel } from '@/lib/period-utils';
+import { formatYtdLabel, isPartYearPeriod } from '@/lib/period-utils';
 
 interface PLSummarySectionProps {
   financialData: any;
@@ -30,17 +30,42 @@ export default function PLSummarySection({ financialData, adjustments, calculati
   const columns = useMemo<PeriodColumn[]>(() => {
     if (!financialData?.periods || !financialData?.incomeStatements) return [];
 
-    const statutory = financialData.periods
+    const sorted = financialData.periods
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
       .filter((p: any) => financialData.incomeStatements.some(
         (i: any) => i.financialPeriodId === p.id
       ))
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
+    // Dedup: at most one column per (fiscalYear, isPartYear) pair; richest income row wins
+    const statutory = sorted.reduce((acc: any[], p: any) => {
+      const key = `${p.fiscalYear}:${isPartYearPeriod(p)}`;
+      const existingIdx = acc.findIndex(
+        (a: any) => `${a.fiscalYear}:${isPartYearPeriod(a)}` === key
+      );
+      if (existingIdx === -1) {
+        acc.push(p);
+      } else {
+        const existing = acc[existingIdx];
+        const existingIncome = financialData.incomeStatements.find((i: any) => i.financialPeriodId === existing.id);
+        const pIncome = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
+        const existingScore =
+          (existingIncome?.operatingProfit != null ? 2 : 0) +
+          (existingIncome?.revenue != null ? 1 : 0);
+        const pScore =
+          (pIncome?.operatingProfit != null ? 2 : 0) +
+          (pIncome?.revenue != null ? 1 : 0);
+        if (pScore > existingScore || (pScore === existingScore && new Date(p.periodEnd) > new Date(existing.periodEnd))) {
+          acc[existingIdx] = p;
+        }
+      }
+      return acc;
+    }, []);
+
     return statutory.map((p: any) => {
       const income = financialData.incomeStatements.find((i: any) => i.financialPeriodId === p.id);
       const staff = financialData.staffData?.find((s: any) => s.financialPeriodId === p.id);
-      const isYtd = !!(p.documentCategory?.toLowerCase().includes('ytd'));
+      const isYtd = isPartYearPeriod(p);
       return {
         periodId: p.id,
         label: isYtd && p.fiscalYear ? formatYtdLabel(p.fiscalYear) : (p.periodLabel || String(p.fiscalYear)),
