@@ -81,6 +81,7 @@ interface FinancialPeriod {
 interface IncomeStatement {
   id: number;
   financialPeriodId: number;
+  revenue: string | null;
   operatingProfit: string | null;
   depreciationAmortisation: string | null;
 }
@@ -189,8 +190,8 @@ export default function DealModeller({ companyId }: DealModellerProps) {
       const rawMatches = (financialsRaw?.periods ?? [])
         .filter((p: any) => p.fiscalYear === year && !isPartYearPeriod(p))
         .sort((a: any, b: any) => {
-          const aInc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === a.id) as any;
-          const bInc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === b.id) as any;
+          const aInc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === a.id);
+          const bInc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === b.id);
           const aScore = (aInc?.operatingProfit != null ? 2 : 0) + (aInc?.revenue != null ? 1 : 0);
           const bScore = (bInc?.operatingProfit != null ? 2 : 0) + (bInc?.revenue != null ? 1 : 0);
           if (bScore !== aScore) return bScore - aScore;
@@ -229,7 +230,7 @@ export default function DealModeller({ companyId }: DealModellerProps) {
     );
     // Dedup: at most one full-year and one part-year per fiscalYear, richest income preferred
     const rawIncomeScore = (p: any): number => {
-      const inc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === p.id) as any;
+      const inc = financialsRaw?.incomeStatements?.find((i: any) => i.financialPeriodId === p.id);
       return (inc?.operatingProfit != null ? 2 : 0) + (inc?.revenue != null ? 1 : 0);
     };
     const rawPeriodMap = new Map<string, any>();

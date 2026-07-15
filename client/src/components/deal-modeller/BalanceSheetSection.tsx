@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Landmark, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
-import { formatYtdLabel } from '@/lib/period-utils';
+import { formatYtdLabel, isPartYearPeriod } from '@/lib/period-utils';
 
 interface BalanceSheetSectionProps {
   financialData: any;
@@ -94,18 +94,33 @@ const GROUPS: GroupDef[] = [
 export default function BalanceSheetSection({ financialData }: BalanceSheetSectionProps) {
   const columns = useMemo<BSColumn[]>(() => {
     if (!financialData?.periods || !financialData?.balanceSheets) return [];
-    const statutory = financialData.periods
+    const sorted = financialData.periods
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
       .filter((p: any) => financialData.balanceSheets.some(
         (s: any) => s.financialPeriodId === p.id
       ))
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
+    // Dedup: at most one column per (fiscalYear, part-year flag); later periodEnd wins
+    // (all survivors already have a balance sheet row from the filter above)
+    const statutory = sorted.reduce((acc: any[], p: any) => {
+      const key = `${p.fiscalYear}:${isPartYearPeriod(p)}`;
+      const existingIdx = acc.findIndex(
+        (a: any) => `${a.fiscalYear}:${isPartYearPeriod(a)}` === key
+      );
+      if (existingIdx === -1) {
+        acc.push(p);
+      } else if (new Date(p.periodEnd) > new Date(acc[existingIdx].periodEnd)) {
+        acc[existingIdx] = p;
+      }
+      return acc;
+    }, []);
+
     return statutory
       .map((p: any) => {
         const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id);
         if (!bs) return null;
-        const isYtd = !!(p.documentCategory?.toLowerCase().includes('ytd'));
+        const isYtd = isPartYearPeriod(p);
         return {
           periodId: p.id,
           label: isYtd && p.fiscalYear ? formatYtdLabel(p.fiscalYear) : (p.periodLabel || String(p.fiscalYear)),
