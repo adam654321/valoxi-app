@@ -101,12 +101,20 @@ export class FinancialDataRepository {
         periodEnd,
         fiscalYear: fiscalYear ?? existing.fiscalYear,
       };
-      if (options?.sourceDocumentId && !existing.sourceDocumentId) {
-        updates.sourceDocumentId = options.sourceDocumentId;
-      }
-      if (options?.monthsCovered != null && existing.monthsCovered == null) {
-        updates.monthsCovered = options.monthsCovered;
-        updates.isFullYear = options.isFullYear ?? true;
+      if (options?.labelPriority === 'financial') {
+        if (options.sourceDocumentId != null) updates.sourceDocumentId = options.sourceDocumentId;
+        if (options.monthsCovered != null) {
+          updates.monthsCovered = options.monthsCovered;
+          updates.isFullYear = options.isFullYear ?? true;
+        }
+      } else {
+        if (options?.sourceDocumentId && !existing.sourceDocumentId) {
+          updates.sourceDocumentId = options.sourceDocumentId;
+        }
+        if (options?.monthsCovered != null && existing.monthsCovered == null) {
+          updates.monthsCovered = options.monthsCovered;
+          updates.isFullYear = options.isFullYear ?? true;
+        }
       }
       // Label precedence: 'financial' always overwrites; 'weak'/unset only fills null
       if (options?.periodLabel) {

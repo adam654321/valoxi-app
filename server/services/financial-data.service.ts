@@ -69,6 +69,11 @@ export class FinancialDataService {
     return { monthsCovered: null, isFullYear: true };
   }
 
+  private hasAnyValue(obj: Record<string, any>): boolean {
+    const SKIP = new Set(['sourceDocumentId', 'updatedAt']);
+    return Object.entries(obj).some(([k, v]) => !SKIP.has(k) && v !== null && v !== undefined);
+  }
+
   private async processProfitAndLoss(
     data: any,
     targetCompanyId: number,
@@ -97,23 +102,10 @@ export class FinancialDataService {
         const isPrimary = primaryYear === null || fiscalYear === primaryYear;
         const span = this.deriveSpan(data, yearKey, documentCategory);
 
-        const period = await financialDataRepository.findOrCreateFinancialPeriod(
-          targetCompanyId,
-          periodType,
-          periodEnd,
-          {
-            fiscalYear,
-            periodLabel: `FY ${fiscalYear}`,
-            labelPriority: 'financial',
-            ...span,
-            sourceDocumentId,
-          }
-        );
-
         const pl = (yearData as any).profit_and_loss || yearData;
         const yd = yearData as any;
-        
-        await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, {
+
+        const plFields = {
           revenue: this.parseDecimal(pl.revenue),
           costOfSales: this.parseDecimal(pl.cost_of_sales),
           grossProfit: this.parseDecimal(pl.gross_profit),
@@ -134,7 +126,27 @@ export class FinancialDataService {
           overheadsBreakdown: yd.overheads_breakdown || pl.overheads_breakdown || null,
           exceptionalItems: yd.exceptional_items || pl.exceptional_items || null,
           sourceDocumentId,
-        }, isPrimary);
+        };
+
+        if (!this.hasAnyValue(plFields)) {
+          console.log(`[FINANCIAL_DATA] Skipping empty income statement for FY ${fiscalYear} (doc ${sourceDocumentId})`);
+          continue;
+        }
+
+        const period = await financialDataRepository.findOrCreateFinancialPeriod(
+          targetCompanyId,
+          periodType,
+          periodEnd,
+          {
+            fiscalYear,
+            periodLabel: `FY ${fiscalYear}`,
+            labelPriority: 'financial',
+            ...span,
+            sourceDocumentId,
+          }
+        );
+
+        await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, plFields, isPrimary);
 
         recordsCreated++;
         console.log(`[FINANCIAL_DATA] Created income statement for ${fiscalYear}`);
@@ -150,14 +162,8 @@ export class FinancialDataService {
         const periodEnd = data.period_end || `${fiscalYear}-12-31`;
         
         const fallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory);
-        const period = await financialDataRepository.findOrCreateFinancialPeriod(
-          targetCompanyId,
-          'management',
-          periodEnd,
-          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...fallbackSpan, sourceDocumentId }
-        );
 
-        await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, {
+        const plFields = {
           revenue: this.parseDecimal(pl.revenue),
           costOfSales: this.parseDecimal(pl.cost_of_sales),
           grossProfit: this.parseDecimal(pl.gross_profit),
@@ -175,7 +181,21 @@ export class FinancialDataService {
           overheadsBreakdown: pl.overheads_breakdown || null,
           exceptionalItems: pl.exceptional_items || null,
           sourceDocumentId,
-        });
+        };
+
+        if (!this.hasAnyValue(plFields)) {
+          console.log(`[FINANCIAL_DATA] Skipping empty income statement for FY ${fiscalYear} (doc ${sourceDocumentId})`);
+          return { success: true, message: `Skipped empty income statement for FY ${fiscalYear}`, recordsCreated: 0 };
+        }
+
+        const period = await financialDataRepository.findOrCreateFinancialPeriod(
+          targetCompanyId,
+          'management',
+          periodEnd,
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...fallbackSpan, sourceDocumentId }
+        );
+
+        await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, plFields);
         recordsCreated++;
       } catch (error) {
         errors.push(`Failed to process single P&L: ${error instanceof Error ? error.message : 'Unknown'}`);
@@ -212,13 +232,6 @@ export class FinancialDataService {
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
         const bsSpan = this.deriveSpan(data, yearKey, documentCategory);
         
-        const period = await financialDataRepository.findOrCreateFinancialPeriod(
-          targetCompanyId,
-          periodType,
-          periodEnd,
-          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...bsSpan, sourceDocumentId }
-        );
-
         const bs = (yearData as any).balance_sheet || yearData;
         const fixedAssets = bs.fixed_assets || {};
         const currentAssets = bs.current_assets || {};
@@ -226,7 +239,7 @@ export class FinancialDataService {
         const longTermLiabilities = bs.long_term_liabilities || {};
         const equity = bs.equity || {};
 
-        await financialDataRepository.upsertBalanceSheet(period.id, targetCompanyId, {
+        const bsFields = {
           intangibleAssets: this.parseDecimal(fixedAssets.intangible_assets),
           tangibleFixedAssets: this.parseDecimal(fixedAssets.tangible_assets || fixedAssets.total),
           freeholdProperty: this.parseDecimal(fixedAssets.freehold_property),
@@ -266,7 +279,21 @@ export class FinancialDataService {
           creditorsList: currentLiabilities.creditors_list || null,
           fixedAssetsDetail: fixedAssets.detail || null,
           sourceDocumentId,
-        });
+        };
+
+        if (!this.hasAnyValue(bsFields)) {
+          console.log(`[FINANCIAL_DATA] Skipping empty balance sheet for FY ${fiscalYear} (doc ${sourceDocumentId})`);
+          continue;
+        }
+
+        const period = await financialDataRepository.findOrCreateFinancialPeriod(
+          targetCompanyId,
+          periodType,
+          periodEnd,
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...bsSpan, sourceDocumentId }
+        );
+
+        await financialDataRepository.upsertBalanceSheet(period.id, targetCompanyId, bsFields);
 
         recordsCreated++;
         console.log(`[FINANCIAL_DATA] Created balance sheet for ${fiscalYear}`);
@@ -282,12 +309,6 @@ export class FinancialDataService {
         const periodEnd = data.period_end || data.report_date || `${fiscalYear}-12-31`;
         
         const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory);
-        const period = await financialDataRepository.findOrCreateFinancialPeriod(
-          targetCompanyId,
-          'management',
-          periodEnd,
-          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...bsFallbackSpan, sourceDocumentId }
-        );
 
         const fixedAssets = bs.fixed_assets || {};
         const currentAssets = bs.current_assets || {};
@@ -295,7 +316,7 @@ export class FinancialDataService {
         const longTermLiabilities = bs.long_term_liabilities || {};
         const equity = bs.equity || {};
 
-        await financialDataRepository.upsertBalanceSheet(period.id, targetCompanyId, {
+        const bsFields = {
           intangibleAssets: this.parseDecimal(fixedAssets.intangible_assets),
           tangibleFixedAssets: this.parseDecimal(fixedAssets.tangible_assets),
           freeholdProperty: this.parseDecimal(fixedAssets.freehold_property),
@@ -332,7 +353,21 @@ export class FinancialDataService {
           retainedEarnings: this.parseDecimal(equity.retained_earnings),
           totalEquity: this.parseDecimal(equity.total),
           sourceDocumentId,
-        });
+        };
+
+        if (!this.hasAnyValue(bsFields)) {
+          console.log(`[FINANCIAL_DATA] Skipping empty balance sheet for FY ${fiscalYear} (doc ${sourceDocumentId})`);
+          return { success: true, message: `Skipped empty balance sheet for FY ${fiscalYear}`, recordsCreated: 0 };
+        }
+
+        const period = await financialDataRepository.findOrCreateFinancialPeriod(
+          targetCompanyId,
+          'management',
+          periodEnd,
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...bsFallbackSpan, sourceDocumentId }
+        );
+
+        await financialDataRepository.upsertBalanceSheet(period.id, targetCompanyId, bsFields);
         recordsCreated++;
       } catch (error) {
         errors.push(`Failed to process single balance sheet: ${error instanceof Error ? error.message : 'Unknown'}`);
