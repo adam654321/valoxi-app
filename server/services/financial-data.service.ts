@@ -104,6 +104,7 @@ export class FinancialDataService {
           {
             fiscalYear,
             periodLabel: `FY ${fiscalYear}`,
+            labelPriority: 'financial',
             ...span,
             sourceDocumentId,
           }
@@ -153,7 +154,7 @@ export class FinancialDataService {
           targetCompanyId,
           'management',
           periodEnd,
-          { fiscalYear, periodLabel: `Current Period`, ...fallbackSpan, sourceDocumentId }
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...fallbackSpan, sourceDocumentId }
         );
 
         await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, {
@@ -215,7 +216,7 @@ export class FinancialDataService {
           targetCompanyId,
           periodType,
           periodEnd,
-          { fiscalYear, periodLabel: `FY ${fiscalYear}`, ...bsSpan, sourceDocumentId }
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...bsSpan, sourceDocumentId }
         );
 
         const bs = (yearData as any).balance_sheet || yearData;
@@ -285,7 +286,7 @@ export class FinancialDataService {
           targetCompanyId,
           'management',
           periodEnd,
-          { fiscalYear, periodLabel: `Current Period`, ...bsFallbackSpan, sourceDocumentId }
+          { fiscalYear, periodLabel: `FY ${fiscalYear}`, labelPriority: 'financial', ...bsFallbackSpan, sourceDocumentId }
         );
 
         const fixedAssets = bs.fixed_assets || {};
@@ -362,7 +363,7 @@ export class FinancialDataService {
         targetCompanyId,
         'management',
         reportDate,
-        { fiscalYear, periodLabel: 'Staff Matrix', monthsCovered: null, isFullYear: false, sourceDocumentId }
+        { fiscalYear, periodLabel: 'Staff Matrix', labelPriority: 'weak', monthsCovered: null, isFullYear: false, sourceDocumentId }
       );
 
       const summary = data.summary || data;

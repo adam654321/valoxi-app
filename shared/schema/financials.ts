@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, date, json, unique } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, integer, decimal, boolean, timestamp, date, json } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './core';
@@ -19,9 +19,7 @@ export const financialPeriods = pgTable("financial_periods", {
   sourceDocumentId: integer("source_document_id").references(() => documents.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  uniquePeriod: unique("unique_financial_period").on(table.targetCompanyId, table.periodType, table.periodEnd),
-}));
+});
 
 // Income statements (P&L) - one row per financial period
 export const incomeStatements = pgTable("income_statements", {

@@ -37,41 +37,94 @@ export class FinancialDataRepository {
       periodStart?: string;
       fiscalYear?: number;
       periodLabel?: string;
+      labelPriority?: 'financial' | 'weak';
       monthsCovered?: number | null;
       isFullYear?: boolean;
       sourceDocumentId?: number;
     }
   ): Promise<FinancialPeriod> {
-    const existing = await db
-      .select()
-      .from(financialPeriods)
-      .where(
-        and(
-          eq(financialPeriods.targetCompanyId, targetCompanyId),
-          eq(financialPeriods.periodType, periodType),
-          eq(financialPeriods.periodEnd, periodEnd)
-        )
-      )
-      .limit(1);
+    // Canonicalise fiscal year from periodEnd
+    const periodEndYear = parseInt(periodEnd.slice(0, 4), 10);
+    let fiscalYear: number | null = options?.fiscalYear ?? null;
+    if (!isNaN(periodEndYear)) {
+      if (fiscalYear != null && fiscalYear !== periodEndYear) {
+        console.warn(`[FINANCIAL_DATA] fiscalYear mismatch: extractor said ${fiscalYear}, periodEnd says ${periodEndYear} — using ${periodEndYear}`);
+      }
+      fiscalYear = periodEndYear;
+    }
 
-    if (existing.length > 0) {
-      const updates: Record<string, any> = { updatedAt: new Date() };
-      if (options?.sourceDocumentId && !existing[0].sourceDocumentId) {
+    let existing: FinancialPeriod | undefined;
+
+    // MATCH PATH A: fiscalYear known — match on (company, type, fiscalYear, isFullYear)
+    if (fiscalYear !== null) {
+      const isFullYear = options?.isFullYear ?? true;
+      const matches = await db
+        .select()
+        .from(financialPeriods)
+        .where(
+          and(
+            eq(financialPeriods.targetCompanyId, targetCompanyId),
+            eq(financialPeriods.periodType, periodType),
+            eq(financialPeriods.fiscalYear, fiscalYear),
+            eq(financialPeriods.isFullYear, isFullYear)
+          )
+        );
+      // Prefer rows with a sourceDocumentId, then most recently updated
+      matches.sort((a, b) => {
+        const aDoc = a.sourceDocumentId != null ? 1 : 0;
+        const bDoc = b.sourceDocumentId != null ? 1 : 0;
+        if (bDoc !== aDoc) return bDoc - aDoc;
+        return (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0);
+      });
+      existing = matches[0];
+    }
+
+    // MATCH PATH B: fallback to (company, type, periodEnd) — defensive only
+    if (!existing) {
+      const fallback = await db
+        .select()
+        .from(financialPeriods)
+        .where(
+          and(
+            eq(financialPeriods.targetCompanyId, targetCompanyId),
+            eq(financialPeriods.periodType, periodType),
+            eq(financialPeriods.periodEnd, periodEnd)
+          )
+        )
+        .limit(1);
+      existing = fallback[0];
+    }
+
+    if (existing) {
+      const updates: Record<string, any> = {
+        updatedAt: new Date(),
+        periodEnd,
+        fiscalYear: fiscalYear ?? existing.fiscalYear,
+      };
+      if (options?.sourceDocumentId && !existing.sourceDocumentId) {
         updates.sourceDocumentId = options.sourceDocumentId;
       }
-      if (options?.monthsCovered != null && existing[0].monthsCovered == null) {
+      if (options?.monthsCovered != null && existing.monthsCovered == null) {
         updates.monthsCovered = options.monthsCovered;
         updates.isFullYear = options.isFullYear ?? true;
       }
-      if (Object.keys(updates).length > 1) {
-        await db
-          .update(financialPeriods)
-          .set(updates)
-          .where(eq(financialPeriods.id, existing[0].id));
+      // Label precedence: 'financial' always overwrites; 'weak'/unset only fills null
+      if (options?.periodLabel) {
+        if (options.labelPriority === 'financial') {
+          updates.periodLabel = options.periodLabel;
+        } else if (!existing.periodLabel) {
+          updates.periodLabel = options.periodLabel;
+        }
       }
-      return existing[0];
+      const [updated] = await db
+        .update(financialPeriods)
+        .set(updates)
+        .where(eq(financialPeriods.id, existing.id))
+        .returning();
+      return updated;
     }
 
+    // CREATE
     const [created] = await db
       .insert(financialPeriods)
       .values({
@@ -79,7 +132,7 @@ export class FinancialDataRepository {
         periodType,
         periodEnd,
         periodStart: options?.periodStart,
-        fiscalYear: options?.fiscalYear,
+        fiscalYear: fiscalYear ?? undefined,
         periodLabel: options?.periodLabel,
         monthsCovered: options?.monthsCovered,
         isFullYear: options?.isFullYear ?? true,
