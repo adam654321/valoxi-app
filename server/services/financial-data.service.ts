@@ -58,12 +58,19 @@ export class FinancialDataService {
     }
   }
 
-  private deriveSpan(data: any, yearKey: string, documentCategory?: string): { monthsCovered: number | null; isFullYear: boolean } {
+  private deriveSpan(data: any, yearKey: string, documentCategory?: string, docId?: number): { monthsCovered: number | null; isFullYear: boolean } {
     const m = data.months_covered?.[yearKey];
+    const catLower = documentCategory?.toLowerCase() ?? '';
     if (typeof m === 'number' && m > 0) {
+      if (catLower.includes('ytd') && m >= 11) {
+        console.warn(
+          `[FINANCIAL_DATA] span conflict: category '${documentCategory}' says part-year, extraction says ${Math.round(m)} months for FY ${yearKey} (doc ${docId ?? 'unknown'}) — trusting category, marking part-year`
+        );
+        return { monthsCovered: null, isFullYear: false };
+      }
       return { monthsCovered: Math.round(m), isFullYear: m >= 11 };
     }
-    if (documentCategory?.toLowerCase().includes('ytd')) {
+    if (catLower.includes('ytd')) {
       return { monthsCovered: null, isFullYear: false };
     }
     return { monthsCovered: null, isFullYear: true };
@@ -100,7 +107,7 @@ export class FinancialDataService {
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
         const isPrimary = primaryYear === null || fiscalYear === primaryYear;
-        const span = this.deriveSpan(data, yearKey, documentCategory);
+        const span = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId);
 
         const pl = (yearData as any).profit_and_loss || yearData;
         const yd = yearData as any;
@@ -161,7 +168,7 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || `${fiscalYear}-12-31`;
         
-        const fallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory);
+        const fallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId);
 
         const plFields = {
           revenue: this.parseDecimal(pl.revenue),
@@ -230,7 +237,7 @@ export class FinancialDataService {
         if (isNaN(fiscalYear)) continue;
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
-        const bsSpan = this.deriveSpan(data, yearKey, documentCategory);
+        const bsSpan = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId);
         
         const bs = (yearData as any).balance_sheet || yearData;
         const fixedAssets = bs.fixed_assets || {};
@@ -308,7 +315,7 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || data.report_date || `${fiscalYear}-12-31`;
         
-        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory);
+        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId);
 
         const fixedAssets = bs.fixed_assets || {};
         const currentAssets = bs.current_assets || {};
