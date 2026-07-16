@@ -151,18 +151,19 @@ export class FinancialDataRepository {
     return created;
   }
 
-  async getFinancialPeriodsByCompany(targetCompanyId: number): Promise<(FinancialPeriod & { documentCategory: string | null })[]> {
+  async getFinancialPeriodsByCompany(targetCompanyId: number): Promise<(FinancialPeriod & { documentCategory: string | null; documentName: string | null })[]> {
     const results = await db
       .select({
         period: financialPeriods,
         documentCategory: documents.documentCategory,
+        documentName: documents.documentName,
       })
       .from(financialPeriods)
       .leftJoin(documents, eq(financialPeriods.sourceDocumentId, documents.id))
       .where(eq(financialPeriods.targetCompanyId, targetCompanyId))
       .orderBy(desc(financialPeriods.periodEnd));
 
-    return results.map(r => ({ ...r.period, documentCategory: r.documentCategory ?? null }));
+    return results.map(r => ({ ...r.period, documentCategory: r.documentCategory ?? null, documentName: r.documentName ?? null }));
   }
 
   async upsertIncomeStatement(

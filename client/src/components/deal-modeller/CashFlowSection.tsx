@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, ChevronDown, ChevronRight, TrendingUp, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, TrendingUp, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
 import { isPartYearPeriod } from '@/lib/period-utils';
@@ -16,6 +16,14 @@ interface CFCol {
   bs: any;
   is: any;
   priorBs: any;
+  priorIs: any;
+}
+
+interface SkippedYear {
+  fiscalYear: number;
+  reason: 'insufficient_bs';
+  docName: string | null;
+  whichSide: 'current' | 'prior' | 'both';
 }
 
 interface CFData {
@@ -29,6 +37,7 @@ interface CFData {
   wcPrepayments: number;
   totalWC: number;
   taxPaid: number;
+  taxEstimated: boolean;
   netOperating: number;
   capexLabel: string;
   capex: number;
@@ -47,6 +56,17 @@ function n(v: any): number {
   return toNum(v);
 }
 
+function hasUsableBalanceSheet(bs: any): boolean {
+  if (!bs) return false;
+  if (bs.cashAtBank == null) return false;
+  return (
+    bs.tradeDebtors != null ||
+    bs.tradeCreditors != null ||
+    bs.totalCurrentAssets != null ||
+    bs.totalEquity != null
+  );
+}
+
 function formatCF(value: number | null | undefined): React.ReactNode {
   if (value == null || isNaN(value) || Math.abs(value) < 0.5) {
     return <span className="text-muted-foreground">—</span>;
@@ -61,23 +81,23 @@ function formatCF(value: number | null | undefined): React.ReactNode {
   return <span>{formatCurrency(value)}</span>;
 }
 
-function deriveColumns(financialData: any): CFCol[] {
-  if (!financialData?.periods || !financialData?.balanceSheets) return [];
+function deriveColumns(financialData: any): { cols: CFCol[]; skipped: SkippedYear[] } {
+  if (!financialData?.periods || !financialData?.balanceSheets) return { cols: [], skipped: [] };
 
   // Full-year periods only
   const fullYear = financialData.periods.filter(
     (p: any) => (p.periodType === 'statutory' || p.periodType === 'historic') && p.fiscalYear && !isPartYearPeriod(p)
   );
 
-  // Dedup per fiscalYear: prefer the period with a balance sheet row, then later periodEnd
+  // Dedup per fiscalYear: prefer the period with a usable balance sheet, then later periodEnd
   const periodMap = new Map<number, any>();
   for (const p of fullYear) {
     const existing = periodMap.get(p.fiscalYear);
     if (!existing) {
       periodMap.set(p.fiscalYear, p);
     } else {
-      const hasBs = financialData.balanceSheets.some((s: any) => s.financialPeriodId === p.id);
-      const existingHasBs = financialData.balanceSheets.some((s: any) => s.financialPeriodId === existing.id);
+      const hasBs = hasUsableBalanceSheet(financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id));
+      const existingHasBs = hasUsableBalanceSheet(financialData.balanceSheets.find((s: any) => s.financialPeriodId === existing.id));
       if (hasBs && !existingHasBs) {
         periodMap.set(p.fiscalYear, p);
       } else if (hasBs === existingHasBs && new Date(p.periodEnd) > new Date(existing.periodEnd)) {
@@ -90,28 +110,51 @@ function deriveColumns(financialData: any): CFCol[] {
     .sort((a: any, b: any) => a.fiscalYear - b.fiscalYear);
 
   const cols: CFCol[] = [];
+  const skipped: SkippedYear[] = [];
+
   for (let i = 1; i < statutory.length; i++) {
     const current = statutory[i];
     const prior = statutory[i - 1];
     // Only pair consecutive fiscal years — non-consecutive deltas are not meaningful cash flow years
     if (current.fiscalYear !== prior.fiscalYear + 1) continue;
+
     const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === current.id);
     const priorBs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === prior.id);
-    if (!bs || !priorBs) continue;
+
+    const bsOk = hasUsableBalanceSheet(bs);
+    const priorBsOk = hasUsableBalanceSheet(priorBs);
+
+    if (!bsOk || !priorBsOk) {
+      const whichSide: 'current' | 'prior' | 'both' =
+        !bsOk && !priorBsOk ? 'both' : !bsOk ? 'current' : 'prior';
+      const offendingPeriod = !priorBsOk ? prior : current;
+      skipped.push({
+        fiscalYear: current.fiscalYear,
+        reason: 'insufficient_bs',
+        docName: offendingPeriod.documentName ?? null,
+        whichSide,
+      });
+      continue;
+    }
+
     const is = (financialData.incomeStatements ?? []).find((s: any) => s.financialPeriodId === current.id) ?? {};
+    const priorIs = (financialData.incomeStatements ?? []).find((s: any) => s.financialPeriodId === prior.id) ?? null;
+
     cols.push({
       periodId: current.id,
       label: current.periodLabel || String(current.fiscalYear),
       bs,
       is,
       priorBs,
+      priorIs,
     });
   }
-  return cols;
+
+  return { cols, skipped };
 }
 
 function derive(col: CFCol): CFData {
-  const { bs, is, priorBs } = col;
+  const { bs, is, priorBs, priorIs } = col;
 
   const profitBeforeTax = n(is.profitBeforeTax);
   const addDA = n(is.depreciationAmortisation);
@@ -124,7 +167,16 @@ function derive(col: CFCol): CFData {
   const wcPrepayments = n(priorBs.prepayments) - n(bs.prepayments);
   const totalWC = wcDebtors + wcStock + wcCreditors + wcAccruals + wcPrepayments;
 
-  const taxPaid = -n(priorBs.corporationTaxDue);
+  let taxPaid: number;
+  let taxEstimated = false;
+  if (priorBs.corporationTaxDue != null) {
+    taxPaid = -n(priorBs.corporationTaxDue);
+  } else if (priorIs?.corporationTax != null) {
+    taxPaid = -n(priorIs.corporationTax);
+    taxEstimated = true;
+  } else {
+    taxPaid = 0;
+  }
 
   const netOperating = profitBeforeTax + addDA + addInterest + totalWC + taxPaid;
 
@@ -148,7 +200,7 @@ function derive(col: CFCol): CFData {
   return {
     profitBeforeTax, addDA, addInterest,
     wcDebtors, wcStock, wcCreditors, wcAccruals, wcPrepayments, totalWC,
-    taxPaid, netOperating,
+    taxPaid, taxEstimated, netOperating,
     capexLabel, capex, netInvesting,
     dividends, directorsAccount, netFinancing,
     netMovement, openingCash, closingCash, derivedClosing, variance,
@@ -158,7 +210,7 @@ function derive(col: CFCol): CFData {
 export default function CashFlowSection({ financialData }: CashFlowSectionProps) {
   const [wcOpen, setWcOpen] = useState(true);
 
-  const columns = useMemo(() => deriveColumns(financialData), [financialData]);
+  const { cols: columns, skipped } = useMemo(() => deriveColumns(financialData), [financialData]);
   const derived = useMemo(() => columns.map(derive), [columns]);
 
   const hasStatutoryPeriods = useMemo(() => {
@@ -178,9 +230,24 @@ export default function CashFlowSection({ financialData }: CashFlowSectionProps)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">
+          <p className="text-sm text-muted-foreground text-center py-4">
             Insufficient data — at least two years of accounts required to derive cashflow.
           </p>
+          {skipped.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {skipped.map(s => (
+                <div key={s.fiscalYear} className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
+                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    Cash flow for FY {s.fiscalYear} cannot be derived:{' '}
+                    the balance sheet {s.docName ? `from ${s.docName}` : 'for the prior year'} has
+                    no extracted cash or working capital values. Upload statutory accounts or a
+                    balance sheet for this year, or re-run analysis, to enable it.
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -224,6 +291,8 @@ export default function CashFlowSection({ financialData }: CashFlowSectionProps)
   );
 
   const anyVariance = derived.some(d => Math.abs(d.variance) > 1000);
+  const anyTaxEstimated = derived.some(d => d.taxEstimated);
+  const taxLabel = anyTaxEstimated ? 'Tax paid (est. from prior-year charge)' : 'Tax paid (approx)';
 
   return (
     <Card>
@@ -283,7 +352,7 @@ export default function CashFlowSection({ financialData }: CashFlowSectionProps)
               </>
             )}
 
-            {lineRow('tax', 'Tax paid (approx)', derived.map(d => d.taxPaid), indentClass)}
+            {lineRow('tax', taxLabel, derived.map(d => d.taxPaid), indentClass)}
             {subtotalRow('net-op', 'Net cash from operating activities', derived.map(d => d.netOperating))}
 
             {/* ── INVESTING ACTIVITIES ─────────────────────────── */}
@@ -322,16 +391,35 @@ export default function CashFlowSection({ financialData }: CashFlowSectionProps)
           </TableBody>
         </Table>
 
-        {/* Reconciliation warning */}
+        {/* Skipped years — info panels */}
+        {skipped.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {skipped.map(s => (
+              <div key={s.fiscalYear} className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
+                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Cash flow for FY {s.fiscalYear} cannot be derived:{' '}
+                  the balance sheet {s.docName ? `from ${s.docName}` : 'for the prior year'} has
+                  no extracted cash or working capital values. Upload statutory accounts or a
+                  balance sheet for this year, or re-run analysis, to enable it.
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Reconciliation notices */}
         {anyVariance && (
           <div className="mt-3 space-y-1">
             {derived.map((d, i) =>
               Math.abs(d.variance) > 1000 ? (
-                <div key={columns[i].periodId} className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <div key={columns[i].periodId} className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
+                  <Info className="h-3.5 w-3.5 shrink-0" />
                   <span>
-                    <strong>{columns[i].label}</strong> reconciliation difference:{' '}
-                    {formatCurrency(Math.abs(d.variance))} — financing activities may be incomplete
+                    <strong>{columns[i].label}:</strong> derived cash differs from reported cash by{' '}
+                    {formatCurrency(Math.abs(d.variance))}. This usually reflects loan drawdowns
+                    or repayments, asset finance, or tax timing, which statutory accounts do not
+                    disclose in enough detail to derive.
                   </span>
                 </div>
               ) : null
