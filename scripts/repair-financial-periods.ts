@@ -217,15 +217,19 @@ async function run() {
     }
 
     // ── Step 2b: Orphan cleanup candidates (Change 2) ────────────────────
-    const nullSrcPeriods = allPeriods.filter(p => p.source_document_id === null);
-    const orphanIds: number[] = [];
-    for (const p of nullSrcPeriods) {
-      let totalChildren = 0;
-      for (const tbl of ALL_CHILD_TABLES) {
-        totalChildren += await childCount(pool, tbl, p.id);
-      }
-      if (totalChildren === 0) orphanIds.push(p.id);
-    }
+    // Single query: null source doc AND no children across all FK tables
+    const orphanRes = await pool.query(`
+      SELECT fp.id
+      FROM financial_periods fp
+      WHERE fp.target_company_id = $1
+        AND fp.source_document_id IS NULL
+        AND NOT EXISTS (SELECT 1 FROM income_statements   WHERE financial_period_id = fp.id)
+        AND NOT EXISTS (SELECT 1 FROM balance_sheets      WHERE financial_period_id = fp.id)
+        AND NOT EXISTS (SELECT 1 FROM staff_data          WHERE financial_period_id = fp.id)
+        AND NOT EXISTS (SELECT 1 FROM ebitda_adjustments  WHERE financial_period_id = fp.id)
+      ORDER BY fp.id
+    `, [companyId]);
+    const orphanIds: number[] = orphanRes.rows.map((r: any) => r.id);
 
     if (orphanIds.length > 0) {
       console.log(`\n[2b] ORPHANS (no source doc, no children): ${orphanIds.length}`);
