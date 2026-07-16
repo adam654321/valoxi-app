@@ -22,9 +22,7 @@ try {
 const pool = new Pool({ connectionString: DB_URL });
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-// Special-merge tables: survivor null-fill from loser, then delete loser row (or re-point)
 const SPECIAL_TABLES = ['income_statements', 'balance_sheets', 'staff_data'] as const;
-// Re-point-only tables: UPDATE financial_period_id → survivor, no row merging
 const REPOINT_TABLES = ['ebitda_adjustments'] as const;
 const ALL_CHILD_TABLES = [...SPECIAL_TABLES, ...REPOINT_TABLES];
 
@@ -36,7 +34,6 @@ async function childCount(client: pg.PoolClient | pg.Pool, table: string, period
   return parseInt(r.rows[0].cnt, 10);
 }
 
-// Returns non-PK, non-FK, non-timestamp column names for a table
 const colCache: Record<string, string[]> = {};
 async function dataColumns(table: string): Promise<string[]> {
   if (colCache[table]) return colCache[table];
@@ -48,6 +45,55 @@ async function dataColumns(table: string): Promise<string[]> {
   `, [table]);
   colCache[table] = r.rows.map((x: any) => x.column_name);
   return colCache[table];
+}
+
+// ─── modal computation helpers (Change 1) ────────────────────────────────────
+
+/** True if d is the last calendar day of its UTC month. */
+function isEOM(d: Date): boolean {
+  const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+  return next.getUTCMonth() !== d.getUTCMonth();
+}
+
+/**
+ * Leap-equivalence: two period-end dates represent the same fiscal year-end if
+ * they share the same month AND (|day diff| <= 1 OR both are last-of-their-month).
+ */
+function leapEquiv(d1: Date, d2: Date): boolean {
+  if (d1.getUTCMonth() !== d2.getUTCMonth()) return false;
+  const diff = Math.abs(d1.getUTCDate() - d2.getUTCDate());
+  return diff <= 1 || (isEOM(d1) && isEOM(d2));
+}
+
+/**
+ * Compute modal year-end date from an array of period-end Date objects.
+ * Returns the representative Date of the most frequent equivalence class,
+ * or null if no class has >= 2 members.
+ */
+function computeModal(dates: Date[]): Date | null {
+  if (dates.length === 0) return null;
+  const clusters: { rep: Date; count: number }[] = [];
+  for (const d of dates) {
+    const existing = clusters.find(c => leapEquiv(c.rep, d));
+    if (existing) {
+      existing.count++;
+    } else {
+      clusters.push({ rep: d, count: 1 });
+    }
+  }
+  clusters.sort((a, b) => b.count - a.count);
+  if (clusters[0].count >= 2) return clusters[0].rep;
+  return null;
+}
+
+/** Format a Date as YYYY-MM-DD (UTC) for display / SQL. */
+function toDateStr(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** Format a modal Date as MM-DD for display. */
+function toMMDD(d: Date): string {
+  return `${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -83,6 +129,7 @@ async function run() {
   let totalRowsRepointed = 0;
   let totalBackfills = 0;
   let totalSuspects = 0;
+  let totalOrphans = 0;
 
   for (const companyId of companies) {
     console.log(`\n${sep('═')}`);
@@ -106,74 +153,161 @@ async function run() {
       console.log(`\n[1] Fiscal-year backfill: none needed`);
     }
 
-    // ── Step 2: is_full_year → false candidates ───────────────────────────
-    const span0Res = await pool.query(`
-      SELECT fp.id, fp.period_label, d.document_category
+    // ── Step 2: Classification pass (Change 1) ────────────────────────────
+    // Fetch all periods for this company with doc category
+    const allPeriodsRes = await pool.query(`
+      SELECT
+        fp.id,
+        fp.period_end::text,
+        fp.period_label,
+        fp.period_type,
+        fp.is_full_year,
+        fp.fiscal_year,
+        fp.source_document_id,
+        COALESCE(fp.fiscal_year, EXTRACT(YEAR FROM fp.period_end::date)::int) AS eff_fy,
+        d.document_category AS doc_category
       FROM financial_periods fp
       LEFT JOIN documents d ON d.id = fp.source_document_id
       WHERE fp.target_company_id = $1
-        AND fp.is_full_year = true
-        AND (d.document_category ILIKE '%ytd%' OR fp.period_label = 'Staff Matrix')
       ORDER BY fp.id
     `, [companyId]);
 
-    if (span0Res.rows.length > 0) {
-      console.log(`\n[2] Span backfill (is_full_year → false): ${span0Res.rows.length}`);
-      for (const r of span0Res.rows)
-        console.log(`    period ${r.id}  label="${r.period_label}"  category="${r.document_category}"`);
-    } else {
-      console.log(`\n[2] Span backfill: none needed`);
+    const allPeriods: any[] = allPeriodsRes.rows;
+
+    // Compute modal from statutory period-end dates
+    const statutoryDates = allPeriods
+      .filter(p => p.period_type === 'statutory' && p.period_end)
+      .map(p => new Date(p.period_end));
+    const modal = computeModal(statutoryDates);
+    const modalReliable = modal !== null;
+
+    // Build effective is_full_year for every period (Change 1b/1c)
+    const effMap = new Map<number, { eff: boolean; reason: string }>();
+    for (const p of allPeriods) {
+      let eff: boolean;
+      let reason: string;
+      if (modalReliable && p.period_end) {
+        const matches = leapEquiv(new Date(p.period_end), modal!);
+        eff = matches;
+        reason = matches ? 'modal-match' : 'modal-mismatch';
+      } else {
+        // category fallback (Change 1c)
+        const isCatYTD = typeof p.doc_category === 'string' && p.doc_category.toLowerCase().includes('ytd');
+        const isStaffMatrix = p.period_label === 'Staff Matrix';
+        eff = !(isCatYTD || isStaffMatrix);
+        reason = 'category-fallback';
+      }
+      effMap.set(p.id, { eff, reason });
     }
 
-    // ── Step 3: Dedup groups (post-backfill effective values) ─────────────
-    const dupRes = await pool.query(`
-      WITH effective AS (
-        SELECT
-          fp.id,
-          fp.period_type,
-          fp.period_end,
-          fp.period_label,
-          fp.source_document_id,
-          fp.is_full_year,
-          COALESCE(fp.fiscal_year, EXTRACT(YEAR FROM fp.period_end::date)::int) AS eff_fy,
-          CASE
-            WHEN fp.period_label = 'Staff Matrix' THEN false
-            WHEN d.document_category ILIKE '%ytd%' THEN false
-            ELSE fp.is_full_year
-          END AS eff_full
-        FROM financial_periods fp
-        LEFT JOIN documents d ON d.id = fp.source_document_id
-        WHERE fp.target_company_id = $1
-      )
-      SELECT
-        eff_fy, period_type, eff_full,
-        COUNT(*)::int AS cnt,
-        ARRAY_AGG(id ORDER BY id) AS period_ids
-      FROM effective
-      GROUP BY eff_fy, period_type, eff_full
-      HAVING COUNT(*) > 1
-      ORDER BY eff_fy, period_type
-    `, [companyId]);
+    // Print classification pass (Change 1d): only periods with a stored/eff mismatch
+    const classDiffs = allPeriods.filter(p => {
+      const e = effMap.get(p.id)!;
+      return e.eff !== p.is_full_year;
+    });
 
-    totalDupeGroups += dupRes.rows.length;
+    if (modalReliable) {
+      console.log(`\n[2] Classification pass (modal year-end = ${toMMDD(modal!)}): ${classDiffs.length > 0 ? classDiffs.length + ' mismatch(es)' : 'no mismatches'}`);
+    } else {
+      console.log(`\n[2] Classification pass (no reliable modal — category fallback): ${classDiffs.length > 0 ? classDiffs.length + ' mismatch(es)' : 'no mismatches'}`);
+    }
+    for (const p of classDiffs) {
+      const e = effMap.get(p.id)!;
+      console.log(`    period ${p.id}  label="${p.period_label}"  stored=${p.is_full_year} → eff=${e.eff}  reason=${e.reason}`);
+    }
 
-    if (dupRes.rows.length === 0) {
+    // ── Step 2b: Orphan cleanup candidates (Change 2) ────────────────────
+    const nullSrcPeriods = allPeriods.filter(p => p.source_document_id === null);
+    const orphanIds: number[] = [];
+    for (const p of nullSrcPeriods) {
+      let totalChildren = 0;
+      for (const tbl of ALL_CHILD_TABLES) {
+        totalChildren += await childCount(pool, tbl, p.id);
+      }
+      if (totalChildren === 0) orphanIds.push(p.id);
+    }
+
+    if (orphanIds.length > 0) {
+      console.log(`\n[2b] ORPHANS (no source doc, no children): ${orphanIds.length}`);
+      for (const oid of orphanIds) {
+        const p = allPeriods.find((x: any) => x.id === oid)!;
+        console.log(`    period ${oid}  label="${p.period_label}"  period_end=${p.period_end}  type=${p.period_type}`);
+      }
+      totalOrphans += orphanIds.length;
+    } else {
+      console.log(`\n[2b] ORPHANS: none`);
+    }
+
+    // ── Step 3: Dedup groups keyed on effective is_full_year (Change 5) ──
+    // Exclude orphans from dedup (they will be deleted before merge runs)
+    const orphanIdSet = new Set(orphanIds);
+    const deduplicable = allPeriods.filter(p => !orphanIdSet.has(p.id));
+
+    type GroupKey = string;
+    const groupMap = new Map<GroupKey, any[]>();
+    for (const p of deduplicable) {
+      const e = effMap.get(p.id)!;
+      const key = `${p.eff_fy}|${p.period_type}|${e.eff}`;
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(p);
+    }
+
+    const dupGroups = [...groupMap.entries()]
+      .filter(([, periods]) => periods.length > 1)
+      .sort(([ka], [kb]) => {
+        const [fyA, typeA] = ka.split('|');
+        const [fyB, typeB] = kb.split('|');
+        if (fyA !== fyB) return parseInt(fyA) - parseInt(fyB);
+        return typeA.localeCompare(typeB);
+      });
+
+    totalDupeGroups += dupGroups.length;
+
+    if (dupGroups.length === 0) {
       console.log(`\n[3] Dedup groups: none`);
     } else {
-      console.log(`\n[3] Dedup groups: ${dupRes.rows.length}`);
+      console.log(`\n[3] Dedup groups: ${dupGroups.length}`);
     }
 
     // ── Per-group survivor/loser analysis ─────────────────────────────────
     type GroupPlan = {
       survivorId: number;
       loserIds: number[];
+      effFull: boolean;
     };
     const groupPlans: GroupPlan[] = [];
 
-    for (const grp of dupRes.rows) {
-      console.log(`\n  Group: fy=${grp.eff_fy}  type=${grp.period_type}  full_year=${grp.eff_full}  (${grp.cnt} periods: [${grp.period_ids.join(', ')}])`);
+    const modalDateStr = modal ? toDateStr(modal) : null;
 
-      // Survivor selection query
+    // SQL modal-match expression (reused in two places in survivor ORDER BY)
+    const MODAL_MATCH_EXPR = `
+      CASE
+        WHEN $2::date IS NOT NULL
+          AND EXTRACT(MONTH FROM fp.period_end::date) = EXTRACT(MONTH FROM $2::date)
+          AND (
+            ABS(EXTRACT(DAY FROM fp.period_end::date)::int - EXTRACT(DAY FROM $2::date)::int) <= 1
+            OR (
+              fp.period_end::date = (DATE_TRUNC('month', fp.period_end::date) + INTERVAL '1 month' - INTERVAL '1 day')::date
+              AND $2::date = (DATE_TRUNC('month', $2::date) + INTERVAL '1 month' - INTERVAL '1 day')::date
+            )
+          )
+        THEN 1 ELSE 0
+      END
+    `;
+
+    for (const [key, periods] of dupGroups) {
+      const [effFyStr, periodType, effFullStr] = key.split('|');
+      const effFull = effFullStr === 'true';
+      const periodIds = periods.map((p: any) => p.id);
+
+      console.log(`\n  Group: fy=${effFyStr}  type=${periodType}  full_year=${effFull}  (${periods.length} periods: [${periodIds.join(', ')}])`);
+
+      // Survivor selection — Change 3 ordering:
+      // 1) has source_document_id
+      // 2) has operating_profit (non-null)
+      // 3) highest revenue (numeric desc)
+      // 4) period_end matches modal (leap-equiv)
+      // 5) latest period_end
       const candRes = await pool.query(`
         SELECT
           fp.id,
@@ -187,36 +321,57 @@ async function run() {
         ORDER BY
           (fp.source_document_id IS NOT NULL)::int DESC,
           (i.operating_profit IS NOT NULL)::int DESC,
-          (i.revenue IS NOT NULL)::int DESC,
+          COALESCE(i.revenue, 0) DESC,
+          ${MODAL_MATCH_EXPR} DESC,
           fp.period_end DESC
-      `, [grp.period_ids]);
+      `, [periodIds, modalDateStr]);
 
       const survivor = candRes.rows[0];
       const losers = candRes.rows.slice(1);
-      groupPlans.push({ survivorId: survivor.id, loserIds: losers.map((r: any) => r.id) });
+      groupPlans.push({ survivorId: survivor.id, loserIds: losers.map((r: any) => r.id), effFull });
 
       console.log(`    SURVIVOR  period ${survivor.id}  period_end=${survivor.period_end}  src_doc=${survivor.source_document_id}  op=${survivor.operating_profit}  rev=${survivor.revenue}`);
 
       for (const loser of losers) {
         console.log(`    LOSER     period ${loser.id}  period_end=${loser.period_end}  src_doc=${loser.source_document_id}  op=${loser.operating_profit}  rev=${loser.revenue}`);
 
-        // Child rows on loser
+        // Fetch special-table rows upfront (used for both audit logging and null-fill)
+        const specialRows: Record<string, { survivor: any | null; loser: any | null }> = {};
+        for (const tbl of SPECIAL_TABLES) {
+          const sRes = await pool.query(`SELECT * FROM ${tbl} WHERE financial_period_id = $1`, [survivor.id]);
+          const lRes = await pool.query(`SELECT * FROM ${tbl} WHERE financial_period_id = $1`, [loser.id]);
+          specialRows[tbl] = {
+            survivor: sRes.rows[0] ?? null,
+            loser: lRes.rows[0] ?? null,
+          };
+        }
+
+        // AUDIT-ARCHIVE (Change 4): loser row will be deleted when survivor already has one
+        // Print BEFORE child-row counts and null-fill summary
+        for (const tbl of ['income_statements', 'balance_sheets'] as const) {
+          const { survivor: sRow, loser: lRow } = specialRows[tbl];
+          if (sRow !== null && lRow !== null) {
+            console.log(`      AUDIT-ARCHIVE  period=${loser.id}  doc=${loser.source_document_id}  table=${tbl}`);
+            console.log(`      ${JSON.stringify(lRow)}`);
+          }
+        }
+
+        // Child row counts
         for (const tbl of ALL_CHILD_TABLES) {
           const cnt = await childCount(pool, tbl, loser.id);
           if (cnt > 0) console.log(`      child rows → ${tbl}: ${cnt}`);
         }
 
-        // Null-fill preview for special tables
+        // Null-fill / re-point preview
         for (const tbl of SPECIAL_TABLES) {
-          const cols = await dataColumns(tbl);
-          const sRes = await pool.query(`SELECT * FROM ${tbl} WHERE financial_period_id = $1`, [survivor.id]);
-          const lRes = await pool.query(`SELECT * FROM ${tbl} WHERE financial_period_id = $1`, [loser.id]);
-          if (sRes.rows.length > 0 && lRes.rows.length > 0) {
-            const s = sRes.rows[0]; const l = lRes.rows[0];
-            const fillable = cols.filter(c => s[c] == null && l[c] != null);
+          const { survivor: sRow, loser: lRow } = specialRows[tbl];
+          if (lRow === null) continue;
+          if (sRow !== null) {
+            const cols = await dataColumns(tbl);
+            const fillable = cols.filter(c => sRow[c] == null && lRow[c] != null);
             if (fillable.length > 0)
               console.log(`      null-fill survivor ${tbl}: [${fillable.join(', ')}]`);
-          } else if (sRes.rows.length === 0 && lRes.rows.length > 0) {
+          } else {
             console.log(`      survivor lacks ${tbl} row → loser row will be re-pointed`);
           }
         }
@@ -229,8 +384,16 @@ async function run() {
       try {
         await client.query('BEGIN');
 
+        // Delete orphans first (Change 2)
+        for (const oid of orphanIds) {
+          await client.query(`DELETE FROM financial_periods WHERE id = $1`, [oid]);
+          totalPeriodsDeleted++;
+          console.log(`  [EXECUTE] Deleted orphan period ${oid}`);
+        }
+
+        // Dedup merges
         for (const plan of groupPlans) {
-          const { survivorId, loserIds } = plan;
+          const { survivorId, loserIds, effFull } = plan;
 
           for (const loserId of loserIds) {
             // Special-merge tables
@@ -241,16 +404,15 @@ async function run() {
               if (lRes.rows.length === 0) continue;
 
               if (sRes.rows.length > 0) {
-                // Both have a row: null-fill survivor from loser, then delete loser row
+                // Both have a row: null-fill survivor, then delete loser row
                 const cols = await dataColumns(tbl);
                 const s = sRes.rows[0]; const l = lRes.rows[0];
                 const fillCols = cols.filter(c => s[c] == null && l[c] != null);
                 if (fillCols.length > 0) {
                   const setStr = fillCols.map((c, i) => `"${c}" = $${i + 2}`).join(', ');
-                  const vals = fillCols.map(c => l[c]);
                   await client.query(
                     `UPDATE ${tbl} SET ${setStr} WHERE financial_period_id = $1`,
-                    [survivorId, ...vals]
+                    [survivorId, ...fillCols.map(c => l[c])]
                   );
                   totalRowsRepointed += fillCols.length;
                 }
@@ -289,6 +451,12 @@ async function run() {
             totalPeriodsDeleted++;
             console.log(`  [EXECUTE] Deleted loser period ${loserId}, re-pointed children → survivor ${survivorId}`);
           }
+
+          // Write effective is_full_year onto the survivor (Change 5)
+          await client.query(
+            `UPDATE financial_periods SET is_full_year = $1 WHERE id = $2`,
+            [effFull, survivorId]
+          );
         }
 
         // Apply fiscal_year backfills
@@ -300,13 +468,18 @@ async function run() {
           totalBackfills++;
         }
 
-        // Apply is_full_year → false backfills
-        for (const r of span0Res.rows) {
-          await client.query(
-            `UPDATE financial_periods SET is_full_year = false WHERE id = $1`,
-            [r.id]
-          );
-          totalBackfills++;
+        // Apply effective is_full_year to all periods with classification mismatches
+        // (replaces old category-only span backfill; orphans already deleted so skip them)
+        for (const p of allPeriods) {
+          if (orphanIdSet.has(p.id)) continue;
+          const e = effMap.get(p.id)!;
+          if (e.eff !== p.is_full_year) {
+            await client.query(
+              `UPDATE financial_periods SET is_full_year = $1 WHERE id = $2`,
+              [e.eff, p.id]
+            );
+            totalBackfills++;
+          }
         }
 
         await client.query('COMMIT');
@@ -321,6 +494,7 @@ async function run() {
     }
 
     // ── Step 5: Suspect flags (report-only, never written) ────────────────
+    // Re-query modal from DB for suspects section (post-execute state)
     const modalRes = await pool.query(`
       SELECT TO_CHAR(period_end::date, 'MM-DD') AS md, COUNT(*) AS cnt
       FROM financial_periods
@@ -333,7 +507,7 @@ async function run() {
     `, [companyId]);
 
     if (modalRes.rows.length > 0) {
-      const modal = modalRes.rows[0].md;
+      const modal5 = modalRes.rows[0].md;
       const suspRes = await pool.query(`
         SELECT fp.id, fp.period_end::text, fp.period_label,
                fp.source_document_id, d.document_name AS doc_name
@@ -344,13 +518,12 @@ async function run() {
           AND fp.period_type = 'management'
           AND TO_CHAR(fp.period_end::date, 'MM-DD') != $2
         ORDER BY fp.period_end
-      `, [companyId, modal]);
+      `, [companyId, modal5]);
 
       if (suspRes.rows.length > 0) {
-        console.log(`\n[5] RE-ANALYSIS CANDIDATES (modal period-end month/day = ${modal}):`);
-        for (const r of suspRes.rows) {
+        console.log(`\n[5] RE-ANALYSIS CANDIDATES (modal period-end month/day = ${modal5}):`);
+        for (const r of suspRes.rows)
           console.log(`    period ${r.id}  period_end=${r.period_end}  label="${r.period_label}"  src_doc=${r.source_document_id}  doc="${r.doc_name}"`);
-        }
         totalSuspects += suspRes.rows.length;
       } else {
         console.log(`\n[5] RE-ANALYSIS CANDIDATES: none`);
@@ -365,6 +538,7 @@ async function run() {
   console.log('SUMMARY');
   console.log(sep('═'));
   console.log(`Dupe groups found:  ${totalDupeGroups}`);
+  console.log(`Orphans found:      ${totalOrphans}`);
   if (EXECUTE) {
     console.log(`Periods deleted:    ${totalPeriodsDeleted}`);
     console.log(`Rows re-pointed:    ${totalRowsRepointed}`);
