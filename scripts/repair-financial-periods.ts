@@ -426,6 +426,8 @@ async function run() {
       const diffDays = (d2.getTime() - d1.getTime()) / 86_400_000;
       if (diffDays >= 362 && diffDays <= 367) {
         for (const p of [statutorySorted[i], statutorySorted[i + 1]]) {
+          // Only backfill periods whose effective classification is full-year
+          if (effMap.get(p.id)?.eff !== true) continue;
           if (p.months_covered !== 12 && !monthsBackfillMap.has(p.id)) {
             monthsBackfillMap.set(p.id, { periodEnd: p.period_end, current: p.months_covered });
           }
