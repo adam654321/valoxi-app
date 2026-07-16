@@ -130,6 +130,8 @@ async function run() {
   let totalBackfills = 0;
   let totalSuspects = 0;
   let totalOrphans = 0;
+  let totalHollowsDeleted = 0;
+  let totalMonthsBackfilled = 0;
 
   for (const companyId of companies) {
     console.log(`\n${sep('═')}`);
@@ -164,6 +166,7 @@ async function run() {
         fp.is_full_year,
         fp.fiscal_year,
         fp.source_document_id,
+        fp.months_covered,
         COALESCE(fp.fiscal_year, EXTRACT(YEAR FROM fp.period_end::date)::int) AS eff_fy,
         d.document_category AS doc_category
       FROM financial_periods fp
@@ -382,13 +385,77 @@ async function run() {
       }
     }
 
-    // ── Step 4: Execute merge (one transaction per company) ───────────────
+    // ── Step 4: Hollow-shell balance_sheet rows ───────────────────────────
+    // A shell is a BS row where every financial value field is null.
+    // We exclude non-value metadata: source_document_id, debtors_list,
+    // creditors_list, fixed_assets_detail.
+    const NON_VALUE_BS = new Set(['source_document_id', 'debtors_list', 'creditors_list', 'fixed_assets_detail']);
+    const bsAllCols = await dataColumns('balance_sheets');
+    const bsValueCols = bsAllCols.filter(c => !NON_VALUE_BS.has(c));
+    const hollowWhere = bsValueCols.map(c => `"${c}" IS NULL`).join(' AND ');
+
+    const hollowRes = await pool.query(`
+      SELECT b.id, b.financial_period_id, b.source_document_id
+      FROM balance_sheets b
+      WHERE b.target_company_id = $1 AND (${hollowWhere})
+      ORDER BY b.id
+    `, [companyId]);
+    const hollowRows: any[] = hollowRes.rows;
+    if (EXECUTE) totalHollowsDeleted += hollowRows.length;
+
+    if (hollowRows.length > 0) {
+      console.log(`\n[4] HOLLOW-SHELLS (all value fields null): ${hollowRows.length}`);
+      for (const r of hollowRows) {
+        const confirmed = bsValueCols.map(c => `${c}=null`).join(', ');
+        console.log(`    BS id=${r.id}  period=${r.financial_period_id}  src_doc=${r.source_document_id ?? 'null'}  [${confirmed}]`);
+      }
+    } else {
+      console.log(`\n[4] HOLLOW-SHELLS: none`);
+    }
+
+    // ── Step 4b: Months-backfill candidates ───────────────────────────────
+    // Consecutive statutory period-end pairs ~365 days apart prove months_covered = 12.
+    const statutorySorted = [...allPeriods]
+      .filter((p: any) => p.period_type === 'statutory')
+      .sort((a: any, b: any) => new Date(a.period_end).getTime() - new Date(b.period_end).getTime());
+
+    const monthsBackfillMap = new Map<number, { periodEnd: string; current: number | null }>();
+    for (let i = 0; i + 1 < statutorySorted.length; i++) {
+      const d1 = new Date(statutorySorted[i].period_end);
+      const d2 = new Date(statutorySorted[i + 1].period_end);
+      const diffDays = (d2.getTime() - d1.getTime()) / 86_400_000;
+      if (diffDays >= 362 && diffDays <= 367) {
+        for (const p of [statutorySorted[i], statutorySorted[i + 1]]) {
+          if (p.months_covered !== 12 && !monthsBackfillMap.has(p.id)) {
+            monthsBackfillMap.set(p.id, { periodEnd: p.period_end, current: p.months_covered });
+          }
+        }
+      }
+    }
+    if (EXECUTE) totalMonthsBackfilled += monthsBackfillMap.size;
+
+    if (monthsBackfillMap.size > 0) {
+      console.log(`\n[4b] MONTHS-BACKFILL (consecutive year-ends prove 12): ${monthsBackfillMap.size}`);
+      for (const [pid, info] of monthsBackfillMap) {
+        console.log(`    period ${pid}  period_end=${info.periodEnd}  months_covered=${info.current ?? 'null'} → 12`);
+      }
+    } else {
+      console.log(`\n[4b] MONTHS-BACKFILL: none needed`);
+    }
+
+    // ── Step 5: Execute merge (one transaction per company) ───────────────
     if (EXECUTE) {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
 
-        // Delete orphans first (Change 2)
+        // Delete hollow BS shells first (before dedup, so dedup sees clean state)
+        for (const r of hollowRows) {
+          await client.query(`DELETE FROM balance_sheets WHERE id = $1`, [r.id]);
+          console.log(`  [EXECUTE] Deleted hollow BS shell id=${r.id}  period=${r.financial_period_id}`);
+        }
+
+        // Delete orphans (Change 2)
         for (const oid of orphanIds) {
           await client.query(`DELETE FROM financial_periods WHERE id = $1`, [oid]);
           totalPeriodsDeleted++;
@@ -486,6 +553,15 @@ async function run() {
           }
         }
 
+        // Apply months_covered = 12 where consecutive year-ends prove it
+        for (const [pid] of monthsBackfillMap) {
+          await client.query(
+            `UPDATE financial_periods SET months_covered = 12 WHERE id = $1`,
+            [pid]
+          );
+          console.log(`  [EXECUTE] Set months_covered=12 on period ${pid}`);
+        }
+
         await client.query('COMMIT');
         console.log(`  [EXECUTE] Transaction committed for company ${companyId}`);
       } catch (err) {
@@ -543,10 +619,12 @@ async function run() {
   console.log(sep('═'));
   console.log(`Dupe groups found:  ${totalDupeGroups}`);
   console.log(`Orphans found:      ${totalOrphans}`);
+  console.log(`Hollow shells:      ${EXECUTE ? totalHollowsDeleted + ' deleted' : '(see [4] sections above)'}`);
   if (EXECUTE) {
     console.log(`Periods deleted:    ${totalPeriodsDeleted}`);
     console.log(`Rows re-pointed:    ${totalRowsRepointed}`);
     console.log(`Backfills applied:  ${totalBackfills}`);
+    console.log(`Months backfilled:  ${totalMonthsBackfilled}`);
   }
   console.log(`Suspects flagged:   ${totalSuspects}`);
   if (!EXECUTE) console.log('\n(dry-run — pass --execute to apply changes)');
