@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ChevronDown, ChevronRight, TrendingUp, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
-import { isPartYearPeriod } from '@/lib/period-utils';
+import { isPartYearPeriod, hasUsableBalanceSheet } from '@/lib/period-utils';
 
 interface CashFlowSectionProps {
   financialData: any;
@@ -56,16 +56,6 @@ function n(v: any): number {
   return toNum(v);
 }
 
-function hasUsableBalanceSheet(bs: any): boolean {
-  if (!bs) return false;
-  if (bs.cashAtBank == null) return false;
-  return (
-    bs.tradeDebtors != null ||
-    bs.tradeCreditors != null ||
-    bs.totalCurrentAssets != null ||
-    bs.totalEquity != null
-  );
-}
 
 function formatCF(value: number | null | undefined): React.ReactNode {
   if (value == null || isNaN(value) || Math.abs(value) < 0.5) {
@@ -128,6 +118,21 @@ function deriveColumns(financialData: any): { cols: CFCol[]; skipped: SkippedYea
       const whichSide: 'current' | 'prior' | 'both' =
         !bsOk && !priorBsOk ? 'both' : !bsOk ? 'current' : 'prior';
       const offendingPeriod = !priorBsOk ? prior : current;
+      skipped.push({
+        fiscalYear: current.fiscalYear,
+        reason: 'insufficient_bs',
+        docName: offendingPeriod.documentName ?? null,
+        whichSide,
+      });
+      continue;
+    }
+
+    // Additionally require cashAtBank on both sides — cash flow cannot be derived without it
+    if (bs.cashAtBank == null || priorBs.cashAtBank == null) {
+      const bothMissing = bs.cashAtBank == null && priorBs.cashAtBank == null;
+      const whichSide: 'current' | 'prior' | 'both' =
+        bothMissing ? 'both' : bs.cashAtBank == null ? 'current' : 'prior';
+      const offendingPeriod = bs.cashAtBank == null ? current : prior;
       skipped.push({
         fiscalYear: current.fiscalYear,
         reason: 'insufficient_bs',

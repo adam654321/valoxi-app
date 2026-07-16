@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Landmark, Info } from 'lucide-react';
 import { toNum } from '@shared/calculators/deal-model.calc';
 import { formatCurrency } from '@/lib/format-utils';
-import { formatYtdLabel, isPartYearPeriod } from '@/lib/period-utils';
+import { formatYtdLabel, isPartYearPeriod, hasUsableBalanceSheet } from '@/lib/period-utils';
 
 interface BalanceSheetSectionProps {
   financialData: any;
@@ -17,6 +17,7 @@ interface BSColumn {
   periodEnd: string;
   bs: any;
   isYtd: boolean;
+  docName: string | null;
 }
 
 type LineItem = [field: string, label: string];
@@ -92,51 +93,62 @@ const GROUPS: GroupDef[] = [
 ];
 
 export default function BalanceSheetSection({ financialData }: BalanceSheetSectionProps) {
-  const columns = useMemo<BSColumn[]>(() => {
-    if (!financialData?.periods || !financialData?.balanceSheets) return [];
+  const { tableColumns, hollowEntries } = useMemo<{ tableColumns: BSColumn[]; hollowEntries: BSColumn[] }>(() => {
+    if (!financialData?.periods || !financialData?.balanceSheets) return { tableColumns: [], hollowEntries: [] };
+
     const sorted = financialData.periods
       .filter((p: any) => (p.periodType === 'statutory' || p.periodType === 'historic' || p.periodType === 'management') && p.fiscalYear)
-      .filter((p: any) => financialData.balanceSheets.some(
-        (s: any) => s.financialPeriodId === p.id
-      ))
       .sort((a: any, b: any) => new Date(a.periodEnd).getTime() - new Date(b.periodEnd).getTime());
 
-    // Dedup: at most one column per (fiscalYear, part-year flag); later periodEnd wins
-    // (all survivors already have a balance sheet row from the filter above)
-    const statutory = sorted.reduce((acc: any[], p: any) => {
+    // Dedup: rank 2=usable BS, 1=hollow BS row exists, 0=no BS row
+    // Within same rank, later periodEnd wins
+    const dedupMap = new Map<string, { period: any; rank: number }>();
+    for (const p of sorted) {
       const key = `${p.fiscalYear}:${isPartYearPeriod(p)}`;
-      const existingIdx = acc.findIndex(
-        (a: any) => `${a.fiscalYear}:${isPartYearPeriod(a)}` === key
-      );
-      if (existingIdx === -1) {
-        acc.push(p);
-      } else if (new Date(p.periodEnd) > new Date(acc[existingIdx].periodEnd)) {
-        acc[existingIdx] = p;
+      const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id) ?? null;
+      const rank = hasUsableBalanceSheet(bs) ? 2 : bs ? 1 : 0;
+      const existing = dedupMap.get(key);
+      if (
+        !existing ||
+        rank > existing.rank ||
+        (rank === existing.rank && new Date(p.periodEnd) > new Date(existing.period.periodEnd))
+      ) {
+        dedupMap.set(key, { period: p, rank });
       }
-      return acc;
-    }, []);
+    }
 
-    return statutory
-      .map((p: any) => {
-        const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id);
-        if (!bs) return null;
+    const tableColumns: BSColumn[] = [];
+    const hollowEntries: BSColumn[] = [];
+
+    Array.from(dedupMap.values())
+      .sort((a, b) => new Date(a.period.periodEnd).getTime() - new Date(b.period.periodEnd).getTime())
+      .forEach(({ period: p, rank }) => {
+        const bs = financialData.balanceSheets.find((s: any) => s.financialPeriodId === p.id) ?? null;
         const isYtd = isPartYearPeriod(p);
-        return {
+        const col: BSColumn = {
           periodId: p.id,
           label: isYtd && p.fiscalYear ? formatYtdLabel(p.fiscalYear) : (p.periodLabel || String(p.fiscalYear)),
           year: p.fiscalYear,
           periodEnd: p.periodEnd,
           bs,
           isYtd,
+          docName: p.documentName ?? null,
         };
-      })
-      .filter((c: BSColumn | null): c is BSColumn => c !== null);
+        // Full-year columns with hollow/absent BS → info panel; YTD columns always in table
+        if (!isYtd && rank < 2) {
+          hollowEntries.push(col);
+        } else {
+          tableColumns.push(col);
+        }
+      });
+
+    return { tableColumns, hollowEntries };
   }, [financialData]);
 
-  const fullYearColumns = useMemo(() => columns.filter(c => !c.isYtd), [columns]);
-  const ytdColumns = useMemo(() => columns.filter(c => c.isYtd), [columns]);
+  const fullYearColumns = useMemo(() => tableColumns.filter(c => !c.isYtd), [tableColumns]);
+  const ytdColumns = useMemo(() => tableColumns.filter(c => c.isYtd), [tableColumns]);
 
-  const hasValue = (field: string) => columns.some(c => c.bs?.[field] != null);
+  const hasValue = (field: string) => tableColumns.some(c => c.bs?.[field] != null);
 
   const netCurrentAssets = (col: BSColumn): number | null => {
     const ca = col.bs?.totalCurrentAssets;
@@ -144,7 +156,7 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
     if (ca == null && cl == null) return null;
     return toNum(ca) - toNum(cl);
   };
-  const showNetCurrent = columns.some(c => netCurrentAssets(c) != null);
+  const showNetCurrent = tableColumns.some(c => netCurrentAssets(c) != null);
 
   const cellClass = (col: BSColumn) => {
     const base = 'text-right tabular-nums px-3 py-2';
@@ -152,13 +164,28 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
     return base;
   };
 
-  const renderCell = (value: any, col?: BSColumn) => {
+  const renderCell = (value: any) => {
     if (value == null) return <span className="text-muted-foreground">—</span>;
     const raw = toNum(value);
     return formatCurrency(raw);
   };
 
-  if (columns.length === 0) {
+  const hollowPanels = hollowEntries.length > 0 ? (
+    <div className="mt-3 space-y-2">
+      {hollowEntries.map(col => (
+        <div key={col.periodId} className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
+          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            No balance sheet values extracted for FY {col.year}
+            {col.docName ? ` from ${col.docName}` : ''}. Upload statutory accounts or a balance
+            sheet for this year, or re-run analysis.
+          </span>
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  if (tableColumns.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -171,10 +198,13 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
           <p className="text-sm text-muted-foreground text-center py-8">
             No balance sheet data available. Upload accounts documents and run analysis to populate this section.
           </p>
+          {hollowPanels}
         </CardContent>
       </Card>
     );
   }
+
+  const colCount = tableColumns.length + 1;
 
   const bodyRows: JSX.Element[] = [];
   for (const group of GROUPS) {
@@ -184,7 +214,7 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
 
     bodyRows.push(
       <TableRow key={`hdr-${group.title}`} className="bg-muted/40">
-        <TableCell colSpan={columns.length + 1} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground py-1.5">
+        <TableCell colSpan={colCount} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground py-1.5">
           {group.title}
         </TableCell>
       </TableRow>
@@ -196,12 +226,12 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
           <TableCell className="text-sm">{label}</TableCell>
           {fullYearColumns.map(col => (
             <TableCell key={col.periodId} className={cellClass(col)}>
-              {renderCell(col.bs?.[field], col)}
+              {renderCell(col.bs?.[field])}
             </TableCell>
           ))}
           {ytdColumns.map(col => (
             <TableCell key={col.periodId} className={cellClass(col)}>
-              {renderCell(col.bs?.[field], col)}
+              {renderCell(col.bs?.[field])}
             </TableCell>
           ))}
         </TableRow>
@@ -219,7 +249,7 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
         );
         return toNum(sub) - disclosed;
       };
-      const showUndisclosed = columns.some(col => {
+      const showUndisclosed = tableColumns.some(col => {
         const r = undisclosedFor(col);
         return r != null && r > 0.5;
       });
@@ -252,12 +282,12 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
           <TableCell className="text-sm font-semibold">{sl}</TableCell>
           {fullYearColumns.map(col => (
             <TableCell key={col.periodId} className={cellClass(col)}>
-              {renderCell(col.bs?.[sf], col)}
+              {renderCell(col.bs?.[sf])}
             </TableCell>
           ))}
           {ytdColumns.map(col => (
             <TableCell key={col.periodId} className={cellClass(col)}>
-              {renderCell(col.bs?.[sf], col)}
+              {renderCell(col.bs?.[sf])}
             </TableCell>
           ))}
         </TableRow>
@@ -312,6 +342,8 @@ export default function BalanceSheetSection({ financialData }: BalanceSheetSecti
           </TableHeader>
           <TableBody>{bodyRows}</TableBody>
         </Table>
+
+        {hollowPanels}
 
         <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5 shrink-0" />
