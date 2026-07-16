@@ -332,7 +332,7 @@ export class FinancialDataService {
           amountsOwedByConnectedCompanies: this.parseDecimal(currentAssets.amounts_owed_by_connected_companies),
           directorsCurrentAccount: this.parseDecimal(currentAssets.directors_current_account),
           otherDebtors: this.parseDecimal(currentAssets.other_debtors),
-          cashAtBank: this.parseDecimal(currentAssets.cash_at_bank),
+          cashAtBank: this.parseDecimal(currentAssets.cash_at_bank || currentAssets.cash),
           totalCurrentAssets: this.parseDecimal(currentAssets.total),
           tradeCreditors: this.parseDecimal(currentLiabilities.trade_creditors),
           taxationSocialSecurity: this.parseDecimal(currentLiabilities.taxation_social_security),

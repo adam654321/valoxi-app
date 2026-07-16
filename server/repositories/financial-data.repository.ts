@@ -272,9 +272,12 @@ export class FinancialDataRepository {
       .limit(1);
 
     if (existing.length > 0) {
+      const updateData = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => v !== null && v !== undefined)
+      );
       const [updated] = await db
         .update(balanceSheets)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...updateData, updatedAt: new Date() })
         .where(eq(balanceSheets.id, existing[0].id))
         .returning();
       return updated;
