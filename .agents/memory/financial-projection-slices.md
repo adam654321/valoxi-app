@@ -3,7 +3,7 @@ name: Financial projection slices
 description: Architecture and completion status of the multi-slice financial projection system (contributions table, selector, reselect wiring).
 ---
 
-## Status: Slices 1–3 complete
+## Status: Slices 1–3, 10–11 complete
 
 ### Slice 1 — financialContributions table
 - Table: `financial_contributions` in `shared/schema/financials.ts`

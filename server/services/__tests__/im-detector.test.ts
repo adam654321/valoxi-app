@@ -1,5 +1,5 @@
 /**
- * Acceptance tests for Slice 6 — content-based IM detection.
+ * Acceptance tests for IM detection (Slice 6 + Slice 11).
  *
  * Structure:
  *   Part A — pure unit tests for detectInformationMemorandum (no DB needed)
@@ -49,7 +49,6 @@ describe('detectInformationMemorandum — pure logic', () => {
     });
 
     expect(result.isIM).toBe(true);
-    // Should have multiple strong reasons
     expect(result.reasons.some(r => r.includes('information memorandum'))).toBe(true);
     expect(result.reasons.some(r => r.includes('adjusted ebitda'))).toBe(true);
     expect(result.reasons.some(r => r.includes('marketing-narrative'))).toBe(true);
@@ -82,15 +81,16 @@ describe('detectInformationMemorandum — pure logic', () => {
     expect(result.isIM).toBe(false);
   });
 
-  it('Flyer/summary pack: multi-year (>=5) with a forecast year → isIM true', () => {
+  it('Multi-year span with mixed statutory+management data (>=4 years) → isIM true', () => {
     const result = detectInformationMemorandum({
-      rawText: 'Management accounts summary 2021–2025 including budget forecast',
-      extractedYears: [2021, 2022, 2023, 2024, 2025, 2027],
+      rawText: 'Management accounts summary 2021–2025',
+      extractedYears: [2021, 2022, 2023, 2024, 2025],
+      documentSource: 'statutory_and_management',
       currentFiscalYear: CURRENT_YEAR,
     });
 
     expect(result.isIM).toBe(true);
-    expect(result.reasons.some(r => r.includes('forecast year'))).toBe(true);
+    expect(result.reasons.some(r => r.includes('fiscal years with mixed statutory/management'))).toBe(true);
   });
 
   it('Normal standalone P&L (single year, no IM signals) → isIM false', () => {
@@ -109,22 +109,20 @@ describe('detectInformationMemorandum — pure logic', () => {
     expect(result.isIM).toBe(false);
   });
 
-  it('LLM advisory alone (single weak signal) is not enough → isIM false', () => {
+  it('LLM classifier STRONG signal alone => isIM true', () => {
     const result = detectInformationMemorandum({
       rawText: 'Revenue and profit figures for 2024',
       extractedYears: [2024],
       currentFiscalYear: CURRENT_YEAR,
       llmIsIM: true,
-      llmReason: 'summary only financials',
+      llmReason: 'classifier identified as Information Memorandum',
     });
 
-    // One weak (advisory) signal only → not IM
-    expect(result.isIM).toBe(false);
-    // But the advisory reason IS captured
-    expect(result.reasons.some(r => r.includes('ADVISORY'))).toBe(true);
+    expect(result.isIM).toBe(true);
+    expect(result.reasons.some(r => r.includes('STRONG: classifier identified'))).toBe(true);
   });
 
-  it('LLM advisory + mixed Stat/Mgt labels = 2 weak signals → isIM true', () => {
+  it('LLM classifier + mixed Stat/Mgt labels → isIM true (strong signal dominates)', () => {
     const result = detectInformationMemorandum({
       rawText: 'Stat 2023  Mgt 2023  Revenue  £1.2m  £1.1m',
       extractedYears: [2023],
@@ -134,8 +132,8 @@ describe('detectInformationMemorandum — pure logic', () => {
     });
 
     expect(result.isIM).toBe(true);
+    expect(result.reasons.some(r => r.includes('STRONG: classifier identified'))).toBe(true);
     expect(result.reasons.some(r => r.includes('MEDIUM'))).toBe(true);
-    expect(result.reasons.some(r => r.includes('ADVISORY'))).toBe(true);
   });
 
   it('reasons[] is always returned for auditability even when isIM is false', () => {
@@ -146,6 +144,66 @@ describe('detectInformationMemorandum — pure logic', () => {
     });
 
     expect(Array.isArray(result.reasons)).toBe(true);
+  });
+
+  // ── Slice 11 spec tests ────────────────────────────────────────────────────
+
+  it('Slice 11 — doc-485 shape: llmIsIM + 5 years + statutory_and_management → isIM true', () => {
+    const result = detectInformationMemorandum({
+      extractedYears: [2021, 2022, 2023, 2024, 2025],
+      documentSource: 'statutory_and_management',
+      currentFiscalYear: CURRENT_YEAR,
+      llmIsIM: true,
+    });
+
+    expect(result.isIM).toBe(true);
+    console.log('[IM-DETECTOR TEST] doc-485 shape reasons:', result.reasons);
+  });
+
+  it('Slice 11 — LLM signal ALONE (no rawText, no source) → isIM true (no single point of failure)', () => {
+    const result = detectInformationMemorandum({
+      extractedYears: [2021, 2022, 2023, 2024, 2025],
+      documentSource: undefined,
+      currentFiscalYear: CURRENT_YEAR,
+      llmIsIM: true,
+    });
+
+    expect(result.isIM).toBe(true);
+    expect(result.reasons.some(r => r.includes('STRONG: classifier identified'))).toBe(true);
+  });
+
+  it('Slice 11 — span+mixed signal ALONE (llmIsIM false, no rawText) → isIM true (no single point of failure)', () => {
+    const result = detectInformationMemorandum({
+      extractedYears: [2021, 2022, 2023, 2024, 2025],
+      documentSource: 'statutory_and_management',
+      currentFiscalYear: CURRENT_YEAR,
+      llmIsIM: false,
+    });
+
+    expect(result.isIM).toBe(true);
+    expect(result.reasons.some(r => r.includes('fiscal years with mixed statutory/management'))).toBe(true);
+  });
+
+  it('Slice 11 — 2-year statutory (llmIsIM false; 2 years; all statutory) → isIM false', () => {
+    const result = detectInformationMemorandum({
+      extractedYears: [2023, 2024],
+      documentSource: 'statutory',
+      currentFiscalYear: CURRENT_YEAR,
+      llmIsIM: false,
+    });
+
+    expect(result.isIM).toBe(false);
+  });
+
+  it('Slice 11 — 4-year all-statutory filing (llmIsIM false; 4 years; NOT mixed) → isIM false (no false positive)', () => {
+    const result = detectInformationMemorandum({
+      extractedYears: [2021, 2022, 2023, 2024],
+      documentSource: 'statutory',
+      currentFiscalYear: CURRENT_YEAR,
+      llmIsIM: false,
+    });
+
+    expect(result.isIM).toBe(false);
   });
 });
 
@@ -237,7 +295,6 @@ describe('IM wiring — contribution tier + reselect demotion', () => {
   it('reselect demotes IM under a statutory contribution for the same year', async () => {
     if (!targetCompanyId) return;
 
-    // Add a statutory contribution for the same year
     await db.insert(financialContributions).values({
       targetCompanyId,
       fiscalYear: IM_WIRING_YEAR,
@@ -251,10 +308,8 @@ describe('IM wiring — contribution tier + reselect demotion', () => {
       figures: { revenue: '5000000' } as any,
     });
 
-    // Run reselect — it should pick statutory over IM
     await reselect(targetCompanyId);
 
-    // The selector should pick statutory
     const allContribs = await db
       .select()
       .from(financialContributions)

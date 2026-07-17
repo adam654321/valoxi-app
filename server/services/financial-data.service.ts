@@ -61,6 +61,7 @@ export class FinancialDataService {
     const imResult = detectInformationMemorandum({
       rawText: imOptions?.rawText,
       extractedYears,
+      documentSource: analysisData?.source ?? null,
       currentFiscalYear,
       llmIsIM: imOptions?.llmIsIM,
       llmReason: imOptions?.llmReason,

@@ -1,20 +1,29 @@
 /**
  * Deterministic Information Memorandum (IM) detector.
  *
- * A document is an IM / marketing summary if it contains ANY single STRONG
- * signal, or 2+ weak (medium + advisory) signals combined.
+ * A document is an IM / marketing summary if it contains ANY ONE STRONG signal.
  *
  * Returns reasons[] for full auditability — log them alongside every decision.
  *
+ * Strong signals (any one is sufficient):
+ *   1. Raw text contains "information memorandum"
+ *   2. Raw text contains "adjusted ebitda"
+ *   3. Marketing-narrative headers present together (exec summary + growth/products)
+ *   4. Document spans >=4 distinct fiscal years AND mixes statutory + management data
+ *   5. LLM/classifier explicitly identified the document as an Information Memorandum
+ *
+ * Weak signals (kept for auditability but do not affect the decision):
+ *   - Mixed "Stat"/"Mgt" year labels in raw text (MEDIUM)
+ *
  * Rules:
- *   - Pure function: no I/O, no Date.now(). Pass currentFiscalYear in.
- *   - The LLM flag is additive / advisory. It can be the tipping weak signal
- *     but is never the sole decider.
+ *   - Pure function: no I/O, no Date.now().
+ *   - isIM = strongReasons.length > 0
  */
 
 export interface IMDetectorInput {
   rawText?: string | null;
   extractedYears?: number[];
+  documentSource?: string | null;
   currentFiscalYear: number;
   llmIsIM?: boolean;
   llmReason?: string;
@@ -31,7 +40,7 @@ export function detectInformationMemorandum(input: IMDetectorInput): IMDetectorR
 
   const text = (input.rawText ?? '').toLowerCase();
 
-  // ── STRONG signals ─────────────────────────────────────────────────────────
+  // ── STRONG: raw-text signals ────────────────────────────────────────────────
 
   if (text.includes('information memorandum')) {
     strongReasons.push('STRONG: text contains "information memorandum"');
@@ -51,18 +60,38 @@ export function detectInformationMemorandum(input: IMDetectorInput): IMDetectorR
     );
   }
 
+  // ── STRONG: multi-year span with mixed statutory + management data ──────────
+  //
+  // A genuine statutory filing covers at most 2 years (current + comparative).
+  // A document spanning >=4 fiscal years that also mixes statutory and management
+  // figures is structurally an IM / broker summary pack, not a statutory filing.
+
   const years = (input.extractedYears ?? []).map(Number).filter(y => !isNaN(y));
-  if (years.length >= 5) {
-    const maxYear = Math.max(...years);
-    if (maxYear > input.currentFiscalYear) {
-      strongReasons.push(
-        `STRONG: financial footprint spans ${years.length} fiscal years including a forecast year` +
-          ` (${maxYear} > current ${input.currentFiscalYear})`,
-      );
-    }
+  const hasMixedSource =
+    typeof input.documentSource === 'string' &&
+    input.documentSource.toLowerCase().includes('management');
+
+  if (years.length >= 4 && hasMixedSource) {
+    strongReasons.push(
+      `STRONG: document spans ${years.length} fiscal years with mixed statutory/management data` +
+        ` (source: "${input.documentSource}")`,
+    );
   }
 
-  // ── MEDIUM signal ──────────────────────────────────────────────────────────
+  // ── STRONG: LLM / classifier identification (promoted from advisory) ────────
+  //
+  // The classifier reads the full PDF including title, branding, and narrative
+  // headers that the deterministic signals cannot see without rawText.
+  // A confident "yes" from the LLM is treated as a strong signal on its own.
+
+  if (input.llmIsIM) {
+    strongReasons.push(
+      `STRONG: classifier identified an Information Memorandum` +
+        (input.llmReason ? ` — ${input.llmReason}` : ''),
+    );
+  }
+
+  // ── MEDIUM signal (auditability only — does not affect decision) ────────────
 
   const rawForLabels = input.rawText ?? '';
   const hasStat = /\bstat\b/i.test(rawForLabels);
@@ -71,21 +100,9 @@ export function detectInformationMemorandum(input: IMDetectorInput): IMDetectorR
     weakReasons.push('MEDIUM: mixed "Stat"/"Mgt" year labelling in a single summary table');
   }
 
-  // ── ADVISORY signal (LLM, additive only) ───────────────────────────────────
+  // ── Decision: any STRONG signal => IM ───────────────────────────────────────
 
-  if (input.llmIsIM) {
-    weakReasons.push(
-      `ADVISORY: LLM classified as information memorandum` +
-        (input.llmReason ? ` — ${input.llmReason}` : ''),
-    );
-  }
-
-  // ── Decision ────────────────────────────────────────────────────────────────
-  // Any STRONG signal => IM.
-  // 2+ weak signals combined => IM.
-
-  const isIM = strongReasons.length > 0 || weakReasons.length >= 2;
-
+  const isIM = strongReasons.length > 0;
   const reasons = [...strongReasons, ...weakReasons];
 
   return { isIM, reasons };
