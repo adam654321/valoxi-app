@@ -1,4 +1,4 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, ne, or, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import {
   targetCompanies,
@@ -52,6 +52,7 @@ export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promis
     .select({
       periodEnd: financialPeriods.periodEnd,
       fiscalYear: financialPeriods.fiscalYear,
+      sourceTier: financialPeriods.sourceTier,
       operatingProfit: incomeStatements.operatingProfit,
       depreciationAmortisation: incomeStatements.depreciationAmortisation,
     })
@@ -61,6 +62,10 @@ export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promis
       and(
         eq(incomeStatements.targetCompanyId, targetCompanyId),
         eq(financialPeriods.isFullYear, true),
+        or(
+          isNull(financialPeriods.sourceTier),
+          ne(financialPeriods.sourceTier, 'information_memorandum'),
+        ),
       ),
     )
     .orderBy(desc(financialPeriods.periodEnd));

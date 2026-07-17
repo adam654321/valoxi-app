@@ -21,6 +21,7 @@ async function findOrReusePeriod(
   fiscalYear: number,
   isFullYear: boolean,
   periodType: 'statutory' | 'management',
+  sourceTier: string,
   periodEnd: string,
   monthsCovered: number | null,
   sourceDocumentId: number | null,
@@ -45,6 +46,7 @@ async function findOrReusePeriod(
       .update(financialPeriods)
       .set({
         periodType,
+        sourceTier,
         periodEnd,
         isFullYear,
         monthsCovered: monthsCovered ?? preferred.monthsCovered,
@@ -61,6 +63,7 @@ async function findOrReusePeriod(
     .values({
       targetCompanyId,
       periodType,
+      sourceTier,
       periodEnd,
       fiscalYear,
       isFullYear,
@@ -229,6 +232,7 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       winner.fiscalYear,
       winner.isFullYear,
       periodType,
+      winner.sourceTier,
       periodEnd,
       winner.monthsCovered ?? null,
       winner.sourceDocumentId ?? null,

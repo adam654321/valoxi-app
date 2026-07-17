@@ -16,6 +16,7 @@ export const financialPeriods = pgTable("financial_periods", {
   periodLabel: varchar("period_label", { length: 100 }),
   monthsCovered: integer("months_covered"),
   isFullYear: boolean("is_full_year").notNull().default(true),
+  sourceTier: varchar("source_tier", { length: 30 }),
   sourceDocumentId: integer("source_document_id").references(() => documents.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

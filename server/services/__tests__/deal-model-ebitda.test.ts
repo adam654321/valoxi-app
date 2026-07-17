@@ -1,45 +1,40 @@
 /**
- * Acceptance tests for the unified fetchReportedEbitdaByYear helper (Slice 4).
+ * Acceptance tests for fetchReportedEbitdaByYear (Slice 4 + Slice 12).
  *
- * These are DB integration tests that gracefully skip when no target company
- * data exists (non-dev environments / CI). When run against the dev DB they
- * exercise:
- *   1. Duplicate periods for the same year → exactly one value returned.
- *   2. Part-year period excluded from the map.
- *   3. Management-tier company returns a non-empty map (no statutory-only filter).
- *   4. Offer path and screen path use the same function → identical result.
+ * Part A — pure logic tests (no DB needed).
+ *   applyEbitdaLoop mirrors the WHERE + loop inside fetchReportedEbitdaByYear
+ *   so we can unit-test filtering rules without a live connection.
  *
- * The pure de-duplication / part-year-exclusion logic is also tested in-process
- * (without DB) via the mock-rows helper at the bottom of this file.
+ * Part B — DB integration tests (graceful skip when no data).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../../db';
 import {
   financialPeriods,
-  incomeStatements,
-  type FinancialPeriod,
 } from '@shared/schema';
 import { fetchReportedEbitdaByYear } from '../deal-model.service';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper — invoke the same SQL logic against mock data (no DB required)
-// We re-implement the pure loop from fetchReportedEbitdaByYear so we can unit-
-// test the de-duplication and filtering rules without a live connection.
+// Helper — mirrors the WHERE + loop from fetchReportedEbitdaByYear
 // ─────────────────────────────────────────────────────────────────────────────
 function applyEbitdaLoop(
   rows: Array<{
     periodEnd: string | null;
     fiscalYear: number | null;
     isFullYear: boolean;
+    sourceTier?: string | null;
     operatingProfit: string | null;
     depreciationAmortisation: string | null;
   }>,
 ): Record<string, number> {
-  // Mirror the WHERE + ORDER from fetchReportedEbitdaByYear:
-  //   WHERE is_full_year = true ORDER BY period_end DESC
+  // Mirror the WHERE from fetchReportedEbitdaByYear:
+  //   is_full_year = true
+  //   AND (source_tier IS NULL OR source_tier <> 'information_memorandum')
+  // ORDER BY period_end DESC
   const filtered = rows
     .filter(r => r.isFullYear)
+    .filter(r => r.sourceTier == null || r.sourceTier !== 'information_memorandum')
     .sort((a, b) => (b.periodEnd ?? '').localeCompare(a.periodEnd ?? ''));
 
   const result: Record<string, number> = {};
@@ -57,41 +52,37 @@ function applyEbitdaLoop(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pure unit tests (no DB needed)
+// Part A — pure unit tests
 // ─────────────────────────────────────────────────────────────────────────────
 describe('fetchReportedEbitdaByYear — pure logic', () => {
   it('returns exactly one value per fiscal year even with duplicate rows', () => {
     const rows = [
-      // Two rows for FY2023 (statutory wins — it has a later periodEnd in desc order)
-      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true, operatingProfit: '200000', depreciationAmortisation: '10000' },
-      { fiscalYear: 2023, periodEnd: '2023-03-31', isFullYear: true, operatingProfit: '150000', depreciationAmortisation: '8000' },
-      { fiscalYear: 2022, periodEnd: '2022-12-31', isFullYear: true, operatingProfit: '180000', depreciationAmortisation: '9000' },
+      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true, sourceTier: 'statutory',   operatingProfit: '200000', depreciationAmortisation: '10000' },
+      { fiscalYear: 2023, periodEnd: '2023-03-31', isFullYear: true, sourceTier: 'statutory',   operatingProfit: '150000', depreciationAmortisation: '8000' },
+      { fiscalYear: 2022, periodEnd: '2022-12-31', isFullYear: true, sourceTier: 'statutory',   operatingProfit: '180000', depreciationAmortisation: '9000' },
     ];
     const result = applyEbitdaLoop(rows);
     expect(Object.keys(result)).toHaveLength(2);
-    expect(result['2023']).toBe(210000); // 200000 + 10000 (first row in desc order)
+    expect(result['2023']).toBe(210000);
     expect(result['2022']).toBe(189000);
   });
 
   it('excludes part-year periods (isFullYear = false)', () => {
     const rows = [
-      { fiscalYear: 2023, periodEnd: '2023-06-30', isFullYear: false, operatingProfit: '100000', depreciationAmortisation: '5000' },
-      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true,  operatingProfit: '200000', depreciationAmortisation: '10000' },
-      { fiscalYear: 2022, periodEnd: '2022-12-31', isFullYear: false, operatingProfit: '150000', depreciationAmortisation: '7000' },
+      { fiscalYear: 2023, periodEnd: '2023-06-30', isFullYear: false, sourceTier: 'management', operatingProfit: '100000', depreciationAmortisation: '5000' },
+      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true,  sourceTier: 'statutory',  operatingProfit: '200000', depreciationAmortisation: '10000' },
+      { fiscalYear: 2022, periodEnd: '2022-12-31', isFullYear: false, sourceTier: 'management', operatingProfit: '150000', depreciationAmortisation: '7000' },
     ];
     const result = applyEbitdaLoop(rows);
-    // Only the single full-year row for 2023 should appear
     expect(Object.keys(result)).toHaveLength(1);
     expect(result['2023']).toBe(210000);
     expect(result['2022']).toBeUndefined();
   });
 
-  it('returns a non-empty map for management-tier data (no statutory filter applied)', () => {
-    // Previously the offer used period_type IN ('statutory','historic'), which
-    // would have returned nothing here. The unified helper has no tier filter.
+  it('returns a non-empty map for management-tier data (no management filter applied)', () => {
     const rows = [
-      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true, operatingProfit: '300000', depreciationAmortisation: '20000' },
-      { fiscalYear: 2022, periodEnd: '2022-12-31', isFullYear: true, operatingProfit: '280000', depreciationAmortisation: '18000' },
+      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '300000', depreciationAmortisation: '20000' },
+      { fiscalYear: 2022, periodEnd: '2022-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '280000', depreciationAmortisation: '18000' },
     ];
     const result = applyEbitdaLoop(rows);
     expect(Object.keys(result).length).toBeGreaterThan(0);
@@ -100,17 +91,62 @@ describe('fetchReportedEbitdaByYear — pure logic', () => {
   });
 
   it('offer path and screen path use the same function (structural)', () => {
-    // Both paths call fetchReportedEbitdaByYear — by construction they produce
-    // identical input to calculateFullDealModel. This test verifies the import
-    // resolves to the same module export used by deal-model.service.
     expect(typeof fetchReportedEbitdaByYear).toBe('function');
-    // The function name confirms it's the same export (not a local copy)
     expect(fetchReportedEbitdaByYear.name).toBe('fetchReportedEbitdaByYear');
+  });
+
+  // ── Slice 12 spec tests ──────────────────────────────────────────────────
+
+  it('Slice 12 — statutory FY2022-2024 + IM FY2025 full-year → FY2025 excluded', () => {
+    const rows = [
+      { fiscalYear: 2022, periodEnd: '2022-03-31', isFullYear: true, sourceTier: 'statutory',              operatingProfit: '100000', depreciationAmortisation: '10000' },
+      { fiscalYear: 2023, periodEnd: '2023-03-31', isFullYear: true, sourceTier: 'statutory',              operatingProfit: '120000', depreciationAmortisation: '11000' },
+      { fiscalYear: 2024, periodEnd: '2024-03-31', isFullYear: true, sourceTier: 'statutory',              operatingProfit: '140000', depreciationAmortisation: '12000' },
+      { fiscalYear: 2025, periodEnd: '2025-03-31', isFullYear: true, sourceTier: 'information_memorandum', operatingProfit: '200000', depreciationAmortisation: '20000' },
+    ];
+    const result = applyEbitdaLoop(rows);
+
+    expect(Object.keys(result)).toHaveLength(3);
+    expect(result['2022']).toBe(110000);
+    expect(result['2023']).toBe(131000);
+    expect(result['2024']).toBe(152000);
+    expect(result['2025']).toBeUndefined();
+  });
+
+  it('Slice 12 — IM-only full years → empty map (provisional; offer cannot be built)', () => {
+    const rows = [
+      { fiscalYear: 2021, periodEnd: '2021-03-31', isFullYear: true, sourceTier: 'information_memorandum', operatingProfit: '80000',  depreciationAmortisation: '8000' },
+      { fiscalYear: 2022, periodEnd: '2022-03-31', isFullYear: true, sourceTier: 'information_memorandum', operatingProfit: '100000', depreciationAmortisation: '10000' },
+      { fiscalYear: 2023, periodEnd: '2023-03-31', isFullYear: true, sourceTier: 'information_memorandum', operatingProfit: '120000', depreciationAmortisation: '12000' },
+    ];
+    const result = applyEbitdaLoop(rows);
+
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  it('Slice 12 — part-year still excluded even when sourceTier is statutory', () => {
+    const rows = [
+      { fiscalYear: 2024, periodEnd: '2024-09-30', isFullYear: false, sourceTier: 'statutory',  operatingProfit: '50000', depreciationAmortisation: '5000' },
+      { fiscalYear: 2023, periodEnd: '2023-03-31', isFullYear: true,  sourceTier: 'statutory',  operatingProfit: '120000', depreciationAmortisation: '11000' },
+    ];
+    const result = applyEbitdaLoop(rows);
+
+    expect(result['2024']).toBeUndefined();
+    expect(result['2023']).toBe(131000);
+  });
+
+  it('Slice 12 — NULL sourceTier (legacy row) is included as non-IM', () => {
+    const rows = [
+      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true, sourceTier: null, operatingProfit: '200000', depreciationAmortisation: '15000' },
+    ];
+    const result = applyEbitdaLoop(rows);
+
+    expect(result['2023']).toBe(215000);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DB integration tests — skipped gracefully when no data is available
+// Part B — DB integration tests
 // ─────────────────────────────────────────────────────────────────────────────
 describe('fetchReportedEbitdaByYear — DB integration', () => {
   let targetCompanyId: number | null = null;
