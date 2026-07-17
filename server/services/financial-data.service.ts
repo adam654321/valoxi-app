@@ -5,6 +5,7 @@ import { financialContributions } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { reselect } from './projection-reselect.service';
 import { detectInformationMemorandum } from '../../shared/utils/im-detector';
+import { computeSpan } from '../../shared/utils/derive-span';
 
 type PeriodType = 'statutory' | 'management';
 
@@ -107,22 +108,34 @@ export class FinancialDataService {
     }
   }
 
-  private deriveSpan(data: any, yearKey: string, documentCategory?: string, docId?: number): { monthsCovered: number | null; isFullYear: boolean } {
-    const m = data.months_covered?.[yearKey];
-    const catLower = documentCategory?.toLowerCase() ?? '';
-    if (typeof m === 'number' && m > 0) {
-      if (catLower.includes('ytd') && m >= 11) {
-        console.warn(
-          `[FINANCIAL_DATA] span conflict: category '${documentCategory}' says part-year, extraction says ${Math.round(m)} months for FY ${yearKey} (doc ${docId ?? 'unknown'}) — trusting category, marking part-year`
-        );
-        return { monthsCovered: null, isFullYear: false };
-      }
-      return { monthsCovered: Math.round(m), isFullYear: m >= 11 };
+  private deriveSpan(
+    data: any,
+    yearKey: string,
+    documentCategory?: string,
+    docId?: number,
+    documentType?: string,
+  ): { monthsCovered: number | null; isFullYear: boolean } {
+    const periodEnd: string | null =
+      data.period_ends?.[yearKey] ?? data.period_end ?? null;
+    const reportDate: string | null = data.report_date ?? null;
+    const monthsCovered: number | null = data.months_covered?.[yearKey] ?? null;
+
+    const result = computeSpan({
+      monthsCovered,
+      periodEnd,
+      reportDate,
+      documentType,
+    });
+
+    if (result.isFullYear !== (monthsCovered == null || monthsCovered >= 11)) {
+      console.log(
+        `[FINANCIAL_DATA] deriveSpan: doc ${docId ?? 'unknown'} FY ${yearKey}` +
+          ` → isFullYear=${result.isFullYear}` +
+          ` (periodEnd=${periodEnd}, reportDate=${reportDate}, months=${monthsCovered}, type=${documentType ?? 'n/a'})`,
+      );
     }
-    if (catLower.includes('ytd')) {
-      return { monthsCovered: null, isFullYear: false };
-    }
-    return { monthsCovered: null, isFullYear: true };
+
+    return result;
   }
 
   private hasAnyValue(obj: Record<string, any>): boolean {
@@ -343,7 +356,7 @@ export class FinancialDataService {
         if (isNaN(fiscalYear)) continue;
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
-        const bsSpan = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId);
+        const bsSpan = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId, 'balance_sheet');
         
         const bs = (yearData as any).balance_sheet || yearData;
         const fixedAssets = bs.fixed_assets || {};
@@ -435,7 +448,7 @@ export class FinancialDataService {
         const fiscalYear = data.fiscal_year || new Date().getFullYear();
         const periodEnd = data.period_end || data.report_date || `${fiscalYear}-12-31`;
         
-        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId);
+        const bsFallbackSpan = this.deriveSpan(data, String(fiscalYear), documentCategory, sourceDocumentId, 'balance_sheet');
 
         const fixedAssets = bs.fixed_assets || {};
         const currentAssets = bs.current_assets || {};
