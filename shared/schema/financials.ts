@@ -222,6 +222,22 @@ export const valuations = pgTable("valuations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Financial contributions — append-only truth table for income + balance snapshots
+export const financialContributions = pgTable("financial_contributions", {
+  id: serial("id").primaryKey(),
+  targetCompanyId: integer("target_company_id").references(() => targetCompanies.id).notNull(),
+  fiscalYear: integer("fiscal_year"),
+  statementType: varchar("statement_type", { length: 10 }).notNull(), // 'income' | 'balance'
+  sourceDocumentId: integer("source_document_id").references(() => documents.id),
+  sourceTier: varchar("source_tier", { length: 30 }).notNull(), // 'user_override'|'statutory'|'management'|'information_memorandum'
+  isFullYear: boolean("is_full_year").notNull().default(true),
+  monthsCovered: integer("months_covered"),
+  periodEnd: date("period_end"),
+  asAtDate: date("as_at_date"),
+  figures: jsonb("figures").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertFinancialPeriodSchema = createInsertSchema(financialPeriods).omit({
   id: true,
@@ -304,3 +320,11 @@ export type InsertEbitdaAdjustment = z.infer<typeof insertEbitdaAdjustmentSchema
 
 export type Valuation = typeof valuations.$inferSelect;
 export type InsertValuation = z.infer<typeof insertValuationSchema>;
+
+export const insertFinancialContributionSchema = createInsertSchema(financialContributions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FinancialContribution = typeof financialContributions.$inferSelect;
+export type InsertFinancialContribution = z.infer<typeof insertFinancialContributionSchema>;
