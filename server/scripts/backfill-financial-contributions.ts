@@ -11,11 +11,16 @@ import { eq, sql } from 'drizzle-orm';
 /**
  * Resolves the source tier for a financial contribution.
  * Pure function — no DB calls.
+ *
+ * @param isIM - When true, forces 'information_memorandum' tier regardless of
+ *               category/period_type. Supports the content-based IM detector.
  */
 export function resolveSourceTier(
   periodType: string,
   documentCategory: string | null,
+  isIM: boolean = false,
 ): string {
+  if (isIM) return 'information_memorandum';
   if (documentCategory === 'Deal Documents') return 'information_memorandum';
   if (periodType === 'statutory') return 'statutory';
   return 'management';

@@ -86,7 +86,9 @@ IMPORTANT: Respond with a JSON object in the following format:
 {
   "document_types": ["type1", "type2", ...],
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Brief explanation of why this classification was made"
+  "reasoning": "Brief explanation of why this classification was made",
+  "is_information_memorandum": true | false,
+  "im_reason": "One-line reason if is_information_memorandum is true, otherwise null"
 }
 
 Where document_types is an array containing one or more of the following values:
@@ -101,5 +103,12 @@ Where document_types is an array containing one or more of the following values:
 For Company Accounts / statutory accounts files return ["company_accounts"] only — do not return profit_and_loss or balance_sheet for these files.
 For single-purpose standalone documents return only one type.
 
-If the document cannot be classified into any of the above categories, return ["none"].`;
+If the document cannot be classified into any of the above categories, return ["none"].
+
+For is_information_memorandum: set to true if any of the following apply:
+- The document has a title or header containing "Information Memorandum" or "IM"
+- The document contains broker branding, an executive summary, growth opportunities, or products & services narrative typical of a marketing pack
+- Financial figures are presented as a management summary only, without underlying statutory detail
+- The document includes forecast or projected years alongside historic financials
+Otherwise set to false and set im_reason to null.`;
 }

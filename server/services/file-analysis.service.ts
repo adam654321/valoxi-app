@@ -313,7 +313,11 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
                 result.analysisData,
                 event.targetCompanyId,
                 event.documentId,
-                document.documentCategory ?? undefined
+                document.documentCategory ?? undefined,
+                {
+                  llmIsIM: classificationResult.isInformationMemorandum ?? false,
+                  llmReason: classificationResult.imReason,
+                },
               );
               console.log(`[FILE_ANALYSIS] Financial data normalization for ${result.documentType}: ${normalizationResult.message}`);
               if (normalizationResult.errors && normalizationResult.errors.length > 0) {

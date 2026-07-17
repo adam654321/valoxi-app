@@ -4,13 +4,29 @@ import { db } from '../db';
 import { financialContributions } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { reselect } from './projection-reselect.service';
+import { detectInformationMemorandum } from '../../shared/utils/im-detector';
 
 type PeriodType = 'statutory' | 'management';
 
+export interface IMOptions {
+  rawText?: string;
+  llmIsIM?: boolean;
+  llmReason?: string;
+}
+
+/**
+ * Resolve the source tier for a financial contribution.
+ *
+ * @param isIM - When true, forces 'information_memorandum' tier regardless of
+ *               the category or period type. Set by the content-based IM
+ *               detector so that marketing packs never outrank real accounts.
+ */
 function contributionTier(
   periodType: string,
   documentCategory: string | null | undefined,
+  isIM: boolean = false,
 ): string {
+  if (isIM) return 'information_memorandum';
   if (documentCategory === 'Deal Documents') return 'information_memorandum';
   if (periodType === 'statutory') return 'statutory';
   return 'management';
@@ -29,19 +45,39 @@ export class FinancialDataService {
     analysisData: any,
     targetCompanyId: number,
     sourceDocumentId?: number,
-    documentCategory?: string
+    documentCategory?: string,
+    imOptions?: IMOptions,
   ): Promise<ProcessingResult> {
     console.log(`[FINANCIAL_DATA] Processing ${documentType} for company ${targetCompanyId}`);
-    
+
+    // Run IM detector before routing so the isIM flag flows to every insert path.
+    const extractedYears = Object.keys(analysisData?.years ?? {})
+      .map(Number)
+      .filter(y => !isNaN(y));
+    const currentFiscalYear = new Date().getFullYear();
+    const imResult = detectInformationMemorandum({
+      rawText: imOptions?.rawText,
+      extractedYears,
+      currentFiscalYear,
+      llmIsIM: imOptions?.llmIsIM,
+      llmReason: imOptions?.llmReason,
+    });
+    const isIM = imResult.isIM;
+    if (isIM) {
+      console.log(
+        `[FINANCIAL_DATA] IM detected for doc ${sourceDocumentId ?? 'unknown'} — reasons: ${imResult.reasons.join(' | ')}`,
+      );
+    }
+
     try {
       switch (documentType) {
         case 'profit_and_loss':
         case 'profit_loss':
         case 'p_and_l':
-          return await this.processProfitAndLoss(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
+          return await this.processProfitAndLoss(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM);
         
         case 'balance_sheet':
-          return await this.processBalanceSheet(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
+          return await this.processBalanceSheet(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM);
         
         case 'staff_matrix':
           return await this.processStaffMatrix(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
@@ -55,7 +91,7 @@ export class FinancialDataService {
           return await this.processAssetRegister(analysisData, targetCompanyId, sourceDocumentId);
         
         case 'company_accounts':
-          return await this.processCompanyAccounts(analysisData, targetCompanyId, sourceDocumentId, documentCategory);
+          return await this.processCompanyAccounts(analysisData, targetCompanyId, sourceDocumentId, documentCategory, isIM);
         
         default:
           console.log(`[FINANCIAL_DATA] Unknown document type: ${documentType}, skipping normalization`);
@@ -98,7 +134,8 @@ export class FinancialDataService {
     data: any,
     targetCompanyId: number,
     sourceDocumentId?: number,
-    documentCategory?: string
+    documentCategory?: string,
+    isIM: boolean = false,
   ): Promise<ProcessingResult> {
     const errors: string[] = [];
     let recordsCreated = 0;
@@ -184,7 +221,7 @@ export class FinancialDataService {
           fiscalYear,
           statementType: 'income',
           sourceDocumentId: sourceDocumentId ?? null,
-          sourceTier: contributionTier(periodType, documentCategory),
+          sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: span.isFullYear,
           monthsCovered: span.monthsCovered ?? null,
           periodEnd,
@@ -247,7 +284,7 @@ export class FinancialDataService {
           fiscalYear,
           statementType: 'income',
           sourceDocumentId: sourceDocumentId ?? null,
-          sourceTier: contributionTier(periodType, documentCategory),
+          sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: fallbackSpan.isFullYear,
           monthsCovered: fallbackSpan.monthsCovered ?? null,
           periodEnd,
@@ -281,7 +318,8 @@ export class FinancialDataService {
     data: any,
     targetCompanyId: number,
     sourceDocumentId?: number,
-    documentCategory?: string
+    documentCategory?: string,
+    isIM: boolean = false,
   ): Promise<ProcessingResult> {
     const errors: string[] = [];
     let recordsCreated = 0;
@@ -376,7 +414,7 @@ export class FinancialDataService {
           fiscalYear,
           statementType: 'balance',
           sourceDocumentId: sourceDocumentId ?? null,
-          sourceTier: contributionTier(periodType, documentCategory),
+          sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: bsSpan.isFullYear,
           monthsCovered: bsSpan.monthsCovered ?? null,
           periodEnd,
@@ -464,7 +502,7 @@ export class FinancialDataService {
           fiscalYear,
           statementType: 'balance',
           sourceDocumentId: sourceDocumentId ?? null,
-          sourceTier: contributionTier(periodType, documentCategory),
+          sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: bsFallbackSpan.isFullYear,
           monthsCovered: bsFallbackSpan.monthsCovered ?? null,
           periodEnd,
@@ -640,7 +678,8 @@ export class FinancialDataService {
     data: any,
     targetCompanyId: number,
     sourceDocumentId?: number,
-    documentCategory?: string
+    documentCategory?: string,
+    isIM: boolean = false,
   ): Promise<ProcessingResult> {
     const results: ProcessingResult[] = [];
 
@@ -649,7 +688,8 @@ export class FinancialDataService {
         { ...data, source: 'statutory' },
         targetCompanyId,
         sourceDocumentId,
-        documentCategory
+        documentCategory,
+        isIM,
       );
       results.push(plResult);
     }
@@ -659,7 +699,8 @@ export class FinancialDataService {
         { ...data, source: 'statutory' },
         targetCompanyId,
         sourceDocumentId,
-        documentCategory
+        documentCategory,
+        isIM,
       );
       results.push(bsResult);
     }

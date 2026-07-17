@@ -62,6 +62,8 @@ export interface DocumentClassificationResult {
   documentTypes: string[];
   confidence?: "high" | "medium" | "low";
   reasoning?: string;
+  isInformationMemorandum?: boolean;
+  imReason?: string;
   error?: string;
   processingTime?: number;
   usageMetadata?: {
@@ -140,7 +142,14 @@ export async function classifyDocumentWithGemini(
 
     // Gemini occasionally wraps the response in an array — unwrap if needed
     const rawParsed = response.json;
-    const parsedResponse = (Array.isArray(rawParsed) ? rawParsed[0] : rawParsed) as { document_types?: string[]; documentTypes?: string[]; confidence?: string; reasoning?: string };
+    const parsedResponse = (Array.isArray(rawParsed) ? rawParsed[0] : rawParsed) as {
+      document_types?: string[];
+      documentTypes?: string[];
+      confidence?: string;
+      reasoning?: string;
+      is_information_memorandum?: boolean;
+      im_reason?: string;
+    };
 
     // Accept both snake_case (document_types) and camelCase (documentTypes)
     const docTypes = parsedResponse?.document_types ?? parsedResponse?.documentTypes;
@@ -155,9 +164,13 @@ export async function classifyDocumentWithGemini(
       totalTokenCount: response.usage.totalTokens,
     } : undefined;
 
+    const isInformationMemorandum = parsedResponse.is_information_memorandum === true;
+    const imReason = parsedResponse.im_reason ?? undefined;
+
     console.log(`[GEMINI_CLASSIFICATION] Classification completed in ${processingTime}ms`);
     console.log(`[GEMINI_CLASSIFICATION] Document types: ${docTypes.join(", ")}`);
     console.log(`[GEMINI_CLASSIFICATION] Confidence: ${parsedResponse.confidence || "unknown"}`);
+    console.log(`[GEMINI_CLASSIFICATION] Is IM: ${isInformationMemorandum}${imReason ? ` — ${imReason}` : ''}`);
     if (usageMetadata) {
       console.log(`[GEMINI_CLASSIFICATION] Token usage: prompt=${usageMetadata.promptTokenCount}, candidates=${usageMetadata.candidatesTokenCount}, total=${usageMetadata.totalTokenCount}`);
     }
@@ -167,6 +180,8 @@ export async function classifyDocumentWithGemini(
       documentTypes: docTypes,
       confidence: parsedResponse.confidence as "high" | "medium" | "low" | undefined,
       reasoning: parsedResponse.reasoning,
+      isInformationMemorandum,
+      imReason,
       processingTime,
       usageMetadata,
     };
