@@ -601,6 +601,11 @@ export class FinancialDataRepository {
     return parseFloat(result[0]?.total || '0');
   }
 
+  /**
+   * @deprecated No active callers remain — EBITDA calculation is now handled by
+   * `fetchReportedEbitdaByYear` (deal-model.service.ts) + the pure
+   * `calculateFullDealModel` calculator. Retained for reference only.
+   */
   async calculateAdjustedEbitda(targetCompanyId: number, calculationMethod: string = 'average_3yr'): Promise<{
     baseEbitda: number;
     totalAdjustments: number;

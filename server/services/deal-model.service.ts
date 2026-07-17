@@ -38,7 +38,16 @@ async function verifyOwnership(targetCompanyId: number, userCompanyId: number): 
   }
 }
 
-async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Record<string, number>> {
+/**
+ * Single source of truth for "reported EBITDA by fiscal year".
+ * Only full-year periods contribute (is_full_year = true).
+ * Part-year periods are excluded from the average.
+ * If multiple income rows somehow share a fiscal year, the first (most-recent
+ * periodEnd) row wins — matching the reselect precedence.
+ *
+ * Exported so the offer/HoT builder can call the same function as the screen.
+ */
+export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Record<string, number>> {
   const rows = await db
     .select({
       periodEnd: financialPeriods.periodEnd,
@@ -48,13 +57,19 @@ async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Recor
     })
     .from(incomeStatements)
     .innerJoin(financialPeriods, eq(incomeStatements.financialPeriodId, financialPeriods.id))
-    .where(eq(incomeStatements.targetCompanyId, targetCompanyId))
+    .where(
+      and(
+        eq(incomeStatements.targetCompanyId, targetCompanyId),
+        eq(financialPeriods.isFullYear, true),
+      ),
+    )
     .orderBy(desc(financialPeriods.periodEnd));
 
   const result: Record<string, number> = {};
   for (const row of rows) {
     const year = row.fiscalYear?.toString() || (row.periodEnd ? new Date(row.periodEnd).getFullYear().toString() : null);
     if (!year) continue;
+    if (year in result) continue; // first (most-recent) row wins per year
     const op = toNum(row.operatingProfit);
     const da = toNum(row.depreciationAmortisation);
     result[year] = op + da;

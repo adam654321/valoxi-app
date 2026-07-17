@@ -5,6 +5,7 @@ import { documents } from '@shared/schema/documents';
 import { dealModels, dealModelAdjustments, dealModelFundingLines, dealModelSellerPayments, dealModelContingentConsideration } from '@shared/schema/deal-models';
 import { financialPeriods, incomeStatements } from '@shared/schema/financials';
 import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
+import { fetchReportedEbitdaByYear } from './deal-model.service';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
 import { extendPortalTokenForCompany } from './portal-token.service';
 import { buildNdaHtml } from '../utils/document-html-builders';
@@ -790,23 +791,8 @@ export class DealDocumentService {
     const adjustments = await db.select().from(dealModelAdjustments)
       .where(eq(dealModelAdjustments.dealModelId, dealModelId));
 
-    const periods = await db.select().from(financialPeriods)
-      .where(and(
-        eq(financialPeriods.targetCompanyId, targetCompanyId),
-        inArray(financialPeriods.periodType, ['statutory', 'historic'])
-      ));
-
-    const reportedEbitdaByYear: Record<string, number> = {};
-    for (const period of periods) {
-      if (!period.fiscalYear) continue;
-      const [income] = await db.select().from(incomeStatements)
-        .where(eq(incomeStatements.financialPeriodId, period.id));
-      if (income) {
-        const opProfit = Number(income.operatingProfit) || 0;
-        const depAmort = Number(income.depreciationAmortisation) || 0;
-        reportedEbitdaByYear[String(period.fiscalYear)] = opProfit + depAmort;
-      }
-    }
+    // Use the same full-year-only helper the screen uses — no more dual implementations.
+    const reportedEbitdaByYear = await fetchReportedEbitdaByYear(targetCompanyId);
 
     const { calculateFullDealModel } = await import('@shared/calculators/deal-model.calc');
 
