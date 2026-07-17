@@ -301,7 +301,12 @@ export async function analyzeUploadedFileWithGemini(eventId: number) {
               documentId: event.documentId,
               fileUploadEventId: eventId,
               documentType: result.documentType,
-              analysisData: result.analysisData,
+              analysisData: {
+                ...(typeof result.analysisData === 'object' && result.analysisData !== null
+                  ? (result.analysisData as Record<string, unknown>)
+                  : {}),
+                _isIM: classificationResult.isInformationMemorandum === true,
+              },
               processingTime: result.processingTime || 0,
               usageMetadata: result.usageMetadata || null,
             });

@@ -61,14 +61,44 @@ export class DocumentAnalysisRepository {
       .orderBy(desc(documentAnalysisResults.createdAt));
   }
 
-  async getDistinctAnalysisTypesForCompany(targetCompanyId: number): Promise<{ documentType: string; documentCategory: string | null; documentId: number | null }[]> {
-    return await db.selectDistinct({
+  async getDistinctAnalysisTypesForCompany(targetCompanyId: number): Promise<{
+    documentType: string;
+    documentCategory: string | null;
+    documentId: number | null;
+    isIM: boolean;
+  }[]> {
+    const rows = await db.select({
       documentType: documentAnalysisResults.documentType,
       documentCategory: documents.documentCategory,
       documentId: documentAnalysisResults.documentId,
+      analysisData: documentAnalysisResults.analysisData,
     }).from(documentAnalysisResults)
       .leftJoin(documents, eq(documentAnalysisResults.documentId, documents.id))
       .where(eq(documents.targetCompanyId, targetCompanyId));
+
+    // Deduplicate by (documentId, documentType) and extract _isIM flag
+    // that was injected into analysisData during file-analysis processing.
+    const seen = new Map<string, {
+      documentType: string;
+      documentCategory: string | null;
+      documentId: number | null;
+      isIM: boolean;
+    }>();
+
+    for (const row of rows) {
+      const key = `${row.documentId}-${row.documentType}`;
+      if (!seen.has(key)) {
+        const isIM = (row.analysisData as any)?._isIM === true;
+        seen.set(key, {
+          documentType: row.documentType,
+          documentCategory: row.documentCategory,
+          documentId: row.documentId,
+          isIM,
+        });
+      }
+    }
+
+    return Array.from(seen.values());
   }
 
   async getAllDocumentsForCompany(targetCompanyId: number): Promise<{ id: number; documentCategory: string | null }[]> {
