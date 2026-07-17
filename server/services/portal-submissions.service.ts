@@ -161,11 +161,19 @@ export class PortalSubmissionsService {
     const token = await this.validateToken(accessToken);
     const document = await portalSubmissionsRepository.getDocument(documentId);
     if (!document || document.targetCompanyId !== token.targetCompanyId) throw new NotFoundError('Document not found');
-    const { financialDataRepository } = await import('../repositories/financial-data.repository');
     try {
-      await financialDataRepository.deleteByDocumentId(documentId);
+      const { financialDataRepository } = await import('../repositories/financial-data.repository');
+      const { db } = await import('../db');
+      const { financialContributions } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const { reselect } = await import('./projection-reselect.service');
+      // Non-projection financial data (staff, debtors, assets, loans) — delete directly
+      await financialDataRepository.deleteNonProjectionByDocumentId(documentId);
+      // Drop contributions then rebuild the projection via reselect
+      await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
+      await reselect(document.targetCompanyId);
     } catch (error) {
-      console.error(`[PORTAL_DELETE] Error deleting financial data for document ${documentId}:`, error);
+      console.error(`[PORTAL_DELETE] Error cleaning financial data for document ${documentId}:`, error);
     }
     const success = await portalSubmissionsRepository.deleteDocument(documentId);
     if (!success) throw new Error('Failed to delete document');

@@ -563,6 +563,20 @@ export class FinancialDataRepository {
     console.log(`[FINANCIAL_DATA] Deleted all financial data for document ${documentId}`);
   }
 
+  /**
+   * Delete only non-projection financial data for a document (staff, debtors,
+   * assets, loans). Does NOT touch income_statements, balance_sheets, or
+   * financial_periods — those are managed by reselect() after contributions
+   * are dropped.
+   */
+  async deleteNonProjectionByDocumentId(documentId: number): Promise<void> {
+    await db.delete(staffData).where(eq(staffData.sourceDocumentId, documentId));
+    await db.delete(agedDebtors).where(eq(agedDebtors.sourceDocumentId, documentId));
+    await db.delete(fixedAssetsRegister).where(eq(fixedAssetsRegister.sourceDocumentId, documentId));
+    await db.delete(loanFacilities).where(eq(loanFacilities.sourceDocumentId, documentId));
+    console.log(`[FINANCIAL_DATA] Deleted non-projection financial data for document ${documentId}`);
+  }
+
   async getAdjustmentsByCompany(targetCompanyId: number): Promise<(EbitdaAdjustment & { period: FinancialPeriod })[]> {
     const results = await db
       .select({

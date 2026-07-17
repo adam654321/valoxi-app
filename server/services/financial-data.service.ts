@@ -1,7 +1,20 @@
 import { financialDataRepository } from '../repositories/financial-data.repository';
 import { eventBus, type FinancialDataUpdateEvent } from './event-bus.service';
+import { db } from '../db';
+import { financialContributions } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
+import { reselect } from './projection-reselect.service';
 
 type PeriodType = 'statutory' | 'management';
+
+function contributionTier(
+  periodType: string,
+  documentCategory: string | null | undefined,
+): string {
+  if (documentCategory === 'Deal Documents') return 'information_memorandum';
+  if (periodType === 'statutory') return 'statutory';
+  return 'management';
+}
 
 interface ProcessingResult {
   success: boolean;
@@ -100,6 +113,16 @@ export class FinancialDataService {
       ? Math.max(...(data.years_covered as number[]))
       : yearKeys.length > 0 ? Math.max(...yearKeys) : null;
 
+    // Idempotent: drop existing income contributions for this document before re-writing
+    if (sourceDocumentId) {
+      await db.delete(financialContributions).where(
+        and(
+          eq(financialContributions.sourceDocumentId, sourceDocumentId),
+          eq(financialContributions.statementType, 'income'),
+        ),
+      );
+    }
+
     for (const [yearKey, yearData] of Object.entries(years)) {
       try {
         const fiscalYear = parseInt(yearKey);
@@ -155,6 +178,20 @@ export class FinancialDataService {
 
         await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, plFields, isPrimary);
 
+        // Append contribution to the append-only truth table
+        await db.insert(financialContributions).values({
+          targetCompanyId,
+          fiscalYear,
+          statementType: 'income',
+          sourceDocumentId: sourceDocumentId ?? null,
+          sourceTier: contributionTier(periodType, documentCategory),
+          isFullYear: span.isFullYear,
+          monthsCovered: span.monthsCovered ?? null,
+          periodEnd,
+          asAtDate: null,
+          figures: plFields as any,
+        });
+
         recordsCreated++;
         console.log(`[FINANCIAL_DATA] Created income statement for ${fiscalYear}`);
       } catch (yearError) {
@@ -203,6 +240,21 @@ export class FinancialDataService {
         );
 
         await financialDataRepository.upsertIncomeStatement(period.id, targetCompanyId, plFields);
+
+        // Append contribution for fallback single-year path
+        await db.insert(financialContributions).values({
+          targetCompanyId,
+          fiscalYear,
+          statementType: 'income',
+          sourceDocumentId: sourceDocumentId ?? null,
+          sourceTier: contributionTier(periodType, documentCategory),
+          isFullYear: fallbackSpan.isFullYear,
+          monthsCovered: fallbackSpan.monthsCovered ?? null,
+          periodEnd,
+          asAtDate: null,
+          figures: plFields as any,
+        });
+
         recordsCreated++;
       } catch (error) {
         errors.push(`Failed to process single P&L: ${error instanceof Error ? error.message : 'Unknown'}`);
@@ -210,6 +262,12 @@ export class FinancialDataService {
     }
 
     this.emitFinancialDataUpdate(targetCompanyId, 'income_statement', recordsCreated);
+
+    try {
+      await reselect(targetCompanyId);
+    } catch (reselectErr) {
+      console.error('[FINANCIAL_DATA] reselect (income) failed (non-fatal):', reselectErr);
+    }
 
     return {
       success: errors.length === 0,
@@ -230,6 +288,16 @@ export class FinancialDataService {
 
     const years = data.years || {};
     const periodType: PeriodType = data.source === 'statutory' ? 'statutory' : 'management';
+
+    // Idempotent: drop existing balance contributions for this document before re-writing
+    if (sourceDocumentId) {
+      await db.delete(financialContributions).where(
+        and(
+          eq(financialContributions.sourceDocumentId, sourceDocumentId),
+          eq(financialContributions.statementType, 'balance'),
+        ),
+      );
+    }
 
     for (const [yearKey, yearData] of Object.entries(years)) {
       try {
@@ -301,6 +369,20 @@ export class FinancialDataService {
         );
 
         await financialDataRepository.upsertBalanceSheet(period.id, targetCompanyId, bsFields);
+
+        // Append contribution to the append-only truth table
+        await db.insert(financialContributions).values({
+          targetCompanyId,
+          fiscalYear,
+          statementType: 'balance',
+          sourceDocumentId: sourceDocumentId ?? null,
+          sourceTier: contributionTier(periodType, documentCategory),
+          isFullYear: bsSpan.isFullYear,
+          monthsCovered: bsSpan.monthsCovered ?? null,
+          periodEnd,
+          asAtDate: null,
+          figures: bsFields as any,
+        });
 
         recordsCreated++;
         console.log(`[FINANCIAL_DATA] Created balance sheet for ${fiscalYear}`);
@@ -375,6 +457,21 @@ export class FinancialDataService {
         );
 
         await financialDataRepository.upsertBalanceSheet(period.id, targetCompanyId, bsFields);
+
+        // Append contribution for fallback single-year path
+        await db.insert(financialContributions).values({
+          targetCompanyId,
+          fiscalYear,
+          statementType: 'balance',
+          sourceDocumentId: sourceDocumentId ?? null,
+          sourceTier: contributionTier(periodType, documentCategory),
+          isFullYear: bsFallbackSpan.isFullYear,
+          monthsCovered: bsFallbackSpan.monthsCovered ?? null,
+          periodEnd,
+          asAtDate: null,
+          figures: bsFields as any,
+        });
+
         recordsCreated++;
       } catch (error) {
         errors.push(`Failed to process single balance sheet: ${error instanceof Error ? error.message : 'Unknown'}`);
@@ -382,6 +479,12 @@ export class FinancialDataService {
     }
 
     this.emitFinancialDataUpdate(targetCompanyId, 'balance_sheet', recordsCreated);
+
+    try {
+      await reselect(targetCompanyId);
+    } catch (reselectErr) {
+      console.error('[FINANCIAL_DATA] reselect (balance) failed (non-fatal):', reselectErr);
+    }
 
     return {
       success: errors.length === 0,

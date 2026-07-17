@@ -4,6 +4,10 @@ import { documentAnalysisRepository } from '../repositories/document-analysis.re
 import { fileStorageService } from './file-storage.service';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
 import type { Document, InsertDocument } from '@shared/schema';
+import { db } from '../db';
+import { financialContributions } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import { reselect } from './projection-reselect.service';
 
 export class DocumentsFilesService {
   async verifyCompanyAccess(targetCompanyId: number, userCompanyId: number): Promise<void> {
@@ -109,9 +113,13 @@ export class DocumentsFilesService {
     const document = await documentsRepository.getDocument(documentId, userCompanyId);
     if (document) {
       try {
-        await financialDataRepository.deleteByDocumentId(documentId);
+        // Non-projection financial data (staff, debtors, assets, loans) — delete directly
+        await financialDataRepository.deleteNonProjectionByDocumentId(documentId);
+        // Drop contributions then rebuild the projection via reselect
+        await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
+        await reselect(document.targetCompanyId);
       } catch (error) {
-        console.error(`[DELETE_DOCUMENT] Error deleting financial data for document ${documentId}:`, error);
+        console.error(`[DELETE_DOCUMENT] Error cleaning financial data for document ${documentId}:`, error);
       }
       
       try {
