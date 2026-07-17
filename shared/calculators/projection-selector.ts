@@ -18,6 +18,7 @@ export interface Contribution {
   statementType: string;
   sourceTier: string;
   isFullYear: boolean;
+  isPrimaryYear?: boolean | null;
   monthsCovered?: number | null;
   periodEnd?: string | null;
   asAtDate?: string | null;
@@ -50,9 +51,10 @@ function createdAtMs(c: Contribution): number {
  * slot.
  *
  * Precedence (lower rank wins):
- *   user_override=0, statutory=1, management=2, information_memorandum=3
- *
- * Tie-break: most recent createdAt → highest sourceDocumentId.
+ *   1. Tier rank: user_override=0, statutory=1, management=2, information_memorandum=3
+ *   2. is_primary_year: true beats false (primary filing beats a comparative year from another doc)
+ *   3. Most recent createdAt
+ *   4. Highest sourceDocumentId
  *
  * Part-year (isFullYear=false) and full-year (isFullYear=true) are independent
  * groups and both survive.
@@ -77,6 +79,12 @@ export function selectProjectionWinners(contribs: Contribution[]): Winner[] {
       const rankDiff = tierRank(candidate.sourceTier) - tierRank(best.sourceTier);
       if (rankDiff < 0) return candidate;
       if (rankDiff > 0) return best;
+
+      // Primary year beats comparative: null/undefined treated as true (legacy rows)
+      const candidatePrimary = candidate.isPrimaryYear !== false;
+      const bestPrimary = best.isPrimaryYear !== false;
+      if (candidatePrimary && !bestPrimary) return candidate;
+      if (!candidatePrimary && bestPrimary) return best;
 
       const tsDiff = createdAtMs(candidate) - createdAtMs(best);
       if (tsDiff > 0) return candidate;

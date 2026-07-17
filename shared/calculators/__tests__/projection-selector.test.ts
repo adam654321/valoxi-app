@@ -121,3 +121,54 @@ describe('selectProjectionWinners', () => {
     expect(selectProjectionWinners([])).toHaveLength(0);
   });
 });
+
+describe('selectProjectionWinners — is_primary_year precedence (Slice 10)', () => {
+  it('primary (doc B) beats comparative (doc A) within the same tier, regardless of createdAt/id order', () => {
+    // doc A: comparative (FY2023 appeared as prior-year in FY2024 accounts), uploaded first
+    // doc B: primary FY2023 filing, uploaded earlier but is the authoritative source
+    const docA = contrib({ id: 1, sourceTier: 'statutory', sourceDocumentId: 481, isPrimaryYear: false, createdAt: new Date('2024-01-01') });
+    const docB = contrib({ id: 2, sourceTier: 'statutory', sourceDocumentId: 482, isPrimaryYear: true,  createdAt: new Date('2023-06-01') });
+
+    const winners1 = selectProjectionWinners([docA, docB]);
+    expect(winners1).toHaveLength(1);
+    expect(winners1[0].sourceDocumentId).toBe(482);
+
+    // Order in input must not affect the result
+    const winners2 = selectProjectionWinners([docB, docA]);
+    expect(winners2).toHaveLength(1);
+    expect(winners2[0].sourceDocumentId).toBe(482);
+  });
+
+  it('comparative wins as fallback when the primary contribution is removed', () => {
+    const docA = contrib({ id: 1, sourceTier: 'statutory', sourceDocumentId: 481, isPrimaryYear: false, createdAt: new Date('2024-01-01') });
+
+    const winners = selectProjectionWinners([docA]);
+    expect(winners).toHaveLength(1);
+    expect(winners[0].sourceDocumentId).toBe(481);
+  });
+
+  it('FY2022 present only as a comparative still produces a projection (only source)', () => {
+    const comparative = contrib({
+      id: 3,
+      sourceTier: 'statutory',
+      fiscalYear: 2022,
+      sourceDocumentId: 482,
+      isPrimaryYear: false,
+      createdAt: new Date('2023-06-01'),
+    });
+
+    const winners = selectProjectionWinners([comparative]);
+    expect(winners).toHaveLength(1);
+    expect(winners[0].fiscalYear).toBe(2022);
+    expect(winners[0].sourceDocumentId).toBe(482);
+  });
+
+  it('null/undefined isPrimaryYear treated as true — legacy rows are not demoted', () => {
+    const legacy   = contrib({ id: 1, sourceTier: 'statutory', sourceDocumentId: 100, isPrimaryYear: undefined, createdAt: new Date('2023-01-01') });
+    const explicit = contrib({ id: 2, sourceTier: 'statutory', sourceDocumentId: 200, isPrimaryYear: false,     createdAt: new Date('2024-01-01') });
+
+    const winners = selectProjectionWinners([legacy, explicit]);
+    expect(winners).toHaveLength(1);
+    expect(winners[0].sourceDocumentId).toBe(100);
+  });
+});

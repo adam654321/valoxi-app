@@ -231,6 +231,7 @@ export const financialContributions = pgTable("financial_contributions", {
   sourceDocumentId: integer("source_document_id").references(() => documents.id),
   sourceTier: varchar("source_tier", { length: 30 }).notNull(), // 'user_override'|'statutory'|'management'|'information_memorandum'
   isFullYear: boolean("is_full_year").notNull().default(true),
+  isPrimaryYear: boolean("is_primary_year").notNull().default(true),
   monthsCovered: integer("months_covered"),
   periodEnd: date("period_end"),
   asAtDate: date("as_at_date"),

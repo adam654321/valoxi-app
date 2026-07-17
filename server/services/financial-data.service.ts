@@ -237,6 +237,7 @@ export class FinancialDataService {
           sourceDocumentId: sourceDocumentId ?? null,
           sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: span.isFullYear,
+          isPrimaryYear: isPrimary,
           monthsCovered: span.monthsCovered ?? null,
           periodEnd,
           asAtDate: null,
@@ -300,6 +301,7 @@ export class FinancialDataService {
           sourceDocumentId: sourceDocumentId ?? null,
           sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: fallbackSpan.isFullYear,
+          isPrimaryYear: true,
           monthsCovered: fallbackSpan.monthsCovered ?? null,
           periodEnd,
           asAtDate: null,
@@ -341,6 +343,12 @@ export class FinancialDataService {
     const years = data.years || {};
     const periodType: PeriodType = data.source === 'statutory' ? 'statutory' : 'management';
 
+    // Identify the primary year (highest fiscal year in this document); all others are comparatives
+    const bsYearKeys = Object.keys(years).map(Number).filter(n => !isNaN(n));
+    const bsPrimaryYear = data.years_covered
+      ? Math.max(...(data.years_covered as number[]))
+      : bsYearKeys.length > 0 ? Math.max(...bsYearKeys) : null;
+
     // Idempotent: drop existing balance contributions for this document before re-writing
     if (sourceDocumentId) {
       await db.delete(financialContributions).where(
@@ -357,6 +365,7 @@ export class FinancialDataService {
         if (isNaN(fiscalYear)) continue;
 
         const periodEnd = this.inferPeriodEnd(data, yearKey) || `${fiscalYear}-12-31`;
+        const bsIsPrimary = bsPrimaryYear === null || fiscalYear === bsPrimaryYear;
         const bsSpan = this.deriveSpan(data, yearKey, documentCategory, sourceDocumentId, 'balance_sheet');
         
         const bs = (yearData as any).balance_sheet || yearData;
@@ -430,6 +439,7 @@ export class FinancialDataService {
           sourceDocumentId: sourceDocumentId ?? null,
           sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: bsSpan.isFullYear,
+          isPrimaryYear: bsIsPrimary,
           monthsCovered: bsSpan.monthsCovered ?? null,
           periodEnd,
           asAtDate: null,
@@ -518,6 +528,7 @@ export class FinancialDataService {
           sourceDocumentId: sourceDocumentId ?? null,
           sourceTier: contributionTier(periodType, documentCategory, isIM),
           isFullYear: bsFallbackSpan.isFullYear,
+          isPrimaryYear: true,
           monthsCovered: bsFallbackSpan.monthsCovered ?? null,
           periodEnd,
           asAtDate: null,
