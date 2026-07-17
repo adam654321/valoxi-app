@@ -3,7 +3,8 @@ import { BadRequestError } from '../utils/errors';
 import { dealDocuments, dealDocumentResponses, dealDocumentTemplates, currentOffers } from '@shared/schema/deal-documents';
 import { documents } from '@shared/schema/documents';
 import { dealModels, dealModelAdjustments, dealModelFundingLines, dealModelSellerPayments, dealModelContingentConsideration } from '@shared/schema/deal-models';
-import { financialPeriods, incomeStatements } from '@shared/schema/financials';
+import { financialPeriods, incomeStatements, financialContributions } from '@shared/schema/financials';
+import { isProvisionalFinancials } from '../../shared/utils/provisional-financials';
 import { eq, and, desc, not, inArray, sql } from 'drizzle-orm';
 import { fetchReportedEbitdaByYear } from './deal-model.service';
 import { dealDocumentTemplateService, DocumentDataContext } from './deal-document-template.service';
@@ -792,7 +793,13 @@ export class DealDocumentService {
       .where(eq(dealModelAdjustments.dealModelId, dealModelId));
 
     // Use the same full-year-only helper the screen uses — no more dual implementations.
-    const reportedEbitdaByYear = await fetchReportedEbitdaByYear(targetCompanyId);
+    const [reportedEbitdaByYear, contributionTiers] = await Promise.all([
+      fetchReportedEbitdaByYear(targetCompanyId),
+      db.select({ sourceTier: financialContributions.sourceTier })
+        .from(financialContributions)
+        .where(eq(financialContributions.targetCompanyId, targetCompanyId)),
+    ]);
+    const provisionalFinancials = isProvisionalFinancials(contributionTiers);
 
     const { calculateFullDealModel } = await import('@shared/calculators/deal-model.calc');
 
@@ -955,6 +962,7 @@ export class DealDocumentService {
 
     return {
       ...baseContext,
+      isProvisionalFinancials: provisionalFinancials,
       offerPrice: fmt(offerPrice),
       enterpriseValue: fmt(enterpriseValue),
       excessCash: fmt(excessCash),

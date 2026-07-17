@@ -6,6 +6,8 @@ import { eq, and } from 'drizzle-orm';
 import { reselect } from './projection-reselect.service';
 import { detectInformationMemorandum } from '../../shared/utils/im-detector';
 import { computeSpan } from '../../shared/utils/derive-span';
+import { hasAnyValue } from '../../shared/utils/has-any-value';
+import { isProvisionalFinancials } from '../../shared/utils/provisional-financials';
 
 type PeriodType = 'statutory' | 'management';
 
@@ -139,8 +141,7 @@ export class FinancialDataService {
   }
 
   private hasAnyValue(obj: Record<string, any>): boolean {
-    const SKIP = new Set(['sourceDocumentId', 'updatedAt']);
-    return Object.entries(obj).some(([k, v]) => !SKIP.has(k) && v !== null && v !== undefined);
+    return hasAnyValue(obj);
   }
 
   private async processProfitAndLoss(
@@ -760,7 +761,16 @@ export class FinancialDataService {
   }
 
   async getFinancialSummary(targetCompanyId: number) {
-    return await financialDataRepository.getFinancialSummary(targetCompanyId);
+    const [summary, contributions] = await Promise.all([
+      financialDataRepository.getFinancialSummary(targetCompanyId),
+      db.select({ sourceTier: financialContributions.sourceTier })
+        .from(financialContributions)
+        .where(eq(financialContributions.targetCompanyId, targetCompanyId)),
+    ]);
+    return {
+      ...summary,
+      isProvisionalFinancials: isProvisionalFinancials(contributions),
+    };
   }
 
   calculateEBITDA(incomeStatement: {
