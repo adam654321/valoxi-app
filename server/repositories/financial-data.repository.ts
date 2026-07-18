@@ -577,6 +577,25 @@ export class FinancialDataRepository {
     console.log(`[FINANCIAL_DATA] Deleted non-projection financial data for document ${documentId}`);
   }
 
+  /**
+   * NULL out source_document_id on the three projection tables for any rows that
+   * still reference a document being deleted.  Called after reselect() so that
+   * periods / statements whose only source was the deleted doc are detached safely
+   * before the documents row itself is removed.
+   */
+  async detachDocumentReferences(documentId: number): Promise<void> {
+    await db.update(financialPeriods)
+      .set({ sourceDocumentId: null, updatedAt: new Date() })
+      .where(eq(financialPeriods.sourceDocumentId, documentId));
+    await db.update(incomeStatements)
+      .set({ sourceDocumentId: null, updatedAt: new Date() })
+      .where(eq(incomeStatements.sourceDocumentId, documentId));
+    await db.update(balanceSheets)
+      .set({ sourceDocumentId: null, updatedAt: new Date() })
+      .where(eq(balanceSheets.sourceDocumentId, documentId));
+    console.log(`[FINANCIAL_DATA] Detached source_document_id references for document ${documentId}`);
+  }
+
   async getAdjustmentsByCompany(targetCompanyId: number): Promise<(EbitdaAdjustment & { period: FinancialPeriod })[]> {
     const results = await db
       .select({

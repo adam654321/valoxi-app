@@ -118,6 +118,9 @@ export class DocumentsFilesService {
         // Drop contributions then rebuild the projection via reselect
         await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
         await reselect(document.targetCompanyId);
+        // Detach any remaining source_document_id pointers (periods whose only source was this doc).
+        // Must run AFTER reselect so winners are already re-pointed before we null the orphans.
+        await financialDataRepository.detachDocumentReferences(documentId);
       } catch (error) {
         console.error(`[DELETE_DOCUMENT] Error cleaning financial data for document ${documentId}:`, error);
       }

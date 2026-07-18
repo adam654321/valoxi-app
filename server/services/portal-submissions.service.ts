@@ -172,6 +172,7 @@ export class PortalSubmissionsService {
       // Drop contributions then rebuild the projection via reselect
       await db.delete(financialContributions).where(eq(financialContributions.sourceDocumentId, documentId));
       await reselect(document.targetCompanyId);
+      await financialDataRepository.detachDocumentReferences(documentId);
     } catch (error) {
       console.error(`[PORTAL_DELETE] Error cleaning financial data for document ${documentId}:`, error);
     }
