@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hasAnyValue, hasCoreIncomeValue } from '../has-any-value';
+import { hasAnyValue, hasCoreIncomeValue, hasCoreBalanceValue } from '../has-any-value';
 
 describe('hasAnyValue — phantom P&L fix (Item A)', () => {
   it('returns FALSE when all numeric fields are null but breakdown fields are non-null empty objects', () => {
@@ -113,6 +113,82 @@ describe('hasCoreIncomeValue — balance-sheet artefact gate (Item A ext.)', () 
       grossProfit: null,
       operatingProfit: null,
       profitBeforeTax: null,
+    })).toBe(true);
+  });
+});
+
+describe('hasCoreBalanceValue — phantom balance-sheet guard (Slice 13)', () => {
+  const NULL_BS = {
+    cashAtBank: null,
+    totalCurrentAssets: null,
+    totalCurrentLiabilities: null,
+    tradeDebtors: null,
+    tradeCreditors: null,
+    tangibleFixedAssets: null,
+    shareCapital: null,
+    totalEquity: null,
+  };
+
+  it('returns FALSE when only retainedEarnings is present (P&L reserves leakage)', () => {
+    expect(hasCoreBalanceValue({
+      ...NULL_BS,
+      retainedEarnings: '183000',
+      netProfit: '50000',
+    })).toBe(false);
+  });
+
+  it('returns TRUE when cashAtBank is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, cashAtBank: '42000' })).toBe(true);
+  });
+
+  it('returns TRUE when totalCurrentAssets is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, totalCurrentAssets: '310000' })).toBe(true);
+  });
+
+  it('returns TRUE when totalCurrentLiabilities is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, totalCurrentLiabilities: '120000' })).toBe(true);
+  });
+
+  it('returns TRUE when tradeDebtors is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, tradeDebtors: '95000' })).toBe(true);
+  });
+
+  it('returns TRUE when tradeCreditors is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, tradeCreditors: '68000' })).toBe(true);
+  });
+
+  it('returns TRUE when tangibleFixedAssets is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, tangibleFixedAssets: '200000' })).toBe(true);
+  });
+
+  it('returns TRUE when shareCapital is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, shareCapital: '100' })).toBe(true);
+  });
+
+  it('returns TRUE when totalEquity is present', () => {
+    expect(hasCoreBalanceValue({ ...NULL_BS, totalEquity: '340000' })).toBe(true);
+  });
+
+  it('returns FALSE when a real P&L shape (revenue + operatingProfit, no BS fields) is passed', () => {
+    expect(hasCoreBalanceValue({
+      ...NULL_BS,
+      revenue: '1200000',
+      operatingProfit: '180000',
+      depreciationAmortisation: '45000',
+    })).toBe(false);
+  });
+
+  it('returns FALSE when all structural fields are null', () => {
+    expect(hasCoreBalanceValue(NULL_BS)).toBe(false);
+  });
+
+  it('returns TRUE for a realistic real balance sheet (cash + debtors + shareCapital)', () => {
+    expect(hasCoreBalanceValue({
+      ...NULL_BS,
+      cashAtBank: '55000',
+      tradeDebtors: '120000',
+      shareCapital: '1000',
+      retainedEarnings: '310000',
     })).toBe(true);
   });
 });

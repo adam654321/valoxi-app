@@ -22,6 +22,36 @@ export function hasAnyValue(obj: Record<string, unknown>): boolean {
 }
 
 /**
+ * Symmetric gate for balance-sheet contributions: requires at least one
+ * STRUCTURAL balance-sheet field to be non-null before treating the row as
+ * a genuine balance sheet.
+ *
+ * When a company_accounts document runs both P&L and balance extraction, a
+ * pure P&L document can fabricate a phantom balance sheet if the extractor
+ * picks up a stray field (e.g. retainedEarnings from the P&L reserves note).
+ * We require at least one line that can ONLY come from a real balance sheet.
+ *
+ * retainedEarnings is intentionally excluded — it appears in P&L reserves
+ * notes and therefore cannot confirm a real balance sheet on its own.
+ */
+const CORE_BALANCE_FIELDS = new Set([
+  'cashAtBank',
+  'totalCurrentAssets',
+  'totalCurrentLiabilities',
+  'tradeDebtors',
+  'tradeCreditors',
+  'tangibleFixedAssets',
+  'shareCapital',
+  'totalEquity',
+]);
+
+export function hasCoreBalanceValue(bsFields: Record<string, unknown>): boolean {
+  return Array.from(CORE_BALANCE_FIELDS).some(
+    k => bsFields[k] !== null && bsFields[k] !== undefined,
+  );
+}
+
+/**
  * Secondary gate for income contributions: requires at least one CORE P&L
  * field to be non-null before treating the row as a genuine income statement.
  *

@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { reselect } from './projection-reselect.service';
 import { detectInformationMemorandum } from '../../shared/utils/im-detector';
 import { computeSpan } from '../../shared/utils/derive-span';
-import { hasAnyValue, hasCoreIncomeValue } from '../../shared/utils/has-any-value';
+import { hasAnyValue, hasCoreIncomeValue, hasCoreBalanceValue } from '../../shared/utils/has-any-value';
 import { isProvisionalFinancials } from '../../shared/utils/provisional-financials';
 
 type PeriodType = 'statutory' | 'management';
@@ -433,6 +433,11 @@ export class FinancialDataService {
           continue;
         }
 
+        if (!hasCoreBalanceValue(bsFields)) {
+          console.log(`[FINANCIAL_DATA] Skipping no-core-BS balance sheet for FY ${fiscalYear} (doc ${sourceDocumentId}) — likely P&L artefact`);
+          continue;
+        }
+
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
           targetCompanyId,
           periodType,
@@ -520,6 +525,11 @@ export class FinancialDataService {
         if (!this.hasAnyValue(bsFields)) {
           console.log(`[FINANCIAL_DATA] Skipping empty balance sheet for FY ${fiscalYear} (doc ${sourceDocumentId})`);
           return { success: true, message: `Skipped empty balance sheet for FY ${fiscalYear}`, recordsCreated: 0 };
+        }
+
+        if (!hasCoreBalanceValue(bsFields)) {
+          console.log(`[FINANCIAL_DATA] Skipping no-core-BS balance sheet for FY ${fiscalYear} (doc ${sourceDocumentId}) — likely P&L artefact`);
+          return { success: true, message: `Skipped no-core-BS balance sheet for FY ${fiscalYear}`, recordsCreated: 0 };
         }
 
         const period = await financialDataRepository.findOrCreateFinancialPeriod(
