@@ -20,3 +20,28 @@ export function hasAnyValue(obj: Record<string, unknown>): boolean {
     return true;
   });
 }
+
+/**
+ * Secondary gate for income contributions: requires at least one CORE P&L
+ * field to be non-null before treating the row as a genuine income statement.
+ *
+ * Fields like netProfit, staffCosts, and dividendsPaid appear on balance
+ * sheets (equity section, notes). An extraction that has only those fields
+ * is a balance-sheet artefact, not a real P&L, and must be discarded.
+ *
+ * Core fields chosen because they form the spine of any P&L:
+ *   revenue → costOfSales → grossProfit → operatingProfit → profitBeforeTax
+ */
+const CORE_INCOME_FIELDS = new Set([
+  'revenue',
+  'costOfSales',
+  'grossProfit',
+  'operatingProfit',
+  'profitBeforeTax',
+]);
+
+export function hasCoreIncomeValue(plFields: Record<string, unknown>): boolean {
+  return Array.from(CORE_INCOME_FIELDS).some(
+    k => plFields[k] !== null && plFields[k] !== undefined,
+  );
+}
