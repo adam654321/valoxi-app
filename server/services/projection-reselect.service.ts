@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, asc, inArray, notInArray } from 'drizzle-orm';
 import { db } from '../db';
 import {
   financialContributions,
@@ -16,6 +16,15 @@ function tierToPeriodType(sourceTier: string): 'statutory' | 'management' {
   return sourceTier === 'statutory' ? 'statutory' : 'management';
 }
 
+/**
+ * Finds the canonical period for a (company, fiscalYear, isFullYear) slot,
+ * or creates one if none exists.
+ *
+ * Key: (target_company_id, fiscal_year, is_full_year).
+ * Rows are ordered by id ASC so both the income winner and the balance winner
+ * for the same year always land on the same (lowest-id) canonical row — even
+ * when ghost duplicates exist — preventing new rows from being created.
+ */
 async function findOrReusePeriod(
   targetCompanyId: number,
   fiscalYear: number,
@@ -26,7 +35,6 @@ async function findOrReusePeriod(
   monthsCovered: number | null,
   sourceDocumentId: number | null,
 ): Promise<FinancialPeriod> {
-  // Load ALL periods for this (company, fiscalYear, isFullYear) so we preserve the existing id
   const existing = await db
     .select()
     .from(financialPeriods)
@@ -36,12 +44,16 @@ async function findOrReusePeriod(
         eq(financialPeriods.fiscalYear, fiscalYear),
         eq(financialPeriods.isFullYear, isFullYear),
       ),
-    );
+    )
+    .orderBy(asc(financialPeriods.id)); // lowest id = oldest = canonical
 
   if (existing.length > 0) {
-    // Prefer period with matching type so we don't change the type unnecessarily;
-    // fall back to first available — its id (and its ebitda_adjustments) are preserved.
-    const preferred = existing.find(p => p.periodType === periodType) ?? existing[0];
+    // Prefer the period whose type matches the current winner (avoids changing the
+    // type unnecessarily and preserves ebitda_adjustments on the historically
+    // canonical row).  ORDER BY id ASC ensures that when multiple periods share
+    // the same type, we deterministically pick the oldest (lowest-id) one.
+    const preferred =
+      existing.find(p => p.periodType === periodType) ?? existing[0];
     const [updated] = await db
       .update(financialPeriods)
       .set({
@@ -191,15 +203,70 @@ async function upsertBalanceFromFigures(
 }
 
 /**
+ * Prune empty ghost periods — full-year period rows that are not part of the
+ * current winner set AND have no attached income_statement or balance_sheet.
+ *
+ * These arise when a document is deleted or superseded: the old period row
+ * loses its winner status but was never cleaned up (reselect is additive-only
+ * on period creation).  Pruning is safe because data-bearing periods are
+ * explicitly protected by the NOT EXISTS guards.
+ *
+ * financial_contributions is never touched.
+ */
+async function pruneGhostPeriods(
+  targetCompanyId: number,
+  winnerPeriodIds: Set<number>,
+): Promise<void> {
+  const winnerArr = [...winnerPeriodIds];
+
+  // Identify full-year periods outside the current winner set
+  const candidates = await db
+    .select({ id: financialPeriods.id })
+    .from(financialPeriods)
+    .where(
+      and(
+        eq(financialPeriods.targetCompanyId, targetCompanyId),
+        eq(financialPeriods.isFullYear, true),
+        // If winner set is non-empty, exclude winners; otherwise all are candidates.
+        winnerArr.length > 0 ? notInArray(financialPeriods.id, winnerArr) : undefined,
+      ),
+    );
+
+  if (candidates.length === 0) return;
+
+  const ghostIds: number[] = [];
+  for (const { id } of candidates) {
+    const [inc] = await db
+      .select({ id: incomeStatements.id })
+      .from(incomeStatements)
+      .where(eq(incomeStatements.financialPeriodId, id))
+      .limit(1);
+    const [bal] = await db
+      .select({ id: balanceSheets.id })
+      .from(balanceSheets)
+      .where(eq(balanceSheets.financialPeriodId, id))
+      .limit(1);
+    if (!inc && !bal) ghostIds.push(id);
+  }
+
+  if (ghostIds.length > 0) {
+    await db.delete(financialPeriods).where(inArray(financialPeriods.id, ghostIds));
+    console.log(`[RESELECT] Pruned ${ghostIds.length} empty ghost period(s): [${ghostIds.join(', ')}]`);
+  }
+}
+
+/**
  * Reselect — rebuilds the income/balance projection for a company from its
  * financial_contributions (append-only truth) using the precedence selector.
  *
  * Invariants upheld:
  *   - financial_contributions is NEVER modified.
  *   - ebitda_adjustments and staff_data are NEVER touched.
- *   - financial_periods are NEVER deleted (ids preserved for FK referents).
- *   - After completion: at most ONE income row and ONE balance row per
- *     (fiscalYear, isFullYear) slot.
+ *   - financial_periods with income OR balance attached are NEVER deleted.
+ *   - Empty shell periods (no income, no balance, not a current winner) ARE
+ *     pruned — they are stale artefacts from prior reselect runs.
+ *   - After completion: exactly ONE income row and ONE balance row per
+ *     (fiscalYear, isFullYear) slot, on the canonical (lowest-id) period row.
  */
 export async function reselect(targetCompanyId: number): Promise<void> {
   console.log(`[RESELECT] company=${targetCompanyId}`);
@@ -216,7 +283,10 @@ export async function reselect(targetCompanyId: number): Promise<void> {
   const winners = selectProjectionWinners(contribs);
   console.log(`[RESELECT] ${contribs.length} contributions → ${winners.length} winners`);
 
-  // 3. For each winner: find-or-reuse period, upsert figures, evict loser rows
+  // 3. For each winner: find-or-reuse canonical period, upsert figures,
+  //    evict loser income/balance rows from sibling periods in the same slot.
+  const winnerPeriodIds = new Set<number>();
+
   for (const winner of winners) {
     if (winner.fiscalYear === null) {
       console.warn(`[RESELECT] Skipping winner with null fiscalYear (id=${winner.id})`);
@@ -238,6 +308,8 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       winner.sourceDocumentId ?? null,
     );
 
+    winnerPeriodIds.add(period.id);
+
     // Upsert winner figures into the projection table
     if (winner.statementType === 'income') {
       await upsertIncomeFromFigures(period.id, targetCompanyId, figures);
@@ -245,9 +317,8 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       await upsertBalanceFromFigures(period.id, targetCompanyId, figures);
     }
 
-    // 4. Reconcile: remove income/balance rows from OTHER periods with the same
+    // 4. Reconcile: remove income/balance rows from OTHER periods in the same
     //    (fiscalYear, isFullYear) slot — they lost the election.
-    //    Periods themselves are preserved (ebitda_adjustments remain intact).
     const slotPeriods = await db
       .select({ id: financialPeriods.id })
       .from(financialPeriods)
@@ -272,6 +343,10 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       }
     }
   }
+
+  // 5. Prune empty ghost period shells left over from prior reselect runs.
+  //    Only full-year periods are managed here; part-year periods are left intact.
+  await pruneGhostPeriods(targetCompanyId, winnerPeriodIds);
 
   console.log(`[RESELECT] Done. company=${targetCompanyId}`);
 }
