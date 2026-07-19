@@ -11,7 +11,7 @@
  *   Doc B (2024 filing): FY2023 comparative + FY2024 primary
  *
  *   After deleteDocument(docA):
- *     FY2022 period: no winner → must be detached (source_document_id = NULL)
+ *     FY2022: no winner and no adjustment → period is pruned (Slice 16 final)
  *     FY2023 period: falls back to doc B (comparative)
  *     FY2024 period: unchanged (doc B primary)
  */
@@ -170,7 +170,7 @@ describe('deleteDocument — FK detach (Slice 15)', () => {
     expect(fy2024?.sourceDocumentId).toBe(docBId);
   });
 
-  it('deleteDocument(docA) succeeds without FK error; FY2022 detached; FY2023 falls back to doc B', async () => {
+  it('deleteDocument(docA) succeeds without FK error; FY2023 falls back to doc B; FY2022 pruned', async () => {
     // Core regression guard — must NOT throw financial_periods_source_document_id_fkey
     await expect(
       documentsFilesService.deleteDocument(docAId, USER_COMPANY_ID),
@@ -180,9 +180,10 @@ describe('deleteDocument — FK detach (Slice 15)', () => {
       .from(financialPeriods)
       .where(eq(financialPeriods.targetCompanyId, testCompanyId));
 
+    // FY2022 had no fallback contributor and no ebitda_adjustment →
+    // Slice 16 final: orphaned figures cleared + empty container pruned
     const fy2022 = periods.find(p => p.fiscalYear === 2022);
-    expect(fy2022).toBeDefined();               // period still exists (reselect never deletes periods)
-    expect(fy2022?.sourceDocumentId).toBeNull(); // detached — only source was deleted doc
+    expect(fy2022).toBeUndefined();
 
     const fy2023 = periods.find(p => p.fiscalYear === 2023);
     expect(fy2023?.sourceDocumentId).toBe(docBId); // fell back to doc B comparative
@@ -191,16 +192,17 @@ describe('deleteDocument — FK detach (Slice 15)', () => {
     expect(fy2024?.sourceDocumentId).toBe(docBId); // unchanged
   });
 
-  it('income_statement for FY2022 is detached (source_document_id = null)', async () => {
+  it('FY2022 income and period are gone after deleting its only source', async () => {
+    // FY2022 had no fallback and no ebitda_adjustment: orphaned figures were
+    // cleared by reselect and the empty container was pruned.
     const rows = await db.select()
       .from(incomeStatements)
       .where(eq(incomeStatements.targetCompanyId, testCompanyId));
 
-    const fy2022Income = rows.find(r => {
-      // income rows don't carry periodEnd directly — join via period
-      return r.sourceDocumentId === null;
-    });
-    expect(fy2022Income).toBeDefined();
+    // Only FY2023 (docB comparative) and FY2024 (docB primary) remain
+    expect(rows).toHaveLength(2);
+    // None of them should reference a null source — they both come from docB
+    expect(rows.every(r => r.sourceDocumentId !== null)).toBe(true);
   });
 
   it('doc A row is removed from the documents table', async () => {
