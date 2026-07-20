@@ -12,3 +12,33 @@ id = "Ic9CMml8qfFZ4PM7kGcdk"
 uri = "file://.local/us-localisation-scope.md"
 type = "text"
 title = "Valoxi US Localisation — Scope & Research Brief"
+
+[[outputs]]
+id = "z0B1QHv2X57_TWFoFz1d2"
+uri = "file://downloads/Clifford_Press_Flyer.pdf"
+type = "pdf"
+title = "Clifford Press — Flyer (doc 700, 373 KB)"
+
+[[outputs]]
+id = "CMyGaWEntrC4nOptPvWC0"
+uri = "file://downloads/Homecare_People_Financial_Results_Dec2024.pdf"
+type = "pdf"
+title = "Homecare People — Financial Results Dec 2024 (doc 1049, 99 KB)"
+
+[[outputs]]
+id = "jWK_qvAl5u1V8e7y5uxgx"
+uri = "file://downloads/Homecare_People_Year_on_Year_2023-2026.pdf"
+type = "pdf"
+title = "Homecare People — Year on Year 2023–2026 (doc 1051, 145 KB)"
+
+[[outputs]]
+id = "oF7JHgWHff_aPvz4chNbK"
+uri = "file://downloads/Canoports_Staff_Matrix_tenant107.pdf"
+type = "pdf"
+title = "Canoports Staff Matrix — tenant 107, company 218 (doc 1486, 4.5 KB)"
+
+[[outputs]]
+id = "mnW84ndr8mgkQt7kTtIGf"
+uri = "file://downloads/Canoports_Staff_Matrix_tenant108.pdf"
+type = "pdf"
+title = "Canoports Staff Matrix — tenant 108, company 220 (doc 1542, 6.2 KB)"
