@@ -408,9 +408,26 @@ export async function reselect(targetCompanyId: number): Promise<void> {
 
   const contribs: Contribution[] = rawContribs.map(c => ({ ...c }));
 
-  // 2. Deterministic winner selection
-  const winners = selectProjectionWinners(contribs);
-  console.log(`[RESELECT] ${contribs.length} contributions → ${winners.length} winners`);
+  // 2. Deterministic winner selection — Slice 17 completed-year gate.
+  // Contributions whose period_end is in the future (forecast years) are
+  // excluded from winner selection so they are never projected into the live
+  // income / balance tables.  They remain in financial_contributions
+  // (append-only) and can become winners once their period_end passes.
+  // A second guard on fiscalYear catches mislabelled contributions where
+  // period_end fell in the past but the extractor assigned a future fiscal
+  // year (e.g. a June 2026 YTD P&L recorded as fiscalYear=2027).
+  const today = new Date().toISOString().split('T')[0];
+  const currentYear = new Date().getFullYear();
+  const completedContribs = contribs.filter(
+    c =>
+      (!c.periodEnd || c.periodEnd <= today) &&
+      (c.fiscalYear === null || c.fiscalYear <= currentYear),
+  );
+
+  const winners = selectProjectionWinners(completedContribs);
+  console.log(
+    `[RESELECT] ${contribs.length} contributions (${contribs.length - completedContribs.length} future-gated) → ${winners.length} winners`,
+  );
 
   // 3. For each winner: find-or-reuse the canonical container, upsert figures,
   //    evict loser income/balance rows from sibling periods in the same slot.

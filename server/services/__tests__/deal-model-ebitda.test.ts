@@ -27,14 +27,23 @@ function applyEbitdaLoop(
     operatingProfit: string | null;
     depreciationAmortisation: string | null;
   }>,
+  todayOverride?: string,
 ): Record<string, number> {
   // Mirror the WHERE from fetchReportedEbitdaByYear:
   //   is_full_year = true
   //   AND (source_tier IS NULL OR source_tier <> 'information_memorandum')
+  //   AND period_end <= today           ← Slice 17 completed-year gate
+  //   AND fiscal_year <= currentYear    ← guards mislabelled future fiscal years
   // ORDER BY period_end DESC
+  const today = todayOverride ?? new Date().toISOString().split('T')[0];
+  const currentYear = todayOverride
+    ? parseInt(todayOverride.slice(0, 4), 10)
+    : new Date().getFullYear();
   const filtered = rows
     .filter(r => r.isFullYear)
     .filter(r => r.sourceTier == null || r.sourceTier !== 'information_memorandum')
+    .filter(r => r.periodEnd != null && r.periodEnd <= today)
+    .filter(r => r.fiscalYear == null || r.fiscalYear <= currentYear)
     .sort((a, b) => (b.periodEnd ?? '').localeCompare(a.periodEnd ?? ''));
 
   const result: Record<string, number> = {};
@@ -142,6 +151,63 @@ describe('fetchReportedEbitdaByYear — pure logic', () => {
     const result = applyEbitdaLoop(rows);
 
     expect(result['2023']).toBe(215000);
+  });
+
+  // ── Slice 17 spec tests — completed-year gate ────────────────────────────
+
+  it('Slice 17 — future period_end is excluded from valuation', () => {
+    const rows = [
+      { fiscalYear: 2025, periodEnd: '2025-12-31', isFullYear: true, sourceTier: 'statutory', operatingProfit: '200000', depreciationAmortisation: '20000' },
+      { fiscalYear: 2026, periodEnd: '2026-12-31', isFullYear: true, sourceTier: 'statutory', operatingProfit: '250000', depreciationAmortisation: '25000' },
+      { fiscalYear: 2027, periodEnd: '2027-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '300000', depreciationAmortisation: '30000' },
+    ];
+    // Simulate today = 2026-07-21: FY2025 completed, FY2026 not yet (2026-12-31 > today), FY2027 future
+    const result = applyEbitdaLoop(rows, '2026-07-21');
+
+    expect(result['2025']).toBe(220000);
+    expect(result['2026']).toBeUndefined();
+    expect(result['2027']).toBeUndefined();
+    expect(Object.keys(result)).toHaveLength(1);
+  });
+
+  it('Slice 17 — period_end exactly equal to today is included (boundary)', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const rows = [
+      { fiscalYear: 2024, periodEnd: '2024-03-31', isFullYear: true, sourceTier: 'statutory', operatingProfit: '150000', depreciationAmortisation: '15000' },
+      { fiscalYear: 2025, periodEnd: today,          isFullYear: true, sourceTier: 'statutory', operatingProfit: '180000', depreciationAmortisation: '18000' },
+    ];
+    const result = applyEbitdaLoop(rows);
+
+    expect(result['2024']).toBe(165000);
+    expect(result['2025']).toBe(198000); // today boundary is INCLUDED
+  });
+
+  it('Slice 17 — forecast-only company returns empty map', () => {
+    const rows = [
+      { fiscalYear: 2027, periodEnd: '2027-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '500000', depreciationAmortisation: '50000' },
+      { fiscalYear: 2028, periodEnd: '2028-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '600000', depreciationAmortisation: '60000' },
+    ];
+    const result = applyEbitdaLoop(rows, '2026-07-21');
+
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  it('Slice 17 — mix of completed and forecast: only completed years returned', () => {
+    const rows = [
+      { fiscalYear: 2023, periodEnd: '2023-12-31', isFullYear: true, sourceTier: 'statutory',  operatingProfit: '100000', depreciationAmortisation: '10000' },
+      { fiscalYear: 2024, periodEnd: '2024-12-31', isFullYear: true, sourceTier: 'statutory',  operatingProfit: '120000', depreciationAmortisation: '12000' },
+      { fiscalYear: 2025, periodEnd: '2025-12-31', isFullYear: true, sourceTier: 'statutory',  operatingProfit: '140000', depreciationAmortisation: '14000' },
+      { fiscalYear: 2026, periodEnd: '2026-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '160000', depreciationAmortisation: '16000' },
+      { fiscalYear: 2027, periodEnd: '2027-12-31', isFullYear: true, sourceTier: 'management', operatingProfit: '180000', depreciationAmortisation: '18000' },
+    ];
+    const result = applyEbitdaLoop(rows, '2026-07-21');
+
+    expect(Object.keys(result)).toHaveLength(3);
+    expect(result['2023']).toBe(110000);
+    expect(result['2024']).toBe(132000);
+    expect(result['2025']).toBe(154000);
+    expect(result['2026']).toBeUndefined();
+    expect(result['2027']).toBeUndefined();
   });
 });
 

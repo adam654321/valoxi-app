@@ -1,4 +1,4 @@
-import { eq, desc, and, ne, or, isNull } from 'drizzle-orm';
+import { eq, desc, and, ne, or, isNull, lte } from 'drizzle-orm';
 import { db } from '../db';
 import {
   targetCompanies,
@@ -48,6 +48,15 @@ async function verifyOwnership(targetCompanyId: number, userCompanyId: number): 
  * Exported so the offer/HoT builder can call the same function as the screen.
  */
 export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promise<Record<string, number>> {
+  // Slice 17 — completed-year gate: only periods whose period_end is today or
+  // in the past contribute to valuation.  Forecast periods (period_end in the
+  // future) are excluded here so they never appear in the averaging window.
+  // A second guard on fiscal_year catches the edge case where a period_end
+  // falls in the past but was mislabelled with a future fiscal_year (e.g. a
+  // YTD P&L dated June 2026 extracted as FY2027 on some prod documents).
+  const today = new Date().toISOString().split('T')[0];
+  const currentYear = new Date().getFullYear();
+
   const rows = await db
     .select({
       periodEnd: financialPeriods.periodEnd,
@@ -66,6 +75,8 @@ export async function fetchReportedEbitdaByYear(targetCompanyId: number): Promis
           isNull(financialPeriods.sourceTier),
           ne(financialPeriods.sourceTier, 'information_memorandum'),
         ),
+        lte(financialPeriods.periodEnd, today),
+        lte(financialPeriods.fiscalYear, currentYear),
       ),
     )
     .orderBy(desc(financialPeriods.periodEnd));
