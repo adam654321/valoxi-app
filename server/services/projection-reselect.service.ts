@@ -431,7 +431,27 @@ export async function reselect(targetCompanyId: number): Promise<void> {
     `[RESELECT] ${contribs.length} contributions (${contribs.length - completedContribs.length} future-gated) → ${winners.length} winners`,
   );
 
-  // 3. For each winner: find-or-reuse the canonical container, upsert figures,
+  // 3. Pre-compute how many income winners exist per fiscal year.
+  //
+  //    When a fiscal year has exactly ONE income winner we use wide-scope
+  //    reconcile (all periods in the FY) to evict any stale income_statement
+  //    left over from a previous reselect run where that winner's is_full_year
+  //    changed slot (e.g. a company-accounts P&L later superseded by a YTD).
+  //
+  //    When a fiscal year has TWO income winners — one full-year (|1) and one
+  //    part-year (|0) — both are legitimate and must coexist.  We switch to
+  //    narrow-scope reconcile (same is_full_year slot only) so neither evicts
+  //    the other.  fetchReportedEbitdaByYear already gates on
+  //    income_statements.is_full_year = true, so only the full-year IS feeds
+  //    valuation while the part-year IS is retained for transparency.
+  const incomeWinnersPerYear = new Map<number, number>();
+  for (const w of winners) {
+    if (w.statementType === 'income' && w.fiscalYear !== null) {
+      incomeWinnersPerYear.set(w.fiscalYear, (incomeWinnersPerYear.get(w.fiscalYear) ?? 0) + 1);
+    }
+  }
+
+  // 4. For each winner: find-or-reuse the canonical container, upsert figures,
   //    evict loser income/balance rows from sibling periods in the same slot.
   const winnerPeriodIds = new Set<number>();
   const yearToWinnerPeriodId = new Map<number, number>(); // fiscalYear → survivor period id (full-year only)
@@ -443,14 +463,15 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       console.warn(`[RESELECT] Skipping winner with null fiscalYear (id=${winner.id})`);
       continue;
     }
+    const fiscalYear = winner.fiscalYear; // narrowed — non-null from here
 
     const periodType = tierToPeriodType(winner.sourceTier);
-    const periodEnd = winner.periodEnd ?? `${winner.fiscalYear}-12-31`;
+    const periodEnd = winner.periodEnd ?? `${fiscalYear}-12-31`;
     const figures = winner.figures as Record<string, any>;
 
     const period = await findOrReusePeriod(
       targetCompanyId,
-      winner.fiscalYear,
+      fiscalYear,
       winner.isFullYear,
       periodType,
       winner.sourceTier,
@@ -462,9 +483,9 @@ export async function reselect(targetCompanyId: number): Promise<void> {
     winnerPeriodIds.add(period.id);
 
     if (winner.isFullYear) {
-      yearToWinnerPeriodId.set(winner.fiscalYear, period.id);
-      if (latestWinnerFiscalYear === null || winner.fiscalYear > latestWinnerFiscalYear) {
-        latestWinnerFiscalYear = winner.fiscalYear;
+      yearToWinnerPeriodId.set(fiscalYear, period.id);
+      if (latestWinnerFiscalYear === null || fiscalYear > latestWinnerFiscalYear) {
+        latestWinnerFiscalYear = fiscalYear;
         latestWinnerPeriodId = period.id;
       }
     }
@@ -475,37 +496,40 @@ export async function reselect(targetCompanyId: number): Promise<void> {
       // Slice 20: stamp the income statement's own is_full_year from the INCOME
       // contribution's span — not the period container.  This lets
       // fetchReportedEbitdaByYear gate on income_statements.is_full_year so that
-      // a YTD P&L whose contribution was flipped to is_full_year=false by Slice 18
-      // is excluded from valuation even when it lives in an is_full_year=true
+      // a YTD P&L whose contribution was computed to is_full_year=false is
+      // excluded from valuation even when it lives in an is_full_year=true
       // period container (stamped true by the balance sheet winner).
       await upsertIncomeFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId, winner.isFullYear);
     } else {
       await upsertBalanceFromFigures(period.id, targetCompanyId, figures, winnerSourceDocId);
     }
 
-    // 4. Reconcile: remove income/balance rows from OTHER periods that lost
+    // 5. Reconcile: remove income/balance rows from OTHER periods that lost
     //    the election for this fiscal year.
     //
-    //    Income winners span ALL is_full_year slots in this fiscal year.
-    //    This is critical for the split-attribution case where a container period
-    //    was created by one document (e.g. a Company Accounts PDF, stamping
-    //    is_full_year=true) while the actual income figures were written by a
-    //    different part-year document (e.g. a YTD P&L).  After Slice 18 flips the
-    //    income contribution's is_full_year to false, the income winner lands in a
-    //    new is_full_year=false container.  Without the wider scope, the old
-    //    is_full_year=true container's income_statement would never be evicted and
-    //    would keep leaking into fetchReportedEbitdaByYear.
+    //    Income scope is adaptive (see step 3 comment):
+    //      - One income winner for the year → wide scope (all FY periods):
+    //        cleans up stale IS from previous reselect runs where the winner's
+    //        isFullYear changed.
+    //      - Multiple income winners → narrow scope (same isFullYear slot):
+    //        preserves the legitimate coexistence of full-year and part-year IS.
     //
-    //    Balance winners remain scoped to their own is_full_year slot so that
+    //    Balance winners always use narrow scope (same isFullYear slot) so that
     //    balance and income reconcile independently.
+    const multipleIncomeWinnersThisYear =
+      winner.statementType === 'income' &&
+      (incomeWinnersPerYear.get(fiscalYear) ?? 1) > 1;
+
     const slotPeriods = await db
       .select({ id: financialPeriods.id })
       .from(financialPeriods)
       .where(
         and(
           eq(financialPeriods.targetCompanyId, targetCompanyId),
-          eq(financialPeriods.fiscalYear, winner.fiscalYear),
-          winner.statementType === 'balance'
+          eq(financialPeriods.fiscalYear, fiscalYear),
+          // Narrow scope for balance AND for income when multiple winners share
+          // the same FY; wide scope for the sole income winner in a FY.
+          winner.statementType === 'balance' || multipleIncomeWinnersThisYear
             ? eq(financialPeriods.isFullYear, winner.isFullYear)
             : undefined,
         ),

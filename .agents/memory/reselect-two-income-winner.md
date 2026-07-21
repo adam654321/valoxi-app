@@ -1,16 +1,23 @@
 ---
-name: Reselect two-income-winner ordering
-description: When a fiscal year has both a full-year and a part-year income winner, the last one processed in the reselect loop clears the other via the income reconcile. Contribution DB insertion order drives Map iteration order, which drives reselect processing order.
+name: Reselect income reconcile scope (adaptive)
+description: When two income winners coexist for the same fiscal year (full-year + part-year slots), the reconcile must not let them evict each other. The reselect service uses a per-year income-winner count to choose wide vs narrow scope.
 ---
 
 ## The rule
 
-When `selectProjectionWinners` returns two income winners for the same fiscal year (e.g. `2024|income|1` and `2024|income|0`), the income reconcile step runs for each winner and deletes income_statements from ALL other periods in that fiscal year. Whichever winner is processed LAST in the for-loop wins.
+`selectProjectionWinners` groups income contributions by `(fiscalYear, statementType, isFullYear)`. When both a full-year (`|1`) and a part-year (`|0`) income contribution exist for the same FY, two separate winners are produced. The old "wide-scope" reconcile (all FY periods, no isFullYear filter) would let each winner evict the other's income_statement, with whichever processed last "winning" — a non-deterministic race.
 
-**Why:** The income reconcile intentionally spans all is_full_year slots (not just the winner's slot) to handle the split-attribution case (Sc-10). This was designed for the one-income-winner case; with two winners the last one evicts the first.
+**Fix applied** (projection-reselect.service.ts step 3 + step 5):
+- Before the winners loop, build `incomeWinnersPerYear: Map<FY, count>`.
+- If count = 1 for a FY → **wide scope** (all FY periods): needed to evict stale IS left over from a previous reselect run where the sole winner's `isFullYear` changed slot.
+- If count > 1 for a FY → **narrow scope** (same `isFullYear` slot only): both ISes coexist legitimately; `fetchReportedEbitdaByYear` gates on `IS.isFullYear=true` so only the full-year IS feeds valuation.
 
-**How to apply:** In tests (and in practice), the full-year "complete" contribution must be the LAST inserted into financial_contributions so it appears last in the Map and is processed last by reselect. Specifically: process the partial/supplementary doc first, then the complete full-year doc. The full-year winner's reconcile then evicts the part-year income_statement, which is the desired "complete copy wins" behaviour.
+**Why this is correct:**
+- Sc-8 (full-year + part-year statutory for same FY): both ISes survive, EBITDA=53k (full-year only), 2 contributions in truth table. ORDER-INDEPENDENT.
+- Sc-9 (management + statutory, both full-year): same group key → `selectProjectionWinners` resolves by tier. One winner, one IS. Already order-independent.
+- Sc-10 (balance-only company accounts + YTD income): one income winner (part-year) → wide scope → evicts stale full-year IS if any. Still correct.
+- Sc-11 (empty + data balance): empty produces no contribution → trivially one balance winner. Already order-independent.
 
-The DB insertion order of contributions matches the order of processExtractedData calls (no ORDER BY in reselect's rawContribs query; PostgreSQL returns fresh rows in heap/insertion order for small tables with no concurrent writes).
+**How to apply:** Do NOT work around the race by ordering test inputs. If a content-based decision produces the wrong result under either upload order, that is a bug in the selector/reconcile — fix the logic, not the test setup.
 
-**TSC baseline note:** portal.service.ts line 81 has a pre-existing `error TS2353` (token property). This existed before the forward-path gate work and is not introduced by it.
+**TSC baseline note:** portal.service.ts line 81 has a pre-existing `error TS2353` (token property). Not introduced by this work.

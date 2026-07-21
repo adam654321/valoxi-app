@@ -356,30 +356,24 @@ describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
 
   // ══════════════════════════════════════════════════════════════════════════
   // Sc-8  Duplicate statutory (Timber) — complete copy wins full-year slot
+  //       Determinism: correct winner must hold under BOTH upload orders.
   // ══════════════════════════════════════════════════════════════════════════
 
-  it('Sc-8: Duplicate statutory — complete (full-year) copy wins; partial retained in contributions', async () => {
-    const coId = await mkCompany('FPG SC8 Timber Duplicate Statutory');
-
-    // Process partial first so full-year contribution is inserted last → full-year winner
-    // is processed last in reselect → its reconcile evicts the partial income statement.
-    // This is the correct upload order when the user uploads a half-year extract before
-    // the complete accounts arrive.
-    await financialDataService.processExtractedData('profit_and_loss', sc08Part, coId);
-    await financialDataService.processExtractedData('profit_and_loss', sc08Full, coId);
-
-    // Full-year income_statement shows complete statutory figures
+  async function assertSc8(coId: number): Promise<void> {
+    // Full-year IS: complete statutory figures
     const allIncomes = await db
       .select()
       .from(incomeStatements)
       .where(eq(incomeStatements.targetCompanyId, coId));
     const full = allIncomes.filter(r => r.isFullYear === true);
+    const part = allIncomes.filter(r => r.isFullYear === false);
     expect(full).toHaveLength(1);
     expect(full[0].revenue).toBe('337000');
-    // Partial income was evicted by the full-year reconcile (loser demoted in IS,
-    // but the contribution itself is retained in financial_contributions below).
+    // Part-year IS coexists (narrow-scope reconcile keeps it); it is excluded
+    // from EBITDA because IS.isFullYear=false.
+    expect(part).toHaveLength(1);
 
-    // EBITDA uses the full-year figure only: 45000 + 8000
+    // EBITDA only uses the full-year IS: 45000 + 8000 = 53000
     const ebitda = await fetchReportedEbitdaByYear(coId);
     expect(ebitda['2024']).toBe(53000);
 
@@ -389,19 +383,30 @@ describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
       .from(financialContributions)
       .where(eq(financialContributions.targetCompanyId, coId));
     expect(contribs).toHaveLength(2);
+  }
+
+  it('Sc-8a: Duplicate statutory — full-year uploaded first, partial second; full-year wins', async () => {
+    const coId = await mkCompany('FPG SC8a Timber Duplicate Full-First');
+    await financialDataService.processExtractedData('profit_and_loss', sc08Full, coId);
+    await financialDataService.processExtractedData('profit_and_loss', sc08Part, coId);
+    await assertSc8(coId);
+  });
+
+  it('Sc-8b: Duplicate statutory — partial uploaded first, full-year second; full-year wins', async () => {
+    const coId = await mkCompany('FPG SC8b Timber Duplicate Part-First');
+    await financialDataService.processExtractedData('profit_and_loss', sc08Part, coId);
+    await financialDataService.processExtractedData('profit_and_loss', sc08Full, coId);
+    await assertSc8(coId);
   });
 
   // ══════════════════════════════════════════════════════════════════════════
   // Sc-9  Management + statutory overlap → statutory wins
+  //       Determinism: tier-based win must hold under BOTH upload orders.
   // ══════════════════════════════════════════════════════════════════════════
 
-  it('Sc-9: Management + statutory overlap — statutory wins, management contribution retained', async () => {
-    const coId = await mkCompany('FPG SC9 Mgmt+Stat Overlap');
-
-    await financialDataService.processExtractedData('profit_and_loss', sc09Mgmt, coId);
-    await financialDataService.processExtractedData('profit_and_loss', sc09Stat, coId);
-
-    // Full-year income_statement shows statutory revenue
+  async function assertSc9(coId: number): Promise<void> {
+    // Both management and statutory are full-year for FY2024 → same group key
+    // → selectProjectionWinners picks statutory by tier, regardless of order.
     const fullYearIncomes = await db
       .select()
       .from(incomeStatements)
@@ -421,6 +426,20 @@ describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
     expect(contribs).toHaveLength(2);
     expect(contribs.some(c => c.sourceTier === 'management')).toBe(true);
     expect(contribs.some(c => c.sourceTier === 'statutory')).toBe(true);
+  }
+
+  it('Sc-9a: Management + statutory overlap — management first, statutory second; statutory wins', async () => {
+    const coId = await mkCompany('FPG SC9a Mgmt+Stat Mgmt-First');
+    await financialDataService.processExtractedData('profit_and_loss', sc09Mgmt, coId);
+    await financialDataService.processExtractedData('profit_and_loss', sc09Stat, coId);
+    await assertSc9(coId);
+  });
+
+  it('Sc-9b: Management + statutory overlap — statutory first, management second; statutory wins', async () => {
+    const coId = await mkCompany('FPG SC9b Mgmt+Stat Stat-First');
+    await financialDataService.processExtractedData('profit_and_loss', sc09Stat, coId);
+    await financialDataService.processExtractedData('profit_and_loss', sc09Mgmt, coId);
+    await assertSc9(coId);
   });
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -471,15 +490,13 @@ describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
 
   // ══════════════════════════════════════════════════════════════════════════
   // Sc-11  Empty-balance survivor — data-bearing balance wins; empty skipped
+  //        Determinism: only one contribution ever exists (empty is not stored),
+  //        so order cannot matter — confirmed under both upload orders.
   // ══════════════════════════════════════════════════════════════════════════
 
-  it('Sc-11: Empty-balance survivor — data-bearing balance wins; empty (no-core) skipped', async () => {
-    const coId = await mkCompany('FPG SC11 Empty Balance Survivor');
-
-    await financialDataService.processExtractedData('balance_sheet', sc11Emp, coId);
-    await financialDataService.processExtractedData('balance_sheet', sc11Data, coId);
-
-    // Only one balance contribution (empty fixture was skipped)
+  async function assertSc11(coId: number): Promise<void> {
+    // Empty fixture produces zero contributions (no core balance fields present).
+    // Only the data-bearing document creates a contribution.
     const balContribs = await db
       .select()
       .from(financialContributions)
@@ -498,6 +515,20 @@ describe('Forward-Path Regression Gate — Layer A (14 scenarios)', () => {
       .where(eq(balanceSheets.targetCompanyId, coId));
     expect(bsRows).toHaveLength(1);
     expect(bsRows[0].totalCurrentAssets).toBe('686000');
+  }
+
+  it('Sc-11a: Empty-balance survivor — empty first, data second; data-bearing balance wins', async () => {
+    const coId = await mkCompany('FPG SC11a Empty Balance Emp-First');
+    await financialDataService.processExtractedData('balance_sheet', sc11Emp, coId);
+    await financialDataService.processExtractedData('balance_sheet', sc11Data, coId);
+    await assertSc11(coId);
+  });
+
+  it('Sc-11b: Empty-balance survivor — data first, empty second; data-bearing balance wins', async () => {
+    const coId = await mkCompany('FPG SC11b Empty Balance Data-First');
+    await financialDataService.processExtractedData('balance_sheet', sc11Data, coId);
+    await financialDataService.processExtractedData('balance_sheet', sc11Emp, coId);
+    await assertSc11(coId);
   });
 
   // ══════════════════════════════════════════════════════════════════════════
