@@ -1,22 +1,24 @@
 #!/usr/bin/env tsx
 /**
- * Layer B — Forward-Path Live Gate
+ * Layer B — Forward-Path Live Gate (REAL PROD FILES)
  *
- * For each of 14 scenarios:
- *   1. Writes a purpose-built synthetic CSV/text document to /tmp/fpg-layer-b/
- *   2. Calls classifyDocumentWithGemini + runStep2AnalysisForTypes (real Gemini API)
- *   3. Feeds the Gemini extraction into processExtractedData
- *   4. Asserts the same structural outcomes as the Layer A tests
- *   5. Prints PASS/FAIL per scenario with key figures
- *   6. Cleans up all created DB companies and temp files
+ * HARD RULES:
+ *  - Uses ACTUAL prod binaries via object storage keys — no synthetic documents
+ *  - Assertions are UNCHANGED from Layer A — failing = a result, not a bug to fix
+ *  - documentCategory is the REAL category from prod (may affect tier)
+ *  - imOverride is NEVER used — Gemini determines isIM from document content
  *
- * Usage:  npx tsx scripts/forward-path-live-gate.ts
+ * Step 1: Print prod document manifest (company → doc_id → filename → key)
+ * Step 2: For each scenario create a fresh dev company, run real file through
+ *         the full pipeline (classifyDocumentWithGemini + runStep2AnalysisForTypes
+ *         + processExtractedData), assert unchanged Layer A assertions
+ * Step 3: Print PASS/FAIL table with raw extracted values for every scenario
+ *
+ * Usage: npx tsx scripts/forward-path-live-gate.ts
  * Prereq: DATABASE_URL (dev) and GOOGLE_GEMINI_API_KEY must be set
  */
 
-import { join } from 'path';
-import { writeFile, mkdir, rm } from 'fs/promises';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../server/db';
 import {
   targetCompanies,
@@ -28,7 +30,6 @@ import {
   ebitdaAdjustments,
 } from '../shared/schema';
 import { financialDataService } from '../server/services/financial-data.service';
-import { reselect } from '../server/services/projection-reselect.service';
 import { fetchReportedEbitdaByYear } from '../server/services/deal-model.service';
 import { classifyDocumentWithGemini } from '../server/services/gemini-document-classification-service';
 import { runStep2AnalysisForTypes } from '../server/services/gemini-step2-analysis-service';
@@ -37,296 +38,121 @@ import { runStep2AnalysisForTypes } from '../server/services/gemini-step2-analys
 const dbUrl = process.env.DATABASE_URL ?? '';
 const dbHost = dbUrl.match(/@([^\/]+)\//)?.[1] ?? 'unknown';
 if (dbHost.includes('ep-old-recipe') || dbHost.includes('.prod.')) {
-  console.error(`\nABORT: DATABASE_URL points at prod host (${dbHost}).\nLayer B gate must run on dev only.\n`);
+  console.error(`\nABORT: DATABASE_URL points at prod host (${dbHost}). Must run on dev.\n`);
   process.exit(1);
 }
 
 const USER_COMPANY_ID = 71;
-const MOCK_URL = 'http://localhost/synthetic';
+const MOCK_URL = 'http://localhost/prod-doc';
 
-// ── Synthetic document content ────────────────────────────────────────────────
+// ── Prod document manifest ────────────────────────────────────────────────────
+// Storage keys are real prod object storage paths — readable from dev because
+// dev and prod share the same object storage bucket.
 
-const DOCS: Record<string, string> = {
-  // Sc-1: YTD named P&L — "YTD" in filename + 9-month period → is_full_year=false
-  'sc01-ytd-named-pl.csv': `PROFIT AND LOSS STATEMENT (YTD)
-Company: Canoports Ltd
-Source: Statutory
-Period: 9 Months Ended 30 September 2025
-Period Ending: 2025-09-30
-Months Covered: 9
+interface ProdDoc {
+  prodCo: string;    // prod company name + ID
+  docId: number;     // prod document ID
+  fileName: string;  // original filename (used for YTD / filename-based detection)
+  key: string;       // object storage key (NOT a local path)
+  mimeType: string;
+  docCategory: string;
+}
 
-Fiscal Year,Period End,Months Covered,Revenue,Operating Profit,Depreciation & Amortisation
-FY2025,2025-09-30,9,1200000,150000,25000
-`,
+const DOCS: Record<string, ProdDoc> = {
+  sc01: {
+    prodCo: 'Canoports UK Limited (220)',
+    docId: 1543,
+    fileName: 'Canoports_YTD_Profit_and_Loss.pdf',
+    key: 'companies/220/doc-1783154915000-431657599.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'YTD Profit & Loss',
+  },
+  sc02: {
+    prodCo: 'Opem Security (215)',
+    docId: 1497,
+    fileName: 'Valoxi - OPEM - YTD Profit & Loss 28.02.2026 to 31.05.2026.xlsx',
+    key: 'companies/215/doc-1782943014906-133969238.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    docCategory: 'YTD Profit & Loss',
+  },
+  sc03: {
+    prodCo: 'Canoports UK Limited (218)',
+    docId: 1506,
+    fileName: 'Sales Ledger 2.pdf',
+    key: 'companies/218/doc-1782995714308-283716183.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'Sales Ledger',
+  },
+  sc04: {
+    prodCo: 'MANOR BUILDING SOLUTIONS (UK) LTD (137)',
+    docId: 1596,
+    fileName: 'Manor Building Solutions YTD P&L.pdf',
+    key: 'companies/137/doc-1783613615639-259551387.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'Deal Documents',
+  },
+  sc05: {
+    prodCo: 'Clifford Press Limited (122)',
+    docId: 700,
+    fileName: 'Project Folio - Flyer (new).pdf',
+    key: 'companies/122/doc-1777926859738-906639683.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'Company Accounts',
+  },
+  sc06: {
+    prodCo: 'Canoports UK Limited (220)',
+    docId: 1542,
+    fileName: 'Canoports_Staff_Matrix (1).pdf',
+    key: 'companies/220/doc-1783154907393-627077613.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'Staff Matrix',
+  },
+  // Sc-7 phase 1: IM multi-year results pack (Deal Documents → IM tier)
+  sc07a: {
+    prodCo: 'The Homecare People (161)',
+    docId: 1051,
+    fileName: 'Year on Year 2023_2026 (2).pdf',
+    key: 'companies/161/doc-1780160579222-622971738.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'Deal Documents',
+  },
+  // Sc-7 phase 2: statutory FY2023 override
+  sc07b: {
+    prodCo: 'The Homecare People (161)',
+    docId: 1048,
+    fileName: 'THCP Stat Accounts 31 Dec 2023 (detailed PL) (1).pdf',
+    key: 'companies/161/doc-1780160490371-374310687.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'Company Accounts',
+  },
+  // Sc-10 BS doc: Canoports 220 YTD Balance Sheet
+  sc10a: {
+    prodCo: 'Canoports UK Limited (220)',
+    docId: 1522,
+    fileName: 'Canoports_YTD_Balance_Sheet.pdf',
+    key: 'companies/220/doc-1783111615066-242378147.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'YTD Balance Sheet',
+  },
+  // Sc-10 P&L doc: Canoports 220 YTD P&L (same as Sc-1)
+  sc10b: {
+    prodCo: 'Canoports UK Limited (220)',
+    docId: 1543,
+    fileName: 'Canoports_YTD_Profit_and_Loss.pdf',
+    key: 'companies/220/doc-1783154915000-431657599.pdf',
+    mimeType: 'application/pdf',
+    docCategory: 'YTD Profit & Loss',
+  },
+};
 
-  // Sc-2: YTD date-range P&L — 3-month period, months_covered=3
-  'sc02-opem-ytd-daterange.csv': `MANAGEMENT ACCOUNTS - PROFIT AND LOSS
-Company: OPEM Ltd
-Source: Management
-Period: 28 February 2026 to 31 May 2026 (3 months)
-Period Ending: 2026-05-31
-Months Covered: 3
-
-Fiscal Year,Period End,Months Covered,Revenue,Operating Profit,Depreciation & Amortisation
-FY2026,2026-05-31,3,400000,40000,5000
-`,
-
-  // Sc-3: Multi-year P&L with future years — years 2027/2028 are future-gated
-  // Note: synthetic doc deliberately avoids "forecast" wording to prevent isIM classification
-  'sc03-forecast-multiyear.csv': `PROFIT AND LOSS STATEMENT - STATUTORY ACCOUNTS
-Company: Growth Co Ltd
-Source: Statutory
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2023,2023-12-31,1000000,100000,15000
-FY2024,2024-12-31,1100000,120000,18000
-FY2025,2025-12-31,1200000,140000,20000
-FY2027,2027-12-31,1400000,170000,25000
-FY2028,2028-12-31,1500000,190000,30000
-`,
-
-  // Sc-4: Fiscal year mislabel — label says FY2027 but period ends June 2026
-  'sc04-fiscal-mislabel.csv': `MANAGEMENT ACCOUNTS
-Company: Mislabel Co Ltd
-Source: Management
-Fiscal Year Label: FY2027
-Period Ending: 2026-06-30
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2027,2026-06-30,800000,80000,12000
-`,
-
-  // Sc-5: Information Memorandum — Gemini should set isInformationMemorandum=true
-  // Contains a structured P&L table so Gemini classifies as profit_and_loss (not none)
-  'sc05-clifford-im.txt': `INFORMATION MEMORANDUM
-Clifford Press Limited
-Strictly Private and Confidential — For Prospective Purchasers Only
-
-EXECUTIVE SUMMARY
-This Information Memorandum has been prepared by the management of Clifford Press Limited
-for the sole purpose of providing information to potential acquirers.
-This document is confidential and forms the basis for initial discussions only.
-
-COMPANY OVERVIEW
-Clifford Press is an established commercial printing business providing high-quality
-print services to a diverse blue-chip client base across the UK.
-
-FINANCIAL PERFORMANCE
-Source: Management
-The following profit and loss figures are extracted from management accounts.
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,500000,50000,8000
-
-This document is an information memorandum prepared for M&A and acquisition purposes.
-All financial data is indicative and unaudited.
-`,
-
-  // Sc-6: Staff matrix
-  'sc06-staff-matrix.csv': `STAFF MATRIX
-Company: Staffing Co Ltd
-Fiscal Year: 2024
-Report Date: 2024-03-31
-
-Employee ID,Name,Role,Department,Annual Gross Salary,Employer NI,Employer Pension
-1,Alice Brown,Managing Director,Management,150000,18000,7500
-2,Bob Smith,Operations Manager,Operations,85000,10200,4250
-3,Carol Jones,Sales Manager,Sales,72000,8640,3600
-
-SUMMARY
-Total Headcount,25
-Total Gross Salaries,700000
-Total Employer NI,85000
-Total Employer Pension,35000
-Total Staff Costs,850000
-`,
-
-  // Sc-7: IM multi-year pack (phase 1) — documentCategory='Deal Documents' forces IM tier
-  'sc07-homecare-im-pack.csv': `HOMECARE SERVICES GROUP
-Financial Performance Summary — Management Information
-Source: Management
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2022,2022-12-31,2000000,200000,30000
-FY2023,2023-12-31,2200000,230000,35000
-FY2024,2024-12-31,2400000,260000,40000
-`,
-
-  // Sc-7 phase 2: Statutory FY2023 (overrides IM for that year)
-  'sc07-stat-fy2023.csv': `STATUTORY ACCOUNTS - PROFIT AND LOSS
-Company: Homecare Services Group Ltd
-Source: Statutory
-Fiscal Year: 2023
-Period Ending: 2023-12-31
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2023,2023-12-31,2000000,220000,32000
-`,
-
-  // Sc-8: Full-year statutory (FY2024 Dec — 12 months)
-  'sc08-timber-full.csv': `STATUTORY ACCOUNTS - PROFIT AND LOSS
-Company: Timber Holdings Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024 (12 months full year)
-
-Fiscal Year,Period End,Months Covered,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,12,337000,45000,8000
-`,
-
-  // Sc-8: Partial-year statutory (FY2024 Jun — 6 months)
-  'sc08-timber-part.csv': `STATUTORY ACCOUNTS - PROFIT AND LOSS
-Company: Timber Holdings Ltd
-Source: Statutory
-Period: 6 Months Ended 30 June 2024
-Months Covered: 6
-
-Fiscal Year,Period End,Months Covered,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-06-30,6,180000,20000,3000
-`,
-
-  // Sc-9: Statutory P&L FY2024
-  'sc09-stat-pl.csv': `STATUTORY ACCOUNTS - PROFIT AND LOSS
-Company: Overlap Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,500000,55000,9000
-`,
-
-  // Sc-9: Management P&L FY2024
-  'sc09-mgmt-pl.csv': `MANAGEMENT ACCOUNTS - PROFIT AND LOSS
-Company: Overlap Co Ltd
-Source: Management
-Period: Year Ended 31 December 2024
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,400000,40000,6000
-`,
-
-  // Sc-10: Balance sheet only (statutory company accounts, no P&L)
-  'sc10-bs-only.csv': `STATUTORY ACCOUNTS - BALANCE SHEET ONLY
-Company: Split Source Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-
-Balance Sheet as at 31 December 2024:
-Fiscal Year,Period End
-FY2024,2024-12-31
-
-CURRENT ASSETS
-Cash at Bank,200000
-Trade Debtors,400000
-Total Current Assets,600000
-
-EQUITY
-Retained Earnings,600000
-Total Equity,600000
-`,
-
-  // Sc-10: YTD P&L (9 months)
-  'sc10-ytd-pl.csv': `MANAGEMENT ACCOUNTS - PROFIT AND LOSS (YTD)
-Company: Split Source Co Ltd
-Source: Management
-Period: 9 Months Ended 30 September 2024
-Months Covered: 9
-
-Fiscal Year,Period End,Months Covered,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-09-30,9,750000,75000,12000
-`,
-
-  // Sc-11: Empty balance sheet — no asset or liability data; pipeline should skip/not store it
-  'sc11-empty-bs.csv': `STATUTORY ACCOUNTS - BALANCE SHEET
-Company: Empty Balance Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-Period Ending: 2024-12-31
-
-Balance Sheet as at 31 December 2024:
-No balance sheet data available for this period. Statement not yet prepared.
-`,
-
-  // Sc-11: Data-bearing balance sheet
-  'sc11-data-bs.csv': `STATUTORY ACCOUNTS - BALANCE SHEET
-Company: Data Balance Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-
-Balance Sheet as at 31 December 2024:
-Fiscal Year,Period End
-FY2024,2024-12-31
-
-CURRENT ASSETS
-Cash at Bank,200000
-Trade Debtors,486000
-Total Current Assets,686000
-
-EQUITY
-Retained Earnings,686000
-Total Equity,686000
-`,
-
-  // Sc-12: Balance-only doc with stray net_profit (should not create income contributions)
-  'sc12-bs-phantom-np.csv': `STATUTORY ACCOUNTS - BALANCE SHEET
-Company: Phantom PL Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-
-Net Profit for the Year: 75000
-
-Balance Sheet as at 31 December 2024:
-Fiscal Year,Period End
-FY2024,2024-12-31
-
-CURRENT ASSETS
-Cash at Bank,150000
-Trade Debtors,350000
-Total Current Assets,500000
-
-EQUITY
-Retained Earnings,450000
-Total Equity,450000
-`,
-
-  // Sc-13: Statutory P&L (same figures as sc09 stat)
-  'sc13-stat-pl.csv': `STATUTORY ACCOUNTS - PROFIT AND LOSS
-Company: Fallback Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,500000,55000,9000
-`,
-
-  // Sc-13: Management P&L (same figures as sc09 mgmt)
-  'sc13-mgmt-pl.csv': `MANAGEMENT ACCOUNTS - PROFIT AND LOSS
-Company: Fallback Co Ltd
-Source: Management
-Period: Year Ended 31 December 2024
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,400000,40000,6000
-`,
-
-  // Sc-14: Management v1 P&L
-  'sc14-mgmt-v1.csv': `MANAGEMENT ACCOUNTS - PROFIT AND LOSS
-Company: Ghost Prune Co Ltd
-Source: Management
-Period: Year Ended 31 December 2024
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,350000,35000,5000
-`,
-
-  // Sc-14: Statutory P&L (overrides management)
-  'sc14-stat-pl.csv': `STATUTORY ACCOUNTS - PROFIT AND LOSS
-Company: Ghost Prune Co Ltd
-Source: Statutory
-Period: Year Ended 31 December 2024
-
-Fiscal Year,Period End,Revenue,Operating Profit,Depreciation & Amortisation
-FY2024,2024-12-31,420000,48000,7000
-`,
+// Scenarios without a real prod file
+const SKIPPED: Record<string, string> = {
+  'Sc-8':  'No prod pair found: requires partial + full-year statutory for the SAME fiscal year from same company',
+  'Sc-9':  'No prod pair found: requires management + statutory for the SAME fiscal year from same company',
+  'Sc-11': 'No prod file: requires an empty balance sheet with no core asset data',
+  'Sc-12': 'No prod file: requires balance-only doc with stray net_profit at year level',
+  'Sc-13': 'No prod pair: requires same-FY management + statutory for delete/fallback/re-add test',
+  'Sc-14': 'No prod pair: requires same-FY management + statutory for ghost-prune/container-stability test',
 };
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
@@ -351,31 +177,28 @@ async function cleanupCompany(coId: number): Promise<void> {
   } catch { /* best-effort */ }
 }
 
-// ── Pipeline helper ───────────────────────────────────────────────────────────
+// ── Pipeline ──────────────────────────────────────────────────────────────────
 
 interface PipelineResult {
   geminiTypes: string[];
   isIM: boolean;
-  step2Results: Array<{ type: string; success: boolean; error?: string }>;
+  step2Results: Array<{ type: string; success: boolean }>;
 }
 
-async function runDocumentThroughPipeline(
-  filePath: string,
-  fileName: string,
-  mimeType: string,
+async function runDocThroughPipeline(
+  doc: ProdDoc,
   companyId: number,
-  opts?: {
-    documentCategory?: string;
-    forcedTypes?: string[];
-    imOverride?: boolean;
-  },
 ): Promise<PipelineResult> {
-  // Step 1: Classify
-  const classResult = await classifyDocumentWithGemini({ filePath, mimeType, fileName });
-  const isIM = opts?.imOverride ?? (classResult.isInformationMemorandum ?? false);
-  let types = opts?.forcedTypes ?? classResult.documentTypes ?? [];
+  // Step 1: Classify — uses real prod binary from object storage
+  const classResult = await classifyDocumentWithGemini({
+    filePath: doc.key,
+    mimeType: doc.mimeType,
+    fileName: doc.fileName,
+  });
+  const isIM = classResult.isInformationMemorandum ?? false;
+  let types = classResult.documentTypes ?? [];
 
-  // Expand company_accounts → profit_and_loss + balance_sheet
+  // Expand company_accounts → both P&L and BS (mirrors real pipeline)
   if (types.includes('company_accounts')) {
     if (!types.includes('profit_and_loss')) types = [...types, 'profit_and_loss'];
     if (!types.includes('balance_sheet')) types = [...types, 'balance_sheet'];
@@ -386,20 +209,21 @@ async function runDocumentThroughPipeline(
   }
 
   // Step 2: Extract
-  const step2 = await runStep2AnalysisForTypes(MOCK_URL, filePath, mimeType, fileName, types);
+  const step2 = await runStep2AnalysisForTypes(
+    MOCK_URL, doc.key, doc.mimeType, doc.fileName, types,
+  );
 
-  // Step 3: processExtractedData for each successful result
+  // Step 3: processExtractedData — uses REAL documentCategory from prod
   for (const r of step2) {
     if (r.success && r.analysisData) {
-      const data = { ...r.analysisData, _isIM: isIM };
       await financialDataService.processExtractedData(
         r.documentType,
-        data,
+        r.analysisData,
         companyId,
         undefined,
-        opts?.documentCategory,
+        doc.docCategory,
         { llmIsIM: isIM },
-        fileName,
+        doc.fileName,
       );
     }
   }
@@ -407,417 +231,233 @@ async function runDocumentThroughPipeline(
   return {
     geminiTypes: classResult.documentTypes,
     isIM,
-    step2Results: step2.map(r => ({ type: r.documentType, success: r.success, error: r.error })),
+    step2Results: step2.map(r => ({ type: r.documentType, success: r.success })),
   };
 }
 
-// ── Assertion helpers ─────────────────────────────────────────────────────────
+// ── Assertions ────────────────────────────────────────────────────────────────
 
 interface Assertion { ok: boolean; msg: string }
 
-function expect_eq<T>(label: string, actual: T, expected: T): Assertion {
+function aeq<T>(label: string, actual: T, expected: T): Assertion {
   const ok = actual === expected;
-  return { ok, msg: ok ? `✓ ${label}: ${actual}` : `✗ ${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}` };
+  return { ok, msg: ok ? `  ✓ ${label}: ${JSON.stringify(actual)}` : `  ✗ ${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}` };
 }
-
-function expect_true(label: string, actual: boolean): Assertion {
-  return { ok: actual, msg: actual ? `✓ ${label}` : `✗ ${label}` };
-}
-
-function expect_gte(label: string, actual: number, min: number): Assertion {
+function agte(label: string, actual: number, min: number): Assertion {
   const ok = actual >= min;
-  return { ok, msg: ok ? `✓ ${label}: ${actual} >= ${min}` : `✗ ${label}: expected >= ${min}, got ${actual}` };
+  return { ok, msg: ok ? `  ✓ ${label}: ${actual} >= ${min}` : `  ✗ ${label}: expected >= ${min}, got ${actual}` };
+}
+function atrue(label: string, val: boolean): Assertion {
+  return { ok: val, msg: val ? `  ✓ ${label}` : `  ✗ ${label}` };
 }
 
-// ── Scenario result ───────────────────────────────────────────────────────────
-
-interface ScenarioResult {
+interface ScResult {
   name: string;
-  pass: boolean;
+  status: 'PASS' | 'FAIL' | 'SKIP';
+  skipReason?: string;
   assertions: Assertion[];
   geminiTypes: string[];
   isIM: boolean;
-  ebitda: Record<string, number>;
-  geminiNote?: string;
-}
-
-function collectResult(
-  name: string,
-  assertions: Assertion[],
-  geminiTypes: string[],
-  isIM: boolean,
-  ebitda: Record<string, number>,
-  geminiNote?: string,
-): ScenarioResult {
-  return {
-    name,
-    pass: assertions.every(a => a.ok),
-    assertions,
-    geminiTypes,
-    isIM,
-    ebitda,
-    geminiNote,
-  };
+  raw: Record<string, unknown>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-1: YTD named P&L → is_full_year=false, excluded from EBITDA
+// Sc-1: Canoports YTD P&L → is_full_year=false, excluded from EBITDA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc1(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC1 YTD Named PL');
+async function runSc1(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc1 Canoports YTD PL');
   try {
-    const fileName = 'Canoports_YTD_Profit_and_Loss.csv';
-    const filePath = join(tmpDir, 'sc01-ytd-named-pl.csv');
-    const pr = await runDocumentThroughPipeline(filePath, fileName, 'text/csv', coId);
-
+    const pr = await runDocThroughPipeline(DOCS.sc01, coId);
     const contribs = await db.select().from(financialContributions)
       .where(and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.statementType, 'income')));
     const incomes = await db.select().from(incomeStatements).where(eq(incomeStatements.targetCompanyId, coId));
     const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const assertions: Assertion[] = [
-      expect_gte('income contribs', contribs.length, 1),
-      expect_eq('IS is_full_year', contribs[0]?.isFullYear, false),
-      expect_gte('incomeStatements', incomes.length, 1),
-      expect_eq('income stmt is_full_year', incomes[0]?.isFullYear, false),
-      expect_eq('EBITDA empty', Object.keys(ebitda).length, 0),
+    const raw = { types: pr.geminiTypes, isIM: pr.isIM, incomeContribs: contribs.length, isFullYear: contribs[0]?.isFullYear, monthsCovered: contribs[0]?.monthsCovered, ebitdaKeys: Object.keys(ebitda) };
+    const assertions = [
+      agte('income contribs ≥ 1', contribs.length, 1),
+      aeq('contrib.isFullYear=false', contribs[0]?.isFullYear, false),
+      agte('incomeStatements ≥ 1', incomes.length, 1),
+      aeq('IS.isFullYear=false', incomes[0]?.isFullYear, false),
+      aeq('EBITDA={}', Object.keys(ebitda).length, 0),
     ];
-    return collectResult('Sc-1: YTD named P&L → is_full_year=false, excluded EBITDA', assertions, pr.geminiTypes, pr.isIM, ebitda);
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-1: Canoports YTD P&L → is_full_year=false, EBITDA={}', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr.geminiTypes, isIM: pr.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-2: YTD date-range P&L (3 months) → is_full_year=false, monthsCovered=3
+// Sc-2: OPEM YTD P&L xlsx → monthsCovered=3, is_full_year=false
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc2(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC2 YTD DateRange PL');
+async function runSc2(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc2 OPEM YTD PL');
   try {
-    const fileName = 'OPEM - YTD Profit & Loss 28.02.2026 to 31.05.2026.csv';
-    const filePath = join(tmpDir, 'sc02-opem-ytd-daterange.csv');
-    const pr = await runDocumentThroughPipeline(filePath, fileName, 'text/csv', coId);
-
+    const pr = await runDocThroughPipeline(DOCS.sc02, coId);
     const contribs = await db.select().from(financialContributions)
       .where(and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.statementType, 'income')));
     const incomes = await db.select().from(incomeStatements).where(eq(incomeStatements.targetCompanyId, coId));
     const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const assertions: Assertion[] = [
-      expect_gte('income contribs', contribs.length, 1),
-      expect_eq('IS is_full_year', contribs[0]?.isFullYear, false),
-      expect_eq('months_covered', contribs[0]?.monthsCovered, 3),
-      expect_gte('incomeStatements', incomes.length, 1),
-      expect_eq('income stmt is_full_year', incomes[0]?.isFullYear, false),
-      expect_eq('EBITDA empty', Object.keys(ebitda).length, 0),
+    const raw = { types: pr.geminiTypes, isIM: pr.isIM, incomeContribs: contribs.length, isFullYear: contribs[0]?.isFullYear, monthsCovered: contribs[0]?.monthsCovered, tier: contribs[0]?.sourceTier, ebitdaKeys: Object.keys(ebitda) };
+    const assertions = [
+      agte('income contribs ≥ 1', contribs.length, 1),
+      aeq('contrib.isFullYear=false', contribs[0]?.isFullYear, false),
+      aeq('contrib.monthsCovered=3', contribs[0]?.monthsCovered, 3),
+      agte('incomeStatements ≥ 1', incomes.length, 1),
+      aeq('IS.isFullYear=false', incomes[0]?.isFullYear, false),
+      aeq('EBITDA={}', Object.keys(ebitda).length, 0),
     ];
-    return collectResult('Sc-2: YTD date-range P&L (3 months) → is_full_year=false', assertions, pr.geminiTypes, pr.isIM, ebitda);
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-2: OPEM YTD P&L (3 months) → monthsCovered=3, EBITDA={}', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr.geminiTypes, isIM: pr.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-3: Forecast multi-year — future fiscal years never enter EBITDA
+// Sc-3: Canoports 218 Sales Ledger → multi-year with future-gated years
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc3(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC3 Forecast MultiYear');
+async function runSc3(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc3 Canoports218 SalesLedger');
   try {
-    const fileName = 'Growth Co Multi-Year Profit and Loss.csv';
-    const filePath = join(tmpDir, 'sc03-forecast-multiyear.csv');
-    // imOverride=false: the adversarial corpus doc was a statutory P&L, not an IM.
-    // Gemini may false-positive isIM=true when it sees future FY years, so we force it off
-    // to match the real production scenario where this doc was NOT treated as IM.
-    const pr = await runDocumentThroughPipeline(filePath, fileName, 'text/csv', coId, {
-      imOverride: false,
-    });
-
+    const pr = await runDocThroughPipeline(DOCS.sc03, coId);
     const allContribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
     const allPeriods = await db.select({ fy: financialPeriods.fiscalYear }).from(financialPeriods)
       .where(and(eq(financialPeriods.targetCompanyId, coId), eq(financialPeriods.isFullYear, true)));
     const ebitda = await fetchReportedEbitdaByYear(coId);
-    const ebitdaYears = Object.keys(ebitda).sort();
-
-    const assertions: Assertion[] = [
-      expect_true('EBITDA has 2023', '2023' in ebitda),
-      expect_true('EBITDA has 2024', '2024' in ebitda),
-      expect_true('EBITDA has 2025', '2025' in ebitda),
-      expect_eq('EBITDA 2023', ebitda['2023'], 115000),
-      expect_eq('EBITDA 2024', ebitda['2024'], 138000),
-      expect_eq('EBITDA 2025', ebitda['2025'], 160000),
-      expect_true('EBITDA no 2027', !('2027' in ebitda)),
-      expect_true('EBITDA no 2028', !('2028' in ebitda)),
-      expect_true('contribs has fy2027', allContribs.some(c => c.fiscalYear === 2027)),
-      expect_true('contribs has fy2028', allContribs.some(c => c.fiscalYear === 2028)),
-      expect_true('no full-year period >2026', allPeriods.every(p => (p.fy ?? 0) <= 2026)),
+    const raw = { types: pr.geminiTypes, isIM: pr.isIM, contribCount: allContribs.length, contribFYs: allContribs.map(c => c.fiscalYear), ebitdaKeys: Object.keys(ebitda), ebitda2023: ebitda['2023'], ebitda2024: ebitda['2024'], ebitda2025: ebitda['2025'] };
+    const assertions = [
+      atrue('EBITDA has 2023', '2023' in ebitda),
+      atrue('EBITDA has 2024', '2024' in ebitda),
+      atrue('EBITDA has 2025', '2025' in ebitda),
+      aeq('ebitda[2023]=115000', ebitda['2023'], 115000),
+      aeq('ebitda[2024]=138000', ebitda['2024'], 138000),
+      aeq('ebitda[2025]=160000', ebitda['2025'], 160000),
+      atrue('EBITDA no 2027', !('2027' in ebitda)),
+      atrue('EBITDA no 2028', !('2028' in ebitda)),
+      atrue('contrib fy2027 exists', allContribs.some(c => c.fiscalYear === 2027)),
+      atrue('contrib fy2028 exists', allContribs.some(c => c.fiscalYear === 2028)),
+      atrue('no full-year period >2026', allPeriods.every(p => (p.fy ?? 0) <= 2026)),
     ];
-    return collectResult(
-      'Sc-3: Forecast multi-year → future years excluded from EBITDA',
-      assertions, pr.geminiTypes, pr.isIM, ebitda,
-      `EBITDA years: ${ebitdaYears.join(', ')}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-3: Canoports 218 Sales Ledger → future FYs excluded, EBITDA[2023-2025]=unchanged', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr.geminiTypes, isIM: pr.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-4: Fiscal-year mislabel (FY2027, period_end 2026-06-30) → excluded EBITDA
+// Sc-4: Manor YTD P&L (FY2027 mislabel, category=Deal Documents) → EBITDA={}
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc4(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC4 FiscalYear Mislabel');
+async function runSc4(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc4 Manor YTD Mislabel');
   try {
-    const fileName = 'Management Accounts FY2027.csv';
-    const filePath = join(tmpDir, 'sc04-fiscal-mislabel.csv');
-    const pr = await runDocumentThroughPipeline(filePath, fileName, 'text/csv', coId);
-
+    const pr = await runDocThroughPipeline(DOCS.sc04, coId);
     const allContribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
     const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const has2027Contrib = allContribs.some(c => c.fiscalYear === 2027);
-    const has2026Contrib = allContribs.some(c => c.fiscalYear === 2026);
-    const ebitdaEmpty = Object.keys(ebitda).length === 0;
-
-    let note: string | undefined;
-    if (!has2027Contrib && has2026Contrib) {
-      note = `⚠ Gemini normalised FY2027→FY2026 (label resolved to period_end year). Contrib fy=2026. EBITDA exclusion still holds since 2026 ≤ current, so EBITDA would have 2026 if full_year.`;
-    }
-
-    const assertions: Assertion[] = [
-      expect_true('contribution exists (fy=2027 or fy=2026)', has2027Contrib || has2026Contrib),
-      expect_eq('EBITDA empty', Object.keys(ebitda).length, 0),
+    const has2027 = allContribs.some(c => c.fiscalYear === 2027);
+    const has2026 = allContribs.some(c => c.fiscalYear === 2026);
+    const raw = { types: pr.geminiTypes, isIM: pr.isIM, contribFYs: allContribs.map(c => ({ fy: c.fiscalYear, tier: c.sourceTier })), ebitdaKeys: Object.keys(ebitda), ebitda };
+    const assertions = [
+      atrue('contribution exists (fy=2027 or 2026)', has2027 || has2026),
+      aeq('EBITDA={}', Object.keys(ebitda).length, 0),
     ];
-    return collectResult(
-      'Sc-4: Fiscal-year mislabel → FY2027 with 2026 period_end, excluded from EBITDA',
-      assertions, pr.geminiTypes, pr.isIM, ebitda, note,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-4: Manor YTD P&L (FY2027 mislabel, Deal Docs cat) → contrib exists, EBITDA={}', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr.geminiTypes, isIM: pr.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-5: Information Memorandum → tier=information_memorandum, excluded EBITDA
+// Sc-5: Clifford Press flyer → isInformationMemorandum=true, tier=IM, EBITDA={}
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc5(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC5 IM Flyer');
+async function runSc5(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc5 Clifford Flyer');
   try {
-    const fileName = 'Clifford Press Information Memorandum.txt';
-    const filePath = join(tmpDir, 'sc05-clifford-im.txt');
-    const pr = await runDocumentThroughPipeline(filePath, fileName, 'text/plain', coId);
-
+    const pr = await runDocThroughPipeline(DOCS.sc05, coId);
     const contribs = await db.select().from(financialContributions)
       .where(and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.statementType, 'income')));
     const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    let note: string | undefined;
-    if (!pr.isIM) {
-      note = '⚠ Gemini did not detect isInformationMemorandum=true on the synthetic IM doc. Tier may not be information_memorandum.';
-    }
-
     const actualTier = contribs[0]?.sourceTier;
-    const assertions: Assertion[] = [
-      expect_true('isIM from Gemini classifier', pr.isIM),
-      expect_gte('income contribs exist', contribs.length, 1),
-      expect_eq('tier=information_memorandum', actualTier, 'information_memorandum'),
-      expect_eq('EBITDA empty', Object.keys(ebitda).length, 0),
+    const raw = { types: pr.geminiTypes, isIM: pr.isIM, incomeContribs: contribs.length, tier: actualTier, ebitdaKeys: Object.keys(ebitda) };
+    const assertions = [
+      atrue('Gemini isIM=true', pr.isIM),
+      agte('income contribs ≥ 1', contribs.length, 1),
+      aeq('tier=information_memorandum', actualTier, 'information_memorandum'),
+      aeq('EBITDA={}', Object.keys(ebitda).length, 0),
     ];
-    return collectResult(
-      'Sc-5: IM flyer → tier=information_memorandum, excluded from EBITDA',
-      assertions, pr.geminiTypes, pr.isIM, ebitda, note,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-5: Clifford Flyer → isIM=true, tier=information_memorandum, EBITDA={}', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr.geminiTypes, isIM: pr.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-6: Staff matrix → staff_data written, zero financial contributions
+// Sc-6: Canoports staff matrix → staff_data written, zero financial contribs
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc6(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC6 Staff Matrix');
+async function runSc6(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc6 Canoports StaffMatrix');
   try {
-    const fileName = 'Staff Matrix FY2024.csv';
-    const filePath = join(tmpDir, 'sc06-staff-matrix.csv');
-    const pr = await runDocumentThroughPipeline(filePath, fileName, 'text/csv', coId);
-
+    const pr = await runDocThroughPipeline(DOCS.sc06, coId);
     const contribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
     const incomes = await db.select().from(incomeStatements).where(eq(incomeStatements.targetCompanyId, coId));
     const sdRows = await db.select().from(staffData).where(eq(staffData.targetCompanyId, coId));
     const ebitda = await fetchReportedEbitdaByYear(coId);
-
     const actualHeadcount = sdRows[0]?.totalHeadcount;
-    const assertions: Assertion[] = [
-      expect_eq('zero financial contribs', contribs.length, 0),
-      expect_eq('zero income stmts', incomes.length, 0),
-      expect_gte('staff_data written', sdRows.length, 1),
-      expect_eq('headcount=25', actualHeadcount, 25),
+    const raw = { types: pr.geminiTypes, isIM: pr.isIM, contribCount: contribs.length, incomeCount: incomes.length, staffDataRows: sdRows.length, headcount: actualHeadcount };
+    const assertions = [
+      aeq('zero financial contribs', contribs.length, 0),
+      aeq('zero income stmts', incomes.length, 0),
+      agte('staffData rows ≥ 1', sdRows.length, 1),
+      aeq('totalHeadcount=25', actualHeadcount, 25),
     ];
-    return collectResult(
-      'Sc-6: Staff matrix → staff_data written (headcount=25), zero financial contribs',
-      assertions, pr.geminiTypes, pr.isIM, ebitda,
-      `headcount=${actualHeadcount}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-6: Canoports Staff Matrix → staffData written (headcount=25), zero financial contribs', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr.geminiTypes, isIM: pr.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-7: IM pack + statutory override
+// Sc-7: Homecare multi-year results pack (Deal Docs) → IM tier; stat FY2023 overrides
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc7(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC7 Homecare IM Pack');
+async function runSc7(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc7 Homecare IM Pack');
   try {
-    // Phase 1: IM pack via documentCategory='Deal Documents'
-    const fileName1 = 'Homecare IM Financial Summary.csv';
-    const filePath1 = join(tmpDir, 'sc07-homecare-im-pack.csv');
-    await runDocumentThroughPipeline(filePath1, fileName1, 'text/csv', coId, { documentCategory: 'Deal Documents' });
-
+    // Phase 1: IM pack (Deal Documents → IM tier forced by category)
+    const pr1 = await runDocThroughPipeline(DOCS.sc07a, coId);
     const imContribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
-    const ebitdaPhase1 = await fetchReportedEbitdaByYear(coId);
+    const ebitdaP1 = await fetchReportedEbitdaByYear(coId);
+    const allIMTier = imContribs.every(c => c.sourceTier === 'information_memorandum');
 
     // Phase 2: statutory FY2023 override
-    const fileName2 = 'Homecare Statutory Accounts FY2023.csv';
-    const filePath2 = join(tmpDir, 'sc07-stat-fy2023.csv');
-    const pr2 = await runDocumentThroughPipeline(filePath2, fileName2, 'text/csv', coId);
-
+    await new Promise(r => setTimeout(r, 500));
+    const pr2 = await runDocThroughPipeline(DOCS.sc07b, coId);
     const ebitda = await fetchReportedEbitdaByYear(coId);
 
-    const allIMTier = imContribs.every(c => c.sourceTier === 'information_memorandum');
-    const assertions: Assertion[] = [
-      expect_gte('phase1 IM contribs', imContribs.length, 1),
-      expect_true('all phase1 contribs are IM tier', allIMTier),
-      expect_eq('phase1 EBITDA empty', Object.keys(ebitdaPhase1).length, 0),
-      expect_eq('EBITDA 2023 = 252000 (statutory wins)', ebitda['2023'], 252000),
-      expect_true('EBITDA no 2022', !('2022' in ebitda)),
-      expect_true('EBITDA no 2024', !('2024' in ebitda)),
+    const raw = {
+      types_phase1: pr1.geminiTypes,
+      isIM_phase1: pr1.isIM,
+      imContribCount: imContribs.length,
+      allIMTier,
+      ebitdaPhase1Keys: Object.keys(ebitdaP1),
+      types_phase2: pr2.geminiTypes,
+      ebitda,
+    };
+    const assertions = [
+      agte('phase1 IM contribs ≥ 1', imContribs.length, 1),
+      atrue('all phase1 contribs are IM tier', allIMTier),
+      aeq('phase1 EBITDA={}', Object.keys(ebitdaP1).length, 0),
+      aeq('ebitda[2023]=252000 after phase2', ebitda['2023'], 252000),
+      atrue('EBITDA no 2022', !('2022' in ebitda)),
+      atrue('EBITDA no 2024', !('2024' in ebitda)),
     ];
-    return collectResult(
-      'Sc-7: IM pack → all IM tier; statutory FY2023 overrides → EBITDA[2023]=252000',
-      assertions, pr2.geminiTypes, pr2.isIM, ebitda,
-      `IM contribs: ${imContribs.length}, all IM: ${allIMTier}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-7: Homecare IM pack → all IM; stat FY2023 overrides → EBITDA[2023]=252000', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: pr1.geminiTypes, isIM: pr1.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Sc-8: Duplicate statutory (Timber) — full-year wins regardless of upload order
+// Sc-10: Canoports 220 YTD BS + YTD P&L → split-source container
+// (NOTE: both docs are YTD, not full-year statutory BS — expected to diverge from Layer A)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function runSc8(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC8 Timber Duplicate Statutory');
+async function runSc10(): Promise<ScResult> {
+  const coId = await mkCompany('LB-PROD Sc10 Canoports YTD BS+PL');
   try {
-    // Upload full-year first, then partial
-    const prFull = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc08-timber-full.csv'),
-      'Timber Holdings Statutory Accounts FY2024.csv',
-      'text/csv', coId,
-    );
+    const prBS = await runDocThroughPipeline(DOCS.sc10a, coId);
     await new Promise(r => setTimeout(r, 500));
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc08-timber-part.csv'),
-      'Timber Holdings H1 2024 Statutory Accounts.csv',
-      'text/csv', coId,
-    );
-
-    const allIncomes = await db.select().from(incomeStatements).where(eq(incomeStatements.targetCompanyId, coId));
-    const full = allIncomes.filter(r => r.isFullYear === true);
-    const part = allIncomes.filter(r => r.isFullYear === false);
-    const contribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
-    const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const fullRevenue = full[0]?.revenue;
-    const assertions: Assertion[] = [
-      expect_eq('full-year IS count=1', full.length, 1),
-      expect_eq('full-year IS revenue=337000', fullRevenue, '337000'),
-      expect_eq('part-year IS count=1', part.length, 1),
-      expect_eq('EBITDA 2024 = 53000', ebitda['2024'], 53000),
-      expect_eq('2 contributions in truth table', contribs.length, 2),
-    ];
-    return collectResult(
-      'Sc-8: Duplicate statutory → full-year IS wins (rev=337k), EBITDA[2024]=53000',
-      assertions, prFull.geminiTypes, prFull.isIM, ebitda,
-      `full IS revenue=${fullRevenue}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sc-9: Management + statutory overlap → statutory wins
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runSc9(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC9 Mgmt+Stat Overlap');
-  try {
-    // Management first, then statutory
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc09-mgmt-pl.csv'),
-      'Overlap Co Management Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-    await new Promise(r => setTimeout(r, 500));
-    const prStat = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc09-stat-pl.csv'),
-      'Overlap Co Statutory Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-
-    const fullYearIncomes = await db.select().from(incomeStatements)
-      .where(and(eq(incomeStatements.targetCompanyId, coId), eq(incomeStatements.isFullYear, true)));
-    const contribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
-    const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const winnerRevenue = fullYearIncomes[0]?.revenue;
-    const assertions: Assertion[] = [
-      expect_eq('exactly 1 full-year IS', fullYearIncomes.length, 1),
-      expect_eq('statutory IS revenue=500000', winnerRevenue, '500000'),
-      expect_eq('EBITDA 2024 = 64000', ebitda['2024'], 64000),
-      expect_eq('2 contributions', contribs.length, 2),
-      expect_true('has management contrib', contribs.some(c => c.sourceTier === 'management')),
-      expect_true('has statutory contrib', contribs.some(c => c.sourceTier === 'statutory')),
-    ];
-    return collectResult(
-      'Sc-9: Mgmt+Stat overlap → statutory wins (rev=500k), EBITDA[2024]=64000',
-      assertions, prStat.geminiTypes, prStat.isIM, ebitda,
-      `winner revenue=${winnerRevenue}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sc-10: Split-source container — YTD income is_full_year=false
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runSc10(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC10 Split-Source Container');
-  try {
-    // BS-only company accounts
-    const prBS = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc10-bs-only.csv'),
-      'Split Source Co Statutory Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-    await new Promise(r => setTimeout(r, 500));
-    // YTD P&L (9 months)
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc10-ytd-pl.csv'),
-      'Split Source Co YTD PL 9 months to Sep 2024.csv',
-      'text/csv', coId,
-    );
+    await runDocThroughPipeline(DOCS.sc10b, coId);
 
     const fullYearIncomes = await db.select().from(incomeStatements)
       .where(and(eq(incomeStatements.targetCompanyId, coId), eq(incomeStatements.isFullYear, true)));
@@ -833,242 +473,26 @@ async function runSc10(tmpDir: string): Promise<ScenarioResult> {
       bsExists = bsRows.length > 0;
     }
 
-    const assertions: Assertion[] = [
-      expect_eq('no full-year IS', fullYearIncomes.length, 0),
-      expect_gte('YTD IS exists', allIncomes.length, 1),
-      expect_eq('YTD IS is_full_year=false', allIncomes[0]?.isFullYear, false),
-      expect_eq('EBITDA empty', Object.keys(ebitda).length, 0),
-      expect_gte('full-year period exists (from BS)', fullYearPeriods.length, 1),
-      expect_true('BS written to full-year period', bsExists),
+    const raw = {
+      types_bs: prBS.geminiTypes,
+      isIM_bs: prBS.isIM,
+      fullYearIncomes: fullYearIncomes.length,
+      allIncomes: allIncomes.length,
+      allIncomesIsFullYear: allIncomes.map(i => i.isFullYear),
+      fullYearPeriods: fullYearPeriods.length,
+      bsExists,
+      ebitdaKeys: Object.keys(ebitda),
+    };
+    const assertions = [
+      aeq('no full-year IS', fullYearIncomes.length, 0),
+      agte('YTD IS exists ≥ 1', allIncomes.length, 1),
+      aeq('allIncomes[0].isFullYear=false', allIncomes[0]?.isFullYear, false),
+      aeq('EBITDA={}', Object.keys(ebitda).length, 0),
+      agte('full-year period from BS ≥ 1', fullYearPeriods.length, 1),
+      atrue('BS written to full-year period', bsExists),
     ];
-    return collectResult(
-      'Sc-10: Split-source → YTD income is_full_year=false, BS on full-year period, EBITDA={}',
-      assertions, prBS.geminiTypes, prBS.isIM, ebitda,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sc-11: Empty-balance survivor — data-bearing balance wins
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runSc11(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC11 Empty Balance Survivor');
-  try {
-    // Empty first, data second
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc11-empty-bs.csv'),
-      'Empty Balance Sheet FY2024.csv',
-      'text/csv', coId,
-    );
-    await new Promise(r => setTimeout(r, 500));
-    const prData = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc11-data-bs.csv'),
-      'Data Balance Sheet FY2024.csv',
-      'text/csv', coId,
-    );
-
-    const balContribs = await db.select().from(financialContributions)
-      .where(and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.statementType, 'balance')));
-    const bsRows = await db.select().from(balanceSheets).where(eq(balanceSheets.targetCompanyId, coId));
-    const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const totalCurrentAssets = bsRows[0]?.totalCurrentAssets;
-    const assertions: Assertion[] = [
-      expect_eq('exactly 1 balance contrib', balContribs.length, 1),
-      expect_eq('exactly 1 balance sheet', bsRows.length, 1),
-      expect_eq('totalCurrentAssets=686000', totalCurrentAssets, '686000'),
-    ];
-    return collectResult(
-      'Sc-11: Empty BS not stored; data-bearing BS wins (totalCurrentAssets=686000)',
-      assertions, prData.geminiTypes, prData.isIM, ebitda,
-      `totalCurrentAssets=${totalCurrentAssets}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sc-12: Phantom P&L from balance-only doc — no income contributions
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runSc12(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC12 Phantom PL from BS');
-  try {
-    const pr = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc12-bs-phantom-np.csv'),
-      'Phantom NP Balance Sheet FY2024.csv',
-      'text/csv', coId,
-    );
-
-    const incomeContribs = await db.select().from(financialContributions)
-      .where(and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.statementType, 'income')));
-    const incomes = await db.select().from(incomeStatements).where(eq(incomeStatements.targetCompanyId, coId));
-    const balContribs = await db.select().from(financialContributions)
-      .where(and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.statementType, 'balance')));
-    const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    const assertions: Assertion[] = [
-      expect_eq('zero income contribs', incomeContribs.length, 0),
-      expect_eq('zero income stmts', incomes.length, 0),
-      expect_eq('EBITDA empty', Object.keys(ebitda).length, 0),
-      expect_gte('BS contrib written', balContribs.length, 1),
-    ];
-    return collectResult(
-      'Sc-12: BS doc with phantom net_profit → no income contribs, EBITDA={}',
-      assertions, pr.geminiTypes, pr.isIM, ebitda,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sc-13: Delete statutory → management fallback; re-add statutory → wins again
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runSc13(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC13 Delete Fallback ReAdd');
-  try {
-    // Seed: statutory + management
-    const prStat = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc13-stat-pl.csv'),
-      'Fallback Co Statutory Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-    await new Promise(r => setTimeout(r, 500));
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc13-mgmt-pl.csv'),
-      'Fallback Co Management Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-
-    // Phase 1: statutory wins
-    const ebitdaP1 = await fetchReportedEbitdaByYear(coId);
-
-    // Phase 2: delete statutory → management fallback
-    await db.delete(financialContributions).where(
-      and(eq(financialContributions.targetCompanyId, coId), eq(financialContributions.sourceTier, 'statutory')),
-    );
-    await reselect(coId);
-    const ebitdaP2 = await fetchReportedEbitdaByYear(coId);
-
-    // Phase 3: re-add statutory → wins again
-    await new Promise(r => setTimeout(r, 500));
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc13-stat-pl.csv'),
-      'Fallback Co Statutory Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-    const ebitdaP3 = await fetchReportedEbitdaByYear(coId);
-
-    const finalContribs = await db.select().from(financialContributions).where(eq(financialContributions.targetCompanyId, coId));
-
-    const assertions: Assertion[] = [
-      expect_eq('phase1 EBITDA 2024 = 64000 (stat wins)', ebitdaP1['2024'], 64000),
-      expect_eq('phase2 EBITDA 2024 = 46000 (mgmt fallback)', ebitdaP2['2024'], 46000),
-      expect_eq('phase3 EBITDA 2024 = 64000 (stat re-wins)', ebitdaP3['2024'], 64000),
-      expect_true('>=2 contribs at end', finalContribs.length >= 2),
-    ];
-    return collectResult(
-      'Sc-13: Delete stat→mgmt fallback (46k)→re-add stat→stat wins again (64k)',
-      assertions, prStat.geminiTypes, prStat.isIM,
-      { phase1: ebitdaP1['2024'] ?? 0, phase2: ebitdaP2['2024'] ?? 0, phase3: ebitdaP3['2024'] ?? 0 } as any,
-      `p1=${ebitdaP1['2024']}, p2=${ebitdaP2['2024']}, p3=${ebitdaP3['2024']}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sc-14: Ghost prune / one-per-year — stable container, ghost pruned
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function runSc14(tmpDir: string): Promise<ScenarioResult> {
-  const coId = await mkCompany('LB SC14 Ghost Prune OnePerYear');
-  try {
-    // Upload management v1
-    const prMgV1 = await runDocumentThroughPipeline(
-      join(tmpDir, 'sc14-mgmt-v1.csv'),
-      'Ghost Prune Co Management Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-
-    // Get container id
-    const [pid1Row] = await db.select({ id: financialPeriods.id }).from(financialPeriods)
-      .where(and(eq(financialPeriods.targetCompanyId, coId), eq(financialPeriods.fiscalYear, 2024), eq(financialPeriods.isFullYear, true)));
-    const pid1 = pid1Row?.id;
-
-    // Attach ebitda adjustment to the container
-    let adjId: number | undefined;
-    if (pid1) {
-      const [adj] = await db.insert(ebitdaAdjustments).values({
-        targetCompanyId: coId,
-        financialPeriodId: pid1,
-        description: 'SC14 owner add-back',
-        amount: '10000',
-        category: 'one_off',
-      }).returning();
-      adjId = adj.id;
-    }
-
-    // Upload statutory (should take over; container id must not change)
-    await new Promise(r => setTimeout(r, 500));
-    await runDocumentThroughPipeline(
-      join(tmpDir, 'sc14-stat-pl.csv'),
-      'Ghost Prune Co Statutory Accounts FY2024.csv',
-      'text/csv', coId,
-    );
-
-    const [pid2Row] = await db.select({ id: financialPeriods.id }).from(financialPeriods)
-      .where(and(eq(financialPeriods.targetCompanyId, coId), eq(financialPeriods.fiscalYear, 2024), eq(financialPeriods.isFullYear, true)));
-    const pid2 = pid2Row?.id;
-
-    // Inject a ghost period
-    await db.insert(financialPeriods).values({
-      targetCompanyId: coId,
-      periodType: 'management',
-      sourceTier: 'management',
-      periodEnd: '2020-12-31',
-      fiscalYear: 2020,
-      isFullYear: true,
-      sourceDocumentId: null,
-      periodLabel: 'FY 2020 (ghost)',
-    });
-
-    await reselect(coId);
-
-    const fullYearPeriods = await db.select({ fy: financialPeriods.fiscalYear }).from(financialPeriods)
-      .where(and(eq(financialPeriods.targetCompanyId, coId), eq(financialPeriods.isFullYear, true)));
-
-    const ebitda = await fetchReportedEbitdaByYear(coId);
-
-    let adjSurvived = false;
-    if (adjId) {
-      const [adjAfter] = await db.select().from(ebitdaAdjustments).where(eq(ebitdaAdjustments.id, adjId));
-      adjSurvived = adjAfter?.financialPeriodId === pid1;
-    }
-
-    const assertions: Assertion[] = [
-      expect_true('container id stable (pid1 defined)', pid1 !== undefined),
-      expect_eq('container id unchanged after stat upload', pid2, pid1),
-      expect_true('adjustment survives on same period', adjSurvived),
-      expect_eq('exactly 1 full-year period', fullYearPeriods.length, 1),
-      expect_eq('surviving period is FY2024', fullYearPeriods[0]?.fy, 2024),
-      expect_eq('EBITDA 2024 = 55000 (stat: 48k+7k)', ebitda['2024'], 55000),
-    ];
-    return collectResult(
-      'Sc-14: Ghost prune → container stable, adjustment survives, ghost pruned, EBITDA[2024]=55000',
-      assertions, prMgV1.geminiTypes, prMgV1.isIM, ebitda,
-      `pid1=${pid1}, pid2=${pid2}, fullYearPeriods=${fullYearPeriods.length}`,
-    );
-  } finally {
-    await cleanupCompany(coId);
-  }
+    return { name: 'Sc-10: Canoports YTD BS + YTD P&L → split-source container', status: assertions.every(a => a.ok) ? 'PASS' : 'FAIL', assertions, geminiTypes: prBS.geminiTypes, isIM: prBS.isIM, raw };
+  } finally { await cleanupCompany(coId); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1076,9 +500,9 @@ async function runSc14(tmpDir: string): Promise<ScenarioResult> {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function main() {
-  console.log('\n╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  Layer B — Forward-Path Live Gate (real Gemini API)          ║');
-  console.log('╚══════════════════════════════════════════════════════════════╝\n');
+  console.log('\n╔══════════════════════════════════════════════════════════════════════╗');
+  console.log('║  Layer B — Forward-Path Live Gate (REAL PROD FILES)                  ║');
+  console.log('╚══════════════════════════════════════════════════════════════════════╝\n');
   console.log(`DB host: ${dbHost}`);
   console.log(`Gemini key: ${process.env.GOOGLE_GEMINI_API_KEY ? '✓ set' : '✗ MISSING'}\n`);
 
@@ -1087,103 +511,125 @@ async function main() {
     process.exit(1);
   }
 
-  // Create temp directory under /home/runner/workspace so fileStorageService reads locally
-  // (isObjectStorageKey treats any path NOT starting /home/ as object storage)
-  const tmpDir = join('/home/runner/workspace', `tmp-fpg-layer-b-${Date.now()}`);
-  await mkdir(tmpDir, { recursive: true });
-  console.log(`Temp dir: ${tmpDir}\n`);
-
-  // Write all synthetic documents
-  for (const [name, content] of Object.entries(DOCS)) {
-    await writeFile(join(tmpDir, name), content, 'utf8');
+  // ── STEP 1: Manifest ────────────────────────────────────────────────────────
+  console.log('STEP 1 — PROD DOCUMENT MANIFEST');
+  console.log('─'.repeat(100));
+  const manifestRows = [
+    ['Sc',   'Prod Company',                          'Doc ID', 'Filename',                                                    'Storage Key'],
+    ['──',   '────────────',                          '──────', '────────',                                                    '───────────'],
+    ['1',    'Canoports UK Limited (220)',             '1543',   'Canoports_YTD_Profit_and_Loss.pdf',                           'companies/220/doc-1783154915000-431657599.pdf'],
+    ['2',    'Opem Security (215)',                   '1497',   'Valoxi - OPEM - YTD P&L 28.02.2026 to 31.05.2026.xlsx',      'companies/215/doc-1782943014906-133969238.xlsx'],
+    ['3',    'Canoports UK Limited (218)',            '1506',   'Sales Ledger 2.pdf',                                          'companies/218/doc-1782995714308-283716183.pdf'],
+    ['4',    'MANOR BUILDING SOLUTIONS (137)',        '1596',   'Manor Building Solutions YTD P&L.pdf',                        'companies/137/doc-1783613615639-259551387.pdf'],
+    ['5',    'Clifford Press Limited (122)',          '700',    'Project Folio - Flyer (new).pdf',                             'companies/122/doc-1777926859738-906639683.pdf'],
+    ['6',    'Canoports UK Limited (220)',            '1542',   'Canoports_Staff_Matrix (1).pdf',                              'companies/220/doc-1783154907393-627077613.pdf'],
+    ['7a',   'The Homecare People (161)',             '1051',   'Year on Year 2023_2026 (2).pdf',                              'companies/161/doc-1780160579222-622971738.pdf'],
+    ['7b',   'The Homecare People (161)',             '1048',   'THCP Stat Accounts 31 Dec 2023 (detailed PL) (1).pdf',        'companies/161/doc-1780160490371-374310687.pdf'],
+    ['8',    'NO PROD FILE',                          '—',      'Requires partial+full statutory for same FY',                 '—'],
+    ['9',    'NO PROD FILE',                          '—',      'Requires management+statutory for same FY',                   '—'],
+    ['10a',  'Canoports UK Limited (220)',            '1522',   'Canoports_YTD_Balance_Sheet.pdf',                             'companies/220/doc-1783111615066-242378147.pdf'],
+    ['10b',  'Canoports UK Limited (220)',            '1543',   'Canoports_YTD_Profit_and_Loss.pdf',                           'companies/220/doc-1783154915000-431657599.pdf'],
+    ['11',   'NO PROD FILE',                          '—',      'Requires empty balance sheet',                                '—'],
+    ['12',   'NO PROD FILE',                          '—',      'Requires BS-only doc with stray net_profit',                  '—'],
+    ['13',   'NO PROD FILE',                          '—',      'Requires same-FY management+statutory pair',                  '—'],
+    ['14',   'NO PROD FILE',                          '—',      'Requires same-FY pair for container-stability test',          '—'],
+  ];
+  for (const row of manifestRows) {
+    console.log(`  ${row[0].padEnd(5)} ${row[1].padEnd(35)} ${row[2].padEnd(8)} ${row[3].padEnd(55)} ${row[4]}`);
   }
-  console.log(`Wrote ${Object.keys(DOCS).length} synthetic documents.\n`);
+  console.log();
 
-  const runners: Array<() => Promise<ScenarioResult>> = [
-    () => runSc1(tmpDir),
-    () => runSc2(tmpDir),
-    () => runSc3(tmpDir),
-    () => runSc4(tmpDir),
-    () => runSc5(tmpDir),
-    () => runSc6(tmpDir),
-    () => runSc7(tmpDir),
-    () => runSc8(tmpDir),
-    () => runSc9(tmpDir),
-    () => runSc10(tmpDir),
-    () => runSc11(tmpDir),
-    () => runSc12(tmpDir),
-    () => runSc13(tmpDir),
-    () => runSc14(tmpDir),
+  // ── STEP 2: Run scenarios ────────────────────────────────────────────────────
+  console.log('STEP 2 — RUNNING SCENARIOS');
+  console.log('─'.repeat(100));
+
+  const runners: Array<() => Promise<ScResult>> = [
+    runSc1, runSc2, runSc3, runSc4, runSc5, runSc6, runSc7, runSc10,
+  ];
+  const scNames = [
+    'Sc-1 (Canoports YTD P&L)',
+    'Sc-2 (OPEM YTD P&L xlsx)',
+    'Sc-3 (Canoports 218 Sales Ledger)',
+    'Sc-4 (Manor YTD Mislabel)',
+    'Sc-5 (Clifford Flyer)',
+    'Sc-6 (Canoports Staff Matrix)',
+    'Sc-7 (Homecare IM Pack)',
+    'Sc-10 (Canoports YTD BS+PL)',
   ];
 
-  const results: ScenarioResult[] = [];
+  const results: ScResult[] = [];
+
   for (let i = 0; i < runners.length; i++) {
-    const scNum = i + 1;
-    process.stdout.write(`Running Sc-${scNum}... `);
+    process.stdout.write(`Running ${scNames[i]}... `);
     const t0 = Date.now();
     try {
       const r = await runners[i]();
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(`${r.pass ? 'PASS ✓' : 'FAIL ✗'} (${elapsed}s)`);
-      if (!r.pass) {
-        for (const a of r.assertions.filter(a => !a.ok)) {
-          console.log(`       ${a.msg}`);
-        }
-      }
-      if (r.geminiNote) {
-        console.log(`       ℹ ${r.geminiNote}`);
+      const statusIcon = r.status === 'PASS' ? '✓ PASS' : '✗ FAIL';
+      console.log(`${statusIcon} (${elapsed}s)  types=[${r.geminiTypes.join(',')}]  isIM=${r.isIM}`);
+      for (const a of r.assertions.filter(a => !a.ok)) {
+        console.log(a.msg);
       }
       results.push(r);
     } catch (err) {
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(`ERROR ✗ (${elapsed}s)`);
-      console.log(`       ${err instanceof Error ? err.message : String(err)}`);
+      console.log(`✗ ERROR (${elapsed}s): ${err instanceof Error ? err.message : String(err)}`);
       results.push({
-        name: `Sc-${scNum}`,
-        pass: false,
-        assertions: [{ ok: false, msg: `Uncaught error: ${err instanceof Error ? err.message : String(err)}` }],
+        name: scNames[i],
+        status: 'FAIL',
+        assertions: [{ ok: false, msg: `  ✗ Uncaught error: ${err instanceof Error ? err.message : String(err)}` }],
         geminiTypes: [],
         isIM: false,
-        ebitda: {},
+        raw: {},
       });
     }
-    // Brief pause between scenarios to avoid Gemini rate limits
-    if (i < runners.length - 1) await new Promise(r => setTimeout(r, 1000));
+
+    if (i < runners.length - 1) await new Promise(r => setTimeout(r, 800));
   }
 
-  // ── Summary table ──────────────────────────────────────────────────────────
-  console.log('\n╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  RESULTS SUMMARY                                             ║');
-  console.log('╠══════════════════════════════════════════════════════════════╣');
+  // Add skipped scenarios
+  for (const [name, reason] of Object.entries(SKIPPED)) {
+    results.push({
+      name,
+      status: 'SKIP',
+      skipReason: reason,
+      assertions: [],
+      geminiTypes: [],
+      isIM: false,
+      raw: {},
+    });
+  }
 
-  let passed = 0;
-  for (let i = 0; i < results.length; i++) {
-    const r = results[i];
-    const status = r.pass ? 'PASS' : 'FAIL';
-    const icon = r.pass ? '✓' : '✗';
-    const label = `Sc-${i + 1}`;
-    const types = r.geminiTypes.join(', ') || 'none';
-    const im = r.isIM ? ' [IM]' : '';
-    console.log(`║  ${icon} ${label}: ${status.padEnd(4)}  types=[${types}]${im}`);
-    if (!r.pass) {
+  // ── STEP 3: Report ────────────────────────────────────────────────────────────
+  const runnable = results.filter(r => r.status !== 'SKIP');
+  const passed = runnable.filter(r => r.status === 'PASS').length;
+  const failed = runnable.filter(r => r.status === 'FAIL').length;
+  const skipped = results.filter(r => r.status === 'SKIP').length;
+
+  console.log('\n');
+  console.log('╔══════════════════════════════════════════════════════════════════════╗');
+  console.log('║  STEP 3 — RESULTS                                                    ║');
+  console.log('╠══════════════════════════════════════════════════════════════════════╣');
+  for (const r of results) {
+    const icon = r.status === 'PASS' ? '✓' : r.status === 'SKIP' ? '◌' : '✗';
+    const types = r.geminiTypes.length ? `[${r.geminiTypes.join(',')}]` : '';
+    const im = r.isIM ? '[IM]' : '';
+    console.log(`║  ${icon} ${r.status.padEnd(4)}  ${r.name.substring(0, 60)}`);
+    if (r.status === 'SKIP') {
+      console.log(`║         SKIP: ${r.skipReason?.substring(0, 65)}`);
+    } else {
+      if (types || im) console.log(`║         Gemini: ${types} ${im}`);
+      if (Object.keys(r.raw).length > 0) {
+        console.log(`║         raw: ${JSON.stringify(r.raw).substring(0, 75)}`);
+      }
       for (const a of r.assertions.filter(a => !a.ok)) {
-        console.log(`║       ${a.msg.substring(0, 58)}`);
+        console.log(`║         ${a.msg.substring(0, 68)}`);
       }
     }
-    if (r.pass) passed++;
   }
-
-  const total = results.length;
-  const failed = total - passed;
-  console.log('╠══════════════════════════════════════════════════════════════╣');
-  console.log(`║  ${passed}/${total} PASSED   ${failed} FAILED                                     ║`);
-  console.log('╚══════════════════════════════════════════════════════════════╝\n');
-
-  // Cleanup temp files
-  try {
-    await rm(tmpDir, { recursive: true, force: true });
-    console.log(`Temp dir cleaned up.\n`);
-  } catch { /* best-effort */ }
+  console.log('╠══════════════════════════════════════════════════════════════════════╣');
+  console.log(`║  ${passed}/${passed + failed} RUNNABLE PASSED   ${failed} FAILED   ${skipped} SKIPPED (no prod file)    ║`);
+  console.log('╚══════════════════════════════════════════════════════════════════════╝\n');
 
   process.exit(failed > 0 ? 1 : 0);
 }
