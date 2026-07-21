@@ -1,9 +1,9 @@
 /**
  * scripts/comms-analysis.ts
  *
- * Definitive customer-communications analysis.
+ * Definitive customer-communications analysis — Slices 17/18/19 live.
  *
- * READS:  PROD_DATABASE_URL (prod — never written to, verified below)
+ * READS:  PROD_DATABASE_URL (prod — never written to, host-fingerprint verified)
  * WRITES: DATABASE_URL (dev heliumdb only — asserted before every write)
  *
  * STEP 1 — Re-identify affected companies FRESH from current prod.
@@ -18,15 +18,27 @@
  *             a) Capture CURRENT state from prod (reportedEbitdaByYear + deal model EV)
  *             b) Clone prod → fresh dev company
  *             c) Backfill financial_contributions on dev clone
- *             d) Run reselect() on dev clone
- *             e) Capture CORRECTED state from dev
- *             f) Compute delta; determine materiality
- *             g) Check for any issued offer/HoT (frozen snapshot)
- *             h) Delete dev clone
+ *             d) Apply Slice 18 patch (rerun computeSpan with document filename
+ *                to flip YTD income contributions to is_full_year=false)
+ *             e) Run reselect() on dev clone  (Slices 17/18/19 live)
+ *             f) Capture CORRECTED state from dev
+ *             g) Compute delta; determine materiality
+ *             h) Check for any issued offer/HoT (frozen snapshot)
+ *             i) Self-validate ACTIVE+MATERIAL companies (3 leak checks)
+ *             j) Delete dev clone
  *
- * STEP 3 — Output one table sorted:
+ * STEP 3 — Self-validate every ACTIVE+MATERIAL company:
+ *             i)  no fiscal_year > current year feeds the averaging window
+ *             ii) no YTD/part-year income contribution wins valuation (is_full_year=true)
+ *             iii) no is_full_year=true IS period has income sourced from a YTD document
+ *           Flag if any check fails — residual leak, not an email.
+ *
+ * STEP 4 — Output one table sorted:
  *             ACTIVE+MATERIAL first (the email list),
  *             then ACTIVE+IMMATERIAL, then non-active.
+ *           Columns: company, owner, email, status, flags, what-moved,
+ *                    current→corrected EV, up/down, material?, offer-affected?,
+ *                    leak-check (clean / FLAG)
  *
  * Run: npx tsx scripts/comms-analysis.ts
  */
@@ -60,6 +72,7 @@ import {
   type DealModelInput,
 } from '../shared/calculators/deal-model.calc';
 import { resolveSourceTier } from '../server/scripts/backfill-financial-contributions';
+import { computeSpan } from '../shared/utils/derive-span';
 
 // ─── pg setup — keep JSON as raw strings for cross-DB clone ──────────────────
 pg.types.setTypeParser(114,  (v: string) => v);   // json
@@ -76,6 +89,7 @@ const DEV_USER_ID         = 1;
 const DEV_USER_COMPANY_ID = 5;
 const MATERIAL_ABS        = 1000;   // £1,000 absolute threshold
 const MATERIAL_PCT        = 0.01;   // 1% relative threshold
+const TODAY_YEAR          = new Date().getFullYear();
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -114,6 +128,11 @@ interface IssuedOffer {
   sentAt: string | null;
 }
 
+interface SelfValidationResult {
+  pass: boolean;
+  leaks: string[];
+}
+
 interface CompanyResult {
   prodTcId: number;
   companyName: string;
@@ -132,6 +151,8 @@ interface CompanyResult {
   whatMoved: string;
   direction: string;
   deltaEV: number | null;
+  slice18Flipped: number;
+  validation: SelfValidationResult;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,7 +199,6 @@ async function assertHosts(): Promise<void> {
   console.log('SAFETY CHECK — asserting both hosts before any writes');
   console.log('═'.repeat(70));
 
-  // Check prod URL fingerprint from the connection string itself
   const prodUrl = process.env.PROD_DATABASE_URL ?? '';
   const devUrl  = process.env.DATABASE_URL ?? '';
 
@@ -194,11 +214,11 @@ async function assertHosts(): Promise<void> {
   }
   console.log('  DEV:  ✓ NOT prod — dev writes permitted');
 
-  // Confirm prod is reachable and dev is reachable
   const prodDb = (await prodPool.query('SELECT current_database() AS db')).rows[0].db;
   console.log(`  PROD db name: ${prodDb}`);
   const devDb = (await devPool.query('SELECT current_database() AS db')).rows[0].db;
-  console.log(`  DEV  db name: ${devDb}\n`);
+  console.log(`  DEV  db name: ${devDb}`);
+  console.log(`  Today year: ${TODAY_YEAR}\n`);
 }
 
 // ─── 1. Identify affected companies from prod ─────────────────────────────────
@@ -219,10 +239,9 @@ async function identifyAffectedCompanies(): Promise<AffectedCompany[]> {
     HAVING COUNT(*) > 1
   `);
   const setA = new Set(flagA.map(r => r.target_company_id as number));
-  console.log(`  Flag A (duplicate full-year periods):         ${setA.size} companies`);
+  console.log(`  Flag A (duplicate full-year periods):          ${setA.size} companies`);
 
-  // Flag B: Management full-year coexisting with statutory full-year for same year
-  // (prod uses period_type, not source_tier, which only exists on dev)
+  // Flag B: Management full-year coexisting with statutory for same year
   const { rows: flagB } = await prodPool.query(`
     SELECT DISTINCT fp1.target_company_id
     FROM financial_periods fp1
@@ -238,20 +257,19 @@ async function identifyAffectedCompanies(): Promise<AffectedCompany[]> {
       )
   `);
   const setB = new Set(flagB.map(r => r.target_company_id as number));
-  console.log(`  Flag B (management+statutory conflict):       ${setB.size} companies`);
+  console.log(`  Flag B (management+statutory conflict):        ${setB.size} companies`);
 
-  // Flag C: Any period fiscal_year > 2026
+  // Flag C: Any period fiscal_year > TODAY_YEAR
   const { rows: flagC } = await prodPool.query(`
     SELECT DISTINCT target_company_id
     FROM financial_periods
-    WHERE fiscal_year > 2026
+    WHERE fiscal_year > ${TODAY_YEAR}
       AND target_company_id NOT IN (${excludeList})
   `);
   const setC = new Set(flagC.map(r => r.target_company_id as number));
-  console.log(`  Flag C (forecast year >2026):                 ${setC.size} companies`);
+  console.log(`  Flag C (fiscal_year > ${TODAY_YEAR}):              ${setC.size} companies`);
 
   // Flag D: Accounting docs uploaded, zero statutory full-year income statements resulting
-  // Uses period_type (not source_tier which is dev-only)
   const { rows: flagD } = await prodPool.query(`
     SELECT DISTINCT d.target_company_id
     FROM documents d
@@ -270,17 +288,14 @@ async function identifyAffectedCompanies(): Promise<AffectedCompany[]> {
       )
   `);
   const setD = new Set(flagD.map(r => r.target_company_id as number));
-  console.log(`  Flag D (non-zero docs, zero statutory income): ${setD.size} companies`);
+  console.log(`  Flag D (docs exist, zero stat full-year IS):   ${setD.size} companies`);
 
-  // Union all affected company IDs
   const allIds = new Set([...setA, ...setB, ...setC, ...setD]);
   console.log(`  TOTAL unique affected companies: ${allIds.size}\n`);
 
   if (allIds.size === 0) return [];
 
   const idList = [...allIds].join(',');
-
-  // Fetch company metadata
   const { rows: companies } = await prodPool.query(`
     SELECT tc.id AS tc_id, tc.company_name, tc.user_company_id
     FROM target_companies tc
@@ -293,7 +308,7 @@ async function identifyAffectedCompanies(): Promise<AffectedCompany[]> {
     companyName: c.company_name as string,
     userCompanyId: c.user_company_id as number,
     flags: [
-      setA.has(c.tc_id) ? 'dup-fy'     : null,
+      setA.has(c.tc_id) ? 'dup-fy'      : null,
       setB.has(c.tc_id) ? 'mgmt-v-stat' : null,
       setC.has(c.tc_id) ? 'forecast-yr' : null,
       setD.has(c.tc_id) ? 'zero-stat'   : null,
@@ -325,7 +340,7 @@ async function getAccountInfo(userCompanyId: number): Promise<AccountInfo> {
   const status: string = rows[0].status;
   const isActive = ['active', 'trialing', 'past_due', 'admin_comped'].includes(status);
   return {
-    ownerName: rows[0].owner_name,
+    ownerName:  rows[0].owner_name,
     ownerEmail: rows[0].owner_email,
     status,
     isActive,
@@ -335,7 +350,7 @@ async function getAccountInfo(userCompanyId: number): Promise<AccountInfo> {
 // ─── Current EBITDA from prod (mimics fetchReportedEbitdaByYear) ──────────────
 
 async function getProdEbitdaByYear(tcId: number): Promise<EbitdaByYear> {
-  // prod has period_type (not source_tier). Exclude IM by checking document_category.
+  // prod has period_type (not source_tier). We exclude IM by checking document_category.
   const { rows } = await prodPool.query(`
     SELECT fp.fiscal_year, fp.period_end,
            COALESCE(is_val.operating_profit, '0')::float            AS op,
@@ -355,13 +370,13 @@ async function getProdEbitdaByYear(tcId: number): Promise<EbitdaByYear> {
       ? String(row.fiscal_year)
       : (row.period_end ? String(new Date(row.period_end).getFullYear()) : null);
     if (!year) continue;
-    if (year in result) continue; // first (most-recent period_end) wins
+    if (year in result) continue;
     result[year] = (row.op as number) + (row.da as number);
   }
   return result;
 }
 
-// ─── Current EBITDA from dev (after reselect) — via Drizzle ──────────────────
+// ─── Corrected EBITDA from dev (after reselect) — via Drizzle ────────────────
 
 async function getDevEbitdaByYear(devTcId: number): Promise<EbitdaByYear> {
   const rows = await db
@@ -410,7 +425,6 @@ async function computeDealModel(
 
   if (dms.length === 0) return null;
 
-  // Use the first (earliest) deal model — same one the screen would default to
   const dm = dms[0];
 
   const adjs = await db.select().from(dealModelAdjustments)
@@ -423,10 +437,10 @@ async function computeDealModel(
     .where(eq(dealModelContingentConsideration.dealModelId, dm.id));
 
   const adjustments: AdjustmentInput[] = adjs.map(a => ({
-    adjustmentType:   a.adjustmentType as 'add_back' | 'deduction',
-    amount:           a.amount,
-    amountsByYear:    a.amountsByYear as Record<string, number> | null,
-    status:           a.status || 'suggested',
+    adjustmentType:     a.adjustmentType as 'add_back' | 'deduction',
+    amount:             a.amount,
+    amountsByYear:      a.amountsByYear as Record<string, number> | null,
+    status:             a.status || 'suggested',
     userOverrideAmount: null,
   }));
 
@@ -462,30 +476,30 @@ async function computeDealModel(
   }));
 
   const modelInput: DealModelInput = {
-    averagingYears:          dm.averagingYears ?? 3,
-    ebitdaMultiple:          dm.ebitdaMultiple ?? '3.0',
-    plusExcessCash:          dm.plusExcessCash ?? '0',
-    minusPrimaryDebt:        dm.minusPrimaryDebt ?? '0',
-    minusOtherDebt:          dm.minusOtherDebt ?? '0',
-    minusCorpTaxDue:         dm.minusCorpTaxDue ?? '0',
-    minusWorkingCapitalAdj:  dm.minusWorkingCapitalAdj ?? '0',
-    plusPropertyValue:       dm.propertyValue ?? '0',
-    otherAdjustments:        null,
-    feeLegalDdAmount:        dm.feeLegalDdAmount ?? '0',
-    feeAccountingDdAmount:   dm.feeAccountingDdAmount ?? '0',
+    averagingYears:           dm.averagingYears ?? 3,
+    ebitdaMultiple:           dm.ebitdaMultiple ?? '3.0',
+    plusExcessCash:           dm.plusExcessCash ?? '0',
+    minusPrimaryDebt:         dm.minusPrimaryDebt ?? '0',
+    minusOtherDebt:           dm.minusOtherDebt ?? '0',
+    minusCorpTaxDue:          dm.minusCorpTaxDue ?? '0',
+    minusWorkingCapitalAdj:   dm.minusWorkingCapitalAdj ?? '0',
+    plusPropertyValue:        dm.propertyValue ?? '0',
+    otherAdjustments:         null,
+    feeLegalDdAmount:         dm.feeLegalDdAmount ?? '0',
+    feeAccountingDdAmount:    dm.feeAccountingDdAmount ?? '0',
     feeLoanArrangementAmount: dm.feeLoanArrangementAmount ?? '0',
-    feeDealMakerAmount:      dm.feeDealMakerAmount ?? '0',
-    customFees:              (dm.customFees as Array<{ label: string; amount: string | number }>) ?? [],
+    feeDealMakerAmount:       dm.feeDealMakerAmount ?? '0',
+    customFees:               (dm.customFees as Array<{ label: string; amount: string | number }>) ?? [],
   };
 
   const calc = calculateFullDealModel(ebitdaByYear, adjustments, fundingLines, modelInput, sellerPayments, contingent);
 
   return {
-    modelId:        dm.id,
-    name:           dm.name ?? '(unnamed)',
-    averagingYears: dm.averagingYears ?? 3,
-    multiple:       toNum(dm.ebitdaMultiple),
-    avgAdjEbitda:   calc.averageAdjustedEbitda,
+    modelId:         dm.id,
+    name:            dm.name ?? '(unnamed)',
+    averagingYears:  dm.averagingYears ?? 3,
+    multiple:        toNum(dm.ebitdaMultiple),
+    avgAdjEbitda:    calc.averageAdjustedEbitda,
     enterpriseValue: calc.enterpriseValue,
   };
 }
@@ -493,7 +507,6 @@ async function computeDealModel(
 // ─── Issued offers ────────────────────────────────────────────────────────────
 
 async function getIssuedOffers(prodTcId: number): Promise<IssuedOffer[]> {
-  // deal_documents where type = offer_letter or heads_of_terms and sent
   const { rows } = await prodPool.query(`
     SELECT id, document_type, status, sent_at, document_data
     FROM deal_documents
@@ -502,6 +515,12 @@ async function getIssuedOffers(prodTcId: number): Promise<IssuedOffer[]> {
       AND status != 'draft'
     ORDER BY id
   `, [prodTcId]);
+
+  const parseCurrency = (v: unknown): number | null => {
+    if (v == null) return null;
+    const n = parseFloat(String(v).replace(/[£,\s]/g, ''));
+    return isNaN(n) ? null : n;
+  };
 
   const offers: IssuedOffer[] = [];
   for (const r of rows) {
@@ -512,12 +531,6 @@ async function getIssuedOffers(prodTcId: number): Promise<IssuedOffer[]> {
     }
     const ev    = data.enterpriseValue ?? data.enterprise_value ?? data.calculatedEV ?? null;
     const offer = data.offerPrice ?? data.offer_price ?? data.totalPurchasePrice ?? null;
-    // Values are formatted strings like "£595,152" — strip currency symbols and commas
-    const parseCurrency = (v: unknown): number | null => {
-      if (v == null) return null;
-      const n = parseFloat(String(v).replace(/[£,\s]/g, ''));
-      return isNaN(n) ? null : n;
-    };
     offers.push({
       docId:       r.id as number,
       docType:     r.document_type as string,
@@ -527,13 +540,7 @@ async function getIssuedOffers(prodTcId: number): Promise<IssuedOffer[]> {
     });
   }
 
-  // Also check current_offers
-  const parseCurrencyTop = (v: unknown): number | null => {
-    if (v == null) return null;
-    const n = parseFloat(String(v).replace(/[£,\s]/g, ''));
-    return isNaN(n) ? null : n;
-  };
-
+  // Also check current_offers table
   const { rows: cos } = await prodPool.query(`
     SELECT id, enterprise_value, offer_price, sent_at
     FROM current_offers
@@ -542,8 +549,8 @@ async function getIssuedOffers(prodTcId: number): Promise<IssuedOffer[]> {
   `, [prodTcId]).catch(() => ({ rows: [] }));
 
   for (const r of cos) {
-    const ev    = parseCurrencyTop(r.enterprise_value);
-    const offer = parseCurrencyTop(r.offer_price);
+    const ev    = parseCurrency(r.enterprise_value);
+    const offer = parseCurrency(r.offer_price);
     if (ev != null || offer != null) {
       offers.push({
         docId:       r.id as number,
@@ -570,7 +577,6 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
   try {
     await devClient.query('BEGIN');
 
-    // target_company
     const { rows: [src] } = await prodPool.query('SELECT * FROM target_companies WHERE id = $1', [prodTcId]);
     const tcRow = {
       user_company_id:  DEV_USER_COMPANY_ID,
@@ -606,14 +612,10 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
       docMap.set(d.id as number, id);
     }
 
-    // financial_periods
-    // NOTE: prod financial_periods does NOT have source_tier (dev-only column).
-    // We derive it from period_type + document_category; reselect will overwrite it.
+    // financial_periods — prod does NOT have source_tier; derive from period_type
     const { rows: prodPeriods } = await prodPool.query('SELECT * FROM financial_periods WHERE target_company_id = $1 ORDER BY id', [prodTcId]);
     const periodMap = new Map<number, number>();
     for (const p of prodPeriods) {
-      // Derive source_tier: statutory period_type → statutory, else management
-      // (IM handled by backfill via document_category check)
       const derivedTier = p.period_type === 'statutory' ? 'statutory' : 'management';
       const id = await insertOne(devClient, 'financial_periods', {
         target_company_id:  devTcId,
@@ -711,21 +713,21 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
     const { rows: prodSD } = await prodPool.query('SELECT * FROM staff_data WHERE target_company_id = $1 ORDER BY id', [prodTcId]).catch(() => ({ rows: [] }));
     for (const r of prodSD) {
       await insertOne(devClient, 'staff_data', {
-        financial_period_id:       remap(r.financial_period_id as number, periodMap),
-        target_company_id:         devTcId,
-        total_headcount:           r.total_headcount,
-        total_staff_costs:         r.total_staff_costs,
-        total_gross_salaries:      r.total_gross_salaries,
-        total_employer_ni:         r.total_employer_ni,
-        total_employer_pension:    r.total_employer_pension,
-        director_count:            r.director_count,
-        director_remuneration:     r.director_remuneration,
-        working_director_count:    r.working_director_count,
+        financial_period_id:        remap(r.financial_period_id as number, periodMap),
+        target_company_id:          devTcId,
+        total_headcount:            r.total_headcount,
+        total_staff_costs:          r.total_staff_costs,
+        total_gross_salaries:       r.total_gross_salaries,
+        total_employer_ni:          r.total_employer_ni,
+        total_employer_pension:     r.total_employer_pension,
+        director_count:             r.director_count,
+        director_remuneration:      r.director_remuneration,
+        working_director_count:     r.working_director_count,
         non_working_director_count: r.non_working_director_count,
-        employee_count:            r.employee_count,
-        employee_costs:            r.employee_costs,
-        staff_records:             safeJson(r.staff_records),
-        source_document_id:        remapSoft(r.source_document_id as number, docMap),
+        employee_count:             r.employee_count,
+        employee_costs:             r.employee_costs,
+        staff_records:              safeJson(r.staff_records),
+        source_document_id:         remapSoft(r.source_document_id as number, docMap),
       });
     }
 
@@ -748,49 +750,49 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
     const dmMap = new Map<number, number>();
     for (const r of prodDMs) {
       const id = await insertOne(devClient, 'deal_models', {
-        target_company_id:            devTcId,
-        created_by:                   DEV_USER_ID,
-        name:                         r.name,
-        status:                       r.status,
-        version:                      r.version,
-        transaction_type:             r.transaction_type,
-        parent_model_id:              null,
-        is_locked:                    r.is_locked,
-        averaging_years:              r.averaging_years,
-        ebitda_multiple:              r.ebitda_multiple,
-        multiple_low:                 r.multiple_low,
-        multiple_high:                r.multiple_high,
-        property_value:               r.property_value,
-        cash_value:                   r.cash_value,
-        other_assets:                 r.other_assets,
-        calculated_ebitda:            r.calculated_ebitda,
-        adjusted_ebitda:              r.adjusted_ebitda,
-        enterprise_value:             r.enterprise_value,
-        plus_excess_cash:             r.plus_excess_cash,
-        minus_primary_debt:           r.minus_primary_debt,
-        minus_other_debt:             r.minus_other_debt,
-        minus_corp_tax_due:           r.minus_corp_tax_due,
-        minus_working_capital_adj:    r.minus_working_capital_adj,
-        working_capital_months:       r.working_capital_months,
+        target_company_id:              devTcId,
+        created_by:                     DEV_USER_ID,
+        name:                           r.name,
+        status:                         r.status,
+        version:                        r.version,
+        transaction_type:               r.transaction_type,
+        parent_model_id:                null,
+        is_locked:                      r.is_locked,
+        averaging_years:                r.averaging_years,
+        ebitda_multiple:                r.ebitda_multiple,
+        multiple_low:                   r.multiple_low,
+        multiple_high:                  r.multiple_high,
+        property_value:                 r.property_value,
+        cash_value:                     r.cash_value,
+        other_assets:                   r.other_assets,
+        calculated_ebitda:              r.calculated_ebitda,
+        adjusted_ebitda:                r.adjusted_ebitda,
+        enterprise_value:               r.enterprise_value,
+        plus_excess_cash:               r.plus_excess_cash,
+        minus_primary_debt:             r.minus_primary_debt,
+        minus_other_debt:               r.minus_other_debt,
+        minus_corp_tax_due:             r.minus_corp_tax_due,
+        minus_working_capital_adj:      r.minus_working_capital_adj,
+        working_capital_months:         r.working_capital_months,
         working_capital_monthly_amount: r.working_capital_monthly_amount,
-        total_purchase_price:         r.total_purchase_price,
-        total_funding_available:      r.total_funding_available,
-        equity_required:              r.equity_required,
-        upfront_cash:                 r.upfront_cash,
-        deferred_amount:              r.deferred_amount,
-        deferred_terms:               r.deferred_terms,
-        earnout_maximum:              r.earnout_maximum,
-        earnout_metric:               r.earnout_metric,
-        earnout_period_months:        r.earnout_period_months,
-        retention_escrow:             r.retention_escrow,
-        fee_legal_dd_amount:          r.fee_legal_dd_amount,
-        fee_accounting_dd_amount:     r.fee_accounting_dd_amount,
-        fee_loan_arrangement_amount:  r.fee_loan_arrangement_amount,
-        fee_deal_maker_amount:        r.fee_deal_maker_amount,
-        custom_fees:                  safeJson(r.custom_fees),
-        expert_data_snapshot:         safeJson(r.expert_data_snapshot),
-        financial_data_snapshot:      safeJson(r.financial_data_snapshot),
-        notes:                        r.notes,
+        total_purchase_price:           r.total_purchase_price,
+        total_funding_available:        r.total_funding_available,
+        equity_required:                r.equity_required,
+        upfront_cash:                   r.upfront_cash,
+        deferred_amount:                r.deferred_amount,
+        deferred_terms:                 r.deferred_terms,
+        earnout_maximum:                r.earnout_maximum,
+        earnout_metric:                 r.earnout_metric,
+        earnout_period_months:          r.earnout_period_months,
+        retention_escrow:               r.retention_escrow,
+        fee_legal_dd_amount:            r.fee_legal_dd_amount,
+        fee_accounting_dd_amount:       r.fee_accounting_dd_amount,
+        fee_loan_arrangement_amount:    r.fee_loan_arrangement_amount,
+        fee_deal_maker_amount:          r.fee_deal_maker_amount,
+        custom_fees:                    safeJson(r.custom_fees),
+        expert_data_snapshot:           safeJson(r.expert_data_snapshot),
+        financial_data_snapshot:        safeJson(r.financial_data_snapshot),
+        notes:                          r.notes,
       });
       dmMap.set(r.id as number, id);
     }
@@ -802,23 +804,23 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
       WHERE dm.target_company_id = $1 ORDER BY dma.id`, [prodTcId]);
     for (const r of prodDMA) {
       await insertOne(devClient, 'deal_model_adjustments', {
-        deal_model_id:          remap(r.deal_model_id as number, dmMap),
+        deal_model_id:           remap(r.deal_model_id as number, dmMap),
         source_expert_result_id: null,
-        adjustment_type:        r.adjustment_type,
-        category:               r.category,
-        description:            r.description,
-        amount:                 r.amount,
-        amounts_by_year:        safeJson(r.amounts_by_year),
-        source_expert:          r.source_expert,
-        reasoning:              r.reasoning,
-        confidence:             r.confidence,
-        defensibility_score:    r.defensibility_score,
-        case_for_inclusion:     r.case_for_inclusion,
-        case_for_exclusion:     r.case_for_exclusion,
-        status:                 r.status,
-        is_accepted:            r.is_accepted,
-        is_manual:              r.is_manual,
-        sort_order:             r.sort_order,
+        adjustment_type:         r.adjustment_type,
+        category:                r.category,
+        description:             r.description,
+        amount:                  r.amount,
+        amounts_by_year:         safeJson(r.amounts_by_year),
+        source_expert:           r.source_expert,
+        reasoning:               r.reasoning,
+        confidence:              r.confidence,
+        defensibility_score:     r.defensibility_score,
+        case_for_inclusion:      r.case_for_inclusion,
+        case_for_exclusion:      r.case_for_exclusion,
+        status:                  r.status,
+        is_accepted:             r.is_accepted,
+        is_manual:               r.is_manual,
+        sort_order:              r.sort_order,
       });
     }
 
@@ -874,14 +876,14 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
       WHERE dm.target_company_id = $1 ORDER BY cc.id`, [prodTcId]).catch(() => ({ rows: [] }));
     for (const r of prodCCs) {
       await insertOne(devClient, 'deal_model_contingent_consideration', {
-        deal_model_id:        remap(r.deal_model_id as number, dmMap),
-        consideration_type:   r.consideration_type,
-        maximum_amount:       r.maximum_amount,
-        term_months:          r.term_months,
-        trigger_description:  r.trigger_description,
-        include_in_dscr:      r.include_in_dscr,
-        is_active:            r.is_active,
-        sort_order:           r.sort_order,
+        deal_model_id:       remap(r.deal_model_id as number, dmMap),
+        consideration_type:  r.consideration_type,
+        maximum_amount:      r.maximum_amount,
+        term_months:         r.term_months,
+        trigger_description: r.trigger_description,
+        include_in_dscr:     r.include_in_dscr,
+        is_active:           r.is_active,
+        sort_order:          r.sort_order,
       });
     }
 
@@ -899,7 +901,6 @@ async function cloneCompany(prodTcId: number, companyName: string): Promise<{
 // ─── Backfill contributions on dev clone ──────────────────────────────────────
 
 async function backfillContributions(devTcId: number): Promise<void> {
-  // Start fresh
   await db.delete(financialContributions).where(eq(financialContributions.targetCompanyId, devTcId));
 
   // Income statements
@@ -908,11 +909,11 @@ async function backfillContributions(devTcId: number): Promise<void> {
 
   for (const row of incRows) {
     const [period] = await db.select({
-      fiscalYear:     financialPeriods.fiscalYear,
-      periodType:     financialPeriods.periodType,
-      isFullYear:     financialPeriods.isFullYear,
-      monthsCovered:  financialPeriods.monthsCovered,
-      periodEnd:      financialPeriods.periodEnd,
+      fiscalYear:    financialPeriods.fiscalYear,
+      periodType:    financialPeriods.periodType,
+      isFullYear:    financialPeriods.isFullYear,
+      monthsCovered: financialPeriods.monthsCovered,
+      periodEnd:     financialPeriods.periodEnd,
     }).from(financialPeriods).where(eq(financialPeriods.id, row.financialPeriodId));
 
     let documentCategory: string | null = null;
@@ -924,30 +925,30 @@ async function backfillContributions(devTcId: number): Promise<void> {
 
     const tier = resolveSourceTier(period?.periodType ?? '', documentCategory);
     const figures = {
-      revenue:                   row.revenue,
-      costOfSales:               row.costOfSales,
-      grossProfit:               row.grossProfit,
-      administrativeExpenses:    row.administrativeExpenses,
-      depreciationAmortisation:  row.depreciationAmortisation,
-      otherOperatingIncome:      row.otherOperatingIncome,
-      operatingProfit:           row.operatingProfit,
-      interestReceivable:        row.interestReceivable,
-      interestPayable:           row.interestPayable,
-      profitBeforeTax:           row.profitBeforeTax,
-      corporationTax:            row.corporationTax,
-      netProfit:                 row.netProfit,
-      staffCosts:                row.staffCosts,
-      directorsRemuneration:     row.directorsRemuneration,
-      dividendsPaid:             row.dividendsPaid,
-      revenueBreakdown:          row.revenueBreakdown,
-      costOfSalesBreakdown:      row.costOfSalesBreakdown,
-      overheadsBreakdown:        row.overheadsBreakdown,
-      exceptionalItems:          row.exceptionalItems,
+      revenue:                  row.revenue,
+      costOfSales:              row.costOfSales,
+      grossProfit:              row.grossProfit,
+      administrativeExpenses:   row.administrativeExpenses,
+      depreciationAmortisation: row.depreciationAmortisation,
+      otherOperatingIncome:     row.otherOperatingIncome,
+      operatingProfit:          row.operatingProfit,
+      interestReceivable:       row.interestReceivable,
+      interestPayable:          row.interestPayable,
+      profitBeforeTax:          row.profitBeforeTax,
+      corporationTax:           row.corporationTax,
+      netProfit:                row.netProfit,
+      staffCosts:               row.staffCosts,
+      directorsRemuneration:    row.directorsRemuneration,
+      dividendsPaid:            row.dividendsPaid,
+      revenueBreakdown:         row.revenueBreakdown,
+      costOfSalesBreakdown:     row.costOfSalesBreakdown,
+      overheadsBreakdown:       row.overheadsBreakdown,
+      exceptionalItems:         row.exceptionalItems,
     };
     await db.insert(financialContributions).values({
-      targetCompanyId: devTcId,
-      fiscalYear:      period?.fiscalYear ?? null,
-      statementType:   'income',
+      targetCompanyId:  devTcId,
+      fiscalYear:       period?.fiscalYear ?? null,
+      statementType:    'income',
       sourceDocumentId: row.sourceDocumentId ?? null,
       sourceTier:       tier,
       isFullYear:       period?.isFullYear ?? true,
@@ -964,11 +965,11 @@ async function backfillContributions(devTcId: number): Promise<void> {
 
   for (const row of balRows) {
     const [period] = await db.select({
-      fiscalYear:     financialPeriods.fiscalYear,
-      periodType:     financialPeriods.periodType,
-      isFullYear:     financialPeriods.isFullYear,
-      monthsCovered:  financialPeriods.monthsCovered,
-      periodEnd:      financialPeriods.periodEnd,
+      fiscalYear:    financialPeriods.fiscalYear,
+      periodType:    financialPeriods.periodType,
+      isFullYear:    financialPeriods.isFullYear,
+      monthsCovered: financialPeriods.monthsCovered,
+      periodEnd:     financialPeriods.periodEnd,
     }).from(financialPeriods).where(eq(financialPeriods.id, row.financialPeriodId));
 
     let documentCategory: string | null = null;
@@ -1034,12 +1035,59 @@ async function backfillContributions(devTcId: number): Promise<void> {
   }
 }
 
+// ─── Slice 18 patch — apply computeSpan with document filename ────────────────
+//
+// On prod, YTD income contributions have is_full_year=true because the period
+// container was stamped with is_full_year=true by another (non-YTD) document.
+// This patch re-runs computeSpan with the source document's filename as the
+// ytdHintText, and flips is_full_year to false when the YTD pattern fires.
+// Slice 19 in reselect then evicts the stale income from the full-year container.
+
+async function applySlice18Patch(devTcId: number): Promise<number> {
+  const contribs = await db.select({
+    id:              financialContributions.id,
+    periodEnd:       financialContributions.periodEnd,
+    monthsCovered:   financialContributions.monthsCovered,
+    isFullYear:      financialContributions.isFullYear,
+    sourceDocumentId: financialContributions.sourceDocumentId,
+  }).from(financialContributions)
+    .where(and(
+      eq(financialContributions.targetCompanyId, devTcId),
+      eq(financialContributions.statementType, 'income'),
+    ));
+
+  let flipped = 0;
+  for (const c of contribs) {
+    if (!c.isFullYear) continue; // already part-year, nothing to check
+
+    let docName: string | null = null;
+    if (c.sourceDocumentId) {
+      const [doc] = await db.select({ documentName: documents.documentName })
+        .from(documents).where(eq(documents.id, c.sourceDocumentId)).limit(1);
+      docName = doc?.documentName ?? null;
+    }
+
+    const { isFullYear: newFull } = computeSpan({
+      periodEnd:    c.periodEnd,
+      monthsCovered: c.monthsCovered,
+      ytdHintText:  docName,
+    });
+
+    if (!newFull) {
+      await db.update(financialContributions)
+        .set({ isFullYear: false })
+        .where(eq(financialContributions.id, c.id));
+      flipped++;
+    }
+  }
+  return flipped;
+}
+
 // ─── Cleanup dev clone ────────────────────────────────────────────────────────
 
 async function cleanupDevClone(devTcId: number): Promise<void> {
   const devClient = await devPool.connect();
   try {
-    // Delete in reverse FK order — one query at a time (pg can't handle semicolons in prepared statements)
     await devClient.query('DELETE FROM financial_contributions WHERE target_company_id = $1', [devTcId]);
     await devClient.query('DELETE FROM ebitda_adjustments WHERE target_company_id = $1', [devTcId]);
     await devClient.query('DELETE FROM staff_data WHERE target_company_id = $1', [devTcId]);
@@ -1072,16 +1120,14 @@ function isMaterial(
   let anyUp = false, anyDown = false;
   let deltaEV: number | null = null;
 
-  // Per-year EBITDA movements
   const allYears = new Set([...Object.keys(currentEbitda), ...Object.keys(correctedEbitda)]);
   for (const year of allYears) {
-    const cur  = currentEbitda[year] ?? null;
+    const cur  = currentEbitda[year]  ?? null;
     const corr = correctedEbitda[year] ?? null;
     if (cur == null || corr == null) {
       if (cur == null && corr != null) {
         movements.push(`FY${year} EBITDA appeared (→${fmt(corr)})`);
-        anyUp = corr > 0;
-        anyDown = corr < 0;
+        anyUp = corr > 0; anyDown = corr < 0;
       } else if (cur != null && corr == null) {
         movements.push(`FY${year} EBITDA removed (was ${fmt(cur)})`);
         anyDown = true;
@@ -1098,7 +1144,6 @@ function isMaterial(
     }
   }
 
-  // Deal model EV movement
   if (currentDM && correctedDM) {
     const cur  = currentDM.enterpriseValue;
     const corr = correctedDM.enterpriseValue;
@@ -1111,14 +1156,12 @@ function isMaterial(
       if (d > 0) anyUp = true; else anyDown = true;
     }
   } else if (currentDM || correctedDM) {
-    // One side has a model, other doesn't — unusual
     deltaEV = null;
   }
 
-  // Issued offer affected
   if (issuedOffers.length > 0 && correctedEV != null) {
     for (const offer of issuedOffers) {
-      if (offer.frozenEV != null && correctedEV != null) {
+      if (offer.frozenEV != null) {
         const d = Math.abs(offer.frozenEV - correctedEV);
         if (d >= 0.01) {
           movements.push(`issued ${offer.docType} frozen EV ${fmt(offer.frozenEV)} ≠ corrected ${fmt(correctedEV)}`);
@@ -1138,6 +1181,99 @@ function isMaterial(
   return { material, whatMoved, direction, deltaEV };
 }
 
+// ─── Self-validation (Slice 19 leak checks) ───────────────────────────────────
+//
+// Runs three independent leak checks on the dev clone AFTER reselect:
+//
+//   CHECK 1: No fiscal_year > TODAY_YEAR appears in the corrected averaging window.
+//
+//   CHECK 2: For every fiscal year present in correctedEbitdaByYear, the best-tier
+//            income contribution for that year has is_full_year=true.
+//            (A part-year winner here means a YTD doc leaked into valuation.)
+//
+//   CHECK 3: No is_full_year=true income period has its income_statement sourced
+//            from a document whose name matches the YTD pattern.
+//            (Catches split-source contamination that Slice 19 should have cleared.)
+
+const YTD_PAT = /(?<![a-zA-Z])YTD(?![a-zA-Z])|\byear[\s\-]?to[\s\-]?date\b|\binterim\b/i;
+const TIER_RANK: Record<string, number> = { statutory: 0, management: 1, information_memorandum: 2 };
+
+async function selfValidate(
+  devTcId: number,
+  correctedEbitdaByYear: EbitdaByYear,
+): Promise<SelfValidationResult> {
+  const leaks: string[] = [];
+
+  // ── CHECK 1: no future fiscal year in averaging window ──────────────────────
+  for (const year of Object.keys(correctedEbitdaByYear)) {
+    if (Number(year) > TODAY_YEAR) {
+      leaks.push(`CHECK1: FY${year} (>${TODAY_YEAR}) in averaging window`);
+    }
+  }
+
+  // ── CHECK 2: winning income contribution is is_full_year=true for each year ─
+  const incContribs = await db.select({
+    fiscalYear:      financialContributions.fiscalYear,
+    sourceTier:      financialContributions.sourceTier,
+    isFullYear:      financialContributions.isFullYear,
+    sourceDocumentId: financialContributions.sourceDocumentId,
+  }).from(financialContributions)
+    .where(and(
+      eq(financialContributions.targetCompanyId, devTcId),
+      eq(financialContributions.statementType, 'income'),
+    ));
+
+  for (const year of Object.keys(correctedEbitdaByYear)) {
+    const fyNum      = Number(year);
+    const yearConts  = incContribs.filter(c => c.fiscalYear === fyNum);
+    if (yearConts.length === 0) continue;
+
+    const sorted = [...yearConts].sort(
+      (a, b) => (TIER_RANK[a.sourceTier ?? ''] ?? 99) - (TIER_RANK[b.sourceTier ?? ''] ?? 99),
+    );
+    const winner = sorted[0];
+    if (winner && !winner.isFullYear) {
+      // Fetch doc name for context
+      let docName = '(unknown)';
+      if (winner.sourceDocumentId) {
+        const [d] = await db.select({ documentName: documents.documentName })
+          .from(documents).where(eq(documents.id, winner.sourceDocumentId)).limit(1);
+        docName = d?.documentName ?? docName;
+      }
+      leaks.push(`CHECK2: FY${year} income winner is part-year (is_full_year=false) doc="${docName}"`);
+    }
+  }
+
+  // ── CHECK 3: no is_full_year=true IS period sourced from YTD document ───────
+  const fullYearPeriods = await db.select({
+    id:        financialPeriods.id,
+    fiscalYear: financialPeriods.fiscalYear,
+  }).from(financialPeriods)
+    .where(and(
+      eq(financialPeriods.targetCompanyId, devTcId),
+      eq(financialPeriods.isFullYear, true),
+    ));
+
+  for (const period of fullYearPeriods) {
+    const [isRow] = await db.select({ sourceDocumentId: incomeStatements.sourceDocumentId })
+      .from(incomeStatements)
+      .where(eq(incomeStatements.financialPeriodId, period.id))
+      .limit(1);
+    if (!isRow) continue;
+
+    const docId = isRow.sourceDocumentId;
+    if (!docId) continue;
+
+    const [doc] = await db.select({ documentName: documents.documentName })
+      .from(documents).where(eq(documents.id, docId)).limit(1);
+    if (doc?.documentName && YTD_PAT.test(doc.documentName)) {
+      leaks.push(`CHECK3: FY${period.fiscalYear} full-year IS still sourced from YTD doc "${doc.documentName}"`);
+    }
+  }
+
+  return { pass: leaks.length === 0, leaks };
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -1149,21 +1285,22 @@ async function main(): Promise<void> {
     return;
   }
 
-  console.log(`\nSTEP 2 — Processing ${affected.length} companies (clone → backfill → reselect → measure)`);
+  console.log(`\nSTEP 2 — Processing ${affected.length} companies`);
+  console.log('  (clone → backfill → Slice 18 patch → reselect → measure → self-validate → cleanup)');
   console.log('─'.repeat(70));
 
   const results: CompanyResult[] = [];
 
   for (let i = 0; i < affected.length; i++) {
     const company = affected[i];
-    console.log(`\n[${i + 1}/${affected.length}] prod tc=${company.tcId}  "${company.companyName}"  (${company.flags.join(',')})`);
+    console.log(`\n[${i + 1}/${affected.length}] prod tc=${company.tcId}  "${company.companyName}"  flags=[${company.flags.join(',')}]`);
 
     let devTcId: number | null = null;
     try {
       // a. Current state from prod
       const currentEbitdaByYear = await getProdEbitdaByYear(company.tcId);
-      const issuedOffers = await getIssuedOffers(company.tcId);
-      const account      = await getAccountInfo(company.userCompanyId);
+      const issuedOffers        = await getIssuedOffers(company.tcId);
+      const account             = await getAccountInfo(company.userCompanyId);
 
       // b. Clone prod → dev
       process.stdout.write(`    cloning...`);
@@ -1176,19 +1313,24 @@ async function main(): Promise<void> {
       await backfillContributions(devTcId);
       process.stdout.write(` done\n`);
 
-      // Current deal model — computed from CURRENT ebitda using dev model structure
+      // d. Slice 18 patch — flip YTD income contributions to is_full_year=false
+      process.stdout.write(`    applying Slice 18 patch (YTD detection)...`);
+      const slice18Flipped = await applySlice18Patch(devTcId);
+      process.stdout.write(` ${slice18Flipped} contrib(s) flipped\n`);
+
+      // Current deal model — computed from CURRENT prod EBITDA using dev model structure
       const currentDealModel = await computeDealModel(devTcId, currentEbitdaByYear);
 
-      // d. Reselect
-      process.stdout.write(`    reselecting...`);
+      // e. Reselect (Slices 17/18/19 live)
+      process.stdout.write(`    reselecting (Slices 17/18/19)...`);
       await reselect(devTcId);
       process.stdout.write(` done\n`);
 
-      // e. Corrected state
+      // f. Corrected state
       const correctedEbitdaByYear = await getDevEbitdaByYear(devTcId);
       const correctedDealModel    = await computeDealModel(devTcId, correctedEbitdaByYear);
 
-      // f. Measure delta
+      // g. Measure delta + materiality
       const correctedEV = correctedDealModel?.enterpriseValue ?? null;
       const { material, whatMoved, direction, deltaEV } = isMaterial(
         currentEbitdaByYear, correctedEbitdaByYear,
@@ -1202,7 +1344,17 @@ async function main(): Promise<void> {
       const offerAffected = issuedOffers.length > 0 && correctedEV != null &&
         issuedOffers.some(o => o.frozenEV != null && Math.abs(o.frozenEV - correctedEV!) >= 0.01);
 
-      process.stdout.write(`    ${material ? '⚠  MATERIAL' : '✓  immaterial'} | direction=${direction} | EV delta=${deltaEV != null ? fmt(deltaEV) : 'n/a'}\n`);
+      process.stdout.write(`    ${material ? '⚠  MATERIAL' : '✓  immaterial'} | ${direction} | EV delta=${deltaEV != null ? fmt(deltaEV) : 'n/a'}\n`);
+
+      // i. Self-validate (all companies, not just material — cheap to run, informative)
+      process.stdout.write(`    self-validating...`);
+      const validation = await selfValidate(devTcId, correctedEbitdaByYear);
+      process.stdout.write(` ${validation.pass ? 'clean' : `⚠ LEAK (${validation.leaks.length})`}\n`);
+      if (!validation.pass) {
+        for (const leak of validation.leaks) {
+          process.stdout.write(`      ↳ ${leak}\n`);
+        }
+      }
 
       results.push({
         prodTcId:             company.tcId,
@@ -1222,9 +1374,11 @@ async function main(): Promise<void> {
         whatMoved,
         direction,
         deltaEV,
+        slice18Flipped,
+        validation,
       });
 
-      // h. Cleanup
+      // j. Cleanup
       await cleanupDevClone(devTcId);
       devTcId = null;
       process.stdout.write(`    cleanup done\n`);
@@ -1238,14 +1392,41 @@ async function main(): Promise<void> {
     }
   }
 
-  // ─── STEP 3: Output table ───────────────────────────────────────────────────
+  // ─── STEP 3: Self-validation summary for ACTIVE+MATERIAL ────────────────────
 
-  console.log('\n\n' + '═'.repeat(140));
-  console.log('STEP 3 — FINAL TABLE');
+  const activeMaterialResults = results.filter(r => r.account.isActive && r.material);
+  console.log('\n\n' + '═'.repeat(100));
+  console.log('STEP 3 — SELF-VALIDATION (ACTIVE+MATERIAL companies)');
+  console.log('═'.repeat(100));
+
+  if (activeMaterialResults.length === 0) {
+    console.log('  No ACTIVE+MATERIAL companies to validate.');
+  } else {
+    for (const r of activeMaterialResults) {
+      const label = r.validation.pass ? '✅ clean' : '❌ FLAG';
+      console.log(`  tc=${r.prodTcId}  "${r.companyName}":  ${label}`);
+      if (!r.validation.pass) {
+        for (const leak of r.validation.leaks) {
+          console.log(`     ↳ ${leak}`);
+        }
+      }
+    }
+  }
+
+  const leakyActive = activeMaterialResults.filter(r => !r.validation.pass);
+  if (leakyActive.length > 0) {
+    console.log(`\n  ⚠  ${leakyActive.length} ACTIVE+MATERIAL company/ies have residual leaks — DO NOT EMAIL, fix first.`);
+  } else if (activeMaterialResults.length > 0) {
+    console.log(`\n  ✅ All ${activeMaterialResults.length} ACTIVE+MATERIAL companies passed leak checks.`);
+  }
+
+  // ─── STEP 4: Output table ────────────────────────────────────────────────────
+
+  console.log('\n\n' + '═'.repeat(160));
+  console.log('STEP 4 — FINAL TABLE  (Slices 17/18/19 live)');
   console.log('Sorted: ACTIVE+MATERIAL first | ACTIVE+IMMATERIAL | non-active');
-  console.log('═'.repeat(140));
+  console.log('═'.repeat(160));
 
-  // Sort
   const sorted = [...results].sort((a, b) => {
     const aScore = (a.account.isActive ? 2 : 0) + (a.material ? 1 : 0);
     const bScore = (b.account.isActive ? 2 : 0) + (b.material ? 1 : 0);
@@ -1253,24 +1434,24 @@ async function main(): Promise<void> {
     return a.prodTcId - b.prodTcId;
   });
 
-  // Print table
   const COL = {
     tcId:      6,
-    company:   30,
-    owner:     24,
-    email:     32,
+    company:   28,
+    owner:     22,
+    email:     34,
     status:    12,
-    flags:     18,
-    whatMoved: 55,
+    flags:     16,
+    whatMoved: 50,
     currentEV: 14,
     corrEV:    14,
     dir:        6,
     mat:        8,
     offer:      8,
+    leak:      10,
   };
 
   const row = (vals: string[]) => {
-    const [tcId, company, owner, email, status, flags, whatMoved, curEV, corrEV, dir, mat, offer] = vals;
+    const [tcId, company, owner, email, status, flags, whatMoved, curEV, corrEV, dir, mat, offer, leak] = vals;
     return [
       tcId.padEnd(COL.tcId),
       company.substring(0, COL.company - 1).padEnd(COL.company),
@@ -1284,10 +1465,11 @@ async function main(): Promise<void> {
       dir.padEnd(COL.dir),
       mat.padEnd(COL.mat),
       offer.padEnd(COL.offer),
+      leak.padEnd(COL.leak),
     ].join(' | ');
   };
 
-  const header = row(['TC', 'Company', 'Owner', 'Email', 'Status', 'Flags', 'What moved', 'Current EV', 'Corrected EV', 'Dir', 'Material', 'Offer?']);
+  const header = row(['TC', 'Company', 'Owner', 'Email', 'Status', 'Flags', 'What moved', 'Current EV', 'Corrected EV', 'Dir', 'Material', 'Offer?', 'Leak-check']);
   console.log(header);
   console.log('─'.repeat(header.length));
 
@@ -1301,12 +1483,10 @@ async function main(): Promise<void> {
       sectionLabel = sectionKey;
     }
 
-    const curEbitdaYears = Object.entries(r.currentEbitdaByYear)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([y, v]) => `${y}:${fmt(v)}`).join(' ');
-    const corrEbitdaYears = Object.entries(r.correctedEbitdaByYear)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([y, v]) => `${y}:${fmt(v)}`).join(' ');
+    // Leak-check label: only meaningful for active+material; others marked n/a
+    const leakLabel = (r.account.isActive && r.material)
+      ? (r.validation.pass ? 'clean' : `FLAG(${r.validation.leaks.length})`)
+      : 'n/a';
 
     console.log(row([
       String(r.prodTcId),
@@ -1316,47 +1496,79 @@ async function main(): Promise<void> {
       r.account.status,
       r.flags.join(','),
       r.whatMoved,
-      r.currentDealModel ? fmt(r.currentDealModel.enterpriseValue) : '(no model)',
+      r.currentDealModel  ? fmt(r.currentDealModel.enterpriseValue)  : '(no model)',
       r.correctedDealModel ? fmt(r.correctedDealModel.enterpriseValue) : '(no model)',
       r.direction,
-      r.material ? 'YES' : 'no',
+      r.material  ? 'YES' : 'no',
       r.issuedOffers.length > 0 ? (r.offerAffected ? 'YES ⚠' : 'yes') : 'none',
+      leakLabel,
     ]));
 
     // Per-year EBITDA detail
     if (r.ebitdaChanged) {
-      console.log(`        CURRENT  EBITDA by year: ${curEbitdaYears || '(none)'}`);
-      console.log(`        CORRECTED EBITDA by year: ${corrEbitdaYears || '(none)'}`);
+      const curY  = Object.entries(r.currentEbitdaByYear).sort((a,b)=>a[0].localeCompare(b[0])).map(([y,v])=>`${y}:${fmt(v)}`).join('  ');
+      const corrY = Object.entries(r.correctedEbitdaByYear).sort((a,b)=>a[0].localeCompare(b[0])).map(([y,v])=>`${y}:${fmt(v)}`).join('  ');
+      console.log(`        CURRENT   EBITDA: ${curY  || '(none)'}`);
+      console.log(`        CORRECTED EBITDA: ${corrY || '(none)'}`);
+    }
+
+    // Slice 18 flipped
+    if (r.slice18Flipped > 0) {
+      console.log(`        Slice18: ${r.slice18Flipped} income contribution(s) flipped to part-year`);
     }
 
     // Issued offers detail
     for (const offer of r.issuedOffers) {
       const corrEV = r.correctedDealModel?.enterpriseValue ?? null;
-      const evMatch = offer.frozenEV != null && corrEV != null
+      const evNote = offer.frozenEV != null && corrEV != null
         ? (Math.abs(offer.frozenEV - corrEV) < 0.01 ? ' [MATCHES corrected]' : ` [DIFFERS from corrected ${fmt(corrEV)}]`)
         : '';
-      console.log(`        issued ${offer.docType} (id=${offer.docId}, sent=${offer.sentAt ?? 'n/a'}): frozen EV=${fmt(offer.frozenEV)} offer=${fmt(offer.frozenOffer)}${evMatch}`);
+      console.log(`        issued ${offer.docType} (id=${offer.docId}, sent=${offer.sentAt ?? 'n/a'}): frozen EV=${fmt(offer.frozenEV)} offer=${fmt(offer.frozenOffer)}${evNote}`);
+    }
+
+    // Leak details inline
+    if (r.account.isActive && r.material && !r.validation.pass) {
+      for (const leak of r.validation.leaks) {
+        console.log(`        ⚠ LEAK: ${leak}`);
+      }
     }
   }
 
-  console.log('\n' + '═'.repeat(140));
+  console.log('\n' + '═'.repeat(160));
 
   // Summary counts
   const activeMaterial   = sorted.filter(r => r.account.isActive && r.material);
   const activeImmaterial = sorted.filter(r => r.account.isActive && !r.material);
   const inactive         = sorted.filter(r => !r.account.isActive);
   const offerAffected    = sorted.filter(r => r.offerAffected);
+  const cleanForEmail    = activeMaterial.filter(r => r.validation.pass);
+  const flagged          = activeMaterial.filter(r => !r.validation.pass);
 
   console.log(`\nSUMMARY`);
   console.log(`  Total affected companies processed: ${results.length}`);
-  console.log(`  ACTIVE + MATERIAL (need email):     ${activeMaterial.length}`);
-  console.log(`  ACTIVE + IMMATERIAL (quiet fix):    ${activeImmaterial.length}`);
-  console.log(`  NOT ACTIVE (quiet fix):             ${inactive.length}`);
-  console.log(`  Issued offer/HoT affected:          ${offerAffected.length}`);
-  if (activeMaterial.length > 0) {
-    console.log(`\n  EMAIL LIST:`);
-    for (const r of activeMaterial) {
-      console.log(`    tc=${r.prodTcId}  ${r.companyName.padEnd(35)} ${r.account.ownerEmail}  [${r.account.status}]  ${r.direction}  ${r.whatMoved.substring(0, 80)}`);
+  console.log(`  ACTIVE + MATERIAL (email candidates): ${activeMaterial.length}`);
+  console.log(`    ✅ leak-check clean (safe to email): ${cleanForEmail.length}`);
+  console.log(`    ❌ leak-check FLAG  (fix first):     ${flagged.length}`);
+  console.log(`  ACTIVE + IMMATERIAL (quiet fix):      ${activeImmaterial.length}`);
+  console.log(`  NOT ACTIVE (quiet fix):               ${inactive.length}`);
+  console.log(`  Issued offer/HoT affected:            ${offerAffected.length}`);
+
+  if (cleanForEmail.length > 0) {
+    console.log(`\n  EMAIL LIST (clean, active, material):`);
+    for (const r of cleanForEmail) {
+      const curEV  = r.currentDealModel  ? fmt(r.currentDealModel.enterpriseValue)  : 'n/a';
+      const corrEV = r.correctedDealModel ? fmt(r.correctedDealModel.enterpriseValue) : 'n/a';
+      console.log(`    tc=${r.prodTcId}  ${r.companyName.padEnd(35)} ${r.account.ownerEmail.padEnd(40)} [${r.account.status}]  ${r.direction}  EV ${curEV}→${corrEV}  ${r.whatMoved.substring(0, 70)}`);
+    }
+  }
+
+  if (flagged.length > 0) {
+    console.log(`\n  FLAGGED (do NOT email — residual leaks):`);
+    for (const r of flagged) {
+      console.log(`    tc=${r.prodTcId}  ${r.companyName}`);
+      for (const leak of r.validation.leaks) {
+        console.log(`      ↳ ${leak}`);
+      }
     }
   }
 }
