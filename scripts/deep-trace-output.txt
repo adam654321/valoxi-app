@@ -1,0 +1,644 @@
+════════════════════════════════════════════════════════════════════════════════
+SAFETY CHECK
+  PROD host: ep-old-recipe-an7e4afw.c-6.us-east-1.aws.neon.tech
+  PROD ✓ read-only
+  DEV  host: helium
+  DEV  ✓ writes permitted
+  prod_db=neondb  dev_db=heliumdb
+
+
+
+════════════════════════════════════════════════════════════════════════════════
+COMPANY: "MANOR BUILDING SOLUTIONS (UK) LTD"  (prod tc=137)
+════════════════════════════════════════════════════════════════════════════════
+
+Cloning prod tc=137 → dev...
+  dev tc=259
+  Backfilling contributions... done
+  Reselecting...[RESELECT] company=259
+[RESELECT] 14 contributions → 10 winners
+[RESELECT] Pruned 6 empty ghost period(s): [1581, 1582, 1583, 1585, 1586, 1588]
+[RESELECT] Done. company=259
+ done
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 0 — ALL FULL-YEAR PERIODS ON PROD (duplicate/conflict exposure)
+────────────────────────────────────────────────────────────────────────────────
+
+  FY2023 🟠 MGMT∧STAT  (2 periods)
+        (loser)         period_id=736  type=statutory     period_end=2023-03-31  doc_id=846  "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf"
+               EBITDA=£49,760  (op=£33,358 + DA=£16,402)  equity=£194,502
+        (loser)         period_id=739  type=management    period_end=2023-03-31  doc_id=846  "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf"
+               EBITDA=£66,846  (op=£50,444 + DA=£16,402)  equity=n/a
+
+  FY2024 🟠 MGMT∧STAT  (2 periods)
+        (loser)         period_id=737  type=statutory     period_end=2024-03-31  doc_id=846  "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf"
+               EBITDA=£174,747  (op=£157,753 + DA=£16,994)  equity=£230,213
+        (loser)         period_id=740  type=management    period_end=2024-03-31  doc_id=846  "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf"
+               EBITDA=£194,162  (op=£177,168 + DA=£16,994)  equity=n/a
+
+  FY2025 🟠 MGMT∧STAT  (2 periods)
+      ★ CURRENT WINNER  period_id=738  type=statutory     period_end=2025-03-31  doc_id=1299  "Manor 2025-26 draft accounts.pdf"
+               EBITDA=£489,389  (op=£464,671 + DA=£24,718)  equity=£478,229
+        (loser)         period_id=741  type=management    period_end=2025-03-31  doc_id=846  "HPM304_Information_Memorandum_Manor_Building_Solutions_(UK)_Ltd_1.pdf"
+               EBITDA=£514,633  (op=£489,914 + DA=£24,719)  equity=n/a
+
+  FY2026 🟠 MGMT∧STAT  (3 periods)
+        (loser)         period_id=742  type=statutory     period_end=2026-03-31  doc_id=1299  "Manor 2025-26 draft accounts.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=£717,070
+      ★ CURRENT WINNER  period_id=1109  type=management    period_end=2026-06-16  doc_id=1310  "Staff Organisation 2026-06-16 172912.png"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=n/a
+        (loser)         period_id=1313  type=management    period_end=2026-04-30  doc_id=1596  "Manor Building Solutions YTD P&L.pdf"
+               EBITDA=£30,675  (op=£29,202 + DA=£1,473)  equity=£746,642
+
+  FY2027 🔴 FORECAST>2026 🟡 DUPLICATE  (2 periods)
+        (loser)         period_id=1314  type=management    period_end=2027-03-31  doc_id=1596  "Manor Building Solutions YTD P&L.pdf"
+               EBITDA=£74,653  (op=£71,706 + DA=£2,946)  equity=n/a
+      ★ CURRENT WINNER  period_id=1315  type=management    period_end=2026-05-31  doc_id=1597  "Manor Building Solutions YTD Balance Sheet.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=£789,024
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 1 — PER-YEAR WINNER: CURRENT (prod) vs CORRECTED (dev post-reselect)
+────────────────────────────────────────────────────────────────────────────────
+
+  ── FY2025 ──
+  CURRENT      FY2025
+      tier=statutory              doc_id=845    file="Manor Building Solutions 2024-2025 accounts.pdf"
+      revenue=    £2,084,318  op_profit=      £464,671  D&A=     £24,718  EBITDA=      £489,389  equity=      £478,229
+  CORRECTED    FY2025
+      tier=statutory              doc_id=1552   file="Manor Building Solutions 2024-2025 accounts.pdf"
+      revenue=    £2,084,318  op_profit=      £464,671  D&A=     £24,718  EBITDA=      £489,389  equity=      £478,229
+
+  ── FY2026  ⬅ CHANGED ──
+  CURRENT      FY2026
+      tier=management             doc_id=1310   file="Staff Organisation 2026-06-16 172912.png"
+      revenue=           n/a  op_profit=           n/a  D&A=         n/a  EBITDA=           n/a  equity=           n/a
+  CORRECTED    FY2026
+      tier=statutory              doc_id=1557   file="Manor Building Solutions YTD P&L.pdf"
+      revenue=      £193,264  op_profit=       £29,202  D&A=      £1,473  EBITDA=       £30,675  equity=      £717,070
+    CHANGE: EBITDA ↑ £30,675  (£0 → £30,675)
+
+  ── FY2027  ⬅ CHANGED ──
+  CURRENT      FY2027
+      tier=management             doc_id=1597   file="Manor Building Solutions YTD Balance Sheet.pdf"
+      revenue=           n/a  op_profit=           n/a  D&A=         n/a  EBITDA=           n/a  equity=      £789,024
+  CORRECTED    FY2027
+      tier=management             doc_id=1557   file="Manor Building Solutions YTD P&L.pdf"
+      revenue=      £410,259  op_profit=       £71,706  D&A=      £2,946  EBITDA=       £74,653  equity=      £789,024
+    CHANGE: EBITDA ↑ £74,653  (£0 → £74,653)
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 2 — FORECAST / IM LEAK CHECK (corrected state)
+────────────────────────────────────────────────────────────────────────────────
+  🔴 FORECAST YEARS STILL PRESENT IN CORRECTED EBITDA:
+     FY2027: EBITDA=£74,653  tier=management  doc="Manor Building Solutions YTD P&L.pdf"
+  ✓ Zero IM-tier figures in corrected reported EBITDA
+
+  Forecast periods on dev (any is_full_year):
+    fp_id=1587  FY2027  is_full_year=true  tier=management  EBITDA=£74,653
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 3 — DEAL MODEL / VALUATION
+────────────────────────────────────────────────────────────────────────────────
+  averagingYears=2  multiple=2.5×
+
+  PRE (using current/buggy EBITDA input):
+    Years in window: [2027, 2026]
+    Adjusted EBITDA by year:
+      FY2025:       £632,043  (outside window)
+      FY2026:       £145,634  ← IN WINDOW
+      FY2027:       £227,794  ← IN WINDOW
+    avgAdjEBITDA = £186,714  →  EV = £429,285
+
+  POST (using corrected EBITDA input):
+    Years in window: [2027, 2026]
+    Adjusted EBITDA by year:
+      FY2025:       £632,043  (outside window)
+      FY2026:       £176,309  ← IN WINDOW
+      FY2027:       £302,447  ← IN WINDOW
+    avgAdjEBITDA = £239,378  →  EV = £560,945
+
+  Δ  avgAdjEBITDA = +£52,664   EV = +£131,660
+  Window unchanged: [2027,2026]
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 5 — PLAIN-ENGLISH EXPLANATION
+────────────────────────────────────────────────────────────────────────────────
+
+  • FORECAST CONTAMINATION: Prod has 1 fiscal year(s) > 2026 — FY2027 (EBITDA £0, doc "n/a"). These were fed into the averaging window, inflating/deflating the EV because year ordering sort().reverse() put them at the TOP of the window.
+
+  • MANAGEMENT OVERRIDING STATUTORY: For FY[2026], the prod current-winner was a management-type period even though a statutory period also existed for the same year. This happened because period_end ordering was used as the tie-break instead of tier rank. After reselect, statutory correctly beats management.
+
+  • DUPLICATE PERIODS: FY[2026, 2027] had multiple periods of the same type. This occurs when a document upload creates a new period for a year that already had one. Reselect picks the single best contribution and re-points the income statement to a canonical period.
+
+  • EV IMPACT: INCREASE of £131,660 (£429,285 → £560,945). The averaging window stayed at [2027,2026]; the delta comes purely from figures changing within those years.
+
+  Cleaning up dev tc=259...
+  Done.
+
+
+════════════════════════════════════════════════════════════════════════════════
+COMPANY: "Lovell Landscape"  (prod tc=163)
+════════════════════════════════════════════════════════════════════════════════
+
+Cloning prod tc=163 → dev...
+  dev tc=260
+  Backfilling contributions... done
+  Reselecting...[RESELECT] company=260
+[RESELECT] 8 contributions → 8 winners
+[RESELECT] Pruned 1 empty ghost period(s): [1589]
+[RESELECT] Done. company=260
+ done
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 0 — ALL FULL-YEAR PERIODS ON PROD (duplicate/conflict exposure)
+────────────────────────────────────────────────────────────────────────────────
+
+  FY2023  (1 period)
+      ★ CURRENT WINNER  period_id=930  type=statutory     period_end=2023-03-31  doc_id=1072  "SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf"
+               EBITDA=£215,220  (op=£203,967 + DA=£11,253)  equity=£594,312
+
+  FY2024  (1 period)
+      ★ CURRENT WINNER  period_id=929  type=statutory     period_end=2024-03-31  doc_id=1071  "Lovell Landscapes Full Accounts 31 Mar 2025 signed.pdf"
+               EBITDA=£276,176  (op=£249,322 + DA=£26,854)  equity=£763,221
+
+  FY2025  (1 period)
+      ★ CURRENT WINNER  period_id=927  type=statutory     period_end=2025-03-31  doc_id=1070  "Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest).pdf"
+               EBITDA=£189,102  (op=£167,262 + DA=£21,840)  equity=£876,872
+
+  FY2026 🟠 MGMT∧STAT  (2 periods)
+        (loser)         period_id=926  type=management    period_end=2025-05-12  doc_id=1069  "staff info.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=n/a
+      ★ CURRENT WINNER  period_id=928  type=statutory     period_end=2026-03-31  doc_id=1070  "Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest).pdf"
+               EBITDA=£319,751  (op=£296,888 + DA=£22,863)  equity=£1,103,321
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 1 — PER-YEAR WINNER: CURRENT (prod) vs CORRECTED (dev post-reselect)
+────────────────────────────────────────────────────────────────────────────────
+
+  ── FY2023 ──
+  CURRENT      FY2023
+      tier=statutory              doc_id=1072   file="SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf"
+      revenue=    £2,220,360  op_profit=      £203,967  D&A=     £11,253  EBITDA=      £215,220  equity=      £594,312
+  CORRECTED    FY2023
+      tier=statutory              doc_id=1563   file="SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf"
+      revenue=    £2,220,360  op_profit=      £203,967  D&A=     £11,253  EBITDA=      £215,220  equity=      £594,312
+
+  ── FY2024 ──
+  CURRENT      FY2024
+      tier=statutory              doc_id=1073   file="SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf"
+      revenue=    £2,297,083  op_profit=      £249,322  D&A=     £26,854  EBITDA=      £276,176  equity=      £763,221
+  CORRECTED    FY2024
+      tier=statutory              doc_id=1564   file="SIGNED - Lovell Landscapes ltd Full accounts YE 31 March 2024.pdf"
+      revenue=    £2,297,083  op_profit=      £249,322  D&A=     £26,854  EBITDA=      £276,176  equity=      £763,221
+
+  ── FY2025 ──
+  CURRENT      FY2025
+      tier=statutory              doc_id=1071   file="Lovell Landscapes Full Accounts 31 Mar 2025 signed.pdf"
+      revenue=    £2,374,726  op_profit=      £167,262  D&A=     £21,840  EBITDA=      £189,102  equity=      £876,872
+  CORRECTED    FY2025
+      tier=statutory              doc_id=1562   file="Lovell Landscapes Full Accounts 31 Mar 2025 signed.pdf"
+      revenue=    £2,374,726  op_profit=      £167,262  D&A=     £21,840  EBITDA=      £189,102  equity=      £876,872
+
+  ── FY2026 ──
+  CURRENT      FY2026
+      tier=statutory              doc_id=1298   file="Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest) (1).PDF"
+      revenue=    £3,138,501  op_profit=      £296,888  D&A=     £22,863  EBITDA=      £319,751  equity=    £1,103,321
+  CORRECTED    FY2026
+      tier=statutory              doc_id=1568   file="Lovell Landscapes ltd Full draft accounts YE 31 March 2026 (latest) (1).PDF"
+      revenue=    £3,138,501  op_profit=      £296,888  D&A=     £22,863  EBITDA=      £319,751  equity=    £1,103,321
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 2 — FORECAST / IM LEAK CHECK (corrected state)
+────────────────────────────────────────────────────────────────────────────────
+  ✓ Zero forecast years (>2026) in corrected reported EBITDA
+  ✓ Zero IM-tier figures in corrected reported EBITDA
+  ✓ No forecast-year periods remain on dev at all
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 3 — DEAL MODEL / VALUATION
+────────────────────────────────────────────────────────────────────────────────
+  averagingYears=3  multiple=2.75×
+
+  PRE (using current/buggy EBITDA input):
+    Years in window: [2026, 2025, 2024]
+    Adjusted EBITDA by year:
+      FY2023:       £215,220  (outside window)
+      FY2024:       £276,176  ← IN WINDOW
+      FY2025:       £189,102  ← IN WINDOW
+      FY2026:       £319,751  ← IN WINDOW
+    avgAdjEBITDA = £261,676  →  EV = £719,610
+
+  POST (using corrected EBITDA input):
+    Years in window: [2026, 2025, 2024]
+    Adjusted EBITDA by year:
+      FY2023:       £215,220  (outside window)
+      FY2024:       £276,176  ← IN WINDOW
+      FY2025:       £189,102  ← IN WINDOW
+      FY2026:       £319,751  ← IN WINDOW
+    avgAdjEBITDA = £261,676  →  EV = £719,610
+
+  Δ  avgAdjEBITDA = +£0   EV = +£0
+  Window unchanged: [2026,2025,2024]
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 4 — ISSUED OFFERS
+────────────────────────────────────────────────────────────────────────────────
+
+  doc_id=55  type=offer_letter  status=draft  sent=n/a
+    frozen EV    = £1,255,147
+    frozen offer = £1,002,414
+    corrected EV = £719,610
+    EV delta     = £535,537  (frozen HIGHER than corrected)
+    document_data fields:
+      ebitdaMultiple: 3.5
+      averagingYears: 3
+      propertyValue: 0
+      excessCash: £317,577
+      primaryDebt: 24774
+      otherDebt: 0
+      corpTaxDue: 71934
+      workingCapitalAdj: 473602
+      _raw.averageEbitda: 371563.3333333333
+      _raw.ebitdaMultiple: 3.5
+
+  doc_id=10  type=current_offer  status=issued  sent=Mon Jun 15 2026 12:46:41 GMT+0000 (Coordinated Universal Time)
+    frozen EV    = £1,255,147
+    frozen offer = £1,002,414
+    corrected EV = £719,610
+    EV delta     = £535,537  (frozen HIGHER than corrected)
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 5 — PLAIN-ENGLISH EXPLANATION
+────────────────────────────────────────────────────────────────────────────────
+
+  • EV IMPACT: The enterprise value is unchanged at £719,610. The data changes cancel out OR the affected years fall outside the averaging window.
+
+  Cleaning up dev tc=260...
+  Done.
+
+
+════════════════════════════════════════════════════════════════════════════════
+COMPANY: "Canoports UK Limited"  (prod tc=218)
+════════════════════════════════════════════════════════════════════════════════
+
+Cloning prod tc=218 → dev...
+  dev tc=261
+  Backfilling contributions... done
+  Reselecting...[RESELECT] company=261
+[RESELECT] 15 contributions → 12 winners
+[RESELECT] Pruned 8 empty ghost period(s): [1594, 1598, 1599, 1600, 1602, 1603, 1604, 1605]
+[RESELECT] Done. company=261
+ done
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 0 — ALL FULL-YEAR PERIODS ON PROD (duplicate/conflict exposure)
+────────────────────────────────────────────────────────────────────────────────
+
+  FY2023 🟠 MGMT∧STAT  (3 periods)
+        (loser)         period_id=1218  type=management    period_end=2023-05-31  doc_id=1488  "Doc1_Company_Accounts.pdf"
+               EBITDA=£820,219  (op=£447,656 + DA=£372,563)  equity=n/a
+        (loser)         period_id=1221  type=statutory     period_end=2023-05-31  doc_id=1488  "Doc1_Company_Accounts.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=£4,755,914
+      ★ CURRENT WINNER  period_id=1237  type=management    period_end=2023-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£820,219  (op=£820,219 + DA=n/a)  equity=n/a
+
+  FY2024 🟠 MGMT∧STAT  (3 periods)
+        (loser)         period_id=1219  type=management    period_end=2024-05-31  doc_id=1488  "Doc1_Company_Accounts.pdf"
+               EBITDA=£1,626,170  (op=£1,322,241 + DA=£303,929)  equity=n/a
+        (loser)         period_id=1222  type=statutory     period_end=2024-05-31  doc_id=1488  "Doc1_Company_Accounts.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=£5,022,306
+      ★ CURRENT WINNER  period_id=1238  type=management    period_end=2024-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£1,626,170  (op=£1,626,170 + DA=n/a)  equity=n/a
+
+  FY2025 🟠 MGMT∧STAT  (3 periods)
+        (loser)         period_id=1220  type=management    period_end=2025-05-31  doc_id=1488  "Doc1_Company_Accounts.pdf"
+               EBITDA=£2,822,727  (op=£2,529,109 + DA=£293,618)  equity=£6,851,802
+        (loser)         period_id=1223  type=statutory     period_end=2025-05-31  doc_id=1488  "Doc1_Company_Accounts.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=n/a
+      ★ CURRENT WINNER  period_id=1239  type=management    period_end=2025-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£2,822,727  (op=£2,822,727 + DA=n/a)  equity=n/a
+
+  FY2026 🟡 DUPLICATE  (3 periods)
+        (loser)         period_id=1217  type=management    period_end=2026-07-01  doc_id=1486  "Doc6_Staff_Matrix.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=n/a
+        (loser)         period_id=1224  type=management    period_end=2026-05-31  doc_id=1489  "Doc2_YTD_Profit_and_Loss.pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=£7,873,818
+      ★ CURRENT WINNER  period_id=1240  type=management    period_end=2026-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£2,005,593  (op=£1,742,395 + DA=£263,198)  equity=n/a
+
+  FY2027 🔴 FORECAST>2026  (1 period)
+      ★ CURRENT WINNER  period_id=1241  type=management    period_end=2027-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£2,765,526  (op=£2,765,526 + DA=n/a)  equity=n/a
+
+  FY2028 🔴 FORECAST>2026  (1 period)
+      ★ CURRENT WINNER  period_id=1242  type=management    period_end=2028-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£3,533,866  (op=£3,533,866 + DA=n/a)  equity=n/a
+
+  FY2029 🔴 FORECAST>2026  (1 period)
+      ★ CURRENT WINNER  period_id=1243  type=management    period_end=2029-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£4,394,039  (op=£4,394,039 + DA=n/a)  equity=n/a
+
+  FY2030 🔴 FORECAST>2026  (1 period)
+      ★ CURRENT WINNER  period_id=1244  type=management    period_end=2030-12-31  doc_id=1506  "Sales Ledger 2.pdf"
+               EBITDA=£5,264,270  (op=£5,264,270 + DA=n/a)  equity=n/a
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 1 — PER-YEAR WINNER: CURRENT (prod) vs CORRECTED (dev post-reselect)
+────────────────────────────────────────────────────────────────────────────────
+
+  ── FY2023 ──
+  CURRENT      FY2023
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £15,388,788  op_profit=      £820,219  D&A=         n/a  EBITDA=      £820,219  equity=           n/a
+  CORRECTED    FY2023
+      tier=statutory              doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £15,388,788  op_profit=      £820,219  D&A=         n/a  EBITDA=      £820,219  equity=    £4,755,914
+
+  ── FY2024 ──
+  CURRENT      FY2024
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £14,010,534  op_profit=    £1,626,170  D&A=         n/a  EBITDA=    £1,626,170  equity=           n/a
+  CORRECTED    FY2024
+      tier=statutory              doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £14,010,534  op_profit=    £1,626,170  D&A=         n/a  EBITDA=    £1,626,170  equity=    £5,022,306
+
+  ── FY2025 ──
+  CURRENT      FY2025
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £18,366,818  op_profit=    £2,822,727  D&A=         n/a  EBITDA=    £2,822,727  equity=           n/a
+  CORRECTED    FY2025
+      tier=management             doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £18,366,818  op_profit=    £2,822,727  D&A=         n/a  EBITDA=    £2,822,727  equity=    £6,851,802
+
+  ── FY2026 ──
+  CURRENT      FY2026
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £18,722,852  op_profit=    £1,742,395  D&A=    £263,198  EBITDA=    £2,005,593  equity=           n/a
+  CORRECTED    FY2026
+      tier=management             doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £18,722,852  op_profit=    £1,742,395  D&A=    £263,198  EBITDA=    £2,005,593  equity=    £7,873,818
+
+  ── FY2027 ──
+  CURRENT      FY2027
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £20,612,840  op_profit=    £2,765,526  D&A=         n/a  EBITDA=    £2,765,526  equity=           n/a
+  CORRECTED    FY2027
+      tier=management             doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £20,612,840  op_profit=    £2,765,526  D&A=         n/a  EBITDA=    £2,765,526  equity=           n/a
+
+  ── FY2028 ──
+  CURRENT      FY2028
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £22,903,604  op_profit=    £3,533,866  D&A=         n/a  EBITDA=    £3,533,866  equity=           n/a
+  CORRECTED    FY2028
+      tier=management             doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £22,903,604  op_profit=    £3,533,866  D&A=         n/a  EBITDA=    £3,533,866  equity=           n/a
+
+  ── FY2029 ──
+  CURRENT      FY2029
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £25,401,546  op_profit=    £4,394,039  D&A=         n/a  EBITDA=    £4,394,039  equity=           n/a
+  CORRECTED    FY2029
+      tier=management             doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £25,401,546  op_profit=    £4,394,039  D&A=         n/a  EBITDA=    £4,394,039  equity=           n/a
+
+  ── FY2030 ──
+  CURRENT      FY2030
+      tier=management             doc_id=1506   file="Sales Ledger 2.pdf"
+      revenue=   £28,185,810  op_profit=    £5,264,270  D&A=         n/a  EBITDA=    £5,264,270  equity=           n/a
+  CORRECTED    FY2030
+      tier=management             doc_id=1576   file="Sales Ledger 2.pdf"
+      revenue=   £28,185,810  op_profit=    £5,264,270  D&A=         n/a  EBITDA=    £5,264,270  equity=           n/a
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 2 — FORECAST / IM LEAK CHECK (corrected state)
+────────────────────────────────────────────────────────────────────────────────
+  🔴 FORECAST YEARS STILL PRESENT IN CORRECTED EBITDA:
+     FY2027: EBITDA=£2,765,526  tier=management  doc="Sales Ledger 2.pdf"
+     FY2028: EBITDA=£3,533,866  tier=management  doc="Sales Ledger 2.pdf"
+     FY2029: EBITDA=£4,394,039  tier=management  doc="Sales Ledger 2.pdf"
+     FY2030: EBITDA=£5,264,270  tier=management  doc="Sales Ledger 2.pdf"
+  ✓ Zero IM-tier figures in corrected reported EBITDA
+
+  Forecast periods on dev (any is_full_year):
+    fp_id=1606  FY2027  is_full_year=true  tier=management  EBITDA=£2,765,526
+    fp_id=1607  FY2028  is_full_year=true  tier=management  EBITDA=£3,533,866
+    fp_id=1608  FY2029  is_full_year=true  tier=management  EBITDA=£4,394,039
+    fp_id=1609  FY2030  is_full_year=true  tier=management  EBITDA=£5,264,270
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 3 — DEAL MODEL / VALUATION
+────────────────────────────────────────────────────────────────────────────────
+  averagingYears=3  multiple=4.25×
+
+  PRE (using current/buggy EBITDA input):
+    Years in window: [2030, 2029, 2028]
+    Adjusted EBITDA by year:
+      FY2023:       £910,838  (outside window)
+      FY2024:     £1,716,789  (outside window)
+      FY2025:     £2,822,727  (outside window)
+      FY2026:     £2,096,212  (outside window)
+      FY2027:     £2,856,145  (outside window)
+      FY2028:     £3,624,485  ← IN WINDOW
+      FY2029:     £4,484,658  ← IN WINDOW
+      FY2030:     £5,354,889  ← IN WINDOW
+    avgAdjEBITDA = £4,488,011  →  EV = £19,074,045
+
+  POST (using corrected EBITDA input):
+    Years in window: [2030, 2029, 2028]
+    Adjusted EBITDA by year:
+      FY2023:       £910,838  (outside window)
+      FY2024:     £1,716,789  (outside window)
+      FY2025:     £2,822,727  (outside window)
+      FY2026:     £2,096,212  (outside window)
+      FY2027:     £2,856,145  (outside window)
+      FY2028:     £3,624,485  ← IN WINDOW
+      FY2029:     £4,484,658  ← IN WINDOW
+      FY2030:     £5,354,889  ← IN WINDOW
+    avgAdjEBITDA = £4,488,011  →  EV = £19,074,045
+
+  Δ  avgAdjEBITDA = +£0   EV = +£0
+  Window unchanged: [2030,2029,2028]
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 5 — PLAIN-ENGLISH EXPLANATION
+────────────────────────────────────────────────────────────────────────────────
+
+  • FORECAST CONTAMINATION: Prod has 4 fiscal year(s) > 2026 — FY2027 (EBITDA £2,765,526, doc "Sales Ledger 2.pdf"), FY2028 (EBITDA £3,533,866, doc "Sales Ledger 2.pdf"), FY2029 (EBITDA £4,394,039, doc "Sales Ledger 2.pdf"), FY2030 (EBITDA £5,264,270, doc "Sales Ledger 2.pdf"). These were fed into the averaging window, inflating/deflating the EV because year ordering sort().reverse() put them at the TOP of the window.
+
+  • MANAGEMENT OVERRIDING STATUTORY: For FY[2023, 2024, 2025], the prod current-winner was a management-type period even though a statutory period also existed for the same year. This happened because period_end ordering was used as the tie-break instead of tier rank. After reselect, statutory correctly beats management.
+
+  • DUPLICATE PERIODS: FY[2023, 2024, 2025, 2026] had multiple periods of the same type. This occurs when a document upload creates a new period for a year that already had one. Reselect picks the single best contribution and re-points the income statement to a canonical period.
+
+  • EV IMPACT: The enterprise value is unchanged at £19,074,045. The data changes cancel out OR the affected years fall outside the averaging window.
+
+  Cleaning up dev tc=261...
+  Done.
+
+
+════════════════════════════════════════════════════════════════════════════════
+COMPANY: "Canoports UK Limited"  (prod tc=220)
+════════════════════════════════════════════════════════════════════════════════
+
+Cloning prod tc=220 → dev...
+  dev tc=262
+  Backfilling contributions... done
+  Reselecting...[RESELECT] company=262
+[RESELECT] 11 contributions → 10 winners
+[RESELECT] Pruned 2 empty ghost period(s): [1612, 1616]
+[RESELECT] Done. company=262
+ done
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 0 — ALL FULL-YEAR PERIODS ON PROD (duplicate/conflict exposure)
+────────────────────────────────────────────────────────────────────────────────
+
+  FY2022  (1 period)
+      ★ CURRENT WINNER  period_id=1265  type=management    period_end=2022-05-31  doc_id=1537  "Canoports_Company_Accounts_FY22.pdf"
+               EBITDA=£2,778,000  (op=£2,516,000 + DA=£262,000)  equity=n/a
+
+  FY2023  (1 period)
+      ★ CURRENT WINNER  period_id=1264  type=statutory     period_end=2023-05-31  doc_id=1536  "Canoports_Company_Accounts_FY23.pdf"
+               EBITDA=£820,219  (op=£447,656 + DA=£372,563)  equity=£4,755,914
+
+  FY2024  (1 period)
+      ★ CURRENT WINNER  period_id=1263  type=statutory     period_end=2024-05-31  doc_id=1535  "Canoports_Company_Accounts_FY24.pdf"
+               EBITDA=£1,930,099  (op=£1,626,170 + DA=£303,929)  equity=£5,022,306
+
+  FY2025 🟠 MGMT∧STAT  (2 periods)
+      ★ CURRENT WINNER  period_id=1246  type=management    period_end=2025-05-31  doc_id=1521  "Canoports_Company_Accounts_FY26.pdf"
+               EBITDA=£2,822,727  (op=£2,529,109 + DA=£293,618)  equity=£6,851,802
+        (loser)         period_id=1251  type=statutory     period_end=2025-05-31  doc_id=null  "no doc"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=£6,851,802
+
+  FY2026 🟡 DUPLICATE  (2 periods)
+        (loser)         period_id=1247  type=management    period_end=2026-05-31  doc_id=1521  "Canoports_Company_Accounts_FY26.pdf"
+               EBITDA=£1,517,746  (op=£1,742,396 + DA=£-224,650)  equity=£7,873,818
+      ★ CURRENT WINNER  period_id=1267  type=management    period_end=2026-07-04  doc_id=1542  "Canoports_Staff_Matrix (1).pdf"
+               EBITDA=£0  (op=n/a + DA=n/a)  equity=n/a
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 1 — PER-YEAR WINNER: CURRENT (prod) vs CORRECTED (dev post-reselect)
+────────────────────────────────────────────────────────────────────────────────
+
+  ── FY2022 ──
+  CURRENT      FY2022
+      tier=management             doc_id=1537   file="Canoports_Company_Accounts_FY22.pdf"
+      revenue=   £14,930,000  op_profit=    £2,516,000  D&A=    £262,000  EBITDA=    £2,778,000  equity=           n/a
+  CORRECTED    FY2022
+      tier=management             doc_id=1581   file="Canoports_Company_Accounts_FY22.pdf"
+      revenue=   £14,930,000  op_profit=    £2,516,000  D&A=    £262,000  EBITDA=    £2,778,000  equity=           n/a
+
+  ── FY2023 ──
+  CURRENT      FY2023
+      tier=statutory              doc_id=1536   file="Canoports_Company_Accounts_FY23.pdf"
+      revenue=   £15,388,788  op_profit=      £447,656  D&A=    £372,563  EBITDA=      £820,219  equity=    £4,755,914
+  CORRECTED    FY2023
+      tier=statutory              doc_id=1580   file="Canoports_Company_Accounts_FY23.pdf"
+      revenue=   £15,388,788  op_profit=      £447,656  D&A=    £372,563  EBITDA=      £820,219  equity=    £4,755,914
+
+  ── FY2024 ──
+  CURRENT      FY2024
+      tier=statutory              doc_id=1535   file="Canoports_Company_Accounts_FY24.pdf"
+      revenue=   £14,010,534  op_profit=    £1,626,170  D&A=    £303,929  EBITDA=    £1,930,099  equity=    £5,022,306
+  CORRECTED    FY2024
+      tier=statutory              doc_id=1579   file="Canoports_Company_Accounts_FY24.pdf"
+      revenue=   £14,010,534  op_profit=    £1,626,170  D&A=    £303,929  EBITDA=    £1,930,099  equity=    £5,022,306
+
+  ── FY2025 ──
+  CURRENT      FY2025
+      tier=management             doc_id=1521   file="Canoports_Company_Accounts_FY26.pdf"
+      revenue=   £18,366,818  op_profit=    £2,529,109  D&A=    £293,618  EBITDA=    £2,822,727  equity=    £6,851,802
+  CORRECTED    FY2025
+      tier=statutory              doc_id=1577   file="Canoports_Company_Accounts_FY26.pdf"
+      revenue=   £18,366,818  op_profit=    £2,529,109  D&A=    £293,618  EBITDA=    £2,822,727  equity=    £6,851,802
+
+  ── FY2026  ⬅ CHANGED ──
+  CURRENT      FY2026
+      tier=management             doc_id=1542   file="Canoports_Staff_Matrix (1).pdf"
+      revenue=           n/a  op_profit=           n/a  D&A=         n/a  EBITDA=           n/a  equity=           n/a
+  CORRECTED    FY2026
+      tier=management             doc_id=1585   file="Canoports_YTD_Profit_and_Loss.pdf"
+      revenue=   £18,722,852  op_profit=    £1,742,396  D&A=   £-224,650  EBITDA=    £1,517,746  equity=    £7,873,818
+    CHANGE: EBITDA ↑ £1,517,746  (£0 → £1,517,746)
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 2 — FORECAST / IM LEAK CHECK (corrected state)
+────────────────────────────────────────────────────────────────────────────────
+  ✓ Zero forecast years (>2026) in corrected reported EBITDA
+  ✓ Zero IM-tier figures in corrected reported EBITDA
+  ✓ No forecast-year periods remain on dev at all
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 3 — DEAL MODEL / VALUATION
+────────────────────────────────────────────────────────────────────────────────
+  averagingYears=3  multiple=5.3×
+
+  PRE (using current/buggy EBITDA input):
+    Years in window: [2026, 2025, 2024]
+    Adjusted EBITDA by year:
+      FY2022:     £2,615,975  (outside window)
+      FY2023:       £658,194  (outside window)
+      FY2024:     £1,768,074  ← IN WINDOW
+      FY2025:     £2,660,702  ← IN WINDOW
+      FY2026:        £-6,953  ← IN WINDOW
+    avgAdjEBITDA = £1,473,941  →  EV = £7,811,887
+
+  POST (using corrected EBITDA input):
+    Years in window: [2026, 2025, 2024]
+    Adjusted EBITDA by year:
+      FY2022:     £2,615,975  (outside window)
+      FY2023:       £658,194  (outside window)
+      FY2024:     £1,768,074  ← IN WINDOW
+      FY2025:     £2,660,702  ← IN WINDOW
+      FY2026:     £1,510,793  ← IN WINDOW
+    avgAdjEBITDA = £1,979,856  →  EV = £10,493,239
+
+  Δ  avgAdjEBITDA = +£505,915   EV = +£2,681,351
+  Window unchanged: [2026,2025,2024]
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 4 — ISSUED OFFERS
+────────────────────────────────────────────────────────────────────────────────
+
+  doc_id=59  type=offer_letter  status=draft  sent=n/a
+    frozen EV    = £6,308,297
+    frozen offer = £3,386,196
+    corrected EV = £10,493,239
+    EV delta     = £-4,184,942  (frozen LOWER than corrected)
+    document_data fields:
+      ebitdaMultiple: 5.2
+      averagingYears: 3
+      propertyValue: 0
+      excessCash: £1,500,000
+      primaryDebt: 176987
+      otherDebt: 0
+      corpTaxDue: 0
+      workingCapitalAdj: 4245114
+      _raw.averageEbitda: 1213134
+      _raw.ebitdaMultiple: 5.2
+
+  doc_id=12  type=current_offer  status=issued  sent=Mon Jul 06 2026 18:13:00 GMT+0000 (Coordinated Universal Time)
+    frozen EV    = £6,308,297
+    frozen offer = £3,386,196
+    corrected EV = £10,493,239
+    EV delta     = £-4,184,942  (frozen LOWER than corrected)
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 5 — PLAIN-ENGLISH EXPLANATION
+────────────────────────────────────────────────────────────────────────────────
+
+  • MANAGEMENT OVERRIDING STATUTORY: For FY[2025], the prod current-winner was a management-type period even though a statutory period also existed for the same year. This happened because period_end ordering was used as the tie-break instead of tier rank. After reselect, statutory correctly beats management.
+
+  • DUPLICATE PERIODS: FY[2026] had multiple periods of the same type. This occurs when a document upload creates a new period for a year that already had one. Reselect picks the single best contribution and re-points the income statement to a canonical period.
+
+  • EV IMPACT: INCREASE of £2,681,351 (£7,811,887 → £10,493,239). The averaging window stayed at [2026,2025,2024]; the delta comes purely from figures changing within those years.
+
+  Cleaning up dev tc=262...
+  Done.
+
+
+════════════════════════════════════════════════════════════════════════════════
+ALL COMPANIES PROCESSED.
+════════════════════════════════════════════════════════════════════════════════
